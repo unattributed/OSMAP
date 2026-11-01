@@ -260,6 +260,100 @@ impl Drop for OrdinaryContextFixture {
 }
 
 #[test]
+fn imported_recipients_use_current_mac_inventory_without_crypto_or_private_account_binding() {
+    use crate::openpgp_inventory_runtime::{now, read_frame, write_frame};
+    use std::os::unix::net::UnixListener;
+    use std::time::{Duration, Instant};
+    let mut fixture = OrdinaryContextFixture::new();
+    std::fs::set_permissions(&fixture.root, std::fs::Permissions::from_mode(0o700)).unwrap();
+    let record_store =
+        crate::openpgp_bindings::BindingStore::new(fixture.settings.join("openpgp-bindings"));
+    let before = record_store.load("alice@example.test").unwrap();
+    assert!(before.account_binding.is_none() && before.recipient_bindings.is_empty());
+    assert!(fixture.app.gateway.crypto_client().is_none());
+    let mut metadata: serde_json::Value =
+        serde_json::from_slice(&fixture.inventory.to_bytes().unwrap()).unwrap();
+    metadata["keys"][0]["email_addresses"] =
+        serde_json::json!(["Recipient@EXAMPLE.test", "alias@example.test"]);
+    let inventory =
+        crate::openpgp_inventory::Inventory::parse(&serde_json::to_vec(&metadata).unwrap())
+            .unwrap();
+    let socket = fixture.root.join("public.sock");
+    let key = fixture.root.join("public.key");
+    std::fs::write(&key, [43; 32]).unwrap();
+    std::fs::set_permissions(&key, std::fs::Permissions::from_mode(0o600)).unwrap();
+    let listener = UnixListener::bind(&socket).unwrap();
+    std::fs::set_permissions(&socket, std::fs::Permissions::from_mode(0o600)).unwrap();
+    listener.set_nonblocking(true).unwrap();
+    fixture.app.gateway.public_inventory_client = Some(
+        crate::openpgp_inventory_runtime::Client::from_operator_files(
+            &socket,
+            &key,
+            crate::openbsd::effective_uid(),
+        )
+        .unwrap(),
+    );
+    let server = std::thread::spawn(move || {
+        let deadline = Instant::now() + Duration::from_secs(3);
+        let mut stream = loop {
+            match listener.accept() {
+                Ok((stream, _)) => break stream,
+                Err(error)
+                    if error.kind() == std::io::ErrorKind::WouldBlock
+                        && Instant::now() < deadline =>
+                {
+                    std::thread::sleep(Duration::from_millis(5))
+                }
+                Err(_) => panic!("bounded public inventory fixture accept failed"),
+            }
+        };
+        let raw = read_frame(&mut stream, 2048, deadline).unwrap();
+        let request = crate::openpgp_inventory_protocol::Verifier::default()
+            .request(&raw, "alice@example.test", &[43; 32], now().unwrap())
+            .unwrap();
+        let response = request
+            .response(&inventory, &[43; 32], now().unwrap())
+            .unwrap();
+        write_frame(&mut stream, &response, deadline).unwrap();
+    });
+    let session = ValidatedSession {
+        record: fixture.issued.record.clone(),
+        audit_event: fixture.issued.audit_event.clone(),
+    };
+    let view = fixture
+        .app
+        .gateway
+        .compose_protection_view(&session, "", "", "", ProtectionIntent::default())
+        .unwrap();
+    assert!(!view.runtime_configured && view.account_binding.is_none());
+    let snapshot = view.imported_recipients.unwrap();
+    assert_eq!(snapshot.choices.len(), 2);
+    let recipient = snapshot
+        .choices
+        .iter()
+        .find(|choice| choice.address == "Recipient@EXAMPLE.test")
+        .unwrap();
+    assert_eq!(
+        snapshot
+            .selected("alice@example.test", &recipient.id)
+            .unwrap()
+            .address,
+        "Recipient@EXAMPLE.test"
+    );
+    server.join().unwrap();
+    let unavailable = fixture
+        .app
+        .gateway
+        .compose_protection_view(&session, "", "", "", ProtectionIntent::default())
+        .unwrap();
+    assert!(
+        unavailable.imported_recipients.is_none(),
+        "a later failed inventory read cannot reuse the prior member snapshot"
+    );
+    assert_eq!(record_store.load("alice@example.test").unwrap(), before);
+}
+
+#[test]
 fn ordinary_compose_projects_existing_revision_when_crypto_client_cannot_construct() {
     let fixture = OrdinaryContextFixture::new();
     let revision = fixture.rendered_revision(&fixture.page());

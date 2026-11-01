@@ -50,23 +50,44 @@ impl<G: BrowserGateway> BrowserApp<G> {
         if !["to", "cc", "bcc"].contains(&target.as_str()) {
             return Err(ContactError::Invalid);
         }
-        let expected = revision(form.get("contact_revision")).ok_or(ContactError::Invalid)?;
         let id = form.get("contact_id").ok_or(ContactError::Invalid)?;
-        let book = self.contact_snapshot(session)?;
-        let contact = book.selected(expected, id)?;
+        let address = if id.starts_with("key:") {
+            // A posted handle is never address/key authority: reconstruct the
+            // current account-owned certificate choices before touching a draft.
+            let view = self
+                .gateway
+                .compose_protection(
+                    session,
+                    "",
+                    "",
+                    "",
+                    crate::send::ProtectionIntent::default(),
+                )
+                .ok_or(ContactError::Unavailable)?;
+            view.imported_recipients
+                .as_ref()
+                .ok_or(ContactError::Unavailable)?
+                .selected(&session.record.canonical_username, id)?
+                .address
+                .clone()
+        } else {
+            let expected = revision(form.get("contact_revision")).ok_or(ContactError::Invalid)?;
+            let book = self.contact_snapshot(session)?;
+            book.selected(expected, id)?.address.clone()
+        };
         let value = form.entry(target).or_default();
         let entered = crate::mail_address::parse_address_list(ComposePolicy::default(), value)
             .map_err(|_| ContactError::Invalid)?;
-        if entered.iter().any(|address| {
-            crate::mail_address::comparison_key(address)
-                == crate::mail_address::comparison_key(&contact.address)
+        if entered.iter().any(|entered_address| {
+            crate::mail_address::comparison_key(entered_address)
+                == crate::mail_address::comparison_key(&address)
         }) {
             return Ok(());
         }
         if !value.trim().is_empty() {
             value.push_str(", ");
         }
-        value.push_str(&contact.address);
+        value.push_str(&address);
         Ok(())
     }
 

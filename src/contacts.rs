@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use crate::private_account_file::PrivateAccountFile;
 
@@ -25,6 +26,141 @@ pub struct ContactBook {
     canonical_username: String,
     pub revision: u64,
     pub contacts: Vec<Contact>,
+}
+
+/// Read-only recipient shortcuts from the current imported public inventory.
+/// These opaque handles carry no contact revision or authentication authority.
+#[derive(Clone, PartialEq, Eq)]
+pub struct ImportedRecipientChoice {
+    pub id: String,
+    pub address: String,
+    primary_fingerprint: String,
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct ImportedRecipientSnapshot {
+    canonical_username: String,
+    pub choices: Vec<ImportedRecipientChoice>,
+}
+
+impl std::fmt::Debug for ImportedRecipientChoice {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("ImportedRecipientChoice(<redacted>)")
+    }
+}
+impl std::fmt::Debug for ImportedRecipientSnapshot {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ImportedRecipientSnapshot")
+            .field("count", &self.choices.len())
+            .finish()
+    }
+}
+
+impl ImportedRecipientSnapshot {
+    pub fn from_inventory(
+        account: &str,
+        record: &crate::openpgp_bindings::BindingRecord,
+        inventory: &crate::openpgp_inventory::Inventory,
+    ) -> Result<Self, ContactError> {
+        validate_account(account)?;
+        record
+            .ensure_account(account)
+            .map_err(|_| ContactError::Unavailable)?;
+        let keys = inventory.keys().ok_or(ContactError::Unavailable)?;
+        let mut seen = BTreeSet::new();
+        let mut choices = Vec::new();
+        for address in keys.iter().flat_map(|key| &key.email_addresses) {
+            let comparison = crate::mail_address::comparison_key(address);
+            if seen.contains(&comparison) {
+                continue;
+            }
+            let Ok(selected) = record.resolve_recipient(inventory, address) else {
+                continue;
+            };
+            if !keys
+                .iter()
+                .any(|key| key.primary.fingerprint == selected.primary_fingerprint)
+            {
+                continue;
+            }
+            validate_values("", address)?;
+            if choices.len() == MAX_CONTACTS {
+                return Err(ContactError::Quota);
+            }
+            choices.push(ImportedRecipientChoice {
+                id: imported_choice_id(account, address, &selected.primary_fingerprint)?,
+                address: address.clone(),
+                primary_fingerprint: selected.primary_fingerprint,
+            });
+            seen.insert(comparison);
+        }
+        choices.sort_by_key(|choice| crate::mail_address::comparison_key(&choice.address));
+        let snapshot = Self {
+            canonical_username: account.into(),
+            choices,
+        };
+        snapshot.ensure_account(account)?;
+        Ok(snapshot)
+    }
+
+    /// Check the trusted gateway projection before display or membership lookup.
+    pub fn ensure_account(&self, account: &str) -> Result<(), ContactError> {
+        validate_account(account)?;
+        if self.canonical_username != account || self.choices.len() > MAX_CONTACTS {
+            return Err(ContactError::Unavailable);
+        }
+        let mut ids = BTreeSet::new();
+        let mut addresses = BTreeSet::new();
+        for choice in &self.choices {
+            if validate_values("", &choice.address).is_err()
+                || !crate::openpgp_crypto::full_fingerprint(&choice.primary_fingerprint)
+                || choice.id
+                    != imported_choice_id(account, &choice.address, &choice.primary_fingerprint)?
+                || !ids.insert(&choice.id)
+                || !addresses.insert(crate::mail_address::comparison_key(&choice.address))
+            {
+                return Err(ContactError::Unavailable);
+            }
+        }
+        Ok(())
+    }
+
+    pub fn selected(
+        &self,
+        account: &str,
+        id: &str,
+    ) -> Result<&ImportedRecipientChoice, ContactError> {
+        self.ensure_account(account)?;
+        if id.len() != 68
+            || !id.starts_with("key:")
+            || !id.as_bytes()[4..]
+                .iter()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(byte))
+        {
+            return Err(ContactError::Invalid);
+        }
+        self.choices
+            .iter()
+            .find(|choice| choice.id == id)
+            .ok_or(ContactError::Stale)
+    }
+}
+
+fn imported_choice_id(
+    account: &str,
+    address: &str,
+    fingerprint: &str,
+) -> Result<String, ContactError> {
+    let tuple = serde_json::to_vec(&(
+        account,
+        crate::mail_address::comparison_key(address),
+        fingerprint,
+    ))
+    .map_err(|_| ContactError::Unavailable)?;
+    let mut hash = Sha256::new();
+    hash.update(b"osmap-imported-recipient-choice-v1\0");
+    hash.update(tuple);
+    Ok(format!("key:{:x}", hash.finalize()))
 }
 
 impl std::fmt::Debug for Contact {
@@ -293,6 +429,182 @@ mod tests {
     use super::*;
     use std::fs;
     use std::sync::{Arc, Barrier};
+
+    fn imported_inventory(keys: &[(String, Vec<String>)]) -> crate::openpgp_inventory::Inventory {
+        crate::openpgp_inventory::Inventory::parse(&serde_json::to_vec(&serde_json::json!({
+            "version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.4.8",
+            "keys":keys.iter().map(|(fingerprint, emails)| serde_json::json!({
+                "primary":{"fingerprint":fingerprint,"algorithm":1,"bits":3072,"created":1,"expires":0,"revoked":false,"expired":false,"disabled":false,"invalid":false,"can_sign":true,"can_encrypt":true,"can_certify":true,"can_authenticate":false},
+                "subkeys":[],"email_addresses":emails,
+            })).collect::<Vec<_>>(),
+        })).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn imported_recipient_snapshot_is_owned_stable_deduplicated_and_not_a_contact_book() {
+        let account = "alice@example.test";
+        let record = crate::openpgp_bindings::BindingRecord::empty(account).unwrap();
+        let inventory = imported_inventory(&[(
+            "A".repeat(40),
+            vec![
+                "Desk@EXAMPLE.test".into(),
+                "Desk@example.TEST".into(),
+                "alias@example.test".into(),
+            ],
+        )]);
+        let snapshot =
+            ImportedRecipientSnapshot::from_inventory(account, &record, &inventory).unwrap();
+        assert_eq!(snapshot.choices.len(), 2);
+        assert!(snapshot
+            .choices
+            .iter()
+            .all(|choice| choice.id.starts_with("key:") && choice.id.len() == 68));
+        let desk = snapshot
+            .choices
+            .iter()
+            .find(|choice| choice.address.starts_with("Desk@"))
+            .unwrap();
+        assert_eq!(
+            snapshot.selected(account, &desk.id).unwrap().address,
+            "Desk@EXAMPLE.test"
+        );
+        let reordered = imported_inventory(&[(
+            "A".repeat(40),
+            vec!["alias@example.test".into(), "Desk@example.test".into()],
+        )]);
+        let fresh =
+            ImportedRecipientSnapshot::from_inventory(account, &record, &reordered).unwrap();
+        assert_eq!(
+            fresh
+                .choices
+                .iter()
+                .find(|choice| choice.address.starts_with("Desk@"))
+                .unwrap()
+                .id,
+            desk.id
+        );
+        let other = "bob@example.test";
+        let other_record = crate::openpgp_bindings::BindingRecord::empty(other).unwrap();
+        let other_snapshot =
+            ImportedRecipientSnapshot::from_inventory(other, &other_record, &inventory).unwrap();
+        assert_ne!(other_snapshot.choices[0].id, snapshot.choices[0].id);
+        assert!(snapshot.ensure_account(other).is_err());
+        assert!(snapshot.selected(other, &desk.id).is_err());
+        assert!(ImportedRecipientSnapshot::from_inventory(other, &record, &inventory).is_err());
+        assert_eq!(
+            snapshot.selected(account, &format!("key:{}", "0".repeat(64))),
+            Err(ContactError::Stale)
+        );
+        assert_eq!(
+            snapshot.selected(account, &"a".repeat(32)),
+            Err(ContactError::Invalid)
+        );
+        assert!(!format!("{snapshot:?} {desk:?}").contains("example.test"));
+        assert_eq!(record.revision, 0);
+        assert!(record.recipient_bindings.is_empty() && record.account_binding.is_none());
+    }
+
+    #[test]
+    fn imported_recipient_handles_do_not_survive_removed_rebound_or_ambiguous_membership() {
+        let account = "alice@example.test";
+        let mut record = crate::openpgp_bindings::BindingRecord::empty(account).unwrap();
+        let first = imported_inventory(&[("A".repeat(40), vec!["recipient@example.test".into()])]);
+        let old = ImportedRecipientSnapshot::from_inventory(account, &record, &first).unwrap();
+        let id = &old.choices[0].id;
+        let changed =
+            imported_inventory(&[("B".repeat(40), vec!["recipient@example.test".into()])]);
+        let rebound =
+            ImportedRecipientSnapshot::from_inventory(account, &record, &changed).unwrap();
+        assert_eq!(rebound.selected(account, id), Err(ContactError::Stale));
+        let removed = imported_inventory(&[]);
+        assert!(
+            ImportedRecipientSnapshot::from_inventory(account, &record, &removed)
+                .unwrap()
+                .choices
+                .is_empty()
+        );
+        let conflict = imported_inventory(&[
+            ("A".repeat(40), vec!["recipient@example.test".into()]),
+            ("B".repeat(40), vec!["recipient@example.test".into()]),
+        ]);
+        assert!(
+            ImportedRecipientSnapshot::from_inventory(account, &record, &conflict)
+                .unwrap()
+                .choices
+                .is_empty()
+        );
+        record.revision = 1;
+        record
+            .recipient_bindings
+            .push(crate::openpgp_bindings::RecipientBinding {
+                address: "recipient@example.test".into(),
+                primary_fingerprint: "B".repeat(40),
+                encryption: crate::openpgp_bindings::Requirement::Required,
+            });
+        let selected =
+            ImportedRecipientSnapshot::from_inventory(account, &record, &conflict).unwrap();
+        assert_eq!(selected.choices.len(), 1);
+        assert_eq!(selected.choices[0].id, rebound.choices[0].id);
+        assert!(
+            ImportedRecipientSnapshot::from_inventory(account, &record, &first)
+                .unwrap()
+                .choices
+                .is_empty(),
+            "a missing explicitly selected primary cannot be replaced"
+        );
+        let unavailable = crate::openpgp_inventory::Inventory::parse(
+            br#"{"version":1,"ok":false,"error":"inventory_unavailable"}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            ImportedRecipientSnapshot::from_inventory(account, &record, &unavailable),
+            Err(ContactError::Unavailable)
+        );
+    }
+
+    #[test]
+    fn imported_recipient_snapshot_refuses_quota_and_tampered_gateway_choices_without_truncation() {
+        let account = "alice@example.test";
+        let record = crate::openpgp_bindings::BindingRecord::empty(account).unwrap();
+        let inventory = |count: usize| {
+            imported_inventory(
+                &(0..count.div_ceil(16))
+                    .map(|key| {
+                        (
+                            format!("{:040X}", key + 1),
+                            (key * 16..count.min((key + 1) * 16))
+                                .map(|email| format!("user{email}@example.test"))
+                                .collect(),
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            )
+        };
+        let snapshot =
+            ImportedRecipientSnapshot::from_inventory(account, &record, &inventory(MAX_CONTACTS))
+                .unwrap();
+        assert_eq!(snapshot.choices.len(), MAX_CONTACTS);
+        assert_eq!(
+            ImportedRecipientSnapshot::from_inventory(
+                account,
+                &record,
+                &inventory(MAX_CONTACTS + 1)
+            ),
+            Err(ContactError::Quota)
+        );
+        let mut changed = snapshot.clone();
+        changed.choices[0].address = "foreign@example.test".into();
+        assert_eq!(
+            changed.ensure_account(account),
+            Err(ContactError::Unavailable)
+        );
+        let mut duplicate = snapshot;
+        duplicate.choices[1] = duplicate.choices[0].clone();
+        assert_eq!(
+            duplicate.ensure_account(account),
+            Err(ContactError::Unavailable)
+        );
+    }
 
     fn scratch() -> PathBuf {
         std::env::temp_dir().join(format!(

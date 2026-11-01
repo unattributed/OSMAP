@@ -105,6 +105,7 @@ mod tests {
             Some(&inventory),
         );
         let mut capability = ComposeProtectionView {
+            imported_recipients: None,
             runtime_configured: false,
             revision: Some(2),
             preflight: None,
@@ -169,6 +170,7 @@ mod tests {
             Some(&inventory),
         );
         let capability = ComposeProtectionView {
+            imported_recipients: None,
             runtime_configured: true,
             revision: Some(2),
             preflight: None,

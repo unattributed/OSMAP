@@ -3020,7 +3020,12 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         escape_html(model.cc_value),
         if model.bcc_value.is_empty() { "" } else { " open" },
         escape_html(model.bcc_value),
-        render_contact_selection(model.contacts, confirmation_required),
+        render_contact_selection(
+            model.canonical_username,
+            model.contacts,
+            model.openpgp.as_ref().and_then(|view| view.imported_recipients.as_ref()),
+            confirmation_required,
+        ),
         escape_html(model.subject_value),
         openpgp_compose_controls,
         escape_html(model.body_value),
@@ -3096,20 +3101,20 @@ fn render_reply_reference(reference: Option<&crate::reply_thread::ReplyReference
 }
 
 fn render_contact_selection(
+    account: &str,
     book: Option<&crate::contacts::ContactBook>,
+    imported: Option<&crate::contacts::ImportedRecipientSnapshot>,
     confirmation_required: bool,
 ) -> String {
     let manage =
         "<a href=\"/contacts\" target=\"_blank\" rel=\"noopener\">Manage contacts in a new tab</a>";
-    let Some(book) = book else {
-        return format!("<details class=\"compose-contacts\"><summary>Contacts</summary><div><p class=\"muted\">Contacts are unavailable. {manage}</p></div></details>");
-    };
-    if book.contacts.is_empty() {
-        return format!("<details class=\"compose-contacts\"><summary>Contacts</summary><div><p class=\"muted\">No saved contacts. {manage}</p></div></details>");
-    }
-    let options: String = book
-        .contacts
-        .iter()
+    let book = book.filter(|book| book.ensure_account(account).is_ok());
+    let imported = imported.filter(|snapshot| snapshot.ensure_account(account).is_ok());
+    let mut seen = std::collections::BTreeSet::new();
+    let saved_options: String = book
+        .into_iter()
+        .flat_map(|book| &book.contacts)
+        .filter(|contact| seen.insert(crate::mail_address::comparison_key(&contact.address)))
         .map(|contact| {
             format!(
                 "<option value=\"{}\">{} &lt;{}&gt;</option>",
@@ -3119,14 +3124,187 @@ fn render_contact_selection(
             )
         })
         .collect();
+    let imported_options: String = imported
+        .into_iter()
+        .flat_map(|snapshot| &snapshot.choices)
+        .filter(|choice| seen.insert(crate::mail_address::comparison_key(&choice.address)))
+        .map(|choice| {
+            format!(
+                "<option value=\"{}\">{}</option>",
+                escape_html(&choice.id),
+                escape_html(&choice.address)
+            )
+        })
+        .collect();
+    let saved_notice = match book {
+        None => "Saved contacts are unavailable.",
+        Some(book) if book.contacts.is_empty() => "No saved contacts.",
+        Some(_) => "",
+    };
+    let imported_notice = match imported {
+        None => "Imported public-key recipients are unavailable.",
+        Some(snapshot) if snapshot.choices.is_empty() => {
+            "No email addresses from imported public keys are available."
+        }
+        Some(_) if imported_options.is_empty() => {
+            "Imported-key addresses are already listed in Saved contacts."
+        }
+        Some(_) => "",
+    };
+    let notices = [saved_notice, imported_notice]
+        .into_iter()
+        .filter(|notice| !notice.is_empty())
+        .map(|notice| format!("<p class=\"muted\">{notice}</p>"))
+        .collect::<String>();
+    if saved_options.is_empty() && imported_options.is_empty() {
+        return format!("<details class=\"compose-contacts\"><summary>Contacts and imported keys</summary><div>{notices}<p>{manage}</p></div></details>");
+    }
+    let mut options = String::new();
+    if !saved_options.is_empty() {
+        options.push_str(&format!(
+            "<optgroup label=\"Saved contacts\">{saved_options}</optgroup>"
+        ));
+    }
+    if !imported_options.is_empty() {
+        options.push_str(&format!(
+            "<optgroup label=\"Imported public keys\">{imported_options}</optgroup>"
+        ));
+    }
     format!(concat!(
-        "<details class=\"compose-contacts panel\"><summary>Choose a contact</summary>",
-        "<p>Adding a contact saves this message as a draft, including selected uploads.</p>",
+        "<details class=\"compose-contacts panel\"><summary>Choose a recipient</summary>",
+        "<p>Adding a recipient saves this message as a draft, including selected uploads. This does not change encryption settings.</p>{notices}",
         "<input type=\"hidden\" name=\"contact_revision\" value=\"{}\">",
-        "<label for=\"compose-contact\">Saved contact</label><select id=\"compose-contact\" name=\"contact_id\"><option value=\"\">Choose a saved contact</option>{}</select>",
-        "<label for=\"compose-contact-target\">Add contact to</label><select id=\"compose-contact-target\" name=\"contact_target\"><option value=\"to\">To</option><option value=\"cc\">Cc</option><option value=\"bcc\">Bcc</option></select>",
-        "<button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"add-contact\"{}>Add contact and save draft</button><p>{}</p></details>"
-    ), book.revision, options, if confirmation_required { " disabled" } else { "" }, manage)
+        "<label for=\"compose-contact\">Contact or imported key recipient</label><select id=\"compose-contact\" name=\"contact_id\"><option value=\"\">Choose a recipient</option>{}</select>",
+        "<label for=\"compose-contact-target\">Add recipient to</label><select id=\"compose-contact-target\" name=\"contact_target\"><option value=\"to\">To</option><option value=\"cc\">Cc</option><option value=\"bcc\">Bcc</option></select>",
+        "<button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"add-contact\"{}>Add recipient and save draft</button><p>{}</p></details>"
+    ), book.map(|book| book.revision).unwrap_or(0), options, if confirmation_required { " disabled" } else { "" }, manage, notices=notices)
+}
+
+#[cfg(test)]
+mod contact_selection_tests {
+    use super::*;
+
+    fn imported(account: &str, addresses: &[&str]) -> crate::contacts::ImportedRecipientSnapshot {
+        let inventory = crate::openpgp_inventory::Inventory::parse(
+            &serde_json::to_vec(&serde_json::json!({
+                "version":1,"ok":true,"protocol":"openpgp",
+                "gpgme_version":"2.0.1","engine_version":"2.5.18",
+                "keys":[{"primary":{"fingerprint":"A".repeat(40),"algorithm":1,
+                    "bits":3072,"created":1704067200u64,"expires":0,
+                    "revoked":false,"expired":false,"disabled":false,"invalid":false,
+                    "can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false},
+                    "subkeys":[],"email_addresses":addresses}]
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        crate::contacts::ImportedRecipientSnapshot::from_inventory(
+            account,
+            &crate::openpgp_bindings::BindingRecord::empty(account).unwrap(),
+            &inventory,
+        )
+        .unwrap()
+    }
+
+    fn book(account: &str) -> crate::contacts::ContactBook {
+        serde_json::from_value(serde_json::json!({
+            "version":1,"canonical_username":account,"revision":7,
+            "contacts":[{"id":"a".repeat(32),"display_name":"Desk <Public> & Team","address":"desk@EXAMPLE.TEST"}]
+        })).unwrap()
+    }
+
+    #[test]
+    fn imported_recipients_remain_selectable_without_saved_contacts_and_retain_save_guard() {
+        let account = "alice@example.test";
+        let snapshot = imported(account, &["bob&tag@example.test"]);
+        let empty = crate::contacts::ContactBook::empty(account);
+        for contacts in [None, Some(&empty)] {
+            let html = render_contact_selection(account, contacts, Some(&snapshot), false);
+            assert!(html.contains("<optgroup label=\"Imported public keys\">"));
+            assert!(html.contains(&format!(
+                "<option value=\"{}\">bob&amp;tag@example.test</option>",
+                snapshot.choices[0].id
+            )));
+            assert!(!html.contains("<optgroup label=\"Saved contacts\">"));
+            assert!(html.contains("name=\"contact_revision\" value=\"0\""));
+            for target in ["to", "cc", "bcc"] {
+                assert!(html.contains(&format!("<option value=\"{target}\">")));
+            }
+            assert!(html.contains("value=\"add-contact\">Add recipient and save draft</button>"));
+            assert!(html.contains("This does not change encryption settings."));
+            assert!(!html.contains("Imported public-key recipients are unavailable."));
+            assert!(!html.contains("name=\"pgp_encrypt\""));
+        }
+        let guarded = render_contact_selection(account, None, Some(&snapshot), true);
+        assert!(guarded
+            .contains("value=\"add-contact\" disabled>Add recipient and save draft</button>"));
+    }
+
+    #[test]
+    fn merged_recipient_sources_preserve_saved_labels_and_dedupe_addresses_case_insensitively() {
+        let account = "alice@example.test";
+        let saved = book(account);
+        let snapshot = imported(account, &["desk@example.test", "bob&tag@example.test"]);
+        let before = serde_json::to_vec(&saved).unwrap();
+        let html = render_contact_selection(account, Some(&saved), Some(&snapshot), false);
+        assert!(html.contains("<optgroup label=\"Saved contacts\">"));
+        assert!(html.contains("<optgroup label=\"Imported public keys\">"));
+        assert!(html.contains(&format!("<option value=\"{}\">Desk &lt;Public&gt; &amp; Team &lt;desk@EXAMPLE.TEST&gt;</option>", saved.contacts[0].id)));
+        let duplicate = snapshot
+            .choices
+            .iter()
+            .find(|choice| choice.address == "desk@example.test")
+            .unwrap();
+        assert!(!html.contains(&format!("value=\"{}\"", duplicate.id)));
+        assert!(html.contains("bob&amp;tag@example.test"));
+        assert!(!html.contains("Desk <Public>"));
+        assert!(!html.contains("bob&tag@example.test"));
+        assert!(html.contains("name=\"contact_revision\" value=\"7\""));
+        assert_eq!(serde_json::to_vec(&saved).unwrap(), before);
+    }
+
+    #[test]
+    fn recipient_source_ownership_is_checked_independently_without_hiding_the_other_source() {
+        let account = "alice@example.test";
+        let saved = book(account);
+        let foreign_book = book("mallory@example.test");
+        let own_keys = imported(account, &["owned@example.test"]);
+        let foreign_keys = imported("mallory@example.test", &["foreign@example.test"]);
+        let saved_only =
+            render_contact_selection(account, Some(&saved), Some(&foreign_keys), false);
+        assert!(saved_only.contains("Desk &lt;Public&gt; &amp; Team"));
+        assert!(!saved_only.contains("foreign@example.test"));
+        assert!(saved_only.contains("Imported public-key recipients are unavailable."));
+        let key_only =
+            render_contact_selection(account, Some(&foreign_book), Some(&own_keys), false);
+        assert!(key_only.contains("owned@example.test"));
+        assert!(!key_only.contains("Desk &lt;Public&gt; &amp; Team"));
+        assert!(key_only.contains("Saved contacts are unavailable."));
+        let neither =
+            render_contact_selection(account, Some(&foreign_book), Some(&foreign_keys), false);
+        assert!(!neither.contains("name=\"contact_id\""));
+        assert!(!neither.contains("foreign@example.test"));
+    }
+
+    #[test]
+    fn empty_and_unavailable_recipient_sources_have_distinct_truthful_states() {
+        let account = "alice@example.test";
+        let empty_book = crate::contacts::ContactBook::empty(account);
+        let empty_keys = imported(account, &[]);
+        let empty = render_contact_selection(account, Some(&empty_book), Some(&empty_keys), false);
+        assert!(empty.contains("No saved contacts."));
+        assert!(empty.contains("No email addresses from imported public keys are available."));
+        assert!(!empty.contains("unavailable"));
+        assert!(!empty.contains("value=\"add-contact\""));
+        let unavailable = render_contact_selection(account, None, None, false);
+        assert!(unavailable.contains("Saved contacts are unavailable."));
+        assert!(unavailable.contains("Imported public-key recipients are unavailable."));
+        assert!(!unavailable.contains("No saved contacts."));
+        let saved = book(account);
+        let saved_only = render_contact_selection(account, Some(&saved), None, false);
+        assert!(saved_only.contains(&format!("value=\"{}\"", saved.contacts[0].id)));
+        assert!(saved_only.contains("value=\"add-contact\">Add recipient and save draft</button>"));
+    }
 }
 
 fn render_source_attachment_hidden_fields(

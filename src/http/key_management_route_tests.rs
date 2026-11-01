@@ -585,6 +585,7 @@ fn compose_protection_model() -> crate::http_ui::ComposePageModel<'static> {
  selected_sender_id: None,
         protection: crate::send::ProtectionIntent::default(),
         openpgp: Some(ComposeProtectionView {
+            imported_recipients: None,
             runtime_configured: true,
             revision: Some(1),
             preflight: None,

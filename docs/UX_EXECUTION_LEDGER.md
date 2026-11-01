@@ -88,9 +88,18 @@ slice using the same failure-analysis method. See
     "src/protected_submission.rs",
     "src/openpgp_crypto_runtime.rs",
     "src/http/compose_protection.rs",
+    "src/http/compose_protection_tests.rs",
     "src/bin/osmap_public_inventory_helper.rs",
     "src/bin/osmap_public_admin_helper.rs",
-    "src/bin/osmap_crypto_helper.rs"
+    "src/bin/osmap_crypto_helper.rs",
+    "src/contacts.rs",
+    "src/contacts_tests.rs",
+    "src/http_ui.rs",
+    "src/http/routes_contacts.rs",
+    "src/http/contact_tests.rs",
+    "src/http/compose_preflight.rs",
+    "src/http/routes_draft.rs",
+    "maint/ux/contact_workflows.py"
   ],
   "outcomes": [
     {
@@ -134,7 +143,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
       "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
-      "next_action": "Complete normal signed GitHub delivery including full current-source security hook; then owner ordinary ASC import/automatic-email acceptance. HistoricalT09FAIL retained/newworkflowNOT_RUN/S05open.",
+      "next_action": "Connect Compose recipient picker to owned derived public-key email choices without contact-book writes; qualify selected draft recipient path and deploy matching Web only.",
       "dependencies": [
         {
           "owner": "/root",
@@ -144,11 +153,11 @@ slice using the same failure-analysis method. See
         }
       ],
       "stages": {
-        "implementation": "PASS",
-        "source_tests": "PASS",
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
         "native_tests": "PASS",
-        "deployed_qa": "PASS",
-        "independent_review": "PASS",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
         "recovery": "PASS"
       },
       "evidence": [
@@ -283,6 +292,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "independent_review",
           "reference": "auto-email-installed-independent-review.json SHAd09b261a9c0f44d51a131c1301303f04c51479f5d2e19a97976a53a3b877d3b2 GOsource/native/installed with failedmixedgate andinitialnormalized-caseprobe retained; finalfullnormalpush/ownernewworkflowpending."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Ownerpositive freshimport/automaticemail/Offdefault confirmed screenshotuser4-6pO. SeparateComposepickerbug sourcecontactbook-only confirmed; newS03-01B/S05-02 read-onlyderivedpickerintegrationauthorised, no persistentcontactwrite."
         }
       ]
     }
@@ -308,7 +321,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "b8f4578ed9eb091700204330bd5fdde7698ba4d1a157bb50a62c4a3337eb44dd"
+      "sha256": "7d6fc518f10ce36409130f9aef72d4f49bb18e3c3ddd9b7706661005271132b0"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
@@ -507,9 +520,9 @@ slice using the same failure-analysis method. See
   },
   "human_acceptance": {
     "status": "FAIL",
-    "reference": "2026-11-01 ownerreports publickey02B34119C22074FC68B10E23E3294DF8DE68C834 importgenericUnavailable; bothfactorsacceptedliveaudit, nochangeconfirmed. Ownercredentials/proofmustnotbereplayed. Latest06:45primaryrefusal beforefactor/native remainsUNKNOWN; ASCuploadinstalled, newordinaryownerfileimportnotyetperformed. Newownerrequestedautomatic-emailflowinstalledandagentqualified; owneracceptanceofnewflowNOT_RUN. Historicalfailuresretained; current3key/rev6readback isnotnewbrowserUAT."
+    "reference": "2026-11-01 ownerreports publickey02B34119C22074FC68B10E23E3294DF8DE68C834 importgenericUnavailable; bothfactorsacceptedliveaudit, nochangeconfirmed. Ownercredentials/proofmustnotbereplayed. Latest06:45primaryrefusal beforefactor/native remainsUNKNOWN; ASCuploadinstalled, newordinaryownerfileimportnotyetperformed. Newownerrequestedautomatic-emailflowinstalledandagentqualified; owneracceptanceofnewflowNOT_RUN. Historicalfailuresretained; current3key/rev6readback isnotnewbrowserUAT. OwnerNOWconfirmsnewkeyimport+automaticemail+OffdefaultPASS screenshotuser4-6pO; fullsliceacceptanceseparate. Composepickerstillmissingimportedkeyaddresses, activeintegrationcorrection."
   },
-  "next_action": "Complete normal signed GitHub delivery including full current-source security hook; then owner ordinary ASC import/automatic-email acceptance. HistoricalT09FAIL retained/newworkflowNOT_RUN/S05open."
+  "next_action": "Connect Compose recipient picker to owned derived public-key email choices without contact-book writes; qualify selected draft recipient path and deploy matching Web only."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

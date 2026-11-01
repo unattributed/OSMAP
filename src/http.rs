@@ -1151,6 +1151,7 @@ mod tests {
         mark_read_policy_loads: Arc<std::sync::atomic::AtomicUsize>,
         mark_read_policy_sequence: Option<Arc<Mutex<Vec<crate::mark_read::Policy>>>>,
         contacts_store: Option<crate::contacts::ContactStore>,
+        compose_imported_recipients: Option<crate::contacts::ImportedRecipientSnapshot>,
         document_store:
             Option<crate::documents::Store<crate::documents::test_support::FixtureBackend>>,
         draft_store: Option<crate::draft::FileDraftStore>,
@@ -1227,6 +1228,7 @@ mod tests {
                 mark_read_policy_loads: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
                 mark_read_policy_sequence: None,
                 contacts_store: None,
+                compose_imported_recipients: None,
                 document_store: None,
                 draft_store: None,
                 send_journal: fixture_send_journal(),
@@ -1529,18 +1531,32 @@ mod tests {
         }
         fn compose_protection(
             &self,
-            _session: &ValidatedSession,
+            session: &ValidatedSession,
             to: &str,
             _cc: &str,
             _bcc: &str,
             intent: crate::send::ProtectionIntent,
         ) -> Option<ComposeProtectionView> {
+            let imported_recipients = self.compose_imported_recipients.clone().or_else(|| {
+                if !self.browser_fixture_openpgp {
+                    return None;
+                }
+                let account = &session.record.canonical_username;
+                let inventory =
+                    key_inventory_fixture::outcome("KeyInventoryPractical", account).inventory?;
+                let record = crate::openpgp_bindings::BindingRecord::empty(account).ok()?;
+                crate::contacts::ImportedRecipientSnapshot::from_inventory(
+                    account, &record, &inventory,
+                )
+                .ok()
+            });
             if let Some(snapshot) = &self.fixture_openpgp_snapshot {
                 let snapshot = snapshot.lock().unwrap();
                 if !snapshot.available {
                     return None;
                 }
                 return Some(ComposeProtectionView {
+                    imported_recipients: imported_recipients.clone(),
                     runtime_configured: true,
                     revision: Some(snapshot.revision),
                     preflight: snapshot.preflight_revision.map(|revision| {
@@ -1575,15 +1591,19 @@ mod tests {
                     recipient_binding_count: 1,
                 });
             }
-            self.browser_fixture_openpgp
-                .then_some(ComposeProtectionView {
+            (self.browser_fixture_openpgp || imported_recipients.is_some()).then_some(
+                ComposeProtectionView {
+                    imported_recipients: imported_recipients.clone(),
                     runtime_configured: false,
-                    revision: Some(2),
+                    revision: self.browser_fixture_openpgp.then_some(2),
                     preflight: None,
                     account_binding: None,
                     policy: crate::openpgp_bindings::ProtectionPolicy::default(),
-                    recipient_binding_count: 0,
-                })
+                    recipient_binding_count: imported_recipients
+                        .as_ref()
+                        .map_or(0, |snapshot| snapshot.choices.len()),
+                },
+            )
         }
         fn load_bin_preference(
             &self,

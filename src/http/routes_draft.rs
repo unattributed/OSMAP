@@ -620,7 +620,7 @@ where
         };
         if let Err(error) = contact_result {
             return HandledHttpResponse {
-                response: super::compose_enhancement::response(409, "Conflict", "Choose a Contact", self.render_protected_compose_page(&validated_session, ComposePageModel {
+                response: super::compose_enhancement::response(409, "Conflict", "Choose a Recipient", self.render_protected_compose_page(&validated_session, ComposePageModel {
  sender_choices: None,
  selected_sender_id: form.get("sender_id").map(String::as_str),
                     protection: super::compose_protection::retained_intent_from_form(&form),

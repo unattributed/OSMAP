@@ -4,6 +4,7 @@ use crate::openpgp_bindings::{Preflight, PreflightState, Recipients, Selections}
 use crate::send::ProtectionIntent;
 
 pub struct ComposeProtectionView {
+    pub imported_recipients: Option<crate::contacts::ImportedRecipientSnapshot>,
     pub runtime_configured: bool,
     pub revision: Option<u64>,
     pub preflight: Option<Preflight>,
@@ -139,6 +140,12 @@ impl RuntimeBrowserGateway {
             _ => None,
         };
         Some(ComposeProtectionView {
+            imported_recipients: inventory.as_ref().and_then(|inventory| {
+                crate::contacts::ImportedRecipientSnapshot::from_inventory(
+                    account, &record, inventory,
+                )
+                .ok()
+            }),
             runtime_configured,
             revision,
             preflight,

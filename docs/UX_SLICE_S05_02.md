@@ -689,3 +689,30 @@ binds root evidence4b3c9f4b7f2638b4218ecc46c5c7671b06c8f661ed1b3052c7af8562bb18b
 Owner acceptance of the new workflow remains NOT_RUN; prior T09FAIL and primary
 refusal history are retained, not treated as new-workflow success. S05-02 remains
 IN_PROGRESS/importPARTIALLY_VERIFIED pending owner result.
+
+## Compose imported-recipient integration — owner report, 2026-11-01
+
+Owner confirms a fresh public key import, automatic certificate email and Off
+default succeeded (user4-6pO@protonmail.com screenshot). Record positive human
+evidence for that import journey; previous failures remain historical. Owner
+then reports Compose's contact picker shows only saved contacts. This is the
+S03-01B/S05-02 integration seam, not another key-import failure.
+
+Observable exit: Compose offers saved contacts plus owned certificate-derived
+recipient emails, deduplicated with saved labels preferred. Selecting one adds
+its address to To/Cc/Bcc through existing draft-save, retaining protection flags
+and content/uploads. No persistent ContactBook synchronisation or second import
+write. Same common compose renderer covers initial/reply/resume/refusal views.
+Use an account-owned bounded choice snapshot in existing ComposeProtectionView;
+opaque domain-separated tuple hash IDs are selection handles, not authority.
+POST rebuilds fresh owned membership; reject forged/foreign/removed/rebound/
+ambiguous choices before draft mutation. Saved contact revision checks stay
+unchanged. Independent source availability: imported choices work without a
+contact book; saved choices work without inventory. No encryption toggle/trust
+change from selecting an address. Tests cover these outcomes and existing
+session/CSRF/origin safeguards; synthetic browser and installed readonly picker
+projection checks precede a matching Web-only update. Reuse unchanged native
+key/crypto/helper qualification. Root owns routes/integration/Git/host; runtime
+engineer owns snapshot/core/view/fixtures; QA owns renderer and visual tests;
+protocol reviewer independently reviews source/results/recipe. Normal signed
+checks/preservation apply, no owner drafts/contacts/messages are mutated.

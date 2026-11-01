@@ -150,6 +150,7 @@ mod tests {
     }
     fn capability(state: PreflightState) -> ComposeProtectionView {
         ComposeProtectionView {
+            imported_recipients: None,
             runtime_configured: true,
             revision: Some(2),
             account_binding: None,

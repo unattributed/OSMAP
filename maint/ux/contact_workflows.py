@@ -82,11 +82,11 @@ def main():
             page.get_by_label("Subject", exact=True).fill("Synthetic contact draft")
             page.get_by_label("Body", exact=True).fill("Public synthetic authoring text")
             page.locator(".compose-contacts summary").click()
-            page.get_by_label("Saved contact", exact=True).select_option(index=1)
-            page.get_by_label("Add contact to", exact=True).select_option("to")
+            page.get_by_label("Contact or imported key recipient", exact=True).select_option(index=1)
+            page.get_by_label("Add recipient to", exact=True).select_option("to")
             page.get_by_label("Add attachments", exact=True).set_input_files(
                 {"name": "synthetic.txt", "mimeType": "text/plain", "buffer": b"synthetic attachment"})
-            page.get_by_role("button", name="Add contact and save draft", exact=True).click()
+            page.get_by_role("button", name="Add recipient and save draft", exact=True).click()
             page.wait_for_url(origin + "/draft?id=*")
             assert page.get_by_label("To", exact=True).input_value() == "original@example.test, desk@example.test"
             assert "1 stored attachment" in page.locator(".compose-attachments").inner_text()
@@ -96,9 +96,9 @@ def main():
 
             for target in ["cc", "bcc"]:
                 page.locator(".compose-contacts summary").click()
-                page.get_by_label("Saved contact", exact=True).select_option(index=2)
-                page.get_by_label("Add contact to", exact=True).select_option(target)
-                page.get_by_role("button", name="Add contact and save draft", exact=True).click()
+                page.get_by_label("Contact or imported key recipient", exact=True).select_option(index=2)
+                page.get_by_label("Add recipient to", exact=True).select_option(target)
+                page.get_by_role("button", name="Add recipient and save draft", exact=True).click()
                 page.wait_for_load_state("networkidle")
                 assert page.get_by_label(target.capitalize(), exact=True).input_value() == "private@example.test"
             checks.append("Cc and Bcc selections persist in their requested roles while existing uploads and text remain")
@@ -127,9 +127,9 @@ def main():
             manager.wait_for_load_state("networkidle")
             add(manager, "New contact", "new@example.test")
             manager.close()
-            page.get_by_label("Saved contact", exact=True).select_option(index=1)
+            page.get_by_label("Contact or imported key recipient", exact=True).select_option(index=1)
             with page.expect_navigation() as stale_selection:
-                page.get_by_role("button", name="Add contact and save draft", exact=True).click()
+                page.get_by_role("button", name="Add recipient and save draft", exact=True).click()
             assert stale_selection.value.status == 409
             assert "Your contacts changed" in page.get_by_role("alert").inner_text()
             assert page.get_by_label("Body", exact=True).input_value() == "Public synthetic authoring text"
@@ -153,7 +153,7 @@ def main():
             assert "No contacts saved yet" in other_page.locator("main").inner_text()
             assert "desk@example.test" not in other_page.locator("main").inner_text()
             visit(other_page, "/compose")
-            assert other_page.get_by_label("Saved contact", exact=True).count() == 0
+            assert other_page.get_by_label("Contact or imported key recipient", exact=True).count() == 0
             other.close()
             checks.append("other synthetic account cannot list or select the first account's contacts")
 
