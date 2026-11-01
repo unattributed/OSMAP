@@ -3045,6 +3045,101 @@ pub(crate) fn fixture_t04_terminate_owned_group(pid: u32) -> io::Result<()> {
     Ok(())
 }
 
+#[cfg(all(test, unix))]
+#[derive(Clone, Copy)]
+pub(crate) enum OpenPgpFixtureRole {
+    Root,
+    Web,
+    Helper,
+}
+/// A positive-PID existence witness only; signal0 never changes process state.
+#[cfg(all(test, unix))]
+pub(crate) fn openpgp_fixture_process_exists(pid: u32) -> io::Result<bool> {
+    let pid = i32::try_from(pid).map_err(|_| io::ErrorKind::InvalidInput)?;
+    if pid <= 1 {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    // SAFETY: signal0 only tests existence/permission for this positive PID.
+    if unsafe { libc::kill(pid, 0) } == 0 {
+        return Ok(true);
+    }
+    let error = io::Error::last_os_error();
+    match error.raw_os_error() {
+        Some(libc::ESRCH) => Ok(false),
+        Some(libc::EPERM) => Ok(true),
+        _ => Err(error),
+    }
+}
+/// Only fixed existing identities are admitted; this never edits account files.
+#[cfg(all(test, unix))]
+pub(crate) fn openpgp_fixture_identities_valid() -> io::Result<()> {
+    if effective_uid() != 0 {
+        return Err(io::ErrorKind::PermissionDenied.into());
+    }
+    for (name, uid, gid) in [(c"_osmap", 1001, 1001), (c"_osmapgpg", 1002, 1003)] {
+        let mut entry: libc::passwd = unsafe { std::mem::zeroed() };
+        let mut buffer = [0u8; 16384];
+        let mut result = std::ptr::null_mut();
+        // SAFETY: reentrant lookup uses live bounded output storage.
+        let code = unsafe {
+            libc::getpwnam_r(
+                name.as_ptr(),
+                &mut entry,
+                buffer.as_mut_ptr().cast(),
+                buffer.len(),
+                &mut result,
+            )
+        };
+        if code != 0 || result.is_null() || entry.pw_uid != uid || entry.pw_gid != gid {
+            return Err(io::ErrorKind::PermissionDenied.into());
+        }
+    }
+    Ok(())
+}
+#[cfg(all(test, unix))]
+pub(crate) fn openpgp_fixture_child_profile(
+    command: &mut std::process::Command,
+    role: OpenPgpFixtureRole,
+) {
+    use std::os::unix::process::CommandExt;
+    let (uid, gid, groups): (u32, u32, &'static [u32]) = match role {
+        OpenPgpFixtureRole::Root => (0, 0, &[0]),
+        OpenPgpFixtureRole::Web => (1001, 1001, &[1001, 1002, 1003]),
+        OpenPgpFixtureRole::Helper => (1002, 1003, &[1003]),
+    };
+    // SAFETY: fixed identity and signal changes use only async-signal-safe
+    // syscalls between fork and exec; no account database is changed.
+    unsafe {
+        command.pre_exec(move || {
+            if libc::geteuid() != 0 {
+                return Err(io::ErrorKind::PermissionDenied.into());
+            }
+            libc::umask(0o077);
+            let mut stops: libc::sigset_t = std::mem::zeroed();
+            if libc::sigemptyset(&mut stops) != 0
+                || libc::sigaddset(&mut stops, libc::SIGTERM) != 0
+                || libc::sigaddset(&mut stops, libc::SIGINT) != 0
+                || libc::sigaddset(&mut stops, libc::SIGHUP) != 0
+                || libc::sigprocmask(libc::SIG_UNBLOCK, &stops, std::ptr::null_mut()) != 0
+                || libc::setgroups(groups.len() as _, groups.as_ptr()) != 0
+                || libc::setresgid(gid, gid, gid) != 0
+                || libc::setresuid(uid, uid, uid) != 0
+            {
+                return Err(io::Error::last_os_error());
+            }
+            let (mut ruid, mut euid, mut suid, mut rgid, mut egid, mut sgid) = (0, 0, 0, 0, 0, 0);
+            if libc::getresuid(&mut ruid, &mut euid, &mut suid) != 0
+                || libc::getresgid(&mut rgid, &mut egid, &mut sgid) != 0
+                || (ruid, euid, suid) != (uid, uid, uid)
+                || (rgid, egid, sgid) != (gid, gid, gid)
+            {
+                return Err(io::ErrorKind::PermissionDenied.into());
+            }
+            Ok(())
+        });
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #[cfg(unix)]

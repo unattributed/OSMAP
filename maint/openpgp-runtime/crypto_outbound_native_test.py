@@ -2,7 +2,7 @@
 """Exact outgoing MIME proof with disposable native keys and bounded cleanup.
 
 The Rust fixture exercises the real worker, composed MIME and receiving pipeline.
-Separate principal/client qualification is recorded by crypto_principal_test.py.
+Separate principal/client qualification belongs to the Rust native principal fixture.
 No mailbox keys, real message bodies, SMTP delivery or retained key exports.
 """
 import hashlib

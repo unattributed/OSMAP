@@ -540,6 +540,58 @@ pub(crate) fn inventory_fixture_command(mode: &str) -> Command {
     command
 }
 
+/// Fixed programs for the isolated native principal libtests only.
+#[cfg(all(test, unix))]
+pub(crate) enum PrincipalFixtureProgram<'a> {
+    Gpg,
+    Gpgconf,
+    GpgConnectAgent,
+    Libtest(&'a std::path::Path),
+    CryptoHelper(&'a std::path::Path),
+    InventoryHelper(&'a std::path::Path),
+    AdminHelper(&'a std::path::Path),
+    Probe(&'a std::path::Path),
+}
+#[cfg(all(test, unix))]
+pub(crate) fn principal_fixture_command(
+    program: PrincipalFixtureProgram<'_>,
+) -> std::io::Result<Command> {
+    use std::path::Path;
+    let (path, expected) = match program {
+        PrincipalFixtureProgram::Gpg => (Path::new("/usr/local/bin/gpg"), None),
+        PrincipalFixtureProgram::Gpgconf => (Path::new("/usr/local/bin/gpgconf"), None),
+        PrincipalFixtureProgram::GpgConnectAgent => {
+            (Path::new("/usr/local/bin/gpg-connect-agent"), None)
+        }
+        PrincipalFixtureProgram::Libtest(path) => (path, Some("libtest")),
+        PrincipalFixtureProgram::CryptoHelper(path) => (path, Some("crypto-helper")),
+        PrincipalFixtureProgram::InventoryHelper(path) => (path, Some("inventory-helper")),
+        PrincipalFixtureProgram::AdminHelper(path) => (path, Some("admin-helper")),
+        PrincipalFixtureProgram::Probe(path) => {
+            let name = path.file_name().and_then(|name| name.to_str());
+            if !matches!(
+                name,
+                Some("crypto-probe" | "inventory-probe" | "confinement-probe")
+            ) {
+                return Err(std::io::ErrorKind::PermissionDenied.into());
+            }
+            (path, None)
+        }
+    };
+    if !path.is_absolute()
+        || expected.is_some_and(|name| path.file_name() != Some(std::ffi::OsStr::new(name)))
+    {
+        return Err(std::io::ErrorKind::PermissionDenied.into());
+    }
+    let mut command = Command::new(path);
+    command
+        .env_clear()
+        .env("LC_ALL", "C")
+        .env("PATH", SAFE_COMMAND_PATH)
+        .current_dir("/");
+    Ok(command)
+}
+
 /// Only operator-validated worker, engine and account home paths enter here.
 /// Operation bytes are sent over stdin, never in command arguments.
 #[cfg(unix)]

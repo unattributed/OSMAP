@@ -75,6 +75,8 @@ pub mod message_metadata;
 pub mod mime;
 pub mod openbsd;
 pub mod openpgp_helper_client;
+#[cfg(all(test, unix))]
+mod openpgp_principal_native_tests;
 pub mod password_change;
 pub mod password_change_rate;
 #[cfg(test)]

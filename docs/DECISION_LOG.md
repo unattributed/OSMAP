@@ -1,5 +1,27 @@
 # Decision Log
 
+2026-11-02 — **S05-04 restored; Rust principal qualification PASS.** Owner fresh login and subsequent three-recipient mail evidence are retained. The two retired Python principal runners are deleted. Final matching Rust crypto/inventory and public-admin cases pass with unchanged system account databases and live account-helper process; post-test installed signed admission, eight service roles, HTTPS200 and exact cleanup pass. Source, failed attempts and limits are recorded in [S05-04](UX_SLICE_S05_04.md). Normal signed Git delivery and infrastructure T09 acceptance remain separate.
+
+
+2026-11-02 (Asia/Bangkok), historical checkpoint before final Rust qualification — Retire and delete the two Python principal-test
+runners after their temporary-user creation/deletion changed the system password
+database and invalidated the long-running OSMAP account helper's pinned backend
+identity. The observed password-file change at `2026-11-01T19:15:50Z` matches
+fixture completion; the three owner login failures were primary-backend
+unavailability before TOTP. Refresh only the OSMAP account helper and Web clients,
+preserving passwords, TOTP, epoch state and public mail services/configuration.
+The read-only epoch proof passes in 0.511 seconds, followed by the owner's fresh
+full login and authenticated `/mailboxes` screenshot at `2026-11-01T20:19:08Z`.
+
+Use the existing Rust/native test machinery and fixed service identities for
+replacement qualification, with disposable homes and no system user/group
+database changes or UID-wide process signals. Preserve the previous native,
+installed and failure records; they are not replacement qualification. Retain
+the earliest recovery-observer failure as UNKNOWN because its original cold
+HTTP response was not retained. Current owner access is restored, while the
+Rust principal replacement and S05-04 completion remain pending native proof.
+Accepted R4 core, S05-03, Contacts/Compose and F3 results are unchanged.
+
 2026-11-02 (Asia/Bangkok) — Record owner Accepted for the bounded F3 Welcome
 status repair, backed by two screenshots from the actual signed-in account.
 Close that requested repair with F3-T01–T09 PASS; preserve original evidence and

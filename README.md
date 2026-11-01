@@ -1,6 +1,6 @@
 # OSMAP
 
-S05-04 native isolation qualification: engineering/native/installed QA PASS; owner infrastructure T09 pending. The qualified inventory helper is installed on obsd1. [Evidence, scope and acceptance](docs/UX_SLICE_S05_04.md). Normal signed GitHub delivery remains the publication gate.
+**S05-04 restored; Rust principal qualification PASS.** The owner can sign in again. The two retired Python principal-test runners are deleted and replaced by native Rust tests using existing service identities and disposable state. Final crypto/inventory/admin, live admission, account-state preservation and cleanup checks pass. [Evidence and limits](docs/UX_SLICE_S05_04.md). Signed Git delivery and infrastructure T09 acceptance remain separate.
 
 **2026-11-02: Account-relative Welcome status repair accepted.** The owner has accepted the installed dashboard, with account-specific mailbox/public-key/session observations and expanded details. F3-T01–T09 PASS; broader host monitoring and backup/update integrations remain separate. See [F3 owner acceptance](docs/UX_FOLLOWUP_F3_ACCOUNT_STATUS.md#owner-acceptance--2026-11-02).
 

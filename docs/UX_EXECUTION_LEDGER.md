@@ -1,3 +1,7 @@
+2026-11-02 — **S05-04 restored and Rust replacement qualified; T09 infrastructure acceptance pending.** Final matching native crypto/inventory/admin, post-test live admission, preservation and exact cleanup PASS. Normal signed source delivery is required before readiness announcement.
+
+2026-11-02 — **S05-04 owner UAT FAIL: login backend unavailable; repair and Rust test migration IN_PROGRESS.**
+
 2026-11-02 (Asia/Bangkok) — **S05-04 engineering/native/installed QA PASS; infrastructure T09 owner acceptance pending.** Only the qualified inventory helper is updated; ordinary signed GitHub delivery is the final publication gate before readiness notification.
 
 2026-11-02 (Asia/Bangkok) — **S05-04 IN_PROGRESS: approved T01–T09 native isolation, dependency and recovery qualification.** Accepted S05-03/F3 results preserved; no new user page.
@@ -77,7 +81,15 @@ slice using the same failure-analysis method. See
     "maint/security/v10-fail-closed-remediation.json",
     "maint/security/v10-rust-assumption-audit.json",
     "src/openpgp_inventory_runtime.rs",
-    "src/openpgp_inventory_runtime_tests.rs"
+    "src/openpgp_inventory_runtime_tests.rs",
+    "src/openpgp_principal_native_tests.rs",
+    "src/lib.rs",
+    "src/auth.rs",
+    "src/openbsd.rs",
+    "maint/openpgp-runtime/principal_crypto_probe.c",
+    "maint/openpgp-runtime/principal_inventory_probe.c",
+    "maint/openpgp-runtime/crypto_outbound_native_test.py",
+    "src/account_admission_runtime_tests.rs"
   ],
   "outcomes": [
     {
@@ -86,7 +98,7 @@ slice using the same failure-analysis method. See
       "requirement_ids": [],
       "frontend_backend_outcome": "The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
       "essential_qa": "Fresh separate-principal, actual worker confinement/descriptor/core/refusal and owned lifecycle proof, matching native/installed custody, isolated restore and independent review.",
-      "next_action": "Complete ordinary signed GitHub publication and fresh parity; notify owner of infrastructure T09 readiness only after that gate passes.",
+      "next_action": "Complete normal signed Git delivery and fresh remote equality, then announce S05-04 T09 infrastructure readiness. Owner login and three-recipient mail evidence are already supplied; no additional credential attempt is needed.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -123,11 +135,11 @@ slice using the same failure-analysis method. See
         },
         {
           "stage": "recovery",
-          "reference": "Actualisolatedprevious4b81\u21926853candidate\u2192previous4b81 withauthorizedclients andstablefixturefiles; durableevidence/exactUIDscratchcleanup; exactinstalledprobe/publicationnamesabsent0.312s. Live rollbacknotneeded."
+          "reference": "Actualisolatedprevious4b81→6853candidate→previous4b81 withauthorizedclients andstablefixturefiles; durableevidence/exactUIDscratchcleanup; exactinstalledprobe/publicationnamesabsent0.312s. Live rollbacknotneeded."
         },
         {
           "stage": "independent_review",
-          "reference": "Independent source/combined5aeac5db\u2026 andrunnera52f6c1\u2026 plus actualinstalledQA896c65f4ee3d7826380ee4981c167e71a064a3e18c4974082f744dc6494209d9 GO; limitsandpendingowneracceptance explicit."
+          "reference": "Independent source/combined5aeac5db… andrunnera52f6c1… plus actualinstalledQA896c65f4ee3d7826380ee4981c167e71a064a3e18c4974082f744dc6494209d9 GO; limitsandpendingowneracceptance explicit."
         }
       ]
     }
@@ -142,7 +154,7 @@ slice using the same failure-analysis method. See
       "timebox_seconds": 14400,
       "started_at": "2026-11-01T18:46:37Z",
       "elapsed_status": "MEASURED",
-      "elapsed_seconds": 2489.799
+      "elapsed_seconds": 8407
     },
     "attempts": [
       {
@@ -530,6 +542,406 @@ slice using the same failure-analysis method. See
         "elapsed_seconds": 0.312,
         "change_reference": "Durableactualevidence thenhash/custodychecked exactprobe removal.",
         "reference": "installed-probe-cleanup-result/log2803fd:exactprobe/publicationnamesabsent."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-login-recovery-observer",
+        "result": "FAIL",
+        "elapsed_seconds": 3.034,
+        "source_revision": "b40187be203e61ed01668c99ec552ad7a8dd9f88916ee96fbd3c64151898d179",
+        "reference": "Recovery effect and protected-state comparisons pass; immediate cold HTTP observer exits1, original HTTP value not retained/UNKNOWN. Later live proof and owner success separate.",
+        "change_reference": "Refresh stale OSMAP account authority then Web only; no credential or public mail changes."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-build01",
+        "result": "PASS",
+        "elapsed_seconds": 120.28,
+        "source_revision": "716c57b0dbac03e9e9feea58cc6dde448694ffe31ac4bad7f8ec497fc613cb38",
+        "reference": "Private rust-principals-build-result.json and compiler output; compile only, not product acceptance.",
+        "change_reference": "Compile first Rust principal replacement without account database administration.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s05_protocol_review"
+          ],
+          "reference": "Combined root/independent reassessment preserves all failed inputs, classifications, elapsed cost and cleanup; exact changed method was reviewed before the next fixture workflow.",
+          "next_action": "Compile first Rust principal replacement without account database administration.",
+          "failed_attempt_ids": [
+            "S05-04-scratch-consumer-refusal01",
+            "S05-04-login-recovery-observer"
+          ]
+        }
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-build02",
+        "result": "FAIL",
+        "elapsed_seconds": 53.62,
+        "source_revision": "46be76fefa1b7daf42454486f21dde6100256ca3ee9af595d1d9d066121c23b3",
+        "reference": "Private rust-principals-build-result02.json and compiler output; compile only, not product acceptance.",
+        "change_reference": "Compile narrow cleanup corrections; retain actual E0282."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-build03",
+        "result": "PASS",
+        "elapsed_seconds": 119.324,
+        "source_revision": "db2a7cc379da0605abfd77de3e3267f2521ea02fcbe0cfcadb96ea8de8e325f8",
+        "reference": "Private rust-principals-build-result03.json and compiler output; compile only, not product acceptance.",
+        "change_reference": "Explicit closure Result type corrects E0282; no shutdown semantic change."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-crypto01",
+        "result": "FAIL",
+        "elapsed_seconds": 0.767,
+        "source_revision": "7d39b33ba436e89b6dd49beca16479a6bb96de6d5aed48a4195c28820644cf6c",
+        "reference": "crypto-result.json.attempt01; functional FAIL, cleanup/preservation PASS.",
+        "change_reference": "First exact Rust fixture with guarded manifest and fixed principals."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-crypto02",
+        "result": "FAIL",
+        "elapsed_seconds": 9.521,
+        "source_revision": "7d39b33ba436e89b6dd49beca16479a6bb96de6d5aed48a4195c28820644cf6c",
+        "reference": "crypto-result.json.attempt02; functional FAIL, cleanup/preservation PASS.",
+        "change_reference": "Use observed canonical /tmp bindings; preserve noncanonical-path refusal.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s05_protocol_review"
+          ],
+          "reference": "Combined root/independent reassessment preserves all failed inputs, classifications, elapsed cost and cleanup; exact changed method was reviewed before the next fixture workflow.",
+          "next_action": "Use observed canonical /tmp bindings; preserve noncanonical-path refusal.",
+          "failed_attempt_ids": [
+            "S05-04-rust-build02",
+            "S05-04-rust-crypto01"
+          ]
+        }
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-build04",
+        "result": "PASS",
+        "elapsed_seconds": 119.846,
+        "source_revision": "c9b7a814c1b7585671f527052c211ee80531631e20b09ff19e291a10a3ff9af9",
+        "reference": "Native build04 PASS; diagnostic-only source change.",
+        "change_reference": "Remove nested --nocapture so failing SDK assertions reach existing bounded private stdout; production supervisor unchanged."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-crypto03",
+        "result": "FAIL",
+        "elapsed_seconds": 9.477,
+        "source_revision": "7d39b33ba436e89b6dd49beca16479a6bb96de6d5aed48a4195c28820644cf6c",
+        "reference": "crypto-result.json.attempt03; firstSign innerUnavailable; cleanup/account DB/artifact/authority preservation PASS.",
+        "change_reference": "Capture the exact assertion without changing expected SDK outcome."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-crypto04",
+        "result": "FAIL",
+        "elapsed_seconds": 9.583,
+        "source_revision": "7d39b33ba436e89b6dd49beca16479a6bb96de6d5aed48a4195c28820644cf6c",
+        "reference": "crypto-result.json.attempt04; firstSign innerUnavailable; cleanup/account DB/artifact/authority preservation PASS.",
+        "change_reference": "Substitute only source-qualified installed crypto worker/engine to distinguish artifact pair; same failure excludes it as sole cause.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s05_protocol_review"
+          ],
+          "reference": "Combined root/independent reassessment preserves all failed inputs, classifications, elapsed cost and cleanup; exact changed method was reviewed before the next fixture workflow.",
+          "next_action": "Substitute only source-qualified installed crypto worker/engine to distinguish artifact pair; same failure excludes it as sole cause.",
+          "failed_attempt_ids": [
+            "S05-04-rust-crypto02",
+            "S05-04-rust-crypto03"
+          ]
+        }
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-build05",
+        "result": "PASS",
+        "elapsed_seconds": 118.943,
+        "source_revision": "b4e337e2347c7271189fb708ff1c969208526029ac92360ac65f231a52a52529",
+        "reference": "Build05 PASS; physical cwd probe fails at711 and succeeds at755.",
+        "change_reference": "Match proven readable top-level fixture directory755; private homes remain700."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-crypto05",
+        "result": "PASS",
+        "elapsed_seconds": 10.567,
+        "source_revision": "7d39b33ba436e89b6dd49beca16479a6bb96de6d5aed48a4195c28820644cf6c",
+        "reference": "Crypto/inventory functional+cleanup PASS with original new C pair; root exact cleanup PASS.",
+        "change_reference": "Verify directory prerequisite correction through actual SDK crypto and inventory clients."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-admin01",
+        "result": "FAIL",
+        "elapsed_seconds": 9.382,
+        "source_revision": "7d39b33ba436e89b6dd49beca16479a6bb96de6d5aed48a4195c28820644cf6c",
+        "reference": "First import innerUnavailable after successful snapshots; cleanup/preservation PASS. Resolved staging agent path105 chars; FileNameTooLong diagnostic retained.",
+        "change_reference": "Run unchanged native admin test with readable parent; classify mutation-only failure."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-build06",
+        "result": "PASS",
+        "elapsed_seconds": 119.056,
+        "source_revision": "0f5631bfd8b6742324e231113ae1e6a14f9cb7e949a9d35cd4cf7712867e97dd",
+        "reference": "Final matching native build PASS119.058s.",
+        "change_reference": "Shorten only fixture name prefix while preserving128-bit random identity and all private permissions.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s05_protocol_review"
+          ],
+          "reference": "Combined root/independent reassessment preserves all failed inputs, classifications, elapsed cost and cleanup; exact changed method was reviewed before the next fixture workflow.",
+          "next_action": "Shorten only fixture name prefix while preserving128-bit random identity and all private permissions.",
+          "failed_attempt_ids": [
+            "S05-04-rust-crypto04",
+            "S05-04-rust-admin01"
+          ]
+        }
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-admin02",
+        "result": "PASS",
+        "elapsed_seconds": 10.367,
+        "source_revision": "7d39b33ba436e89b6dd49beca16479a6bb96de6d5aed48a4195c28820644cf6c",
+        "reference": "Final admin functional/cleanup PASS; import/remove/CAS/private guard, reachable wrong peer and replay-after-restart; exact removal PASS.",
+        "change_reference": "Verify derived native socket path correction through the actual admin client."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-crypto06",
+        "result": "PASS",
+        "elapsed_seconds": 10.597,
+        "source_revision": "7d39b33ba436e89b6dd49beca16479a6bb96de6d5aed48a4195c28820644cf6c",
+        "reference": "Final matching-build crypto/inventory functional/cleanup PASS; exact scratch removal PASS.",
+        "change_reference": "Confirm shorter-path final source through signed crypto/inventory, restart and isolated restore."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Retained independent source, dispatch and actual-result reviews; final review d5f1b40f. Result reconciliation does not turn a later review into pre-action proof."
+        },
+        "id": "S05-04-rust-live-readiness",
+        "result": "PASS",
+        "elapsed_seconds": 1.02,
+        "source_revision": "cbccaa7a0c3243874dda59305865fdd493ed2dbca5503332ac7903305818101a",
+        "reference": "Installed read-only signed admission PASS; eight services/HTTPS200 and account DB/artifact/PID preservation.",
+        "change_reference": "Verify final principal QA leaves the restored live account authority usable without credentials."
       }
     ],
     "next_attempt": null
@@ -539,7 +951,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-04",
     "specification": {
       "path": "docs/UX_SLICE_S05_04.md",
-      "sha256": "ab884fbd4a8bba49e982122abcb1212631ffba32b4cc5dcefefd7e9eb7729f78"
+      "sha256": "f68d4a421f7e7f128adb6cd5a5d9cecd8434fcd031b1a227a0b581e5190d4706"
     },
     "design": {
       "journey": "The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
@@ -584,7 +996,8 @@ slice using the same failure-analysis method. See
         "reviewer": "/root/s05_protocol_review",
         "status": "PASS",
         "evidence": [
-          "Finalsigned4c0415 build169.444s lib58ee/helper6853; currentnative3process+8runtimePASS; actual GPGME/public/crypto/admin clients in distinct-principal fixtures; lock/dependency observations retained."
+          "Finalsigned4c0415 build169.444s lib58ee/helper6853; currentnative3process+8runtimePASS; actual GPGME/public/crypto/admin clients in distinct-principal fixtures; lock/dependency observations retained.",
+          "Final Rust build06 PASS119.058s; current libtest4703c0fd. Same reviewed Rust source files, new fixed C probes and original newly compiled worker/engine pair."
         ]
       },
       {
@@ -595,14 +1008,16 @@ slice using the same failure-analysis method. See
         "kind": "negative",
         "level": "native",
         "prerequisites": "Current source and actual installed capabilities/custody checked before dependent execution; disposable fixture authority and matching pinned artifacts required.",
-        "action": "Use three disposable principals and actual signed clients; prove authorized success and reachable unauthorized peer refusal.",
+        "action": "Use existing Web/helper identities and reachable unauthorized root peer, synthetic homes and actual signed clients; preserve account database identities.",
         "expected": "Privilege and socket authority: The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
         "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
         "status": "PASS",
         "evidence": [
-          "Three actual temporaryUIDs eachfixture, socket660/helperownership, authorizedpositive plus reachable samegrant unauthorizedrefusal, wronghelperUID and crossaccount/DAC negatives;21/9 nativeBooleanchecksPASS."
+          "Three actual temporaryUIDs eachfixture, socket660/helperownership, authorizedpositive plus reachable samegrant unauthorizedrefusal, wronghelperUID and crossaccount/DAC negatives;21/9 nativeBooleanchecksPASS.",
+          "Rustreplacement01MANIFEST_CUSTODY_REFUSED0.767s beforechildren, canonical/tmp bindingcorrection;02COMMAND_REFUSED9.521s inSDKcrypto afterCprobes. BothfunctionalFAILretained;cleanup/accountdb/installed/authoritypreservationPASS. Diagnosticnestedcapturecorrectionreviewed; matchingnextnativepending.",
+          "Final matching Rust crypto/inventory PASS10.597s and admin PASS10.367s; actual authorized clients and reachable unauthorized root protocol peer; no account database writes. Prior failed attempts retained separately."
         ]
       },
       {
@@ -620,7 +1035,8 @@ slice using the same failure-analysis method. See
         "reviewer": "/root/s05_protocol_review",
         "status": "PASS",
         "evidence": [
-          "Actual included-Cworkerconfinement functions denyprivate/outside/otherhome, execchilddenial and selectedpublicreadsuccess; realcrypto/inventorysuccessful afterconfinement. Foreignagentcustodyrefusalonly."
+          "Actual included-Cworkerconfinement functions denyprivate/outside/otherhome, execchilddenial and selectedpublicreadsuccess; realcrypto/inventorysuccessful afterconfinement. Foreignagentcustodyrefusalonly.",
+          "Final Rust native C probes and real SDK crypto/admin journeys PASS; top-level755 cwd and shorter staging paths correct measured fixture prerequisites while private homes remain700."
         ]
       },
       {
@@ -656,7 +1072,8 @@ slice using the same failure-analysis method. See
         "reviewer": "/root/s05_protocol_review",
         "status": "PASS",
         "evidence": [
-          "Actualworker-entry inheritedcore0 check+syntheticSIGABRT/nocorefile, zerohelperservice stdout/stderr, boundedoutputs/failures/quarantine; utility44checkgroups ordinary/-O includeactualfixederrorconsumer."
+          "Actualworker-entry inheritedcore0 check+syntheticSIGABRT/nocorefile, zerohelperservice stdout/stderr, boundedoutputs/failures/quarantine; utility44checkgroups ordinary/-O includeactualfixederrorconsumer.",
+          "Exact agent PID witnesses and bounded owned shutdown/absence checked; fixed native failure diagnostics retained privately through ordinary libtest capture."
         ]
       },
       {
@@ -674,7 +1091,8 @@ slice using the same failure-analysis method. See
         "reviewer": "/root/s05_protocol_review",
         "status": "PASS",
         "evidence": [
-          "TwoactualREDs retained+combinedreassessment; sourceandnativeownership/absence/unknownquarantine; actualSIGTERMworkerabsencebeforeexit; nativecandidateService request and idleactualrestart/restorefreshclientPASS."
+          "TwoactualREDs retained+combinedreassessment; sourceandnativeownership/absence/unknownquarantine; actualSIGTERMworkerabsencebeforeexit; nativecandidateService request and idleactualrestart/restorefreshclientPASS.",
+          "Final native matching helper restart/replay and isolated candidate→previous→candidate inventory restore PASS; root external FD/process namespace absence and exact scratch disposal PASS."
         ]
       },
       {
@@ -692,7 +1110,11 @@ slice using the same failure-analysis method. See
         "reviewer": "/root/s05_protocol_review",
         "status": "PASS",
         "evidence": [
-          "InstalledONLYinventory6853/source4c PID28267/inode3758861, before/after authenticatedpublicinventory inconfiguredlog, protected3d13995c equal,8roles/HTTPS200/unchangedotherartifacts/backups/exactprobeabsence. IsolatedoldcandidateoldactualrestorePASS; live rollbacknotneeded."
+          "InstalledONLYinventory6853/source4c PID28267/inode3758861, before/after authenticatedpublicinventory inconfiguredlog, protected3d13995c equal,8roles/HTTPS200/unchangedotherartifacts/backups/exactprobeabsence. IsolatedoldcandidateoldactualrestorePASS; live rollbacknotneeded.",
+          "Owner3freshsignins fail; actualprimarybackendUnavailable. Principalfixtureuserdel passwdctime19:15:50UTC matchesadminfixturecompletion; accounthelperOct30startup pinsoldpasswdidentity.",
+          "Recovery: account authority then Web refreshed; protected before/after hash748d44950961d0722f4832febbc41a2eea4784178a8bd5bddd4b8ef1ccb7f2ae equal. Initial coldHTTP observer exit1 retained/valueUNKNOWN, later HTTPS200; Rust epoch admissionPASS0.511s, owner full loginSUCCESS20:19:07UTC/screenshot20:19:08UTC. Rust replacement native qualification pending.",
+          "OwnerfreshsigninSUCCESS20:19:07UTC/screenshot20:19:08UTC; subsequent3recipientrelayaccepted C45583CEA7A20:20:43UTC and3recipientinboxscreenshots(2bodiesvisible). Rustreplacementfailedfixtures do notchangeaccountdb orauthorityPID46956.",
+          "Post-Rust qualification live signed epoch admission PASS1.020s; all8roles/HTTPS200, account databases/artifacts/authority PID46956 unchanged. Root publication readback hash4d8201c7819f8fda08e0448e6f84c577d5772c68b4703587f1582056633e83d8; exact removal PASS."
         ]
       },
       {
@@ -708,8 +1130,12 @@ slice using the same failure-analysis method. See
         "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PARTIAL",
+        "evidence": [
+          "Owner3freshloginfailures; infrastructureacceptanceblockedpendingrepair.",
+          "Owner confirms Login successful after bounded recovery; full infrastructure acceptance remains separate from this successful sign-in.",
+          "Independent final source/native/result review d5f1b40fa5fa55cc7bb64f1103d3a5825d534bc3a2ac8702e28f3126f4da5372 GO; normal signed source delivery required before readiness announcement."
+        ]
       }
     ],
     "engineering_exit": "Matching native isolation/lifecycle/dependency/installed and recovery proof independently reviewed and normally signed/synchronized.",
@@ -717,9 +1143,9 @@ slice using the same failure-analysis method. See
   },
   "human_acceptance": {
     "status": "PENDING",
-    "reference": "Owner infrastructure T09 remains separate; no new visual page or credential/key mutation walkthrough is required."
+    "reference": "Historical login UAT failure retained; owner subsequently confirms fresh login success and supplies three-recipient mail receipts. S05-04 infrastructure acceptance is separate from that repaired journey."
   },
-  "next_action": "Complete ordinary signed GitHub publication and fresh parity; notify owner of infrastructure T09 readiness only after that gate passes."
+  "next_action": "Complete normal signed Git delivery and fresh remote equality, then announce S05-04 T09 infrastructure readiness. Owner login and three-recipient mail evidence are already supplied; no additional credential attempt is needed."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

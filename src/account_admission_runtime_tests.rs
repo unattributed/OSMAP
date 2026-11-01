@@ -3,6 +3,38 @@ use crate::openpgp_inventory_runtime::validate_socket;
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::net::UnixListener;
 use std::sync::atomic::{AtomicUsize, Ordering};
+
+#[cfg(target_os = "openbsd")]
+#[test]
+#[ignore = "operator-run installed read-only epoch admission; no credentials or mutation"]
+fn native_installed_epoch_readiness() -> Result<(), &'static str> {
+    if crate::openbsd::effective_uid() != 1001 {
+        return Err("existing Web identity required");
+    }
+    let account =
+        std::env::var("OSMAP_READINESS_ACCOUNT").map_err(|_| "explicit account required")?;
+    crate::account_admission::valid_account(&account).map_err(|_| "canonical account required")?;
+    let epoch: u64 = std::env::var("OSMAP_READINESS_EPOCH")
+        .map_err(|_| "explicit epoch required")?
+        .parse()
+        .map_err(|_| "valid epoch required")?;
+    if !crate::account_admission::valid_epoch(epoch) {
+        return Err("valid epoch required");
+    }
+    let key = std::env::var_os("OSMAP_ACCOUNT_ADMISSION_KEY_FILE")
+        .map(PathBuf::from)
+        .ok_or("configured admission grant required")?;
+    let client = Client::from_native_local_operator_files(&key)
+        .map_err(|_| "installed client custody unavailable")?;
+    client
+        .admit_before(&account, epoch, Instant::now() + Duration::from_secs(10))
+        .map_err(|_| "installed signed epoch admission unavailable")?;
+    println!(
+        "INSTALLED_EPOCH_READINESS=PASS PASSWORD_SUBMITTED=NO TOTP_CONSUMED=NO CREDENTIAL_WRITE=NO"
+    );
+    Ok(())
+}
+
 fn service(uid: u32) -> Service {
     Service {
         active: Mutex::new(BTreeSet::new()),

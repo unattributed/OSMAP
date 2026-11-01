@@ -1,6 +1,35 @@
 # Current Project Status
 
-2026-11-02 (Asia/Bangkok) — **S05-04 engineering/native/installed QA PASS; owner infrastructure T09 pending.** Two reproduced inventory lifecycle defects are corrected with existing Rust supervisor/signal handling. Fresh distinct-principal native fixtures, real isolated restore, inventory-only installation, authenticated public readback, protected-state preservation and independent review pass. Qualified runtime source4c041501; installed inventory6853a100. Existing accepted user journeys remain intact. Normal signed GitHub publication and fresh equality gate the readiness notification. See [S05-04 qualification and limits](UX_SLICE_S05_04.md).
+2026-11-02 — **S05-04 restored; Rust principal qualification PASS.** Owner fresh login and subsequent three-recipient mail evidence are retained. The two retired Python principal runners are deleted. Final matching Rust crypto/inventory and public-admin cases pass with unchanged system account databases and live account-helper process; post-test installed signed admission, eight service roles, HTTPS200 and exact cleanup pass. Source, failed attempts and limits are recorded in [S05-04](UX_SLICE_S05_04.md). Normal signed Git delivery and infrastructure T09 acceptance remain separate.
+
+
+2026-11-02 (Asia/Bangkok), historical checkpoint before final Rust qualification — **Owner sign-in restored; replacement qualification then pending.**
+The owner reported three fresh login failures. Primary authentication was
+unavailable before TOTP: the Python principal fixtures' temporary-user creation
+and deletion rewrote the system password database at
+`2026-11-01T19:15:50Z`, matching fixture completion. The persistent account helper
+still held its October 30 password-file identity pin and refused the changed
+backend. This was not evidence that the supplied password or TOTP was wrong.
+
+Refreshing only the OSMAP account helper and Web clients restored the route.
+A read-only epoch proof passed in 0.511 seconds. The owner then completed a fresh
+full sign-in and supplied an authenticated `/mailboxes` screenshot at
+`2026-11-01T20:19:08Z`, showing verified mailbox access and four imported public
+keys. No password/TOTP reset or public mail-service/configuration change was
+performed for this recovery. The earliest recovery-observer failure remains
+retained: its original cold HTTP response was not retained, so that failure's
+precise cause is UNKNOWN. Later successful verification does not replace that
+missing observation.
+
+The owner retired the two Python principal-test runners; their active source
+files are deleted. The replacement uses Rust, existing fixed service identities
+and disposable homes, without user/group database changes or UID-wide signals.
+Its native qualification is pending; no replacement PASS or completed S05-04
+acceptance is claimed. Earlier native and installed results remain preserved
+with their original scopes. Accepted S04-01 R4, S05-03, Contacts/Compose and F3
+remain unchanged. See [S05-04 evidence and remaining qualification](UX_SLICE_S05_04.md).
+
+2026-11-02 (Asia/Bangkok), historical checkpoint before the owner login incident — **Initial S05-04 engineering/native/installed QA PASS; owner infrastructure T09 pending.** Two reproduced inventory lifecycle defects were corrected with existing Rust supervisor/signal handling. The then-current distinct-principal native fixtures, isolated restore, inventory-only installation, authenticated public readback, protected-state preservation and independent review passed. Runtime source4c041501 and inventory6853a100 identify that checkpoint. Those observations do not qualify the subsequently requested Rust principal-test replacement or close the later login incident. See [S05-04 qualification and limits](UX_SLICE_S05_04.md).
 
 2026-11-02 (Asia/Bangkok) — **S05-04 IN_PROGRESS.** Approved native isolation/dependency/recovery T01–T09 work is active. Fresh host preflight confirms current semantic capabilities and all eight roles healthy. Baseline inventory process ownership regression reproduces two post-reap signal attempts; smallest existing-supervisor correction is in progress. No new user page or owner mutation. See [S05-04 contract](UX_SLICE_S05_04.md).
 

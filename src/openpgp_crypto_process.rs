@@ -93,6 +93,15 @@ pub(crate) fn run_inventory_fixture_with_group_ops(
     }
     Ok(output)
 }
+/// Existing bounded supervisor exposed only to native fixture orchestration.
+#[cfg(test)]
+pub(crate) fn run_native_fixture(
+    command: Command,
+    input: &[u8],
+    deadline: Instant,
+) -> Result<(Vec<u8>, bool), Error> {
+    run_bounded(command, input, deadline, MAX_METADATA)
+}
 /// Separate primary-auth profile: Dovecot may delay a failed credential by15s.
 /// Existing crypto/admin callers retain their original ten-second cap.
 pub(crate) fn run_account_admission(
