@@ -1,5 +1,13 @@
 # Decision Log
 
+2026-11-01 — Reopen S05-02 after actual owner import failure. Both factors
+were accepted; exact-file native clone/RPC imports pass. Correct the measured
+validator/dispatch whitespace mismatch by forwarding the validated slice after
+raw limits, then qualify padded input through current native Runtime and install
+Web only. Native/gates/install/preservation PASS; preserve T09FAIL and original
+payload UNKNOWN until one fresh owner browser retest. No blanket helper restart,
+credential replay, owner key mutation or retrospective acceptance.
+
 2026-10-31 — S05-02 final engineering/installed QA passed after the actual
 Welcome-placeholder and temporal-expiry regressions were corrected. Preserve
 all original failures, reuse unchanged native key-effect evidence, install only

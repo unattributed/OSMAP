@@ -1,5 +1,18 @@
 # Current Project Status
 
+2026-11-01 (America/Toronto) — **S05-02 paste correction installed; owner import retest pending.**
+Actual owner import failed after accepted password/TOTP. The exact public key
+passes installed-helper clone import; a leading-whitespace contract defect was
+reproduced and corrected without weakening raw limits or native validation.
+Signed80585ec/Web89b36d29b076d770c05e3bf47f6b1c49d793986d44901564f1677bc054334f70
+is loaded on obsd1. Two exact native tests including padded Runtime import,
+2,096Rust/0failed/75ignored, security/V10–V13 and V14 pass. Only Web restarted;
+protected state, helpers, credentials, original two keys and revision5 remain.
+Owner T09 is still FAIL pending one fresh authenticated browser import; the
+owner request payload was not retained and its precise past cause is UNKNOWN.
+S05-02 remains open; import control is PARTIALLY_VERIFIED. See
+[the correction record](UX_SLICE_S05_02.md#correction-installed-owner-import-retest-pending--2026-11-01).
+
 2026-10-31 (America/Toronto) — **S05-02 installed on obsd1 and ready for owner T09.**
 Imported keys show approved email identities and applied policies directly;
 technical details remain expandable. Existing recipient policy/key editing,

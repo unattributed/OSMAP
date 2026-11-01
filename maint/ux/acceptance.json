@@ -18298,7 +18298,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "FAILED",
+        "status": "PARTIALLY_VERIFIED",
         "executed": true,
         "evidence": [
           {
@@ -18320,6 +18320,11 @@
             "kind": "human_uat",
             "path": "docs/UX_EXECUTION_LEDGER.md",
             "scope": "2026-11-01ownerpublicimportreportsUnavailablewithbothfreshfactorsaccepted. Liveinventoryremains2keys andbindingrevision5; engineeringreopened, previousboundedproofretained."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-import-20261101/actual-security-independent-review.json",
+            "scope": "Correction80585ec native actualpaddedRuntime/RPC import and exact661-byteinstalledhelperpublicclonePASS; current2096/0/75+V10-V14 andmatchinginstalledWeb89b36/protectedpreservationPASS. ReviewSHA6aa441c48c075454f95dda4815a19a5da333d86f1188ab99ab22d7bd4954deaf. OriginalownerpayloadcauseUNKNOWN; ownerT09stillFAILpendingfreshbrowserimport. No liveownerkeywasimportedbyagent."
           }
         ]
       }

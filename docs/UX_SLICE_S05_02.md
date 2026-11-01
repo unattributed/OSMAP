@@ -1,6 +1,6 @@
 # S05-02 — Practical public-key and email-policy management
 
-**Current 2026-11-01: owner import UAT failed; paste normalization corrected in source, new native/install verification pending. Historical Oct31 closeout is retained below.**
+**Current 2026-11-01: paste correction installed and engineering-verified; owner import T09 remains failed pending one fresh browser retest. S05-02 remains open. Historical Oct31 closeout is retained below.**
 
 Started 2026-10-31 (America/Toronto) from signed S05-01 closeout
 `279df22e6ceb384410b151a4acc9134e67dc3e25`. The operator acknowledged the
@@ -293,3 +293,46 @@ Private diagnostics and failed/zero-selected test invocations are retained under
 `/home/foo/Downloads/osmap-ux-s05/s05-02-import-20261101/`; zero-test selection is
 not counted as verification. Existing test/worker mechanisms are reused, with no
 new daemon, parser framework, database or public mail-service change.
+
+
+## Correction installed; owner import retest pending — 2026-11-01
+
+Signed correction80585eccc31c3b7d45e2864413060becf4c347c6 built on obsd1
+in163.771seconds with the qualified compiler profile. Actual native libtest
+SHA1118f710425b9fadc4f8243f631b59afb2e64927c997161febf2783f4d6749d3
+ran both exact public-admin/Runtime cases successfully, including padded armor
+through current Runtime/session/factors/RPC/Cworker. Fixed runner listing and
+pre-dispatch hash guards prevent zero-test or stale-binary qualification; fresh
+artifact readback and native scratch absence passed. Source acceptance passes
+2,096Rust/0failed/75explicit ignores, security/V10–V13 and V14; strict Clippy
+and focused nine-test suite pass.
+
+Matching Web SHA256
+`89b36d29b076d770c05e3bf47f6b1c49d793986d44901564f1677bc054334f70`
+is installed/loaded (PID34969/textinode129979); loopback/HTTPSlogin200/eight
+checked roles pass. Only Web restarted. Environment8edd312f and all seven
+account/OpenPGP helper binaries remain unchanged. Protected before/after
+manifests match SHA256
+`f4a623e21f6eac8692d07242005e9c139ae577d26169362e48cdb429e53368ab`.
+Post-install readback still has the two original keys, binding revision5,
+account Optional policies and Proton Required policy; actual RAM-only encryption
+passes. No owner import, credential/factor change, key/binding/policy write,
+SMTP submission or mail-service restart was performed by the agent.
+
+Four exact public-only diagnostic clone roots were removed only after durable
+sanitized evidence readback, with no remaining sockets. The installed helper
+used by the RPC clone had been stopped/reaped by its actor. The real helper
+was never restarted. Original failure and differential evidence remain private.
+Independent correction/installed review is GO, receipt SHA256
+`6aa441c48c075454f95dda4815a19a5da333d86f1188ab99ab22d7bd4954deaf`.
+
+The correction is ready for ONE owner fresh-browser import: reload
+`/settings/keys?panel=import`, paste only the public armor block, confirm full
+fingerprint02B34119C22074FC68B10E23E3294DF8DE68C834 and use the current obsd1
+password plus a fresh unused authenticator code. Submit once and check for the
+third imported key/full fingerprint. Import alone does not approve an email
+association or enable encryption. Do not repeat an unavailable/unconfirmed
+response; reconcile the new result first. The old submitted payload remains
+unknown; this correction does not retrospectively prove its exact cause.
+T09 and the owner import control remain unaccepted until that ordinary browser
+path succeeds. Final GitHub preservation is verified separately by delivery receipt.
