@@ -1,5 +1,7 @@
 # S05-02 — Practical public-key and email-policy management
 
+**Current 2026-11-01: owner import UAT failed; paste normalization corrected in source, new native/install verification pending. Historical Oct31 closeout is retained below.**
+
 Started 2026-10-31 (America/Toronto) from signed S05-01 closeout
 `279df22e6ceb384410b151a4acc9134e67dc3e25`. The operator acknowledged the
 infrastructure closeout and authorized this slice using the same failure-analysis
@@ -245,3 +247,49 @@ clipboard-API success are not claimed. Arbitrary new-correspondent crypto-servic
 authorization, private-key provisioning/unlock execution and production release
 remain outside this closeout. Signed branch synchronization will be separately
 verified by the final delivery receipt.
+
+
+## Owner import failure and measured correction — 2026-11-01
+
+Owner reports public certificate02B34119C22074FC68B10E23E3294DF8DE68C834
+was refused with generic key-management Unavailable. Actual live audits for both
+POSTs04:02:50/04:06:34UTC show primary and TOTP accepted before HTTP503.
+Fresh authenticated inventory/admin reads succeed; the live keybox has only
+its two original keys, original bindings/policy and revision5. No owner
+credential, factor, grant, binding or key import was replayed by the agent.
+Healthy service status alone was not treated as import proof.
+
+The exact661-byte public file (SHA256
+`a2e0df77497fd625df11c4e4774cfa898d1d5a8ae9803d77e300c7ca522ef690`)
+imports successfully through current Rust PublicAdminStore with the installed
+C worker/engine on a private public-only clone. Browser CRLF armor also passes.
+A separate fresh MAC/synthetic-account service using the exact installed
+public-admin helper47cccbf9 also imports it successfully: two->three keys,
+target present, trustdb unchanged. Each diagnostic preserves live keybox/trustdb
+hashes; the disposable helper is stopped. This is not a live owner import or
+fresh cross-principal qualification.
+
+A leading blank/space variant is accepted by the old Rust validator but fails
+native Store import with Unavailable in59ms, preserving the clone. The validator
+trimmed input only for checking while mutation forwarded original bytes; native
+armor admission requires BEGIN at byte zero. The smallest correction now shares
+the validated trimmed ASCII slice with dispatch. Raw64KiB/ASCII/public framing,
+full fingerprint, fresh factors, session authority, CAS and native private-packet
+checks remain unchanged; interior CRLF and base64 '+' bytes are preserved.
+Actual mutate/backend contract test reproduces RED then GREEN, with all9 focused
+tests passing and strict Clippy passing. Oversized padding/private/non-ASCII/
+malformed input still refuses before backend dispatch. The existing native
+Runtime journey now imports padded armor through its real RPC path.
+
+The owner request's certificate bytes were not logged or retained, so its exact
+past payload cause remains UNKNOWN. This fixes a demonstrated paste defect;
+it does not retrospectively prove that whitespace caused the owner failure.
+The exact certificate's installed-helper clone success and subsequent current
+native Runtime test qualify the correction before a single owner fresh-browser
+retest. Existing owner inventory, policies, private keys and mail services remain
+preserved. T09 remains failed pending that retest; no acceptance is fabricated.
+
+Private diagnostics and failed/zero-selected test invocations are retained under
+`/home/foo/Downloads/osmap-ux-s05/s05-02-import-20261101/`; zero-test selection is
+not counted as verification. Existing test/worker mechanisms are reused, with no
+new daemon, parser framework, database or public mail-service change.

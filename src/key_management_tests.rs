@@ -501,6 +501,87 @@ fn key_management_public_writes_unavailable_and_invalid_key_never_committed() {
         Err(Error::Invalid)
     );
 }
+#[test]
+fn public_import_dispatches_validated_armor_without_outer_paste_whitespace() {
+    struct NativeArmorContract<'a> {
+        expected: &'a [u8],
+        calls: Cell<usize>,
+    }
+    impl PublicKeyBackend for NativeArmorContract<'_> {
+        fn read(&self, _: &str) -> Result<Inventory, Error> {
+            panic!("public import must not read the inventory first");
+        }
+        fn import_public(
+            &self,
+            account: &str,
+            revision: &str,
+            primary: &str,
+            certificate: &[u8],
+        ) -> Result<(), Error> {
+            assert_eq!(account, "alice@example.test");
+            assert_eq!(revision, PUBLIC_REVISION);
+            assert_eq!(primary, "B".repeat(40));
+            self.calls.set(self.calls.get() + 1);
+            // The native public helper requires BEGIN at byte zero. Compare
+            // every byte too: normalization must preserve CRLF and base64 '+'.
+            if certificate == self.expected {
+                Ok(())
+            } else {
+                Err(Error::Unavailable)
+            }
+        }
+    }
+    let armor = b"-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n\r\nYWJj+ZGVm\r\n-----END PGP PUBLIC KEY BLOCK-----";
+    let backend = NativeArmorContract {
+        expected: armor,
+        calls: Cell::new(0),
+    };
+    let root = Scratch::new();
+    let store = BindingStore::new(root.0.join("bindings"));
+    let c = context();
+    let s = session();
+    let fp = "B".repeat(40);
+    let submit = |certificate: &[u8]| {
+        mutate(
+            &backend,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &public_request(
+                Action::ImportPublic {
+                    certificate,
+                    expected_primary_fingerprint: &fp,
+                },
+                0,
+            ),
+            59,
+        )
+    };
+    let mut pasted = b" \r\n\t".to_vec();
+    pasted.extend_from_slice(armor);
+    pasted.extend_from_slice(b"\r\n \t");
+    assert_eq!(validate_public_certificate(&pasted, &fp), Ok(()));
+    assert_eq!(submit(&pasted), Ok(()));
+    assert_eq!(submit(armor), Ok(()));
+    assert_eq!(backend.calls.get(), 2);
+
+    let mut oversized_padding = vec![b' '; MAX_PUBLIC_CERTIFICATE];
+    oversized_padding.extend_from_slice(armor);
+    let mut non_ascii = pasted.clone();
+    non_ascii.push(0xff);
+    for invalid in [
+        oversized_padding.as_slice(),
+        non_ascii.as_slice(),
+        b"-----BEGIN PGP PRIVATE KEY BLOCK-----\nsecret\n-----END PGP PRIVATE KEY BLOCK-----",
+        b"-----BEGIN PGP PUBLIC KEY BLOCK-----\nSECRET KEY\n-----END PGP PUBLIC KEY BLOCK-----",
+        b"prefix-----BEGIN PGP PUBLIC KEY BLOCK-----\nfixture\n-----END PGP PUBLIC KEY BLOCK-----",
+    ] {
+        assert_eq!(submit(invalid), Err(Error::Invalid));
+    }
+    assert_eq!(backend.calls.get(), 2);
+    assert_eq!(store.load("alice@example.test").unwrap().revision, 0);
+}
 struct PublicWriteSpy {
     inventory: Inventory,
     calls: Cell<usize>,

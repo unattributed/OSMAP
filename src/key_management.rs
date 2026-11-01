@@ -242,7 +242,8 @@ pub fn mutate<B: PublicKeyBackend>(
             certificate,
             expected_primary_fingerprint,
         } => {
-            validate_public_certificate(certificate, expected_primary_fingerprint)?;
+            let certificate =
+                normalized_public_certificate(certificate, expected_primary_fingerprint)?;
             let public_revision = public_revision(request.expected_public_revision)?;
             return store
                 .with_locked_revision(account, request.expected_revision, |record| {
@@ -389,6 +390,9 @@ fn public_revision(value: Option<&str>) -> Result<&str, Error> {
     Ok(value)
 }
 pub fn validate_public_certificate(bytes: &[u8], expected: &str) -> Result<(), Error> {
+    normalized_public_certificate(bytes, expected).map(|_| ())
+}
+fn normalized_public_certificate<'a>(bytes: &'a [u8], expected: &str) -> Result<&'a [u8], Error> {
     fingerprint(expected)?;
     if bytes.is_empty() || bytes.len() > MAX_PUBLIC_CERTIFICATE || !bytes.is_ascii() {
         return Err(Error::Invalid);
@@ -405,7 +409,9 @@ pub fn validate_public_certificate(bytes: &[u8], expected: &str) -> Result<(), E
     }
     // Native before-write inspection still establishes packet/key contents and
     // exact full fingerprint. Armor labels alone grant no import authority.
-    Ok(())
+    // Forward the same armor representation that passed these checks. The
+    // native helper requires BEGIN at byte zero; preserve all interior bytes.
+    Ok(text.as_bytes())
 }
 fn key_in_use(record: &BindingRecord, primary: &str) -> bool {
     record.account_binding.as_ref().is_some_and(|b| {

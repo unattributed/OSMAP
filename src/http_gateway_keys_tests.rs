@@ -345,10 +345,16 @@ fn native_runtime_key_management_journey() {
         .unwrap()
         .iter()
         .any(|k| k.primary.fingerprint == bob_fp));
+    // Exercise the browser paste representation through the actual Runtime/RPC
+    // path: outer whitespace is accepted, interior armor bytes are untouched.
+    let pasted_certificate = format!(
+        " \r\n{}\r\n\t",
+        std::str::from_utf8(&certificate.stdout).unwrap()
+    );
     assert_eq!(
         change(
             key_management::Action::ImportPublic {
-                certificate: &certificate.stdout,
+                certificate: pasted_certificate.as_bytes(),
                 expected_primary_fingerprint: &bob_fp,
             },
             3,

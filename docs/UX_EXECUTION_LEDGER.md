@@ -1,3 +1,5 @@
+2026-11-01 (America/Toronto) — **S05-02 reopened: owner public-key import UAT failed; correction in progress.**
+
 2026-10-31 (America/Toronto) — **S05-02 UAT_READY: practical key, email and policy management installed.**
 
 The operator acknowledged S05-01 closeout and authorized this visual/functional
@@ -10,8 +12,8 @@ slice using the same failure-analysis method. See
   "version": 1,
   "slice": "S05-02",
   "original_requirement": "Public-key import/list/remove, full-fingerprint binding, explicit recipient trust, capability/policy UI and private-key provisioning SOP",
-  "source_baseline": "279df22e6ceb384410b151a4acc9134e67dc3e25",
-  "state": "UAT_READY",
+  "source_baseline": "fe500fb9c3232c0507d5023365e0ef543d9e09d4",
+  "state": "IN_PROGRESS",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -66,7 +68,8 @@ slice using the same failure-analysis method. See
     "src/welcome_ui.rs",
     "src/http/routes_mail.rs",
     "src/http/welcome.css",
-    "src/key_management_tests.rs"
+    "src/key_management_tests.rs",
+    "src/key_management.rs"
   ],
   "outcomes": [
     {
@@ -110,7 +113,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
       "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
-      "next_action": "Record and independently verify signed branch delivery; owner T09 live browser walkthrough remains pending.",
+      "next_action": "Qualify normalized armor in current native Runtime RPC, install matching Web only, preserve state and deliver one owner fresh import retest.",
       "dependencies": [
         {
           "owner": "/root",
@@ -123,7 +126,7 @@ slice using the same failure-analysis method. See
         "implementation": "PASS",
         "source_tests": "PASS",
         "native_tests": "PASS",
-        "deployed_qa": "PASS",
+        "deployed_qa": "FAIL",
         "independent_review": "PASS",
         "recovery": "PASS"
       },
@@ -151,6 +154,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "recovery",
           "reference": "Actual protected.before/after manifest d9f3a0ceef1799355e1dae6d0bb21e58eeb45130359395159f64fdc5bf12f43a equal; env/helpers preserved; exactscratch/probe absent. Verified oldWeb backup/guardedrollback reviewed; rollback notneeded. Preview outer143causeUNKNOWN, actualobservations and absence separate."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Nov1actualownerUATfails import aftersuccessfulpassword/TOTP; live2originalkeys/rev5 unchanged andfreshadmin/inventorysnapshotPASS. PriorOct31narrowqualificationretained, notcompleteimportjourney."
         }
       ]
     }
@@ -159,7 +166,7 @@ slice using the same failure-analysis method. See
     "owner": "/root",
     "functional_exit": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "S05-01 acknowledged and preserved. Retained identity-renderer work ported from original checkout; no owner keys/credentials/policy or public mail mutation inferred. Acceptance03 normal gatePASS after two recordedtest-inventory refusals/combinedreview. Independentcontrolaudit thenfound inheritedWelcomeOpenPGPplaceholders forfiveS05-02controls and missingexplicitdiscoveryOff copy; sourcecorrectionrequiredbeforeinstallation. No oldcandidateinstalled. Final actual normalgate/install/helperreadback/independentreviewPASS; originalfailures and preview143UNKNOWN diagnostic retained. No ownercredential/key/policy action or mailservice restart.",
+    "history_reference": "S05-01 acknowledged and preserved. Retained identity-renderer work ported from original checkout; no owner keys/credentials/policy or public mail mutation inferred. Acceptance03 normal gatePASS after two recordedtest-inventory refusals/combinedreview. Independentcontrolaudit thenfound inheritedWelcomeOpenPGPplaceholders forfiveS05-02controls and missingexplicitdiscoveryOff copy; sourcecorrectionrequiredbeforeinstallation. No oldcandidateinstalled. Final actual normalgate/install/helperreadback/independentreviewPASS; originalfailures and preview143UNKNOWN diagnostic retained. No ownercredential/key/policy action or mailservice restart. Nov1reopenedactualownerimportfailure; nativepubliccloneexactcert andCRLFpass,leadingblankvariantfailswhileRustvalidatoraccepts; minimalnormalizationcorrectionunderway. No liveownerimport/password/TOTPreplay, nohelperrestart.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
@@ -175,7 +182,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "84fb95a083f45ed15bf3dc3da7932f1b5a53de1094313ee19c6c761c5a9e0787"
+      "sha256": "82d7e9ecc2fc5508064e2c6903858d4bb3764837d6cd1dfe7c0c3c1a8583593d"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
@@ -219,10 +226,11 @@ slice using the same failure-analysis method. See
         "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "PASS",
+        "status": "FAIL",
         "evidence": [
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
-          "Actual two exact native public-admin/Runtime casesPASS; current13effectinputs unchangedfa26102; root/native/security independent reviews, exactfixturecleanup and freshabsencePASS."
+          "Actual two exact native public-admin/Runtime casesPASS; current13effectinputs unchangedfa26102; root/native/security independent reviews, exactfixturecleanup and freshabsencePASS.",
+          "Nov1ownerimportfailure; liveaudit04:02:50/04:06:34UTC acceptsprimaryandTOTPthen503. Privateevidence s05-02-import-20261101."
         ]
       },
       {
@@ -333,10 +341,11 @@ slice using the same failure-analysis method. See
         "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "PASS",
+        "status": "PARTIAL",
         "evidence": [
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
-          "Actual install-final.actual.log/installed-final-readback.log loadedWebfe44b3/inode129966/loopback/HTTPS200/8roles; installed-read-after.log same2keys/rev5/policies/preflight/RAMencrypt. Synthetic CUA browser+Welcome results/JPEG; owner browser session remains T09."
+          "Actual install-final.actual.log/installed-final-readback.log loadedWebfe44b3/inode129966/loopback/HTTPS200/8roles; installed-read-after.log same2keys/rev5/policies/preflight/RAMencrypt. Synthetic CUA browser+Welcome results/JPEG; owner browser session remains T09.",
+          "Actualownerpublicimportfails; successfulUI/readiness/readcompatibilitydoesnotproveinstalledmutation."
         ]
       },
       {
@@ -352,18 +361,20 @@ slice using the same failure-analysis method. See
         "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "FAIL",
+        "evidence": [
+          "Nov1ownerimportfailure; liveaudit04:02:50/04:06:34UTC acceptsprimaryandTOTPthen503. Privateevidence s05-02-import-20261101."
+        ]
       }
     ],
     "engineering_exit": "Current source/native and browser checks pass, matching Web installed, preserved state/rollback and independent review plus normal signed synchronization.",
     "human_exit": "Owner accepts actual installed key/email/policy journey with selected authenticated actions."
   },
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "Owner actual login/view/selectedfresh-auth save follows completed engineering/installed QA; T09NOT_RUN."
+    "status": "FAIL",
+    "reference": "2026-11-01 ownerreports publickey02B34119C22074FC68B10E23E3294DF8DE68C834 importgenericUnavailable; bothfactorsacceptedliveaudit, nochangeconfirmed. Ownercredentials/proofmustnotbereplayed."
   },
-  "next_action": "Record and independently verify signed branch delivery; owner T09 live browser walkthrough remains pending."
+  "next_action": "Qualify normalized armor in current native Runtime RPC, install matching Web only, preserve state and deliver one owner fresh import retest."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

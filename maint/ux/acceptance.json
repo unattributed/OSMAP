@@ -18298,7 +18298,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "FAILED",
         "executed": true,
         "evidence": [
           {
@@ -18315,6 +18315,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/native-functional01.log",
             "scope": "Actual exact native public-admin store and Runtime key-management casesPASS, exact-owned cleanup and freshabsencePASS. Unchangedfa26102 key-effect inputs reviewed reusable under831516b Web. Controlled primary process is synthetic, not ownerDovecot credential verification. Different-primary rotation/stale-CAS is additionally exercised by the current actual BindingStore/mutate source regression."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_EXECUTION_LEDGER.md",
+            "scope": "2026-11-01ownerpublicimportreportsUnavailablewithbothfreshfactorsaccepted. Liveinventoryremains2keys andbindingrevision5; engineeringreopened, previousboundedproofretained."
           }
         ]
       }
