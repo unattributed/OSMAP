@@ -247,3 +247,20 @@ This slice proves IPC cancellation, not browser-abort propagation. It does not
 qualify a separate-UID crypto topology, invent private-key readiness from public
 inventory, complete S05-04, or claim whole-sprint/epic/production acceptance.
 The accepted Contacts/Compose experience and all frozen obligations remain intact.
+
+
+## Normal delivery gate refusal and test-boundary correction
+
+The first ordinary push stops after232.221seconds: main Rust2147PASS/77ignored,
+strict Clippy/format and V10/V11/V13 pass, then the CWE guard rejects a direct
+current-executable command in the new test-only file. GitHub is not updated by
+that failed push. Its complete original log/result remain private and immutable.
+
+The smallest correction reuses the existing reviewed auth crypto fixture command
+factory with a fixed descendant-disposition mode. The test-only worker dispatcher
+calls the same isolated assertions;3-second outer and500-millisecond inner bounds
+remain unchanged. No scanner exception, command boundary or production logic is
+added. Focused process9PASS/2fixturesignored, CWE and raw constructor scans pass;
+generated maps are refreshed to the actual source. Current native libtest and a
+targeted descendant proof will check this test-only composition; the matching
+installed three production binaries need no rebuild or reinstallation.

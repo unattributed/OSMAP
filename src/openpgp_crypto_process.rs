@@ -434,6 +434,9 @@ mod tests {
             .unwrap()
             .as_str()
         {
+            "descendant_disposition" => {
+                super::lifecycle_tests::descendant_disposition_fixture();
+            }
             "runtime_service_hold" => {
                 crate::openpgp_crypto_runtime::lifecycle_tests::serve_hold_child();
             }

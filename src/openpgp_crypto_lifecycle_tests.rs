@@ -67,13 +67,7 @@ fn an_already_reaped_child_is_never_group_signal_authority() {
 }
 
 pub(super) fn assert_isolated_descendant_cleanup() {
-    let mut command = Command::new(std::env::current_exe().unwrap());
-    command.args([
-        "--exact",
-        "openpgp_crypto_process::lifecycle_tests::descendant_disposition_fixture",
-        "--ignored",
-        "--nocapture",
-    ]);
+    let command = crate::auth::crypto_fixture_command("descendant_disposition");
     let (output, success) = run(command, b"", Instant::now() + Duration::from_secs(3)).unwrap();
     assert!(success, "isolated descendant disposition checks failed");
     if output
@@ -91,7 +85,7 @@ pub(super) fn assert_isolated_descendant_cleanup() {
 
 #[test]
 #[ignore = "isolated current-executable descendant cleanup discriminator"]
-fn descendant_disposition_fixture() {
+pub(super) fn descendant_disposition_fixture() {
     let group_id = AtomicU32::new(0);
     let remaining_group = AtomicBool::new(false);
     let exists = |pid| {
