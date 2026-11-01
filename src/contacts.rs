@@ -1,5 +1,5 @@
 //! Explicit account-private address shortcuts; no harvesting or trust inference.
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -161,6 +161,178 @@ fn imported_choice_id(
     hash.update(b"osmap-imported-recipient-choice-v1\0");
     hash.update(tuple);
     Ok(format!("key:{:x}", hash.finalize()))
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DirectoryEncryption {
+    OffByDefault,
+    Required,
+    Disabled,
+    Conflict,
+    Unavailable,
+}
+
+/// Current public recipient capability and policy, never private-key readiness.
+#[derive(Clone, PartialEq, Eq)]
+pub struct ContactDirectoryEntry {
+    pub display_name: String,
+    pub address: String,
+    pub saved_id: Option<String>,
+    pub imported_id: Option<String>,
+    pub key_status: Option<crate::openpgp_bindings::KeyStatus>,
+    pub encryption: DirectoryEncryption,
+    pub imported: bool,
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct ContactDirectory {
+    pub entries: Vec<ContactDirectoryEntry>,
+    pub saved_available: bool,
+    pub keys_available: bool,
+}
+
+impl std::fmt::Debug for ContactDirectoryEntry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("ContactDirectoryEntry(<redacted>)")
+    }
+}
+impl std::fmt::Debug for ContactDirectory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ContactDirectory")
+            .field("count", &self.entries.len())
+            .field("saved_available", &self.saved_available)
+            .field("keys_available", &self.keys_available)
+            .finish()
+    }
+}
+
+impl ContactDirectory {
+    /// Merge independently owned sources without changing contacts or bindings.
+    /// The caller supplies inventory authenticated for this account; Inventory
+    /// contains public metadata, not an independently encoded account identity.
+    pub fn from_sources(
+        account: &str,
+        book: Option<&ContactBook>,
+        bindings: Option<&crate::openpgp_bindings::BindingRecord>,
+        inventory: Option<&crate::openpgp_inventory::Inventory>,
+        now: u64,
+    ) -> Result<Self, ContactError> {
+        validate_account(account)?;
+        if now == 0 || now > 253402300799 {
+            return Err(ContactError::Unavailable);
+        }
+        if book.is_some_and(|book| {
+            book.canonical_username == account && book.contacts.len() > MAX_CONTACTS
+        }) {
+            return Err(ContactError::Quota);
+        }
+        let book = book.filter(|book| book.ensure_account(account).is_ok());
+        let bindings = bindings.filter(|record| record.ensure_account(account).is_ok());
+        let public_inventory = bindings
+            .and(inventory)
+            .filter(|inventory| inventory.keys().is_some());
+        let mut entries = BTreeMap::new();
+        if let Some(book) = book {
+            for contact in &book.contacts {
+                entries.insert(
+                    crate::mail_address::comparison_key(&contact.address),
+                    ContactDirectoryEntry {
+                        display_name: contact.display_name.clone(),
+                        address: contact.address.clone(),
+                        saved_id: Some(contact.id.clone()),
+                        imported_id: None,
+                        key_status: None,
+                        encryption: DirectoryEncryption::Unavailable,
+                        imported: false,
+                    },
+                );
+            }
+        }
+        if let (Some(record), Some(inventory)) = (bindings, public_inventory) {
+            let mut imported = BTreeSet::new();
+            for email in inventory
+                .keys()
+                .ok_or(ContactError::Unavailable)?
+                .iter()
+                .flat_map(|key| &key.email_addresses)
+            {
+                let comparison = crate::mail_address::comparison_key(email);
+                if imported.insert(comparison.clone()) && imported.len() > MAX_CONTACTS {
+                    return Err(ContactError::Quota);
+                }
+                let entry = entries
+                    .entry(comparison)
+                    .or_insert_with(|| ContactDirectoryEntry {
+                        display_name: String::new(),
+                        address: email.clone(),
+                        saved_id: None,
+                        imported_id: None,
+                        key_status: None,
+                        encryption: DirectoryEncryption::Unavailable,
+                        imported: true,
+                    });
+                entry.imported = true;
+            }
+            let selectable = ImportedRecipientSnapshot::from_inventory(account, record, inventory)?;
+            for choice in selectable.choices {
+                if let Some(entry) =
+                    entries.get_mut(&crate::mail_address::comparison_key(&choice.address))
+                {
+                    entry.imported_id = Some(choice.id);
+                }
+            }
+        }
+        if entries.len() > MAX_CONTACTS * 2 {
+            return Err(ContactError::Quota);
+        }
+        let unavailable = crate::openpgp_inventory::Inventory::parse(
+            br#"{"version":1,"ok":false,"error":"inventory_unavailable"}"#,
+        )
+        .map_err(|_| ContactError::Unavailable)?;
+        if let Some(record) = bindings {
+            for entry in entries.values_mut() {
+                let recipient = [entry.address.clone()];
+                let assessment = crate::openpgp_bindings::evaluate(
+                    account,
+                    record,
+                    public_inventory.unwrap_or(&unavailable),
+                    crate::openpgp_bindings::Recipients {
+                        to: &recipient,
+                        cc: &[],
+                        bcc: &[],
+                    },
+                    crate::openpgp_bindings::Selections::default(),
+                    now,
+                )
+                .map_err(|_| ContactError::Unavailable)?;
+                let readiness = assessment
+                    .recipients
+                    .first()
+                    .ok_or(ContactError::Unavailable)?;
+                entry.key_status = Some(readiness.state);
+                entry.encryption =
+                    directory_encryption(record.policy.encryption, readiness.requirement);
+            }
+        }
+        Ok(Self {
+            entries: entries.into_values().collect(),
+            saved_available: book.is_some(),
+            keys_available: public_inventory.is_some(),
+        })
+    }
+}
+
+fn directory_encryption(
+    global: crate::openpgp_bindings::Requirement,
+    recipient: crate::openpgp_bindings::Requirement,
+) -> DirectoryEncryption {
+    use crate::openpgp_bindings::Requirement::{Disabled, Optional, Required};
+    match (global, recipient) {
+        (Required, Disabled) | (Disabled, Required) => DirectoryEncryption::Conflict,
+        (Required, _) | (_, Required) => DirectoryEncryption::Required,
+        (Disabled, _) | (_, Disabled) => DirectoryEncryption::Disabled,
+        (Optional, Optional) => DirectoryEncryption::OffByDefault,
+    }
 }
 
 impl std::fmt::Debug for Contact {
@@ -438,6 +610,286 @@ mod tests {
                 "subkeys":[],"email_addresses":emails,
             })).collect::<Vec<_>>(),
         })).unwrap()).unwrap()
+    }
+
+    fn directory_book(account: &str, entries: &[(&str, &str)]) -> ContactBook {
+        let mut book = ContactBook::empty(account);
+        for (name, address) in entries {
+            book.change(book.revision, add(name, address)).unwrap();
+        }
+        book
+    }
+
+    #[test]
+    fn directory_merges_saved_labels_and_imported_ids_without_changing_sources() {
+        use crate::openpgp_bindings::KeyStatus;
+        let account = "alice@example.test";
+        let book = directory_book(
+            account,
+            &[
+                ("Saved desk", "Desk@example.test"),
+                ("Plain contact", "plain@example.test"),
+            ],
+        );
+        let record = crate::openpgp_bindings::BindingRecord::empty(account).unwrap();
+        let inventory = imported_inventory(&[(
+            "A".repeat(40),
+            vec!["Desk@EXAMPLE.test".into(), "imported@example.test".into()],
+        )]);
+        let before = book.clone();
+        let binding_before = record.clone();
+        let directory = ContactDirectory::from_sources(
+            account,
+            Some(&book),
+            Some(&record),
+            Some(&inventory),
+            50,
+        )
+        .unwrap();
+        assert!(directory.saved_available && directory.keys_available);
+        assert_eq!(directory.entries.len(), 3);
+        let desk = directory
+            .entries
+            .iter()
+            .find(|entry| entry.address == "Desk@example.test")
+            .unwrap();
+        assert_eq!(desk.display_name, "Saved desk");
+        assert_eq!(
+            desk.saved_id.as_ref(),
+            Some(
+                &book
+                    .contacts
+                    .iter()
+                    .find(|entry| entry.address == desk.address)
+                    .unwrap()
+                    .id
+            )
+        );
+        assert!(desk.imported && desk.imported_id.is_some());
+        assert_eq!(desk.key_status, Some(KeyStatus::Ready));
+        assert_eq!(desk.encryption, DirectoryEncryption::OffByDefault);
+        let plain = directory
+            .entries
+            .iter()
+            .find(|entry| entry.address == "plain@example.test")
+            .unwrap();
+        assert!(!plain.imported && plain.imported_id.is_none());
+        assert_eq!(plain.key_status, Some(KeyStatus::MissingBinding));
+        assert_eq!(plain.encryption, DirectoryEncryption::OffByDefault);
+        assert_eq!(book, before);
+        assert_eq!(record, binding_before);
+        assert!(!format!("{directory:?} {desk:?}").contains("example.test"));
+    }
+
+    #[test]
+    fn directory_source_ownership_and_availability_are_independent() {
+        use crate::openpgp_bindings::{KeyStatus, Requirement};
+        let account = "alice@example.test";
+        let book = directory_book(account, &[("Saved", "saved@example.test")]);
+        let foreign_book =
+            directory_book("bob@example.test", &[("Foreign", "foreign@example.test")]);
+        let mut record = crate::openpgp_bindings::BindingRecord::empty(account).unwrap();
+        record.revision = 1;
+        record.policy.encryption = Requirement::Required;
+        let foreign_record =
+            crate::openpgp_bindings::BindingRecord::empty("bob@example.test").unwrap();
+        let inventory =
+            imported_inventory(&[("A".repeat(40), vec!["imported@example.test".into()])]);
+        let foreign = ContactDirectory::from_sources(
+            account,
+            Some(&foreign_book),
+            Some(&record),
+            Some(&inventory),
+            50,
+        )
+        .unwrap();
+        assert!(!foreign.saved_available && foreign.keys_available);
+        assert_eq!(foreign.entries.len(), 1);
+        assert_eq!(foreign.entries[0].address, "imported@example.test");
+        for binding in [None, Some(&foreign_record)] {
+            let result =
+                ContactDirectory::from_sources(account, Some(&book), binding, Some(&inventory), 50)
+                    .unwrap();
+            assert!(result.saved_available && !result.keys_available);
+            assert_eq!(result.entries.len(), 1);
+            assert_eq!(result.entries[0].address, "saved@example.test");
+            assert_eq!(
+                result.entries[0].encryption,
+                DirectoryEncryption::Unavailable
+            );
+            assert_eq!(result.entries[0].key_status, None);
+        }
+        let keys_only =
+            ContactDirectory::from_sources(account, None, Some(&record), Some(&inventory), 50)
+                .unwrap();
+        assert!(!keys_only.saved_available && keys_only.keys_available);
+        let unavailable =
+            ContactDirectory::from_sources(account, Some(&book), Some(&record), None, 50).unwrap();
+        assert!(unavailable.saved_available && !unavailable.keys_available);
+        assert_eq!(
+            unavailable.entries[0].key_status,
+            Some(KeyStatus::InventoryUnavailable)
+        );
+        assert_eq!(
+            unavailable.entries[0].encryption,
+            DirectoryEncryption::Required
+        );
+        let mut malformed = record.clone();
+        malformed.revision = 0;
+        assert!(
+            !ContactDirectory::from_sources(account, None, Some(&malformed), Some(&inventory), 50)
+                .unwrap()
+                .keys_available
+        );
+        assert_eq!(
+            ContactDirectory::from_sources(account, None, Some(&record), Some(&inventory), 0),
+            Err(ContactError::Unavailable)
+        );
+    }
+
+    #[test]
+    fn directory_keeps_ambiguous_and_missing_selected_keys_visible_without_compose_ids() {
+        use crate::openpgp_bindings::{KeyStatus, RecipientBinding, Requirement};
+        let account = "alice@example.test";
+        let mut record = crate::openpgp_bindings::BindingRecord::empty(account).unwrap();
+        let inventory = imported_inventory(&[
+            ("A".repeat(40), vec!["same@example.test".into()]),
+            ("B".repeat(40), vec!["same@example.test".into()]),
+        ]);
+        let ambiguous =
+            ContactDirectory::from_sources(account, None, Some(&record), Some(&inventory), 50)
+                .unwrap();
+        assert_eq!(ambiguous.entries.len(), 1);
+        assert!(ambiguous.entries[0].imported && ambiguous.entries[0].imported_id.is_none());
+        assert_eq!(ambiguous.entries[0].key_status, Some(KeyStatus::Ambiguous));
+        record.revision = 1;
+        record.recipient_bindings.push(RecipientBinding {
+            address: "same@example.test".into(),
+            primary_fingerprint: "C".repeat(40),
+            encryption: Requirement::Disabled,
+        });
+        let missing =
+            ContactDirectory::from_sources(account, None, Some(&record), Some(&inventory), 50)
+                .unwrap();
+        assert_eq!(missing.entries[0].key_status, Some(KeyStatus::MissingKey));
+        assert!(missing.entries[0].imported_id.is_none());
+        assert_eq!(missing.entries[0].encryption, DirectoryEncryption::Disabled);
+    }
+
+    #[test]
+    fn directory_combines_actual_global_and_recipient_encryption_without_default_encryption() {
+        use crate::openpgp_bindings::{
+            RecipientBinding,
+            Requirement::{Disabled, Optional, Required},
+        };
+        let account = "alice@example.test";
+        let inventory =
+            imported_inventory(&[("A".repeat(40), vec!["recipient@example.test".into()])]);
+        for (global, recipient, expected) in [
+            (Optional, Optional, DirectoryEncryption::OffByDefault),
+            (Optional, Required, DirectoryEncryption::Required),
+            (Required, Optional, DirectoryEncryption::Required),
+            (Required, Required, DirectoryEncryption::Required),
+            (Optional, Disabled, DirectoryEncryption::Disabled),
+            (Disabled, Optional, DirectoryEncryption::Disabled),
+            (Disabled, Disabled, DirectoryEncryption::Disabled),
+            (Required, Disabled, DirectoryEncryption::Conflict),
+            (Disabled, Required, DirectoryEncryption::Conflict),
+        ] {
+            let mut record = crate::openpgp_bindings::BindingRecord::empty(account).unwrap();
+            record.revision = 1;
+            record.policy.encryption = global;
+            record.recipient_bindings.push(RecipientBinding {
+                address: "recipient@example.test".into(),
+                primary_fingerprint: "A".repeat(40),
+                encryption: recipient,
+            });
+            let result =
+                ContactDirectory::from_sources(account, None, Some(&record), Some(&inventory), 50)
+                    .unwrap();
+            assert_eq!(result.entries[0].encryption, expected);
+        }
+    }
+
+    #[test]
+    fn directory_bounds_all_imported_identities_even_when_ambiguous_and_never_truncates() {
+        let account = "alice@example.test";
+        let record = crate::openpgp_bindings::BindingRecord::empty(account).unwrap();
+        let inventory = |count: usize| {
+            imported_inventory(
+                &(0..count.div_ceil(16))
+                    .map(|key| {
+                        (
+                            format!("{:040X}", key + 1),
+                            (key * 16..count.min((key + 1) * 16))
+                                .map(|index| format!("key{index}@example.test"))
+                                .collect(),
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            )
+        };
+        let names = (0..MAX_CONTACTS)
+            .map(|index| {
+                (
+                    format!("Saved {index}"),
+                    format!("saved{index}@example.test"),
+                )
+            })
+            .collect::<Vec<_>>();
+        let book = directory_book(
+            account,
+            &names
+                .iter()
+                .map(|(name, address)| (name.as_str(), address.as_str()))
+                .collect::<Vec<_>>(),
+        );
+        let full = ContactDirectory::from_sources(
+            account,
+            Some(&book),
+            Some(&record),
+            Some(&inventory(MAX_CONTACTS)),
+            50,
+        )
+        .unwrap();
+        assert_eq!(full.entries.len(), MAX_CONTACTS * 2);
+        assert_eq!(
+            ContactDirectory::from_sources(
+                account,
+                Some(&book),
+                Some(&record),
+                Some(&inventory(MAX_CONTACTS + 1)),
+                50
+            ),
+            Err(ContactError::Quota)
+        );
+        let ambiguous = imported_inventory(
+            &(0..(MAX_CONTACTS + 1).div_ceil(16))
+                .flat_map(|group| {
+                    let emails = (group * 16..(MAX_CONTACTS + 1).min((group + 1) * 16))
+                        .map(|index| format!("ambiguous{index}@example.test"))
+                        .collect::<Vec<_>>();
+                    (0..2)
+                        .map(move |copy| (format!("{:040X}", group * 2 + copy + 1), emails.clone()))
+                })
+                .collect::<Vec<_>>(),
+        );
+        assert_eq!(
+            ContactDirectory::from_sources(account, None, Some(&record), Some(&ambiguous), 50),
+            Err(ContactError::Quota)
+        );
+        let mut oversized = book;
+        oversized.contacts.push(oversized.contacts[0].clone());
+        assert_eq!(
+            ContactDirectory::from_sources(
+                account,
+                Some(&oversized),
+                Some(&record),
+                Some(&inventory(1)),
+                50
+            ),
+            Err(ContactError::Quota)
+        );
     }
 
     #[test]

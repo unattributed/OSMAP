@@ -376,3 +376,128 @@ fn imported_picker_mutation_keeps_session_origin_and_csrf_guards() {
         assert!(!root.exists(), "read-only picker must not create the contact store");
     }
 }
+
+fn directory_get(app: &BrowserApp<StubGateway>, path: &str, mode: &str) -> HandledHttpResponse {
+    let mut req = request("GET", path, &authenticated_same_origin_headers(), "");
+    req.headers.insert("user-agent".into(), mode.into());
+    app.handle_request(&req, "127.0.0.1")
+}
+
+#[test]
+fn contacts_directory_lists_searches_and_filters_current_owned_sources_without_writes() {
+    let (app, root, store) = fixture();
+    let before = add(&store);
+    let page = body_text(&directory_get(&app, "/contacts", "KeyInventoryPractical"));
+    for expected in ["<table", "Email address", "Encryption policy", "Desk &lt;Public&gt;", "second@example.test", "Off by default", "Require encryption"] {
+        assert!(page.contains(expected), "{expected}");
+    }
+    let search = body_text(&directory_get(&app, "/contacts?q=second", "KeyInventoryPractical"));
+    assert!(search.contains("second@example.test"));
+    assert!(!search.contains("Desk &lt;Public&gt;"));
+    let saved = body_text(&directory_get(&app, "/contacts?filter=saved", "KeyInventoryPractical"));
+    assert!(saved.contains("Desk &lt;Public&gt;"));
+    assert!(!saved.contains("second@example.test"));
+    let imported = body_text(&directory_get(&app, "/contacts?filter=keys", "KeyInventoryPractical"));
+    assert!(imported.contains("second@example.test"));
+    assert!(!imported.contains("Desk &lt;Public&gt;"));
+    let foreign = body_text(&directory_get(&app, "/contacts", "KeyInventoryPracticalForeign"));
+    assert!(foreign.contains("Desk &lt;Public&gt;"));
+    assert!(!foreign.contains("second@example.test"));
+    assert!(!foreign.contains("bob@example.com"));
+    assert_eq!(store.load("alice@example.com").unwrap(), before);
+    assert!(app.gateway.drafts.lock().unwrap().is_empty());
+    assert!(app.gateway.submitted.lock().unwrap().is_empty());
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn contacts_directory_rejects_invalid_queries_and_opens_only_explicit_editor() {
+    let (app, root, store) = fixture();
+    let before = add(&store);
+    for query in ["filter=anything".into(), "new=0".into(), "new=1&edit=x&revision=1".into(), "revision=1".into(), "q=%0A".into(), format!("q={}", "x".repeat(201)), "account=bob".into()] {
+        assert_eq!(perform(&app, "GET", &format!("/contacts?{query}"), "").response.status_code, 400, "{query}");
+    }
+    assert_eq!(perform(&app, "GET", "/contacts?new=1", "").response.status_code, 200);
+    assert_eq!(store.load("alice@example.com").unwrap(), before);
+    assert!(app.gateway.drafts.lock().unwrap().is_empty());
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn contacts_write_links_revalidate_saved_and_imported_identity_without_get_persistence() {
+    let (mut app, root, store) = fixture();
+    let before = add(&store);
+    let saved = &before.contacts[0].id;
+    let page = perform(&app, "GET", &format!("/compose?contact_id={saved}&contact_revision=1"), "");
+    assert_eq!(page.response.status_code, 200);
+    assert!(body_text(&page).contains("value=\"desk@example.test\""));
+    let snapshot = imported_recipient_fixture("alice@example.com", "key@example.test", &['A']);
+    let key = snapshot.choices[0].id.clone();
+    app.gateway.compose_imported_recipients = Some(snapshot);
+    let page = perform(&app, "GET", &format!("/compose?contact_id={key}"), "");
+    assert_eq!(page.response.status_code, 200);
+    assert!(body_text(&page).contains("value=\"key@example.test\""));
+    for path in [format!("/compose?contact_id={saved}&contact_revision=0"), format!("/compose?contact_id={}&contact_revision=1", "f".repeat(32)), format!("/compose?contact_id=key:{}", "0".repeat(64)), "/compose?contact_revision=1".into()] {
+        assert_eq!(perform(&app, "GET", &path, "").response.status_code, 409);
+    }
+    for suffix in ["&to=outside%40example.test", "&mode=reply&mailbox=INBOX&uid=1", "&pgp_encrypt=on"] {
+        assert_eq!(perform(&app, "GET", &format!("/compose?contact_id={key}{suffix}"), "").response.status_code, 400);
+    }
+    for mode in ["foreign", "removed", "rebound", "ambiguous", "unavailable"] {
+        app.gateway.compose_imported_recipients = match mode {
+            "foreign" => Some(imported_recipient_fixture("bob@example.com", "key@example.test", &['A'])),
+            "removed" => Some(imported_recipient_fixture("alice@example.com", "key@example.test", &[])),
+            "rebound" => Some(imported_recipient_fixture("alice@example.com", "key@example.test", &['B'])),
+            "ambiguous" => Some(imported_recipient_fixture("alice@example.com", "key@example.test", &['A', 'B'])),
+            _ => None,
+        };
+        assert_eq!(perform(&app, "GET", &format!("/compose?contact_id={key}"), "").response.status_code, 409, "{mode}");
+    }
+    let mut unsigned = request("GET", &format!("/compose?contact_id={saved}&contact_revision=1"), &[], "");
+    unsigned.headers.insert("user-agent".into(), "Firefox/Test".into());
+    assert_eq!(app.handle_request(&unsigned, "127.0.0.1").response.status_code, 303);
+    assert_eq!(store.load("alice@example.com").unwrap(), before);
+    assert!(app.gateway.drafts.lock().unwrap().is_empty());
+    assert!(app.gateway.submitted.lock().unwrap().is_empty());
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn imported_contact_name_editor_prefills_only_a_current_owned_key_address() {
+    let (mut app, root, store) = fixture();
+    let snapshot = imported_recipient_fixture("alice@example.com", "key@example.test", &['A']);
+    let id = snapshot.choices[0].id.clone();
+    app.gateway.compose_imported_recipients = Some(snapshot);
+    let page = perform(&app, "GET", &format!("/contacts?new=1&from_key={id}"), "");
+    assert_eq!(page.response.status_code, 200);
+    assert!(body_text(&page).contains("value=\"key@example.test\""));
+    assert_eq!(store.load("alice@example.com").unwrap().revision, 0);
+    assert!(!root.exists());
+    for path in [format!("/contacts?from_key={id}"), "/contacts?new=1&from_key=not-a-key".into()] {
+        assert_eq!(perform(&app, "GET", &path, "").response.status_code, 400);
+    }
+    app.gateway.compose_imported_recipients = None;
+    assert_eq!(perform(&app, "GET", &format!("/contacts?new=1&from_key={id}"), "").response.status_code, 503);
+    assert!(!root.exists());
+    assert!(app.gateway.drafts.lock().unwrap().is_empty());
+    assert!(app.gateway.submitted.lock().unwrap().is_empty());
+}
+
+#[test]
+fn contacts_directory_keeps_imported_rows_when_the_saved_store_is_unavailable() {
+    use std::os::unix::fs::PermissionsExt as _;
+    let (mut app, root, _) = fixture();
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
+    std::fs::write(root.join("blocked"), b"public fixture").unwrap();
+    app.gateway.contacts_store = Some(ContactStore::new(root.join("blocked")));
+    let page = directory_get(&app, "/contacts", "KeyInventoryPractical");
+    assert_eq!(page.response.status_code, 200);
+    let html = body_text(&page);
+    assert!(html.contains("second@example.test"));
+    assert!(html.contains("unavailable"));
+    assert!(!html.contains("No contacts saved yet"));
+    assert!(app.gateway.drafts.lock().unwrap().is_empty());
+    assert!(app.gateway.submitted.lock().unwrap().is_empty());
+    std::fs::remove_dir_all(root).unwrap();
+}

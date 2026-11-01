@@ -133,6 +133,44 @@ where
             },
         };
 
+        if request.query_params.contains_key("contact_id")
+            || request.query_params.contains_key("contact_revision")
+        {
+            if request
+                .query_params
+                .keys()
+                .any(|key| !matches!(key.as_str(), "contact_id" | "contact_revision"))
+            {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid contact",
+                        "<p>Open a current Write link from Contacts.</p>",
+                    ),
+                    audit_events,
+                };
+            }
+            let mut fields = request.query_params.clone();
+            fields.insert("compose_action".into(), "add-contact".into());
+            fields.insert("contact_target".into(), "to".into());
+            if let Err(error) = self.add_selected_contact(&validated_session, &mut fields) {
+                return HandledHttpResponse {
+                    response: html_response(
+                        409,
+                        "Conflict",
+                        "Contact changed",
+                        TrustedHtml::from_template(format!(
+                            "<p>{}</p><a href=\"/contacts\">Return to Contacts</a>",
+                            escape_html(error.message())
+                        )),
+                    ),
+                    audit_events,
+                };
+            }
+            to_value = fields.remove("to").unwrap_or_default();
+        }
+
         match compose_source_from_request(request) {
             Ok(Some((intent, mailbox_name, uid))) => {
                 let (budget_guard, budget_event) = match self.acquire_mailbox_budget(

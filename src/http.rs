@@ -11,6 +11,7 @@ mod compose_enhancement;
 pub(crate) mod compose_preflight;
 pub(crate) mod compose_protection;
 pub use compose_protection::ComposeProtectionView;
+mod contacts_ui;
 #[path = "http/folder_tree.rs"]
 mod folder_tree;
 mod header_theme;

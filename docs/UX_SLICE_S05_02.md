@@ -773,3 +773,64 @@ journey. The new picker usability check remains PENDING: refresh Compose, open
 confirm the selected To/Cc/Bcc address and retained content/protection choices.
 Sending mail is unnecessary. S05-02 remains separate from whole-epic acceptance
 and production release.
+
+## Contacts directory revision — owner Outlook People reference, 2026-11-01
+
+Owner rejects the plain form-first Contacts page and explicitly requests a
+people icon and table-style listing that shows the added contact, email address
+and encryption policy, similar to the supplied Outlook People screenshot.
+This is a directly requested S03-01B/S05-02 integration correction; preserve the
+frozen plan/reference bundle, with this new visual direction recorded here.
+
+Exit: Contacts opens a practical, searchable table of saved contacts and current
+imported-key email identities, with Name, Email address, Encryption policy and
+Actions columns. Show actual current key readiness and policy; no inferred
+private-key readiness. A people icon and Contacts navigation make it discoverable.
+New contact/edit/remove forms retain existing authenticated revision-checked
+storage and confirmation; the list is primary. Write opens a new owned composer
+with the selected address, using fresh opaque-choice/revision validation, without
+saving a draft or sending mail on GET. Selecting an address never changes policy.
+
+Reuse existing contact store, authenticated key-management read, public inventory,
+recipient resolver and policy evaluator. Read-only merged projection: bounded
+200 saved plus200 imported identities, saved labels preferred; duplicate domain
+case collapses while local-part case is preserved. Ambiguous keys remain visible
+with attention status and cannot supply an imported selection handle. Effective
+Required/Disabled policy conflicts are explicit. Foreign/unavailable sources do
+not leak identities or conceal the other valid source. No new persistence,
+protocol, dependency, external discovery, mail operation or credential mutation.
+
+Root owns management, ledger, routes, shared navigation, compilation, Git and
+obsd1 deployment. Runtime engineer owns contacts.rs directory model; UX developer
+owns new contacts_ui.rs/contacts.css; protocol reviewer independently reviews
+source, tests and installed results. Minimum checks: directory merge/default/
+conflict/ambiguity/owner/quota; route search/filter/strictquery and contact CRUD;
+Write fresh owner/member/revision checks, no GET writes, preserved compose
+preferences; hostile text escaping, semantic table/accessibility, responsive
+browser at360/768/1440 and both themes. Native changed-boundary checks, existing
+normal gates, Web-only installation and actual owned-data readback follow source
+review/signing. Reuse unchanged native helpers/crypto qualification. No public
+Dovecot/Postfix/MariaDB restart or configuration change. Preserve current owner
+keys, contacts, policies, sessions and drafts; only OSMAP Web may restart.
+
+Use progressive failure→analysis→small correction→retest; retain every failed
+result distinctly. Two same-boundary failures require independent reassessment
+before a changed attempt. Local focused checks have120s technical bounds,
+native build600s per compiler action and Web-only install360s; preserve bounded
+cleanup and old-binary rollback. Cumulative whole-task elapsed/cost is UNKNOWN;
+prior failures/passes are reused only where inputs remain matching. Owner
+acceptance is pending this revision, and public-key import success remains PASS.
+
+Contacts Add name opens a fresh-key-ID checked, prefilled contact editor. Only the
+existing Save-contact POST persists a user-chosen name/email; imported metadata
+itself remains read-only and there is no automatic duplicate contact write.
+Initial CUA passes Add name/save/merge/search/Write-prefill/edit-cancel. Desktop
+clock/New-contact overlap was retained and corrected by scoped heading spacing.
+Current CUA passes360/768/1440 in light/dark without overflow or clock overlap,
+restart persistence and Remove-confirmation/Keep. Initial180s fixture expired
+before that confirmation; current bounded300s fixture covers it, exits0 and its
+listener is absent. Current tab/media/viewport are closed/reset. One initial
+expired error tab remains blocked by browser URL policy; no bypass was attempted,
+and its eventual automatic disposal is not yet observed. No owner state or SMTP
+operation is part of these synthetic checks. Final native/install qualification
+and normal delivery gates remain pending.

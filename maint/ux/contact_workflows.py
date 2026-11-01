@@ -51,21 +51,21 @@ def main():
             page.wait_for_url(origin + "/mailboxes")
 
         def add(page, name, address):
-            visit(page, "/contacts")
+            visit(page, "/contacts?new=1")
             page.get_by_label("Display name (optional)").fill(name)
             page.get_by_label("Email address", exact=True).fill(address)
             page.get_by_role("button", name="Save contact", exact=True).click()
             page.wait_for_load_state("networkidle")
-            assert page.get_by_role("heading", name="Saved contacts", exact=True).is_visible()
-            assert address in page.locator(".contact-list").inner_text()
+            assert page.get_by_role("heading", name="Contacts", exact=True).is_visible()
+            assert address in page.locator(".contacts-table").inner_text()
 
         try:
             owned = context()
             page = owned.new_page()
             login(page, "alice")
             add(page, "Desk <Public>", "desk@example.test")
-            assert page.locator(".contact-list strong").inner_text() == "Desk <Public>"
-            page.get_by_role("link", name="Edit", exact=True).click()
+            assert page.locator(".contacts-table .contact-person strong").inner_text() == "Desk <Public>"
+            page.get_by_role("link", name="Edit desk@example.test", exact=True).click()
             page.wait_for_load_state("networkidle")
             second = owned.new_page()
             add(second, "Private recipient", "private@example.test")
@@ -74,7 +74,7 @@ def main():
                 page.get_by_role("button", name="Save contact", exact=True).click()
             assert stale.value.status == 409
             assert page.get_by_label("Display name (optional)").input_value() == "Stale name"
-            assert "Desk <Public>" in page.locator(".contact-list").inner_text()
+            assert "Desk <Public>" in page.locator(".contacts-table").inner_text()
             checks.append("contact create/escape/edit uses real storage; stale edit refuses without overwriting and retains typed values")
 
             visit(page, "/compose")
@@ -150,7 +150,7 @@ def main():
             other_page = other.new_page()
             login(other_page, "bob")
             visit(other_page, "/contacts")
-            assert "No contacts saved yet" in other_page.locator("main").inner_text()
+            assert "No contacts yet" in other_page.locator("main").inner_text()
             assert "desk@example.test" not in other_page.locator("main").inner_text()
             visit(other_page, "/compose")
             assert other_page.get_by_label("Contact or imported key recipient", exact=True).count() == 0
@@ -164,15 +164,15 @@ def main():
             page = owned.new_page()
             login(page, "alice")
             visit(page, "/contacts")
-            assert page.locator(".contact-list li").count() == 3
+            assert page.locator(".contacts-table tbody tr").count() == 3
             page.screenshot(path=str(args.output / "contacts-light-1600.png"), full_page=True)
-            page.get_by_role("link", name="Remove", exact=True).first.click()
+            page.locator(".contacts-table a").filter(has_text="Remove").first.click()
             page.wait_for_load_state("networkidle")
-            assert page.get_by_role("heading", name="Remove this contact?", exact=True).is_visible()
-            assert page.locator(".contact-list li").count() == 3
+            assert page.get_by_role("heading", name="Remove saved contact?", exact=True).is_visible()
+            assert page.locator(".contacts-table tbody tr").count() == 3
             page.get_by_role("button", name="Remove contact", exact=True).click()
             page.wait_for_load_state("networkidle")
-            assert page.locator(".contact-list li").count() == 2
+            assert page.locator(".contacts-table tbody tr").count() == 2
             checks.append("contacts survive process restart; GET confirmation is read-only and explicit POST removes only the selected entry")
             owned.close()
             assert not blocked

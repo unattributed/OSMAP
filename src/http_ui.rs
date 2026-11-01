@@ -304,6 +304,7 @@ fn shell_icon(name: &str) -> String {
         "bin" => "<path d=\"M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7\"/>",
         "compose" => "<path d=\"m14 4 6 6M4 20l5-1L21 7l-4-4L5 15z\"/>",
         "drafts" => "<path d=\"M5 3h9l5 5v13H5zM14 3v6h5M9 13h6M9 17h6\"/>",
+        "people" => "<circle cx=\"9\" cy=\"7\" r=\"3\"/><path d=\"M3 21v-3a6 6 0 0 1 12 0v3M16 4a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 4v3\"/>",
         "settings" => "<path d=\"m10 3-.5 3-2 1-3-.7-2 3 2.3 2v2l-2.3 2 2 3 3-.7 2 1 .5 3h4l.5-3 2-1 3 .7 2-3-2.3-2v-2l2.3-2-2-3-3 .7-2-1L14 3z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>",
         "folders" => "<path d=\"M3 5h7l2 3h9v13H3zM3 5V3h7l2 2h9v3\"/>",
         "menu" => "<path d=\"M4 6h16M4 12h16M4 18h16\"/>",
@@ -386,6 +387,7 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
         ("inbox", "Inbox", "/mailbox?name=INBOX", "inbox"),
         ("drafts", "Drafts", "/drafts", "drafts"),
         ("sent", "Sent", "/mailbox/shortcut?kind=sent", "sent"),
+        ("contacts", "Contacts", "/contacts", "people"),
         ("folders", "Folders", "/folders", "folders"),
         (
             "archive",

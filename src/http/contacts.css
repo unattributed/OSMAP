@@ -1,0 +1,60 @@
+.contacts-page{max-width:1440px}
+.contacts-page .contacts-heading{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+@media(min-width:701px){.contacts-page .contacts-heading{padding-top:2rem}}
+.contacts-page .contacts-heading h1{display:flex;align-items:center;gap:.6rem;margin:0}
+.contacts-page .contacts-heading p{margin:.4rem 0 0;color:var(--muted)}
+.contacts-page .contacts-people-icon{width:1.6rem;height:1.6rem;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.contacts-page .contacts-directory{background:var(--panel);border:1px solid var(--line);border-radius:.65rem;padding:1rem;min-width:0}
+.contacts-page .contacts-search{display:flex;align-items:end;flex-wrap:wrap;gap:.75rem;margin:0}
+.contacts-page .contacts-search>div:first-child{flex:1 1 18rem}
+.contacts-page .contacts-search>div{min-width:0}
+.contacts-page .contacts-search label{display:block;font-size:.875rem;font-weight:650;margin-bottom:.3rem}
+.contacts-page .contacts-search input,.contacts-page .contacts-search select{width:100%;margin:0;min-height:2.4rem}
+.contacts-page .contacts-search button{min-height:2.4rem;margin:0}
+.contacts-page .contacts-search>a{align-self:center;font-size:.875rem}
+.contacts-page .contacts-count{font-size:.875rem;color:var(--muted);margin:.8rem 0}
+.contacts-page .contacts-source-notice{font-size:.875rem;color:var(--muted);margin:.5rem 0;overflow-wrap:anywhere}
+.contacts-page .contacts-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.contacts-page .contacts-table th{text-align:left;font-size:.8rem;color:var(--muted);font-weight:650;padding:.75rem .6rem;border-bottom:1px solid var(--line)}
+.contacts-page .contacts-table th:first-child{width:25%}
+.contacts-page .contacts-table th:nth-child(2){width:29%}
+.contacts-page .contacts-table th:nth-child(3){width:27%}
+.contacts-page .contacts-table th:nth-child(4){width:19%}
+.contacts-page .contacts-table td{vertical-align:top;padding:.85rem .6rem;border-bottom:1px solid var(--line);overflow-wrap:anywhere;font-size:.9rem}
+.contacts-page .contacts-table tbody tr:last-child td{border-bottom:0}
+.contacts-page .contact-person{display:flex;gap:.65rem;align-items:flex-start;min-width:0}
+.contacts-page .contact-person>div{min-width:0}
+.contacts-page .contact-person strong{display:block;font-size:.95rem;overflow-wrap:anywhere}
+.contacts-page .contact-avatar{display:flex;align-items:center;justify-content:center;flex:0 0 2rem;height:2rem;border-radius:50%;background:var(--panel-soft);border:1px solid var(--line);font-size:.8rem;font-weight:700;color:var(--ink)}
+.contacts-page .contact-source,.contacts-page .contact-key-state{display:block;font-size:.78rem;line-height:1.5;color:var(--muted);margin-top:.25rem}
+.contacts-page .contact-policy{font-size:.875rem;font-weight:650}
+.contacts-page .contact-key-link{display:inline-block;font-size:.78rem;margin-top:.25rem}
+.contacts-page .contact-row-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem .65rem}
+.contacts-page .contact-row-actions>a,.contacts-page .contact-row-actions>button{display:inline-flex;align-items:center;justify-content:center;min-height:2.25rem;font-size:.8rem;margin:0}
+.contacts-page .contact-row-actions .contact-write{padding:.35rem .65rem}
+.contacts-page .contacts-empty{padding:1rem .6rem;color:var(--muted)}
+.contacts-page .contacts-editor{max-width:38rem;margin-top:1rem;border:1px solid var(--line);border-radius:.65rem;background:var(--panel)}
+.contacts-page .contacts-editor>summary{cursor:pointer;padding:.8rem 1rem;font-weight:650;min-height:2.5rem}
+.contacts-page .contacts-editor>form{padding:0 1rem 1rem;margin:0}
+.contacts-page .contacts-editor fieldset{border:0;padding:0;margin:0;min-width:0}
+.contacts-page .contacts-editor label{display:block;font-size:.875rem;font-weight:650;margin:.75rem 0 .25rem}
+.contacts-page .contacts-editor input:not([type=hidden]){width:100%;max-width:100%;margin:0}
+.contacts-page .contacts-editor p{font-size:.875rem;overflow-wrap:anywhere}
+.contacts-page .contact-form-actions{display:flex;align-items:center;flex-wrap:wrap;gap:1rem;margin-top:1rem}
+.contacts-page a:focus-visible,.contacts-page button:focus-visible,.contacts-page summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+@media(max-width:700px){
+.contacts-page .contacts-heading{align-items:flex-start;flex-wrap:wrap}
+.contacts-page .contacts-directory{padding:.75rem}
+.contacts-page .contacts-search{align-items:stretch}
+.contacts-page .contacts-search>div:first-child{flex-basis:100%}
+.contacts-page .contacts-search>div:nth-child(2){flex:1 1 10rem}
+.contacts-page .contacts-search button{align-self:end}
+.contacts-page .contacts-table,.contacts-page .contacts-table tbody{display:block;width:100%}
+.contacts-page .contacts-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.contacts-page .contacts-table tr{display:grid;grid-template-columns:minmax(0,1fr);padding:.75rem 0;border-bottom:1px solid var(--line)}
+.contacts-page .contacts-table tr:last-child{border-bottom:0}
+.contacts-page .contacts-table td{display:block;border:0;padding:.35rem 0;min-width:0}
+.contacts-page .contacts-table td:not(:first-child)::before{content:attr(data-label);display:block;font-size:.75rem;font-weight:650;color:var(--muted);margin-bottom:.15rem}
+.contacts-page .contacts-editor{max-width:100%}
+}
+@media(forced-colors:active){.contacts-page .contacts-directory,.contacts-page .contacts-editor,.contacts-page .contact-avatar{background:Canvas;color:CanvasText;border-color:CanvasText}.contacts-page .contacts-table th,.contacts-page .contacts-table td,.contacts-page .contacts-table tr{border-color:CanvasText}}
