@@ -1,5 +1,7 @@
 # S05-03 — Existing OpenPGP runtime lifecycle and recovery
 
+**Status: ACCEPTED — owner `S05-03 T09 = PASS`, 2026-11-01.**
+
 Started 2026-11-01 (America/Toronto), explicitly approved after the proposed
 reuse-first engineering method and T01–T09 tests. Source baseline
 `5ebe610204b602a2c715a8854164b42495d92ffc`; Contacts/Compose UAT PASS is preserved.
@@ -274,3 +276,36 @@ matching production69f712 source and installed artifacts are reused. T01–T08
 remain PASS and infrastructure T09 remains NOT RUN. The second normal push and
 fresh GitHub equality are the final delivery conditions; their actual outcome
 is recorded separately after execution, without erasing the first failed gate.
+
+
+## Owner T09 acceptance — 2026-11-01
+
+The owner explicitly reports **`S05-03 T09 = PASS`**, completing infrastructure
+acceptance after the signed runtime delivery and installed qualification.
+The owner also supplies a three-recipient mail test and three recipient-side
+screenshots displaying the readable test message, with lock indicators visible.
+This is owner-provided functional evidence; no new agent-operated send or
+recipient login was performed for closeout.
+
+The supplied Postfix log identifies queue `8EEE63CEA7A`, three recipients,
+verified TLS1.3 to the Brevo submission relay, a `250`/`dsn=2.0.0`/`status=sent`
+response for each recipient and removal of the local queue entry. Those log
+lines establish successful relay acceptance. The separate recipient screenshots
+and explicit owner PASS provide the recipient-side UAT evidence; SMTP alone is
+not treated as proof of final delivery or OpenPGP cryptographic internals.
+Original syslog times have no supplied timezone and are retained without
+invented UTC conversion.
+
+The private acceptance receipt is retained at
+`/home/foo/Downloads/osmap-ux-s05/s05-03-20261101/owner-t09-20261101/acceptance.json`
+with SHA256 `bcadd09a9ea21dff28f23a9f2694171858b054c6a3b04c99694a74058c57caa8`.
+All three original attachments are privately retained and hash-verified;
+unrelated inbox content is excluded from repository records.
+
+T01–T09 are PASS and the S05-03 work order is ACCEPTED. Runtime delivery
+`a7663d6667bafa5f0409fe9dfe640cc62c0ef547` passed the ordinary full gate in
+451.75seconds, with2147Rust tests passing/0failed/77ignored, all six signatures
+verified and fresh GitHub equality/clean checkout. This acceptance-only update
+changes no application code or installed state. Earlier failures, Contacts/Compose
+acceptance and all frozen controls remain preserved. S05-04, whole-sprint/epic
+acceptance and production release are separate.

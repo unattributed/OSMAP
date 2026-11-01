@@ -1,5 +1,13 @@
 # Decision Log
 
+2026-11-01 — Record explicit owner `S05-03 T09 = PASS`, closing S05-03 with
+T01–T09 PASS. Retain the supplied three-recipient readable-message screenshots
+privately, with sanitized repository provenance. Treat Postfix queue8EEE63CEA7A
+verified-TLS/250/sent/removal as relay acceptance and the separate recipient
+screenshots plus owner PASS as functional UAT. Preserve supplied timestamps
+without inventing a timezone. No new send, code, service, credential, key or
+policy operation is required; later-slice and production acceptance stay separate.
+
 2026-11-01 — Complete S05-03 through reproduced process-ownership, IPC-disconnect,
 helper-stop and optimized-recovery-guard failures. Reuse existing Rust/GPGME
 protocol and native primitives; add no service, database, dependency or crypto

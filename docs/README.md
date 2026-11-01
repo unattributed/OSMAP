@@ -2,7 +2,7 @@
 
 - `UX_SLICE_S05_03.md` — [S05-03 existing runtime lifecycle and recovery](UX_SLICE_S05_03.md):
   owned cancellation/cleanup, helper shutdown, native recovery and matching installed proof;
-  infrastructure T09 remains separate from visual and production acceptance.
+  owner `S05-03 T09 = PASS` closes T01–T09; later-slice and production acceptance remain separate.
 
 - `UX_SLICE_S05_02.md` — [S05-02 practical key and email-policy management](UX_SLICE_S05_02.md):
   visible imported identities/policies, ASC-derived emails and Compose recipient selection;
