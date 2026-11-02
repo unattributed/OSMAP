@@ -84,6 +84,7 @@ fn ordinary_empty_and_decrypted_attachment_counts_remain_distinct() {
     };
     let mut decoded = rendered.attachments[0].clone();
     decoded.filename = Some("decoded.bin".into());
+    decoded.size_hint_bytes = 4;
     rendered.attachments.clear();
     rendered.metadata.as_mut().unwrap().protection =
         crate::message_metadata::MessageProtection::Plain;
@@ -146,6 +147,10 @@ fn ordinary_empty_and_decrypted_attachment_counts_remain_distinct() {
     );
     assert!(coordinated.contains("decoded.bin") && coordinated.contains("href=\"/attachment?"));
     assert!(!coordinated.contains("unknown until decrypted"));
+    for page in [&decrypted, &coordinated] {
+        assert!(!page.contains("4 bytes · isolated download"));
+        assert!(page.contains("Encoded size hint: 4 bytes."));
+    }
 }
 
 #[test]

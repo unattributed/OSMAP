@@ -4848,7 +4848,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "FAILED",
+        "status": "PARTIALLY_VERIFIED",
         "executed": true,
         "evidence": [
           {
@@ -4870,6 +4870,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/reconciliation.private.json",
             "scope": "2026-11-03 Asia/Bangkok: one public-only self-encrypted controlled MIME imported with native Dovecot into local INBOX UID780,1983bytes SHA256fe2bb9adb877735b201056ef7e1a1fe4f31d747ebd94fe112c4abd6996590424. Original UID779 and account/key/config hashes unchanged,nine service roles healthy. Post-save SSH banner timeout retained separately; read-only reconciliation PASS with no reimport. This is fixture/import qualification only; actual owner encrypted body,attachment/source and T09 remain pending; prior status unchanged."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/owner-functional-observation.json",
+            "scope": "2026-11-03 actualownerUID780 screenshots: readableexpectedbody/UTF8café andDecryptedonmailhost/unsigned; actualdownload3bytes0001ff with expectedSHA26a66b...; sourcevieworiginalmultipart/encrypted/PGParmor,noreadablebody. Earlierlocked/failedbodyhistoryretained. These scopedpositiveobservations do notassert wholecontrolvisualmatrix orformalT09acceptance. Encoded-sizehint presentationcorrection proceeds separately."
           }
         ]
       }
@@ -22035,6 +22040,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-native.actual.log",
             "scope": "2026-11-03 attachmentpresentation: refusedprotectedprocessing unavailable/no download, encryptedpublicmetadata unknown (outerwrappercountsuppressed), ordinaryempty and decodeddownloadpositives inbothcurrentlayouts; matchingnative5PASS0FAIL0ignored. QualifiedWeb04786dcc loaded,HTTPS200,9roles andpreservationPASS inattachment-install.actual.log. Ownerbody/attachment/sourceT09 remainsPENDING; unchangedPARTIALLY_VERIFIED is not wholecontrolacceptance."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/owner-functional-observation.json",
+            "scope": "2026-11-03 actualownerUID780 screenshots: readableexpectedbody/UTF8café andDecryptedonmailhost/unsigned; actualdownload3bytes0001ff with expectedSHA26a66b...; sourcevieworiginalmultipart/encrypted/PGParmor,noreadablebody. Earlierlocked/failedbodyhistoryretained. These scopedpositiveobservations do notassert wholecontrolvisualmatrix orformalT09acceptance. Encoded-sizehint presentationcorrection proceeds separately."
           }
         ]
       }

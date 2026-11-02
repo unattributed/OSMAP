@@ -2596,7 +2596,7 @@ fn render_reader_fragment(
                 })
                 .unwrap_or_default();
             attachments.push_str(&format!(
-                "<li class=\"attachment-item\"><div class=\"attachment-description\"><strong>{}</strong><p class=\"muted\">{} bytes · isolated download</p><details class=\"reader-file-details\"><summary>File details</summary><p>Part {}. {}, {}{}</p></details></div><a class=\"button-link\" href=\"{}\">Download</a></li>",
+                "<li class=\"attachment-item\"><div class=\"attachment-description\"><strong>{}</strong><p class=\"muted\">Isolated download</p><details class=\"reader-file-details\"><summary>File details</summary><p>Encoded size hint: {} bytes. Part {}. {}, {}{}</p></details></div><a class=\"button-link\" href=\"{}\">Download</a></li>",
                 escape_html(attachment.filename.as_deref().unwrap_or("<unnamed>")),
                 attachment.size_hint_bytes,
                 escape_html(&attachment.part_path),

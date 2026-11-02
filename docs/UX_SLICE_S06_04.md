@@ -1,5 +1,42 @@
 # S06-04: practical protected reader, source and downloads
 
+## Owner functional result and size hint — 2026-11-03
+
+The owner has now exercised the installed reader successfully. The screenshot
+of UID780 shows **Decryption works on obsd1.**, **UTF-8 check: café.**,
+**Decrypted on mail host**, an unsigned result and one downloadable attachment.
+The supplied download is exactly three bytes `00 01 ff` with SHA-256
+`26a66b061e8f48f39927c312f25293959729eee95978e2892d49d3512a5cc092`.
+The supplied source-page screenshot shows the original `multipart/encrypted`
+message and complete PGP armor rather than the decrypted body. The owner
+initially described the technical source page as an error; inspection shows
+the expected source view. These are scoped owner body/download/source PASS
+observations, preserved in `owner-functional-observation.json` under the
+existing private evidence root. They supersede the current failed-body
+observation without deleting its history. Formal whole-slice infrastructure
+acceptance is not inferred. No more technical checks are requested from the
+owner for this test.
+
+That successful download also exposed a small presentation defect: the reader
+showed the four-byte encoded MIME hint as the file size, while the actual
+download is three bytes. One format-string change moves the existing number
+into collapsed **File details**, explicitly labelled **Encoded size hint**.
+The main attachment row presents the filename and isolated download. The MIME
+parser, decoding, metadata model and downloaded bytes are unchanged. The
+existing positive test first fails on the misleading label, then all five
+component tests pass with both reader layouts covered. Matching OpenBSD
+qualification passes all five tests with zero failures or skips. The qualified
+Web `c569fbc4eeeb284911ed683fc73fc659c5a52d7610e8da3969d92f61c92f6a53`
+is installed and its loaded inode verified. HTTPS200, nine healthy roles and
+protected account/key/configuration/state comparisons pass; only Web is
+restarted. The old Web is retained under
+`/var/backups/osmap-s06-size-install-20261103-01`. The existing generated
+audit maps are refreshed together, with unchanged counts/risk classifications;
+the complete V10 consistency check passes. Evidence is retained as
+`attachment-size-*.log`, `attachment-size-source-review.json` and the owner
+functional proof under the same private root. No new service or framework is
+introduced. Normal signed delivery for this final correction is separate.
+
 ## Attachment visibility correction — 2026-11-03
 
 The owner's UID780 screenshot establishes a locked-key refusal, not an absent

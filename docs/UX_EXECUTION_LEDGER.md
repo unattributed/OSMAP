@@ -148,7 +148,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Actual protected Runtime reading, processed binary downloads and original encrypted source retain ownership, safe rendering, accurate states and transient privacy.",
       "essential_qa": "Existing actual Dovecot/native reader extended with rendered links, exact bytes, headers, stale/foreign/refused cases and application-state privacy.",
-      "next_action": "Matching native five-component result and qualified Web-only installation PASS; actual loaded04786dcc,HTTPS200,nine roles and protected-state preservation. Complete normal signed GitHub delivery and exact remote parity, then owner checks UID780 decrypted UTF8/body, exactthree-byteattachment and original encrypted source. No reimport or synchronization; private unlock only byowner ifcachelocked.",
+      "next_action": "Complete normal signed source delivery and exact remote parity for final sizehint correction and actual owner functional PASS records. Engineering/native/installed results pass. No additional owner technical checks or private-key operation required; formal whole-slice infrastructure acceptance remains separate.",
       "dependencies": [
         {
           "owner": "/root",
@@ -213,6 +213,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "recovery",
           "reference": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-independent-review.json SHA25601d4367b11126e4d0c063cefc198f6497c9e64ce6094216878ea7a2776381ff6; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-output.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/output-sink-observation.json; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/installed-interpreter-unit.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/install.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-exact-cleanup.actual.log. Qualified Python/tooling correction only; successful owner private unlock/body remains NOT RUN."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/owner-functional-proof-independent-review.json SHAc467e71924ed3ae3a115313745d7df76a9246bb4868ce341914f78a47698a835: actual owner body/UTF8, exact three-byte download and original encrypted source PASS. Formal slice acceptance not inferred; no additional owner technical check requested."
         }
       ]
     }
@@ -667,6 +671,98 @@ slice using the same failure-analysis method. See
           "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-inventory-combined-review.json SHA2568be09665c189de3f23118208574025107600a9d8588089791d78e1265539a42e",
           "next_action": "One corrected narrowV10check then normalenabled signedcommit/push and fresh parity; no native repeat or owneroperation."
         }
+      },
+      {
+        "id": "size-hint-local-red",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "bf94a49799a514cd1ad2c6d285846c8b7090e5a7",
+        "source_revision_scope": "previousproductcodecheckpoint plusnewdistinguishingtest",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-size-label-red.log: existingpositivecase reproduces false4-bytefilesizelabel;1FAIL,0PASS.",
+        "change_reference": "Observed encodedsizehint incorrectly presented asdownloadsize; add distinguishingassertion to existingpositivecase.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-size-source-review.json SHA256644d797b4eb16752cc5909d07c3ba143f89903ec732643dc1a5882e0b7ac3c5b; actualnative/boundinstaller reviewed beforedispatch. Finalactualinstall/metadatareview retained separately."
+        }
+      },
+      {
+        "id": "size-hint-local-green",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "7b12c0ca3d2dfb96c20b6288e5de1649d96d1c67283e1607bfd35996156359ba",
+        "source_revision_scope": "reviewed matching source archive",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-size-label-green.log:5PASS/0FAIL/0ignored,bothlayouts encodedhintcollapsed andactualdownloadpreserved.",
+        "change_reference": "Moveexistingencodedhintinto collapsedFiledetails; no parser/decoder/model/byteschange. Knownreviewednative/Webonlyroute reused.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-size-source-review.json SHA256644d797b4eb16752cc5909d07c3ba143f89903ec732643dc1a5882e0b7ac3c5b; actualnative/boundinstaller reviewed beforedispatch. Finalactualinstall/metadatareview retained separately."
+        }
+      },
+      {
+        "id": "size-hint-native-green",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "7b12c0ca3d2dfb96c20b6288e5de1649d96d1c67283e1607bfd35996156359ba",
+        "source_revision_scope": "reviewed matching source archive",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-size-native.actual.log:matchingOpenBSD5PASS/0FAIL/0ignored,.02s;Webc569fbc4buildPASS.",
+        "change_reference": "Moveexistingencodedhintinto collapsedFiledetails; no parser/decoder/model/byteschange. Knownreviewednative/Webonlyroute reused.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-size-source-review.json SHA256644d797b4eb16752cc5909d07c3ba143f89903ec732643dc1a5882e0b7ac3c5b; actualnative/boundinstaller reviewed beforedispatch. Finalactualinstall/metadatareview retained separately."
+        }
+      },
+      {
+        "id": "size-hint-web-only-install",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "7b12c0ca3d2dfb96c20b6288e5de1649d96d1c67283e1607bfd35996156359ba",
+        "source_revision_scope": "reviewed matching source archive",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-size-install.actual.log:qualifiedWebc569fbc4loadedPID7708/inode130023,HTTPS200,nineroles andprotected-state/config/helperchecksPASS. OnlyWebrestartrequested.",
+        "change_reference": "Moveexistingencodedhintinto collapsedFiledetails; no parser/decoder/model/byteschange. Knownreviewednative/Webonlyroute reused.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-size-source-review.json SHA256644d797b4eb16752cc5909d07c3ba143f89903ec732643dc1a5882e0b7ac3c5b; actualnative/boundinstaller reviewed beforedispatch. Finalactualinstall/metadatareview retained separately."
+        }
       }
     ],
     "source_and_preparation_history": [
@@ -735,7 +831,7 @@ slice using the same failure-analysis method. See
     "slice": "S06-04",
     "specification": {
       "path": "docs/UX_SLICE_S06_04.md",
-      "sha256": "e7102b96edf6603ebc32e3b73cca21c0eeff86cc2b42b4ccffec606463f5bf16"
+      "sha256": "4bc69efd080282cd3ea049e5f9723c3421ba1b7e18a65b3f095ef6823980d84d"
     },
     "design": {
       "journey": "Read supported protected mail, inspect original ciphertext and download exact authorised processed attachments with clear failure and privacy boundaries.",
@@ -919,9 +1015,9 @@ slice using the same failure-analysis method. See
   },
   "human_acceptance": {
     "status": "PENDING",
-    "reference": "Owner reports current obsd1 mailbox_signing_and_decryption_agent_warmed=PASS; all four OSMAP services restored. Actual encrypted UID780 body/attachment/source observations and T09 remain pending. Prior failed body and locked-key screenshots remain retained."
+    "reference": "Owner screenshots and supplied exact3-byte download establish body/UTF8,download and originalencryptedsourcePASS. Formalwhole-sliceinfrastructureacceptance notinferred. Noadditionalhumantechnicalchecksrequested; rootfinishes one-string sizehintcorrection andnormaldelivery."
   },
-  "next_action": "Matching native five-component result and qualified Web-only installation PASS; actual loaded04786dcc,HTTPS200,nine roles and protected-state preservation. Complete normal signed GitHub delivery and exact remote parity, then owner checks UID780 decrypted UTF8/body, exactthree-byteattachment and original encrypted source. No reimport or synchronization; private unlock only byowner ifcachelocked."
+  "next_action": "Complete normal signed source delivery and exact remote parity for final sizehint correction and actual owner functional PASS records. Engineering/native/installed results pass. No additional owner technical checks or private-key operation required; formal whole-slice infrastructure acceptance remains separate."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
