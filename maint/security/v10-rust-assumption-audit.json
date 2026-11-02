@@ -91273,7 +91273,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-11-02T03:56:27Z",
+  "generated_at_utc": "2026-11-02T04:10:27Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",

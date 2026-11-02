@@ -62,7 +62,8 @@ slice using the same failure-analysis method. See
       "/root/s05_scope_qa"
     ],
     "qa": [
-      "/root/s05_protocol_review"
+      "/root/s05_protocol_review",
+      "/root/s05_scope_qa"
     ],
     "security_review": [
       "/root/s05_protocol_review"
@@ -102,7 +103,8 @@ slice using the same failure-analysis method. See
     "src/openpgp_reader_ui.rs",
     "docs/UX_SLICE_S06_04.md",
     "src/http_ui.rs",
-    "src/http_inventory_tests.rs"
+    "src/http_inventory_tests.rs",
+    "src/http_component_tests.rs"
   ],
   "outcomes": [
     {
@@ -173,7 +175,7 @@ slice using the same failure-analysis method. See
     "owner": "/root",
     "functional_exit": "Supported protected mail renders safely; processed downloads and original encrypted source are exact owned operations with truthful state and no plaintext persistence.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "All accepted S05 and S06-01/02/03 observations, failures, corrections, remaining visible-recipient classifier and operator-secret/body acceptance are carried forward explicitly. Consolidated final observations are appended here; all preceding source/compiler/native failures remain in slice documents and private evidence. Source/preparation actions without full-action timing remain UNKNOWN, not zero. Git/owner results stay separate.",
+    "history_reference": "All accepted S05 and S06-01/02/03 observations, failures, corrections, remaining visible-recipient classifier and operator-secret/body acceptance are carried forward explicitly. Consolidated final observations are appended here; all preceding source/compiler/native failures remain in slice documents and private evidence. Source/preparation actions without full-action timing remain UNKNOWN, not zero. Git/owner results stay separate. Independent component-test/claims review by scope QA covers root-authored changes only; protocol reviewer remains independent reviewer of native corpus authored by scope QA.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
@@ -313,6 +315,28 @@ slice using the same failure-analysis method. See
           ],
           "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json; corresponding earlier slice native-independent-review.json and preserved chat review. This is actual-result reconciliation, not a retrospective claim that an unrecorded pre-action check ran."
         }
+      },
+      {
+        "id": "normal-push-main-suite-stale-component-assertion",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "182b006ff96b680481bfce45792eb2a2ed371a35",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/normal-push.log: mainRust2160PASS/1FAIL/85ignored112.30s; totalhookelapsednotmeasured. Pre-push refused Git publication; no remote success claimed.",
+        "change_reference": "Normal required full delivery gate exposed old unassessed-reader component copy assertion. Existing test changed to Decryption/notproduced and explicit unassessed state; production artifacts unchanged.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_scope_qa",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Independent actual failure/test review in this chat; minimal component expectation correction and full normal gate retest, no production/native replay."
+        }
       }
     ],
     "source_and_preparation_history": [
@@ -336,6 +360,13 @@ slice using the same failure-analysis method. See
         "elapsed_seconds": null,
         "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/install-draft-invalid-not-executed.ksh",
         "observation": "Generated installer draft syntax failed locally before dispatch due JavaScript replacement-string expansion. Corrected literal replacement; shell syntax PASS and independently reviewed before host use."
+      },
+      {
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/operator-entrypoint-refresh.actual.log",
+        "observation": "Separate atomic refresh of existing root-owned operator unlock utility from already tracked explicit-guard source94a433; original retained. No execution, agentstart/unlock/service restart; protectedstate/runtimePIDs/artifacts unchanged."
       }
     ]
   },
@@ -344,7 +375,7 @@ slice using the same failure-analysis method. See
     "slice": "S06-04",
     "specification": {
       "path": "docs/UX_SLICE_S06_04.md",
-      "sha256": "05d0c025c2b3bc60a6011f47982ebaa75fea695008ddcac6fc7f33af0cac5a26"
+      "sha256": "9524118ece6a10a74298d0e9bb1e24f09199b3e69d85e1cb6937d31d1cd33343"
     },
     "design": {
       "journey": "Read supported protected mail, inspect original ciphertext and download exact authorised processed attachments with clear failure and privacy boundaries.",
@@ -526,7 +557,7 @@ slice using the same failure-analysis method. See
     "status": "PENDING",
     "reference": "Owner authorised S06 engineering while away. Consolidated source/native/installed qualification passes within documented scope; actual owner protected-body UAT remains NOT RUN and the historical R2-03-022 owner failure remains retained."
   },
-  "next_action": "Complete normal signed source delivery and exact GitHub parity; owner privately unlocks the existing mailbox key and performs the S06 protected-body/source/download T09 journey. No owner acceptance or successful owner private decryption is inferred."
+  "next_action": "After verified normal signed delivery and fresh remote equality, owner privately unlocks the existing mailbox key through the documented stopped-OSMAP-helper terminal procedure and performs protected-body/source/download T09 UAT. No public mail or account-authority stop."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -922,7 +953,7 @@ slice using the same failure-analysis method. See
     "status": "PENDING",
     "reference": "Owner authorised S06 engineering while away. Consolidated source/native/installed qualification passes within documented scope; actual owner protected-body UAT remains NOT RUN and the historical R2-03-022 owner failure remains retained."
   },
-  "next_action": "Complete normal signed source delivery and exact GitHub parity; owner privately unlocks the existing mailbox key and performs the S06 protected-body/source/download T09 journey. No owner acceptance or successful owner private decryption is inferred."
+  "next_action": "After verified normal signed delivery and fresh remote equality, owner privately unlocks the existing mailbox key through the documented stopped-OSMAP-helper terminal procedure and performs protected-body/source/download T09 UAT. No public mail or account-authority stop."
 }
 ```
 
@@ -1307,7 +1338,7 @@ slice using the same failure-analysis method. See
     "status": "PENDING",
     "reference": "Owner authorised S06 engineering while away. Consolidated source/native/installed qualification passes within documented scope; actual owner protected-body UAT remains NOT RUN and the historical R2-03-022 owner failure remains retained."
   },
-  "next_action": "Complete normal signed source delivery and exact GitHub parity; owner privately unlocks the existing mailbox key and performs the S06 protected-body/source/download T09 journey. No owner acceptance or successful owner private decryption is inferred."
+  "next_action": "After verified normal signed delivery and fresh remote equality, owner privately unlocks the existing mailbox key through the documented stopped-OSMAP-helper terminal procedure and performs protected-body/source/download T09 UAT. No public mail or account-authority stop."
 }
 ```
 
@@ -1816,7 +1847,7 @@ slice using the same failure-analysis method. See
     "status": "PENDING",
     "reference": "Owner authorised S06 engineering while away. Consolidated source/native/installed qualification passes within documented scope; actual owner protected-body UAT remains NOT RUN and the historical R2-03-022 owner failure remains retained."
   },
-  "next_action": "Complete normal signed source delivery and exact GitHub parity; owner privately unlocks the existing mailbox key and performs the S06 protected-body/source/download T09 journey. No owner acceptance or successful owner private decryption is inferred."
+  "next_action": "After verified normal signed delivery and fresh remote equality, owner privately unlocks the existing mailbox key through the documented stopped-OSMAP-helper terminal procedure and performs protected-body/source/download T09 UAT. No public mail or account-authority stop."
 }
 ```
 

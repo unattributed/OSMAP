@@ -50,6 +50,16 @@ The first expanded native reader run failed because its nonexistent attachment s
 
 The only source difference requiring the second test executable was the fixture selector; all five production Rust files match the Web build archive. The C worker was independently built and qualified on obsd1. Evidence is retained as `native-corrected-*-observation.json`, matching actual logs, `native-final-cleanup.log`, `install.actual.log`, `installed-probe.actual.log` and `native-independent-review.json` under the private root above. These files contain scoped observations, not owner acceptance or a general production-release audit.
 
+## Normal delivery regression and operator entrypoint
+
+The first normal pre-push gate refused publication: the main Rust suite recorded2160 PASS,1 FAIL and85 ignored in112.30 s. An older component assertion expected the previous `Decrypted on mail host` heading for a message with no OpenPGP assessment. Its correction retains the negative security and source-view checks, asserts `Decryption: not produced` and explicitly requires the `unassessed` machine state. This changes only the existing test; the independently qualified production bytes and installed artifacts remain identical. The failed gate remains in `normal-push.log`; matching corrected delivery evidence is recorded separately.
+
+Readback also found that the installed operator unlock utility still had the older assertion-based guards, whereas its already tracked source used explicit checks that survive Python optimization. Only that existing root-owned entrypoint was atomically refreshed from the already qualified source, with an old-file backup and unchanged runtime binaries, process identities, protected state and eight healthy roles. It was **not executed**; no agent was started, service restarted or key unlocked by this refresh. This is separate from the two-artifact runtime installation. Its actual receipt is `operator-entrypoint-refresh.actual.log`; installed source SHA-256 is `94a43346f6ebc3db1334af849a64bfeff8f05bfa02f2749d120ea516f460de22`.
+
+The existing terminal workflow requires Web admission to be quiesced and the crypto, public-inventory and public-administration helpers stopped before privately replacing/warming the mailbox agent. Restore those OSMAP helpers and Web afterward. Public mail and account authority stay running. The real entrypoint is `/usr/local/libexec/osmap/deployment_unlock.py`; a bare invocation while its helper prerequisites are unmet correctly refuses. The agent has not performed this owner-secret operation.
+
+This is the immutable pre-push source checkpoint. The final completion record must identify the verified signed commit, successful normal gate and fresh exact remote parity; prose in this checkpoint does not prove publication. T09 and owner-body acceptance remain pending regardless of source publication.
+
 ## Minimal owner T09 journey
 
 1. Use the existing operator terminal/Pinentry workflow to unlock the configured mailbox key privately. D03 and R3 reserve private passphrase entry to the operator. Do not send a passphrase to Codex or enter it into OSMAP. The observed `Locked` response alone does not distinguish cache, agent/socket or confinement causes; protected-key files and an unavailable owner agent were separately observed.

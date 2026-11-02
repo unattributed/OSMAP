@@ -52,7 +52,8 @@ fn compact_security_states_do_not_claim_undelivered_capabilities() {
         body_text(&app().handle_request(&legacy, "127.0.0.1")).contains("Source view unavailable")
     );
     assert!(!reader.contains("Source view escaped"));
-    assert!(reader.contains("Decrypted on mail host</dt><dd>not produced"));
+    assert!(reader.contains("Decryption</dt><dd>not produced"));
+    assert!(reader.contains("data-openpgp-reader-states=\"unassessed\""));
     assert!(!reader.contains("Decrypted locally"));
     assert!(reader.contains("<details class=\"openpgp-reader-states\""));
     assert!(reader.contains("data-protected-body-panel=\"true\""));
