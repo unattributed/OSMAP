@@ -1,5 +1,10 @@
 # Documentation
 
+- `UX_SLICE_S06_01.md` — [S06-01 stored protected MIME integrity](UX_SLICE_S06_01.md): exact signed bytes, supported transport and safe refusal.
+- `UX_SLICE_S06_02.md` — [S06-02 signature and identity results](UX_SLICE_S06_02.md): real verification, missing signing keys and separate sender identity.
+- `UX_SLICE_S06_03.md` — [S06-03 transient decryption](UX_SLICE_S06_03.md): bounded isolated processing and accurate refusal states.
+- `UX_SLICE_S06_04.md` — [S06-04 reader, source and downloads](UX_SLICE_S06_04.md): consolidated native/installed results, retained failures and pending owner protected-message UAT.
+
 - `UX_FOLLOWUP_F3_ACCOUNT_STATUS.md` — [F3 account-relative Welcome status correction](UX_FOLLOWUP_F3_ACCOUNT_STATUS.md):
   current-user observations and explicit unmeasured service scope; bounded repair accepted by the owner on2026-11-02.
 

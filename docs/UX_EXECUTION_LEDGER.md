@@ -104,7 +104,8 @@ slice using the same failure-analysis method. See
     "docs/UX_SLICE_S06_04.md",
     "src/http_ui.rs",
     "src/http_inventory_tests.rs",
-    "src/http_component_tests.rs"
+    "src/http_component_tests.rs",
+    "docs/README.md"
   ],
   "outcomes": [
     {
@@ -337,6 +338,40 @@ slice using the same failure-analysis method. See
           ],
           "reference": "Independent actual failure/test review in this chat; minimal component expectation correction and full normal gate retest, no production/native replay."
         }
+      },
+      {
+        "id": "normal-push-documentation-index-omission",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "2872ddf765e2340f7502526a2d36aff1d8382b1d",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/normal-push-corrected.log: mainRust2161PASS/0FAIL/85ignored112.85s, remaining regression phases passed through V8; missing docs-index link refused publication. Total hook duration not measured.",
+        "change_reference": "Prior component assertion corrected and independently reviewed; ordinary full gate then exposed separate documentation-index omission.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_scope_qa",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Actual coupled source/result review in this chat before this ordinary gate: native selector and component assertion corrected without production change; no bypass."
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s05_scope_qa"
+          ],
+          "failed_attempt_ids": [
+            "native-reader-invalid-fixture-selector",
+            "normal-push-main-suite-stale-component-assertion"
+          ],
+          "reference": "Combined actual failure review before corrected normal push: native99 was invalid syntax; unassessed component expected obsolete heading. Both retained, focused correction and full gate required.",
+          "next_action": "Ordinary complete gate after minimal component expectation correction; production artifacts remain byte-identical."
+        }
       }
     ],
     "source_and_preparation_history": [
@@ -368,14 +403,27 @@ slice using the same failure-analysis method. See
         "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/operator-entrypoint-refresh.actual.log",
         "observation": "Separate atomic refresh of existing root-owned operator unlock utility from already tracked explicit-guard source94a433; original retained. No execution, agentstart/unlock/service restart; protectedstate/runtimePIDs/artifacts unchanged."
       }
-    ]
+    ],
+    "delivery_reassessment": {
+      "reviewers": [
+        "/root",
+        "/root/s05_scope_qa"
+      ],
+      "failed_attempt_ids": [
+        "normal-push-main-suite-stale-component-assertion",
+        "normal-push-documentation-index-omission"
+      ],
+      "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/normal-push.log; /home/foo/Downloads/osmap-ux-s06/s06-04/normal-push-corrected.log; /home/foo/Downloads/osmap-ux-s06/s06-04/component-regression-green.log; /home/foo/Downloads/osmap-ux-s06/s06-04/documentation-index-green.log; independent actual combined review in this chat.",
+      "observation": "Two distinct failed publication prerequisites have matching minimal corrections. All2161 main tests passed in the second gate; docindex4links now pass narrowguard. No gate bypass, changed product code or native replay.",
+      "next_action": "Run next ordinary complete pre-push hook and require signed commits, fresh fetch/ls-remote exact equality,0ahead/behind and clean worktree before publication claim."
+    }
   },
   "slice_contract": {
     "version": 1,
     "slice": "S06-04",
     "specification": {
       "path": "docs/UX_SLICE_S06_04.md",
-      "sha256": "9524118ece6a10a74298d0e9bb1e24f09199b3e69d85e1cb6937d31d1cd33343"
+      "sha256": "253c31eaeb93d7861e48b15dadc23752bb9ffca37e2de14d18f77fc10ab7a922"
     },
     "design": {
       "journey": "Read supported protected mail, inspect original ciphertext and download exact authorised processed attachments with clear failure and privacy boundaries.",
