@@ -1,5 +1,34 @@
 # S06-04: practical protected reader, source and downloads
 
+## Accepted closeout — 2026-11-03
+
+**S06-04 ACCEPTED. T01–T09 PASS.** The owner explicitly replied **“accepted”**
+after the completed slice was presented with successful body, exact attachment
+and encrypted-source observations and no remaining technical test requested
+from the owner. This closes the completed protected-reader/source/download
+slice and its infrastructure result.
+
+The qualified engineering checkpoint is
+`0866340cc55c54cb660018e50ce3959a8a0ed536`, signed and synchronized to
+`feat/ux-completion-20260929` with fresh exact remote parity and a clean
+worktree. Installed Web SHA-256 is
+`c569fbc4eeeb284911ed683fc73fc659c5a52d7610e8da3969d92f61c92f6a53`.
+Five matching OpenBSD component tests pass without skips; normal delivery
+passes2164 main Rust tests with0 failures and85 ignored, plus the required
+repository checks. The installed loaded identity, HTTPS200, nine service
+roles and protected-state preservation passed. Independent source, native,
+installed and owner functional evidence is retained under the existing
+private evidence root. Explicit acceptance is retained in
+`S06_04_OWNER_ACCEPTANCE.json`.
+
+This is an acceptance-record update only. Earlier failures and historical
+pending statements below remain provenance. The110 immutable legacy cases
+and403 approved-control statuses are preserved; scoped acceptance evidence
+is appended to the mapped approved controls. Broader visual, keyboard and
+network criteria remain in the epic register. No production release,
+mailbox synchronization, private-key change or new host action is authorized
+or claimed by this closeout.
+
 ## Owner functional result and size hint — 2026-11-03
 
 The owner has now exercised the installed reader successfully. The screenshot

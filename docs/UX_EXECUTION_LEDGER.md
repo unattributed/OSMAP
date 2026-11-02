@@ -1,3 +1,5 @@
+2026-11-03 (Asia/Bangkok) — **S06-04 ACCEPTED. T01–T09 PASS.** Explicit owner acceptance closes the completed slice/infrastructure result; no additional technical checks, native run or host change. Engineering0866340 and actual owner functional proof retained. Acceptance-only signed record delivery follows.
+
 2026-11-03 — **S06 attachment visibility correction installed.** Matching native5PASS and guardedWeb-onlyinstallPASS; ownerunlockPASS, actualownerbody/download/sourceT09PENDING. Normal signedGitHubdelivery remains separate; historicfailedprotectedbody is unchanged.
 
 2026-11-03 (Asia/Bangkok) — **S06 agent preparation qualified; controlled encrypted owner UAT READY pending signed record delivery.** One native local Inbox import completed; initial post-save SSH observation failed, then independent-reviewed read-only reconciliation confirmed UID780, exact1983bytes, unchanged UID779 and protected state, nine healthy roles. Initial failure remains separate; no second save. Owner previously reported successful private unlock and signed-message reading, which do not replace encrypted-body/source/download T09.
@@ -61,7 +63,7 @@ slice using the same failure-analysis method. See
   "slice": "S06-04",
   "original_requirement": "Reparse and sanitize decrypted MIME; render state strip, downloads, source and failures",
   "source_baseline": "cefd08517fa0e5b060fc197f50be042853da17c0",
-  "state": "IN_PROGRESS",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -148,7 +150,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Actual protected Runtime reading, processed binary downloads and original encrypted source retain ownership, safe rendering, accurate states and transient privacy.",
       "essential_qa": "Existing actual Dovecot/native reader extended with rendered links, exact bytes, headers, stale/foreign/refused cases and application-state privacy.",
-      "next_action": "Complete normal signed source delivery and exact remote parity for final sizehint correction and actual owner functional PASS records. Engineering/native/installed results pass. No additional owner technical checks or private-key operation required; formal whole-slice infrastructure acceptance remains separate.",
+      "next_action": "S06-04 is accepted and closed. Preserve all prior failures, matching native/installed proof and owner acceptance. Complete ordinary signed delivery of this acceptance-only record; retain broader epic obligations for their existing owners and slices.",
       "dependencies": [
         {
           "owner": "/root",
@@ -217,6 +219,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "deployed_qa",
           "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/owner-functional-proof-independent-review.json SHAc467e71924ed3ae3a115313745d7df76a9246bb4868ce341914f78a47698a835: actual owner body/UTF8, exact three-byte download and original encrypted source PASS. Formal slice acceptance not inferred; no additional owner technical check requested."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/S06_04_OWNER_ACCEPTANCE.json SHA2564ac70fb33cbf443661cf4e1ea09780b512c816288fe425a6db14b3b9a4a8a24d; explicit owner acceptance follows actual UID780 body/exact download/encrypted-source PASS and independently reviewed qualified installation. Legacy/broader control statuses unchanged."
         }
       ]
     }
@@ -831,7 +837,7 @@ slice using the same failure-analysis method. See
     "slice": "S06-04",
     "specification": {
       "path": "docs/UX_SLICE_S06_04.md",
-      "sha256": "4bc69efd080282cd3ea049e5f9723c3421ba1b7e18a65b3f095ef6823980d84d"
+      "sha256": "0392e8e88c9439a017b824b31a5b15050f86d7e96d5ce1350bb3be0a79b04baa"
     },
     "design": {
       "journey": "Read supported protected mail, inspect original ciphertext and download exact authorised processed attachments with clear failure and privacy boundaries.",
@@ -1002,11 +1008,12 @@ slice using the same failure-analysis method. See
         "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
           "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Engineering/review component complete; normal signed delivery and owner acceptance remain pending.",
           "2026-11-02 owner detailed transcript: GPG error creating /dev/null.part PermissionDenied, AgentGuardError; actual owner unlock not confirmed. Prior code publicatione82b12b remains preserved; it does not supersede the real failure.",
-          "Owner old-tool output-path failure remains retained. Agent repair qualified/installed; successful owner private retry and T09 acceptance remain pending. Normal signed publication not inferred from source prose."
+          "Owner old-tool output-path failure remains retained. Agent repair qualified/installed; successful owner private retry and T09 acceptance remain pending. Normal signed publication not inferred from source prose.",
+          "2026-11-03 Asia/Bangkok: owner explicitly says accepted after S06-04 readiness/status with completed native/installed/signed delivery and actual body/download/source PASS. /home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/S06_04_OWNER_ACCEPTANCE.json SHA2564ac70fb33cbf443661cf4e1ea09780b512c816288fe425a6db14b3b9a4a8a24d. No further technical UAT required; no whole-epic or production approval inferred."
         ]
       }
     ],
@@ -1014,10 +1021,10 @@ slice using the same failure-analysis method. See
     "human_exit": "Owner unlocks protected mailbox keys if needed, then accepts a known decrypted message, original encrypted source and attachment UX, plus infrastructure results."
   },
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "Owner screenshots and supplied exact3-byte download establish body/UTF8,download and originalencryptedsourcePASS. Formalwhole-sliceinfrastructureacceptance notinferred. Noadditionalhumantechnicalchecksrequested; rootfinishes one-string sizehintcorrection andnormaldelivery."
+    "status": "PASS",
+    "reference": "2026-11-03 Asia/Bangkok: owner explicitly says accepted after S06-04 readiness/status with completed native/installed/signed delivery and actual body/download/source PASS. /home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/S06_04_OWNER_ACCEPTANCE.json SHA2564ac70fb33cbf443661cf4e1ea09780b512c816288fe425a6db14b3b9a4a8a24d. No further technical UAT required; no whole-epic or production approval inferred."
   },
-  "next_action": "Complete normal signed source delivery and exact remote parity for final sizehint correction and actual owner functional PASS records. Engineering/native/installed results pass. No additional owner technical checks or private-key operation required; formal whole-slice infrastructure acceptance remains separate."
+  "next_action": "S06-04 is accepted and closed. Preserve all prior failures, matching native/installed proof and owner acceptance. Complete ordinary signed delivery of this acceptance-only record; retain broader epic obligations for their existing owners and slices."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
