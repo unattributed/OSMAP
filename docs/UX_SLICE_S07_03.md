@@ -1,5 +1,9 @@
 # S07-03: Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling
 
+## Current delivery result — installed, owner review pending
+
+This slice's agent-owned engineering and matching shared Web deployment are complete. T01–T08 pass within the documented scope; owner T09 and broader visual/keyboard/final-reference acceptance remain pending. The qualified Web8d2e2813 is installed on obsd1 after complete normal signed source publication. See [S07-04 current delivery](UX_SLICE_S07_04.md#current-delivery-result--installed-owner-review-pending) for exact source/build identities, actual installation and preservation evidence. Earlier pending statements below remain historical; no separate owner acceptance is invented.
+
 The owner authorizes independent completion of every S07 slice with later review. Reuse the existing Rust product path, current native worker, disposable synthetic keys/accounts, existing private Dovecot fixture and controlled Rust loopback transport. No new cryptography, dependency, generic QA framework or production mail-system changes.
 
 Inspect and reuse current code and matching evidence; reproduce the demonstrated missing boundary; make the smallest correction; verify the actual composed result and deliver signed source through normal hooks. Functional assertions and actors use Rust. Existing shell orchestration and repository metadata validators remain.

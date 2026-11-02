@@ -1,5 +1,9 @@
 # S07-01: practical protection choices and current send policy
 
+## Current delivery result — installed, owner review pending
+
+This slice's agent-owned engineering and matching shared Web deployment are complete. T01–T08 pass within the documented scope; owner T09 and broader visual/keyboard/final-reference acceptance remain pending. The qualified Web8d2e2813 is installed on obsd1 after complete normal signed source publication. See [S07-04 current delivery](UX_SLICE_S07_04.md#current-delivery-result--installed-owner-review-pending) for exact source/build identities, actual installation and preservation evidence. Earlier pending statements below remain historical; no separate owner acceptance is invented.
+
 The owner directs independent completion of S07-01 through S07-04, reusing
 working code and Rust functional/native tests. Review later; technical
 verification remains agent-owned. The existing policy, binding/inventory,
