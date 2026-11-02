@@ -1,5 +1,25 @@
 # S06-03: bounded transient decryption and accurate failure states
 
+## Current consolidated result — 2026-11-03
+
+The engineering, matching native qualification and installation for this slice
+are complete in the consolidated S06 delivery. The final integrated reader,
+exact attachment download and original encrypted-source view passed the owner
+check; the owner explicitly accepted S06-04 on2026-11-03. See the
+[accepted integrated closeout](UX_SLICE_S06_04.md#accepted-closeout--2026-11-03).
+Engineering checkpoint0866340 and accepted-closeout commitef41693 are signed
+and synchronized to the approved UX branch. The installed Web is
+`c569fbc4eeeb284911ed683fc73fc659c5a52d7610e8da3969d92f61c92f6a53`.
+
+The earlier pending-install, locked-key, owner-check and publication statements
+below describe historical checkpoints; they are superseded by the completed
+consolidated result. Preserve their failures and evidence. No additional S06
+engineering, native run, deployment or owner technical check is identified.
+This records the accepted integrated result without inventing a separate
+individual owner acceptance for this foundational slice. Broader epic visual,
+keyboard, network and production-release obligations remain separately tracked.
+
+
 Continue the owner's 2026-11-02 instruction through S06. S06-01/02 source/native corrections are qualified; their final installation is carried into the consolidated S06 deployment. Use the existing authenticated Rust client/Processor, isolated GPGME worker and renderer. No new cryptography, mailbox protocol or private-key interface.
 
 ## Practical result and eventual owner check
