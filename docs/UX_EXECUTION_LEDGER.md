@@ -1,3 +1,5 @@
+2026-11-03 — Portable read-only inventory test now omits irrelevant authentication-script setup after observed pre-target ETXTBSY. Exact1 and full2165 Rust cases PASS; S07 native/product inputs unchanged; ordinary publication continues.
+
 2026-11-03 — Combined root/protocol/QA delivery reassessment complete after Clippy and documentation-index refusals. Smallest corrections qualified; all normal checks remain enabled; installation/owner acceptance pending.
 
 2026-11-03 — Normal S07 push caught test-method argument lint. Smallest tuple correction and current matching three-case native recheck PASS; no waiver/product change. Signed delivery/installation continue.
@@ -65,7 +67,8 @@
     "maint/openpgp-runtime/s05-01-native.ksh",
     "maint/security/v10-claims-boundary.json",
     "maint/security/v10-fail-closed-remediation.json",
-    "maint/security/v10-rust-assumption-audit.json"
+    "maint/security/v10-rust-assumption-audit.json",
+    "src/http_gateway_keys_tests.rs"
   ],
   "outcomes": [
     {
@@ -79,7 +82,7 @@
       ],
       "frontend_backend_outcome": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
       "essential_qa": "Actual gateway sends to controlled Rust local sink; Real scoped Dovecot append stores protected prepared message; Read decrypt verify Sent and download binary attachment; Source remains encrypted; current source selection protected; Stale policy helper interruption and Sent-store failure do not downgrade or auto duplicate; Actual authenticated HTTP and draft transaction checks; Consolidated native build installed preservation and independent review",
-      "next_action": "Complete signed admission and Web-only deployment; owner reviews later. No owner technical troubleshooting required.",
+      "next_action": "Sign and ordinarily publish the independently reviewed portable read-only fixture correction. Exact current full Rust2165PASS and unchanged selected S07 native/Web qualifications are retained; no user input or extra native run required.",
       "dependencies": [
         {
           "owner": "/root",
@@ -120,6 +123,10 @@
         {
           "stage": "native_tests",
           "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-recheck.actual.log: exact current two-file tuple correction; three actual native cases PASS and cleanup/postflight PASS. Web unchanged. Initial Clippy push refusal retained in source-push.log; corrected all-target Clippy PASS."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/readonly-inventory-fixture-corrected.log and rust-full-after-readonly-fixture.log: exact1PASS and full2165PASS0FAIL85ignored; no product/authentication change."
         }
       ]
     }
@@ -143,7 +150,7 @@
     "slice": "S07-04",
     "specification": {
       "path": "docs/UX_SLICE_S07_04.md",
-      "sha256": "aea2f57f8fc9d60d0976465b6eda2e98377628dc594b8fd1cee3ed2386dfb4a3"
+      "sha256": "0162f6c95cc6c2d95194b23c086670a989e380edf4ce4b3876e9af71468e360d"
     },
     "design": {
       "journey": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
@@ -323,7 +330,7 @@
     "status": "PENDING",
     "reference": "Owner explicitly authorizes independent engineering through allS07slices and willreviewlater; acceptance is not inferred."
   },
-  "next_action": "Complete signed admission and Web-only deployment; owner reviews later. No owner technical troubleshooting required."
+  "next_action": "Sign and ordinarily publish the independently reviewed portable read-only fixture correction. Exact current full Rust2165PASS and unchanged selected S07 native/Web qualifications are retained; no user input or extra native run required."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

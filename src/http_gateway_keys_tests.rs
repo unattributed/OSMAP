@@ -851,11 +851,18 @@ fn failed_cached_admin_can_use_independently_authenticated_read_only_inventory()
     use crate::openpgp_inventory_runtime::{read_frame, write_frame};
     use std::os::unix::net::UnixListener;
     use std::time::{Duration, Instant};
-    let f = Fixture::new();
-    let grant = f.root.join("inventory-grant");
+    // This read-only RPC test needs only private paths, not password/TOTP or
+    // a freshly written authentication executable. Keep failures in this owned
+    // directory for inspection; successful cleanup follows the joined server.
+    use std::os::unix::fs::DirBuilderExt;
+    let root = std::env::temp_dir().join(format!(
+        "osmap-inventory-read-{}", crate::draft::generate_draft_id().unwrap()
+    ));
+    fs::DirBuilder::new().mode(0o700).create(&root).unwrap();
+    let grant = root.join("inventory-grant");
     fs::write(&grant, [43; 32]).unwrap();
     fs::set_permissions(&grant, fs::Permissions::from_mode(0o600)).unwrap();
-    let stale_socket = f.root.join("admin.sock");
+    let stale_socket = root.join("admin.sock");
     let stale_listener = UnixListener::bind(&stale_socket).unwrap();
     fs::set_permissions(&stale_socket, fs::Permissions::from_mode(0o600)).unwrap();
     let admin = crate::openpgp_public_admin_runtime::Client::from_operator_files(
@@ -865,7 +872,7 @@ fn failed_cached_admin_can_use_independently_authenticated_read_only_inventory()
     )
     .unwrap();
     drop(stale_listener);
-    let socket = f.root.join("inventory.sock");
+    let socket = root.join("inventory.sock");
     let listener = UnixListener::bind(&socket).unwrap();
     fs::set_permissions(&socket, fs::Permissions::from_mode(0o600)).unwrap();
     listener.set_nonblocking(true).unwrap();
@@ -911,4 +918,6 @@ fn failed_cached_admin_can_use_independently_authenticated_read_only_inventory()
     assert!(result.is_ok());
     assert!(served);
     assert!(result.unwrap().keys().unwrap().is_empty());
+    fs::remove_dir_all(&root).unwrap();
+    assert!(!root.exists());
 }
