@@ -1,6 +1,6 @@
 # OSMAP
 
-**S05-04 restored; Rust principal qualification PASS.** The owner can sign in again. The two retired Python principal-test runners are deleted and replaced by native Rust tests using existing service identities and disposable state. Final crypto/inventory/admin, live admission, account-state preservation and cleanup checks pass. [Evidence and limits](docs/UX_SLICE_S05_04.md). Signed Git delivery and infrastructure T09 acceptance remain separate.
+**2026-11-02: S05-04 accepted — T01–T09 PASS.** The owner explicitly accepts the completed infrastructure result. Restored login, native Rust crypto/inventory/admin qualification, account-state preservation, cleanup and signed engineering delivery are recorded in the [slice acceptance](docs/UX_SLICE_S05_04.md#owner-t09-acceptance--2026-11-02). This closure updates acceptance records only.
 
 **2026-11-02: Account-relative Welcome status repair accepted.** The owner has accepted the installed dashboard, with account-specific mailbox/public-key/session observations and expanded details. F3-T01–T09 PASS; broader host monitoring and backup/update integrations remain separate. See [F3 owner acceptance](docs/UX_FOLLOWUP_F3_ACCOUNT_STATUS.md#owner-acceptance--2026-11-02).
 

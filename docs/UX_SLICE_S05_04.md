@@ -100,3 +100,13 @@ Final qualification uses the original newly compiled C pair, not the diagnostic 
 Independent source/producer/cleanup/consumer and actual-result review: rust-migration-independent-review.json, SHA256 d5f1b40fa5fa55cc7bb64f1103d3a5825d534bc3a2ac8702e28f3126f4da5372. Final crypto log 1288b1e8e551bc7da1efb4a640161efd1325bc52da5433ce06fbc883d5d3a27a; admin log 43c67590ce13a6da6dcbbc501a32cbbb64e5890189181e0ea6b0ccf06be2f4d6; installed admission log 4db86691617d303587ce13251df78c0a5165f1ee13a5c7370edfb85b9fae0fb1. Private evidence remains under /home/foo/Downloads/osmap-ux-s05/s05-04-login-incident-20261102/. Normal signed repository gates and GitHub equality are delivery checks; infrastructure T09 acceptance remains the owner's separate decision. No additional password or send operation is needed to reproduce the already supplied owner evidence.
 
 Limits remain explicit: root-peer refusal tests the protocol, not resistance to OS root; core probes begin with an inherited zero limit; foreign-agent proof covers endpoint custody; inventory restore is isolated, not a live rollback. Existing production helper behavior remains from source4c041501; this follow-up changes tests and records only.
+
+## Owner T09 acceptance — 2026-11-02
+
+The owner explicitly accepted the completed infrastructure result:
+
+> S05-04-T09 = PASS. I accept the completed infrastructure result.
+
+S05-04 is **ACCEPTED**, with T01–T09 PASS. Acceptance applies to the recorded OpenBSD OpenPGP infrastructure, its recovery and Rust qualification, and preservation of the working login/mail workflows. The accepted engineering source is signed commit `d7a87574c220e1b1474fdb8378e671ed159ba987`; its normal commit/full push gates and fresh GitHub equality passed before the owner decision. The owner's successful fresh sign-in and three-recipient mail evidence remain part of that record.
+
+This closure updates acceptance records only. Existing failed attempts, qualification limits and the distinction between source, native, installed and human evidence are preserved. No runtime change, host operation, credential/key/policy mutation or repeated user test is needed for this acceptance. Other slice/control obligations and whole-epic/production-release decisions retain their separate status. The next planned slice is S06-01; its work has not started through this acceptance update.

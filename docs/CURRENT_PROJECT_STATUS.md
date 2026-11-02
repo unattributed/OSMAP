@@ -1,5 +1,8 @@
 # Current Project Status
 
+2026-11-02 (Asia/Bangkok) — **S05-04 ACCEPTED; T01–T09 PASS.** The owner explicitly states: `S05-04-T09 = PASS. I accept the completed infrastructure result.` The accepted source is signed commit d7a87574, already delivered through normal gates with fresh GitHub equality. Native Rust qualification, restored owner login, three-recipient mail evidence, preservation and cleanup results remain recorded with their original limits and failures. This is an acceptance-record update only; broader epic/release and other control statuses remain separate. See [owner acceptance](UX_SLICE_S05_04.md#owner-t09-acceptance--2026-11-02).
+
+
 2026-11-02 — **S05-04 restored; Rust principal qualification PASS.** Owner fresh login and subsequent three-recipient mail evidence are retained. The two retired Python principal runners are deleted. Final matching Rust crypto/inventory and public-admin cases pass with unchanged system account databases and live account-helper process; post-test installed signed admission, eight service roles, HTTPS200 and exact cleanup pass. Source, failed attempts and limits are recorded in [S05-04](UX_SLICE_S05_04.md). Normal signed Git delivery and infrastructure T09 acceptance remain separate.
 
 

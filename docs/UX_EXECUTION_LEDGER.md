@@ -1,3 +1,5 @@
+2026-11-02 (Asia/Bangkok) — **S05-04 ACCEPTED: owner S05-04-T09 = PASS; T01–T09 PASS.** Explicit owner acceptance of the completed infrastructure result follows signed engineering source d7a87574 and matching native/installed proof. Acceptance-record update only; other obligations remain separate.
+
 2026-11-02 — **S05-04 restored and Rust replacement qualified; T09 infrastructure acceptance pending.** Final matching native crypto/inventory/admin, post-test live admission, preservation and exact cleanup PASS. Normal signed source delivery is required before readiness announcement.
 
 2026-11-02 — **S05-04 owner UAT FAIL: login backend unavailable; repair and Rust test migration IN_PROGRESS.**
@@ -41,7 +43,7 @@ slice using the same failure-analysis method. See
   "slice": "S05-04",
   "original_requirement": "Native OpenBSD build/confinement/dependency qualification in authorized isolated environment",
   "source_baseline": "39d66ba8f8f26dbe75bdb5cab08bf17c8d7afd68",
-  "state": "UAT_READY",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -98,7 +100,7 @@ slice using the same failure-analysis method. See
       "requirement_ids": [],
       "frontend_backend_outcome": "The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
       "essential_qa": "Fresh separate-principal, actual worker confinement/descriptor/core/refusal and owned lifecycle proof, matching native/installed custody, isolated restore and independent review.",
-      "next_action": "Complete normal signed Git delivery and fresh remote equality, then announce S05-04 T09 infrastructure readiness. Owner login and three-recipient mail evidence are already supplied; no additional credential attempt is needed.",
+      "next_action": "S05-04 accepted. Preserve its evidence and limitations; publish this documentation-only owner-acceptance record through normal signed delivery. S06-01 is next in the frozen plan and needs its own work order before implementation.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -951,7 +953,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-04",
     "specification": {
       "path": "docs/UX_SLICE_S05_04.md",
-      "sha256": "f68d4a421f7e7f128adb6cd5a5d9cecd8434fcd031b1a227a0b581e5190d4706"
+      "sha256": "258ba0e267047cfb616bb5d77bdeb40834971f7466634f93422db88c7719fc05"
     },
     "design": {
       "journey": "The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
@@ -1130,11 +1132,13 @@ slice using the same failure-analysis method. See
         "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
           "Owner3freshloginfailures; infrastructureacceptanceblockedpendingrepair.",
           "Owner confirms Login successful after bounded recovery; full infrastructure acceptance remains separate from this successful sign-in.",
-          "Independent final source/native/result review d5f1b40fa5fa55cc7bb64f1103d3a5825d534bc3a2ac8702e28f3126f4da5372 GO; normal signed source delivery required before readiness announcement."
+          "Independent final source/native/result review d5f1b40fa5fa55cc7bb64f1103d3a5825d534bc3a2ac8702e28f3126f4da5372 GO; normal signed source delivery required before readiness announcement.",
+          "Owner explicit acceptance2026-11-02 (Asia/Bangkok): S05-04-T09 = PASS. I accept the completed infrastructure result.",
+          "Signed d7a87574 source delivery: normal commit and full push gates PASS; main Rust2155PASS/0FAIL/79ignored, native cases separatelyPASS; verified signature, exact local/tracking/remote equality and clean worktree."
         ]
       }
     ],
@@ -1142,10 +1146,10 @@ slice using the same failure-analysis method. See
     "human_exit": "Owner accepts infrastructure result separately; no visual ceremony or inferred production release."
   },
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "Historical login UAT failure retained; owner subsequently confirms fresh login success and supplies three-recipient mail receipts. S05-04 infrastructure acceptance is separate from that repaired journey."
+    "status": "PASS",
+    "reference": "Owner explicit acceptance on2026-11-02 (Asia/Bangkok): S05-04-T09 = PASS. I accept the completed infrastructure result. Accepted engineering source d7a87574c220e1b1474fdb8378e671ed159ba987; signed delivery and fresh remote equality verified before acceptance."
   },
-  "next_action": "Complete normal signed Git delivery and fresh remote equality, then announce S05-04 T09 infrastructure readiness. Owner login and three-recipient mail evidence are already supplied; no additional credential attempt is needed."
+  "next_action": "S05-04 accepted. Preserve its evidence and limitations; publish this documentation-only owner-acceptance record through normal signed delivery. S06-01 is next in the frozen plan and needs its own work order before implementation."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
