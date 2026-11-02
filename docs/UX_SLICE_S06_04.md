@@ -46,6 +46,22 @@ ownership, sanitization and privacy proofs are reused for the unchanged backend.
 Owner T09 is not inferred from a successful unlock, fixture import or component
 test.
 
+The first normal push for this correction passed the full Rust regression
+(2164 passed,0 failed,85 ignored;31.80s) and then stopped at the existing V10
+generated-inventory check. The new tests add nine test/fixture assumptions, so
+the recorded current count and fingerprint were stale. The existing generators
+refresh the coupled current audit, remediation register and claims fingerprints.
+The original snapshot remains preserved in Git. Only nine low-relevance
+test/fixture assumptions are added; the generic audit's production categories
+and the refined register's zero high-relevance count/four medium invariants
+remain unchanged. A first partial refresh passed its narrow register check.
+The broader consistency check then caught an authoring error: a new
+`total_count` field had been used instead of the existing claims field
+`current_scanner_count`. That failed check is retained separately; the correction
+updates the existing field and removes the extra one. The failed push is retained as
+`attachment-normal-push.log`; this metadata-only correction requires normal
+signed delivery again, with no native rebuild or repeat installation.
+
 ## Current local UAT result — 2026-11-03
 
 The operator explicitly resumed S06 using controlled messages on obsd1 and

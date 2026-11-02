@@ -565,6 +565,108 @@ slice using the same failure-analysis method. See
           ],
           "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-ui-independent-review.json; matching actual native and bound installer separately reviewed; attachment-native-installed-review.json retains finalobservations."
         }
+      },
+      {
+        "id": "attachment-normal-push-inventory-drift",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "bf0dc44bd19f7829555219a072a66dfa8923666a",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-normal-push.log: normal enabled push refused by stale V10generatedinventory11409→11418 (+9testfixture assumptions), after mainRust2164PASS/0FAIL/85ignored. Exit1; no remoteupdate.",
+        "change_reference": "Refresh existing generated security inventory for nine added test-only assumptions, retain original publication failure and repeat ordinary hooks; no backend change/native repeat.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-inventory-review.json; independent source/generator/current-onlydiff review and bounded normal delivery."
+        }
+      },
+      {
+        "id": "attachment-inventory-refresh",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "bf0dc44bd19f7829555219a072a66dfa8923666a",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-inventory-check.log: first partial remediation-only refresh passes narrow check; original generic audit/claims still required complete regeneration. No final full-gate or publication claim.",
+        "change_reference": "First partial remediation-register-only regeneration; narrow register check passed. Broader coupled audit/claims consistency addressed in separately retained subsequent result; runtime source unchanged.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-inventory-review.json; independent source/generator/current-onlydiff review and bounded normal delivery."
+        }
+      },
+      {
+        "id": "attachment-inventory-claims-count-field",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "bf0dc44bd19f7829555219a072a66dfa8923666a",
+        "source_revision_scope": "unchanged product code checkpoint; transient incorrect metadata draft hash was not retained; failed consumer log and exact field mismatch are preserved",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-inventory-complete-check.log: broader V10consumer correctly rejected stale current_scanner_count11409; added total_count11418 was the wrong property. Metadataauthoringfailure only; no host/action.",
+        "change_reference": "Retain incorrect claims-field draft failure; independently correct existingfield and removeextra field.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-inventory-combined-review.json SHA2568be09665c189de3f23118208574025107600a9d8588089791d78e1265539a42e"
+        }
+      },
+      {
+        "id": "attachment-inventory-corrected-complete",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "feccc75be1e4f60577871f0b634cf35c3feee5f6f04355a4c60af35b953f9ae1",
+        "source_revision_scope": "corrected existing claims map",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-inventory-corrected-check.log: complete existing V10governance checks PASS after existing generators align current audit/register and exact claims hashes/counts. Generic+9 lowtestonly; productionclassifications unchanged; refinedhigh0/medium4, Slice0=712 preserved.",
+        "change_reference": "Correct existing current_scanner_count to11418 and remove added total_count; align three existing audit maps with current source. No product/host/native change.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-inventory-combined-review.json SHA2568be09665c189de3f23118208574025107600a9d8588089791d78e1265539a42e"
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s05_protocol_review"
+          ],
+          "failed_attempt_ids": [
+            "attachment-normal-push-inventory-drift",
+            "attachment-inventory-claims-count-field"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-inventory-combined-review.json SHA2568be09665c189de3f23118208574025107600a9d8588089791d78e1265539a42e",
+          "next_action": "One corrected narrowV10check then normalenabled signedcommit/push and fresh parity; no native repeat or owneroperation."
+        }
       }
     ],
     "source_and_preparation_history": [
@@ -633,7 +735,7 @@ slice using the same failure-analysis method. See
     "slice": "S06-04",
     "specification": {
       "path": "docs/UX_SLICE_S06_04.md",
-      "sha256": "3fbdf4d7ad7ffad0655858568b9c972182517d35ebcb6a712bc9d1fbcf4bd33c"
+      "sha256": "e7102b96edf6603ebc32e3b73cca21c0eeff86cc2b42b4ccffec606463f5bf16"
     },
     "design": {
       "journey": "Read supported protected mail, inspect original ciphertext and download exact authorised processed attachments with clear failure and privacy boundaries.",
