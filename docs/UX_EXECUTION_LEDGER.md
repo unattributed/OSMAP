@@ -135,7 +135,7 @@
     "owner": "/root",
     "functional_exit": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation with current Rust/native evidence and exact owned cleanup; owner reviews separately.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Preserve accepted S04/S05/S06, old S07 bounded native/defaults/recovery evidence, Sent/owner failures and exact source differences. Earlier direct-capture/Sent shims are Python and cannot establish fresh Rust-only or actual Dovecot proof. Full source/preparation elapsed before this record UNKNOWN, not zero. Two delivery refusals retained in source-push.log and correction-push.log; combined root/protocol/QA reassessment recorded in docs/UX_SLICE_S07_04.md before the corrected ordinary push. No native failure or gate waiver inferred.",
+    "history_reference": "Preserve accepted S04/S05/S06, old S07 bounded native/defaults/recovery evidence, Sent/owner failures and exact source differences. Earlier direct-capture/Sent shims are Python and cannot establish fresh Rust-only or actual Dovecot proof. Full source/preparation elapsed before this record UNKNOWN, not zero. Two delivery refusals retained in source-push.log and correction-push.log; combined root/protocol/QA reassessment recorded in docs/UX_SLICE_S07_04.md before the corrected ordinary push. No native failure or gate waiver inferred. Later delivery ETXTBSY and formatting refusals retained separately; bounded setup/newline corrections, full2165PASS/ClippyPASS/directfmtExit0 and second combined root/protocol/QA reassessment precede the next ordinary push.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
@@ -150,7 +150,7 @@
     "slice": "S07-04",
     "specification": {
       "path": "docs/UX_SLICE_S07_04.md",
-      "sha256": "0162f6c95cc6c2d95194b23c086670a989e380edf4ce4b3876e9af71468e360d"
+      "sha256": "a884ead4425678e980b2705f6843046e65f0758b6bb12ca6fb1074c8f4cc21d8"
     },
     "design": {
       "journey": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",

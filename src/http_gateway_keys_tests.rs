@@ -856,7 +856,8 @@ fn failed_cached_admin_can_use_independently_authenticated_read_only_inventory()
     // directory for inspection; successful cleanup follows the joined server.
     use std::os::unix::fs::DirBuilderExt;
     let root = std::env::temp_dir().join(format!(
-        "osmap-inventory-read-{}", crate::draft::generate_draft_id().unwrap()
+        "osmap-inventory-read-{}",
+        crate::draft::generate_draft_id().unwrap()
     ));
     fs::DirBuilder::new().mode(0o700).create(&root).unwrap();
     let grant = root.join("inventory-grant");
