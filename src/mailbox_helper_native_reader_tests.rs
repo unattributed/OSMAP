@@ -499,31 +499,17 @@ fn encode(value: &str) -> String {
         .collect()
 }
 
-// Called by the existing disposable native crypto/send fixture after it has
-// produced a real signed, encrypted-to-self MIME message. This keeps the
-// Dovecot reader boundary here rather than substituting a MessageView.
-pub(crate) fn prove_protected_sent(
-    wire: &[u8],
-    return_wire: &[u8],
-    crypto: &crate::openpgp_crypto_runtime::Client,
-    inventory: &crate::openpgp_inventory_runtime::Client,
-    fingerprint: &str,
-    bob_fingerprint: &str,
-    home: &Path,
-) {
-    use crate::totp::TimeProvider;
-    use std::os::unix::fs::FileTypeExt;
+// Shared test-only fixture: setup occurs before the production gateway sends.
+// Its Sent files are created only by real scoped doveadm save, never preloaded.
+pub(crate) struct ProtectedSentMailbox {
+    pub(crate) config: PathBuf,
+    pub(crate) userdb: PathBuf,
+    fixture: Fixture,
+    before: Vec<StandardMetadata>,
+}
+impl ProtectedSentMailbox {
+    pub(crate) fn new() -> Self {
     assert_eq!(std::env::consts::OS, "openbsd");
-    assert!(matches!(
-        crate::pgp_mime::classify(wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap(),
-        crate::pgp_mime::PgpMimeMessage::Encrypted { .. }
-    ));
-    assert!(!wire.windows(b"Synthetic caf".len()).any(|w| w == b"Synthetic caf"));
-    assert!(matches!(
-        crate::pgp_mime::classify(return_wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap(),
-        crate::pgp_mime::PgpMimeMessage::Encrypted { .. }
-    ));
-    assert!(!return_wire.windows(b"ReturnExactBody".len()).any(|w| w == b"ReturnExactBody"));
     let before = standard_metadata();
     let root = env::temp_dir().join(format!(
         "osmap-protected-reader-native-{}-{}",
@@ -552,33 +538,76 @@ pub(crate) fn prove_protected_sent(
             fs::create_dir_all(root.join("alice/Maildir").join(folder).join(part)).unwrap();
         }
     }
-    let stored = root.join("alice/Maildir/.Sent/new/protected-self");
-    fs::write(&stored, wire).unwrap();
-    fs::set_permissions(&stored, fs::Permissions::from_mode(0o600)).unwrap();
-    let returned = root.join("alice/Maildir/new/protected-return");
-    fs::write(&returned, return_wire).unwrap();
-    fs::set_permissions(&returned, fs::Permissions::from_mode(0o600)).unwrap();
     let config = root.join("dovecot.conf");
     fs::write(&config, format!("base_dir = {0}/run\nstate_dir = {0}/state\nmail_location = maildir:~/Maildir\nmail_uid = {uid}\nmail_gid = {gid}\nfirst_valid_uid = {uid}\nprotocols =\nlisten = 127.0.0.1\nssl = no\nmail_plugins =\nstats_writer_socket_path =\nauth_socket_path = {0}/never-default\nlog_path = {0}/native.log\ninfo_log_path = {0}/native.log\nnamespace inbox {{\n inbox = yes\n separator =\n}}\n", root.display())).unwrap();
     fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).unwrap();
     let userdb = serve_userdb(&mut fixture, uid, gid);
+    Self { config, userdb, fixture, before }
+    }
+    pub(crate) fn prove(
+        &mut self, wire: &[u8], return_wire: &[u8],
+        crypto: &crate::openpgp_crypto_runtime::Client,
+        inventory: &crate::openpgp_inventory_runtime::Client,
+        fingerprint: &str, bob_fingerprint: &str, home: &Path,
+    ) {
+    use crate::totp::TimeProvider;
+    use std::os::unix::fs::FileTypeExt;
+    assert_eq!(std::env::consts::OS, "openbsd");
+    assert!(matches!(
+        crate::pgp_mime::classify(wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap(),
+        crate::pgp_mime::PgpMimeMessage::Encrypted { .. }
+    ));
+    assert!(!wire.windows(b"Synthetic caf".len()).any(|w| w == b"Synthetic caf"));
+    assert!(matches!(
+        crate::pgp_mime::classify(return_wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap(),
+        crate::pgp_mime::PgpMimeMessage::Encrypted { .. }
+    ));
+    assert!(!return_wire.windows(b"ReturnExactBody".len()).any(|w| w == b"ReturnExactBody"));
+    let root = self.fixture.root.clone();
+    let uid = fs::metadata(&root).unwrap().uid();
+    let returned = root.join("alice/Maildir/new/protected-return");
+    fs::write(&returned, return_wire).unwrap();
+    fs::set_permissions(&returned, fs::Permissions::from_mode(0o600)).unwrap();
     let executor = NativeExecutor {
-        config,
+        config: self.config.clone(),
         calls: Arc::new(AtomicUsize::new(0)),
         bin_move_count: None,
     };
     let list = DoveadmMessageListBackend::new(
         MessageListPolicy::default(), executor.clone(), "/usr/local/bin/doveadm"
-    ).with_userdb_socket_path(Some(userdb.clone()));
+    ).with_userdb_socket_path(Some(self.userdb.clone()));
     let sent_query = MessageListRequest::new(MessageListPolicy::default(), "Sent").unwrap();
     let rows = list.list_messages(PROTECTED_ALICE, &sent_query).unwrap();
-    assert_eq!(rows.len(), 1);
+    assert_eq!(rows.len(), 2, "both production gateway Sent saves must exist");
+    let normalized = std::str::from_utf8(wire).unwrap().replace("\r\n", "\n").into_bytes();
+    let stored = ["cur", "new"].into_iter().flat_map(|part|
+        fs::read_dir(root.join("alice/Maildir/.Sent").join(part)).unwrap()
+            .map(|entry| entry.unwrap().path()).collect::<Vec<_>>()
+    ).find(|path| fs::read(path).unwrap() == normalized)
+        .expect("real doveadm save stored the prepared encrypted self message");
+    let stored_wire = fs::read(&stored).unwrap();
+    let crate::pgp_mime::PgpMimeMessage::Encrypted { ciphertext: stored_ciphertext, .. } =
+        crate::pgp_mime::classify(&stored_wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap()
+    else { panic!("Sent must retain encrypted MIME"); };
+    let crate::pgp_mime::PgpMimeMessage::Encrypted { ciphertext: wire_ciphertext, .. } =
+        crate::pgp_mime::classify(wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap()
+    else { unreachable!() };
+    let packets = |armor: &[u8]| {
+        let encoded = std::str::from_utf8(armor).unwrap().lines()
+            .skip_while(|line| !line.is_empty()).skip(1)
+            .take_while(|line| !line.starts_with('=') && !line.starts_with("-----END"))
+            .collect::<String>();
+        crate::attachment::decode_base64_bytes(&encoded, crate::openpgp_crypto::MAX_CONTENT).unwrap()
+    };
+    assert_eq!(packets(&stored_ciphertext), packets(&wire_ciphertext),
+        "Dovecot armor line-ending normalization preserves binary ciphertext packets");
+    let sent_row = rows.iter().max_by_key(|row| row.uid).unwrap();
     let inbox_query = MessageListRequest::new(MessageListPolicy::default(), "INBOX").unwrap();
     let inbox_rows = list.list_messages(PROTECTED_ALICE, &inbox_query).unwrap();
     assert_eq!(inbox_rows.len(), 1);
     let forbidden = Arc::new(AtomicUsize::new(0));
     let helper = start_helper(
-        &mut fixture, executor, userdb, 0,
+        &mut self.fixture, executor, self.userdb.clone(), 0,
         Arc::new(AtomicBool::new(false)), Arc::new(AtomicUsize::new(0)), forbidden.clone()
     );
     let key = root.join("fixture-grant.key");
@@ -624,14 +653,24 @@ pub(crate) fn prove_protected_sent(
     gateway.crypto_client = Some(crypto.clone());
     gateway.public_inventory_client = Some(inventory.clone());
     let app = BrowserApp::new(HttpPolicy::from_config(&app_config), gateway);
-    let path = format!("/message?mailbox=Sent&uid={}", rows[0].uid);
+    let path = format!("/message?mailbox=Sent&uid={}", sent_row.uid);
     let positive = get(&app, &session, &path);
     assert_eq!(positive.response.status_code, 200);
     assert!(text(&positive).contains("Synthetic café body"));
     assert!(text(&positive).contains("Second line"));
     assert!(text(&positive).contains("Decrypted on mail host"));
     assert!(text(&positive).contains("cryptographically valid"));
-    assert_eq!(fs::read(&stored).unwrap(), wire);
+    assert_eq!(fs::read(&stored).unwrap(), normalized);
+    let source_href = stored_content_href(text(&positive), "View source");
+    let source = get(&app, &session, &source_href);
+    assert_eq!(source.response.status_code, 200);
+    assert!(text(&source).contains("multipart/encrypted") && text(&source).contains("BEGIN PGP MESSAGE"));
+    assert!(!text(&source).contains("Synthetic café body"));
+    let download_href = stored_content_href(text(&positive), "Download");
+    let download = get(&app, &session, &download_href);
+    assert_eq!(download.response.status_code, 200);
+    assert_eq!(download.response.body, [0, 1, 255]);
+    assert_eq!(stored_content_header(&download, "Cache-Control"), "no-store");
     let return_path = format!("/message?mailbox=INBOX&uid={}", inbox_rows[0].uid);
     let inbound = get(&app, &session, &return_path);
     assert_eq!(inbound.response.status_code, 200);
@@ -670,7 +709,7 @@ pub(crate) fn prove_protected_sent(
     assert!(text(&locked).contains("The mailbox key is locked"));
     assert!(!text(&locked).contains("Synthetic café body"));
     assert!(!text(&locked).contains("cryptographically valid"));
-    assert_eq!(fs::read(&stored).unwrap(), wire);
+    assert_eq!(fs::read(&stored).unwrap(), normalized);
     let locked_return = get(&app, &session, &return_path);
     assert_eq!(locked_return.response.status_code, 200);
     assert!(text(&locked_return).contains("The mailbox key is locked"));
@@ -679,11 +718,18 @@ pub(crate) fn prove_protected_sent(
     drop(hold);
     assert!(agent.exists());
     assert_eq!(forbidden.load(Ordering::SeqCst), 0);
-    fixture.finish();
-    drop(fixture);
-    assert!(!root.exists());
-    assert_eq!(standard_metadata(), before);
+    assert_eq!(standard_metadata(), self.before);
+    }
+    pub(crate) fn finish(mut self) {
+        let root = self.fixture.root.clone();
+        let before = self.before.clone();
+        self.fixture.finish();
+        drop(self);
+        assert!(!root.exists(), "owned protected Sent fixture cleanup");
+        assert_eq!(standard_metadata(), before);
+    }
 }
+
 // Seven-bit signed-data corpus; transfer decoding happens only after verification.
 fn stored_profile_entities() -> Vec<(&'static str, Vec<u8>, bool)> {
     let entity = concat!(

@@ -5629,9 +5629,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -5681,9 +5687,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -5733,9 +5745,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -5785,9 +5803,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -5837,9 +5861,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -6244,9 +6274,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -6567,9 +6603,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -6937,6 +6979,11 @@
             "kind": "human_uat",
             "path": "/home/foo/Downloads/osmap-ux-s07/encrypted-bcc-20261014/UAT-RESULTS-20261014.json",
             "scope": "Operator first encryption-only Bcc Send/no errors, actual Proton receipt/readable body/explicit PGP-encrypted status and Bcc privacy reported PASS. Exact original-body match unconfirmed; full raw headers not independently inspected; Sign OFF; OSMAP own body decryption failed. This is exact observed subset only, not full control acceptance. Retained artifact sha256=c403c4dd64d31813565989b4c23f1b7cbcf5906012a4bfe55eaf4e8b98f4fe77."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
           }
         ]
       }
@@ -7047,7 +7094,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "FAILED",
+        "status": "PARTIALLY_VERIFIED",
         "executed": true,
         "evidence": [
           {
@@ -7059,6 +7106,11 @@
             "kind": "human_uat",
             "path": "/home/foo/Downloads/osmap-ux-s07/encrypted-bcc-20261014/UAT-SECOND-TEST-20261014.json",
             "scope": "Operator second test proves matching encrypted OSMAP Sent LIST ROW and authoritative Thunderbird Inbox/readable decryption; it does not prove OSMAP Open-message body decryption, second Proton receipt, signature or encrypted return. Executed listing portion only. Retained artifact sha256=dac2bdf8c4f312c2d23545180cc626f53b885d8c5e11fdeebd7949109c8702cd."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
           }
         ]
       }
@@ -11715,9 +11767,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -11767,9 +11825,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -12016,9 +12080,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -14492,9 +14562,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -14544,9 +14620,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -14596,9 +14678,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -14633,9 +14721,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -14707,9 +14801,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -17429,9 +17529,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -17466,9 +17572,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -17503,9 +17615,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -17651,9 +17769,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -22111,9 +22235,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {
@@ -22148,9 +22278,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "2026-11-03 scoped current Rust source/native proof: configured choice defaults/requested intent, current policy/refusal and composed protected-send/real Dovecot Sent/read/download/source/replay. Does not establish all visual/keyboard/final-reference conditions or current owner acceptance. Earlier owner failed observations retained. Evidence /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log"
+          }
+        ]
       }
     },
     {

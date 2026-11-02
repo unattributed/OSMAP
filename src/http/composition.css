@@ -30,3 +30,10 @@
 }
 
 .settings-composition-page #composition-autosave:enabled { cursor:pointer; }
+
+/* Composer intent follows the native checkbox, including without JavaScript. */
+.compose-shell .compose-choice-toggle { flex-wrap: wrap; }
+.compose-shell .compose-choice-state { flex-basis: 100%; font-size: .8rem; }
+.compose-shell .compose-choice-on { display: none; }
+.compose-shell .compose-choice-toggle > input:checked ~ .compose-choice-off { display: none; }
+.compose-shell .compose-choice-toggle > input:checked ~ .compose-choice-on { display: block; }

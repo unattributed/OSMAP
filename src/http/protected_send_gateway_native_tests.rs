@@ -1,9 +1,9 @@
 // Actual authenticated helper processes and production gateway submission path.
-// Loopback SMTP and a controlled Sent save process; not live Dovecot/provider QA.
+// Rust loopback SMTP and scoped real Sent save; not public/provider mail QA.
 use std::fs;
 use std::io::{BufRead, BufReader, Write};
-use std::net::TcpListener;
-use std::os::unix::fs::PermissionsExt;
+use std::net::{TcpListener, TcpStream};
+use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
@@ -62,6 +62,14 @@ fn native_service_child() -> bool {
     let Ok(kind) = std::env::var("OSMAP_GATEWAY_NATIVE_SERVICE") else {
         return false;
     };
+    if kind == "smtp-actor" {
+        native_smtp_actor();
+        return true;
+    }
+    if kind == "sent-actor" {
+        native_sent_actor();
+        return true;
+    }
     let config = PathBuf::from(std::env::var_os("OSMAP_GATEWAY_NATIVE_CONFIG").unwrap());
     let key = PathBuf::from(std::env::var_os("OSMAP_GATEWAY_NATIVE_KEY").unwrap());
     match kind.as_str() {
@@ -78,6 +86,144 @@ fn native_service_child() -> bool {
         _ => panic!("unknown isolated fixture service"),
     }
     true
+}
+
+fn actor_arguments() -> Vec<String> {
+    std::env::var("OSMAP_GATEWAY_NATIVE_ARGV")
+        .expect("fixed launcher argv")
+        .split('\n')
+        .map(str::to_owned)
+        .collect()
+}
+fn actor_input() -> Vec<u8> {
+    crate::openbsd::bounded_operator_stdin(16 * 1024, Instant::now() + Duration::from_secs(5))
+        .expect("bounded synthetic transport input")
+}
+fn smtp_reply(reader: &mut BufReader<TcpStream>, expected: &[u8], deadline: Instant) {
+    reader.get_ref().set_read_timeout(Some(deadline.checked_duration_since(Instant::now())
+        .expect("loopback SMTP deadline"))).unwrap();
+    let mut line = Vec::new();
+    loop {
+        let available = reader.fill_buf().unwrap();
+        assert!(!available.is_empty(), "loopback SMTP reply ended");
+        let count = available.iter().position(|byte| *byte == b'\n').map_or(available.len(), |position| position + 1);
+        assert!(line.len() + count <= 1024, "loopback SMTP reply limit");
+        let ended = available[count - 1] == b'\n';
+        line.extend_from_slice(&available[..count]);
+        reader.consume(count);
+        if ended { break; }
+    }
+    assert!(line.starts_with(expected), "fixed loopback SMTP reply");
+}
+fn smtp_write(stream: &mut TcpStream, bytes: &[u8], deadline: Instant) {
+    stream.set_write_timeout(Some(deadline.checked_duration_since(Instant::now())
+        .expect("loopback SMTP deadline"))).unwrap();
+    stream.write_all(bytes).unwrap();
+}
+fn native_smtp_actor() {
+    let arguments = actor_arguments();
+    assert!(matches!(arguments.len(), 5 | 6));
+    assert!(arguments[..4].iter().map(String::as_str).eq(["-oi", "-f", "alice@example.test", "--"]));
+    let recipients = &arguments[4..];
+    assert!(recipients.iter().all(|recipient| matches!(recipient.as_str(), "alice@example.test" | "bob@example.test")));
+    assert!(recipients.len() == 1 || recipients[0] != recipients[1]);
+    let content = actor_input();
+    assert!(!content.is_empty());
+    let port: u16 = std::env::var("OSMAP_GATEWAY_NATIVE_PORT").unwrap().parse().unwrap();
+    assert_ne!(port, 0);
+    let mut stream = TcpStream::connect_timeout(
+        &std::net::SocketAddr::from(([127, 0, 0, 1], port)), Duration::from_secs(3),
+    ).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(3);
+    let mut reader = BufReader::new(stream.try_clone().unwrap());
+    smtp_reply(&mut reader, b"220 ", deadline);
+    smtp_write(&mut stream, b"EHLO fixture\r\n", deadline);
+    smtp_reply(&mut reader, b"250 ", deadline);
+    smtp_write(&mut stream, b"MAIL FROM:<alice@example.test>\r\n", deadline);
+    smtp_reply(&mut reader, b"250 ", deadline);
+    for recipient in recipients {
+        smtp_write(&mut stream, format!("RCPT TO:<{recipient}>\r\n").as_bytes(), deadline);
+        smtp_reply(&mut reader, b"250 ", deadline);
+    }
+    smtp_write(&mut stream, b"DATA\r\n", deadline);
+    smtp_reply(&mut reader, b"354 ", deadline);
+    for line in content.split_inclusive(|byte| *byte == b'\n') {
+        if line.starts_with(b".") { smtp_write(&mut stream, b".", deadline); }
+        smtp_write(&mut stream, line, deadline);
+    }
+    if !content.ends_with(b"\r\n") { smtp_write(&mut stream, b"\r\n", deadline); }
+    smtp_write(&mut stream, b".\r\n", deadline);
+    smtp_reply(&mut reader, b"250 ", deadline);
+    smtp_write(&mut stream, b"QUIT\r\n", deadline);
+    smtp_reply(&mut reader, b"221 ", deadline);
+}
+fn native_sent_actor() {
+    use crate::auth::CommandExecutor;
+    assert!(actor_arguments().iter().map(String::as_str).eq(["-o", "stats_writer_socket_path=", "save", "-u", "alice@example.test", "-m", "Sent"]));
+    let path = |name| PathBuf::from(std::env::var_os(name).expect("owned Sent actor path"));
+    let config = path("OSMAP_GATEWAY_NATIVE_CONFIG");
+    let userdb = path("OSMAP_GATEWAY_NATIVE_USERDB");
+    assert_eq!(fs::canonicalize(&config).unwrap(), config);
+    let root = config.parent().unwrap();
+    assert_eq!(root.parent().unwrap(), std::env::temp_dir());
+    assert!(root.file_name().unwrap().to_string_lossy().starts_with("osmap-protected-reader-native-"));
+    assert_eq!(config.file_name().unwrap(), "dovecot.conf");
+    assert_eq!(userdb, root.join("userdb"));
+    let metadata = fs::symlink_metadata(&config).unwrap();
+    assert!(metadata.is_file() && metadata.uid() == crate::openbsd::effective_uid() && metadata.mode() & 0o077 == 0);
+    let content = actor_input();
+    assert!(!content.is_empty());
+    let capture = path("OSMAP_GATEWAY_NATIVE_SENT_CAPTURE");
+    let counter = path("OSMAP_GATEWAY_NATIVE_SENT_COUNTER");
+    let refuse = path("OSMAP_GATEWAY_NATIVE_SENT_REFUSE");
+    assert_eq!(capture.parent(), counter.parent());
+    assert_eq!(capture.parent(), refuse.parent());
+    assert_eq!(capture.file_name().unwrap(), "sent.eml");
+    assert_eq!(counter.file_name().unwrap(), "sent.count");
+    assert_eq!(refuse.file_name().unwrap(), "sent-refuse");
+    let capture_root = capture.parent().unwrap();
+    assert_eq!(fs::canonicalize(capture_root).unwrap(), capture_root);
+    assert_eq!(capture_root.file_name().unwrap(), "gateway");
+    assert!(capture_root.parent().unwrap().file_name().unwrap().to_string_lossy().starts_with("osmap-crypto-fixture-"));
+    let metadata = fs::symlink_metadata(capture_root).unwrap();
+    assert!(metadata.is_dir() && metadata.uid() == crate::openbsd::effective_uid() && metadata.mode() & 0o777 == 0o700);
+    match fs::symlink_metadata(&refuse) {
+        Ok(metadata) => {
+            assert!(metadata.is_file() && metadata.nlink() == 1 && metadata.uid() == crate::openbsd::effective_uid() && metadata.mode() & 0o777 == 0o600);
+            eprintln!("fixture_sent_append_refused");
+            std::process::exit(64);
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => (),
+        Err(_) => panic!("owned Sent refusal marker unavailable"),
+    }
+    let mut file = fs::OpenOptions::new().write(true).create(true).truncate(true).mode(0o600)
+        .custom_flags(libc::O_NOFOLLOW).open(capture).unwrap();
+    file.write_all(&content).unwrap();
+    file.sync_all().unwrap();
+    let mut count = fs::OpenOptions::new().append(true).create(true).mode(0o600)
+        .custom_flags(libc::O_NOFOLLOW).open(counter).unwrap();
+    count.write_all(b"1").unwrap();
+    count.sync_all().unwrap();
+    let result = SystemCommandExecutor.run_with_stdin_bytes_timeout_and_output_limit(
+        "/usr/local/bin/doveadm",
+        &["-c".into(), config.to_string_lossy().into_owned(), "-o".into(), "stats_writer_socket_path=".into(),
+            "-o".into(), format!("auth_socket_path={}", userdb.display()), "save".into(), "-u".into(),
+            "alice@example.test".into(), "-m".into(), "Sent".into()],
+        &content, Duration::from_secs(3), 4096,
+    ).expect("bounded private native Sent save");
+    assert_eq!(result.status_code, 0, "private native Sent save refused");
+}
+fn shell_quote(value: &str) -> String { format!("'{}'", value.replace('\'', "'\\''")) }
+fn actor_launcher(mode: &str, settings: &[(&str, String)]) -> Vec<u8> {
+    assert!(matches!(mode, "smtp-actor" | "sent-actor"));
+    let mut launcher = format!("#!/bin/sh\nset -eu\nexport OSMAP_GATEWAY_NATIVE_SERVICE={}\nexport OSMAP_GATEWAY_NATIVE_ARGV=\"$(printf '%s\\n' \"$@\")\"\n", shell_quote(mode));
+    for (name, value) in settings {
+        assert!(name.starts_with("OSMAP_GATEWAY_NATIVE_") && name.bytes().all(|byte| byte.is_ascii_uppercase() || byte == b'_'));
+        launcher.push_str(&format!("export {name}={}\n", shell_quote(value)));
+    }
+    launcher.push_str(&format!("exec {} --exact {} --ignored --nocapture\n",
+        shell_quote(std::env::current_exe().unwrap().to_str().unwrap()), shell_quote(TEST_NAME)));
+    launcher.into_bytes()
 }
 fn smtp_sink(
     listener: TcpListener,
@@ -342,10 +488,20 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     };
     // This executable substitutes only the process transport destination. The
     // production sendmail backend still validates and submits PreparedSubmission.
-    let sendmail=scratch.write("sendmail",format!("#!/usr/local/bin/python3\nimport smtplib,sys\nassert sys.argv[1:3]==['-oi','-f'] and sys.argv[4]=='--'\nwith smtplib.SMTP('127.0.0.1',{port},timeout=10) as smtp:\n    smtp.sendmail(sys.argv[3],sys.argv[5:],sys.stdin.buffer.read())\n").as_bytes(),0o700);
+    let sendmail = scratch.write("sendmail", &actor_launcher("smtp-actor", &[
+        ("OSMAP_GATEWAY_NATIVE_PORT", port.to_string()),
+    ]), 0o700);
     let sent_path = scratch.0.join("sent.eml");
     let sent_count = scratch.0.join("sent.count");
-    let save=scratch.write("doveadm-save",format!("#!/usr/local/bin/python3\nimport sys\nassert sys.argv[1:]==['-o','stats_writer_socket_path=','save','-u','alice@example.test','-m','Sent']\nwith open({:?},'wb') as out: out.write(sys.stdin.buffer.read())\nwith open({:?},'ab') as out: out.write(b'1')\n",sent_path.to_string_lossy(),sent_count.to_string_lossy()).as_bytes(),0o700);
+    let sent_refuse = scratch.0.join("sent-refuse");
+    let mut sent_mailbox = crate::mailbox_helper::NativeProtectedSentMailbox::new();
+    let save = scratch.write("doveadm-save", &actor_launcher("sent-actor", &[
+        ("OSMAP_GATEWAY_NATIVE_CONFIG", sent_mailbox.config.to_str().unwrap().into()),
+        ("OSMAP_GATEWAY_NATIVE_USERDB", sent_mailbox.userdb.to_str().unwrap().into()),
+        ("OSMAP_GATEWAY_NATIVE_SENT_CAPTURE", sent_path.to_str().unwrap().into()),
+        ("OSMAP_GATEWAY_NATIVE_SENT_COUNTER", sent_count.to_str().unwrap().into()),
+        ("OSMAP_GATEWAY_NATIVE_SENT_REFUSE", sent_refuse.to_str().unwrap().into()),
+    ]), 0o700);
     let submission = SubmissionService::new(crate::send::SendmailSubmissionBackend::new(
         SystemCommandExecutor,
         sendmail.clone(),
@@ -574,7 +730,7 @@ fn native_crypto_gateway_protected_send_roundtrip() {
 
     // Reuse the actual owned Dovecot reader fixture for encrypted-to-self
     // Sent and signed inbound return, including a real Locked refusal.
-    crate::mailbox_helper::prove_native_protected_sent_reader(
+    sent_mailbox.prove(
         &self_wire, &return_wire, &crypto, &inventory, &afp, &bfp, &alice,
     );
     assert_eq!(smtp.lock().unwrap().len(), 2, "reader never repeats SMTP submission");
@@ -720,8 +876,8 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     assert_eq!(fs::read(&sent_count).unwrap(), b"11111");
     let plain_sent = fs::read(&sent_path).unwrap();
     assert!(plain_sent.ends_with(b"RoutePlainBody"));
-    // The owned sendmail shim passes prepared bytes to Python smtplib. For a
-    // byte message with no terminal CRLF, SMTP.data adds exactly that CRLF
+    // The owned Rust SMTP actor passes the prepared bytes unchanged. For a
+    // byte message with no terminal CRLF, it adds exactly that CRLF
     // before dot termination. Sent stores the original prepared message.
     let mut smtp_normalized = plain_sent.clone();
     smtp_normalized.extend_from_slice(b"\r\n");
@@ -815,6 +971,37 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     assert!(!ordinary_wire.windows(b"application/pgp-encrypted".len())
         .any(|w| w == b"application/pgp-encrypted"));
 
+    // SMTP acceptance and Sent append are separate durable outcomes. A scoped
+    // child refusal must not invite a second SMTP submission on intent replay.
+    scratch.write("sent-refuse", b"refuse", 0o600);
+    let append_failure_intent = crate::send_journal::mint_intent(now).unwrap();
+    let append_failure_request = || {
+        let mut request = native_send_request(&append_failure_intent, record.revision, &attachments);
+        request.recipients = "alice@example.test";
+        request.protection = crate::send::ProtectionIntent {
+            binding_revision: Some(record.revision), ..Default::default()
+        };
+        request
+    };
+    let append_failure = gateway.send_message_with_backends(
+        &context, &session, append_failure_request(), &submission, &append,
+    );
+    assert!(matches!(append_failure.decision, BrowserSendDecision::Submitted {
+        sent_copy_stored: false, receipt_persisted: true
+    }));
+    assert_eq!(smtp.lock().unwrap().len(), 8);
+    assert!(fs::read(&sent_count).unwrap() == b"1111111");
+    assert!(fs::read(&sent_path).unwrap() == ordinary_wire);
+    fs::remove_file(&sent_refuse).unwrap();
+    let append_failure_replay = gateway.send_message_with_backends(
+        &context, &session, append_failure_request(), &submission, &append,
+    );
+    assert!(matches!(append_failure_replay.decision, BrowserSendDecision::Submitted {
+        sent_copy_stored: false, receipt_persisted: true
+    }));
+    assert_eq!(smtp.lock().unwrap().len(), 8);
+    assert!(fs::read(&sent_count).unwrap() == b"1111111");
+
     for events in [
         &outcome.audit_events,
         &replay.audit_events,
@@ -825,9 +1012,12 @@ fn native_crypto_gateway_protected_send_roundtrip() {
         &required_refusal.audit_events,
         &encrypt_only.audit_events,
         &draft_send.audit_events,
+        &append_failure.audit_events,
+        &append_failure_replay.audit_events,
     ] {
         let rendered = format!("{events:?}");
         assert!(!rendered.contains("Synthetic café body"));
         assert!(!rendered.contains("0, 1, 255"));
     }
+    sent_mailbox.finish();
 }

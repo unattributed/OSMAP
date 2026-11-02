@@ -373,6 +373,89 @@ fn composition_page_and_general_native_form_project_saved_defaults() {
 }
 
 #[test]
+fn configured_openpgp_choices_show_intent_separately_from_eligible_keys_and_preserve_drafts() {
+    let mut f = Fixture::new();
+    let existing = f.save("existing unsigned draft", BodyFormat::Plain);
+    assert_eq!(existing.response.status_code, 303);
+    let existing_url = location_header(&existing);
+    f.app.gateway.fixture_openpgp_snapshot = Some(Arc::new(Mutex::new(FixtureOpenPgpSnapshot {
+        revision: 2,
+        preflight_revision: Some(2),
+        available: true,
+    })));
+    let assert_choices = |response: &HandledHttpResponse, selected: bool| {
+        assert_eq!(response.response.status_code, 200);
+        let html = body_text(response);
+        let controls = html
+            .split_once("data-openpgp-compose-controls=\"server-enforced\">")
+            .expect("actual HTTP page must render configured controls")
+            .1
+            .split_once("</section>")
+            .unwrap()
+            .0;
+        for (label, field, off, requested) in [
+            ("Sign", "pgp_sign", "Unsigned", "Signing requested"),
+            (
+                "Encrypt",
+                "pgp_encrypt",
+                "Not encrypted",
+                "Encryption requested",
+            ),
+            ("Encrypt to self", "pgp_self", "Off", "Requested"),
+        ] {
+            let label_marker = format!("<span>{label}</span>");
+            let choice = controls
+                .split_once(label_marker.as_str())
+                .unwrap()
+                .1
+                .split_once("</label>")
+                .unwrap()
+                .0;
+            let state = if selected { requested } else { off };
+            assert!(
+                choice.contains(&format!(">{state}<")),
+                "configured {label} must show its current intent: {state}"
+            );
+            assert!(choice.contains(&format!("name=\"{field}\"")));
+            assert_eq!(
+                choice.contains(&format!("name=\"{field}\" checked")),
+                selected
+            );
+        }
+        let readiness = controls
+            .split_once("<span>Recipient key status</span>")
+            .unwrap()
+            .1;
+        assert!(readiness.contains("Public key eligible"));
+        assert!(readiness.contains("does not establish private-key readiness or delivery"));
+        assert!(!controls.contains(">Signed<"));
+        assert!(!controls.contains(">Encrypted<"));
+    };
+    assert_choices(&f.perform("GET", "/compose", "", false), false);
+    let csrf = StubGateway::validated_session().record.csrf_token;
+    let saved = f.perform(
+        "POST",
+        "/settings/composition",
+        &format!("csrf_token={csrf}&default_body_format=plain&reply_placement=above&pgp_sign=on&pgp_encrypt=on&pgp_self=on"),
+        false,
+    );
+    assert_eq!(saved.response.status_code, 303);
+    assert_eq!(
+        CompositionPreferencesStore::new(f.root.join("preferences"))
+            .load("alice@example.com")
+            .unwrap()
+            .openpgp,
+        crate::composition_preferences::OpenPgpDefaults {
+            sign: true,
+            encrypt: true,
+            encrypt_to_self: true,
+        }
+    );
+    assert_choices(&f.perform("GET", "/compose", "", false), true);
+    assert_choices(&f.perform("GET", &existing_url, "", false), false);
+}
+
+#[test]
 fn openpgp_defaults_save_reload_isolate_accounts_and_apply_only_to_fresh_composers() {
     let f = Fixture::new();
     let existing = f.save("existing draft body", BodyFormat::Plain);

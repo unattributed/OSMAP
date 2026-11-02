@@ -1,3 +1,1290 @@
+2026-11-03 — S07-01–04 consolidated source/native engineering qualification PASS. Web-only installation and owner T09 remain pending. No production release or full visual acceptance claimed.
+
+2026-11-03 — S07-01 source correction PASS; S07-02/03 reuse and native test seams prepared; S07-04 composed native qualification IN_PROGRESS. Owner acceptance remains pending.
+
+2026-11-03 (Asia/Bangkok) — **S07-01 IN_PROGRESS; independent S07-01–04 completion authorized.** Review/reuse working code; Rust functional/native tests; smallest failure-driven correction and verified delivery. S06 accepted evidence preserved.
+
+<!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S07-04",
+  "original_requirement": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
+  "source_baseline": "598d0a8c1c539638ab14247892ae35959eaf1047",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_runtime_engineer",
+      "/root/s05_scope_qa"
+    ],
+    "qa": [
+      "/root/s05_protocol_review",
+      "/root/s05_scope_qa"
+    ],
+    "security_review": [
+      "/root/s05_protocol_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/UX_SLICE_S07_01.md",
+    "docs/UX_SLICE_S07_02.md",
+    "docs/UX_SLICE_S07_03.md",
+    "docs/UX_SLICE_S07_04.md",
+    "docs/README.md",
+    "maint/ux/acceptance.json",
+    "src/http_ui.rs",
+    "src/http/composition_preference_tests.rs",
+    "src/http/compose_preflight.rs",
+    "src/http/composition.css",
+    "src/http/compose_enhancement.js",
+    "src/openpgp_bindings_tests.rs",
+    "src/protected_submission_tests.rs",
+    "src/http/protected_send_gateway_tests.rs",
+    "src/protected_submission_native_tests.rs",
+    "src/http/protected_send_gateway_native_tests.rs",
+    "src/mailbox_helper_native_reader_tests.rs",
+    "src/mailbox_helper.rs",
+    "src/openpgp_principal_native_tests.rs",
+    "maint/openpgp-runtime/s05-01-native.ksh",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json"
+  ],
+  "outcomes": [
+    {
+      "id": "composed-protected-send-sent-recovery",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX08-010",
+        "R2-04-034",
+        "R2-05-009",
+        "R2-05-012"
+      ],
+      "frontend_backend_outcome": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
+      "essential_qa": "Actual gateway sends to controlled Rust local sink; Real scoped Dovecot append stores protected prepared message; Read decrypt verify Sent and download binary attachment; Source remains encrypted; current source selection protected; Stale policy helper interruption and Sent-store failure do not downgrade or auto duplicate; Actual authenticated HTTP and draft transaction checks; Consolidated native build installed preservation and independent review",
+      "next_action": "Complete signed admission and Web-only deployment; owner reviews later. No owner technical troubleshooting required.",
+      "dependencies": [
+        {
+          "owner": "/root",
+          "condition": "S05 trusted helper/binding runtime and S06 reader implementation qualified; current S07 source inspected and prior native worker differences carried forward.",
+          "status": "PASS",
+          "next_action": "Reuse matching source and actual installed/native facts without treating historical Python-shim proof as new Rust-only qualification."
+        }
+      ],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PENDING",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "recovery",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation with current Rust/native evidence and exact owned cleanup; owner reviews separately.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Preserve accepted S04/S05/S06, old S07 bounded native/defaults/recovery evidence, Sent/owner failures and exact source differences. Earlier direct-capture/Sent shims are Python and cannot establish fresh Rust-only or actual Dovecot proof. Full source/preparation elapsed before this record UNKNOWN, not zero.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-02T21:13:27Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
+    },
+    "attempts": []
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S07-04",
+    "specification": {
+      "path": "docs/UX_SLICE_S07_04.md",
+      "sha256": "2e1844ca84803fcf4fac038c29e95f47d94993b5b3c6e1d124067d5abaf6589e"
+    },
+    "design": {
+      "journey": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
+      "frontend": "Existing configured compose controls and pre-send view, ordinary initial choices off and selected choices labelled requested.",
+      "backend": "Existing binding/inventory policy evaluation, persisted composition preferences, trusted final dispatch and protected submission.",
+      "interfaces": "Existing Runtime/BrowserApp/Helper APIs; no new key or credential interface.",
+      "persistence": "Existing private preference/draft/journal stores only; no new plaintext cache or owner-state mutation.",
+      "security": "No downgrade, stale policy/key refusal, no private-key readiness from public metadata, no external delivery or public backend mutation.",
+      "failure_recovery": "Bounded Rust source/native discriminators, exact owned cleanup, preserved earliest failures and matching reviewed consolidated delivery."
+    },
+    "tests": [
+      {
+        "id": "S07-04-T01",
+        "outcome_ids": [
+          "composed-protected-send-sent-recovery"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Review current composed send journal and recovery",
+        "expected": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-04-T02",
+        "outcome_ids": [
+          "composed-protected-send-sent-recovery"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Actual gateway sends to controlled Rust local sink",
+        "expected": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-04-T03",
+        "outcome_ids": [
+          "composed-protected-send-sent-recovery"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Real scoped Dovecot append stores protected prepared message",
+        "expected": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-04-T04",
+        "outcome_ids": [
+          "composed-protected-send-sent-recovery"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Read decrypt verify Sent and download binary attachment",
+        "expected": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-04-T05",
+        "outcome_ids": [
+          "composed-protected-send-sent-recovery"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Source remains encrypted; current source selection protected",
+        "expected": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-04-T06",
+        "outcome_ids": [
+          "composed-protected-send-sent-recovery"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Stale policy helper interruption and Sent-store failure do not downgrade or auto duplicate",
+        "expected": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-04-T07",
+        "outcome_ids": [
+          "composed-protected-send-sent-recovery"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Actual authenticated HTTP and draft transaction checks",
+        "expected": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-04-T08",
+        "outcome_ids": [
+          "composed-protected-send-sent-recovery"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Consolidated native build installed preservation and independent review",
+        "expected": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Native/build PASS; Web installation pending signed admission."
+        ]
+      },
+      {
+        "id": "S07-04-T09",
+        "outcome_ids": [
+          "composed-protected-send-sent-recovery"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Owner acceptance after normal signed publication",
+        "expected": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "Matching Rust source/native/installed proof and independent review plus normal signed publication for the configured runtime choices and existing policy boundary.",
+    "human_exit": "Owner accepts the practical completed infrastructure/result later; no source inspection, packet decoding or technical troubleshooting requested from owner."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner explicitly authorizes independent engineering through allS07slices and willreviewlater; acceptance is not inferred."
+  },
+  "next_action": "Complete signed admission and Web-only deployment; owner reviews later. No owner technical troubleshooting required."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+<!-- OSMAP_ARCHIVED_S07_03_PRE_NATIVE_20261103 -->
+```json
+{
+  "version": 1,
+  "slice": "S07-03",
+  "original_requirement": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling",
+  "source_baseline": "598d0a8c1c539638ab14247892ae35959eaf1047",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_runtime_engineer",
+      "/root/s05_scope_qa"
+    ],
+    "qa": [
+      "/root/s05_protocol_review",
+      "/root/s05_scope_qa"
+    ],
+    "security_review": [
+      "/root/s05_protocol_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/UX_SLICE_S07_01.md",
+    "docs/UX_SLICE_S07_02.md",
+    "docs/UX_SLICE_S07_03.md",
+    "docs/UX_SLICE_S07_04.md",
+    "docs/README.md",
+    "maint/ux/acceptance.json",
+    "src/http_ui.rs",
+    "src/http/composition_preference_tests.rs",
+    "src/http/compose_preflight.rs",
+    "src/http/composition.css",
+    "src/http/compose_enhancement.js",
+    "src/openpgp_bindings_tests.rs",
+    "src/protected_submission_tests.rs",
+    "src/http/protected_send_gateway_tests.rs",
+    "src/protected_submission_native_tests.rs",
+    "src/http/protected_send_gateway_native_tests.rs",
+    "src/mailbox_helper_native_reader_tests.rs",
+    "src/mailbox_helper.rs",
+    "src/openpgp_principal_native_tests.rs",
+    "maint/openpgp-runtime/s05-01-native.ksh",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json"
+  ],
+  "outcomes": [
+    {
+      "id": "recipient-encryption-and-bcc-privacy",
+      "owner": "/root",
+      "requirement_ids": [],
+      "frontend_backend_outcome": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling",
+      "essential_qa": "Decrypt for visible recipient and hidden recipient; Refuse excluded sender with signing positive control; Add explicit self and prove successful decryption; Independently verify inner signature and attachment; Inspect public ciphertext PKESK IDs; no Bcc header leak; Refuse missing helper or stale inventory without downgrade; Consolidated native and installed review",
+      "next_action": "Complete signed admission and Web-only deployment; owner reviews later. No owner technical troubleshooting required.",
+      "dependencies": [
+        {
+          "owner": "/root",
+          "condition": "S05 trusted helper/binding runtime and S06 reader implementation qualified; current S07 source inspected and prior native worker differences carried forward.",
+          "status": "PASS",
+          "next_action": "Reuse matching source and actual installed/native facts without treating historical Python-shim proof as new Rust-only qualification."
+        }
+      ],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PENDING",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "recovery",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling with current Rust/native evidence and exact owned cleanup; owner reviews separately.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Preserve accepted S04/S05/S06, old S07 bounded native/defaults/recovery evidence, Sent/owner failures and exact source differences. Earlier direct-capture/Sent shims are Python and cannot establish fresh Rust-only or actual Dovecot proof. Full source/preparation elapsed before this record UNKNOWN, not zero.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-02T21:13:27Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
+    },
+    "attempts": []
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S07-03",
+    "specification": {
+      "path": "docs/UX_SLICE_S07_03.md",
+      "sha256": "1cf579cec89e7696c9f8cb292f7593818f2963184251a4fe6c1541df4b9c495f"
+    },
+    "design": {
+      "journey": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling",
+      "frontend": "Existing configured compose controls and pre-send view, ordinary initial choices off and selected choices labelled requested.",
+      "backend": "Existing binding/inventory policy evaluation, persisted composition preferences, trusted final dispatch and protected submission.",
+      "interfaces": "Existing Runtime/BrowserApp/Helper APIs; no new key or credential interface.",
+      "persistence": "Existing private preference/draft/journal stores only; no new plaintext cache or owner-state mutation.",
+      "security": "No downgrade, stale policy/key refusal, no private-key readiness from public metadata, no external delivery or public backend mutation.",
+      "failure_recovery": "Bounded Rust source/native discriminators, exact owned cleanup, preserved earliest failures and matching reviewed consolidated delivery."
+    },
+    "tests": [
+      {
+        "id": "S07-03-T01",
+        "outcome_ids": [
+          "recipient-encryption-and-bcc-privacy"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Inspect/reuse existing encryption and envelope path",
+        "expected": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-03-T02",
+        "outcome_ids": [
+          "recipient-encryption-and-bcc-privacy"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Decrypt for visible recipient and hidden recipient",
+        "expected": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-03-T03",
+        "outcome_ids": [
+          "recipient-encryption-and-bcc-privacy"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Refuse excluded sender with signing positive control",
+        "expected": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-03-T04",
+        "outcome_ids": [
+          "recipient-encryption-and-bcc-privacy"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Add explicit self and prove successful decryption",
+        "expected": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-03-T05",
+        "outcome_ids": [
+          "recipient-encryption-and-bcc-privacy"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Independently verify inner signature and attachment",
+        "expected": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-03-T06",
+        "outcome_ids": [
+          "recipient-encryption-and-bcc-privacy"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Inspect public ciphertext PKESK IDs; no Bcc header leak",
+        "expected": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-03-T07",
+        "outcome_ids": [
+          "recipient-encryption-and-bcc-privacy"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Refuse missing helper or stale inventory without downgrade",
+        "expected": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-03-T08",
+        "outcome_ids": [
+          "recipient-encryption-and-bcc-privacy"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Consolidated native and installed review",
+        "expected": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Native/build PASS; Web installation pending signed admission."
+        ]
+      },
+      {
+        "id": "S07-03-T09",
+        "outcome_ids": [
+          "recipient-encryption-and-bcc-privacy"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Owner acceptance after normal signed delivery",
+        "expected": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "Matching Rust source/native/installed proof and independent review plus normal signed publication for the configured runtime choices and existing policy boundary.",
+    "human_exit": "Owner accepts the practical completed infrastructure/result later; no source inspection, packet decoding or technical troubleshooting requested from owner."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner explicitly authorizes independent engineering through allS07slices and willreviewlater; acceptance is not inferred."
+  },
+  "next_action": "Complete signed admission and Web-only deployment; owner reviews later. No owner technical troubleshooting required."
+}
+```
+<!-- /OSMAP_ARCHIVED_S07_03_PRE_NATIVE_20261103 -->
+
+<!-- OSMAP_ARCHIVED_S07_02_PRE_NATIVE_20261103 -->
+```json
+{
+  "version": 1,
+  "slice": "S07-02",
+  "original_requirement": "PGP/MIME signing and independent verification of emitted message",
+  "source_baseline": "598d0a8c1c539638ab14247892ae35959eaf1047",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_runtime_engineer",
+      "/root/s05_scope_qa"
+    ],
+    "qa": [
+      "/root/s05_protocol_review",
+      "/root/s05_scope_qa"
+    ],
+    "security_review": [
+      "/root/s05_protocol_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/UX_SLICE_S07_01.md",
+    "docs/UX_SLICE_S07_02.md",
+    "docs/UX_SLICE_S07_03.md",
+    "docs/UX_SLICE_S07_04.md",
+    "docs/README.md",
+    "maint/ux/acceptance.json",
+    "src/http_ui.rs",
+    "src/http/composition_preference_tests.rs",
+    "src/http/compose_preflight.rs",
+    "src/http/composition.css",
+    "src/http/compose_enhancement.js",
+    "src/openpgp_bindings_tests.rs",
+    "src/protected_submission_tests.rs",
+    "src/http/protected_send_gateway_tests.rs",
+    "src/protected_submission_native_tests.rs",
+    "src/http/protected_send_gateway_native_tests.rs",
+    "src/mailbox_helper_native_reader_tests.rs",
+    "src/mailbox_helper.rs",
+    "src/openpgp_principal_native_tests.rs",
+    "maint/openpgp-runtime/s05-01-native.ksh",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json"
+  ],
+  "outcomes": [
+    {
+      "id": "real-signature-and-mime-integrity",
+      "owner": "/root",
+      "requirement_ids": [],
+      "frontend_backend_outcome": "PGP/MIME signing and independent verification of emitted message",
+      "essential_qa": "Verify disposable-key detached signature independently; Reject tampered signed entity; Preserve UTF-8 binary attachment and line endings; Refuse missing signer without successful signed claim; Keep wire and Sent protected; authored recovery draft remains private; Qualify current native crypto worker; Consolidated native and installed review",
+      "next_action": "Complete signed admission and Web-only deployment; owner reviews later. No owner technical troubleshooting required.",
+      "dependencies": [
+        {
+          "owner": "/root",
+          "condition": "S05 trusted helper/binding runtime and S06 reader implementation qualified; current S07 source inspected and prior native worker differences carried forward.",
+          "status": "PASS",
+          "next_action": "Reuse matching source and actual installed/native facts without treating historical Python-shim proof as new Rust-only qualification."
+        }
+      ],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PENDING",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "recovery",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "PGP/MIME signing and independent verification of emitted message with current Rust/native evidence and exact owned cleanup; owner reviews separately.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Preserve accepted S04/S05/S06, old S07 bounded native/defaults/recovery evidence, Sent/owner failures and exact source differences. Earlier direct-capture/Sent shims are Python and cannot establish fresh Rust-only or actual Dovecot proof. Full source/preparation elapsed before this record UNKNOWN, not zero.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-02T21:13:27Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
+    },
+    "attempts": []
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S07-02",
+    "specification": {
+      "path": "docs/UX_SLICE_S07_02.md",
+      "sha256": "e2d7cded84b3881ec73716b54c3bc2b604a3cc601d63a369a93f7d5b4dc227ad"
+    },
+    "design": {
+      "journey": "PGP/MIME signing and independent verification of emitted message",
+      "frontend": "Existing configured compose controls and pre-send view, ordinary initial choices off and selected choices labelled requested.",
+      "backend": "Existing binding/inventory policy evaluation, persisted composition preferences, trusted final dispatch and protected submission.",
+      "interfaces": "Existing Runtime/BrowserApp/Helper APIs; no new key or credential interface.",
+      "persistence": "Existing private preference/draft/journal stores only; no new plaintext cache or owner-state mutation.",
+      "security": "No downgrade, stale policy/key refusal, no private-key readiness from public metadata, no external delivery or public backend mutation.",
+      "failure_recovery": "Bounded Rust source/native discriminators, exact owned cleanup, preserved earliest failures and matching reviewed consolidated delivery."
+    },
+    "tests": [
+      {
+        "id": "S07-02-T01",
+        "outcome_ids": [
+          "real-signature-and-mime-integrity"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Inspect/reuse actual signing path",
+        "expected": "PGP/MIME signing and independent verification of emitted message under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-02-T02",
+        "outcome_ids": [
+          "real-signature-and-mime-integrity"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Verify disposable-key detached signature independently",
+        "expected": "PGP/MIME signing and independent verification of emitted message under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-02-T03",
+        "outcome_ids": [
+          "real-signature-and-mime-integrity"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Reject tampered signed entity",
+        "expected": "PGP/MIME signing and independent verification of emitted message under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-02-T04",
+        "outcome_ids": [
+          "real-signature-and-mime-integrity"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Preserve UTF-8 binary attachment and line endings",
+        "expected": "PGP/MIME signing and independent verification of emitted message under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-02-T05",
+        "outcome_ids": [
+          "real-signature-and-mime-integrity"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Refuse missing signer without successful signed claim",
+        "expected": "PGP/MIME signing and independent verification of emitted message under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-02-T06",
+        "outcome_ids": [
+          "real-signature-and-mime-integrity"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Keep wire and Sent protected; authored recovery draft remains private",
+        "expected": "PGP/MIME signing and independent verification of emitted message under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-02-T07",
+        "outcome_ids": [
+          "real-signature-and-mime-integrity"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Qualify current native crypto worker",
+        "expected": "PGP/MIME signing and independent verification of emitted message under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-02-T08",
+        "outcome_ids": [
+          "real-signature-and-mime-integrity"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Consolidated native and installed review",
+        "expected": "PGP/MIME signing and independent verification of emitted message under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Native/build PASS; Web installation pending signed admission."
+        ]
+      },
+      {
+        "id": "S07-02-T09",
+        "outcome_ids": [
+          "real-signature-and-mime-integrity"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Owner acceptance after normal signed delivery",
+        "expected": "PGP/MIME signing and independent verification of emitted message under the exact controlled native boundary and preservation scope.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "Matching Rust source/native/installed proof and independent review plus normal signed publication for the configured runtime choices and existing policy boundary.",
+    "human_exit": "Owner accepts the practical completed infrastructure/result later; no source inspection, packet decoding or technical troubleshooting requested from owner."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner explicitly authorizes independent engineering through allS07slices and willreviewlater; acceptance is not inferred."
+  },
+  "next_action": "Complete signed admission and Web-only deployment; owner reviews later. No owner technical troubleshooting required."
+}
+```
+<!-- /OSMAP_ARCHIVED_S07_02_PRE_NATIVE_20261103 -->
+
+<!-- OSMAP_ARCHIVED_S07_01_PRE_NATIVE_20261103 -->
+```json
+{
+  "version": 1,
+  "slice": "S07-01",
+  "original_requirement": "Runtime-bound sign/encrypt/self settings and page 04 defaults Unsigned/Not encrypted/self Off; separate recipient readiness; green/orange/blocked preflight",
+  "source_baseline": "598d0a8c1c539638ab14247892ae35959eaf1047",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_runtime_engineer",
+      "/root/s05_scope_qa"
+    ],
+    "qa": [
+      "/root/s05_protocol_review",
+      "/root/s05_scope_qa"
+    ],
+    "security_review": [
+      "/root/s05_protocol_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/UX_SLICE_S07_01.md",
+    "docs/UX_SLICE_S07_02.md",
+    "docs/UX_SLICE_S07_03.md",
+    "docs/UX_SLICE_S07_04.md",
+    "docs/README.md",
+    "maint/ux/acceptance.json",
+    "src/http_ui.rs",
+    "src/http/composition_preference_tests.rs",
+    "src/http/compose_preflight.rs",
+    "src/http/composition.css",
+    "src/http/compose_enhancement.js",
+    "src/openpgp_bindings_tests.rs",
+    "src/protected_submission_tests.rs",
+    "src/http/protected_send_gateway_tests.rs",
+    "src/protected_submission_native_tests.rs",
+    "src/http/protected_send_gateway_native_tests.rs",
+    "src/mailbox_helper_native_reader_tests.rs",
+    "src/mailbox_helper.rs",
+    "src/openpgp_principal_native_tests.rs",
+    "maint/openpgp-runtime/s05-01-native.ksh",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json"
+  ],
+  "outcomes": [
+    {
+      "id": "runtime-protection-choices-and-preflight",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX10-001",
+        "UX10-002",
+        "UX10-003",
+        "UX08-001",
+        "UX06-011",
+        "UX08-002",
+        "UX08-003",
+        "UX08-004",
+        "UX08-005",
+        "UX08-007",
+        "UX08-011",
+        "R2-04-011",
+        "R2-04-012",
+        "R2-04-013",
+        "R2-04-014",
+        "R2-04-015",
+        "R2-04-026",
+        "R2-11-017",
+        "R2-11-018",
+        "R2-11-023",
+        "R2-15-006",
+        "R2-15-007",
+        "R2-15-008",
+        "R2-15-009",
+        "R2-15-011",
+        "R2-19-003",
+        "R2-19-004",
+        "R2-19-005",
+        "R2-19-008",
+        "R2-27-004",
+        "R2-27-005"
+      ],
+      "frontend_backend_outcome": "The configured composer presents accurate off/requested choices and separate current recipient readiness; final existing trusted policy reevaluation prevents stale or forbidden submission.",
+      "essential_qa": "Existing Rust configured HTTP preference fixture and policy/submission tests; current native Rust helper and controlled transport boundary proof only where changed or uncovered.",
+      "next_action": "Complete signed admission and Web-only deployment; owner reviews later. No owner technical troubleshooting required.",
+      "dependencies": [
+        {
+          "owner": "/root",
+          "condition": "S05 trusted helper/binding runtime and S06 reader implementation qualified; current S07 source inspected and prior native worker differences carried forward.",
+          "status": "PASS",
+          "next_action": "Reuse matching source and actual installed/native facts without treating historical Python-shim proof as new Rust-only qualification."
+        }
+      ],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PENDING",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "recovery",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Configured choices/readiness and final runtime policy are accurate, bounded and fail closed; Rust native evidence and signed delivery match the completed scope.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Preserve accepted S04/S05/S06, old S07 bounded native/defaults/recovery evidence, Sent/owner failures and exact source differences. Earlier direct-capture/Sent shims are Python and cannot establish fresh Rust-only or actual Dovecot proof. Full source/preparation elapsed before this record UNKNOWN, not zero.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-02T21:13:27Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
+    },
+    "attempts": []
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S07-01",
+    "specification": {
+      "path": "docs/UX_SLICE_S07_01.md",
+      "sha256": "a4319cedd91b0ab825fd7f11bb8470a8d05f1beedf549ebada4ab83c1479fc32"
+    },
+    "design": {
+      "journey": "Compose protection choices and recipient readiness govern the actual submission.",
+      "frontend": "Existing configured compose controls and pre-send view, ordinary initial choices off and selected choices labelled requested.",
+      "backend": "Existing binding/inventory policy evaluation, persisted composition preferences, trusted final dispatch and protected submission.",
+      "interfaces": "Existing Runtime/BrowserApp/Helper APIs; no new key or credential interface.",
+      "persistence": "Existing private preference/draft/journal stores only; no new plaintext cache or owner-state mutation.",
+      "security": "No downgrade, stale policy/key refusal, no private-key readiness from public metadata, no external delivery or public backend mutation.",
+      "failure_recovery": "Bounded Rust source/native discriminators, exact owned cleanup, preserved earliest failures and matching reviewed consolidated delivery."
+    },
+    "tests": [
+      {
+        "id": "S07-01-T01",
+        "outcome_ids": [
+          "runtime-protection-choices-and-preflight"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Review current code and matching proof",
+        "expected": "Ordinary configured choices, current required/optional/disabled policy and recipient readiness are truthful; stale/prohibited protection cannot dispatch or downgrade.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-01-T02",
+        "outcome_ids": [
+          "runtime-protection-choices-and-preflight"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Configured HTTP defaults and requested choices",
+        "expected": "Ordinary configured choices, current required/optional/disabled policy and recipient readiness are truthful; stale/prohibited protection cannot dispatch or downgrade.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-01-T03",
+        "outcome_ids": [
+          "runtime-protection-choices-and-preflight"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Preference persistence and draft preservation",
+        "expected": "Ordinary configured choices, current required/optional/disabled policy and recipient readiness are truthful; stale/prohibited protection cannot dispatch or downgrade.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-01-T04",
+        "outcome_ids": [
+          "runtime-protection-choices-and-preflight"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Policy and key-readiness matrix",
+        "expected": "Ordinary configured choices, current required/optional/disabled policy and recipient readiness are truthful; stale/prohibited protection cannot dispatch or downgrade.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-01-T05",
+        "outcome_ids": [
+          "runtime-protection-choices-and-preflight"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Final send-time current policy and inventory",
+        "expected": "Ordinary configured choices, current required/optional/disabled policy and recipient readiness are truthful; stale/prohibited protection cannot dispatch or downgrade.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-01-T06",
+        "outcome_ids": [
+          "runtime-protection-choices-and-preflight"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Truthful availability and preflight presentation",
+        "expected": "Ordinary configured choices, current required/optional/disabled policy and recipient readiness are truthful; stale/prohibited protection cannot dispatch or downgrade.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-01-T07",
+        "outcome_ids": [
+          "runtime-protection-choices-and-preflight"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Native Rust helper boundary qualification",
+        "expected": "Ordinary configured choices, current required/optional/disabled policy and recipient readiness are truthful; stale/prohibited protection cannot dispatch or downgrade.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Scope-limited source and native qualification; broader visual/owner acceptance separate."
+        ]
+      },
+      {
+        "id": "S07-01-T08",
+        "outcome_ids": [
+          "runtime-protection-choices-and-preflight"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Consolidated build installed preservation",
+        "expected": "Ordinary configured choices, current required/optional/disabled policy and recipient readiness are truthful; stale/prohibited protection cannot dispatch or downgrade.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; Native/build PASS; Web installation pending signed admission."
+        ]
+      },
+      {
+        "id": "S07-01-T09",
+        "outcome_ids": [
+          "runtime-protection-choices-and-preflight"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Current reviewed source, exact configured fixture capability and matching prior result established before dependent action.",
+        "action": "Signed delivery and owner acceptance",
+        "expected": "Ordinary configured choices, current required/optional/disabled policy and recipient readiness are truthful; stale/prohibited protection cannot dispatch or downgrade.",
+        "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "Matching Rust source/native/installed proof and independent review plus normal signed publication for the configured runtime choices and existing policy boundary.",
+    "human_exit": "Owner accepts the practical completed infrastructure/result later; no source inspection, packet decoding or technical troubleshooting requested from owner."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner explicitly authorizes independent engineering through allS07slices and willreviewlater; acceptance is not inferred."
+  },
+  "next_action": "Complete signed admission and Web-only deployment; owner reviews later. No owner technical troubleshooting required."
+}
+```
+<!-- /OSMAP_ARCHIVED_S07_01_PRE_NATIVE_20261103 -->
+
 2026-11-03 (Asia/Bangkok) — **S06 record alignment complete.** S06-01–03 current-result notes reconcile their historical pending wording with qualified consolidated deployment and explicit S06-04 acceptance. Active S06-04 remains ACCEPTED/T01–T09 PASS; no additional individual owner acceptance or broader control closure is inferred. Documentation-only alignment; no new source, fixture, host, native or owner operation.
 
 2026-11-03 (Asia/Bangkok) — **S06-04 ACCEPTED. T01–T09 PASS.** Explicit owner acceptance closes the completed slice/infrastructure result; no additional technical checks, native run or host change. Engineering0866340 and actual owner functional proof retained. Acceptance-only signed record delivery follows.
@@ -58,7 +1345,7 @@ slice using the same failure-analysis method. See
 
 2026-11-03 — **S06 attachment visibility follow-up IN_PROGRESS.** Owner private unlock PASS; actual body/download/source UAT pending. Two source regressions reproduced and corrected; both current reader layouts retain positive decoded downloads. Matching native qualification and Web-only installation follow independent review.
 
-<!-- OSMAP_ACTIVE_WORK_ORDER -->
+<!-- OSMAP_ARCHIVED_S06_04_ACCEPTED_20261103 -->
 ```json
 {
   "version": 1,
@@ -1029,7 +2316,7 @@ slice using the same failure-analysis method. See
   "next_action": "S06-04 is accepted and closed. Preserve all prior failures, matching native/installed proof and owner acceptance. Complete ordinary signed delivery of this acceptance-only record; retain broader epic obligations for their existing owners and slices."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_ARCHIVED_S06_04_ACCEPTED_20261103 -->
 
 <!-- OSMAP_ARCHIVED_S06_03_ACTIVE_NEGATIVE_FOLLOWUP_20261102 -->
 ```json

@@ -1,10 +1,13 @@
 //! Native disposable worker proof for outgoing construction and receiving MIME.
 //! It does not qualify Client account mapping, HTTP dispatch, or deployment.
 use super::*;
+use crate::auth::{
+    CommandExecution, CommandExecutionError, CommandExecutor, SystemCommandExecutor,
+};
 use crate::openpgp_crypto::{Error, SignatureState};
 use crate::pgp_mime::PgpMimeMessage;
 use std::cell::RefCell;
-use std::os::unix::fs::PermissionsExt;
+use std::os::unix::fs::DirBuilderExt;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
@@ -42,6 +45,55 @@ impl CryptoExecutor for NativeFixture {
         }
         self.run(&self.alice_home, operation)
             .map_err(CryptoFailure::Engine)
+    }
+}
+
+#[derive(Default)]
+struct EnvelopeCapture {
+    calls: RefCell<Vec<(Vec<String>, Vec<u8>)>>,
+}
+impl CommandExecutor for &EnvelopeCapture {
+    fn run_with_stdin_bytes(
+        &self,
+        _: &str,
+        _: &[String],
+        _: &[u8],
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        panic!("native capture requires bounded execution")
+    }
+
+    fn run_with_stdin_bytes_timeout(
+        &self,
+        program: &str,
+        args: &[String],
+        input: &[u8],
+        timeout: Duration,
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        assert_eq!(program, "/fixture/capture-envelope");
+        assert_eq!(
+            args.iter().map(String::as_str).collect::<Vec<_>>(),
+            [
+                "-oi",
+                "-f",
+                "alice@example.test",
+                "--",
+                "bob@example.test",
+                "hidden@example.test",
+            ]
+        );
+        assert!(timeout <= Duration::from_secs(10));
+        assert!(!input.is_empty() && input.len() <= 1024 * 1024);
+        let mut calls = self.calls.borrow_mut();
+        assert!(
+            calls.is_empty(),
+            "only one captured submission is permitted"
+        );
+        calls.push((args.to_vec(), input.to_vec()));
+        Ok(CommandExecution {
+            status_code: 0,
+            stdout: String::new(),
+            stderr: String::new(),
+        })
     }
 }
 
@@ -233,6 +285,47 @@ fn native_crypto_outbound_submission_roundtrip() {
     else {
         panic!("encrypted hidden-recipient MIME")
     };
+    // Inspect only public packets, with no keys or agent in this fresh home.
+    // Header privacy alone cannot establish that PKESK recipient IDs are hidden.
+    let packet_home = scratch.join("packet-inspection");
+    std::fs::DirBuilder::new()
+        .mode(0o700)
+        .create(&packet_home)
+        .unwrap();
+    let packets = SystemCommandExecutor
+        .run_with_stdin_bytes_timeout_and_output_limit(
+            "/usr/local/bin/gpg",
+            &[
+                "--no-options".into(),
+                "--homedir".into(),
+                packet_home.to_string_lossy().into_owned(),
+                "--batch".into(),
+                "--no-autostart".into(),
+                "--list-only".into(),
+                "--list-packets".into(),
+            ],
+            &ciphertext,
+            Duration::from_secs(10),
+            65536,
+        )
+        .expect("bounded public packet inspection");
+    assert_eq!(packets.status_code, 0, "public packet inspection refused");
+    let recipient_packets = packets
+        .stdout
+        .lines()
+        .filter(|line| line.starts_with(":pubkey enc packet:"))
+        .collect::<Vec<_>>();
+    assert_eq!(recipient_packets.len(), 2, "two intended recipient packets");
+    for packet in recipient_packets {
+        assert_eq!(
+            packet
+                .split_once("keyid ")
+                .and_then(|(_, value)| value.split_whitespace().next()),
+            Some("0000000000000000"),
+            "every actual PKESK recipient key ID must be hidden"
+        );
+    }
+    println!("encrypted_bcc_pkesk_count=2 all_recipient_keyids_hidden=PASS");
     let mut clear = None;
     for (home, fp) in [
         (&fixture.bob_home, &fixture.bob_fp),
@@ -302,31 +395,18 @@ fn native_crypto_outbound_submission_roundtrip() {
         .unwrap()
         .contains("hidden@example.test"));
 
-    // The real backend executes a disposable capture command, never sendmail or
-    // SMTP. Capture proves envelope arguments and exact emitted/Sent bytes only.
-    let capture = scratch.join("capture-envelope");
-    std::fs::write(&capture, concat!(
-        "#!/usr/local/bin/python3\n",
-        "import pathlib, sys\n",
-        "assert sys.argv[1:] == ['-oi', '-f', 'alice@example.test', '--', 'bob@example.test', 'hidden@example.test']\n",
-        "data = sys.stdin.buffer.read(1048577)\n",
-        "assert 0 < len(data) <= 1048576\n",
-        "assert b'hidden@example.test' not in data and b'\\r\\nbcc:' not in data.lower()\n",
-        "root = pathlib.Path(__file__).parent\n",
-        "(root / 'captured-wire').write_bytes(data)\n",
-        "(root / 'captured-envelope').write_text('\\n'.join(sys.argv[1:]))\n",
-    )).unwrap();
-    std::fs::set_permissions(&capture, std::fs::Permissions::from_mode(0o700)).unwrap();
+    // Exercise the production backend's exact prepared-message/argv boundary.
+    // Only its command executor is substituted; no process or SMTP is invoked.
+    let capture = EnvelopeCapture::default();
     use crate::send::SubmissionBackend;
-    crate::send::SendmailSubmissionBackend::new(crate::auth::SystemCommandExecutor, capture)
+    crate::send::SendmailSubmissionBackend::new(&capture, "/fixture/capture-envelope")
         .submit_prepared_message(account.as_str(), &hidden_request, &hidden)
         .unwrap();
+    let captures = capture.calls.borrow();
+    assert_eq!(captures.len(), 1);
+    assert_eq!(captures[0].1, sent.message);
     assert_eq!(
-        std::fs::read(scratch.join("captured-wire")).unwrap(),
-        sent.message
-    );
-    assert_eq!(
-        std::fs::read_to_string(scratch.join("captured-envelope")).unwrap(),
+        captures[0].0.join("\n"),
         "-oi\n-f\nalice@example.test\n--\nbob@example.test\nhidden@example.test"
     );
 

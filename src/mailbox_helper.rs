@@ -825,28 +825,9 @@ pub(crate) fn prove_native_stored_signed_profile(
     tests::native_reader_tests::prove_stored_signed_profile(root, crypto, inventory, alice, bob);
 }
 
-// Test-only bridge: the outbound native crypto fixture supplies a disposable
-// protected wire message to the existing native Dovecot reader fixture.
+// Test-only bridge reuses the existing owned Dovecot reader fixture for actual Sent append.
 #[cfg(all(test, unix))]
-pub(crate) fn prove_native_protected_sent_reader(
-    wire: &[u8],
-    return_wire: &[u8],
-    crypto: &crate::openpgp_crypto_runtime::Client,
-    inventory: &crate::openpgp_inventory_runtime::Client,
-    fingerprint: &str,
-    bob_fingerprint: &str,
-    home: &Path,
-) {
-    tests::native_reader_tests::prove_protected_sent(
-        wire,
-        return_wire,
-        crypto,
-        inventory,
-        fingerprint,
-        bob_fingerprint,
-        home,
-    );
-}
+pub(crate) use tests::native_reader_tests::ProtectedSentMailbox as NativeProtectedSentMailbox;
 
 #[cfg(test)]
 mod tests {

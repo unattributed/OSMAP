@@ -1,0 +1,37 @@
+# S07-04: Wire compose/send/Sent/reply/forward with transaction and failure reconciliation
+
+The owner authorizes independent completion of every S07 slice with later review. Reuse the existing Rust product path, current native worker, disposable synthetic keys/accounts, existing private Dovecot fixture and controlled Rust loopback transport. No new cryptography, dependency, generic QA framework or production mail-system changes.
+
+Inspect and reuse current code and matching evidence; reproduce the demonstrated missing boundary; make the smallest correction; verify the actual composed result and deliver signed source through normal hooks. Functional assertions and actors use Rust. Existing shell orchestration and repository metadata validators remain.
+
+- T01: Review current composed send journal and recovery.
+- T02: Actual gateway sends to controlled Rust local sink.
+- T03: Real scoped Dovecot append stores protected prepared message.
+- T04: Read decrypt verify Sent and download binary attachment.
+- T05: Source remains encrypted; current source selection protected.
+- T06: Stale policy helper interruption and Sent-store failure do not downgrade or auto duplicate.
+- T07: Actual authenticated HTTP and draft transaction checks.
+- T08: Consolidated native build installed preservation and independent review.
+- T09: Owner acceptance after normal signed publication.
+
+Source, native, installed and owner acceptance remain separate. Scope: private fixture account/key/config/message state only. Never replay owner credentials or passphrases; do not alter owner account, policy, keys, mail or sessions. Never stop/reload or configure public Dovecot, Postfix or MariaDB. No production mailbox synchronization or external recipient send.
+
+The existing signed/encrypted native gateway case previously captured Sent in a test file and preloaded its reader fixture. S07 extends that exact fixture so the production gateway append performs actual scoped doveadm save before independent retrieval. Outer storage CRLF-to-LF normalization is expected; ciphertext payload must remain identical. Editable/recovery authored drafts are an existing private policy, not a claim of no plaintext application state.
+
+Independent protocol review precedes native dispatch. Preserve original failures separately from cleanup. After two failures at one boundary stop retries for combined independent reassessment. Existing exact-owned process and agent cleanup remains; no owner private operation.
+
+## Engineering qualification — 2026-11-03
+
+The S07 engineering changes are implemented and the consolidated native workflow passes. Owner T09 acceptance is PENDING. Production Web installation is PENDING signed admission. No production-release or full visual/keyboard acceptance is inferred.
+
+Only the configured composer needed a product change: it now states Unsigned / Not encrypted / Off and changes those labels to requested intent with native checkbox CSS. Existing policy, PGP/MIME, recipient routing, journal and private draft/recovery paths are reused. The exact configured HTTP regression failed first on missing Unsigned, then all10 preference/HTTP tests passed. Existing focused Rust checks pass: policy21, protected submission18, preflight13, exact gateway2, journal25, journal routes7, recovery UI5, Sent receipt1. A zero-selected shorthand gateway filter is preserved and superseded by the exact2-test selection. Full ordinary Rust suite:2165 PASS,0 FAIL,85 opt-in ignored.
+
+The OpenBSD build consumes source archive70f02adfa51c384448eca400001ef3f808186711a14f5875b342a3c888f8e8fa. Three selected native tests each actually execute1 PASS with0 failures/skips: authenticated helper roundtrip; emitted sign/encrypt/Bcc; and composed Gateway/HTTP/local SMTP/real Dovecot Sent. Native signing is independently verified, tampering refuses, UTF-8 and binary bytes00 01 ff survive, intended recipients decrypt, excluded sender refuses with paired positive controls, self-encryption works, and both public PKESK key IDs are zero. This privacy claim concerns recipient key IDs and absence of a Bcc header, not traffic-analysis anonymity.
+
+Gateway Sent copies now originate in actual scoped doveadm save before readback. Expected outer CRLF-to-LF storage normalization and identical decoded ciphertext packets are checked. Actual authenticated reader routes decrypt and verify stored Sent, download the binary attachment, retain encrypted source, and refuse a locked synthetic agent. Stale policy/helper refusal submits zero; selected protection never falls back to plaintext. Eight controlled local SMTP acceptances and seven actual Sent-save calls include one accepted-submission/Sent-refusal result. After removing the scoped refusal, replay of that intent sends/appends nothing again. Authored editable/recovery drafts remain existing private application state; no claim of no plaintext state is made.
+
+Every key/account/message/process is disposable fixture state. Owned listeners join and scratch removal is explicitly checked; all three fixture GPG agents stop, and postflight finds no fixture agents. Nine existing service roles remain healthy. Public Dovecot/Postfix/MariaDB and owner keys/accounts/policy/messages/sessions are unchanged by native qualification. No external recipient delivery or owner private-key operation occurs.
+
+The two selected native tests no longer generate Python transport/capture actors: fixed Rust actors and the existing native GPG/GPGME/Dovecot utilities exercise the boundary. Existing shell build orchestration and required Python repository metadata validators remain. Independent source review corrected a fixture cleanup omission, a hardcoded temporary directory, and armored-text comparison before dispatch. Native qualification passed on its first run. Current libtest SHA256 b7cce1495427ca9d379771533e5cc5b9faaaeb2e027c80251b940cd126a9fd09; candidate Web SHA2568d2e2813ea96b391978104a3a2ed7b6f85463f84ef3a161be17734b99f965e48.
+
+Retained private evidence: /home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; s07-source-final-build.log; s07-rust-full.log; qualified-source.sha256; native-postflight.actual.log. The local-file browser-render attempt was refused by the tool URL policy and was not worked around. Computed visual/keyboard acceptance remains for later owner review. The110 immutable legacy cases and403 approved controls remain, with only scoped evidence appended; older failed owner observations stay in history and are not relabelled as current owner success.
