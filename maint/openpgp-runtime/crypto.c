@@ -171,6 +171,22 @@ static const char *failure(gpgme_error_t err) {
  default: return "unavailable";
  }
 }
+static const char *decrypt_failure(gpgme_error_t err, gpgme_decrypt_result_t r, int output_failed) {
+ if(output_failed)return "unavailable";
+ if(gpg_err_code(err)==GPG_ERR_NO_DATA || gpg_err_code(err)==GPG_ERR_BAD_DATA)return "unsupported";
+ if(gpg_err_code(err)==GPG_ERR_DECRYPT_FAILED && r) {
+  /* The aggregate error can hide missing recipient keys. Do not mistake an
+   * invalid/non-public-key packet for missing private material, or an output
+   * bound failure for a cryptographic verdict. No content is released here. */
+  if(!r->recipients)return "unsupported";
+  unsigned count=0;int all_missing=1;
+  for(gpgme_recipient_t recipient=r->recipients;recipient;recipient=recipient->next) {
+   if(++count>KEY_LIMIT || gpg_err_code(recipient->status)!=GPG_ERR_NO_SECKEY) {all_missing=0;break;}
+  }
+  if(count && all_missing)return "missing_key";
+ }
+ return failure(err);
+}
 int main(int argc,char **argv) {
  close_inherited_descriptors();
  gpgme_ctx_t ctx=NULL; gpgme_data_t input=NULL,detached=NULL,output=NULL;
@@ -213,8 +229,8 @@ int main(int argc,char **argv) {
  }
  if (op==1) {
   err=gpgme_op_decrypt(ctx,input,output);
-  if(err) {error=failure(err);goto done;}
   gpgme_decrypt_result_t r=gpgme_op_decrypt_result(ctx);
+  if(err) {error=decrypt_failure(err,r,result.overflow);goto done;}
   if(!r || r->unsupported_algorithm || r->wrong_key_usage || r->legacy_cipher_nomdc || !cipher_ok || !decrypt_key_ok) {error="integrity";goto done;}
   strcpy(primary,decrypt_primary);
   err=gpgme_get_key(ctx,primary,&selected[0],0);
@@ -223,6 +239,10 @@ int main(int argc,char **argv) {
   if(gpgme_data_new_from_mem(&detached,(char *)signature,signature_size,0))goto done;
   err=gpgme_op_verify(ctx,detached,input,NULL);
   gpgme_verify_result_t r=gpgme_op_verify_result(ctx); gpgme_signature_t s=r?r->signatures:NULL;
+  /* Missing public material is distinct from a bad signature. Only a single
+   * explicitly missing-key result qualifies; multiple/ambiguous signatures
+   * still take the signature-failure path and never release content. */
+  if(!err && s && !s->next && gpg_err_code(s->status)==GPG_ERR_NO_PUBKEY && (s->summary&GPGME_SIGSUM_KEY_MISSING)) {error="missing_key";goto done;}
   if(err || !s || s->next || s->status || !fp_valid(s->fpr) || valid_signature_seen!=1 || s->wrong_key_usage || (s->summary & ~(GPGME_SIGSUM_VALID|GPGME_SIGSUM_GREEN)) || (s->hash_algo!=GPGME_MD_SHA256 && s->hash_algo!=GPGME_MD_SHA512)) {error="signature";goto done;}
   strcpy(signer,s->fpr);hash=(unsigned)s->hash_algo;
   err=gpgme_get_key(ctx,signer,&selected[0],0);

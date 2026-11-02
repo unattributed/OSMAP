@@ -1,3 +1,7 @@
+2026-11-02 — **S06-01–04 consolidated source/native/installed qualification PASS within scope; normal signed delivery in progress; owner T09 pending.** Actual installed private operation returned Locked; successful owner protected-message reading is not claimed.
+
+2026-11-02 — **S06-04 IN_PROGRESS; S06-03 changed-producer classification follows combined reassessment in parallel.** All earlier failures and final installed/delivery/human requirements remain explicit.
+
 2026-11-02 (Asia/Bangkok) — **S05-04 ACCEPTED: owner S05-04-T09 = PASS; T01–T09 PASS.** Explicit owner acceptance of the completed infrastructure result follows signed engineering source d7a87574 and matching native/installed proof. Acceptance-record update only; other obligations remain separate.
 
 2026-11-02 — **S05-04 restored and Rust replacement qualified; T09 infrastructure acceptance pending.** Final matching native crypto/inventory/admin, post-test live admission, preservation and exact cleanup PASS. Normal signed source delivery is required before readiness announcement.
@@ -37,6 +41,1788 @@ slice using the same failure-analysis method. See
 [the slice specification](UX_SLICE_S05_02.md).
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S06-04",
+  "original_requirement": "Reparse and sanitize decrypted MIME; render state strip, downloads, source and failures",
+  "source_baseline": "cefd08517fa0e5b060fc197f50be042853da17c0",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_runtime_engineer",
+      "/root/s05_scope_qa"
+    ],
+    "qa": [
+      "/root/s05_protocol_review"
+    ],
+    "security_review": [
+      "/root/s05_protocol_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_SLICE_S06_01.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/DECISION_LOG.md",
+    "README.md",
+    "maint/ux/acceptance.json",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "src/openpgp_principal_native_tests.rs",
+    "src/auth.rs",
+    "src/openbsd.rs",
+    "src/mailbox_helper_native_reader_tests.rs",
+    "src/mailbox_helper.rs",
+    "src/http/protected_send_gateway_native_tests.rs",
+    "src/protected_message_gateway.rs",
+    "src/protected_message_gateway_tests.rs",
+    "src/http_gateway_protected.rs",
+    "src/pgp_mime_native_tests.rs",
+    "src/pgp_mime_tests.rs",
+    "src/protected_message.rs",
+    "src/protected_message_tests.rs",
+    "docs/UX_SLICE_S06_02.md",
+    "src/protected_message_native_tests.rs",
+    "src/openpgp_crypto_runtime.rs",
+    "maint/openpgp-runtime/crypto.c",
+    "docs/UX_SLICE_S06_03.md",
+    "src/openpgp_reader_ui.rs",
+    "docs/UX_SLICE_S06_04.md",
+    "src/http_ui.rs",
+    "src/http_inventory_tests.rs"
+  ],
+  "outcomes": [
+    {
+      "id": "protected-reader-source-download",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX15-005",
+        "UX16-004",
+        "UX16-005",
+        "UX16-006",
+        "R2-03-016",
+        "R2-03-017",
+        "R2-03-018",
+        "R2-03-021",
+        "R2-03-022",
+        "R2-27-003",
+        "R2-27-006",
+        "R2-27-007"
+      ],
+      "frontend_backend_outcome": "Actual protected Runtime reading, processed binary downloads and original encrypted source retain ownership, safe rendering, accurate states and transient privacy.",
+      "essential_qa": "Existing actual Dovecot/native reader extended with rendered links, exact bytes, headers, stale/foreign/refused cases and application-state privacy.",
+      "next_action": "Complete normal signed source delivery and exact GitHub parity; owner privately unlocks the existing mailbox key and performs the S06 protected-body/source/download T09 journey. No owner acceptance or successful owner private decryption is inferred.",
+      "dependencies": [
+        {
+          "owner": "/root",
+          "condition": "Actual S06-03 permitted-key decryption/UTF8/sanitization/binary/source/quote positive observations PASS; all classifier cases must still settle before final closure.",
+          "status": "PASS",
+          "next_action": "Final visible-recipient classification PASS; owner private-key readiness and human acceptance remain separate."
+        }
+      ],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed public encryption/typed Locked refusal/epoch6/HTTPS200/preservation PASS; successful owner private decryption NOT RUN."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Supported protected mail renders safely; processed downloads and original encrypted source are exact owned operations with truthful state and no plaintext persistence.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "All accepted S05 and S06-01/02/03 observations, failures, corrections, remaining visible-recipient classifier and operator-secret/body acceptance are carried forward explicitly. Consolidated final observations are appended here; all preceding source/compiler/native failures remain in slice documents and private evidence. Source/preparation actions without full-action timing remain UNKNOWN, not zero. Git/owner results stay separate.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-02T03:19:24Z",
+      "elapsed_status": "MEASURED",
+      "elapsed_seconds": 2485.276
+    },
+    "attempts": [
+      {
+        "id": "native-reader-invalid-fixture-selector",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 11.29,
+        "source_revision": "28235ffef4dc42b24ffed6971de1c21014df8f050bc5c2051fafee24102e4da1",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-reader-first-failure.private.log; child assertion expected404 for syntactically invalid99; actual400 correct. Native internal cleanup PASS.",
+        "change_reference": "First expanded rendered-link discriminator.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json; corresponding earlier slice native-independent-review.json and preserved chat review. This is actual-result reconciliation, not a retrospective claim that an unrecorded pre-action check ran."
+        }
+      },
+      {
+        "id": "native-reader-corrected-selector",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 12.33,
+        "source_revision": "d99bea32e8b140e8ac0404e83c86f23308f987ac5842f92c510be40e60ebf4d0",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader.actual.log; full reader/source/processed download and negative controls PASS.",
+        "change_reference": "Only fixture99 changed to existing valid dotted1.99; child bound unchanged.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json; corresponding earlier slice native-independent-review.json and preserved chat review. This is actual-result reconciliation, not a retrospective claim that an unrecorded pre-action check ran."
+        }
+      },
+      {
+        "id": "native-final-signature",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 8.74,
+        "source_revision": "d99bea32e8b140e8ac0404e83c86f23308f987ac5842f92c510be40e60ebf4d0",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature.actual.log",
+        "change_reference": "Final matching C worker/signature regression.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json; corresponding earlier slice native-independent-review.json and preserved chat review. This is actual-result reconciliation, not a retrospective claim that an unrecorded pre-action check ran."
+        }
+      },
+      {
+        "id": "native-final-decryption",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 9.13,
+        "source_revision": "d99bea32e8b140e8ac0404e83c86f23308f987ac5842f92c510be40e60ebf4d0",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption.actual.log",
+        "change_reference": "Final matching C worker/decryption regression.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json; corresponding earlier slice native-independent-review.json and preserved chat review. This is actual-result reconciliation, not a retrospective claim that an unrecorded pre-action check ran."
+        }
+      },
+      {
+        "id": "consolidated-install",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "28235ffef4dc42b24ffed6971de1c21014df8f050bc5c2051fafee24102e4da1",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; guarded two-artifact cutover, loaded Web, protected files/account authority/public mail preserved.",
+        "change_reference": "Reviewed installer a3df66aef4ce633cb65ca24b6e48511d450bfbceb6ecd57090a7dd4bc708d8dc; no repeated fixture or public mail operation.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json; corresponding earlier slice native-independent-review.json and preserved chat review. This is actual-result reconciliation, not a retrospective claim that an unrecorded pre-action check ran."
+        }
+      },
+      {
+        "id": "installed-public-private-and-epoch",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "28235ffef4dc42b24ffed6971de1c21014df8f050bc5c2051fafee24102e4da1",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; publicEncryptPASS/privateLocked refusal/current signed epoch6PASS0.07s. Full dispatch elapsed not measured; owner private readiness/bodyUAT NOT RUN.",
+        "change_reference": "Actual configured installed SDK boundary and read-only account admission; no credential/TOTP/key/policy mutation.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json; corresponding earlier slice native-independent-review.json and preserved chat review. This is actual-result reconciliation, not a retrospective claim that an unrecorded pre-action check ran."
+        }
+      }
+    ],
+    "source_and_preparation_history": [
+      {
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/ui-red.log; /home/foo/Downloads/osmap-ux-s06/s06-04/ordinary-red.log",
+        "observation": "Separate narrow source regressions identified refused machine state, uncertainty and obsolete unassessed-message copy; green logs retain4+1PASS. Exact modified RED full-tree source identity was not retained; this is not native proof."
+      },
+      {
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-final-build.actual.log",
+        "observation": "Native libtest and Web builds passed; standalone probe consumer assumed absent top-level rlib. Corrected consumer used actual Cargo reported artifact without Web rebuild; probe-build-corrected.log PASS."
+      },
+      {
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/install-draft-invalid-not-executed.ksh",
+        "observation": "Generated installer draft syntax failed locally before dispatch due JavaScript replacement-string expansion. Corrected literal replacement; shell syntax PASS and independently reviewed before host use."
+      }
+    ]
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S06-04",
+    "specification": {
+      "path": "docs/UX_SLICE_S06_04.md",
+      "sha256": "05d0c025c2b3bc60a6011f47982ebaa75fea695008ddcac6fc7f33af0cac5a26"
+    },
+    "design": {
+      "journey": "Read supported protected mail, inspect original ciphertext and download exact authorised processed attachments with clear failure and privacy boundaries.",
+      "frontend": "Existing reader/status/source/download controls, practical message-level states and truthful execution description.",
+      "backend": "Existing Rust Processor/MIME/Runtime/checked content routes and native helper; no alternate parser or service.",
+      "interfaces": "Actual rendered identity/version-bound links and current helper/HTTP contracts.",
+      "persistence": "Plaintext remains transient, source remains original ciphertext; only synthetic native fixtures and normal account settings/session metadata persist.",
+      "security": "CSP/sanitizer/no-store/forced-download and account/message/version checks hold after decryption; no partial or cross-account content on failure.",
+      "failure_recovery": "Focused source RED/GREEN, real native content operations/refusals, exact-owned cleanup, final installed preservation/rollback and separate owner acceptance."
+    },
+    "tests": [
+      {
+        "id": "S06-04-T01",
+        "outcome_ids": [
+          "protected-reader-source-download"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Reconcile all prior source/native/remaining classifier and owner key-readiness evidence.",
+        "expected": "Positive proof supports dependent reader work; unresolved negatives and human prerequisites are not silently closed.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-04-T02",
+        "outcome_ids": [
+          "protected-reader-source-download"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Run actual native decrypted Runtime HTML/UTF8 positive and hostile-content protection.",
+        "expected": "Known supported content displays safely; hostile active/remote content is absent with correct decryption state.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-04-T03",
+        "outcome_ids": [
+          "protected-reader-source-download"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Follow actual rendered processed attachment link; inspect exact binary bytes and isolated response headers.",
+        "expected": "Exact decoded binary bytes, no ciphertext collision, and no-store/nosniff/CORP/sandbox/attachment headers.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-04-T04",
+        "outcome_ids": [
+          "protected-reader-source-download"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Follow actual source link with/without crypto capability; inspect escaped original encrypted MIME and absence of plaintext.",
+        "expected": "Stored encrypted envelope/armor remains source, escaped and bounded, with no decrypted body and no private-key prerequisite.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-04-T05",
+        "outcome_ids": [
+          "protected-reader-source-download"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Exercise stale/foreign/invalid selectors and unavailable crypto through actual routes; verify no content release and recovered budgets.",
+        "expected": "Correct route-specific refusal status and no protected bytes/quote/body/attachment disclosure; identity/version/session checks remain effective.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-04-T06",
+        "outcome_ids": [
+          "protected-reader-source-download"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Reproduce and correct Refused assessed-attribute and obsolete unassessed-reader capability/future copy, keeping explicit uncertainty.",
+        "expected": "Assessed/refused/unassessed labels reflect only actual evidence; no fabricated account capability or obsolete UI-only/future implementation.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-04-T07",
+        "outcome_ids": [
+          "protected-reader-source-download"
+        ],
+        "kind": "recovery",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Check no plaintext application-state persistence and owned native cleanup/public/owner/account preservation.",
+        "expected": "No decrypted application-state content; functional and exact cleanup/preservation outcomes recorded separately.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-04-T08",
+        "outcome_ids": [
+          "protected-reader-source-download"
+        ],
+        "kind": "recovery",
+        "level": "deployed",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Qualify consolidated installed code/helper/worker, real SDK public/private boundary, signed epoch admission, HTTPS and unchanged owner state.",
+        "expected": "Matching installed artifacts and actual available boundary pass; protected owner secret/body dependency stays explicit.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-04-T09",
+        "outcome_ids": [
+          "protected-reader-source-download"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Reconcile independent review, normal signed exact GitHub synchronization and owner visual/functional acceptance.",
+        "expected": "Normal signed delivery and all agent-owned reviewed work complete; only actual owner acceptance closes T09.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Engineering/review component complete; normal signed delivery and owner acceptance remain pending."
+        ]
+      }
+    ],
+    "engineering_exit": "Actual protected reader/source/download and safety/privacy boundaries plus final installed qualification, independent review and normal signed delivery pass, with owner private-entry/body acceptance explicitly separate.",
+    "human_exit": "Owner unlocks protected mailbox keys if needed, then accepts a known decrypted message, original encrypted source and attachment UX, plus infrastructure results."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner authorised S06 engineering while away. Consolidated source/native/installed qualification passes within documented scope; actual owner protected-body UAT remains NOT RUN and the historical R2-03-022 owner failure remains retained."
+  },
+  "next_action": "Complete normal signed source delivery and exact GitHub parity; owner privately unlocks the existing mailbox key and performs the S06 protected-body/source/download T09 journey. No owner acceptance or successful owner private decryption is inferred."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+<!-- OSMAP_ARCHIVED_S06_03_ACTIVE_NEGATIVE_FOLLOWUP_20261102 -->
+```json
+{
+  "version": 1,
+  "slice": "S06-03",
+  "original_requirement": "Real decryption through isolated helper into bounded transient content transport",
+  "source_baseline": "cefd08517fa0e5b060fc197f50be042853da17c0",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_runtime_engineer",
+      "/root/s05_scope_qa"
+    ],
+    "qa": [
+      "/root/s05_protocol_review"
+    ],
+    "security_review": [
+      "/root/s05_protocol_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_SLICE_S06_01.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/DECISION_LOG.md",
+    "README.md",
+    "maint/ux/acceptance.json",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "src/openpgp_principal_native_tests.rs",
+    "src/auth.rs",
+    "src/openbsd.rs",
+    "src/mailbox_helper_native_reader_tests.rs",
+    "src/mailbox_helper.rs",
+    "src/http/protected_send_gateway_native_tests.rs",
+    "src/protected_message_gateway.rs",
+    "src/protected_message_gateway_tests.rs",
+    "src/http_gateway_protected.rs",
+    "src/pgp_mime_native_tests.rs",
+    "src/pgp_mime_tests.rs",
+    "src/protected_message.rs",
+    "src/protected_message_tests.rs",
+    "docs/UX_SLICE_S06_02.md",
+    "src/protected_message_native_tests.rs",
+    "src/openpgp_crypto_runtime.rs",
+    "maint/openpgp-runtime/crypto.c",
+    "docs/UX_SLICE_S06_03.md",
+    "src/openpgp_reader_ui.rs"
+  ],
+  "outcomes": [
+    {
+      "id": "bounded-transient-decryption",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX15-003"
+      ],
+      "frontend_backend_outcome": "Authenticated permitted-key decryption produces bounded transient safe content or an accurate no-content failure, with explicit server execution location.",
+      "essential_qa": "Actual decrypt and malformed/truncated/locked/missing/wrong-key cases, UTF8/binary, lifecycle/privacy, native cleanup and installed boundary.",
+      "next_action": "Complete normal signed source delivery and exact GitHub parity; owner privately unlocks the existing mailbox key and performs the S06 protected-body/source/download T09 journey. No owner acceptance or successful owner private decryption is inferred.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed public encryption/typed Locked refusal/epoch6/HTTPS200/preservation PASS; successful owner private decryption NOT RUN."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Real bounded transient decryption and truthful failure/location states, without content persistence, cross-account release or prompts.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Accepted S05 and S06-01/02 failures/corrections/native results remain preserved; owner private passphrase and owner-body acceptance are explicitly separate. Consolidated final observations are appended here; all preceding source/compiler/native failures remain in slice documents and private evidence. Source/preparation actions without full-action timing remain UNKNOWN, not zero. Git/owner results stay separate.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-02T02:46:17Z",
+      "elapsed_status": "MEASURED",
+      "elapsed_seconds": 4472.276
+    },
+    "attempts": [
+      {
+        "id": "native-decryption-red",
+        "boundary": "bounded-transient-decryption",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 8.66,
+        "source_revision": "e2c2951cbf183230a4c8b8dbba07c51e781b0bcea168872600ee1e9099500d2e",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-03/native-red-receipt.json; malformed/truncated/hidden-recipient failures returned Unavailable. Positive processing and cleanup remained separate.",
+        "change_reference": "First real decryption failure discriminator.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json; corresponding earlier slice native-independent-review.json and preserved chat review. This is actual-result reconciliation, not a retrospective claim that an unrecorded pre-action check ran."
+        }
+      },
+      {
+        "id": "native-decryption-mapping-retest",
+        "boundary": "bounded-transient-decryption",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 8.63,
+        "source_revision": "021ca1d4973d5ab769c2142a640fd7025df7d6d0cbf7741569d8343b7fd3ac6f",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-03/native-green-receipt.json; malformed/truncated fixed but hidden missing-key assertion remained failed. Source revision denotes exact changed C component; matching Rust input retained.",
+        "change_reference": "C decrypt error mapping changed; preserve first failure.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json; corresponding earlier slice native-independent-review.json and preserved chat review. This is actual-result reconciliation, not a retrospective claim that an unrecorded pre-action check ran."
+        }
+      },
+      {
+        "id": "native-decryption-visible-control",
+        "boundary": "bounded-transient-decryption",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 9.07,
+        "source_revision": "77dff06ebe5ac10eed4ae2e22d82aafd1aabbe3d82c0ccf537701129e01317a5",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-03/native-final-receipt.json; visible missing private key correctly classified, hidden-recipient uncertainty retained.",
+        "change_reference": "Changed fixture producer creates visible-recipient control; production recipient hiding unchanged.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json; corresponding earlier slice native-independent-review.json and preserved chat review. This is actual-result reconciliation, not a retrospective claim that an unrecorded pre-action check ran."
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s05_protocol_review"
+          ],
+          "failed_attempt_ids": [
+            "native-decryption-red",
+            "native-decryption-mapping-retest"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-03/native-independent-review.json; actual combined reassessment retained the opaque hidden-recipient failure and rejected weakening production privacy.",
+          "next_action": "Use explicit visible-recipient synthetic control, positive same-key decrypt first, then missing-private-key discriminator; retain hidden Unavailable."
+        }
+      }
+    ]
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S06-03",
+    "specification": {
+      "path": "docs/UX_SLICE_S06_03.md",
+      "sha256": "de7bf456c95914d6cdace2a35e6e320756f5bc1542784017e1edafb4f7243de4"
+    },
+    "design": {
+      "journey": "Read supported encrypted mail safely with an accurate server-decryption state or a distinct no-content locked/missing/invalid/unavailable refusal.",
+      "frontend": "Existing reader state strip with approved summary and accurate OSMAP-server/HTTPS explanation.",
+      "backend": "Existing Rust authenticated crypto client/Processor, isolated native worker and bounded renderer.",
+      "interfaces": "Current helper error/content contract and exact account/fingerprint binding; no key/passphrase browser interface.",
+      "persistence": "Decrypted content remains request-local; no body cache/state/log/automatic draft quote.",
+      "security": "No plaintext release on malformed/locked/wrong-account or cancelled processing, no Pinentry or plaintext fallback.",
+      "failure_recovery": "Observe actual native refusal before changing mapping; preserve earlier passes and exact owned cleanup, then qualify installed boundary."
+    },
+    "tests": [
+      {
+        "id": "S06-03-T01",
+        "outcome_ids": [
+          "bounded-transient-decryption"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Reconcile actual helper/profile/owner readiness with matching prior decrypt and lifecycle evidence.",
+        "expected": "Actual capabilities and private readiness limits are recorded; public keys do not imply private readiness.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-03-T02",
+        "outcome_ids": [
+          "bounded-transient-decryption"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Run actual permitted self-decryption/UTF8/binary positive and wrong-account/key controls.",
+        "expected": "Valid decryption succeeds with exact supported UTF8/binary; wrong-account/key cannot release content.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-03/native-red-observation.json and native-green-observation.json: actual exact decryption/UTF8/sanitization/binary/quote/source positives pass in both; full classifier case remains FAIL.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-03-T03",
+        "outcome_ids": [
+          "bounded-transient-decryption"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Run actual malformed/truncated ciphertext through Client/Processor, retain failure, correct smallest observed gap and retest.",
+        "expected": "Invalid/truncated ciphertext releases no partial body/attachments/quote and reports a truthful typed failure.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "Same actual observations: first all unavailable; C021 corrects malformed/truncated to Unsupported. Missing-private expectation on intentionally hidden recipients remains unresolved pending changed visible-recipient producer. Both whole cases FAIL8.66/8.63; combined reassessment retained.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-03-T04",
+        "outcome_ids": [
+          "bounded-transient-decryption"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Verify actual Locked/MissingKey/no-content states distinct from unknown signer and format errors.",
+        "expected": "Locked and missing private material remain distinct; no prompt, warm-up or plaintext fallback.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-03-T05",
+        "outcome_ids": [
+          "bounded-transient-decryption"
+        ],
+        "kind": "recovery",
+        "level": "source",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Reconcile size/time/cancellation and owned recovery with matching actual proofs; add only uncovered boundary.",
+        "expected": "Finite bounds and cancellation/cleanup remain effective with scoped prior proof reuse.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-03-T06",
+        "outcome_ids": [
+          "bounded-transient-decryption"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Test accurate OSMAP-server/HTTPS explanation and request-local privacy/no persistent quote.",
+        "expected": "Reader names decryption on this OSMAP server and browser HTTPS delivery; no zero-access or browser-only claim.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-03/location-red.log and location-green.log: actual source RED then3UIcasesGREEN; only decrypted state explains OSMAP server/HTTPS, approvedsummarypreserved.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-03-T07",
+        "outcome_ids": [
+          "bounded-transient-decryption"
+        ],
+        "kind": "recovery",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Verify reviewed Rust native actors, exact owned cleanup and public/private/account/installed/mail preservation.",
+        "expected": "Functional and cleanup results remain separate; fixed identities, owner/account data and public mail remain preserved.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-03-T08",
+        "outcome_ids": [
+          "bounded-transient-decryption"
+        ],
+        "kind": "recovery",
+        "level": "deployed",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Qualify installed worker/helper/Runtime and real current account readiness without passphrase entry or external send.",
+        "expected": "Matching installed artifacts and available boundary work; actual owner secret/body prerequisites remain explicit.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-03-T09",
+        "outcome_ids": [
+          "bounded-transient-decryption"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Complete independent result/source review and normal signed delivery, then keep actual owner acceptance distinct.",
+        "expected": "Normal signed delivery and independent engineering complete; only actual owner acceptance can close T09.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Engineering/review component complete; normal signed delivery and owner acceptance remain pending."
+        ]
+      }
+    ],
+    "engineering_exit": "Current native and installed paths establish bounded transient decryption/accurate failure and execution labels with preservation, independent review and normal delivery; owner secret/body acceptance stays explicit.",
+    "human_exit": "Owner unlocks protected keys through the existing operator workflow if needed and accepts a known supported decrypted body in OSMAP, plus the recorded infrastructure result."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner authorised S06 engineering while away. Consolidated source/native/installed qualification passes within documented scope; actual owner protected-body UAT remains NOT RUN and the historical R2-03-022 owner failure remains retained."
+  },
+  "next_action": "Complete normal signed source delivery and exact GitHub parity; owner privately unlocks the existing mailbox key and performs the S06 protected-body/source/download T09 journey. No owner acceptance or successful owner private decryption is inferred."
+}
+```
+
+<!-- OSMAP_ARCHIVED_S06_02_NATIVE_QUALIFIED_20261102 -->
+```json
+{
+  "version": 1,
+  "slice": "S06-02",
+  "original_requirement": "Real signature verification and separate signer binding/key-validity states",
+  "source_baseline": "cefd08517fa0e5b060fc197f50be042853da17c0",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_runtime_engineer",
+      "/root/s05_scope_qa"
+    ],
+    "qa": [
+      "/root/s05_protocol_review"
+    ],
+    "security_review": [
+      "/root/s05_protocol_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_SLICE_S06_01.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/DECISION_LOG.md",
+    "README.md",
+    "maint/ux/acceptance.json",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "src/openpgp_principal_native_tests.rs",
+    "src/auth.rs",
+    "src/openbsd.rs",
+    "src/mailbox_helper_native_reader_tests.rs",
+    "src/mailbox_helper.rs",
+    "src/http/protected_send_gateway_native_tests.rs",
+    "src/protected_message_gateway.rs",
+    "src/protected_message_gateway_tests.rs",
+    "src/http_gateway_protected.rs",
+    "src/pgp_mime_native_tests.rs",
+    "src/pgp_mime_tests.rs",
+    "src/protected_message.rs",
+    "src/protected_message_tests.rs",
+    "docs/UX_SLICE_S06_02.md",
+    "src/protected_message_native_tests.rs",
+    "src/openpgp_crypto_runtime.rs",
+    "maint/openpgp-runtime/crypto.c"
+  ],
+  "outcomes": [
+    {
+      "id": "reader-signature-verdicts",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX15-001",
+        "UX15-004",
+        "R2-02-015"
+      ],
+      "frontend_backend_outcome": "Actual native signature verdicts reach distinct reader verification, signer-binding and key-validity states without content release on refusal.",
+      "essential_qa": "Actual valid/tampered/multiple/missing signer results, separate identity/expiry/revocation, no-content refusal and native cleanup.",
+      "next_action": "Complete normal signed source delivery and exact GitHub parity; owner privately unlocks the existing mailbox key and performs the S06 protected-body/source/download T09 journey. No owner acceptance or successful owner private decryption is inferred.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-02/native-independent-review.json SHA86a6ce5e, actual RED8.58s/GREEN8.55s, source baseline and exact cleanup; final installed/delivery/human pending."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-02/native-independent-review.json SHA86a6ce5e, actual RED8.58s/GREEN8.55s, source baseline and exact cleanup; final installed/delivery/human pending."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-02/native-independent-review.json SHA86a6ce5e, actual RED8.58s/GREEN8.55s, source baseline and exact cleanup; final installed/delivery/human pending."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-02/native-independent-review.json SHA86a6ce5e, actual RED8.58s/GREEN8.55s, source baseline and exact cleanup; final installed/delivery/human pending."
+        },
+        {
+          "stage": "recovery",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-02/native-independent-review.json SHA86a6ce5e, actual RED8.58s/GREEN8.55s, source baseline and exact cleanup; final installed/delivery/human pending."
+        },
+        {
+          "stage": "implementation",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed public encryption/typed Locked refusal/epoch6/HTTPS200/preservation PASS; successful owner private decryption NOT RUN."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Native missing signer is distinguished from a bad signature; valid cryptography never invents sender trust or safe content.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Accepted S05 evidence and all S06-01 setup/native failures, RED/correction/GREEN retained in archived order; consolidated installation and human acceptance remain pending. Consolidated final observations are appended here; all preceding source/compiler/native failures remain in slice documents and private evidence. Source/preparation actions without full-action timing remain UNKNOWN, not zero. Git/owner results stay separate.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-02T00:52:08Z",
+      "elapsed_status": "MEASURED",
+      "elapsed_seconds": 11321.277
+    },
+    "attempts": [
+      {
+        "id": "native-missing-signer-red",
+        "boundary": "reader-signature-verdicts",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 8.58,
+        "source_revision": "e65a05e8a9c0913373b57e5e7be20044b9cd1be018e5abb0abb6ee4bbfd8ac10",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-02/native-red-observation.json; Actual missing signer Signature→SignatureFailure; safe refusal but wrong explanation.",
+        "change_reference": "Execute actual reviewed missing-certificate discriminator before C change.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Independent source/recipe GO before action and actual-result review /home/foo/Downloads/osmap-ux-s06/s06-02/native-independent-review.json."
+        }
+      },
+      {
+        "id": "native-missing-signer-green",
+        "boundary": "reader-signature-verdicts",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 8.55,
+        "source_revision": "195fef28f61a8d4c882738188c934b4ca75075f3a7949d0d28dfac44c4f4e62e",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-02/native-green-observation.json; Single explicit GPGME missing public-key result now MissingKey→UnknownSigner; positive/tamper/duplicate and state preservation controls pass.",
+        "change_reference": "Rebuild only changed C worker, reuse exact Rustlib718 and unchanged discriminator; existing protocol/error types.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Independent source/recipe GO before action and actual-result review /home/foo/Downloads/osmap-ux-s06/s06-02/native-independent-review.json."
+        }
+      }
+    ]
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S06-02",
+    "specification": {
+      "path": "docs/UX_SLICE_S06_02.md",
+      "sha256": "43d66211d9636c5c82f56d3d3e5fd0cf779b83deacb5c1e66eba692f6f400177"
+    },
+    "design": {
+      "journey": "Read supported signed mail with true signature, signer identity and key-validity results; receive a distinct no-content refusal for a missing signer key.",
+      "frontend": "Existing OpenPGP reader strip with accurate fixed error states and no content-safety promise.",
+      "backend": "Existing Rust Processor, authenticated helper and native GPGME verification worker.",
+      "interfaces": "Current versioned helper result/error types; no custom cryptography or new mailbox transport.",
+      "persistence": "Existing public bindings/inventory and transient processing; no owner key/policy change or persistent plaintext.",
+      "security": "Missing-key and bad-signature results remain distinct while every rejected result withholds protected content.",
+      "failure_recovery": "Retain native RED; make smallest supported worker mapping change; re-run discriminator and controls with exact owned cleanup."
+    },
+    "tests": [
+      {
+        "id": "S06-02-T01",
+        "outcome_ids": [
+          "reader-signature-verdicts"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Reconcile current source with retained real verifier and reader proofs.",
+        "expected": "Current source and actual worker API support the reused proof; missing coverage remains explicit.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-02/native-green-observation.json/native-green.actual.log: scoped source/native/cleanup observations; prior RED retained, installed and human pending.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-02-T02",
+        "outcome_ids": [
+          "reader-signature-verdicts"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Run actual valid, tampered and multiple-signature native controls.",
+        "expected": "Valid verification succeeds; tampered bytes and multiple signatures refuse without body release.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-02/native-green-observation.json/native-green.actual.log: scoped source/native/cleanup observations; prior RED retained, installed and human pending.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-02-T03",
+        "outcome_ids": [
+          "reader-signature-verdicts"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Observe a real missing public signer certificate through Client/Processor/reader; retain RED, correct and retest.",
+        "expected": "A single signature missing its public certificate yields missing signer/UnknownSigner; bad/multiple signature remains invalid.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-02/native-green-observation.json/native-green.actual.log: scoped source/native/cleanup observations; prior RED retained, installed and human pending.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-02-T04",
+        "outcome_ids": [
+          "reader-signature-verdicts"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Verify unknown/mismatched/current/expired/revoked binding and inventory states separately from valid cryptography.",
+        "expected": "Binding and key validity remain separate from signature success; expired/revoked binding refuses before crypto.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-02/source-baseline.log and ../s06-01/processor-regressions.log: scoped source/native/cleanup observations; prior RED retained, installed and human pending.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-02-T05",
+        "outcome_ids": [
+          "reader-signature-verdicts"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Check actual reader signature, identity and key labels with no metadata-only verified or content-safety claim.",
+        "expected": "Reader labels reflect only actual results and confirmed bindings; no safe-content inference.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-02/native-green-observation.json/native-green.actual.log: scoped source/native/cleanup observations; prior RED retained, installed and human pending.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-02-T06",
+        "outcome_ids": [
+          "reader-signature-verdicts"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Exercise no-content refusal and invalid-binding zero-dispatch checks with account/message/privacy preservation.",
+        "expected": "No body, attachments, automatic quote, extra crypto or cross-account data escapes refused processing.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-02/native-green-observation.json/native-green.actual.log: scoped source/native/cleanup observations; prior RED retained, installed and human pending.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-02-T07",
+        "outcome_ids": [
+          "reader-signature-verdicts"
+        ],
+        "kind": "recovery",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Execute reviewed bounded Rust actors and verify native cleanup/preservation.",
+        "expected": "Functional and cleanup results are separate; fixed identities/accountDB and public services remain unchanged.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-02/native-exact-cleanup.log: scoped source/native/cleanup observations; prior RED retained, installed and human pending.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-02-T08",
+        "outcome_ids": [
+          "reader-signature-verdicts"
+        ],
+        "kind": "recovery",
+        "level": "deployed",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Qualify changed helper/worker/Runtime in consolidated S06 installation with preservation and rollback.",
+        "expected": "Matching installed code passes relevant actual checks without changing owner credentials/keys/policy/public mail.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-02-T09",
+        "outcome_ids": [
+          "reader-signature-verdicts"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Independently reconcile engineering/delivery, then obtain distinct human infrastructure acceptance.",
+        "expected": "Normal signed delivery and independent engineering review complete; owner acceptance explicitly recorded separately.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Engineering/review component complete; normal signed delivery and owner acceptance remain pending."
+        ]
+      }
+    ],
+    "engineering_exit": "Actual signature and signer/key states qualified through current native worker and reader, with matching installed integration, preservation, independent review and normal delivery.",
+    "human_exit": "Owner accepts the completed infrastructure scope and separately confirms any required real owner protected-reader UAT."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner authorised S06 engineering while away. Consolidated source/native/installed qualification passes within documented scope; actual owner protected-body UAT remains NOT RUN and the historical R2-03-022 owner failure remains retained."
+  },
+  "next_action": "Complete normal signed source delivery and exact GitHub parity; owner privately unlocks the existing mailbox key and performs the S06 protected-body/source/download T09 journey. No owner acceptance or successful owner private decryption is inferred."
+}
+```
+
+<!-- OSMAP_ARCHIVED_S06_01_NATIVE_QUALIFIED_20261102 -->
+```json
+{
+  "version": 1,
+  "slice": "S06-01",
+  "original_requirement": "Bounded PGP/MIME classification and exact signed-byte canonicalization",
+  "source_baseline": "cefd08517fa0e5b060fc197f50be042853da17c0",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_runtime_engineer",
+      "/root/s05_scope_qa"
+    ],
+    "qa": [
+      "/root/s05_protocol_review"
+    ],
+    "security_review": [
+      "/root/s05_protocol_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_SLICE_S06_01.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/DECISION_LOG.md",
+    "README.md",
+    "maint/ux/acceptance.json",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "src/openpgp_principal_native_tests.rs",
+    "src/auth.rs",
+    "src/openbsd.rs",
+    "src/mailbox_helper_native_reader_tests.rs",
+    "src/mailbox_helper.rs",
+    "src/http/protected_send_gateway_native_tests.rs",
+    "src/protected_message_gateway.rs",
+    "src/protected_message_gateway_tests.rs",
+    "src/http_gateway_protected.rs",
+    "src/pgp_mime_native_tests.rs",
+    "src/pgp_mime_tests.rs",
+    "src/protected_message.rs",
+    "src/protected_message_tests.rs"
+  ],
+  "outcomes": [
+    {
+      "id": "stored-protected-mime-integrity",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX15-002"
+      ],
+      "frontend_backend_outcome": "Supported stored protected MIME reaches correct canonical verification bytes; unsupported or altered transport cannot yield a trusted reader assessment.",
+      "essential_qa": "Actual Dovecot producer to Rust consumer, real cryptographic positive, unsupported transport refusal, ordinary/decrypted UTF8 preservation and source/identity/privacy bounds.",
+      "next_action": "Complete normal signed source delivery and exact GitHub parity; owner privately unlocks the existing mailbox key and performs the S06 protected-body/source/download T09 journey. No owner acceptance or successful owner private decryption is inferred.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Reviewed sharedstored-bodyguard; no parser/global executor change."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Focused eight gateway tests PASS; unchanged parser/core proofs retained."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Native GREEN11.05seconds libtest58681235, source851510a9; original RED11.30seconds retained. AccountDB/installed/authority unchanged; public mail healthy."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-01/native-independent-review.json SHA f761bf2a: source/native scoped GO; final installed/delivery/human pending."
+        },
+        {
+          "stage": "recovery",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/s06-01/native-exact-cleanup.log: exact two scratch roots removed after witness readback/no live refs; RED/GREEN libtests retained."
+        },
+        {
+          "stage": "implementation",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed public encryption/typed Locked refusal/epoch6/HTTPS200/preservation PASS; successful owner private decryption NOT RUN."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Correct canonical stored signed bytes and bounded protected classification with explicit unsupported transport refusal and preserved ordinary mail.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Accepted S05-04 and unchanged matching S05-03 parser/Processor/native reader proofs remain preserved; new S06 work does not erase failed owner body UAT or any earlier failure. Consolidated final observations are appended here; all preceding source/compiler/native failures remain in slice documents and private evidence. Source/preparation actions without full-action timing remain UNKNOWN, not zero. Git/owner results stay separate.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-02T00:21:59Z",
+      "elapsed_status": "MEASURED",
+      "elapsed_seconds": 13130.277
+    },
+    "attempts": [
+      {
+        "id": "source-setup-01",
+        "result": "FAIL",
+        "evidence": "/home/foo/Downloads/osmap-ux-s06/s06-01/source-red-compile-failure.log",
+        "sha256": "2e42995c0854e33d5556b605a3375becd8e9f701028a171024002f2b82cc6ec4",
+        "observation": "Agent test edit inserted let inside existing assertion; no product result.",
+        "boundary": "stored-protected-mime-integrity",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "2840faee90e1a4334d383c3858d93969318006d2f890f219e80bf96ef183dff4",
+        "source_revision_scope": "focused test component; incomplete native facade compile failure separately retained",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-01/source-red-compile-failure.log SHA256 2e42995c0854e33d5556b605a3375becd8e9f701028a171024002f2b82cc6ec4; Agent test edit inserted let inside existing assertion; no product result.",
+        "change_reference": "Initial regression source freeze.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Independent source review and root reconciliation in this chat; first two compile failures are fixture setup failures, never product RED. No native execution or external cleanup in these source actions."
+        }
+      },
+      {
+        "id": "source-setup-02",
+        "result": "FAIL",
+        "evidence": "/home/foo/Downloads/osmap-ux-s06/s06-01/source-red-compile-failure02.log",
+        "sha256": "1ac3bedf62b17843022f2f3e20ad3faa2241f43f8966253c1619301164b877ae",
+        "observation": "Paired missing snapshot binding plus compiling while native facade incomplete; independent reassessment identified both, corrected and waited complete source freeze.",
+        "boundary": "stored-protected-mime-integrity",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "c6b936313e4391914c05499353911e32be25b30537f436602e07e5c5c01d9bbb",
+        "source_revision_scope": "focused test component; incomplete native facade compile failure separately retained",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-01/source-red-compile-failure02.log SHA256 1ac3bedf62b17843022f2f3e20ad3faa2241f43f8966253c1619301164b877ae; Paired missing snapshot binding plus compiling while native facade incomplete; independent reassessment identified both, corrected and waited complete source freeze.",
+        "change_reference": "Root removed misplaced let in original assertion; partial facade and missing new local binding remained.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Independent source review and root reconciliation in this chat; first two compile failures are fixture setup failures, never product RED. No native execution or external cleanup in these source actions."
+        }
+      },
+      {
+        "id": "source-transport-red",
+        "result": "FAIL",
+        "evidence": "/home/foo/Downloads/osmap-ux-s06/s06-01/source-red.log",
+        "sha256": "3c265a9608bfc0c16ab15c7b6ac22c87ec59132f48a377674ed0559247fb4b7a",
+        "observation": "Behavioral RED: unsupported synthetic stored transport called crypto once; ordinary UTF8 and assembly controls PASS. Actual Dovecot observation still required before production correction.",
+        "boundary": "stored-protected-mime-integrity",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "a6e052718e741166f256dfc06757016b2c38a011b80e5795064d548408ab1202",
+        "source_revision_scope": "focused test component; incomplete native facade compile failure separately retained",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-01/source-red.log SHA256 3c265a9608bfc0c16ab15c7b6ac22c87ec59132f48a377674ed0559247fb4b7a; Behavioral RED: unsupported synthetic stored transport called crypto once; ordinary UTF8 and assembly controls PASS. Actual Dovecot observation still required before production correction.",
+        "change_reference": "Combined root and independent reviewers identified paired binding error and partial source freeze; corrected new local binding and waited completed native source before behavior run.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Independent source review and root reconciliation in this chat; first two compile failures are fixture setup failures, never product RED. No native execution or external cleanup in these source actions."
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s05_protocol_review"
+          ],
+          "failed_attempt_ids": [
+            "source-setup-01",
+            "source-setup-02"
+          ],
+          "reference": "Root and independent reviewer identified both accidental binding edits; runtime engineer confirmed and corrected partial-source/formatting spill. Existing tests restored; complete source frozen before behavioral run.",
+          "next_action": "Run one corrected complete focused source test; native follows only after real source/fixture review."
+        }
+      },
+      {
+        "id": "source-corpus",
+        "result": "PASS",
+        "evidence": "/home/foo/Downloads/osmap-ux-s06/s06-01/corpus-source.log",
+        "sha256": "0a49ded2f259db8af3e0f0f94482ac3757e9a0b00a00fd277e326c0ed5fbbb0d",
+        "observation": "Three encoded canonical corpus/newline cases PASS; native qualification remains NOT_RUN.",
+        "boundary": "stored-protected-mime-integrity",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "0604e883e6bdac94d17b5738e108274ae34dfe7383902aa0190f9e816bb1b9bf",
+        "source_revision_scope": "native reader corpus file",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-01/corpus-source.log SHA256 0a49ded2f259db8af3e0f0f94482ac3757e9a0b00a00fd277e326c0ed5fbbb0d; Three encoded canonical corpus/newline cases PASS; native qualification remains NOT_RUN.",
+        "change_reference": "Execute actual pure corpus producer/consumer contract after compile and behavioral RED.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Independent source review and root reconciliation in this chat; first two compile failures are fixture setup failures, never product RED. No native execution or external cleanup in these source actions."
+        }
+      },
+      {
+        "boundary": "stored-protected-mime-integrity",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Native source/recipe GO before dispatch and actual-result reconciliation retained in chat and /home/foo/Downloads/osmap-ux-s06/s06-01/native-independent-review.json; no claim that later reconciliation preceded dispatch."
+        },
+        "id": "native-transport-red",
+        "result": "FAIL",
+        "elapsed_seconds": 11.3,
+        "source_revision": "fff4ab5e4a8d235751e9b3cc140c82101f4e448d89b20464151874e52a01cab1",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-01/native-red-observation.json/native-red-child.log: actual transformed representation verified and body visible; supported/UTF8 positive observations pass, cleanupPASS.",
+        "change_reference": "Move from corrected source discriminator to reviewed actual Dovecot/helper/Runtime case, preserving all prior setup and source failures."
+      },
+      {
+        "boundary": "stored-protected-mime-integrity",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Native source/recipe GO before dispatch and actual-result reconciliation retained in chat and /home/foo/Downloads/osmap-ux-s06/s06-01/native-independent-review.json; no claim that later reconciliation preceded dispatch."
+        },
+        "id": "native-transport-green",
+        "result": "PASS",
+        "elapsed_seconds": 11.05,
+        "source_revision": "851510a9fddd2355579626be093aab1ee84f13414ac1e1fff29f26ce8c04b7df",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/s06-01/native-green-observation.json/native-green.actual.log: same raw transformation now profile refusal/no verified/no body; all supported and UTF8 positives retained, cleanupPASS.",
+        "change_reference": "Smallest shared stored-protected BODY profile check; unchanged classifier/Processor/global executor and unchanged native corpus.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s05_protocol_review"
+          ],
+          "failed_attempt_ids": [
+            "source-transport-red",
+            "native-transport-red"
+          ],
+          "reference": "Combined root/independent actual RED review established verification of changed stored bytes. Independently reviewed shared BODY-only correction preserves ordinary/decrypted/outer UTF8 and generated protected MIME compatibility.",
+          "next_action": "Run unchanged native corpus against corrected stored gateway; qualify installation with dependent S06 changes."
+        }
+      }
+    ]
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S06-01",
+    "specification": {
+      "path": "docs/UX_SLICE_S06_01.md",
+      "sha256": "283641302cb64a85a729c942ef92099b37ba43ed842c788385dadfa5e49981db"
+    },
+    "design": {
+      "journey": "Open a supported protected message using correct canonical stored bytes, or receive an accurate safe refusal without changed ordinary mail.",
+      "frontend": "Preserve current reader; no new authentication page or trust claim.",
+      "backend": "Existing Rust MIME classifier, protected gateway/Processor and native helpers.",
+      "interfaces": "Current bounded MessageView and fixed helper protocols; no new raw transport without demonstrated need.",
+      "persistence": "Original stored representation retained; canonical input and decrypted content transient; only synthetic fixture writes.",
+      "security": "No lossy protected transport can manufacture verified status; account/message/version and existing isolation limits preserved.",
+      "failure_recovery": "Typed refusal without plaintext fallback; bounded exact owned cleanup, original failures retained and existing artifact rollback if installed change fails."
+    },
+    "tests": [
+      {
+        "id": "S06-01-T01",
+        "outcome_ids": [
+          "stored-protected-mime-integrity"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Reconcile current code and retained S05 source-bound proofs with the frozen S06 profile and target prerequisites.",
+        "expected": "Baseline and supported profile: correct canonical verification data or explicit safe refusal; source/privacy/ordinary-mail invariants preserved.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-01/preflight.json; current parser/Processor profile and frozen plan reconciled with retained native S05 evidence.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-01-T02",
+        "outcome_ids": [
+          "stored-protected-mime-integrity"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Reuse unchanged framing/canonical-byte suite and add only required missing discriminators.",
+        "expected": "Bounded parser and canonical framing: correct canonical verification data or explicit safe refusal; source/privacy/ordinary-mail invariants preserved.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-01/parser-regressions.log: actual18 parser/canonicalization/bounds cases PASS.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-01-T03",
+        "outcome_ids": [
+          "stored-protected-mime-integrity"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Fetch supported signed MIME through disposable Dovecot and actual helper/Runtime; compare producer canonical bytes and real verification.",
+        "expected": "Supported stored signed MIME preserves the exact canonical entity supplied by the producer and successfully verifies with the real verifier; a refusal fails this positive case. Stored source and privacy remain preserved.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-01/native-red-observation.json: actual supported producer/verification and ordinary/decrypted/outer UTF8 positive observations; overall negative case remains FAIL.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-01-T04",
+        "outcome_ids": [
+          "stored-protected-mime-integrity"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Observe actual invalid-UTF8 transport before changing code; retain failure, make smallest supported correction and retest refusal.",
+        "expected": "Unsupported transport refusal: correct canonical verification data or explicit safe refusal; source/privacy/ordinary-mail invariants preserved.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-01/native-red-observation.json and native-red-child.log: transformed source yielded verified/body-visible assessment; correction and matching GREEN pending.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-01/native-green-observation.json: identical transformed source now refused, no verified/body release; all supported/UTF8 positives remain valid.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-01-T05",
+        "outcome_ids": [
+          "stored-protected-mime-integrity"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Check ordinary UTF8 and decrypted UTF8 positives, outer headers and library byte support through the changed boundary.",
+        "expected": "Ordinary UTF8 and decrypted UTF8 content render successfully with preserved text, including non-ASCII outer headers; a blanket Unicode refusal fails this positive case. Existing byte-oriented parser support remains intact.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-01/native-red-observation.json: actual supported producer/verification and ordinary/decrypted/outer UTF8 positive observations; overall negative case remains FAIL.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-01/processor-regressions.log:13 core body/privacy/identity cases PASS.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-01-T06",
+        "outcome_ids": [
+          "stored-protected-mime-integrity"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Exercise account/message/version/refusal and finite diagnostics with no plaintext store, log or fallback.",
+        "expected": "Identity privacy and typed refusal: correct canonical verification data or explicit safe refusal; source/privacy/ordinary-mail invariants preserved.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-01/source-green.log: eight gateway identity/binding/source/profile tests PASS; unchanged core privacy bounds retained.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-01-T07",
+        "outcome_ids": [
+          "stored-protected-mime-integrity"
+        ],
+        "kind": "recovery",
+        "level": "native",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Run reviewed bounded Rust native fixtures with exact owned child/agent cleanup and account-database preservation.",
+        "expected": "Owned native execution and cleanup: correct canonical verification data or explicit safe refusal; source/privacy/ordinary-mail invariants preserved.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-01/native-green.actual.log and native-exact-cleanup.log: functional/owned cleanup/exact retained scratch disposition separately observed; public mail/accountDB/authority unchanged.",
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-01-T08",
+        "outcome_ids": [
+          "stored-protected-mime-integrity"
+        ],
+        "kind": "recovery",
+        "level": "deployed",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Qualify changed artifact, perform guarded OSMAP-only installation if necessary and verify actual installed route plus preservation.",
+        "expected": "Installed preservation and availability: correct canonical verification data or explicit safe refusal; source/privacy/ordinary-mail invariants preserved.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+        ]
+      },
+      {
+        "id": "S06-01-T09",
+        "outcome_ids": [
+          "stored-protected-mime-integrity"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Current approved bounded profile, matching actual code/fixture inputs and relevant source/native/target capabilities established before dependent operation.",
+        "action": "Reconcile independent results and signed delivery; owner accepts this infrastructure result separately.",
+        "expected": "Independent delivery and owner acceptance: correct canonical verification data or explicit safe refusal; source/privacy/ordinary-mail invariants preserved.",
+        "preserved": "Owner credentials, factors, keys, policies, contacts, messages and sessions; frozen plans/110 legacy rows; public mail availability and configuration.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Engineering/review component complete; normal signed delivery and owner acceptance remain pending."
+        ]
+      }
+    ],
+    "engineering_exit": "Source/native/installed and recovery observations match the supported profile, independently reviewed and normally signed/synchronized.",
+    "human_exit": "Owner acknowledges this infrastructure result; later S06 reader UI acceptance remains separately recorded."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner authorised S06 engineering while away. Consolidated source/native/installed qualification passes within documented scope; actual owner protected-body UAT remains NOT RUN and the historical R2-03-022 owner failure remains retained."
+  },
+  "next_action": "Complete normal signed source delivery and exact GitHub parity; owner privately unlocks the existing mailbox key and performs the S06 protected-body/source/download T09 journey. No owner acceptance or successful owner private decryption is inferred."
+}
+```
+
+
+
+<!-- OSMAP_ARCHIVED_S05_04_ACCEPTED_20261102 -->
 ```json
 {
   "version": 1,
@@ -1152,7 +2938,7 @@ slice using the same failure-analysis method. See
   "next_action": "S05-04 accepted. Preserve its evidence and limitations; publish this documentation-only owner-acceptance record through normal signed delivery. S06-01 is next in the frozen plan and needs its own work order before implementation."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_ARCHIVED_S05_04_ACCEPTED_20261102 -->
 
 <!-- OSMAP_ARCHIVED_F3_ACCEPTED_WORK_ORDER -->
 ```json

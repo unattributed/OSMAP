@@ -684,6 +684,644 @@ pub(crate) fn prove_protected_sent(
     assert!(!root.exists());
     assert_eq!(standard_metadata(), before);
 }
+// Seven-bit signed-data corpus; transfer decoding happens only after verification.
+fn stored_profile_entities() -> Vec<(&'static str, Vec<u8>, bool)> {
+    let entity = concat!(
+        "Content-Type: multipart/mixed;\r\n\tboundary=s06-inner\r\n",
+        "X-Exact: two  spaces \t\r\n\r\n",
+        "--s06-inner\r\nContent-Type: text/plain; charset=utf-8\r\n",
+        "Content-Transfer-Encoding: quoted-printable\r\n\r\n",
+        "Encoded caf=C3=A9 with final whitespace =20=09\r\n",
+        "Significant trailing bytes \t\r\n",
+        "--s06-inner\r\nContent-Type: application/octet-stream\r\n",
+        "Content-Disposition: attachment; filename=s06.bin\r\n",
+        "Content-Transfer-Encoding: base64\r\n\r\nAAH/\r\n",
+        "--s06-inner--\r\n",
+    )
+    .as_bytes()
+    .to_vec();
+    vec![
+        ("folded-final", entity.clone(), false),
+        (
+            "folded-no-final",
+            entity[..entity.len() - 2].to_vec(),
+            false,
+        ),
+        ("folded-lf-store", entity, true),
+    ]
+}
+fn stored_profile_signed_wire(
+    crypto: &crate::openpgp_crypto_runtime::Client,
+    signer: &str,
+    raw_entity: &[u8],
+    verification_entity: &[u8],
+    name: &str,
+) -> Vec<u8> {
+    use crate::openpgp_crypto::{Operation, SignatureState};
+    let signed = crypto
+        .execute(
+            "bob@example.test",
+            &Operation::Sign {
+                signer_fingerprint: signer.into(),
+                data: verification_entity.to_vec(),
+            },
+        )
+        .unwrap()
+        .unwrap();
+    assert_eq!(signed.signature, SignatureState::Valid);
+    let digest = match signed.hash_algorithm {
+        Some(8) => crate::pgp_mime::SignatureDigest::Sha256,
+        Some(10) => crate::pgp_mime::SignatureDigest::Sha512,
+        _ => panic!("unsupported disposable signature digest"),
+    };
+    let entity = crate::pgp_mime::build_signed(
+        raw_entity,
+        &signed.content,
+        digest,
+        &format!("s06-{name}"),
+        crate::pgp_mime::PgpMimePolicy::default(),
+    )
+    .unwrap();
+    let mut wire = format!("From: Bob <bob@example.test>\r\nTo: alice@example.test\r\nSubject: S06 {name}\r\nX-Outer-Note: Café\r\nMessage-ID: <s06-{name}@fixture.test>\r\nMIME-Version: 1.0\r\n").into_bytes();
+    wire.extend_from_slice(&entity);
+    wire
+}
+fn stored_profile_message(root: &Path, name: &str, wire: &[u8]) -> PathBuf {
+    let path = root.join("alice/Maildir/new").join(name);
+    fs::write(&path, wire).unwrap();
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+    path
+}
+
+fn expected_raw_profile_refusal(error: &MailboxBackendError) -> bool {
+    error.backend == "message-json-parser"
+        && error.reason == "native fetch returned invalid or inconsistent JSON fields"
+}
+
+fn stored_profile_encrypted_entity() -> Vec<u8> {
+    concat!(
+        "MIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=s06-inner\r\n\r\n",
+        "--s06-inner\r\nContent-Type: text/html; charset=utf-8\r\n\r\n",
+        "<p><strong>Decrypted UTF8 café remains readable.</strong> S06_TRANSIENT_BODY_04</p>",
+        "<script>S06_ACTIVE_SCRIPT_04</script>",
+        "<img src=\"https://s06.invalid/tracker\" onerror=\"S06_ACTIVE_EVENT_04\">\r\n",
+        "--s06-inner\r\nContent-Type: application/octet-stream\r\n",
+        "Content-Disposition: attachment; filename=s06-protected.bin\r\n",
+        "Content-Transfer-Encoding: base64\r\n\r\nAAH/\r\n--s06-inner--\r\n",
+    )
+    .as_bytes()
+    .to_vec()
+}
+
+// Called only by the outer-owned Rust actor. All keys/agents remain in that
+// actor's existing homes; this corpus creates only a disposable Dovecot reader.
+pub(crate) fn prove_stored_signed_profile(
+    root: &Path,
+    crypto: &crate::openpgp_crypto_runtime::Client,
+    inventory: &crate::openpgp_inventory_runtime::Client,
+    alice: &str,
+    bob: &str,
+) {
+    use crate::openpgp_crypto::{Operation, SignatureState};
+    use crate::totp::TimeProvider;
+    use sha2::Digest;
+    assert_eq!(std::env::consts::OS, "openbsd");
+    assert_eq!(root.canonicalize().unwrap(), root);
+    assert!(root.starts_with("/tmp") && root.ends_with("helper/r"));
+    let metadata = fs::symlink_metadata(root).unwrap();
+    assert!(
+        metadata.is_dir()
+            && metadata.uid() == 1002
+            && metadata.gid() == 1003
+            && metadata.mode() & 0o777 == 0o700
+    );
+    let before = standard_metadata();
+    let mut fixture = Fixture {
+        root: root.into(),
+        stop: Arc::new(AtomicBool::new(false)),
+        threads: vec![],
+    };
+    for directory in ["run", "state", "app-state"] {
+        fs::DirBuilder::new()
+            .mode(0o700)
+            .create(root.join(directory))
+            .unwrap();
+    }
+    for part in ["cur", "new", "tmp"] {
+        fs::create_dir_all(root.join("alice/Maildir").join(part)).unwrap();
+    }
+    let cases = stored_profile_entities();
+    let mut originals = Vec::new();
+    for (name, entity, lf) in &cases {
+        let wire = stored_profile_signed_wire(crypto, bob, entity, entity, name);
+        let wire = if *lf {
+            String::from_utf8(wire)
+                .unwrap()
+                .replace("\r\n", "\n")
+                .into_bytes()
+        } else {
+            wire
+        };
+        let path = stored_profile_message(root, name, &wire);
+        originals.push((path, wire));
+    }
+    let raw_entity = b"Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\nRawInvalid: \xff\r\n";
+    let raw_wire = stored_profile_signed_wire(crypto, bob, raw_entity, raw_entity, "raw-probe");
+    originals.push((
+        stored_profile_message(root, "raw-probe", &raw_wire),
+        raw_wire,
+    ));
+    let ordinary = "From: Bob <bob@example.test>\r\nTo: alice@example.test\r\nSubject: S06 ordinary\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nOrdinary UTF8 café remains readable.\r\n".as_bytes().to_vec();
+    originals.push((
+        stored_profile_message(root, "ordinary", &ordinary),
+        ordinary,
+    ));
+    let encrypted = crypto.execute(PROTECTED_ALICE, &Operation::Encrypt {
+        recipient_fingerprints: vec![alice.into()],
+        data: stored_profile_encrypted_entity(),
+    }).unwrap().unwrap();
+    let mut inner_wire = b"From: Bob <bob@example.test>\r\nTo: alice@example.test\r\nSubject: S06 inner-utf8\r\nMIME-Version: 1.0\r\n".to_vec();
+    inner_wire.extend_from_slice(
+        &crate::pgp_mime::build_encrypted(
+            &encrypted.content,
+            "s06-utf8",
+            crate::pgp_mime::PgpMimePolicy::default(),
+        )
+        .unwrap(),
+    );
+    originals.push((
+        stored_profile_message(root, "inner-utf8", &inner_wire),
+        inner_wire,
+    ));
+    let config = root.join("dovecot.conf");
+    fs::write(&config, format!("base_dir = {0}/run\nstate_dir = {0}/state\nmail_location = maildir:~/Maildir\nmail_uid = 1002\nmail_gid = 1003\nfirst_valid_uid = 1002\nprotocols =\nlisten = 127.0.0.1\nssl = no\nmail_plugins =\nstats_writer_socket_path =\nauth_socket_path = {0}/never-default\nlog_path = {0}/native.log\ninfo_log_path = {0}/native.log\nnamespace inbox {{\n inbox = yes\n separator =\n}}\n", root.display())).unwrap();
+    fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).unwrap();
+    let userdb = serve_userdb(&mut fixture, 1002, 1003);
+    let executor = NativeExecutor {
+        config,
+        calls: Arc::new(AtomicUsize::new(0)),
+        bin_move_count: None,
+    };
+    let list = DoveadmMessageListBackend::new(
+        MessageListPolicy::default(),
+        executor.clone(),
+        "/usr/local/bin/doveadm",
+    )
+    .with_userdb_socket_path(Some(userdb.clone()));
+    let view = DoveadmMessageViewBackend::new(
+        MessageViewPolicy::default(),
+        executor.clone(),
+        "/usr/local/bin/doveadm",
+    )
+    .with_userdb_socket_path(Some(userdb.clone()));
+    let query = MessageListRequest::new(MessageListPolicy::default(), "INBOX").unwrap();
+    let rows = list.list_messages(PROTECTED_ALICE, &query).unwrap();
+    let uid = |name: &str, rows: &[MessageSummary]| {
+        rows.iter()
+            .find(|row| row.subject.as_deref() == Some(&format!("S06 {name}")))
+            .expect("actual native corpus row")
+            .uid
+    };
+    let mut observations = Vec::new();
+    for (name, entity, _) in &cases {
+        let request =
+            MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", uid(name, &rows))
+                .unwrap();
+        let message = view.fetch_message(PROTECTED_ALICE, &request).unwrap();
+        assert!(
+            message.header_block.contains("X-Outer-Note: Café"),
+            "native fetch changed supported UTF8 outer header"
+        );
+        let source = crate::protected_message_gateway::assemble_source(&message).unwrap();
+        let crate::pgp_mime::PgpMimeMessage::Signed {
+            canonical_entity,
+            signature,
+            ..
+        } = crate::pgp_mime::classify(&source, crate::pgp_mime::PgpMimePolicy::default()).unwrap()
+        else {
+            panic!("stored signed corpus entity")
+        };
+        assert!(
+            canonical_entity == *entity,
+            "supported stored entity changed before real verification"
+        );
+        let verified = crypto
+            .execute(
+                PROTECTED_ALICE,
+                &Operation::Verify {
+                    data: canonical_entity.clone(),
+                    signature,
+                },
+            )
+            .unwrap()
+            .unwrap();
+        assert_eq!(verified.signature, SignatureState::Valid);
+        assert_eq!(verified.primary_fingerprint.as_deref(), Some(bob));
+        observations.push(serde_json::json!({"case":name,"canonical_bytes":canonical_entity.len(),"canonical_sha256":format!("{:x}", sha2::Sha256::digest(&canonical_entity)),"producer_equal":true,"actual_signature_valid":true}));
+    }
+    let raw_request = MessageViewRequest::new(
+        MessageViewPolicy::default(),
+        "INBOX",
+        uid("raw-probe", &rows),
+    )
+    .unwrap();
+    let raw_fetch = view.fetch_message(PROTECTED_ALICE, &raw_request);
+    let mut raw_observation;
+    let mut raw_source_expected = true;
+    let mut crafted = false;
+    if let Ok(message) = raw_fetch {
+        let source = crate::protected_message_gateway::assemble_source(&message).unwrap();
+        let crate::pgp_mime::PgpMimeMessage::Signed {
+            canonical_entity, ..
+        } = crate::pgp_mime::classify(&source, crate::pgp_mime::PgpMimePolicy::default()).unwrap()
+        else {
+            panic!("native raw framing changed unexpectedly")
+        };
+        assert!(
+            canonical_entity != raw_entity,
+            "String transport unexpectedly preserved invalid UTF8 octet"
+        );
+        let forged =
+            stored_profile_signed_wire(crypto, bob, raw_entity, &canonical_entity, "raw-crafted");
+        originals.push((stored_profile_message(root, "raw-crafted", &forged), forged));
+        raw_observation = serde_json::json!({"producer":"transformed","original_sha256":format!("{:x}",sha2::Sha256::digest(raw_entity)),"observed_sha256":format!("{:x}",sha2::Sha256::digest(&canonical_entity)),"observed_bytes":canonical_entity.len()});
+        crafted = true;
+    } else if let Err(error) = raw_fetch {
+        raw_source_expected = expected_raw_profile_refusal(&error);
+        raw_observation = serde_json::json!({
+            "producer":"refused", "backend":error.backend,
+            "category":if raw_source_expected {"invalid_native_json_transport"}else{"unrelated_backend_failure"},
+            "reason_bytes":error.reason.len(), "reason_sha256":format!("{:x}",sha2::Sha256::digest(error.reason.as_bytes())),
+        });
+    } else {
+        unreachable!()
+    }
+    let forbidden = Arc::new(AtomicUsize::new(0));
+    let helper = start_helper(
+        &mut fixture,
+        executor,
+        userdb,
+        0,
+        Arc::new(AtomicBool::new(false)),
+        Arc::new(AtomicUsize::new(0)),
+        forbidden.clone(),
+    );
+    let key = root.join("fixture-grant.key");
+    fs::write(&key, test_helper_grant_key()).unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    let app_config = AppConfig::from_env_map(&BTreeMap::from([
+        ("OSMAP_RUN_MODE".into(), "serve".into()),
+        (
+            "OSMAP_STATE_DIR".into(),
+            root.join("app-state").to_string_lossy().into_owned(),
+        ),
+        (
+            "OSMAP_MAILBOX_HELPER_SOCKET_PATH".into(),
+            helper.to_string_lossy().into_owned(),
+        ),
+        (
+            "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH".into(),
+            key.to_string_lossy().into_owned(),
+        ),
+        ("OSMAP_MAILBOX_HELPER_PEER_UID".into(), "1002".into()),
+        ("OSMAP_MAILBOX_WORKER_BUDGET".into(), "1".into()),
+    ]))
+    .unwrap();
+    let public = inventory.read(PROTECTED_ALICE).unwrap();
+    crate::openpgp_bindings::BindingStore::new(
+        app_config
+            .state_layout
+            .settings_dir
+            .join("openpgp-bindings"),
+    )
+    .replace_operator(
+        PROTECTED_ALICE,
+        0,
+        crate::openpgp_bindings::Update {
+            account_binding: Some(crate::openpgp_bindings::AccountBinding {
+                primary_fingerprint: alice.into(),
+                signing_fingerprint: Some(alice.into()),
+                decrypt_primary_fingerprints: vec![alice.into()],
+            }),
+            recipient_bindings: vec![crate::openpgp_bindings::RecipientBinding {
+                address: "bob@example.test".into(),
+                primary_fingerprint: bob.into(),
+                encryption: crate::openpgp_bindings::Requirement::Optional,
+            }],
+            policy: crate::openpgp_bindings::ProtectionPolicy::default(),
+        },
+        &public,
+        SystemTimeProvider.unix_timestamp(),
+    )
+    .unwrap();
+    let context = AuthenticationContext::new(
+        AuthenticationPolicy::default(),
+        "s06-native-reader-session",
+        "127.0.0.1",
+        "OSMAP/S06-native-reader",
+    )
+    .unwrap();
+    let sessions = SessionService::new(
+        FileSessionStore::new(&app_config.state_layout.session_dir),
+        SystemTimeProvider,
+        SystemRandomSource,
+        180,
+        180,
+    );
+    let session = sessions
+        .issue(&context, PROTECTED_ALICE, RequiredSecondFactor::Totp)
+        .unwrap();
+    crate::settings::FileUserSettingsStore::new(&app_config.state_layout.settings_dir)
+        .save_content(
+            PROTECTED_ALICE,
+            crate::rendering::HtmlDisplayPreference::PreferSanitizedHtml,
+        )
+        .unwrap();
+    let mut gateway = RuntimeBrowserGateway::from_config(&app_config);
+    gateway.crypto_client = Some(crypto.clone());
+    gateway.public_inventory_client = Some(inventory.clone());
+    let app = BrowserApp::new(HttpPolicy::from_config(&app_config), gateway);
+    let final_rows = list.list_messages(PROTECTED_ALICE, &query).unwrap();
+    for (name, _, _) in &cases {
+        let response = get(
+            &app,
+            &session,
+            &format!("/message?mailbox=INBOX&uid={}", uid(name, &final_rows)),
+        );
+        assert_eq!(response.response.status_code, 200);
+        assert!(
+            text(&response).contains("cryptographically valid")
+                && text(&response).contains("Encoded café")
+        );
+    }
+    let ordinary = get(
+        &app,
+        &session,
+        &format!(
+            "/message?mailbox=INBOX&uid={}",
+            uid("ordinary", &final_rows)
+        ),
+    );
+    assert!(text(&ordinary).contains("Ordinary UTF8 café remains readable."));
+    let inner = get(
+        &app,
+        &session,
+        &format!(
+            "/message?mailbox=INBOX&uid={}",
+            uid("inner-utf8", &final_rows)
+        ),
+    );
+    assert!(
+        text(&inner).contains("Decrypted UTF8 café remains readable.")
+            && text(&inner).contains("Decrypted on mail host")
+    );
+    assert!(!text(&inner).contains("cryptographically valid"));
+    assert_eq!(inner.response.status_code, 200);
+    budget_pair(&inner);
+    assert!(text(&inner).contains("<strong>Decrypted UTF8 café remains readable.</strong>"));
+    assert!(text(&inner).contains("S06_TRANSIENT_BODY_04"));
+    for unsafe_content in ["<script", "S06_ACTIVE_SCRIPT_04", "S06_ACTIVE_EVENT_04", "https://s06.invalid/tracker"] {
+        assert!(!text(&inner).contains(unsafe_content));
+    }
+    let source_href = stored_content_href(text(&inner), "View source");
+    let download_href = stored_content_href(text(&inner), "Download");
+    let stored = view.fetch_message(
+        PROTECTED_ALICE,
+        &MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", uid("inner-utf8", &final_rows)).unwrap(),
+    ).unwrap();
+    let identity = &stored.metadata.as_ref().unwrap().version;
+    for target in [&source_href, &download_href] {
+        let fields = neighbour_fields(&app, target);
+        assert_eq!(fields.get("mailbox_guid"), Some(&identity.mailbox_guid));
+        assert_eq!(fields.get("message_guid"), Some(&identity.message_guid));
+    }
+    let expected_source = format!("{}\n\n{}",
+        crate::http_support::escape_html(stored.header_block.trim_end_matches(['\r', '\n'])),
+        crate::http_support::escape_html(&stored.body_text));
+    assert!(expected_source.contains("-----BEGIN PGP MESSAGE-----"));
+    assert!(!expected_source.contains("S06_TRANSIENT_BODY_04"));
+    let source = get(&app, &session, &source_href);
+    assert_eq!(source.response.status_code, 200);
+    budget_pair(&source);
+    let source_text = text(&source).split_once("<pre class=\"message-source\"")
+        .unwrap().1.split_once('>').unwrap().1.split_once("</pre>").unwrap().0;
+    assert_eq!(source_text, expected_source);
+    assert!(!text(&source).contains("S06_TRANSIENT_BODY_04"));
+    assert!(!text(&source).contains("Decrypted UTF8 café remains readable."));
+    assert_eq!(stored_content_header(&source, "Cache-Control"), "no-store");
+    assert_eq!(stored_content_header(&source, "Content-Security-Policy"), crate::http_support::browser_csp());
+    let download = get(&app, &session, &download_href);
+    assert_eq!(download.response.status_code, 200);
+    budget_pair(&download);
+    assert_eq!(download.response.body, [0, 1, 255]);
+    assert_ne!(download.response.body, encrypted.content);
+    assert_eq!(stored_content_header(&download, "Content-Type"), "application/octet-stream");
+    assert_eq!(stored_content_header(&download, "Content-Disposition"), "attachment; filename=\"s06-protected.bin\"");
+    assert_eq!(stored_content_header(&download, "Cache-Control"), "no-store");
+    assert_eq!(stored_content_header(&download, "X-Content-Type-Options"), "nosniff");
+    assert_eq!(stored_content_header(&download, "Cross-Origin-Resource-Policy"), "same-origin");
+    assert_eq!(stored_content_header(&download, "Referrer-Policy"), "no-referrer");
+    assert_eq!(stored_content_header(&download, "X-Frame-Options"), "DENY");
+    assert_eq!(stored_content_header(&download, "Content-Security-Policy"),
+        "sandbox; default-src 'none'; base-uri 'none'; frame-ancestors 'none'");
+    assert!(download.response.to_http_bytes().windows(b"Content-Length: 3\r\n".len())
+        .any(|window| window == b"Content-Length: 3\r\n"));
+    let content_url = |target: &str, fields: &BTreeMap<String, String>| format!("{}?{}",
+        target.split_once('?').unwrap().0,
+        fields.iter().map(|(key, value)| format!("{}={}", encode(key), encode(value)))
+            .collect::<Vec<_>>().join("&"));
+    for target in [&source_href, &download_href] {
+        let unauthenticated = http(&app, None, "GET", target, &BTreeMap::new());
+        assert_eq!(unauthenticated.response.status_code, 303);
+        assert_eq!(stored_content_header(&unauthenticated, "Location"), "/login");
+        for selector in ["mailbox_guid", "message_guid"] {
+            let mut fields = neighbour_fields(&app, target);
+            let mismatched = if selector == "mailbox_guid" {
+                let mut guid = identity.mailbox_guid.clone();
+                let first = if guid.starts_with('0') { "1" } else { "0" };
+                guid.replace_range(..1, first);
+                guid
+            } else {
+                "foreign-or-stale-native-content-guid".into()
+            };
+            fields.insert(selector.into(), mismatched);
+            let refused = get(&app, &session, &content_url(target, &fields));
+            assert_eq!(refused.response.status_code, 409);
+            budget_pair(&refused);
+            assert!(!text(&refused).contains("S06_TRANSIENT_BODY_04"));
+            assert_ne!(refused.response.body, [0, 1, 255]);
+        }
+        let mut fields = neighbour_fields(&app, target);
+        fields.remove("mailbox_guid");
+        assert_eq!(get(&app, &session, &content_url(target, &fields)).response.status_code, 400);
+    }
+    let mut invalid_part = neighbour_fields(&app, &download_href);
+    invalid_part.insert("part".into(), "1..2".into());
+    assert_eq!(get(&app, &session, &content_url(&download_href, &invalid_part)).response.status_code, 400);
+    let mut missing_part = neighbour_fields(&app, &download_href);
+    missing_part.insert("part".into(), "1.99".into());
+    assert_eq!(get(&app, &session, &content_url(&download_href, &missing_part)).response.status_code, 404);
+
+    // Source availability does not depend on decrypting the stored envelope.
+    // Inspect the actual Runtime model as well as HTTP: refusal must not leave
+    // plaintext for automatic reply/forward or any downloadable ciphertext part.
+    let mut unavailable = RuntimeBrowserGateway::from_config(&app_config);
+    unavailable.crypto_client = None;
+    unavailable.public_inventory_client = Some(inventory.clone());
+    let validated = sessions.validate(&context, &session.token).unwrap();
+    let refused = crate::http::BrowserGateway::view_message(
+        &unavailable, &context, &validated, "INBOX", uid("inner-utf8", &final_rows),
+    );
+    let crate::http::BrowserMessageViewDecision::Rendered { rendered, .. } = refused.decision else {
+        panic!("unavailable crypto must retain the protected reader refusal");
+    };
+    assert!(matches!(rendered.openpgp, Some(crate::openpgp_reader_ui::ReaderState::Refused(_))));
+    assert!(rendered.body_text_for_compose.is_empty() && rendered.attachments.is_empty());
+    let unavailable = BrowserApp::new(HttpPolicy::from_config(&app_config), unavailable);
+    let refused_reader = get(&unavailable, &session, &format!("/message?mailbox=INBOX&uid={}", uid("inner-utf8", &final_rows)));
+    assert_eq!(refused_reader.response.status_code, 200);
+    assert!(text(&refused_reader).contains("OpenPGP processing refused"));
+    assert!(!text(&refused_reader).contains("S06_TRANSIENT_BODY_04"));
+    assert!(!text(&refused_reader).contains("s06-protected.bin"));
+    let unavailable_source = get(&unavailable, &session, &source_href);
+    assert_eq!(unavailable_source.response.status_code, 200);
+    budget_pair(&unavailable_source);
+    let unavailable_source_text = text(&unavailable_source).split_once("<pre class=\"message-source\"")
+        .unwrap().1.split_once('>').unwrap().1.split_once("</pre>").unwrap().0;
+    assert_eq!(unavailable_source_text, expected_source);
+    assert_eq!(stored_content_header(&unavailable_source, "Cache-Control"), "no-store");
+    let unavailable_download = get(&unavailable, &session, &download_href);
+    assert_eq!(unavailable_download.response.status_code, 503);
+    budget_pair(&unavailable_download);
+    assert_ne!(unavailable_download.response.body, [0, 1, 255]);
+    assert!(!text(&unavailable_download).contains("S06_TRANSIENT_BODY_04"));
+    let recovered_download = get(&app, &session, &download_href);
+    assert_eq!(recovered_download.response.status_code, 200);
+    assert_eq!(recovered_download.response.body, [0, 1, 255]);
+    budget_pair(&recovered_download);
+    let mut pending = vec![root.join("app-state")];
+    while let Some(path) = pending.pop() {
+        let metadata = fs::symlink_metadata(&path).unwrap();
+        assert!(!metadata.file_type().is_symlink());
+        if metadata.is_dir() {
+            pending.extend(fs::read_dir(path).unwrap().map(|entry| entry.unwrap().path()));
+        } else {
+            assert!(metadata.is_file());
+            let bytes = fs::read(path).unwrap();
+            assert!(!bytes.windows(b"S06_TRANSIENT_BODY_04".len())
+                .any(|window| window == b"S06_TRANSIENT_BODY_04"));
+        }
+    }
+    let raw_name = if crafted { "raw-crafted" } else { "raw-probe" };
+    let raw_response = get(
+        &app,
+        &session,
+        &format!("/message?mailbox=INBOX&uid={}", uid(raw_name, &final_rows)),
+    );
+    let falsely_verified = text(&raw_response).contains("cryptographically valid");
+    let raw_body_visible = text(&raw_response).contains("RawInvalid:");
+    let profile_refusal =
+        text(&raw_response).contains(crate::openpgp_reader_ui::refusal_description(
+            crate::protected_message::ProtectedError::UnsupportedTextEncoding,
+        ));
+    raw_observation["reader_verified"] = serde_json::json!(falsely_verified);
+    raw_observation["http_status"] = serde_json::json!(raw_response.response.status_code);
+    raw_observation["raw_body_visible"] = serde_json::json!(raw_body_visible);
+    raw_observation["profile_refusal_notice"] = serde_json::json!(profile_refusal);
+    let fetch_refusal = text(&raw_response).contains("Message View Unavailable");
+    raw_observation["fetch_refusal_notice"] = serde_json::json!(fetch_refusal);
+    raw_observation["expected_reader_path"] = serde_json::json!(if crafted {
+        "protected_profile_refusal"
+    } else {
+        "producer_fetch_unavailable"
+    });
+    let witness = root.parent().unwrap().join("s06-profile-observation.json");
+    fs::write(&witness,serde_json::to_vec(&serde_json::json!({"supported":observations,"ordinary_utf8":true,"decrypted_utf8":true,"protected_http":{"sanitized_utf8":true,"processed_binary_exact":true,"stored_source_exact":true,"source_without_crypto":true,"refusal_no_quote_or_attachments":true,"invalid_and_stale_links_refused":true,"app_state_plaintext_absent":true},"raw":raw_observation})).unwrap()).unwrap();
+    fs::set_permissions(&witness, fs::Permissions::from_mode(0o600)).unwrap();
+    for (path, bytes) in originals {
+        assert!(
+            fs::read(path).unwrap() == bytes,
+            "stored source changed during reader qualification"
+        );
+    }
+    assert_eq!(forbidden.load(Ordering::SeqCst), 0);
+    assert!(
+        raw_source_expected,
+        "raw fixture hit an unrelated producer failure; consult fixed-category witness"
+    );
+    assert!(
+        !falsely_verified,
+        "raw invalid UTF8 was transformed into a verified reader assessment"
+    );
+    assert!(
+        !raw_body_visible,
+        "unsupported raw profile entered a plaintext reader fallback"
+    );
+    if crafted {
+        assert_eq!(
+            raw_response.response.status_code, 200,
+            "transformed raw profile must reach a safe protected-reader refusal"
+        );
+        assert!(
+            profile_refusal,
+            "transformed raw profile did not show the specific unsupported-protection refusal"
+        );
+    } else {
+        assert_eq!(
+            raw_response.response.status_code, 503,
+            "known native parser refusal must retain the normal fetch-unavailable response"
+        );
+        assert!(
+            fetch_refusal,
+            "known native parser refusal did not show Message View Unavailable"
+        );
+    }
+    fixture.finish();
+    drop(fixture);
+    assert!(!root.exists());
+    assert_eq!(standard_metadata(), before);
+}
+#[test]
+fn stored_profile_corpus_is_encoded_canonical_and_has_distinct_newline_cases() {
+    let cases = stored_profile_entities();
+    assert_eq!(cases.len(), 3);
+    for (_, entity, _) in &cases {
+        assert!(entity.is_ascii());
+        assert_eq!(
+            crate::pgp_mime::canonical_signed_entity(entity, 65536).unwrap(),
+            *entity
+        );
+    }
+    assert!(cases[0].1.ends_with(b"\r\n"));
+    assert!(!cases[1].1.ends_with(b"\r\n"));
+    assert!(cases[2].2);
+}
+
+#[test]
+fn stored_profile_producer_refusal_rejects_unrelated_backend_failures() {
+    let expected = MailboxBackendError {
+        backend: "message-json-parser",
+        reason: "native fetch returned invalid or inconsistent JSON fields".into(),
+    };
+    assert!(expected_raw_profile_refusal(&expected));
+    for error in [
+        MailboxBackendError {
+            backend: "doveadm-message-view",
+            reason: "command timed out".into(),
+        },
+        MailboxBackendError {
+            backend: "message-json-parser",
+            reason: "native view omitted message body".into(),
+        },
+        MailboxBackendError {
+            backend: "message-json-parser",
+            reason: "native fetch exited with status 75".into(),
+        },
+    ] {
+        assert!(!expected_raw_profile_refusal(&error));
+    }
+}
+
 fn attribute(tag: &str, name: &str) -> Option<String> {
     tag.split_once(&format!("{name}=\""))?
         .1

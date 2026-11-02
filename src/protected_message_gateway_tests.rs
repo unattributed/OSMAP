@@ -186,6 +186,124 @@ fn stored_source_assembly_preserves_body_bytes_and_enforces_total_limit() {
 }
 
 #[test]
+fn stored_non_ascii_protected_transport_is_refused_before_crypto_dispatch() {
+    use std::cell::Cell;
+
+    struct CountCrypto<'a>(&'a Cell<usize>);
+    impl CryptoExecutor for CountCrypto<'_> {
+        fn execute(
+            &self,
+            _: &CanonicalUsername,
+            _: &crate::openpgp_crypto::Operation,
+        ) -> Result<crate::openpgp_crypto::Outcome, CryptoFailure> {
+            self.0.set(self.0.get() + 1);
+            Err(CryptoFailure::Transport)
+        }
+    }
+
+    let context = AuthenticationContext::new(
+        crate::auth::AuthenticationPolicy::default(),
+        "unsupported-stored-protection",
+        "127.0.0.1",
+        "Synthetic fixture",
+    )
+    .unwrap();
+    let bindings = InboundBindings {
+        account: CanonicalUsername::parse("bob").unwrap(),
+        decrypt_primary_fingerprints: vec!["B".repeat(40)],
+        signer: None,
+    };
+    for (content_type, raw_body) in [
+        (
+            "multipart/signed; protocol=\"application/pgp-signature\"; micalg=pgp-sha256; boundary=transport",
+            b"--transport\r\nContent-Type: text/plain\r\nContent-Transfer-Encoding: 8bit\r\n\r\nRaw \xff body\r\n--transport\r\nContent-Type: application/pgp-signature\r\n\r\nsynthetic-signature\r\n--transport--\r\n".as_slice(),
+        ),
+        (
+            "multipart/encrypted; protocol=\"application/pgp-encrypted\"; boundary=transport",
+            b"--transport\r\nContent-Type: application/pgp-encrypted\r\n\r\nVersion: 1\r\n--transport\r\nContent-Type: application/octet-stream\r\nContent-Transfer-Encoding: binary\r\n\r\nRaw \xff ciphertext\r\n--transport--\r\n".as_slice(),
+        ),
+    ] {
+        let mut stored = message();
+        stored.header_block = format!(
+            "From: Alice <alice@example.test>\r\nSubject: unsupported stored transport\r\nMIME-Version: 1.0\r\nContent-Type: {content_type}\r\n"
+        );
+        // This models a stored string after an invalid raw byte was replaced:
+        // the original cryptographic input can no longer be reconstructed.
+        stored.body_text = String::from_utf8_lossy(raw_body).into_owned();
+        assert_ne!(stored.body_text.as_bytes(), raw_body);
+        assert!(stored.body_text.contains('\u{fffd}'));
+        let calls = Cell::new(0);
+        let processor = Processor::new(CountCrypto(&calls), RenderingPolicy::default());
+        let retrieved = MessageViewDecision::Retrieved {
+            canonical_username: "bob".into(),
+            session_id: session().record.session_id,
+            message: Box::new(stored.clone()),
+        };
+        let result = assemble_source(&stored).and_then(|source| {
+            let snapshot = OwnedSnapshot::from_retrieved(
+                &session(),
+                &request(),
+                stored.metadata.as_ref().map(|metadata| &metadata.version),
+                &retrieved,
+                &source,
+            )?;
+            snapshot
+                .process(&processor, &context, &session(), &bindings)
+                .map(|_| ())
+        });
+        assert!(result.is_err(), "unsupported stored transport was accepted");
+        assert_eq!(
+            calls.get(),
+            0,
+            "unsupported stored transport reached the crypto executor"
+        );
+    }
+}
+
+#[test]
+fn stored_ordinary_utf8_body_preserves_text_and_unprotected_classification() {
+    let mut stored = message();
+    stored.body_text = "Café and a literal replacement character: \u{fffd}\r\n".into();
+    let source = assemble_source(&stored).unwrap();
+    assert!(source.ends_with(stored.body_text.as_bytes()));
+    assert!(matches!(
+        crate::pgp_mime::classify(&source, crate::pgp_mime::PgpMimePolicy::default()).unwrap(),
+        crate::pgp_mime::PgpMimeMessage::Unprotected { .. }
+    ));
+    let context = AuthenticationContext::new(
+        crate::auth::AuthenticationPolicy::default(),
+        "ordinary-stored-utf8",
+        "127.0.0.1",
+        "Synthetic fixture",
+    )
+    .unwrap();
+    let bindings = InboundBindings {
+        account: CanonicalUsername::parse("bob").unwrap(),
+        decrypt_primary_fingerprints: Vec::new(),
+        signer: None,
+    };
+    let retrieved = MessageViewDecision::Retrieved {
+        canonical_username: "bob".into(),
+        session_id: session().record.session_id,
+        message: Box::new(stored.clone()),
+    };
+    let snapshot = OwnedSnapshot::from_retrieved(
+        &session(),
+        &request(),
+        stored.metadata.as_ref().map(|metadata| &metadata.version),
+        &retrieved,
+        &source,
+    )
+    .unwrap();
+    let processor = Processor::new(NeverCrypto, RenderingPolicy::default());
+    let rendered = snapshot
+        .process(&processor, &context, &session(), &bindings)
+        .unwrap();
+    assert!(!rendered.protection.decrypted_on_mail_host);
+    assert!(rendered.rendered.body_html.contains("Café"));
+}
+
+#[test]
 fn inbound_binding_derivation_uses_confirmed_record_not_key_uids_or_guesses() {
     let account = CanonicalUsername::parse("bob").unwrap();
     let record = record();

@@ -2659,7 +2659,7 @@ fn render_reader_fragment(
     let protected_reader_strip = format!(
         concat!(
             "<details class=\"protected-trust-strip\" aria-label=\"Protected by Default reader trust strip\"><summary><strong>Protected by Default</strong><span>Remote content blocked</span></summary>",
-            "<div><strong>Protected by Default</strong><p>Verified signatures do not make content safe. Rendered and future decrypted content must still pass protected rendering.</p></div>",
+            "<div><strong>Protected by Default</strong><p>Verified signatures do not make content safe. All displayed message content passes protected rendering.</p></div>",
             "<div class=\"trust-strip-badges\" aria-label=\"Reader protection states\">",
             "<span class=\"badge badge-ok\">Remote content blocked</span>",
             "<span class=\"badge\">{} rendering</span>",
@@ -2669,10 +2669,10 @@ fn render_reader_fragment(
         escape_html(rendered.rendering_mode.as_str()),
     );
     let openpgp_reader_states = rendered.openpgp.as_ref().map(crate::openpgp_reader_ui::render).unwrap_or_else(|| concat!(
-        "<details class=\"openpgp-reader-states\" aria-label=\"OpenPGP reader states\" data-openpgp-reader-states=\"ui-only\"><summary><strong>OpenPGP unavailable</strong><span>Signature not verified</span></summary>",
-        "<div><strong>OpenPGP reader state</strong><p>No account OpenPGP capability is configured for this reader session. No decrypt, verify, key discovery, private-key access, or passphrase handling was attempted.</p></div>",
-        "<dl class=\"openpgp-state-list\"><dt>Encrypted</dt><dd>not assessed</dd><dt>Decrypted on mail host</dt><dd>not produced</dd><dt>Signature</dt><dd>not verified</dd><dt>Signer</dt><dd>unknown until configured evidence exists</dd><dt>Missing key</dt><dd>not actionable in this UI-only slice</dd></dl>",
-        "<p class=\"muted openpgp-boundary-note\">Verified signatures do not make content safe. Future decrypted content must still pass Protected by Default rendering.</p>",
+        "<details class=\"openpgp-reader-states\" aria-label=\"OpenPGP reader states\" data-openpgp-reader-states=\"unassessed\"><summary><strong>OpenPGP not assessed for this message</strong><span>No verification or decryption result</span></summary>",
+        "<p>Signature and decryption results appear here when protected content is processed. This message has no such result.</p>",
+        "<dl class=\"openpgp-state-list\"><dt>Decryption</dt><dd>not produced</dd><dt>Signature</dt><dd>not verified</dd><dt>Signer identity</dt><dd>not established</dd></dl>",
+        "<p class=\"muted openpgp-boundary-note\">Remote content and active content remain blocked.</p>",
         "</details>"
     ).to_string());
     let toolbar = if let Some(neighbours) = neighbours {
@@ -3644,6 +3644,17 @@ mod v7_rendering_regression_tests {
         assert!(page.contains("<strong>Sanitized HTML:</strong>"));
         assert!(page.contains("Remote content blocked by policy"));
         assert!(page.contains("Safe rendered body"));
+        assert!(page.contains("data-openpgp-reader-states=\"unassessed\""));
+        assert!(page.contains("OpenPGP not assessed for this message"));
+        for obsolete in [
+            "OpenPGP unavailable",
+            "UI-only",
+            "ui-only",
+            "future decrypted",
+            "Future decrypted",
+        ] {
+            assert!(!page.contains(obsolete), "ordinary reader cannot infer account capability or describe obsolete implementation");
+        }
     }
 }
 

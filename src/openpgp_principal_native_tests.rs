@@ -463,6 +463,15 @@ impl Fixture {
         Ok((a, b))
     }
     fn start(&mut self, kind: &str, config: &Path, socket: &Path) -> Result<usize> {
+        self.start_checked(kind, config, socket, 0o660)
+    }
+    fn start_checked(
+        &mut self,
+        kind: &str,
+        config: &Path,
+        socket: &Path,
+        mode: u32,
+    ) -> Result<usize> {
         let binary = self.path(kind);
         let program = match kind {
             "crypto-helper" => Program::CryptoHelper(&binary),
@@ -488,7 +497,7 @@ impl Fixture {
                     metadata.file_type().is_socket()
                         && metadata.uid() == 1002
                         && metadata.gid() == 1003
-                        && metadata.mode() & 0o777 == 0o660,
+                        && metadata.mode() & 0o777 == mode,
                     "SERVICE_SOCKET_REFUSED",
                 )?;
                 crate::openbsd::owned_child_exited_without_reap(
@@ -1123,4 +1132,331 @@ fn agent_pid_witness_requires_one_positive_bounded_pid() {
     ] {
         assert!(parse_agent_pid(bytes).is_err());
     }
+}
+
+// S06 functional composition reuses accepted S05 separate-UID qualification;
+// this actor intentionally owns the disposable reader and key-agent homes.
+fn inbound_stored_profile(f: &mut Fixture) -> Result<()> {
+    let (alice, bob) = f.keys(true)?;
+    let reader = f.directory("helper/r", 1002, 1003, 0o700)?;
+    let crypto = write_config(
+        f,
+        "s06-crypto",
+        serde_json::json!({
+            "version":1,"worker":f.path("crypto-worker"),"engine":f.path("engine"),
+            "socket":f.path("transport/s06-crypto.sock"),"trusted_web_uid":1002,
+            "accounts":[
+                {"account":"alice@example.test","home":f.path("helper/alice"),"signer_fingerprint":alice,"decrypt_fingerprints":[alice],"recipient_fingerprints":[alice,bob]},
+                {"account":"bob@example.test","home":f.path("helper/bob"),"signer_fingerprint":bob,"decrypt_fingerprints":[bob],"recipient_fingerprints":[alice,bob]}
+            ]
+        }),
+    )?;
+    let inventory = write_config(
+        f,
+        "s06-inventory",
+        serde_json::json!({
+            "version":1,"worker":f.path("inventory-worker"),"engine":"/usr/local/bin/gpg",
+            "socket":f.path("transport/s06-inventory.sock"),"trusted_web_uid":1002,
+            "accounts":[{"account":"alice@example.test","home":f.path("helper/alice")},{"account":"bob@example.test","home":f.path("helper/bob")}]
+        }),
+    )?;
+    f.start_checked(
+        "crypto-helper",
+        &crypto,
+        &f.path("transport/s06-crypto.sock"),
+        0o600,
+    )?;
+    f.start_checked(
+        "inventory-helper",
+        &inventory,
+        &f.path("transport/s06-inventory.sock"),
+        0o600,
+    )?;
+    let binary = f.path("libtest");
+    let mut command = f.command(Program::Libtest(&binary), Role::Helper)?;
+    command
+        .args([
+            "openpgp_principal_native_tests::native_stored_signed_profile_client",
+            "--exact",
+            "--ignored",
+            "--test-threads=1",
+        ])
+        .env("OSMAP_S06_READER_ROOT", reader)
+        .env(
+            "OSMAP_S06_CRYPTO_SOCKET",
+            f.path("transport/s06-crypto.sock"),
+        )
+        .env(
+            "OSMAP_S06_INVENTORY_SOCKET",
+            f.path("transport/s06-inventory.sock"),
+        )
+        .env("OSMAP_S06_GRANT", f.path("helper/grant"))
+        .env("OSMAP_S06_ALICE_FP", alice)
+        .env("OSMAP_S06_BOB_FP", bob);
+    let output = f.run(command, b"")?;
+    require(
+        output
+            .windows(b"1 passed; 0 failed".len())
+            .any(|part| part == b"1 passed; 0 failed"),
+        "EXACT_S06_CLIENT_COUNT_REFUSED",
+    )?;
+    f.checks.push("s06_actual_stored_signed_profile_corpus");
+    Ok(())
+}
+#[test]
+#[ignore = "explicit OpenBSD root fixture; S06 actual Dovecot stored-byte discriminator"]
+fn native_stored_signed_profile_corpus() {
+    qualification(inbound_stored_profile)
+}
+#[test]
+#[ignore = "nested S06 helper actor; only outer-owned disposable homes and signed SDKs"]
+fn native_stored_signed_profile_client() {
+    assert_eq!(std::env::consts::OS, "openbsd");
+    assert_eq!(crate::openbsd::effective_uid(), 1002);
+    let path = |name| PathBuf::from(std::env::var_os(name).expect("explicit S06 fixture setting"));
+    let root = path("OSMAP_S06_READER_ROOT");
+    let grant = path("OSMAP_S06_GRANT");
+    let crypto = crate::openpgp_crypto_runtime::Client::from_operator_files(
+        &path("OSMAP_S06_CRYPTO_SOCKET"),
+        &grant,
+        1002,
+    )
+    .unwrap();
+    let inventory = crate::openpgp_inventory_runtime::Client::from_operator_files(
+        &path("OSMAP_S06_INVENTORY_SOCKET"),
+        &grant,
+        1002,
+    )
+    .unwrap();
+    let alice = std::env::var("OSMAP_S06_ALICE_FP").unwrap();
+    let bob = std::env::var("OSMAP_S06_BOB_FP").unwrap();
+    crate::mailbox_helper::prove_native_stored_signed_profile(
+        &root, &crypto, &inventory, &alice, &bob,
+    );
+}
+
+// Unlike the stored-reader corpus, this uses the accepted distinct Web/helper
+// principals and deliberately never exchanges the two public certificates.
+#[derive(Clone, Copy)]
+enum InboundCryptoCase {
+    MissingSigner,
+    Decryption,
+}
+fn inbound_disjoint_crypto(f: &mut Fixture, case: InboundCryptoCase) -> Result<()> {
+    let (selector, observation, check) = match case {
+        InboundCryptoCase::MissingSigner => (
+            "openpgp_principal_native_tests::native_missing_signer_client",
+            "web/s06-signature-observation.json",
+            "s06_actual_missing_signer_and_signature_controls",
+        ),
+        InboundCryptoCase::Decryption => (
+            "openpgp_principal_native_tests::native_decryption_client",
+            "web/s06-decryption-observation.json",
+            "s06_actual_self_decryption_and_invalid_ciphertext",
+        ),
+    };
+    let (alice, bob) = f.keys(false)?;
+    let before = protected_manifest(f)?;
+    let public_before = ["alice", "bob"]
+        .into_iter()
+        .map(|name| {
+            fs::read(f.path(&format!("helper/{name}/pubring.kbx")))
+                .map(|bytes| hash(&bytes))
+                .map_err(|_| "PUBLIC_KEYBOX_READ_REFUSED")
+        })
+        .collect::<Result<Vec<_>>>()?;
+    if matches!(case, InboundCryptoCase::Decryption) {
+        let mut command = f.command(Program::Gpg, Role::Helper)?;
+        command
+            .args(["--no-options", "--homedir"])
+            .arg(f.path("helper/alice"))
+            .args([
+                "--batch",
+                "--no-autostart",
+                "--no-auto-check-trustdb",
+                "--no-throw-keyids",
+                "--rfc4880",
+                "--trust-model",
+                "always",
+                "--armor",
+                "--cipher-algo",
+                "AES256",
+                "--compress-algo",
+                "none",
+                "--recipient",
+                &alice,
+                "--encrypt",
+            ]);
+        let ciphertext = f.run(
+            command,
+            crate::protected_message::native_tests::VISIBLE_DECRYPTION_PLAINTEXT,
+        )?;
+        require(
+            ciphertext.is_ascii()
+                && ciphertext.starts_with(b"-----BEGIN PGP MESSAGE-----")
+                && ciphertext
+                    .windows(b"-----END PGP MESSAGE-----".len())
+                    .any(|part| part == b"-----END PGP MESSAGE-----"),
+            "VISIBLE_RECIPIENT_CIPHERTEXT_REFUSED",
+        )?;
+        f.write(
+            &f.path("web/s06-visible-ciphertext.asc"),
+            &ciphertext,
+            1001,
+            1001,
+            0o600,
+        )?;
+    }
+    let socket = f.path("transport/s06-signature.sock");
+    let config = write_config(
+        f,
+        "s06-signature",
+        serde_json::json!({
+            "version":1,"worker":f.path("crypto-worker"),"engine":f.path("engine"),
+            "socket":socket,"trusted_web_uid":1001,
+            "accounts":[
+                {"account":"alice","home":f.path("helper/alice"),"signer_fingerprint":alice,"decrypt_fingerprints":[alice],"recipient_fingerprints":[alice]},
+                {"account":"bob","home":f.path("helper/bob"),"signer_fingerprint":bob,"decrypt_fingerprints":[bob],"recipient_fingerprints":[bob]}
+            ]
+        }),
+    )?;
+    f.start("crypto-helper", &config, &socket)?;
+    let binary = f.path("libtest");
+    let mut command = f.command(Program::Libtest(&binary), Role::Web)?;
+    command
+        .args([selector, "--exact", "--ignored", "--test-threads=1"])
+        .env("OSMAP_S06_SIGNATURE_SOCKET", socket)
+        .env("OSMAP_S06_SIGNATURE_GRANT", f.path("web/grant"))
+        .env("OSMAP_S06_SIGNATURE_ALICE_FP", alice)
+        .env("OSMAP_S06_SIGNATURE_BOB_FP", bob)
+        .env(
+            "OSMAP_S06_VISIBLE_CIPHERTEXT",
+            f.path("web/s06-visible-ciphertext.asc"),
+        )
+        .env("OSMAP_S06_SIGNATURE_OBSERVATION", f.path(observation));
+    let output = f.run(command, b"")?;
+    require(
+        output
+            .windows(b"1 passed; 0 failed".len())
+            .any(|part| part == b"1 passed; 0 failed"),
+        "EXACT_S06_SIGNATURE_CLIENT_COUNT_REFUSED",
+    )?;
+    require(
+        protected_manifest(f)? == before,
+        "SIGNATURE_PRIVATE_STATE_CHANGED",
+    )?;
+    for (name, expected) in ["alice", "bob"].into_iter().zip(public_before) {
+        require(
+            hash(
+                &fs::read(f.path(&format!("helper/{name}/pubring.kbx")))
+                    .map_err(|_| "PUBLIC_KEYBOX_READ_REFUSED")?,
+            ) == expected,
+            "SIGNATURE_PUBLIC_STATE_CHANGED",
+        )?;
+    }
+    f.checks.push(check);
+    Ok(())
+}
+fn inbound_missing_signer(f: &mut Fixture) -> Result<()> {
+    inbound_disjoint_crypto(f, InboundCryptoCase::MissingSigner)
+}
+fn inbound_decryption(f: &mut Fixture) -> Result<()> {
+    inbound_disjoint_crypto(f, InboundCryptoCase::Decryption)
+}
+
+#[test]
+#[ignore = "explicit OpenBSD root fixture; actual missing-public-signer classification"]
+fn native_missing_signer_classification() {
+    qualification(inbound_missing_signer)
+}
+
+#[test]
+#[ignore = "explicit OpenBSD root fixture; actual transient decryption and malformed ciphertext"]
+fn native_decryption_classification() {
+    qualification(inbound_decryption)
+}
+
+#[test]
+#[ignore = "nested S06 Web actor; only outer-owned synthetic key homes and signed SDK"]
+fn native_decryption_client() {
+    assert_eq!(std::env::consts::OS, "openbsd");
+    assert_eq!(crate::openbsd::effective_uid(), 1001);
+    let path = |name| PathBuf::from(std::env::var_os(name).expect("explicit S06 fixture setting"));
+    let client = crate::openpgp_crypto_runtime::Client::from_operator_files(
+        &path("OSMAP_S06_SIGNATURE_SOCKET"),
+        &path("OSMAP_S06_SIGNATURE_GRANT"),
+        1002,
+    )
+    .unwrap();
+    let alice = std::env::var("OSMAP_S06_SIGNATURE_ALICE_FP").unwrap();
+    let bob = std::env::var("OSMAP_S06_SIGNATURE_BOB_FP").unwrap();
+    let ciphertext = fs::read(path("OSMAP_S06_VISIBLE_CIPHERTEXT")).unwrap();
+    let observed = crate::protected_message::native_tests::run_decryption_fixture(
+        &client,
+        &alice,
+        &bob,
+        &ciphertext,
+    );
+    let encoded = serde_json::to_vec(&observed).unwrap();
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .custom_flags(libc::O_NOFOLLOW)
+        .open(path("OSMAP_S06_SIGNATURE_OBSERVATION"))
+        .unwrap();
+    file.write_all(&encoded).unwrap();
+    file.sync_all().unwrap();
+    println!("{observed}");
+    // Preserve all actual typed observations before a classification can fail.
+    assert_eq!(observed["missing_private_key"], "MissingKey");
+    assert_eq!(observed["missing_private_processor"], "MissingKey");
+    assert_eq!(observed["hidden_recipient_native"], "Unavailable");
+    assert_eq!(observed["hidden_recipient_processor"], "Unavailable");
+    assert_eq!(observed["hidden_recipient_safe_refusal"], true);
+    assert_eq!(observed["wrong_requested_key"], "Invalid");
+    assert_eq!(observed["invalid_ciphertext"][0]["native"], "Unsupported");
+    assert_eq!(
+        observed["invalid_ciphertext"][0]["processor"],
+        "UnsupportedCrypto"
+    );
+    for result in observed["invalid_ciphertext"].as_array().unwrap() {
+        assert!(result["native"].is_string());
+        assert!(result["processor"].is_string());
+        assert_eq!(result["safe_refusal_ui"], true);
+    }
+}
+
+#[test]
+#[ignore = "nested S06 Web actor; only outer-owned synthetic key homes and signed SDK"]
+fn native_missing_signer_client() {
+    assert_eq!(std::env::consts::OS, "openbsd");
+    assert_eq!(crate::openbsd::effective_uid(), 1001);
+    let path = |name| PathBuf::from(std::env::var_os(name).expect("explicit S06 fixture setting"));
+    let client = crate::openpgp_crypto_runtime::Client::from_operator_files(
+        &path("OSMAP_S06_SIGNATURE_SOCKET"),
+        &path("OSMAP_S06_SIGNATURE_GRANT"),
+        1002,
+    )
+    .unwrap();
+    let alice = std::env::var("OSMAP_S06_SIGNATURE_ALICE_FP").unwrap();
+    let observed =
+        crate::protected_message::native_tests::run_missing_signer_fixture(&client, &alice);
+    let encoded = serde_json::to_vec(&observed).unwrap();
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .custom_flags(libc::O_NOFOLLOW)
+        .open(path("OSMAP_S06_SIGNATURE_OBSERVATION"))
+        .unwrap();
+    file.write_all(&encoded).unwrap();
+    file.sync_all().unwrap();
+    println!("{observed}");
+    // Persist both actual classifications before distinguishing expectations.
+    assert_eq!(observed["native_missing_signer"], "MissingKey");
+    assert_eq!(observed["processor_missing_signer"], "UnknownSigner");
+    assert_eq!(observed["safe_refusal_ui"], true);
+    assert_eq!(observed["missing_public_key_copy"], true);
+    assert_eq!(observed["no_decryption_key_copy"], false);
 }

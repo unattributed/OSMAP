@@ -813,6 +813,18 @@ fn remove_stale_socket_if_needed(socket_path: &Path) -> Result<(), String> {
     }
 }
 
+// Test-only S06 composition; the caller owns all disposable homes/services.
+#[cfg(all(test, unix))]
+pub(crate) fn prove_native_stored_signed_profile(
+    root: &std::path::Path,
+    crypto: &crate::openpgp_crypto_runtime::Client,
+    inventory: &crate::openpgp_inventory_runtime::Client,
+    alice: &str,
+    bob: &str,
+) {
+    tests::native_reader_tests::prove_stored_signed_profile(root, crypto, inventory, alice, bob);
+}
+
 // Test-only bridge: the outbound native crypto fixture supplies a disposable
 // protected wire message to the existing native Dovecot reader fixture.
 #[cfg(all(test, unix))]

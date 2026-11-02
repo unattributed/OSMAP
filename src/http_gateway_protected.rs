@@ -2,7 +2,9 @@
 use super::*;
 use crate::identity::CanonicalUsername;
 use crate::protected_message::{Processor, ProtectedError};
-use crate::protected_message_gateway::{assemble_source, inbound_bindings};
+use crate::protected_message_gateway::{
+    assemble_source, inbound_bindings, validate_stored_transport,
+};
 
 pub(crate) fn has_protection_envelope(message: &MessageView) -> bool {
     let Ok(source) = assemble_source(message) else {
@@ -48,8 +50,9 @@ impl RuntimeBrowserGateway {
         message: &MessageView,
         policy: RenderingPolicy,
     ) -> Result<RenderedMessageView, ProtectedError> {
-        let client = self.crypto_client().ok_or(ProtectedError::Unavailable)?;
         let source = assemble_source(message)?;
+        validate_stored_transport(message, &source)?;
+        let client = self.crypto_client().ok_or(ProtectedError::Unavailable)?;
         let bindings = self.protected_bindings(session, message)?;
         let processed = Processor::new(client, policy)
             .process(context, session, message, &source, &bindings)?;
@@ -67,8 +70,9 @@ impl RuntimeBrowserGateway {
         message: &MessageView,
         part: &str,
     ) -> Result<DownloadedAttachment, ProtectedError> {
-        let client = self.crypto_client().ok_or(ProtectedError::Unavailable)?;
         let source = assemble_source(message)?;
+        validate_stored_transport(message, &source)?;
+        let client = self.crypto_client().ok_or(ProtectedError::Unavailable)?;
         let bindings = self.protected_bindings(session, message)?;
         let processed = Processor::new(client, self.render_policy)
             .process(context, session, message, &source, &bindings)?;

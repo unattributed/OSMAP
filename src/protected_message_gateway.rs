@@ -34,6 +34,25 @@ pub fn assemble_source(message: &MessageView) -> Result<Vec<u8>, ProtectedError>
     Ok(source)
 }
 
+/// The mailbox adapter transports stored bodies as UTF-8 Strings, so it cannot
+/// establish the original octets of an unencoded eight-bit protected body.
+/// Require seven-bit protected transport at this boundary; encoded Unicode and
+/// binary parts, outer UTF-8 headers and decrypted inner content remain usable.
+pub fn validate_stored_transport(
+    message: &MessageView,
+    source: &[u8],
+) -> Result<(), ProtectedError> {
+    if message.body_text.is_ascii()
+        || matches!(
+            crate::pgp_mime::classify(source, crate::pgp_mime::PgpMimePolicy::default()),
+            Ok(crate::pgp_mime::PgpMimeMessage::Unprotected { .. })
+        )
+    {
+        return Ok(());
+    }
+    Err(ProtectedError::UnsupportedTextEncoding)
+}
+
 pub fn inbound_bindings(
     account: &CanonicalUsername,
     record: &crate::openpgp_bindings::BindingRecord,
@@ -107,6 +126,7 @@ impl<'a> OwnedSnapshot<'a> {
         {
             return Err(ProtectedError::MessageIdentity);
         }
+        validate_stored_transport(self.message, self.source)?;
         processor.process(context, session, self.message, self.source, bindings)
     }
 }

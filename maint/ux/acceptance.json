@@ -3589,9 +3589,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json",
+            "scope": "2026-11-02 S06 exact native reader12.33s/signature8.74s/decrypt9.13s PASS. Real signature verifies separately from signer identity/binding and key validity; source binding/key-validity cases retain their source-only scope. Final reader witness SHA256a8d4befd4a1b6c69fe46235dee198f092e2c8a3ec7dfae77d1742791f363beee; no human acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json",
+            "scope": "Independent source/native/installed GO SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed Web/worker, publicEncrypt, Locked refusal, epoch6, HTTPS200,8roles and protected-state preservation pass. Owner body/unlock UAT, complete visual/keyboard/network evidence and human acceptance remain separate."
+          }
+        ]
       }
     },
     {
@@ -4526,9 +4537,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json",
+            "scope": "2026-11-02 S06 exact native reader12.33s/signature8.74s/decrypt9.13s PASS. Actual Dovecot encrypted/ordinary positives and transformed raw protected-format refusal; no decryption inferred from a MIME marker. Final reader witness SHA256a8d4befd4a1b6c69fe46235dee198f092e2c8a3ec7dfae77d1742791f363beee; no human acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json",
+            "scope": "Independent source/native/installed GO SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed Web/worker, publicEncrypt, Locked refusal, epoch6, HTTPS200,8roles and protected-state preservation pass. Owner body/unlock UAT, complete visual/keyboard/network evidence and human acceptance remain separate."
+          }
+        ]
       }
     },
     {
@@ -4568,9 +4590,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json",
+            "scope": "2026-11-02 S06 exact native reader12.33s/signature8.74s/decrypt9.13s PASS. Successful disposable-key native decryption and reader server/HTTPS explanation. Installed owner private operation is Locked, not successful owner decryption. Final reader witness SHA256a8d4befd4a1b6c69fe46235dee198f092e2c8a3ec7dfae77d1742791f363beee; no human acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json",
+            "scope": "Independent source/native/installed GO SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed Web/worker, publicEncrypt, Locked refusal, epoch6, HTTPS200,8roles and protected-state preservation pass. Owner body/unlock UAT, complete visual/keyboard/network evidence and human acceptance remain separate."
+          }
+        ]
       }
     },
     {
@@ -4610,9 +4643,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json",
+            "scope": "2026-11-02 S06 exact native reader12.33s/signature8.74s/decrypt9.13s PASS. Actual valid/tampered/duplicate/missing-public-signer outcomes, independently reported identity state; no expanded provider-signature interoperability claim. Final reader witness SHA256a8d4befd4a1b6c69fe46235dee198f092e2c8a3ec7dfae77d1742791f363beee; no human acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json",
+            "scope": "Independent source/native/installed GO SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed Web/worker, publicEncrypt, Locked refusal, epoch6, HTTPS200,8roles and protected-state preservation pass. Owner body/unlock UAT, complete visual/keyboard/network evidence and human acceptance remain separate."
+          }
+        ]
       }
     },
     {
@@ -4736,9 +4780,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json",
+            "scope": "2026-11-02 S06 exact native reader12.33s/signature8.74s/decrypt9.13s PASS. Actual encrypted hostile HTML safely rendered; exact processed binary, unchanged encrypted source and absent application-state plaintext marker. Final reader witness SHA256a8d4befd4a1b6c69fe46235dee198f092e2c8a3ec7dfae77d1742791f363beee; no human acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json",
+            "scope": "Independent source/native/installed GO SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed Web/worker, publicEncrypt, Locked refusal, epoch6, HTTPS200,8roles and protected-state preservation pass. Owner body/unlock UAT, complete visual/keyboard/network evidence and human acceptance remain separate."
+          }
+        ]
       }
     },
     {
@@ -4785,6 +4840,16 @@
             "kind": "human_uat",
             "path": "/home/foo/Downloads/osmap-ux-s07/encrypted-bcc-20261014/UAT-RESULTS-20261014.json",
             "scope": "Exact first test OSMAP protected body was NOT DISPLAYED and reported no usable decryption key. Account agent owned socket subsequently returned ECONNREFUSED61; cause unknown. Later Thunderbird success does not supersede this OSMAP failure; matching OSMAP successful body rendering remains required. Retained artifact sha256=c403c4dd64d31813565989b4c23f1b7cbcf5906012a4bfe55eaf4e8b98f4fe77."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json",
+            "scope": "2026-11-02 S06 exact native reader12.33s/signature8.74s/decrypt9.13s PASS. New bounded synthetic native body success is engineering progress only. Keep FAILED from October14 owner UAT; successful OSMAP owner-body observation remains NOT RUN. Thunderbird, public inventory and installed locked refusal do not supersede that failure. Final reader witness SHA256a8d4befd4a1b6c69fe46235dee198f092e2c8a3ec7dfae77d1742791f363beee; no human acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json",
+            "scope": "Independent source/native/installed GO SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed Web/worker, publicEncrypt, Locked refusal, epoch6, HTTPS200,8roles and protected-state preservation pass. Owner body/unlock UAT, complete visual/keyboard/network evidence and human acceptance remain separate."
           }
         ]
       }
@@ -21933,9 +21998,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json",
+            "scope": "2026-11-02 S06 exact native reader12.33s/signature8.74s/decrypt9.13s PASS. Actual rendered processed download exact binary positive, valid absent part404, invalid selector400, identity mismatch409, unavailable crypto503 and subsequent recovery. Final reader witness SHA256a8d4befd4a1b6c69fe46235dee198f092e2c8a3ec7dfae77d1742791f363beee; no human acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json",
+            "scope": "Independent source/native/installed GO SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed Web/worker, publicEncrypt, Locked refusal, epoch6, HTTPS200,8roles and protected-state preservation pass. Owner body/unlock UAT, complete visual/keyboard/network evidence and human acceptance remain separate."
+          }
+        ]
       }
     },
     {
@@ -22044,9 +22120,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json",
+            "scope": "2026-11-02 S06 exact native reader12.33s/signature8.74s/decrypt9.13s PASS. Actual tamper/duplicate/unknown-signer safe outcomes; source reader uncertainty and identity distinctions; no verified/trusted inference from missing certificate. Final reader witness SHA256a8d4befd4a1b6c69fe46235dee198f092e2c8a3ec7dfae77d1742791f363beee; no human acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json",
+            "scope": "Independent source/native/installed GO SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed Web/worker, publicEncrypt, Locked refusal, epoch6, HTTPS200,8roles and protected-state preservation pass. Owner body/unlock UAT, complete visual/keyboard/network evidence and human acceptance remain separate."
+          }
+        ]
       }
     },
     {
@@ -22081,9 +22168,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json",
+            "scope": "2026-11-02 S06 exact native reader12.33s/signature8.74s/decrypt9.13s PASS. Decrypted rendered output lacks hostile/remote probes, with CSP/download isolation; this is not a newly recorded browser network trace. Final reader witness SHA256a8d4befd4a1b6c69fe46235dee198f092e2c8a3ec7dfae77d1742791f363beee; no human acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json",
+            "scope": "Independent source/native/installed GO SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed Web/worker, publicEncrypt, Locked refusal, epoch6, HTTPS200,8roles and protected-state preservation pass. Owner body/unlock UAT, complete visual/keyboard/network evidence and human acceptance remain separate."
+          }
+        ]
       }
     },
     {
