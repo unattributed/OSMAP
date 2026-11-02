@@ -1,3 +1,5 @@
+2026-11-03 — Combined root/protocol/QA delivery reassessment complete after Clippy and documentation-index refusals. Smallest corrections qualified; all normal checks remain enabled; installation/owner acceptance pending.
+
 2026-11-03 — Normal S07 push caught test-method argument lint. Smallest tuple correction and current matching three-case native recheck PASS; no waiver/product change. Signed delivery/installation continue.
 
 2026-11-03 — S07-01–04 consolidated source/native engineering qualification PASS. Web-only installation and owner T09 remain pending. No production release or full visual acceptance claimed.
@@ -126,7 +128,7 @@
     "owner": "/root",
     "functional_exit": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation with current Rust/native evidence and exact owned cleanup; owner reviews separately.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Preserve accepted S04/S05/S06, old S07 bounded native/defaults/recovery evidence, Sent/owner failures and exact source differences. Earlier direct-capture/Sent shims are Python and cannot establish fresh Rust-only or actual Dovecot proof. Full source/preparation elapsed before this record UNKNOWN, not zero.",
+    "history_reference": "Preserve accepted S04/S05/S06, old S07 bounded native/defaults/recovery evidence, Sent/owner failures and exact source differences. Earlier direct-capture/Sent shims are Python and cannot establish fresh Rust-only or actual Dovecot proof. Full source/preparation elapsed before this record UNKNOWN, not zero. Two delivery refusals retained in source-push.log and correction-push.log; combined root/protocol/QA reassessment recorded in docs/UX_SLICE_S07_04.md before the corrected ordinary push. No native failure or gate waiver inferred.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
@@ -141,7 +143,7 @@
     "slice": "S07-04",
     "specification": {
       "path": "docs/UX_SLICE_S07_04.md",
-      "sha256": "0fc7d46fa2cdbc9a9a348ebd28ef96060d608878d9993e5e2a4c19e3c2a67974"
+      "sha256": "aea2f57f8fc9d60d0976465b6eda2e98377628dc594b8fd1cee3ed2386dfb4a3"
     },
     "design": {
       "journey": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",

@@ -1,11 +1,11 @@
+# Documentation
+
 ## S07 outbound protection qualification
 
-- [S07-01: intent and policy](UX_SLICE_S07_01.md)
-- [S07-02: PGP/MIME signing](UX_SLICE_S07_02.md)
-- [S07-03: encryption, self and Bcc](UX_SLICE_S07_03.md)
-- [S07-04: composed send and Sent recovery](UX_SLICE_S07_04.md)
-
-# Documentation
+- `UX_SLICE_S07_01.md` — [S07-01: intent and policy](UX_SLICE_S07_01.md)
+- `UX_SLICE_S07_02.md` — [S07-02: PGP/MIME signing](UX_SLICE_S07_02.md)
+- `UX_SLICE_S07_03.md` — [S07-03: encryption, self and Bcc](UX_SLICE_S07_03.md)
+- `UX_SLICE_S07_04.md` — [S07-04: composed send and Sent recovery](UX_SLICE_S07_04.md)
 
 - `UX_SLICE_S06_01.md` — [S06-01 stored protected MIME integrity](UX_SLICE_S06_01.md): exact signed bytes, supported transport and safe refusal.
 - `UX_SLICE_S06_02.md` — [S06-02 signature and identity results](UX_SLICE_S06_02.md): real verification, missing signing keys and separate sender identity.
