@@ -1,3 +1,5 @@
+2026-11-03 — **S06 attachment visibility correction installed.** Matching native5PASS and guardedWeb-onlyinstallPASS; ownerunlockPASS, actualownerbody/download/sourceT09PENDING. Normal signedGitHubdelivery remains separate; historicfailedprotectedbody is unchanged.
+
 2026-11-03 (Asia/Bangkok) — **S06 agent preparation qualified; controlled encrypted owner UAT READY pending signed record delivery.** One native local Inbox import completed; initial post-save SSH observation failed, then independent-reviewed read-only reconciliation confirmed UID780, exact1983bytes, unchanged UID779 and protected state, nine healthy roles. Initial failure remains separate; no second save. Owner previously reported successful private unlock and signed-message reading, which do not replace encrypted-body/source/download T09.
 
 2026-11-03 (Asia/Bangkok) — **S06 completion resumed; production mailbox synchronization DEFERRED.** Operator explicitly approves controlled local messages and the proven failure-analysis method. No production mail action, key/credential/policy change or new synchronization component. Prior uninstalled synchronization drafts are privately archived and removed from active source; earlier planning remains history. T09 requires actual owner encrypted-body/source/download acceptance.
@@ -49,6 +51,8 @@
 The operator acknowledged S05-01 closeout and authorized this visual/functional
 slice using the same failure-analysis method. See
 [the slice specification](UX_SLICE_S05_02.md).
+
+2026-11-03 — **S06 attachment visibility follow-up IN_PROGRESS.** Owner private unlock PASS; actual body/download/source UAT pending. Two source regressions reproduced and corrected; both current reader layouts retain positive decoded downloads. Matching native qualification and Web-only installation follow independent review.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
 ```json
@@ -144,7 +148,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Actual protected Runtime reading, processed binary downloads and original encrypted source retain ownership, safe rendering, accurate states and transient privacy.",
       "essential_qa": "Existing actual Dovecot/native reader extended with rendered links, exact bytes, headers, stale/foreign/refused cases and application-state privacy.",
-      "next_action": "Controlled encrypted UAT message is imported exactly once as local INBOX UID780, stored hash fe2bb9ad; original UID779 and protected account/key/config state unchanged. Reuse matching native passes and complete reviewed signed record delivery. Then owner checks actual encrypted body, exact three-byte attachment and original encrypted source; private terminal unlock only if the existing key cache is locked. Synchronization remains deferred; T09 and protected-body FAILED history are not promoted by fixture preparation.",
+      "next_action": "Matching native five-component result and qualified Web-only installation PASS; actual loaded04786dcc,HTTPS200,nine roles and protected-state preservation. Complete normal signed GitHub delivery and exact remote parity, then owner checks UID780 decrypted UTF8/body, exactthree-byteattachment and original encrypted source. No reimport or synchronization; private unlock only byowner ifcachelocked.",
       "dependencies": [
         {
           "owner": "/root",
@@ -458,6 +462,109 @@ slice using the same failure-analysis method. See
           ],
           "reference": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-independent-review.json SHA25601d4367b11126e4d0c063cefc198f6497c9e64ce6094216878ea7a2776381ff6; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-output.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/output-sink-observation.json; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/installed-interpreter-unit.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/install.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-exact-cleanup.actual.log."
         }
+      },
+      {
+        "id": "attachment-ui-local-red",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "1fb76bba139742c039d39768882ba3dddb345bb7",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-ui-red.log: 2 expected behavioral failures, 3 controls pass; compiler44.14s/tests0.03s, full-action elapsed not retained.",
+        "change_reference": "Existing reader/list renderers misrepresented refused attachment state and encrypted wrapper parts; narrow Rust presentation correction.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-ui-independent-review.json; actual source behavior, no protected links on refusal, public entrypoint reachability and native build input/consumer reviewed. Host deployment remains separate."
+        }
+      },
+      {
+        "id": "attachment-ui-local-green",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "61dabe2743502b5751c58b47009247f7729f09977727ddacf0ecbc54cbbb7b99",
+        "source_revision_scope": "reviewed native input archive",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-ui-green.log: 5PASS/0FAIL/0ignored; coordinated diagnostic1PASS before any extra production change, reviewer withdrew unreachable-branch finding.",
+        "change_reference": "Refused attachments unavailable; encrypted public metadata unknown; actual decoded download preserved in both current layouts.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-ui-independent-review.json; actual source behavior, no protected links on refusal, public entrypoint reachability and native build input/consumer reviewed. Host deployment remains separate."
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s05_protocol_review"
+          ],
+          "failed_attempt_ids": [
+            "normal-push-documentation-index-omission",
+            "attachment-ui-local-red"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-ui-combined-reassessment.json SHA256555cda6f24b06f867ee5e94147f026c74562e830ebf2d50d20ca730f01b496f0; actual index/normalgate/transport history and independently corrected attachment presentation are preserved without cost or failure reset.",
+          "next_action": "Run matching native5componenttests and Webbuild, qualified Web-onlyinstallation then normalSSHkeepalivepush; ownerbody/source/downloadacceptance separate."
+        }
+      },
+      {
+        "id": "attachment-ui-native",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "61dabe2743502b5751c58b47009247f7729f09977727ddacf0ecbc54cbbb7b99",
+        "source_revision_scope": "exact reviewed build input archive",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-native.actual.log; copied component actual5PASS0FAIL0ignored0.02s, testbuild2m00s, Webbuild49.32s; entireactionelapsedUNKNOWN. Input61dabe27; Web04786dcc.",
+        "change_reference": "Smallest Rust presentation correction only; preserve unchanged cryptographic backend proof, ownerfixture and keys/configuration.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-ui-independent-review.json; matching actual native and bound installer separately reviewed; attachment-native-installed-review.json retains finalobservations."
+        }
+      },
+      {
+        "id": "attachment-ui-web-only-install",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "61dabe2743502b5751c58b47009247f7729f09977727ddacf0ecbc54cbbb7b99",
+        "source_revision_scope": "exact reviewed build input archive",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-install.actual.log: loaded04786dcc/PID90300/inode130022,HTTPS200,nine roles and protectedfiles/accountauthority/config/helperhashchecksPASS. OnlyWebrestartrequested; noownerprivateoperation or allhelperPIDcontinuityclaim. EntireactionelapsedUNKNOWN.",
+        "change_reference": "Smallest Rust presentation correction only; preserve unchanged cryptographic backend proof, ownerfixture and keys/configuration.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/attachment-ui-independent-review.json; matching actual native and bound installer separately reviewed; attachment-native-installed-review.json retains finalobservations."
+        }
       }
     ],
     "source_and_preparation_history": [
@@ -526,7 +633,7 @@ slice using the same failure-analysis method. See
     "slice": "S06-04",
     "specification": {
       "path": "docs/UX_SLICE_S06_04.md",
-      "sha256": "237e0af26fca7a2395de275d84a3a6ee73b7d05b557cdae63bd9c15a824d092d"
+      "sha256": "3fbdf4d7ad7ffad0655858568b9c972182517d35ebcb6a712bc9d1fbcf4bd33c"
     },
     "design": {
       "journey": "Read supported protected mail, inspect original ciphertext and download exact authorised processed attachments with clear failure and privacy boundaries.",
@@ -710,9 +817,9 @@ slice using the same failure-analysis method. See
   },
   "human_acceptance": {
     "status": "PENDING",
-    "reference": "Owner failed unlock prerequisite is retained as history. Its output-path defect is fixed and installed, but no owner passphrase was replayed and no successful owner-body UAT is claimed."
+    "reference": "Owner reports current obsd1 mailbox_signing_and_decryption_agent_warmed=PASS; all four OSMAP services restored. Actual encrypted UID780 body/attachment/source observations and T09 remain pending. Prior failed body and locked-key screenshots remain retained."
   },
-  "next_action": "Complete normal signed source delivery and exact remote parity, then one owner private terminal unlock and actual protected-message/source/download check. Keep relay Documents profile and unmeasured shutdown observations separate."
+  "next_action": "Matching native five-component result and qualified Web-only installation PASS; actual loaded04786dcc,HTTPS200,nine roles and protected-state preservation. Complete normal signed GitHub delivery and exact remote parity, then owner checks UID780 decrypted UTF8/body, exactthree-byteattachment and original encrypted source. No reimport or synchronization; private unlock only byowner ifcachelocked."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

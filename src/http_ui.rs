@@ -1602,6 +1602,12 @@ fn render_message_flag_form(
 }
 
 fn render_attachment_count(metadata: Option<&MessageMetadata>) -> String {
+    if metadata.is_some_and(|value| {
+        value.protection == crate::message_metadata::MessageProtection::Encrypted
+    }) {
+        return "<span class=\"muted attachment-count\">Attachments unknown until decrypted</span>"
+            .into();
+    }
     match metadata.and_then(|metadata| metadata.attachment_count) {
         Some(0) => String::new(),
         Some(count) => format!("<span class=\"badge attachment-count\" data-attachment-count=\"{count}\">{count} {}</span>", if count == 1 { "attachment" } else { "attachments" }),
@@ -1613,6 +1619,9 @@ fn render_public_attachment_details(metadata: Option<&MessageMetadata>) -> Strin
     let Some(metadata) = metadata else {
         return "<p class=\"muted\">Attachment details unavailable.</p>".into();
     };
+    if metadata.protection == crate::message_metadata::MessageProtection::Encrypted {
+        return "<p class=\"muted\">Attachment details are unknown until the message is decrypted.</p>".into();
+    }
     let Some(summaries) = metadata.attachments.as_deref().filter(|summaries| {
         crate::message_metadata::validate_attachment_summaries(summaries, metadata.attachment_count)
     }) else {
@@ -2513,6 +2522,10 @@ fn render_reader_fragment(
     neighbours: Option<&crate::reader_neighbours::ReaderNeighbours>,
 ) -> String {
     let standalone = neighbours.is_some();
+    let attachments_unavailable = matches!(
+        rendered.openpgp.as_ref(),
+        Some(crate::openpgp_reader_ui::ReaderState::Refused(_))
+    );
     let navigation = neighbours
         .map(|value| value.html_with_policy(csrf_token))
         .unwrap_or_default();
@@ -2552,7 +2565,9 @@ fn render_reader_fragment(
         })
         .count();
     let mut attachments = String::new();
-    if rendered.attachments.is_empty() {
+    if attachments_unavailable {
+        attachments.push_str("<li class=\"attachment-item\">Attachments have not been checked because protected content could not be processed.</li>");
+    } else if rendered.attachments.is_empty() {
         attachments.push_str("<li class=\"attachment-item\">No attachments.</li>");
     } else {
         for attachment in &displayed_attachments {
@@ -2714,7 +2729,7 @@ fn render_reader_fragment(
         escape_html(rendered.from.as_deref().unwrap_or("Sender unavailable")),
         escape_html(rendered.to.as_deref().unwrap_or("Not present")),
         protected_reader_strip, openpgp_reader_states, if standalone { &source_link } else { "" },
-        rendered.body_html, if standalone { format!("Attachments ({})", rendered.attachments.len()) } else { "Attachments".into() }, attachments,
+        rendered.body_html, if attachments_unavailable { "Attachments unavailable".into() } else if standalone { format!("Attachments ({})", rendered.attachments.len()) } else { "Attachments".into() }, attachments,
         compose_link("reply", "Reply"), compose_link("reply-all", "Reply all"), compose_link("forward", "Forward"),
         html_state_badge, rendering_notice, inline_image_notice,
         escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")), escape_html(rendered.from.as_deref().unwrap_or("Sender unavailable")),

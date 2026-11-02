@@ -1,5 +1,51 @@
 # S06-04: practical protected reader, source and downloads
 
+## Attachment visibility correction — 2026-11-03
+
+The owner's UID780 screenshot establishes a locked-key refusal, not an absent
+attachment: the reader reported zero while the list counted two outer encrypted
+MIME parts. The owner subsequently reported
+`mailbox_signing_and_decryption_agent_warmed=PASS`; all four OSMAP services were
+restored and HTTPS returned200 after startup. Actual owner body, download and
+source observations are still pending. The fixture is preserved without another
+save, private operation, credential submission or key/policy change.
+
+The smallest Rust presentation correction distinguishes unavailable attachment
+processing from a successfully inspected empty message. Both reader layouts show
+**Attachments unavailable** on protected-processing refusal and expose no
+attachment link. Encrypted list/public-metadata views show attachment details as
+unknown until decrypted, instead of counting the outer OpenPGP wrapper. A
+successfully processed reader keeps its actual decoded attachment count and
+download link. The backend parser, attachment filters, helper protocol and
+cryptographic processing remain unchanged.
+
+Focused source tests first reproduced two failures, with three passing controls.
+The correction passes all five component tests. Independent review proposed a
+possible coordinated-reader contradiction; an additional positive assertion
+passed before any further production change. Inspection confirmed the cited
+legacy toolbar branch is unreachable through both current public entrypoints,
+and the reviewer withdrew that finding. The assertion remains as coverage;
+`attachment-coordinated-red.log` records an actual PASS despite its diagnostic
+filename. No extra implementation was added for that speculative path.
+
+Evidence: `/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/`,
+`attachment-ui-red.log`, `attachment-ui-green.log`,
+`attachment-coordinated-red.log`. Matching OpenBSD verification passed all five
+component tests (zero failures or skips,0.02s); the test build took2m00s and the
+Web build49.32s. The reviewed input archive is
+`61dabe2743502b5751c58b47009247f7729f09977727ddacf0ecbc54cbbb7b99`;
+the installed Web is
+`04786dcc26455b63d84b9faa673c54aa9e1e6f3f8c43862351c89b73b8d37b43`.
+A guarded Web-only installation passed exact file/loaded-inode checks, HTTPS200,
+nine service checks and protected account/key/configuration/state preservation.
+Only Web was restarted; no helper, owner agent or public mail restart was
+requested. The prior Web and root-owned installation witnesses are retained under
+`/var/backups/osmap-s06-attachment-install-20261103-01` on obsd1. No continuity
+claim for every helper PID is inferred. Existing exact binary-download/ciphertext-source,
+ownership, sanitization and privacy proofs are reused for the unchanged backend.
+Owner T09 is not inferred from a successful unlock, fixture import or component
+test.
+
 ## Current local UAT result — 2026-11-03
 
 The operator explicitly resumed S06 using controlled messages on obsd1 and
