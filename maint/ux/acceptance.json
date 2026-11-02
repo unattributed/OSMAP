@@ -4549,6 +4549,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json",
             "scope": "Independent source/native/installed GO SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed Web/worker, publicEncrypt, Locked refusal, epoch6, HTTPS200,8roles and protected-state preservation pass. Owner body/unlock UAT, complete visual/keyboard/network evidence and human acceptance remain separate."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/reconciliation.private.json",
+            "scope": "2026-11-03 Asia/Bangkok: one public-only self-encrypted controlled MIME imported with native Dovecot into local INBOX UID780,1983bytes SHA256fe2bb9adb877735b201056ef7e1a1fe4f31d747ebd94fe112c4abd6996590424. Original UID779 and account/key/config hashes unchanged,nine service roles healthy. Post-save SSH banner timeout retained separately; read-only reconciliation PASS with no reimport. This is fixture/import qualification only; actual owner encrypted body,attachment/source and T09 remain pending; prior status unchanged."
           }
         ]
       }
@@ -4602,6 +4607,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json",
             "scope": "Independent source/native/installed GO SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed Web/worker, publicEncrypt, Locked refusal, epoch6, HTTPS200,8roles and protected-state preservation pass. Owner body/unlock UAT, complete visual/keyboard/network evidence and human acceptance remain separate."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/reconciliation.private.json",
+            "scope": "2026-11-03 Asia/Bangkok: one public-only self-encrypted controlled MIME imported with native Dovecot into local INBOX UID780,1983bytes SHA256fe2bb9adb877735b201056ef7e1a1fe4f31d747ebd94fe112c4abd6996590424. Original UID779 and account/key/config hashes unchanged,nine service roles healthy. Post-save SSH banner timeout retained separately; read-only reconciliation PASS with no reimport. This is fixture/import qualification only; actual owner encrypted body,attachment/source and T09 remain pending; prior status unchanged."
           }
         ]
       }
@@ -4792,6 +4802,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json",
             "scope": "Independent source/native/installed GO SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed Web/worker, publicEncrypt, Locked refusal, epoch6, HTTPS200,8roles and protected-state preservation pass. Owner body/unlock UAT, complete visual/keyboard/network evidence and human acceptance remain separate."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/reconciliation.private.json",
+            "scope": "2026-11-03 Asia/Bangkok: one public-only self-encrypted controlled MIME imported with native Dovecot into local INBOX UID780,1983bytes SHA256fe2bb9adb877735b201056ef7e1a1fe4f31d747ebd94fe112c4abd6996590424. Original UID779 and account/key/config hashes unchanged,nine service roles healthy. Post-save SSH banner timeout retained separately; read-only reconciliation PASS with no reimport. This is fixture/import qualification only; actual owner encrypted body,attachment/source and T09 remain pending; prior status unchanged."
           }
         ]
       }
@@ -4850,6 +4865,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json",
             "scope": "Independent source/native/installed GO SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Installed Web/worker, publicEncrypt, Locked refusal, epoch6, HTTPS200,8roles and protected-state preservation pass. Owner body/unlock UAT, complete visual/keyboard/network evidence and human acceptance remain separate."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/reconciliation.private.json",
+            "scope": "2026-11-03 Asia/Bangkok: one public-only self-encrypted controlled MIME imported with native Dovecot into local INBOX UID780,1983bytes SHA256fe2bb9adb877735b201056ef7e1a1fe4f31d747ebd94fe112c4abd6996590424. Original UID779 and account/key/config hashes unchanged,nine service roles healthy. Post-save SSH banner timeout retained separately; read-only reconciliation PASS with no reimport. This is fixture/import qualification only; actual owner encrypted body,attachment/source and T09 remain pending; prior status unchanged."
           }
         ]
       }

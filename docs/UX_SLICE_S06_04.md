@@ -1,5 +1,56 @@
 # S06-04: practical protected reader, source and downloads
 
+## Current local UAT result — 2026-11-03
+
+The operator explicitly resumed S06 using controlled messages on obsd1 and
+deferred production mailbox synchronization. No production-mailhost action,
+replication service, account/key/policy change or new application transport is
+required. The abandoned, uninstalled synchronization drafts are privately
+archived and removed from active source. Matching passing S05/S06 evidence is
+reused; this continuation does not rebuild unchanged production code.
+
+The owner previously reported the corrected private-terminal unlock succeeded
+and all OpenPGP/Web services restarted. The later copied Proton reply displayed
+readable signed MIME and a cryptographically valid signature in OSMAP. Those are
+useful scoped observations, not an encrypted-body acceptance result. A private
+agent cache may expire independently of that earlier successful unlock.
+
+One local-only public-key-encrypted test message is now in **INBOX UID780**:
+**S06 UAT: encrypted reader, attachment and source**. Its recipient is the
+already provisioned and currently authorized mailbox key. No secret key,
+passphrase, signature, SMTP submission or key/policy edit was used to prepare it.
+The message contains safe HTML with expected text **Decryption works on obsd1.**
+and **UTF-8 check: café.** Its attachment is `s06-attachment.bin`, exactly the
+three bytes `00 01 ff`, SHA-256
+`26a66b061e8f48f39927c312f25293959729eee95978e2892d49d3512a5cc092`.
+It is encrypted but unsigned; a verified-signature claim would be incorrect.
+
+Native storage qualification explicitly observed Dovecot's CRLF-to-LF outer
+storage conversion: the canonical wire message is2024bytes, SHA-256
+`df78c17c013d89e4ea5cb2fc2964eea7de053e450ee70fecce15528f883f1e35`;
+the stored form is1983bytes, SHA-256
+`fe2bb9adb877735b201056ef7e1a1fe4f31d747ebd94fe112c4abd6996590424`.
+The decoded binary PGP payload is identical; encrypted inner MIME retains its
+canonical CRLF bytes. This conversion does not rewrite any existing signed mail.
+
+The one save completed, then a new SSH connection timed out during banner
+exchange. Its cause is UNKNOWN. The initial failed observation is retained in
+`import-result.private.json`; the save was not repeated. Independent-reviewed
+read-only reconciliation found exactly one matching Message-ID/UID780, exact
+stored bytes, unchanged original UID779/content/persistent flags, identical
+protected account/key/configuration hashes and nine healthy service roles.
+Evidence is under `/home/foo/Downloads/osmap-ux-s06/controlled-local-uat-20261103/`.
+Web `ec4ac037…`, crypto worker `adab695f…` and unlock utility `83b01e98…` still
+match the qualified installed artifacts. No unchanged native suite was repeated.
+
+The remaining owner T09 check is to open UID780, confirm the expected decrypted
+UTF-8 body and server-side decryption explanation, download the exact attachment,
+and inspect **View source** for encrypted MIME/PGP armor without the readable body.
+Use the existing private terminal unlock only if OSMAP reports a locked key.
+Fixture preparation and import do not promote the retained FAILED body result
+or complete S06 on the owner's behalf. Normal signed record delivery remains a
+separate observation below; production release is not authorized by this work.
+
 Continue the owner's 2026-11-02 authorisation through S06. S06-01–03 source/native results are reconciled, including the visible-recipient missing-key discriminator and both earlier failed classification runs. The final combined native reader, signature and decryption tests pass. The qualified Web and crypto worker are installed on obsd1; normal signed delivery is the remaining agent-owned publication step. Owner protected-message reading and T09 acceptance remain pending.
 
 Reuse the current Rust Processor, MIME renderer, Runtime and checked content routes. Extend the existing disposable Dovecot/BrowserApp native corpus: one encrypted MIME with known UTF8/hostile HTML and a binary attachment, then follow its actual rendered download/source links. Assert exact processed bytes, account/message/version selectors, no-store/sandbox/nosniff protections, source remaining ciphertext and no plaintext application-state persistence. Preserve valid encoded signed MIME and ordinary/decrypted UTF8 from S06-01. No new parser, service, framework, mailbox transport, key API or external send.

@@ -1,3 +1,9 @@
+2026-11-03 (Asia/Bangkok) — **S06 agent preparation qualified; controlled encrypted owner UAT READY pending signed record delivery.** One native local Inbox import completed; initial post-save SSH observation failed, then independent-reviewed read-only reconciliation confirmed UID780, exact1983bytes, unchanged UID779 and protected state, nine healthy roles. Initial failure remains separate; no second save. Owner previously reported successful private unlock and signed-message reading, which do not replace encrypted-body/source/download T09.
+
+2026-11-03 (Asia/Bangkok) — **S06 completion resumed; production mailbox synchronization DEFERRED.** Operator explicitly approves controlled local messages and the proven failure-analysis method. No production mail action, key/credential/policy change or new synchronization component. Prior uninstalled synchronization drafts are privately archived and removed from active source; earlier planning remains history. T09 requires actual owner encrypted-body/source/download acceptance.
+
+2026-11-02, superseded planning — **Mailbox synchronization considered, never deployed.** The operator initially requested mailbox replication, then rejected workstation dependence, selected native two-way synchronization and paused for scope questions. On 2026-11-03 the operator explicitly deferred synchronization and resumed S06 with controlled local messages. No synchronization key, job, service or production configuration change was installed; the abandoned unexecuted drafts are retained privately.
+
 2026-11-02 — **S06-04 Python unlock/tooling correction qualified and installed; signed delivery in progress; owner private unlock/T09 pending.** Named-output failure reproduced with disposable keys; exact same-cipher stdout decrypt/sign and installed-interpreter checks PASS. No owner secret was replayed.
 
 2026-11-02 — **S06-04 owner unlock prerequisite FAIL; Python tooling repair IN_PROGRESS.** The user observed GPG attempting /dev/null.part; services are restored and HTTPS200 verified. Earlier native/runtime qualifications remain scoped history; no successful owner-key unlock or body UAT is claimed.
@@ -138,7 +144,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Actual protected Runtime reading, processed binary downloads and original encrypted source retain ownership, safe rendering, accurate states and transient privacy.",
       "essential_qa": "Existing actual Dovecot/native reader extended with rendered links, exact bytes, headers, stale/foreign/refused cases and application-state privacy.",
-      "next_action": "Complete normal signed source delivery and exact remote parity, then one owner private terminal unlock and actual protected-message/source/download check. Keep relay Documents profile and unmeasured shutdown observations separate.",
+      "next_action": "Controlled encrypted UAT message is imported exactly once as local INBOX UID780, stored hash fe2bb9ad; original UID779 and protected account/key/config state unchanged. Reuse matching native passes and complete reviewed signed record delivery. Then owner checks actual encrypted body, exact three-byte attachment and original encrypted source; private terminal unlock only if the existing key cache is locked. Synchronization remains deferred; T09 and protected-body FAILED history are not promoted by fixture preparation.",
       "dependencies": [
         {
           "owner": "/root",
