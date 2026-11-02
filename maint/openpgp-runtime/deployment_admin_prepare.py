@@ -24,6 +24,15 @@ HELPER = "_osmapgpg"
 WEB = "_osmap"
 
 
+class PreparationGuardError(AssertionError):
+    """Operational refusals remain active under interpreter optimization."""
+
+
+def require(condition, code="ADMIN_PREPARATION_GUARD_REFUSED"):
+    if not condition:
+        raise PreparationGuardError(code)
+
+
 def exclusive(path, content, uid, gid, mode=0o600):
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
     descriptor = os.open(path, flags, mode)
@@ -44,7 +53,7 @@ def main():
     parser.add_argument("--inventory-worker-sha256")
     parser.add_argument("--crypto-engine-sha256")
     args = parser.parse_args()
-    assert os.geteuid() == 0 and socket.gethostname() == HOST, "obsd1 root-only preparation"
+    require(os.geteuid() == 0 and socket.gethostname() == HOST, "ADMIN_PREPARE_AUTHORITY_REFUSED")
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     os.umask(0o077)
     receipt = ROOT / "admin-preparation.json"
@@ -52,44 +61,44 @@ def main():
         print(json.dumps({"target": HOST, "prepared": receipt.is_file(), "service": SERVICE}))
         return
     recovery = pathlib.Path("/usr/local/libexec/osmap/service_socket_recovery.py")
-    assert recovery.resolve() == recovery, "install reviewed root-owned socket recovery helper first"
+    require(recovery.resolve() == recovery, "ADMIN_PREPARE_RECOVERY_CUSTODY_REFUSED")
     for path in (recovery, *recovery.parents):
         metadata = path.lstat()
-        assert metadata.st_uid == 0 and not metadata.st_mode & 0o022
-        assert stat.S_ISREG(metadata.st_mode) if path == recovery else stat.S_ISDIR(metadata.st_mode)
-    assert recovery.stat().st_nlink == 1, "socket recovery helper must be singly linked"
+        require(metadata.st_uid == 0 and not metadata.st_mode & 0o022, "ADMIN_PREPARE_RECOVERY_CUSTODY_REFUSED")
+        require(stat.S_ISREG(metadata.st_mode) if path == recovery else stat.S_ISDIR(metadata.st_mode), "ADMIN_PREPARE_RECOVERY_CUSTODY_REFUSED")
+    require(recovery.stat().st_nlink == 1, "ADMIN_PREPARE_RECOVERY_CUSTODY_REFUSED")
     sources = {
         "osmap_public_admin_helper": args.binary,
         "admin-inventory-worker": args.inventory_worker,
         "admin-crypto-engine": args.crypto_engine,
     }
     for source in sources.values():
-        assert source is not None and source.is_absolute() and source.resolve() == source
+        require(source is not None and source.is_absolute() and source.resolve() == source, "ADMIN_PREPARE_SOURCE_CUSTODY_REFUSED")
         info = source.stat(follow_symlinks=False)
-        assert stat.S_ISREG(info.st_mode) and 0 < info.st_size <= 64 * 1024 * 1024
-        assert info.st_mode & 0o111 and not info.st_mode & 0o022
-    assert ROOT.is_dir() and not receipt.exists()
+        require(stat.S_ISREG(info.st_mode) and 0 < info.st_size <= 64 * 1024 * 1024, "ADMIN_PREPARE_SOURCE_CUSTODY_REFUSED")
+        require(info.st_mode & 0o111 and not info.st_mode & 0o022, "ADMIN_PREPARE_SOURCE_CUSTODY_REFUSED")
+    require(ROOT.is_dir() and not receipt.exists(), "ADMIN_PREPARE_EXISTING_STATE_REFUSED")
     base = json.loads((ROOT / "preparation.json").read_text())
-    assert base["target"] == HOST and base["version"] == 1
+    require(base["target"] == HOST and base["version"] == 1, "ADMIN_PREPARE_BASE_REFUSED")
     helper = pwd.getpwnam(HELPER)
     web = pwd.getpwnam(WEB)
     group = grp.getgrnam("osmapgpg")
-    assert base["helper_uid"] == helper.pw_uid and base["web_uid"] == web.pw_uid
-    assert (ROOT / "config").stat().st_uid == helper.pw_uid
+    require(base["helper_uid"] == helper.pw_uid and base["web_uid"] == web.pw_uid, "ADMIN_PREPARE_OWNER_REFUSED")
+    require((ROOT / "config").stat().st_uid == helper.pw_uid, "ADMIN_PREPARE_OWNER_REFUSED")
     inventory = json.loads((ROOT / "config/inventory.json").read_text())
-    assert inventory["version"] == 1 and inventory["trusted_web_uid"] == web.pw_uid
-    assert inventory["accounts"] and len(inventory["accounts"]) <= 128
-    assert all(set(item) == {"account", "home"} for item in inventory["accounts"])
+    require(inventory["version"] == 1 and inventory["trusted_web_uid"] == web.pw_uid, "ADMIN_PREPARE_INVENTORY_REFUSED")
+    require(inventory["accounts"] and len(inventory["accounts"]) <= 128, "ADMIN_PREPARE_INVENTORY_REFUSED")
+    require(all(set(item) == {"account", "home"} for item in inventory["accounts"]), "ADMIN_PREPARE_INVENTORY_REFUSED")
     for item in inventory["accounts"]:
         home = pathlib.Path(item["home"])
-        assert home.is_dir() and home.stat().st_uid == helper.pw_uid
-        assert home.is_relative_to(ROOT / "accounts") and home.resolve() == home
+        require(home.is_dir() and home.stat().st_uid == helper.pw_uid, "ADMIN_PREPARE_HOME_REFUSED")
+        require(home.is_relative_to(ROOT / "accounts") and home.resolve() == home, "ADMIN_PREPARE_HOME_REFUSED")
     expected_hashes = {
         "admin-inventory-worker": args.inventory_worker_sha256,
         "admin-crypto-engine": args.crypto_engine_sha256,
     }
     for option in expected_hashes.values():
-        assert option and len(option) == 64 and all(c in "0123456789abcdef" for c in option)
+        require(option and len(option) == 64 and all(c in "0123456789abcdef" for c in option), "ADMIN_PREPARE_PIN_REFUSED")
     binary = ROOT / "bin/osmap_public_admin_helper"
     worker = ROOT / "bin/admin-inventory-worker"
     engine = ROOT / "bin/admin-crypto-engine"
@@ -101,30 +110,30 @@ def main():
     rc = pathlib.Path("/etc/rc.d/osmap_public_admin")
     pending = ROOT / "config/web-environment.pending"
     for path in (binary, worker, engine, state, config, helper_key, web_key, wrapper, rc):
-        assert not path.exists() and not path.is_symlink(), "existing admin state preserved"
-    assert pending.is_file() and pending.stat().st_uid == helper.pw_uid
-    assert web_key.parent.is_dir() and web_key.parent.stat().st_uid == web.pw_uid
+        require(not path.exists() and not path.is_symlink(), "ADMIN_PREPARE_EXISTING_STATE_REFUSED")
+    require(pending.is_file() and pending.stat().st_uid == helper.pw_uid, "ADMIN_PREPARE_PENDING_REFUSED")
+    require(web_key.parent.is_dir() and web_key.parent.stat().st_uid == web.pw_uid, "ADMIN_PREPARE_SECRET_DIRECTORY_REFUSED")
     environment = pending.read_text()
-    assert "OSMAP_OPENPGP_PUBLIC_ADMIN_" not in environment
-    assert all(name in environment for name in ("OSMAP_OPENPGP_CRYPTO_SOCKET", "OSMAP_OPENPGP_INVENTORY_SOCKET"))
+    require("OSMAP_OPENPGP_PUBLIC_ADMIN_" not in environment, "ADMIN_PREPARE_EXISTING_CONFIGURATION_REFUSED")
+    require(all(name in environment for name in ("OSMAP_OPENPGP_CRYPTO_SOCKET", "OSMAP_OPENPGP_INVENTORY_SOCKET")), "ADMIN_PREPARE_PENDING_REFUSED")
     digests = {}
     for name, source in sources.items():
         source_info = source.stat(follow_symlinks=False)
         source_fd = os.open(source, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
-        assert os.fstat(source_fd).st_ino == source_info.st_ino and os.fstat(source_fd).st_dev == source_info.st_dev
+        require(os.fstat(source_fd).st_ino == source_info.st_ino and os.fstat(source_fd).st_dev == source_info.st_dev, "ADMIN_PREPARE_SOURCE_CHANGED")
         with os.fdopen(source_fd, "rb") as stream:
             candidate = stream.read(64 * 1024 * 1024 + 1)
-        assert len(candidate) == source_info.st_size
+        require(len(candidate) == source_info.st_size, "ADMIN_PREPARE_SOURCE_CHANGED")
         digest = hashlib.sha256(candidate).hexdigest()
         if name in expected_hashes:
-            assert digest == expected_hashes[name], "worker differs from qualified native build"
+            require(digest == expected_hashes[name], "ADMIN_PREPARE_PIN_MISMATCH")
         exclusive(ROOT / "bin" / name, candidate, helper.pw_uid, group.gr_gid, 0o700)
         digests[name] = digest
     state.mkdir(mode=0o700)
     state_fd = os.open(state, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0))
     try:
         state_info = os.fstat(state_fd)
-        assert stat.S_ISDIR(state_info.st_mode) and state_info.st_uid == 0
+        require(stat.S_ISDIR(state_info.st_mode) and state_info.st_uid == 0, "ADMIN_PREPARE_STATE_CUSTODY_REFUSED")
         os.fchown(state_fd, helper.pw_uid, group.gr_gid)
         os.fchmod(state_fd, 0o700)
         os.fsync(state_fd)

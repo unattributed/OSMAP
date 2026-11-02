@@ -1,3 +1,7 @@
+2026-11-02 — **S06-04 Python unlock/tooling correction qualified and installed; signed delivery in progress; owner private unlock/T09 pending.** Named-output failure reproduced with disposable keys; exact same-cipher stdout decrypt/sign and installed-interpreter checks PASS. No owner secret was replayed.
+
+2026-11-02 — **S06-04 owner unlock prerequisite FAIL; Python tooling repair IN_PROGRESS.** The user observed GPG attempting /dev/null.part; services are restored and HTTPS200 verified. Earlier native/runtime qualifications remain scoped history; no successful owner-key unlock or body UAT is claimed.
+
 2026-11-02 — **S06-01–04 consolidated source/native/installed qualification PASS within scope; normal signed delivery in progress; owner T09 pending.** Actual installed private operation returned Locked; successful owner protected-message reading is not claimed.
 
 2026-11-02 — **S06-04 IN_PROGRESS; S06-03 changed-producer classification follows combined reassessment in parallel.** All earlier failures and final installed/delivery/human requirements remain explicit.
@@ -105,7 +109,14 @@ slice using the same failure-analysis method. See
     "src/http_ui.rs",
     "src/http_inventory_tests.rs",
     "src/http_component_tests.rs",
-    "docs/README.md"
+    "docs/README.md",
+    "maint/openpgp-runtime/deployment_unlock.py",
+    "maint/openpgp-runtime/deployment_unlock_test.py",
+    "maint/openpgp-runtime/deployment_prepare.py",
+    "maint/openpgp-runtime/deployment_admin_prepare.py",
+    "maint/openpgp-runtime/deployment_prepare_test.py",
+    "maint/openpgp-runtime/deployment.md",
+    "maint/security/osmap-security-check.sh"
   ],
   "outcomes": [
     {
@@ -127,7 +138,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Actual protected Runtime reading, processed binary downloads and original encrypted source retain ownership, safe rendering, accurate states and transient privacy.",
       "essential_qa": "Existing actual Dovecot/native reader extended with rendered links, exact bytes, headers, stale/foreign/refused cases and application-state privacy.",
-      "next_action": "Complete normal signed source delivery and exact GitHub parity; owner privately unlocks the existing mailbox key and performs the S06 protected-body/source/download T09 journey. No owner acceptance or successful owner private decryption is inferred.",
+      "next_action": "Complete normal signed source delivery and exact remote parity, then one owner private terminal unlock and actual protected-message/source/download check. Keep relay Documents profile and unmeasured shutdown observations separate.",
       "dependencies": [
         {
           "owner": "/root",
@@ -168,6 +179,30 @@ slice using the same failure-analysis method. See
         {
           "stage": "recovery",
           "reference": "docs/UX_SLICE_S06_04.md: consolidated actual result; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Final exact source/native/preservation scope and limitations retained; owner T09 separate."
+        },
+        {
+          "stage": "implementation",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-independent-review.json SHA25601d4367b11126e4d0c063cefc198f6497c9e64ce6094216878ea7a2776381ff6; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-output.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/output-sink-observation.json; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/installed-interpreter-unit.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/install.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-exact-cleanup.actual.log. Qualified Python/tooling correction only; successful owner private unlock/body remains NOT RUN."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-independent-review.json SHA25601d4367b11126e4d0c063cefc198f6497c9e64ce6094216878ea7a2776381ff6; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-output.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/output-sink-observation.json; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/installed-interpreter-unit.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/install.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-exact-cleanup.actual.log. Qualified Python/tooling correction only; successful owner private unlock/body remains NOT RUN."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-independent-review.json SHA25601d4367b11126e4d0c063cefc198f6497c9e64ce6094216878ea7a2776381ff6; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-output.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/output-sink-observation.json; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/installed-interpreter-unit.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/install.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-exact-cleanup.actual.log. Qualified Python/tooling correction only; successful owner private unlock/body remains NOT RUN."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-independent-review.json SHA25601d4367b11126e4d0c063cefc198f6497c9e64ce6094216878ea7a2776381ff6; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-output.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/output-sink-observation.json; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/installed-interpreter-unit.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/install.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-exact-cleanup.actual.log. Qualified Python/tooling correction only; successful owner private unlock/body remains NOT RUN."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-independent-review.json SHA25601d4367b11126e4d0c063cefc198f6497c9e64ce6094216878ea7a2776381ff6; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-output.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/output-sink-observation.json; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/installed-interpreter-unit.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/install.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-exact-cleanup.actual.log. Qualified Python/tooling correction only; successful owner private unlock/body remains NOT RUN."
+        },
+        {
+          "stage": "recovery",
+          "reference": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-independent-review.json SHA25601d4367b11126e4d0c063cefc198f6497c9e64ce6094216878ea7a2776381ff6; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-output.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/output-sink-observation.json; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/installed-interpreter-unit.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/install.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-exact-cleanup.actual.log. Qualified Python/tooling correction only; successful owner private unlock/body remains NOT RUN."
         }
       ]
     }
@@ -176,13 +211,13 @@ slice using the same failure-analysis method. See
     "owner": "/root",
     "functional_exit": "Supported protected mail renders safely; processed downloads and original encrypted source are exact owned operations with truthful state and no plaintext persistence.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "All accepted S05 and S06-01/02/03 observations, failures, corrections, remaining visible-recipient classifier and operator-secret/body acceptance are carried forward explicitly. Consolidated final observations are appended here; all preceding source/compiler/native failures remain in slice documents and private evidence. Source/preparation actions without full-action timing remain UNKNOWN, not zero. Git/owner results stay separate. Independent component-test/claims review by scope QA covers root-authored changes only; protocol reviewer remains independent reviewer of native corpus authored by scope QA.",
+    "history_reference": "All accepted S05 and S06-01/02/03 observations, failures, corrections, remaining visible-recipient classifier and operator-secret/body acceptance are carried forward explicitly. Consolidated final observations are appended here; all preceding source/compiler/native failures remain in slice documents and private evidence. Source/preparation actions without full-action timing remain UNKNOWN, not zero. Git/owner results stay separate. Independent component-test/claims review by scope QA covers root-authored changes only; protocol reviewer remains independent reviewer of native corpus authored by scope QA. New owner unlock incident: two reported launch/retry errors, one detailed command trace; no extra inferred backend/private-key success. Root and independent reviewer identify named-output failure, stdout correction with discarded descriptor, and restore service availability before further tests. New tooling repair remains in the same outcome; cumulative prior history retained.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
-      "started_at": "2026-11-02T03:19:24Z",
+      "started_at": "2026-11-02T07:31:08Z",
       "elapsed_status": "MEASURED",
-      "elapsed_seconds": 2485.276
+      "elapsed_seconds": 1328.17
     },
     "attempts": [
       {
@@ -372,6 +407,51 @@ slice using the same failure-analysis method. See
           "reference": "Combined actual failure review before corrected normal push: native99 was invalid syntax; unassessed component expected obsolete heading. Both retained, focused correction and full gate required.",
           "next_action": "Ordinary complete gate after minimal component expectation correction; production artifacts remain byte-identical."
         }
+      },
+      {
+        "id": "python-output-sink-native-qualification",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 9.21,
+        "source_revision": "492b5a9435c1323ec2bab27b913b22a4ce59e3e88f6468bccdaa057ec48fc518",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-output.actual.log; expected named-output negative and same-cipher stdout positive, existing decrypt controls, internal/external cleanup and preservation PASS.",
+        "change_reference": "Add only fixed-UID Rust same-cipher output-sink discriminator; no owner key/private passphrase/OS account operation.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-independent-review.json SHA25601d4367b11126e4d0c063cefc198f6497c9e64ce6094216878ea7a2776381ff6; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-output.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/output-sink-observation.json; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/installed-interpreter-unit.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/install.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-exact-cleanup.actual.log."
+        }
+      },
+      {
+        "id": "python-output-sink-file-only-install",
+        "boundary": "protected-reader-source-download",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "83b01e98adca6c6a880f6f7264b2eb3bf93e0bd263a5e5d43558b69eddcf78b3",
+        "source_revision_scope": "exact operational Python component",
+        "reference": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/install.actual.log; old94→new83 existing root555 file only, backup/custody/protected state/runtime PIDs PASS; owner launcher NOT executed.",
+        "change_reference": "Both private GPG outputs route to stdout discarded by existing subprocess sink; guarded atomic replacement after independent actual qualification.",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-independent-review.json SHA25601d4367b11126e4d0c063cefc198f6497c9e64ce6094216878ea7a2776381ff6; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-output.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/output-sink-observation.json; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/installed-interpreter-unit.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/install.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-exact-cleanup.actual.log."
+        }
       }
     ],
     "source_and_preparation_history": [
@@ -416,6 +496,23 @@ slice using the same failure-analysis method. See
       "reference": "/home/foo/Downloads/osmap-ux-s06/s06-04/normal-push.log; /home/foo/Downloads/osmap-ux-s06/s06-04/normal-push-corrected.log; /home/foo/Downloads/osmap-ux-s06/s06-04/component-regression-green.log; /home/foo/Downloads/osmap-ux-s06/s06-04/documentation-index-green.log; independent actual combined review in this chat.",
       "observation": "Two distinct failed publication prerequisites have matching minimal corrections. All2161 main tests passed in the second gate; docindex4links now pass narrowguard. No gate bypass, changed product code or native replay.",
       "next_action": "Run next ordinary complete pre-push hook and require signed commits, fresh fetch/ls-remote exact equality,0ahead/behind and clean worktree before publication claim."
+    },
+    "tooling_incident": {
+      "reported": "2026-11-02 owner trace; exact owner execution time not supplied",
+      "failure": "GPG named /dev/null output attempted /dev/null.part; separate earlier bad-passphrase prompt, private warming not confirmed",
+      "reviewers": [
+        "/root",
+        "/root/s05_protocol_review"
+      ],
+      "scope": "Installed unlock, active socket recovery and relay source/custody/callgraph, retained preparation utilities, normal test coverage",
+      "source_red": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/unlock-source-red.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/unlock-source-red-corrected-fixture.log",
+      "source_green": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/unlock-source-green.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/unlock-source-optimized-green.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/prepare-complete-source-green.log",
+      "native": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-independent-review.json SHA25601d4367b11126e4d0c063cefc198f6497c9e64ce6094216878ea7a2776381ff6; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-output.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/output-sink-observation.json; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/installed-interpreter-unit.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/install.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-exact-cleanup.actual.log.",
+      "retained_followups": "Installed Documents response-cap drift has no observed owner failure and requires separate typed-exchange qualification; relay shutdown child survival is unmeasured. Neither was changed as part of the unlock correction.",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null,
+      "preparation_retention": "Original author RED/GREEN diagnostics were chat-only (toolchunks0999f7,ce79fa,09f409,4a451e), no independently retained original raw files. Fresh baseline reproduction is separately retained in /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/prepare-baseline-reproduction-red.log: originale82b12b scripts +finaleffect-traptest,4optimizedfailures0.504s; currentrootcompleteGREEN5PASS0.621s. No oldrawtext reconstructed.",
+      "external_cleanup": "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-exact-cleanup.actual.log PASS, witness readback/hash and no process/descriptor refs before exact removal; compiled libtest retained."
     }
   },
   "slice_contract": {
@@ -423,7 +520,7 @@ slice using the same failure-analysis method. See
     "slice": "S06-04",
     "specification": {
       "path": "docs/UX_SLICE_S06_04.md",
-      "sha256": "253c31eaeb93d7861e48b15dadc23752bb9ffca37e2de14d18f77fc10ab7a922"
+      "sha256": "237e0af26fca7a2395de275d84a3a6ee73b7d05b557cdae63bd9c15a824d092d"
     },
     "design": {
       "journey": "Read supported protected mail, inspect original ciphertext and download exact authorised processed attachments with clear failure and privacy boundaries.",
@@ -576,7 +673,9 @@ slice using the same failure-analysis method. See
         "reviewer": "/root/s05_protocol_review",
         "status": "PASS",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented."
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Actual installed private boundary is typed Locked refusal, not successful owner decryption; matching unchanged lifecycle and cross-account proofs are reused as documented.",
+          "Owner operational unlock prerequisite failed after prior installed public/Locked refusal qualification. /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/restoration.actual.log records8roles andHTTPS200 restored; repair not yet qualified.",
+          "/home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-independent-review.json SHA25601d4367b11126e4d0c063cefc198f6497c9e64ce6094216878ea7a2776381ff6; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-output.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/output-sink-observation.json; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/installed-interpreter-unit.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/install.actual.log; /home/foo/Downloads/osmap-ux-s06/unlock-output-incident-20261102/native-exact-cleanup.actual.log. Existing root-owned utility83b01e98 installed without execution/restart/owner warming; prior runtime binaries and private state preserved."
         ]
       },
       {
@@ -594,7 +693,9 @@ slice using the same failure-analysis method. See
         "reviewer": "/root/s05_protocol_review",
         "status": "PARTIAL",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Engineering/review component complete; normal signed delivery and owner acceptance remain pending."
+          "/home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-results.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-reader-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-signature-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/native-corrected-decryption-observation.json; /home/foo/Downloads/osmap-ux-s06/s06-04/install.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/installed-probe.actual.log; /home/foo/Downloads/osmap-ux-s06/s06-04/native-independent-review.json SHA256239550649ccc05ed35c30da1bac46c4c91a2ed7d4e77cd91aba14b8d5c96c932. Engineering/review component complete; normal signed delivery and owner acceptance remain pending.",
+          "2026-11-02 owner detailed transcript: GPG error creating /dev/null.part PermissionDenied, AgentGuardError; actual owner unlock not confirmed. Prior code publicatione82b12b remains preserved; it does not supersede the real failure.",
+          "Owner old-tool output-path failure remains retained. Agent repair qualified/installed; successful owner private retry and T09 acceptance remain pending. Normal signed publication not inferred from source prose."
         ]
       }
     ],
@@ -603,9 +704,9 @@ slice using the same failure-analysis method. See
   },
   "human_acceptance": {
     "status": "PENDING",
-    "reference": "Owner authorised S06 engineering while away. Consolidated source/native/installed qualification passes within documented scope; actual owner protected-body UAT remains NOT RUN and the historical R2-03-022 owner failure remains retained."
+    "reference": "Owner failed unlock prerequisite is retained as history. Its output-path defect is fixed and installed, but no owner passphrase was replayed and no successful owner-body UAT is claimed."
   },
-  "next_action": "After verified normal signed delivery and fresh remote equality, owner privately unlocks the existing mailbox key through the documented stopped-OSMAP-helper terminal procedure and performs protected-body/source/download T09 UAT. No public mail or account-authority stop."
+  "next_action": "Complete normal signed source delivery and exact remote parity, then one owner private terminal unlock and actual protected-message/source/download check. Keep relay Documents profile and unmeasured shutdown observations separate."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

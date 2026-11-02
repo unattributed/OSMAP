@@ -186,6 +186,10 @@ python3 -B -m unittest discover -s maint/mail-backend -p 'test_*.py'
 echo "Running abandoned OSMAP service socket recovery regressions"
 python3 -B maint/test_service_socket_recovery.py
 
+echo "==> validating OpenPGP operator tool guards and output handling"
+OSMAP_UNLOCK_NATIVE=0 python3 -B -m unittest discover -s maint/openpgp-runtime -p deployment_unlock_test.py
+python3 -B -m unittest discover -s maint/openpgp-runtime -p deployment_prepare_test.py
+
 echo "==> validating V7 boundary hardening invariants"
 sh maint/security/osmap-v7-boundary-hardening-gate.sh
 

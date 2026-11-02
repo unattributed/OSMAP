@@ -7,6 +7,7 @@ import shutil
 import signal
 import socket
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -45,6 +46,53 @@ int main(int argc, char **argv) {
     for (;;) pause();
 }
 '''
+
+
+class PreparationGuards(unittest.TestCase):
+    def test_actual_authority_guards_refuse_before_effects_under_optimization(self):
+        driver = r'''
+import importlib.util, sys
+source = sys.argv[1]
+spec = importlib.util.spec_from_file_location("preparation_guard_fixture", source)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+module.os.geteuid = lambda: 0
+module.socket.gethostname = lambda: "wrong-preparation-host.invalid"
+effects = []
+def forbidden_effect(*args, **kwargs):
+    effects.append(True)
+    raise SystemExit(2)
+module.resource.setrlimit = forbidden_effect
+module.os.umask = forbidden_effect
+module.subprocess.run = forbidden_effect
+sys.argv = [source, "--prepare"]
+try:
+    module.main()
+except AssertionError:
+    if effects:
+        raise SystemExit("PREPARATION_GUARD_RESULT_REFUSED") from None
+else:
+    raise SystemExit("PREPARATION_GUARD_BYPASSED")
+print("PREPARATION_AUTHORITY_GUARD_PASS_NO_EFFECTS")
+'''
+        for name in ("deployment_prepare.py", "deployment_admin_prepare.py"):
+            for mode in ("ordinary", "flag", "environment"):
+                with self.subTest(source=name, mode=mode):
+                    environment = dict(os.environ)
+                    environment.pop("PYTHONOPTIMIZE", None)
+                    if mode == "environment":
+                        environment["PYTHONOPTIMIZE"] = "1"
+                    command = [sys.executable, "-B"]
+                    if mode == "flag":
+                        command.append("-O")
+                    result = subprocess.run(
+                        command + ["-c", driver, str(HERE / name)],
+                        stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE, env=environment, timeout=5,
+                    )
+                    self.assertEqual(result.returncode, 0, "actual preparation authority guard failed")
+                    self.assertEqual(result.stdout, b"PREPARATION_AUTHORITY_GUARD_PASS_NO_EFFECTS\n")
+                    self.assertEqual(result.stderr, b"")
 
 
 class CryptoServiceScripts(unittest.TestCase):

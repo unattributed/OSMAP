@@ -151,6 +151,26 @@ def restart_bounded_agent(home, env, demote, run=subprocess.run):
     require(agent.returncode == 0, "bounded mailbox agent startup refused")
 
 
+def run_gpg(arguments, data=None, capture=False, *, env, home, demote):
+    result = subprocess.run(["/usr/local/bin/gpg", "--no-options", "--homedir", str(home), "--no-autostart"] + arguments,
+                            input=data, stdout=subprocess.PIPE if capture else subprocess.DEVNULL,
+                            env=env, cwd=home, preexec_fn=demote, timeout=300)
+    require(result.returncode == 0, "mailbox key operation refused")
+    return result.stdout
+
+
+def warm_key_operations(gpg):
+    listed = gpg(["--batch", "--with-colons", "--list-secret-keys", PRIMARY], capture=True).decode()
+    fingerprints = [line.split(":")[9] for line in listed.splitlines() if line.startswith("fpr:")]
+    require(PRIMARY in fingerprints and SIGNER in fingerprints, "matching mailbox secret key has not been imported")
+    # Use stdout, already discarded by run_gpg. A named /dev/null output can
+    # make GPG try to create an atomic sibling /dev/null.part as the helper UID.
+    gpg(["--local-user", SIGNER + "!", "--digest-algo", "SHA256", "--detach-sign", "--output", "-", "/dev/null"])
+    ciphertext = gpg(["--batch", "--trust-model", "always", "--cipher-algo", "AES256", "--recipient", PRIMARY, "--encrypt"], b"Disposable mailbox unlock check.\n", capture=True)
+    require(len(ciphertext) < 65536, "mailbox agent guard refused")
+    gpg(["--output", "-", "--decrypt"], ciphertext)
+
+
 def main():
     require(os.geteuid() == 0 and socket.gethostname() == "obsd1.blackbagsecurity.com", "mailbox agent guard refused")
     with launcher_lock():
@@ -178,11 +198,7 @@ def warm_mailbox_agent():
         os.setuid(helper.pw_uid)
 
     def gpg(arguments, data=None, capture=False):
-        result = subprocess.run(["/usr/local/bin/gpg", "--no-options", "--homedir", str(HOME), "--no-autostart"] + arguments,
-                                input=data, stdout=subprocess.PIPE if capture else subprocess.DEVNULL,
-                                env=env, cwd=HOME, preexec_fn=demote, timeout=300)
-        require(result.returncode == 0, "mailbox key operation refused")
-        return result.stdout
+        return run_gpg(arguments, data, capture, env=env, home=HOME, demote=demote)
 
     def interrupted(signum, _frame):
         raise SystemExit(128 + signum)
@@ -195,13 +211,7 @@ def warm_mailbox_agent():
         os.fchown(0, helper.pw_uid, helper.pw_gid)
         os.fchmod(0, 0o600)
         restart_bounded_agent(HOME, env, demote)
-        listed = gpg(["--batch", "--with-colons", "--list-secret-keys", PRIMARY], capture=True).decode()
-        fingerprints = [line.split(":")[9] for line in listed.splitlines() if line.startswith("fpr:")]
-        require(PRIMARY in fingerprints and SIGNER in fingerprints, "matching mailbox secret key has not been imported")
-        gpg(["--local-user", SIGNER + "!", "--digest-algo", "SHA256", "--detach-sign", "--output", "/dev/null", "/dev/null"])
-        ciphertext = gpg(["--batch", "--trust-model", "always", "--cipher-algo", "AES256", "--recipient", PRIMARY, "--encrypt"], b"Disposable mailbox unlock check.\n", capture=True)
-        require(len(ciphertext) < 65536, "mailbox agent guard refused")
-        gpg(["--output", "/dev/null", "--decrypt"], ciphertext)
+        warm_key_operations(gpg)
         print("mailbox_signing_and_decryption_agent_warmed=PASS")
     finally:
         os.fchown(0, original.st_uid, original.st_gid)

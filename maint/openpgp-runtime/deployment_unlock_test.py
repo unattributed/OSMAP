@@ -18,12 +18,100 @@ import tempfile
 import termios
 import time
 import unittest
+import contextlib
+import io
+import stat
+from types import SimpleNamespace
 from unittest.mock import patch
 
 SOURCE = pathlib.Path(__file__).with_name("deployment_unlock.py")
 SPEC = importlib.util.spec_from_file_location("deployment_unlock", SOURCE)
 unlock = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(unlock)
+
+
+class WarmOperationTests(unittest.TestCase):
+    def operations(self, fail=None):
+        calls = []
+        def gpg(arguments, data=None, capture=False):
+            calls.append((arguments, data, capture))
+            if fail and fail in arguments:
+                raise unlock.AgentGuardError("mailbox key operation refused")
+            if "--list-secret-keys" in arguments:
+                return ("fpr:::::::::" + unlock.PRIMARY + ":\n"
+                        "fpr:::::::::" + unlock.SIGNER + ":\n").encode()
+            if "--encrypt" in arguments:
+                return b"synthetic-ciphertext"
+        return calls, gpg
+
+    def test_actual_warm_sequence_uses_stdout_without_capturing_private_output(self):
+        calls, gpg = self.operations()
+        unlock.warm_key_operations(gpg)
+        self.assertEqual(len(calls), 4)
+        for arguments, _, capture in (calls[1], calls[3]):
+            self.assertEqual(arguments[arguments.index("--output") + 1], "-")
+            self.assertFalse(capture)
+        self.assertEqual(calls[3][1], b"synthetic-ciphertext")
+        self.assertTrue(calls[0][2] and calls[2][2])
+
+    def test_operation_failure_stops_the_actual_sequence(self):
+        for fail, count in (("--detach-sign", 2), ("--encrypt", 3), ("--decrypt", 4)):
+            calls, gpg = self.operations(fail)
+            with self.subTest(fail=fail), self.assertRaises(unlock.AgentGuardError):
+                unlock.warm_key_operations(gpg)
+            self.assertEqual(len(calls), count)
+
+    def test_private_gpg_stdout_is_discarded_and_failure_is_explicit(self):
+        for status in (0, 1):
+            def run(command, **kwargs):
+                self.assertEqual(command[-3:], ["--output", "-", "--decrypt"])
+                self.assertEqual(kwargs["stdout"], subprocess.DEVNULL)
+                self.assertEqual(kwargs["input"], b"synthetic-ciphertext")
+                self.assertEqual(kwargs["timeout"], 300)
+                return subprocess.CompletedProcess(command, status, None)
+            with self.subTest(status=status), patch.object(unlock.subprocess, "run", run):
+                if status:
+                    with self.assertRaises(unlock.AgentGuardError):
+                        unlock.run_gpg(["--output", "-", "--decrypt"], b"synthetic-ciphertext",
+                                       env={}, home=pathlib.Path("/unused"), demote=None)
+                else:
+                    self.assertIsNone(unlock.run_gpg(["--output", "-", "--decrypt"], b"synthetic-ciphertext",
+                                                    env={}, home=pathlib.Path("/unused"), demote=None))
+
+    def test_failed_warm_restores_terminal_and_does_not_report_success(self):
+        with tempfile.TemporaryDirectory(prefix="osmap-unlock-finally-") as directory:
+            home = pathlib.Path(directory)
+            home.chmod(0o700)
+            master, slave = pty.openpty()
+            original = os.fstat(slave)
+            saved_stdin = os.dup(0)
+            handlers = {value: unlock.signal.getsignal(value)
+                        for value in (unlock.signal.SIGTERM, unlock.signal.SIGHUP)}
+            output = io.StringIO()
+            try:
+                os.dup2(slave, 0)
+                helper = SimpleNamespace(pw_uid=os.getuid(), pw_gid=original.st_gid, pw_name="fixture")
+                with patch.object(unlock.os, "geteuid", return_value=0), \
+                     patch.object(unlock.socket, "gethostname", return_value="obsd1.blackbagsecurity.com"), \
+                     patch.object(unlock, "HOME", home), \
+                     patch.object(unlock.pwd, "getpwnam", return_value=helper), \
+                     patch.object(unlock, "require_stopped_helpers"), \
+                     patch.object(unlock, "restart_bounded_agent"), \
+                     patch.object(unlock, "warm_key_operations", side_effect=unlock.AgentGuardError("mailbox key operation refused")), \
+                     patch.object(unlock.resource, "setrlimit"), \
+                     contextlib.redirect_stdout(output):
+                    with self.assertRaises(unlock.AgentGuardError):
+                        unlock.warm_mailbox_agent()
+                restored = os.fstat(slave)
+                self.assertEqual((restored.st_uid, restored.st_gid, stat.S_IMODE(restored.st_mode)),
+                                 (original.st_uid, original.st_gid, stat.S_IMODE(original.st_mode)))
+                self.assertEqual({value: unlock.signal.getsignal(value) for value in handlers}, handlers)
+                self.assertNotIn("warmed=PASS", output.getvalue())
+            finally:
+                os.dup2(saved_stdin, 0)
+                os.close(saved_stdin)
+                os.close(master)
+                os.close(slave)
 
 
 class AgentPolicyTests(unittest.TestCase):

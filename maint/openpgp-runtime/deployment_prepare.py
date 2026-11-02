@@ -30,6 +30,15 @@ SIGNER = "83A5689C7C52CE43DB88C8A5322909FC05BF68BB"
 PROTON = "C384498B2CC97D8D9EB7B20162C21B767540D006"
 
 
+class PreparationGuardError(AssertionError):
+    """Operational refusals remain active under interpreter optimization."""
+
+
+def require(condition, code="PREPARATION_GUARD_REFUSED"):
+    if not condition:
+        raise PreparationGuardError(code)
+
+
 def crypto_service_scripts():
     """Let rc.subr own the foreground listener, without a shell supervisor.
 
@@ -68,47 +77,47 @@ def main():
     for name in ("account", "test-account", "correspondent"):
         parser.add_argument("--" + name)
     args = parser.parse_args()
-    assert os.geteuid() == 0 and socket.gethostname() == HOST, "obsd1 root-only deployment preparation"
+    require(os.geteuid() == 0 and socket.gethostname() == HOST, "PREPARE_AUTHORITY_REFUSED")
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     os.umask(0o077)
     if not args.prepare:
         print(json.dumps({"target": HOST, "prepared": ROOT.exists(), "services": ["osmap_crypto", "osmap_public_inventory"], "activation": "separate operator step; running web unchanged"}))
         return
     recovery = pathlib.Path("/usr/local/libexec/osmap/service_socket_recovery.py")
-    assert recovery.resolve() == recovery, "install reviewed root-owned socket recovery helper first"
+    require(recovery.resolve() == recovery, "PREPARE_RECOVERY_CUSTODY_REFUSED")
     for path in (recovery, *recovery.parents):
         metadata = path.lstat()
-        assert metadata.st_uid == 0 and not metadata.st_mode & 0o022
-        assert stat.S_ISREG(metadata.st_mode) if path == recovery else stat.S_ISDIR(metadata.st_mode)
-    assert recovery.stat().st_nlink == 1, "socket recovery helper must be singly linked"
-    assert all(getattr(args, n) for n in ("source", "binaries", "duncan_public", "proton_public"))
+        require(metadata.st_uid == 0 and not metadata.st_mode & 0o022, "PREPARE_RECOVERY_CUSTODY_REFUSED")
+        require(stat.S_ISREG(metadata.st_mode) if path == recovery else stat.S_ISDIR(metadata.st_mode), "PREPARE_RECOVERY_CUSTODY_REFUSED")
+    require(recovery.stat().st_nlink == 1, "PREPARE_RECOVERY_CUSTODY_REFUSED")
+    require(all(getattr(args, n) for n in ("source", "binaries", "duncan_public", "proton_public")), "PREPARE_INPUT_REFUSED")
     addresses = [args.account, args.test_account, args.correspondent]
-    assert all(address and len(address) <= 254 and re.fullmatch(r"[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?", address) for address in addresses), "supply canonical operator-approved account and correspondent addresses"
-    assert len(set(addresses)) == 3, "account and correspondent mappings must be distinct"
+    require(all(address and len(address) <= 254 and re.fullmatch(r"[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?", address) for address in addresses), "PREPARE_ADDRESS_REFUSED")
+    require(len(set(addresses)) == 3, "PREPARE_ADDRESS_REFUSED")
     accounts = addresses[:2]
-    assert not ROOT.exists(), "existing development custody directory preserved; use status/SOP instead of overwrite"
+    require(not ROOT.exists(), "PREPARE_EXISTING_CUSTODY_REFUSED")
     for path in (args.source, args.binaries, args.duncan_public, args.proton_public):
-        assert path.is_absolute() and path.resolve() == path and path.exists()
+        require(path.is_absolute() and path.resolve() == path and path.exists(), "PREPARE_INPUT_CUSTODY_REFUSED")
     web = pwd.getpwnam(WEB)
     for name in (HELPER,):
         try:
             pwd.getpwnam(name)
-            raise AssertionError("helper already exists; inspect existing deployment")
+            raise PreparationGuardError("PREPARE_EXISTING_HELPER_REFUSED")
         except KeyError:
             pass
     try:
         grp.getgrnam(GROUP)
-        raise AssertionError("socket group already exists; inspect existing deployment")
+        raise PreparationGuardError("PREPARE_EXISTING_GROUP_REFUSED")
     except KeyError:
         pass
     for service in ("osmap_crypto", "osmap_public_inventory"):
-        assert not pathlib.Path("/etc/rc.d", service).exists()
+        require(not pathlib.Path("/etc/rc.d", service).exists(), "PREPARE_EXISTING_SERVICE_REFUSED")
     pending = pathlib.Path("/var/lib/osmap/settings/openpgp-pending")
-    assert not pending.exists() and not pending.is_symlink(), "existing pending bindings preserved"
+    require(not pending.exists() and not pending.is_symlink(), "PREPARE_EXISTING_BINDINGS_REFUSED")
     secrets = pathlib.Path("/var/lib/osmap/secrets")
-    assert secrets.is_dir() and secrets.stat().st_uid == web.pw_uid
+    require(secrets.is_dir() and secrets.stat().st_uid == web.pw_uid, "PREPARE_SECRET_DIRECTORY_REFUSED")
     for service in ("crypto", "inventory"):
-        assert not (secrets / ("openpgp-" + service + ".key")).exists()
+        require(not (secrets / ("openpgp-" + service + ".key")).exists(), "PREPARE_EXISTING_GRANT_REFUSED")
 
     def run(command, data=None, user=None, timeout=30, settings=None, cwd=None):
         def demote():
@@ -119,8 +128,8 @@ def main():
         result = subprocess.run(list(map(str, command)), input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 timeout=timeout, env={"PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin", "LC_ALL": "C"} | (settings or {}),
                                 preexec_fn=demote if user else None, cwd=cwd)
-        assert result.returncode == 0, "preparation command refused: " + pathlib.Path(str(command[0])).name
-        assert len(result.stdout) <= 65536
+        require(result.returncode == 0, "PREPARE_COMMAND_REFUSED")
+        require(len(result.stdout) <= 65536, "PREPARE_COMMAND_OUTPUT_REFUSED")
         return result.stdout
 
     def owned(path, uid, gid, mode):
@@ -149,7 +158,7 @@ def main():
                 elif fields[0] == "fpr" and next_primary:
                     primary.append(fields[9])
                     next_primary = False
-            assert primary == [expected], "public certificate primary mismatch"
+            require(primary == [expected], "PREPARE_PUBLIC_FINGERPRINT_REFUSED")
         built = {}
         for label, source, libraries in [("crypto-worker", "crypto.c", ["-L/usr/local/lib", "-lgpgme", "-lgpg-error"]), ("crypto-engine", "crypto_engine.c", []), ("inventory-worker", "inventory.c", ["-L/usr/local/lib", "-lgpgme", "-lgpg-error"])]:
             destination = scratch / label
@@ -157,7 +166,7 @@ def main():
             built[label] = destination
         for name in ("osmap_crypto_helper", "osmap_public_inventory_helper"):
             path = args.binaries / name
-            assert path.is_file() and path.stat().st_mode & 0o111
+            require(path.is_file() and path.stat().st_mode & 0o111, "PREPARE_BINARY_REFUSED")
             built[name] = path
         previous_groups = os.getgrouplist(WEB, web.pw_gid)
         run(["/usr/sbin/groupadd", GROUP])
@@ -189,10 +198,10 @@ def main():
                 # startup is needed to build this bounded public inventory.
                 run(["/usr/local/bin/gpg", "--no-options", "--homedir", home, "--batch", "--no-autostart", "--pinentry-mode", "error", "--import"], data=public.read_bytes(), user=HELPER)
             for name in ("pubring.kbx", "trustdb.gpg"):
-                assert (home / name).is_file() and (home / name).stat().st_mode & 0o077 == 0
-            assert not (home / "private-keys-v1.d").exists() or not list((home / "private-keys-v1.d").iterdir())
+                require((home / name).is_file() and (home / name).stat().st_mode & 0o077 == 0, "PREPARE_PUBLIC_STORE_REFUSED")
+            require(not (home / "private-keys-v1.d").exists() or not list((home / "private-keys-v1.d").iterdir()), "PREPARE_PRIVATE_MATERIAL_REFUSED")
             actual = json.loads(run([ROOT / "bin/inventory-worker", home], user=HELPER, settings={"GNUPGHOME": str(home)}, cwd=home))
-            assert actual["ok"] and {key["primary"]["fingerprint"] for key in actual["keys"]} == {DUNCAN, PROTON}
+            require(actual["ok"] and {key["primary"]["fingerprint"] for key in actual["keys"]} == {DUNCAN, PROTON}, "PREPARE_PUBLIC_INVENTORY_REFUSED")
         config_root = ROOT / "config"
         settings = {}
         for label in ("crypto", "inventory"):

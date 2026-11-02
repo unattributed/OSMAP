@@ -1242,6 +1242,98 @@ enum InboundCryptoCase {
     MissingSigner,
     Decryption,
 }
+fn qualify_gpg_output_sinks(f: &mut Fixture, ciphertext: &[u8], alice: &str) -> Result<()> {
+    let part_absent = || {
+        fs::symlink_metadata("/dev/null.part")
+            .is_err_and(|error| error.kind() == std::io::ErrorKind::NotFound)
+    };
+    require(part_absent(), "DEV_NULL_PART_PREFLIGHT_REFUSED")?;
+    let command = |output: &str| -> Result<Command> {
+        let mut command = f.command(Program::Gpg, Role::Helper)?;
+        command
+            .args(["--no-options", "--homedir"])
+            .arg(f.path("helper/alice"))
+            .args([
+                "--batch",
+                "--yes",
+                "--pinentry-mode",
+                "error",
+                "--no-autostart",
+                "--no-auto-check-trustdb",
+                "--output",
+                output,
+            ]);
+        Ok(command)
+    };
+    // Do not use Fixture.raw here: it persists failed stdout, which could
+    // contain partial plaintext. The same bounded supervisor keeps these
+    // transient buffers in memory and only fixed accounting is retained below.
+    let run = |command, input: &[u8]| {
+        crate::openpgp_crypto_process::run_native_fixture(
+            command,
+            input,
+            (f.started + Duration::from_secs(240)).min(Instant::now() + Duration::from_secs(10)),
+        )
+        .map_err(|_| "OUTPUT_SINK_PROCESS_UNCONFIRMED")
+    };
+    let mut named = command("/dev/null")?;
+    named.arg("--decrypt");
+    let (named_output, named_success) = run(named, ciphertext)?;
+    require(part_absent(), "DEV_NULL_PART_ABSENCE_UNCONFIRMED")?;
+    let mut stdout = command("-")?;
+    stdout.arg("--decrypt");
+    let (plaintext, stdout_success) = run(stdout, ciphertext)?;
+    let mut sign = command("-")?;
+    sign.args([
+        "--local-user",
+        &format!("{alice}!"),
+        "--digest-algo",
+        "SHA256",
+        "--armor",
+        "--detach-sign",
+    ]);
+    let (signature, sign_success) = run(sign, b"")?;
+    let exact_plaintext =
+        plaintext == crate::protected_message::native_tests::VISIBLE_DECRYPTION_PLAINTEXT;
+    let signature_armor = signature.starts_with(b"-----BEGIN PGP SIGNATURE-----")
+        && signature
+            .windows(b"-----END PGP SIGNATURE-----".len())
+            .any(|part| part == b"-----END PGP SIGNATURE-----");
+    let witness = serde_json::json!({
+        "helper_uid":1002,
+        "dev_null_part_absent_before_and_after":true,
+        "named_dev_null_refused":!named_success,
+        "named_stdout_bytes":named_output.len(),
+        "stdout_decrypt_success":stdout_success,
+        "stdout_plaintext_exact":exact_plaintext,
+        "stdout_plaintext_bytes":plaintext.len(),
+        "stdout_sign_success":sign_success,
+        "stdout_signature_armor":signature_armor,
+        "stdout_signature_bytes":signature.len(),
+        "plaintext_persisted":false,
+    });
+    f.write(
+        &f.path("control/s06-output-sink-observation.json"),
+        &serde_json::to_vec(&witness).map_err(|_| "OUTPUT_SINK_WITNESS_REFUSED")?,
+        0,
+        0,
+        0o600,
+    )?;
+    require(
+        !named_success && named_output.is_empty(),
+        "NAMED_DEV_NULL_NEGATIVE_NOT_OBSERVED",
+    )?;
+    require(
+        stdout_success && exact_plaintext,
+        "STDOUT_DECRYPT_CONTROL_REFUSED",
+    )?;
+    require(
+        sign_success && signature_armor,
+        "STDOUT_SIGN_CONTROL_REFUSED",
+    )?;
+    f.checks.push("s06_native_named_vs_stdout_gpg_output_sink");
+    Ok(())
+}
 fn inbound_disjoint_crypto(f: &mut Fixture, case: InboundCryptoCase) -> Result<()> {
     let (selector, observation, check) = match case {
         InboundCryptoCase::MissingSigner => (
@@ -1299,6 +1391,7 @@ fn inbound_disjoint_crypto(f: &mut Fixture, case: InboundCryptoCase) -> Result<(
                     .any(|part| part == b"-----END PGP MESSAGE-----"),
             "VISIBLE_RECIPIENT_CIPHERTEXT_REFUSED",
         )?;
+        qualify_gpg_output_sinks(f, &ciphertext, &alice)?;
         f.write(
             &f.path("web/s06-visible-ciphertext.asc"),
             &ciphertext,

@@ -1,3 +1,5 @@
+2026-11-02 (Asia/Bangkok) — **S06-04 owner unlock failure repaired in installed tooling; actual owner retry pending.** GPG /dev/null.part failure was a named-output defect. Both private operations now use stdout discarded by the existing descriptor sink. Source/optimized tests, actual obsd1 Python suite, same-cipher Rust native proof and file-only installation/preservation pass. Normal signed delivery remains separate; no owner passphrase/key operation was replayed. See [repair and bounded Python audit](UX_SLICE_S06_04.md#owner-unlock-failure-and-python-tooling-repair-2026-11-02).
+
 2026-11-02 (Asia/Bangkok) — **2026-11-02: S06-01–04 source/native and consolidated installed qualification pass within scope.** The guarded obsd1 update installs the qualified Web and crypto worker. Real public encryption, typed private `Locked` refusal, current signed account-epoch admission, HTTPS and account/key/configuration/state preservation pass. Owner private-key unlock and successful encrypted-body/source/download UAT remain pending; normal signed GitHub delivery is in progress. See [the consolidated S06 result and UAT](UX_SLICE_S06_04.md).
 
 # Current Project Status

@@ -179,8 +179,27 @@ All OpenPGP helpers must be stopped while the launcher replaces the mailbox
 agent. It stops any existing account agent and starts a new one with both
 default and maximum passphrase-cache lifetime set to 300 seconds, with external
 Pinentry caching disabled. Existing agent sockets are never accepted as proof
-of this policy. Restart the helpers after successful warming; after cache
-expiry, operations fail closed and the operator repeats the terminal unlock.
+of this policy. Both the signing and decryption challenges must succeed before
+the launcher reports `mailbox_signing_and_decryption_agent_warmed=PASS`. Their
+output uses GPG's stdout destination (`--output -`), connected directly to a
+discarded descriptor; no named plaintext output or `/dev/null.part` is created.
+
+Restore the OSMAP helpers and Web after the command returns, including after a
+failure or cancellation:
+
+```sh
+doas rcctl start osmap_crypto osmap_public_inventory osmap_public_admin
+doas rcctl start osmap_serve
+```
+
+A failed or cancelled warm-up is **not confirmed**. The `finally` block restores
+terminal ownership/mode and signal handlers, but the launcher does not restore
+services itself or undo a partly warmed, bounded agent. Its success must not be
+inferred from an earlier signing prompt. Restore frontend availability, retain
+the actual error and reconcile the cause before another private-key attempt.
+After cache expiry, private operations fail closed; a new private unlock is an
+operator action rather than an automatic credential retry. Public mail services
+and account authority are not stopped by this workflow.
 
 ## Coordinated activation and rollback
 

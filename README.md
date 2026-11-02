@@ -1,5 +1,7 @@
 # OSMAP
 
+**2026-11-02: Owner unlock-tool failure corrected and installed.** Actual GPG named-output failure is reproduced; stdout signing/decryption and native Python-interpreter tests pass. Operational guards in the two preparation utilities now survive optimization, with normal regression coverage added. Owner private unlock/body UAT remains pending. See [the repair and audit limits](docs/UX_SLICE_S06_04.md#owner-unlock-failure-and-python-tooling-repair-2026-11-02).
+
 **2026-11-02: S06-01–04 source/native and consolidated installed qualification pass within scope.** The guarded obsd1 update installs the qualified Web and crypto worker. Real public encryption, typed private `Locked` refusal, current signed account-epoch admission, HTTPS and account/key/configuration/state preservation pass. Owner private-key unlock and successful encrypted-body/source/download UAT remain pending; normal signed GitHub delivery is in progress. See [the consolidated S06 result and UAT](docs/UX_SLICE_S06_04.md).
 
 **2026-11-02: S05-04 accepted — T01–T09 PASS.** The owner explicitly accepts the completed infrastructure result. Restored login, native Rust crypto/inventory/admin qualification, account-state preservation, cleanup and signed engineering delivery are recorded in the [slice acceptance](docs/UX_SLICE_S05_04.md#owner-t09-acceptance--2026-11-02). This closure updates acceptance records only.
