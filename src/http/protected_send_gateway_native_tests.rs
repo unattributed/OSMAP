@@ -731,7 +731,7 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     // Reuse the actual owned Dovecot reader fixture for encrypted-to-self
     // Sent and signed inbound return, including a real Locked refusal.
     sent_mailbox.prove(
-        &self_wire, &return_wire, &crypto, &inventory, &afp, &bfp, &alice,
+        &self_wire, &return_wire, &crypto, &inventory, (&afp, &bfp), &alice,
     );
     assert_eq!(smtp.lock().unwrap().len(), 2, "reader never repeats SMTP submission");
     assert_eq!(fs::read(&sent_count).unwrap(), b"11");

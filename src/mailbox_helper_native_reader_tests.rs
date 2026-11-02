@@ -548,10 +548,11 @@ impl ProtectedSentMailbox {
         &mut self, wire: &[u8], return_wire: &[u8],
         crypto: &crate::openpgp_crypto_runtime::Client,
         inventory: &crate::openpgp_inventory_runtime::Client,
-        fingerprint: &str, bob_fingerprint: &str, home: &Path,
+        fingerprints: (&str, &str), home: &Path,
     ) {
     use crate::totp::TimeProvider;
     use std::os::unix::fs::FileTypeExt;
+    let (fingerprint, bob_fingerprint) = fingerprints;
     assert_eq!(std::env::consts::OS, "openbsd");
     assert!(matches!(
         crate::pgp_mime::classify(wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap(),

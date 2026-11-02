@@ -1,3 +1,5 @@
+2026-11-03 — Normal S07 push caught test-method argument lint. Smallest tuple correction and current matching three-case native recheck PASS; no waiver/product change. Signed delivery/installation continue.
+
 2026-11-03 — S07-01–04 consolidated source/native engineering qualification PASS. Web-only installation and owner T09 remain pending. No production release or full visual acceptance claimed.
 
 2026-11-03 — S07-01 source correction PASS; S07-02/03 reuse and native test seams prepared; S07-04 composed native qualification IN_PROGRESS. Owner acceptance remains pending.
@@ -112,6 +114,10 @@
         {
           "stage": "recovery",
           "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-recheck.actual.log: exact current two-file tuple correction; three actual native cases PASS and cleanup/postflight PASS. Web unchanged. Initial Clippy push refusal retained in source-push.log; corrected all-target Clippy PASS."
         }
       ]
     }
@@ -135,7 +141,7 @@
     "slice": "S07-04",
     "specification": {
       "path": "docs/UX_SLICE_S07_04.md",
-      "sha256": "2e1844ca84803fcf4fac038c29e95f47d94993b5b3c6e1d124067d5abaf6589e"
+      "sha256": "0fc7d46fa2cdbc9a9a348ebd28ef96060d608878d9993e5e2a4c19e3c2a67974"
     },
     "design": {
       "journey": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
@@ -423,6 +429,10 @@
         {
           "stage": "recovery",
           "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-recheck.actual.log: exact current two-file tuple correction; three actual native cases PASS and cleanup/postflight PASS. Web unchanged. Initial Clippy push refusal retained in source-push.log; corrected all-target Clippy PASS."
         }
       ]
     }
@@ -734,6 +744,10 @@
         {
           "stage": "recovery",
           "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-recheck.actual.log: exact current two-file tuple correction; three actual native cases PASS and cleanup/postflight PASS. Web unchanged. Initial Clippy push refusal retained in source-push.log; corrected all-target Clippy PASS."
         }
       ]
     }
@@ -1077,6 +1091,10 @@
         {
           "stage": "recovery",
           "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-build.actual.log and native/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log; explicit native cleanup and scope-reviewed source; ordinary2165PASS and focused tests retained."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/native-recheck.actual.log: exact current two-file tuple correction; three actual native cases PASS and cleanup/postflight PASS. Web unchanged. Initial Clippy push refusal retained in source-push.log; corrected all-target Clippy PASS."
         }
       ]
     }

@@ -89,7 +89,7 @@
     "audit_script_present": true,
     "classification_complete": true,
     "current_scanner_count": 11482,
-    "inventory_sha256": "1cdb41f7cf2f3f8e6c3d089d5e1f1cd3ac5e1876af7737a9ca01e4db22716cad",
+    "inventory_sha256": "16d083e2f0b359698bd6ca9f678ba69fd059ea3b2c043fd9885566035a4bf716",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
@@ -135,6 +135,6 @@
     "remediation_script_present": true,
     "selected_target": "src_test_module_assumption_reclassification",
     "source_test_module_assumption_count": 11397,
-    "refined_inventory_sha256": "8482ff63bf39ed6b771adfe8fd6762324832d35511b1f0f2fa20c894d49a9bce"
+    "refined_inventory_sha256": "81d3d3811f5be20c978efc1ed97af30f2de8a7feb329cb50051650ed73a5056e"
   }
 }
