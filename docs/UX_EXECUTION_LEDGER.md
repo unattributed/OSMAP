@@ -51487,3 +51487,59 @@ failed/refused/interrupted outcomes remain retained, including native05 aggregat
 FAIL and UNKNOWN SSH cause. S04-04 identity/password/factor recovery, whole
 Sprint S04/epic and production/global release are not inferred. Detailed record:
 `docs/UX_S04_03_T08_ACCEPTANCE_20261027.md`.
+## General Settings account-security followup — 2026-11-03
+
+Owner reports four hardcoded Status unknown rows on /settings. This bounded
+S09-03 Settings correction does not reopen accepted S07 or start all of S09.
+Outcome: General shows current signed-in account public-key binding, password
+history, TOTP enrollment and recovery-contact state from existing read paths.
+Missing/read-failed metadata stays explicitly unavailable; never infer private
+key readiness, password strength or a verified recovery contact from login.
+
+Root owns route/HTTP tests, records, compiler/host/Git; runtime engineer owns
+General renderer/shared-summary exports; protocol reviewer independently checks
+source, matching tests and installation before readiness. Allowed source:
+settings_general_ui.rs, settings_security_ui.rs, settings_ui.rs, http_ui.rs,
+http/routes_settings.rs and http/security_settings_tests.rs; associated existing
+generated audit maps may refresh through unchanged mandatory scanners. Mutable
+ledger/status only; frozen plans, prior acceptance and unrelated controls stay.
+
+Reuse existing account-bound Runtime reads and summary functions. Rust tests:
+owned positive metadata through actual GET /settings and explicit general;
+foreign/unavailable metadata and malformed timestamps cannot claim success or
+leak foreign values; absent enrollment/contact remain distinct from read error;
+GET must not dispatch key/account mutations. Normal formatting/Clippy/delivery
+gates plus matching OpenBSD Web build and Web-only loaded-byte/HTTPS/preservation
+check before owner refresh. No new crypto/native helper qualification needed
+for unchanged helper code. Native build bounded at 600 seconds; existing read
+deadlines apply; no public mail service restart/configuration mutation. Preserve
+the live crypto helper, key unlock grant, accounts/keys/preferences/sessions.
+Two failures at one boundary require independent reassessment, no blind retry.
+Source baseline d7ded56; no deployment or owner mutation has run at this entry.
+
+Source/native qualification: actual HTTP4PASS and renderer4PASS, local full
+Rust2191PASS/0FAIL/87ignored, strict all-target Clippy, fmt and normal
+acceptance/security/V10–V13 gates PASS. Shared summary/code reuse preserves
+account isolation and distinguishes public binding from private-key readiness.
+Password-history read errors/absence use neutral history-unavailable wording.
+Independent protocol source/recipe review GO. Native build2 actual4/4 tests
+execute on obsd1 and Web SHA256 is
+6d27e05f4c6cce9695bd54a00983870748d1ee0bdbbfcbeb8faac716ec4161a4;
+profile is dev/debug0, not a release qualification. Complete tracked source
+archive eeced0499bf1b1a310e84026bc2c56b62bf1b1748b60c3678ed07f5511a98427
+and manifest0f81a70c5745a86247f4eccd9083f62ea9f369893483d44e27b88c696dff9dc3
+bind the build. Retained evidence root:
+/home/foo/Downloads/osmap-ux-s09/general-security-20261103/.
+
+Failure analysis retained: initial intermediate compile/API/String mismatches;
+duplicate User-Agent test request refused before gateway dispatch (corrected by
+replacement); renderer fixture binding at revision0 correctly refused (fixture
+corrected to1); coupled V10 refined-hash claim omission corrected through the
+unchanged scanner outputs. Combined independent setup/source reassessment
+preceded the changed HTTP run. Native build1 omitted compile-time fixture files
+and stopped before tests; build2 packages all tracked inputs with original484
+inputs byte-identical, retains the failed source/log, and actually runs4/4.
+These are setup/recording failures, not owner credential or crypto failures.
+No gate/assertion/deadline was weakened, no secret/owner operation was replayed.
+Matching signed source and reviewed Web-only installation remain next; preserve
+the live crypto helper/agent and account state. Owner General refresh is pending.

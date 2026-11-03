@@ -19,6 +19,7 @@ pub(crate) use settings_recovery_ui::{recovery_contact_summary, render_recovery_
 #[path = "settings_security_ui.rs"]
 mod settings_security_ui;
 pub(crate) use settings_password_ui::render_password_page;
+use settings_security_ui::public_account_key_summary;
 #[cfg(test)]
 pub(crate) use settings_security_ui::render_security_page;
 pub(crate) use settings_security_ui::render_security_page_with_recovery;
@@ -33,7 +34,9 @@ pub(crate) use settings_copies_ui::{
 
 #[path = "settings_general_ui.rs"]
 mod settings_general_ui;
-pub(crate) use settings_general_ui::render_general_page_with_mark_read;
+pub(crate) use settings_general_ui::{
+    render_general_page_with_mark_read, GeneralPageState, GeneralSecurityState,
+};
 #[path = "settings_reading_ui.rs"]
 mod settings_reading_ui;
 pub(crate) use settings_reading_ui::{render_reading_page_with_state, ReadingFoldersState};

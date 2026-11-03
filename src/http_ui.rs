@@ -47,8 +47,8 @@ pub(crate) use settings_ui::{
     render_appearance_page, render_composition_page_with_signature, render_copies_page_with_state,
     render_folders_page_with_state, render_general_page_with_mark_read, render_identity_page,
     render_identity_page_with_signature, render_notifications_page, render_password_page,
-    render_privacy_page, render_reading_page_with_state, CopiesPageState, IdentityPageModel,
-    ReadingFoldersState,
+    render_privacy_page, render_reading_page_with_state, CopiesPageState, GeneralPageState,
+    GeneralSecurityState, IdentityPageModel, ReadingFoldersState,
 };
 pub(crate) use settings_ui::{render_recovery_contact_page, render_security_page_with_recovery};
 

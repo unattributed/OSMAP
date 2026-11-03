@@ -1,6 +1,21 @@
 //! PAGE-11 General overview. Each writable card uses its existing native route.
 use super::*;
 
+#[derive(Default)]
+pub(crate) struct GeneralSecurityState<'a> {
+    pub keys: Option<&'a crate::key_management::State>,
+    pub password_changed_at: Option<&'a str>,
+    pub recovery: Option<&'a crate::recovery_contact::RecoveryContactSnapshot>,
+    pub authenticator: Option<&'a crate::authenticator::Snapshot>,
+}
+
+#[derive(Default)]
+pub(crate) struct GeneralPageState<'a> {
+    pub mark_read: Option<&'a crate::mark_read::Preference>,
+    pub timezone: Option<&'a crate::timezone::Preference>,
+    pub security: GeneralSecurityState<'a>,
+}
+
 #[cfg(test)]
 pub(crate) fn render_general_page(
     model: &SettingsPageModel<'_>,
@@ -17,7 +32,7 @@ pub(crate) fn render_general_page(
         identity,
         reading,
         signature,
-        (None, None),
+        GeneralPageState::default(),
     )
 }
 
@@ -28,12 +43,13 @@ pub(crate) fn render_general_page_with_mark_read(
     identity: Option<crate::identity_preferences::IdentityPreferencesRecord>,
     reading: Option<crate::reading_preferences::ReadingPreferences>,
     signature: Option<&crate::signature::SignatureRecord>,
-    saved_mail_preferences: (
-        Option<&crate::mark_read::Preference>,
-        Option<&crate::timezone::Preference>,
-    ),
+    state: GeneralPageState<'_>,
 ) -> TrustedHtml {
-    let (mark_read, timezone) = saved_mail_preferences;
+    let GeneralPageState {
+        mark_read,
+        timezone,
+        security,
+    } = state;
     let profile_input = |id: &str, label: &str, value: Option<&str>| {
         match value {
         Some(value) => format!("<div class=\"general-field\"><label for=\"{id}\">{label}</label><input id=\"{id}\" value=\"{}\" readonly></div>", escape_html(value)),
@@ -121,24 +137,48 @@ pub(crate) fn render_general_page_with_mark_read(
         "<li><span class=\"general-row-icon\" aria-hidden=\"true\">♢</span><div><strong>Content Security Policy</strong></div><span class=\"general-enforced\">Enforced</span></li>",
         "<li><span class=\"general-row-icon\" aria-hidden=\"true\">▤</span><div><strong>Source isolation</strong><span>Source is never active HTML</span></div><span class=\"general-enforced\">Enforced</span></li></ul></section>"
     );
-    let mut security_rows = String::new();
-    for (label, icon) in [
-        ("OpenPGP keys", "⌘"),
-        ("Password", "▣"),
-        ("TOTP", "◉"),
-        ("Recovery contact", "♧"),
-    ] {
-        let (destination, link_label, visible) = if label == "OpenPGP keys" {
-            ("security", "View security settings", "View security")
+    let (key_status, key_detail) =
+        public_account_key_summary(model.canonical_username, security.keys);
+    let (factor_status, factor_detail) = authenticator_summary(
+        security
+            .authenticator
+            .filter(|snapshot| snapshot.account == model.canonical_username),
+    );
+    let (recovery_status, recovery_detail) = recovery_contact_summary(security.recovery);
+    let visible_status = |value: &str| {
+        escape_html(if value == "Unknown" {
+            "Unavailable"
         } else {
-            (
-                "authentication",
-                "View authentication settings",
-                "View authentication",
-            )
-        };
-        security_rows.push_str(&format!("<li><span class=\"general-row-icon\" aria-hidden=\"true\">{icon}</span><div><strong>{label}</strong><span>Status unknown</span></div><a class=\"button-link\" href=\"/settings?section={destination}\" aria-label=\"{link_label}\">{visible}</a></li>"));
-    }
+            value
+        })
+        .to_string()
+    };
+    let password_detail = security
+        .password_changed_at
+        .filter(|value| crate::account_mutation::changed_at_valid(value))
+        .map_or_else(
+            || "Used at sign-in; last-change history unavailable".to_owned(),
+            |value| {
+                format!(
+                    "Last changed {}-{}-{} {}:{}:{} UTC",
+                    &value[0..4],
+                    &value[4..6],
+                    &value[6..8],
+                    &value[8..10],
+                    &value[10..12],
+                    &value[12..14],
+                )
+            },
+        );
+    // Key and recovery details are already escaped by their shared summaries.
+    let security_rows = [
+        ("OpenPGP keys", "⌘", visible_status(key_status), key_detail, "/settings/keys", "Manage keys"),
+        ("Password", "▣", "Used at sign-in".into(), escape_html(&password_detail).to_string(), "/settings/password", "Change password"),
+        ("TOTP", "◉", visible_status(&factor_status), escape_html(&factor_detail).to_string(), "/settings/authenticator", "Manage authenticator"),
+        ("Recovery contact", "♧", visible_status(recovery_status), recovery_detail, "/settings/recovery", "Manage contact"),
+    ].into_iter().map(|(label, icon, status, detail, destination, action)| {
+        format!("<li><span class=\"general-row-icon\" aria-hidden=\"true\">{icon}</span><div><strong>{label}</strong><span>{status}</span><p class=\"general-help\">{detail}</p></div><a class=\"button-link\" href=\"{destination}\">{action}</a></li>")
+    }).collect::<String>();
     let security = format!(concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-security-title\"><h2 id=\"general-security-title\">Account Security</h2><ul class=\"general-status-list\">{}</ul>",
         "</section>"
@@ -199,6 +239,168 @@ mod tests {
         }
     }
 
+    fn key_state(owner: &str, configured: bool) -> crate::key_management::State {
+        let fingerprint = "A".repeat(40);
+        let inventory = crate::openpgp_inventory::Inventory::parse(
+            &serde_json::to_vec(&serde_json::json!({
+                "version":1,"ok":true,"protocol":"openpgp",
+                "gpgme_version":"2.0.1","engine_version":"2.5.18",
+                "keys":[{"primary":{"fingerprint":fingerprint,"algorithm":1,
+                "bits":3072,"created":0,"expires":0,"revoked":false,
+                "expired":false,"disabled":false,"invalid":false,
+                "can_sign":true,"can_encrypt":true,"can_certify":true,
+                "can_authenticate":false},"subkeys":[]}]
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let mut bindings = crate::openpgp_bindings::BindingRecord::empty(owner).unwrap();
+        if configured {
+            bindings.revision = 1;
+            bindings.account_binding = Some(crate::openpgp_bindings::AccountBinding {
+                primary_fingerprint: fingerprint.clone(),
+                signing_fingerprint: Some(fingerprint.clone()),
+                decrypt_primary_fingerprints: vec![fingerprint],
+            });
+        }
+        crate::key_management::State {
+            canonical_username: owner.into(),
+            inventory: Some(inventory),
+            bindings: Some(bindings),
+            binding_changes_available: false,
+            public_key_changes_available: false,
+            public_inventory_revision: None,
+        }
+    }
+
+    fn security_html(security: GeneralSecurityState<'_>) -> String {
+        render_general_page_with_mark_read(
+            &model(),
+            &crate::appearance::AppearanceSettings::default(),
+            None,
+            None,
+            None,
+            None,
+            GeneralPageState {
+                security,
+                ..Default::default()
+            },
+        )
+        .as_str()
+        .to_owned()
+    }
+
+    #[test]
+    fn general_security_projects_owned_metadata_with_direct_actions_and_escaped_details() {
+        let keys = key_state("synthetic@example.test", true);
+        let factor = crate::authenticator::Snapshot {
+            account: "synthetic@example.test".into(),
+            enrolled: true,
+            last_accepted_counter: Some(1),
+            request: None,
+            case: None,
+        };
+        let recovery = crate::recovery_contact::RecoveryContactSnapshot {
+            revision: 1,
+            verified: Some(crate::recovery_contact::VerifiedRecoveryContact {
+                email: "contact+<&>@example.test".into(),
+                verified_at: 30,
+            }),
+            pending: None,
+            notice: None,
+            resend_at: None,
+        };
+        let html = security_html(GeneralSecurityState {
+            keys: Some(&keys),
+            password_changed_at: Some("20261103123456"),
+            recovery: Some(&recovery),
+            authenticator: Some(&factor),
+        });
+        assert!(html.contains("Account binding configured"));
+        assert!(html.contains(&"A".repeat(40)));
+        assert!(html.contains(
+            "Public metadata only; private-key readiness is checked when an operation runs."
+        ));
+        assert!(html.contains("Last changed 2026-11-03 12:34:56 UTC"));
+        assert!(html.contains(">Enrolled</span>"));
+        assert!(html.contains("Last accepted account TOTP time window:"));
+        assert!(html.contains(">Verified</span>"));
+        assert!(html.contains("contact+&lt;&amp;&gt;@example.test"));
+        assert!(!html.contains("contact+<&>"));
+        assert!(!html.contains("&amp;lt;"));
+        assert!(!html.contains("Status unknown"));
+        assert!(!html.contains("unlocked"));
+        for path in [
+            "/settings/keys",
+            "/settings/password",
+            "/settings/authenticator",
+            "/settings/recovery",
+        ] {
+            assert!(html.contains(&format!("href=\"{path}\"")));
+        }
+    }
+
+    #[test]
+    fn general_security_distinguishes_unconfigured_from_unavailable_and_hides_foreign_metadata() {
+        let keys = key_state("synthetic@example.test", false);
+        let factor = crate::authenticator::Snapshot {
+            account: "synthetic@example.test".into(),
+            enrolled: false,
+            last_accepted_counter: None,
+            request: None,
+            case: None,
+        };
+        let recovery = crate::recovery_contact::RecoveryContactSnapshot {
+            revision: 0,
+            verified: None,
+            pending: None,
+            notice: None,
+            resend_at: None,
+        };
+        let html = security_html(GeneralSecurityState {
+            keys: Some(&keys),
+            password_changed_at: Some("<script>invalid timestamp</script>"),
+            recovery: Some(&recovery),
+            authenticator: Some(&factor),
+        });
+        assert!(html.contains("Account binding needed"));
+        assert!(html.contains("No active factor"));
+        assert!(html.contains("Not configured"));
+        assert!(html.contains("Used at sign-in; last-change history unavailable"));
+        assert!(!html.contains("invalid timestamp"));
+
+        let mut foreign = key_state("foreign@example.test", true);
+        let foreign_factor = crate::authenticator::Snapshot {
+            account: "foreign@example.test".into(),
+            enrolled: true,
+            last_accepted_counter: Some(56789),
+            ..factor
+        };
+        for state in [None, Some(&foreign)] {
+            let html = security_html(GeneralSecurityState {
+                keys: state,
+                authenticator: Some(&foreign_factor),
+                ..Default::default()
+            });
+            assert!(html.contains("Account bindings or public inventory unavailable"));
+            assert!(html.contains("Authenticator state and last use are unavailable."));
+            assert!(html.contains("Contact and verification status unavailable"));
+            assert_eq!(html.matches(">Unavailable</span>").count(), 3);
+            assert!(!html.contains(&"A".repeat(40)));
+            assert!(!html.contains("foreign@example.test"));
+            assert!(!html.contains(">Enrolled</span>"));
+            assert!(!html.contains(">Not configured</span>"));
+        }
+        // An owned outer state cannot authorize another account's bindings.
+        foreign.canonical_username = "synthetic@example.test".into();
+        let html = security_html(GeneralSecurityState {
+            keys: Some(&foreign),
+            ..Default::default()
+        });
+        assert!(html.contains("Account bindings or public inventory unavailable"));
+        assert!(!html.contains(&"A".repeat(40)));
+    }
+
     #[test]
     fn general_mark_read_uses_its_own_native_form_and_saved_revision() {
         let saved = crate::mark_read::Preference {
@@ -212,7 +414,10 @@ mod tests {
             None,
             None,
             None,
-            (Some(&saved), None),
+            GeneralPageState {
+                mark_read: Some(&saved),
+                ..Default::default()
+            },
         );
         let html = html.as_str();
         assert!(html.contains("<option value=\"on_open\" selected>On Open</option>"));

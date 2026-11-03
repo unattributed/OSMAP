@@ -342,6 +342,11 @@ where
                         )
                     } else if section == "general" {
                         let mark_read = self.load_settings_mark_read_policy(context, &validated_session, &mut audit_events);
+                        let mut keys = self.gateway.key_management(context, &validated_session);
+                        audit_events.append(&mut keys.audit_events);
+                        let password_changed_at = self.gateway.password_changed_at(&validated_session);
+                        let recovery = self.gateway.recovery_contact(&validated_session).ok();
+                        let authenticator = self.gateway.authenticator(&validated_session).ok();
                         crate::http_ui::render_general_page_with_mark_read(
                             &model,
                             &presentation,
@@ -353,7 +358,16 @@ where
                                 .ok(),
                             self.gateway.load_reading_preferences(context, &validated_session).ok(),
                             self.gateway.load_signature(&validated_session).ok().as_ref(),
-                            (mark_read.as_ref(), self.gateway.load_timezone(&validated_session).ok().as_ref()),
+                            crate::http_ui::GeneralPageState {
+                                mark_read: mark_read.as_ref(),
+                                timezone: self.gateway.load_timezone(&validated_session).ok().as_ref(),
+                                security: crate::http_ui::GeneralSecurityState {
+                                    keys: Some(&keys.state),
+                                    password_changed_at: password_changed_at.as_deref(),
+                                    recovery: recovery.as_ref(),
+                                    authenticator: authenticator.as_ref(),
+                                },
+                            },
                         )
                     } else {
                         let preferences = match self.gateway.load_reading_preferences(context, &validated_session) {

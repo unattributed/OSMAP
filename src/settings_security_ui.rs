@@ -14,7 +14,7 @@ fn verified_security_sessions<'a>(
     decision.verified_sessions(account)
 }
 
-fn public_account_key_summary(
+pub(super) fn public_account_key_summary(
     account: &str,
     state: Option<&crate::key_management::State>,
 ) -> (&'static str, String) {
