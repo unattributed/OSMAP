@@ -51543,3 +51543,18 @@ These are setup/recording failures, not owner credential or crypto failures.
 No gate/assertion/deadline was weakened, no secret/owner operation was replayed.
 Matching signed source and reviewed Web-only installation remain next; preserve
 the live crypto helper/agent and account state. Owner General refresh is pending.
+
+Installed result: signed source e861595971c412c4214c3b6fbd31e361938f07d5,
+known-input parity484PASS, reviewed installer9bd968d26c852303b01f3dabc44073035b3de84005b3f00cc690463978b6f9e2
+executes successfully. Loaded Web6d27e05f PID13665/textinode130023, HTTPS200,
+nine service checks and protected files/environment/config/helper/worker/system
+account/authority preservation PASS. Crypto-helper and native-agent PID sets
+are unchanged; only Web restarted. No owner unlock, credential/account change,
+private-key operation or external message. Rollback was not needed; retained
+known-byte previous Web is under /var/backups/osmap-general-security-20261103-01.
+Actual installation log SHA256
+983f0dd5e0a97429ab0fbe490faec5d939523231be9acf74b745b430949179b6.
+Owner can refresh /settings and read the four account-specific rows; no repeat
+key upload/unlock or authentication mutation is assigned. Owner visual UAT for
+this correction is NOT_RUN; full S09 and release obligations remain separate.
+Final normal signed Git preservation/fresh parity is the remaining delivery step.
