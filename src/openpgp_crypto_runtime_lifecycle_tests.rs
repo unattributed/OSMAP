@@ -452,6 +452,7 @@ fn native_same_service_recovers_stale_private_agent_without_disrupting_public_en
             result.status_code, 0,
             "bounded disposable recovery command refused"
         );
+        result.stdout
     };
     let first = client.execute("alice", &sign()).unwrap().unwrap();
     assert!(!first.content.is_empty());
@@ -505,6 +506,62 @@ fn native_same_service_recovers_stale_private_agent_without_disrupting_public_en
             alice.to_str().unwrap().into(),
         ],
     );
+    let agent_info = execute_command(
+        "/usr/local/bin/gpg-connect-agent",
+        &[
+            "--homedir".into(),
+            alice.to_str().unwrap().into(),
+            "--no-autostart".into(),
+            "GETINFO pid".into(),
+            "/bye".into(),
+        ],
+    );
+    let mut pid_rows = agent_info
+        .lines()
+        .filter_map(|line| line.strip_prefix("D "));
+    let pid_text = pid_rows.next().expect("disposable agent PID witness");
+    assert!(
+        pid_rows.next().is_none()
+            && pid_text.len() <= 10
+            && pid_text.bytes().all(|byte| byte.is_ascii_digit())
+    );
+    let pid: u32 = pid_text.parse().unwrap();
+    assert!(pid > 1 && pid <= i32::MAX as u32);
+    let agent_command = execute_command(
+        "/bin/ps",
+        &[
+            "-ww".into(),
+            "-p".into(),
+            pid.to_string(),
+            "-o".into(),
+            "args=".into(),
+        ],
+    );
+    let arguments: Vec<&str> = agent_command.split_whitespace().collect();
+    for option in ["--default-cache-ttl", "--max-cache-ttl"] {
+        assert_eq!(
+            arguments
+                .iter()
+                .filter(|argument| **argument == option)
+                .count(),
+            1
+        );
+        let position = arguments
+            .iter()
+            .position(|argument| *argument == option)
+            .unwrap();
+        assert_eq!(arguments.get(position + 1), Some(&"28800"));
+    }
+    assert!(arguments.contains(&"--no-allow-external-cache"));
+    let pinentry = arguments
+        .iter()
+        .position(|argument| *argument == "--pinentry-program")
+        .unwrap();
+    assert_eq!(
+        arguments.get(pinentry + 1),
+        Some(&"/usr/local/bin/pinentry-tty")
+    );
+    assert!(agent_command.contains(alice.to_str().unwrap()));
     let recovered = client.execute("alice", &sign()).unwrap().unwrap();
     let verified = client
         .execute(
@@ -518,5 +575,5 @@ fn native_same_service_recovers_stale_private_agent_without_disrupting_public_en
         .unwrap();
     assert_eq!(verified.primary_fingerprint, Some(alice_fp));
     assert!(server.join().unwrap().is_ok());
-    println!("same_service_initial_sign=PASS stale_private_agent_locked=PASS stale_public_encrypt=PASS bounded_recovery_fresh_sign_verify=PASS");
+    println!("same_service_initial_sign=PASS stale_private_agent_locked=PASS stale_public_encrypt=PASS actual_agent_eight_hour_cache_flags=PASS bounded_recovery_fresh_sign_verify=PASS");
 }

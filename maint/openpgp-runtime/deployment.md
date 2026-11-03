@@ -177,12 +177,22 @@ challenge. No passphrase is read by the launcher or sent to Codex. Signing and
 decryption can require separate pinentry prompts because their keygrips differ.
 All OpenPGP helpers must be stopped while the launcher replaces the mailbox
 agent. It stops any existing account agent and starts a new one with both
-default and maximum passphrase-cache lifetime set to 300 seconds, with external
-Pinentry caching disabled. Existing agent sockets are never accepted as proof
+default and maximum passphrase-cache lifetime set to 28,800 seconds (eight hours
+per cached key), with external Pinentry caching disabled. Existing agent sockets
+are never accepted as proof
 of this policy. Both the signing and decryption challenges must succeed before
 the launcher reports `mailbox_signing_and_decryption_agent_warmed=PASS`. Their
 output uses GPG's stdout destination (`--output -`), connected directly to a
 discarded descriptor; no named plaintext output or `/dev/null.part` is created.
+
+This is the owner's selected obsd1 Duncan UAT policy. The launcher prints its
+bounded policy only after both native challenges succeed. Eight hours is the
+maximum cache lifetime per key entry, not a promise that an agent survives a
+restart or that signing and decryption entries expire at exactly the same
+instant. Private keys remain encrypted at rest; passphrases are supplied only
+to native Pinentry and are not collected by OSMAP or its Web UI. This operational
+unlock remains an operator terminal workflow; Web self-service unlock has not
+been implemented or implied by the longer UAT window.
 
 Restore the OSMAP helpers and Web after the command returns, including after a
 failure or cancellation:

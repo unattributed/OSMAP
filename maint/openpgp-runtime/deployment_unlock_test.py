@@ -107,6 +107,7 @@ class WarmOperationTests(unittest.TestCase):
                                  (original.st_uid, original.st_gid, stat.S_IMODE(original.st_mode)))
                 self.assertEqual({value: unlock.signal.getsignal(value) for value in handlers}, handlers)
                 self.assertNotIn("warmed=PASS", output.getvalue())
+                self.assertNotIn("mailbox_agent_cache_policy=", output.getvalue())
             finally:
                 os.dup2(saved_stdin, 0)
                 os.close(saved_stdin)
@@ -180,7 +181,7 @@ with tempfile.TemporaryDirectory(prefix="osmap-unlock-optimized-") as directory:
             self.assertEqual(calls[0][-2:], ["--kill", "gpg-agent"])
             agent = calls[1]
             for option in ("--default-cache-ttl", "--max-cache-ttl"):
-                self.assertEqual(agent[agent.index(option) + 1], "300")
+                self.assertEqual(agent[agent.index(option) + 1], "28800")
             self.assertIn("--no-allow-external-cache", agent)
             self.assertIn("--no-options", agent)
             self.assertEqual(agent[agent.index("--pinentry-program") + 1], "/usr/local/bin/pinentry-tty")
@@ -312,8 +313,8 @@ with tempfile.TemporaryDirectory(prefix="osmap-unlock-optimized-") as directory:
                 current = pid()
                 self.assertNotEqual(old, current)
                 command = subprocess.check_output(["/bin/ps", "-ww", "-p", str(current), "-o", "args="], env=env, timeout=10).decode()
-                self.assertIn("--default-cache-ttl 300", command)
-                self.assertIn("--max-cache-ttl 300", command)
+                self.assertIn("--default-cache-ttl 28800", command)
+                self.assertIn("--max-cache-ttl 28800", command)
                 self.assertIn("--no-allow-external-cache", command)
                 self.assertIn("--pinentry-program /usr/local/bin/pinentry-tty", command)
                 self.assertEqual(list((home / "private-keys-v1.d").glob("*.key")), [])

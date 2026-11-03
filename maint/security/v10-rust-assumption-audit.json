@@ -75734,7 +75734,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
       "kind": "unwrap_call",
-      "line": 456
+      "line": 457
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75742,15 +75742,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
       "kind": "unwrap_call",
-      "line": 462
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
-      "kind": "unwrap_call",
-      "line": 477
+      "line": 463
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75766,7 +75758,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
       "kind": "unwrap_call",
-      "line": 482
+      "line": 479
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75774,7 +75766,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
       "kind": "unwrap_call",
-      "line": 493
+      "line": 483
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75790,7 +75782,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
       "kind": "unwrap_call",
-      "line": 504
+      "line": 495
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75806,7 +75798,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
       "kind": "unwrap_call",
-      "line": 508
+      "line": 506
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75814,7 +75806,15 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
       "kind": "unwrap_call",
-      "line": 517
+      "line": 513
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
+      "kind": "expect_call",
+      "line": 522
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75822,7 +75822,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
       "kind": "unwrap_call",
-      "line": 518
+      "line": 528
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75830,7 +75830,55 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
       "kind": "unwrap_call",
-      "line": 520
+      "line": 552
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
+      "kind": "unwrap_call",
+      "line": 559
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
+      "kind": "unwrap_call",
+      "line": 564
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
+      "kind": "unwrap_call",
+      "line": 565
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
+      "kind": "unwrap_call",
+      "line": 574
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
+      "kind": "unwrap_call",
+      "line": 575
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_runtime_lifecycle_tests.rs",
+      "kind": "unwrap_call",
+      "line": 577
     },
     {
       "classification": "production_adjacent_assumption",
@@ -92753,7 +92801,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-11-03T05:50:41Z",
+  "generated_at_utc": "2026-11-03T06:34:23Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -92795,25 +92843,25 @@
       "panic_path_assumption": 91,
       "production_adjacent_assumption": 2917,
       "startup_or_global_invariant": 10,
-      "test_or_fixture_assumption": 8569
+      "test_or_fixture_assumption": 8575
     },
     "by_fail_closed_relevance": {
       "high": 3008,
-      "low": 8569,
+      "low": 8575,
       "medium": 17
     },
     "by_kind": {
-      "expect_call": 1164,
+      "expect_call": 1165,
       "panic_macro": 344,
       "unreachable_macro": 30,
-      "unwrap_call": 10056
+      "unwrap_call": 10061
     },
     "classification_complete": true,
-    "inventory_sha256": "0676b3bb2a26691028a3b46b66c403404448cbb1626daeed9b712ee4a2e3ae21",
+    "inventory_sha256": "279cce55a673efcf1f64a78376f5d6bd0b0cbd7bdcb5fc9393be719b1a9e65f2",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 11594
+    "total_count": 11600
   }
 }

@@ -24,7 +24,7 @@ import time
 HOME = pathlib.Path("/var/lib/osmap-gpg/accounts/duncan")
 PRIMARY = "E401B0FDCA3A712DE8E15BB23DAB198EA2E96BBE"
 SIGNER = "83A5689C7C52CE43DB88C8A5322909FC05BF68BB"
-CACHE_SECONDS = 300
+CACHE_SECONDS = 28800  # Owner-selected eight-hour obsd1 UAT window, per key.
 PINENTRY_PROGRAM = "/usr/local/bin/pinentry-tty"
 LAUNCHER_LOCK = pathlib.Path("/var/run/osmap-duncan-agent-unlock.lock")
 
@@ -212,6 +212,7 @@ def warm_mailbox_agent():
         os.fchmod(0, 0o600)
         restart_bounded_agent(HOME, env, demote)
         warm_key_operations(gpg)
+        print(f"mailbox_agent_cache_policy=default_ttl_seconds:{CACHE_SECONDS},max_ttl_seconds:{CACHE_SECONDS},external_cache:disabled,scope:obsd1_duncan_uat")
         print("mailbox_signing_and_decryption_agent_warmed=PASS")
     finally:
         os.fchown(0, original.st_uid, original.st_gid)

@@ -88,7 +88,11 @@
     "docs/UX_DECISIONS.md",
     "maint/security/osmap-cwe-top25-guard.py",
     "maint/security/osmap-security-check.sh",
-    "maint/security/test-osmap-cwe-top25-guard.sh"
+    "maint/security/test-osmap-cwe-top25-guard.sh",
+    "maint/openpgp-runtime/deployment_unlock.py",
+    "maint/openpgp-runtime/deployment_unlock_test.py",
+    "maint/openpgp-runtime/deployment.md",
+    "src/openpgp_crypto_runtime_lifecycle_tests.rs"
   ],
   "outcomes": [
     {
@@ -102,7 +106,7 @@
       ],
       "frontend_backend_outcome": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
       "essential_qa": "Actual gateway sends to controlled Rust local sink; Real scoped Dovecot append stores protected prepared message; Read decrypt verify Sent and download binary attachment; Source remains encrypted; current source selection protected; Stale policy helper interruption and Sent-store failure do not downgrade or auto duplicate; Actual authenticated HTTP and draft transaction checks; Consolidated native build installed preservation and independent review",
-      "next_action": "Owner private-unlock workflow remains an open usability dependency; no automatic private operation or T09 acceptance. Source/native/installed public-certificate followup delivered; preserve final result through normal signed publication.",
+      "next_action": "Signed source admission then utility-only eight-hour UAT policy installation, actual result record and one ordinary complete push. Current agent not restarted/unlocked; Web self-service remains unimplemented.",
       "dependencies": [
         {
           "owner": "/root",
@@ -194,7 +198,7 @@
     "slice": "S07-04",
     "specification": {
       "path": "docs/UX_SLICE_S07_04.md",
-      "sha256": "4475948931d991ffbbc79dc966d10449945e0132567fbd59ed1e79f5fbb3981a"
+      "sha256": "2279a677677a0d42deccd4d84612b57c13aa1ba836e2236a8559845dd876d164"
     },
     "design": {
       "journey": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
@@ -377,7 +381,7 @@
     "status": "FAIL",
     "reference": "Owner sign-only UAT returned Locked. Configured public binding confirmed; no successful owner signing or acceptance inferred."
   },
-  "next_action": "Owner private-unlock workflow remains an open usability dependency; no automatic private operation or T09 acceptance. Source/native/installed public-certificate followup delivered; preserve final result through normal signed publication.",
+  "next_action": "Signed source admission then utility-only eight-hour UAT policy installation, actual result record and one ordinary complete push. Current agent not restarted/unlocked; Web self-service remains unimplemented.",
   "followup": {
     "outcome": "Sign-only to a new recipient includes the own account-bound public certificate inside signed MIME; locked private key refuses without send/draft loss. No recipient key required. Native synthetic proof and installed delivery before owner retry.",
     "owners": {
@@ -471,6 +475,31 @@
         "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/installed-public-read.actual.log",
         "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/S07_SIGNED_SEND_DEPLOYMENT.json"
       ]
+    },
+    "approved_uat_unlock": {
+      "owner_direction": "8 hours after native unlock (Recommended for UAT), explicit reply2026-11-03",
+      "scope": "Fixed development Duncan account on obsd1 only; both native cache flags28800; retain encrypted key files, native Pinentry, no external cache, exact keys/home/peer/tty/service guards. Applies after next successful native unlock. No web secret flow, account/session capability or private operation added.",
+      "status": "NATIVE_QUALIFIED_INSTALL_PENDING",
+      "owners": {
+        "implementation": "/root/s05_runtime_engineer",
+        "integration": "/root",
+        "independent_review": "/root/s05_protocol_review"
+      },
+      "tests": [
+        "Rust existing native same-service recovery executes actual product launcher restart in disposable home, queries actual PID and ps flags28800, then Locked/public-encrypt/recoveredsign+verify proof",
+        "matching native utility byte validation and root-owned utility-only installation with owner files/config/agent unchanged",
+        "no eight-hour sleep or claim of elapsed-time proof; no owner private unlock/signing"
+      ],
+      "operation_bound": "Existing root native/compiler/host queue and bounded fixture deadlines; utility-only install. Existing cumulative failures retained; two same-boundary failures stop for combined reassessment.",
+      "evidence": [
+        "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/eight-hour/rust-lifecycle-source.log",
+        "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/eight-hour/native.actual.log"
+      ],
+      "install": {
+        "sha256": "09c50f5ee6f600b65cb1f1c9a53dbe99e3c630a4ec43b48a1c1abb490b3215ba",
+        "status": "PLANNED",
+        "sequence": "Independent source/native review PASS; normal signed source checkpoint/signature before utility-only file installation; signed actual-result record then one fully enabled ordinary push of both/fresh0/0 before handoff. No rule requires extra broad unchanged suite between those milestones."
+      }
     }
   }
 }
