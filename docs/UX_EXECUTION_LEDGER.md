@@ -83,7 +83,10 @@
     "src/openpgp_public_admin_runtime_tests.rs",
     "maint/openpgp-runtime/inventory.c",
     "src/http_support.rs",
-    "docs/UX_DECISIONS.md"
+    "docs/UX_DECISIONS.md",
+    "maint/security/osmap-cwe-top25-guard.py",
+    "maint/security/osmap-security-check.sh",
+    "maint/security/test-osmap-cwe-top25-guard.sh"
   ],
   "outcomes": [
     {
@@ -185,7 +188,7 @@
     "slice": "S07-04",
     "specification": {
       "path": "docs/UX_SLICE_S07_04.md",
-      "sha256": "796be5578fd2f2ac1ea76cb224f2503ee7a697a07f7ef6d2f53cdd3127e1d421"
+      "sha256": "569abec6a4ed4e85f9016043d4b46255eda39abc7beb28c977b24cb5cd256000"
     },
     "design": {
       "journey": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
@@ -425,6 +428,20 @@
         "cause": "Inline SSH shell argv contained its own fixture path and process guard matched the current shell. Refused before deletion.",
         "evidence": "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-postflight.log",
         "correction": "Same exact-owned cleanup executed from stdin so script text is absent from argv; durable log readback/agent-socket absence/namespace absence verified; synthetic failed fixture removed. Corrected postflightPASS."
+      },
+      {
+        "boundary": "normal_publication_security_gate",
+        "status": "FAIL",
+        "cause": "Existing external cfg(test) public-admin Runtime test file was missing from exact test-child registration; new inert shell fixtures were classified as production.",
+        "evidence": "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/source-push.log",
+        "correction": "Register exact child only when its actual parent cfg(test)/path/mod marker remains present; regression removes marker and proves production rules catch hostile fixture. Mirror exact classification in subsequent shell scan; no production rule/directCommand exception or gate bypass. Regression and guardPASS; next ordinarypushpending."
+      },
+      {
+        "boundary": "installed_public_read_probe_build",
+        "status": "FAIL",
+        "cause": "Redundant .into() made generic BindingStore::new type inference ambiguous in ephemeral probe; compilation refused before execution.",
+        "evidence": "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/installed-smoke-build.log",
+        "correction": "Remove redundant conversion; compiler0.42sPASS, sourcea8b79e1453ce91be8f80e9ca452a0637feca50e411bf4a5f2803ac4cda34e1b1, binarya59eb609052010ef4b2b78632222ea938b0fc4bf179cd5dd727336a0f5cc3005. No productsource or owneroperation."
       }
     ],
     "native_corrected": {

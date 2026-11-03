@@ -227,7 +227,8 @@ if [ -n "$disallowed_unsafe" ]; then
 fi
 
 echo "==> scanning for shell-based command execution"
-shell_hits=$(grep -RIn '/bin/sh\|sh -c\|cmd /c\|powershell' src 2>/dev/null | grep -v -e '^src/openpgp_public_admin_tests.rs:' -e '^src/http/protected_send_gateway_native_tests.rs:' -e '^src/http_gateway_keys_tests.rs:' || true)
+# The preceding CWE guard verifies this external child's exact cfg(test) marker.
+shell_hits=$(grep -RIn '/bin/sh\|sh -c\|cmd /c\|powershell' src 2>/dev/null | grep -v -e '^src/openpgp_public_admin_tests.rs:' -e '^src/openpgp_public_admin_runtime_tests.rs:' -e '^src/http/protected_send_gateway_native_tests.rs:' -e '^src/http_gateway_keys_tests.rs:' || true)
 if [ -n "$shell_hits" ]; then
 	echo "error: found shell-based command execution patterns in src/"
 	printf '%s\n' "$shell_hits"
