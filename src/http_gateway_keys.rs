@@ -86,6 +86,76 @@ impl PublicKeyBackend for KeyBackend<'_> {
     }
 }
 impl RuntimeBrowserGateway {
+    pub(super) fn private_key_session(
+        session: &ValidatedSession,
+    ) -> crate::openpgp_personal::PrivateSession {
+        crate::openpgp_personal::PrivateSession {
+            session_id: session.record.session_id.clone(),
+            account_epoch: session.record.account_epoch,
+            expires_at: session.record.expires_at,
+        }
+    }
+
+    fn personal_key_change(
+        &self,
+        session: &ValidatedSession,
+        request: &MutationRequest<'_>,
+    ) -> Result<(), Error> {
+        use crate::openpgp_personal::{PersonalAction, PersonalError};
+        let native_error = |error| match error {
+            PersonalError::Locked => Error::PersonalLocked,
+            PersonalError::Conflict => Error::PersonalConflict,
+            PersonalError::Expired => Error::Authentication,
+            PersonalError::Invalid | PersonalError::Unsupported => Error::PersonalInvalid,
+            PersonalError::Unavailable => Error::Unavailable,
+            PersonalError::Unconfirmed => Error::Unconfirmed,
+        };
+        let client = self.crypto_client().ok_or(Error::Unavailable)?;
+        let account = &session.record.canonical_username;
+        let private_session = Self::private_key_session(session);
+        // Lock is deliberately available even when the public binding store
+        // cannot be read. It can only reduce this mapped account's authority.
+        if matches!(request.action, key_management::Action::LockPersonal) {
+            return client
+                .personal(account, &private_session, PersonalAction::Lock)
+                .map(|_| ())
+                .map_err(native_error);
+        }
+        BindingStore::new(self.settings_dir.join("openpgp-bindings"))
+            .with_locked_revision(account, request.expected_revision, |record| {
+                let state = client
+                    .personal(account, &private_session, PersonalAction::Status)
+                    .map_err(native_error);
+                let result = (|| {
+                    let state = state?;
+                    if record.account_binding.as_ref().is_none_or(|binding| {
+                        binding.primary_fingerprint != state.primary_fingerprint
+                    }) {
+                        return Err(Error::InvalidKey);
+                    }
+                    let action = match &request.action {
+                        key_management::Action::ImportPersonal {
+                            certificate,
+                            passphrase,
+                        } => PersonalAction::Import {
+                            certificate,
+                            passphrase,
+                        },
+                        key_management::Action::UnlockPersonal { passphrase } => {
+                            PersonalAction::Unlock { passphrase }
+                        }
+                        _ => return Err(Error::Invalid),
+                    };
+                    client
+                        .personal(account, &private_session, action)
+                        .map(|_| ())
+                        .map_err(native_error)
+                })();
+                Ok(result)
+            })
+            .map_err(key_management::binding_error)?
+    }
+
     pub(super) fn key_management_state(
         &self,
         _context: &AuthenticationContext,
@@ -141,6 +211,16 @@ impl RuntimeBrowserGateway {
                 }
                 let account = CanonicalUsername::parse(&current.record.canonical_username)
                     .map_err(|_| Error::Invalid)?;
+                if matches!(
+                    request.action,
+                    key_management::Action::UnlockPersonal { .. }
+                        | key_management::Action::LockPersonal
+                ) {
+                    sessions
+                        .recheck_guarded_session(&current)
+                        .map_err(guarded_error)?;
+                    return self.personal_key_change(&current, &request);
+                }
                 let inventory = self.inventory_client();
                 let admin = self.admin_client();
                 let backend = KeyBackend {
@@ -217,6 +297,15 @@ impl RuntimeBrowserGateway {
                 sessions
                     .recheck_guarded_session(&current)
                     .map_err(guarded_error)?;
+                if matches!(
+                    request.action,
+                    key_management::Action::ImportPersonal { .. }
+                ) {
+                    // Reaching this branch requires the same actual primary
+                    // and replay-protected factor verification as public writes.
+                    drop(authorization);
+                    return self.personal_key_change(&current, &request);
+                }
                 key_management::mutate(
                     &backend,
                     &BindingStore::new(self.settings_dir.join("openpgp-bindings")),

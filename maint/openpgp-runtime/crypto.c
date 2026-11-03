@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <stdint.h>
 #include <time.h>
 #ifdef __OpenBSD__
@@ -99,7 +100,7 @@ static int live_private_agent(const char *path, const struct stat *before) {
  close(fd);return ok;
 }
 #endif
-static int confine(const char *home, const char *engine, int agent_required) {
+static int confine_mode(const char *home, const char *engine, int agent_required, int personal_import) {
 #ifdef __OpenBSD__
  char path[4096]; struct stat st;
  const char *files[] = {CRYPTO_GPG, "/usr/local/bin/gpgconf", "/usr/libexec/ld.so", "/usr/local/lib", "/usr/lib", "/var/run/ld.so.hints", "/etc/localtime", "/dev/null", "/dev/urandom"};
@@ -108,17 +109,19 @@ static int confine(const char *home, const char *engine, int agent_required) {
  for(size_t i=0;i<sizeof(files)/sizeof(files[0]);i++)present[i]=!stat(files[i],&st);
  char agent[4096];
  if(agent_required && (snprintf(agent,sizeof(agent),"%s/S.gpg-agent",home)>=(int)sizeof(agent) || lstat(agent,&st) || !S_ISSOCK(st.st_mode) || st.st_uid!=geteuid() || st.st_nlink!=1 || !live_private_agent(agent,&st)))return 0;
- if (unveil(home, "") || unveil(engine,"rx")) return 0;
+ if (unveil(home, personal_import?"rwc":"") || unveil(engine,"rx")) return 0;
  const char *public_files[] = {"pubring.kbx", "trustdb.gpg"};
- for (size_t i=0;i<2;i++) { if (snprintf(path,sizeof(path),"%s/%s",home,public_files[i]) >= (int)sizeof(path) || unveil(path,"r")) return 0; }
+ for (size_t i=0;i<2;i++) { if (snprintf(path,sizeof(path),"%s/%s",home,public_files[i]) >= (int)sizeof(path) || unveil(path,personal_import?"rwc":"r")) return 0; }
  if (agent_required && unveil(agent,"rw"))return 0;
  for (size_t i=0;i<sizeof(files)/sizeof(files[0]);i++) if (present[i] && unveil(files[i],perms[i])) return 0;
- if (unveil(NULL,NULL) || pledge("stdio rpath wpath unix proc exec error", "stdio rpath wpath unix proc exec error")) return 0;
+ const char *promises=personal_import?"stdio rpath wpath cpath flock unix proc exec error":"stdio rpath wpath unix proc exec error";
+ if (unveil(NULL,NULL) || pledge(promises,promises)) return 0;
  return 1;
 #else
- (void)home; (void)engine; (void)agent_required; return 0;
+ (void)home; (void)engine; (void)agent_required; (void)personal_import; return 0;
 #endif
 }
+static int confine(const char *home,const char *engine,int agent_required) {return confine_mode(home,engine,agent_required,0);}
 static gpgme_error_t status_callback(void *unused,const char *keyword,const char *args) {
  (void)unused;
  if (!strcmp(keyword,"TRUNCATED") || !strcmp(keyword,"FAILURE") || !strcmp(keyword,"ERROR")) status_failed = 1;
@@ -187,8 +190,89 @@ static const char *decrypt_failure(gpgme_error_t err, gpgme_decrypt_result_t r, 
  }
  return failure(err);
 }
+struct personal_secret { unsigned char *bytes; size_t size; unsigned calls; };
+static gpgme_error_t personal_passphrase(void *opaque,const char *uid,const char *info,int bad,int fd) {
+ (void)uid;(void)info;struct personal_secret *secret=opaque;
+ if(bad||secret->calls++>=16)return gpg_error(GPG_ERR_BAD_PASSPHRASE);
+ size_t offset=0;while(offset<secret->size){ssize_t n=write(fd,secret->bytes+offset,secret->size-offset);if(n<0&&errno==EINTR)continue;if(n<=0)return gpg_error(GPG_ERR_EIO);offset+=(size_t)n;}
+ return write(fd,"\n",1)==1?0:gpg_error(GPG_ERR_EIO);
+}
+static int personal_identity(gpgme_key_t key,const char *account) {
+ const char *at=strrchr(account,'@');if(!at)return 0;
+ unsigned count=0;for(gpgme_user_id_t uid=key->uids;uid;uid=uid->next){
+  if(++count>32)return 0;if(uid->revoked||uid->invalid)continue;
+  const char *email=uid->email&&*uid->email?uid->email:uid->address;if(!email)continue;
+  const char *other=strrchr(email,'@');if(!other)continue;
+  if((size_t)(at-account)==(size_t)(other-email)&&!memcmp(account,email,(size_t)(at-account))&&!strcasecmp(at+1,other+1))return 1;
+ }return 0;
+}
+static int personal_main(const char *home,const char *engine) {
+ unsigned char header[143],*certificate=NULL,*passphrase=NULL;char primary[65],signer[65],account[255];
+ uint32_t certificate_size=0,passphrase_size=0;
+ gpgme_ctx_t ctx=NULL;gpgme_key_t key=NULL,signing=NULL;gpgme_data_t imported=NULL,input=NULL,signature=NULL,cipher=NULL,plain=NULL;
+ const char *error="invalid";int ok=0;gpgme_error_t err=0;struct personal_secret secret={0};
+ struct rlimit core={0,0},cpu={10,10},files={4U*1024U*1024U,4U*1024U*1024U},memory={256U*1024U*1024U,256U*1024U*1024U};
+ if(setrlimit(RLIMIT_CORE,&core)||setrlimit(RLIMIT_CPU,&cpu)||setrlimit(RLIMIT_FSIZE,&files)||setrlimit(RLIMIT_DATA,&memory)||!trusted_paths(home,engine)||!read_exact(header,sizeof(header))||memcmp(header,"OSMP",4)||(header[4]!=1&&header[4]!=2))goto done;
+ memcpy(primary,header+5,64);primary[64]=0;memcpy(signer,header+69,64);signer[64]=0;
+ unsigned account_size=((unsigned)header[133]<<8)|header[134];certificate_size=number(header+135);passphrase_size=number(header+139);
+ if(!fp_valid(primary)||strlen(primary)!=40||!fp_valid(signer)||strlen(signer)!=40||!account_size||account_size>=sizeof(account)||certificate_size>65536||passphrase_size>1024||(header[4]==1?!certificate_size:certificate_size))goto done;
+ for(size_t i=40;i<64;i++)if(header[5+i]||header[69+i])goto done;
+ if(!read_exact(account,account_size))goto done;account[account_size]=0;
+ for(unsigned i=0;i<account_size;i++)if((unsigned char)account[i]<33||account[i]==127)goto done;
+ certificate=malloc(certificate_size?certificate_size:1);passphrase=malloc(passphrase_size?passphrase_size:1);
+ if(!certificate||!passphrase||!read_exact(certificate,certificate_size)||!read_exact(passphrase,passphrase_size)||fgetc(stdin)!=EOF)goto done;
+ for(uint32_t i=0;i<passphrase_size;i++)if(!passphrase[i]||passphrase[i]=='\n'||passphrase[i]=='\r')goto done;
+ if(!confine_mode(home,engine,1,header[4]==1))goto done;
+ error="unavailable";
+ if(!gpgme_check_version("2.0.1")||gpgme_new(&ctx)||gpgme_set_protocol(ctx,GPGME_PROTOCOL_OpenPGP)||gpgme_ctx_set_engine_info(ctx,GPGME_PROTOCOL_OpenPGP,engine,home))goto done;
+ secret.bytes=passphrase;secret.size=passphrase_size;
+ gpgme_set_offline(ctx,1);gpgme_set_passphrase_cb(ctx,personal_passphrase,&secret);gpgme_set_status_cb(ctx,status_callback,NULL);
+ if(gpgme_set_pinentry_mode(ctx,GPGME_PINENTRY_MODE_LOOPBACK)||gpgme_set_keylist_mode(ctx,GPGME_KEYLIST_MODE_LOCAL)||gpgme_set_ctx_flag(ctx,"full-status","1")||gpgme_set_ctx_flag(ctx,"auto-key-retrieve","0")||gpgme_set_ctx_flag(ctx,"auto-key-import","0")||gpgme_set_ctx_flag(ctx,"no-auto-check-trustdb","1"))goto done;
+ if(header[4]==1){
+  error="invalid";
+  if(gpgme_data_new_from_mem(&imported,(char *)certificate,certificate_size,0)||gpgme_set_keylist_mode(ctx,GPGME_KEYLIST_MODE_LOCAL|GPGME_KEYLIST_MODE_WITH_SECRET)||gpgme_op_keylist_from_data_start(ctx,imported,0))goto done;
+  unsigned count=0;int valid=1;while(!(err=gpgme_op_keylist_next(ctx,&key))){if(++count!=1||!key->secret||!key->subkeys||!key->subkeys->fpr||strcmp(key->subkeys->fpr,primary)||!personal_identity(key,account))valid=0;gpgme_key_unref(key);key=NULL;}
+  if(gpgme_op_keylist_end(ctx)||gpg_err_code(err)!=GPG_ERR_EOF||!valid||count!=1||gpgme_set_keylist_mode(ctx,GPGME_KEYLIST_MODE_LOCAL)||gpgme_data_seek(imported,0,SEEK_SET)!=0)goto done;
+  err=gpgme_op_import(ctx,imported);if(err){error=failure(err);goto done;}
+  gpgme_import_result_t result=gpgme_op_import_result(ctx);
+  if(!result||result->considered!=1||result->secret_read!=1||result->secret_imported!=1||result->not_imported||!result->imports)goto done;
+  unsigned reports=0,secret_report=0;
+  for(gpgme_import_status_t record=result->imports;record;record=record->next){
+   if(++reports>2||record->result||!record->fpr||strcmp(record->fpr,primary))goto done;
+   if(record->status&GPGME_IMPORT_SECRET)secret_report=1;
+  }
+  if(!secret_report)goto done;
+ }
+ error="unsupported";
+ if(gpgme_get_key(ctx,primary,&key,0)||!key||!key->subkeys||strcmp(key->subkeys->fpr,primary)||!personal_identity(key,account)||!usable(key,primary,2,1)||gpgme_get_key(ctx,signer,&signing,0)||!signing||!signing->subkeys||strcmp(signing->subkeys->fpr,primary)||!usable(signing,signer,1,0))goto done;
+ const char challenge[]="OSMAP personal private-key proof\r\n";
+ if(gpgme_data_new_from_mem(&input,challenge,sizeof(challenge)-1,0)||gpgme_data_new(&signature)||gpgme_data_new(&cipher)||gpgme_data_new(&plain)||gpgme_signers_add(ctx,signing))goto done;
+ status_failed=0;valid_signature_seen=0;err=gpgme_op_sign(ctx,input,signature,GPGME_SIG_MODE_DETACH);if(err){error=failure(err);goto done;}
+ gpgme_sign_result_t signed_result=gpgme_op_sign_result(ctx);
+ if(!signed_result||signed_result->invalid_signers||!signed_result->signatures||signed_result->signatures->next||!signed_result->signatures->fpr||strcmp(signed_result->signatures->fpr,signer))goto done;
+ if(gpgme_data_seek(signature,0,SEEK_SET)!=0||gpgme_data_seek(input,0,SEEK_SET)!=0)goto done;
+ err=gpgme_op_verify(ctx,signature,input,NULL);gpgme_verify_result_t verified=gpgme_op_verify_result(ctx);gpgme_signature_t checked=verified?verified->signatures:NULL;
+ if(err||!checked||checked->next||checked->status||!checked->fpr||strcmp(checked->fpr,signer)||valid_signature_seen!=1||status_failed)goto done;
+ if(gpgme_data_seek(input,0,SEEK_SET)!=0)goto done;
+ status_failed=0;cipher_seen=0;cipher_ok=0;gpgme_key_t recipients[]={key,NULL};
+ err=gpgme_op_encrypt(ctx,recipients,GPGME_ENCRYPT_ALWAYS_TRUST,input,cipher);if(err||!cipher_ok||status_failed)goto done;
+ if(gpgme_data_seek(cipher,0,SEEK_SET)!=0)goto done;
+ strcpy(fingerprints[0],primary);key_count=1;status_failed=0;cipher_seen=0;cipher_ok=0;decrypt_key_ok=0;
+ err=gpgme_op_decrypt(ctx,cipher,plain);if(err){error=failure(err);goto done;}
+ if(!cipher_ok||!decrypt_key_ok||status_failed||gpgme_data_seek(plain,0,SEEK_SET)!=0)goto done;
+ char recovered[sizeof(challenge)];ssize_t size=gpgme_data_read(plain,recovered,sizeof(recovered));
+ if(size!=(ssize_t)(sizeof(challenge)-1)||memcmp(recovered,challenge,sizeof(challenge)-1))goto done;
+ memset(recovered,0,sizeof(recovered));ok=1;
+done:
+ if(imported)gpgme_data_release(imported);if(input)gpgme_data_release(input);if(signature)gpgme_data_release(signature);if(cipher)gpgme_data_release(cipher);if(plain)gpgme_data_release(plain);
+ if(key)gpgme_key_unref(key);if(signing)gpgme_key_unref(signing);if(ctx)gpgme_release(ctx);
+ if(certificate){memset(certificate,0,certificate_size);free(certificate);}if(passphrase){memset(passphrase,0,passphrase_size);free(passphrase);}
+ if(ok)fputs("{\"ok\":true}\n",stdout);else fprintf(stdout,"{\"ok\":false,\"error\":\"%s\"}\n",error);
+ return ok?0:1;
+}
 int main(int argc,char **argv) {
  close_inherited_descriptors();
+ if(argc==4&&!strcmp(argv[3],"--personal"))return personal_main(argv[1],argv[2]);
  gpgme_ctx_t ctx=NULL; gpgme_data_t input=NULL,detached=NULL,output=NULL;
  gpgme_key_t selected[KEY_LIMIT+1]={0}; gpgme_error_t err=0;
  struct rlimit core={0,0},cpu={10,10},filesize={0,0},memory={256U*1024U*1024U,256U*1024U*1024U};

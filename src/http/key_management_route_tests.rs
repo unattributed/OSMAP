@@ -3,6 +3,8 @@ use super::*;
 const UPLOAD_CERTIFICATE: &str =
     "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n\r\nYWJj+ZGVm\r\n-----END PGP PUBLIC KEY BLOCK-----";
 const UPLOAD_PASSWORD: &str = "public +&= café upload password";
+const PERSONAL_UPLOAD: &str = "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n\r\nPRIVATE-PARSER-FIXTURE\r\n-----END PGP PRIVATE KEY BLOCK-----";
+const PERSONAL_PASSPHRASE: &str = "synthetic private +&= café passphrase";
 struct KeyChangeSpy {
     inner: StubGateway,
     calls: Arc<AtomicUsize>,
@@ -274,6 +276,34 @@ impl BrowserGateway for KeyChangeSpy {
         request: crate::key_management::MutationRequest<'_>,
     ) -> crate::key_management::MutationOutcome {
         self.calls.fetch_add(1, Ordering::SeqCst);
+        if context.user_agent == "OSMAP/PersonalKeys" {
+            assert_eq!(request.expected_revision, 0);
+            match request.action {
+                crate::key_management::Action::ImportPersonal {
+                    certificate,
+                    passphrase,
+                } => {
+                    assert_eq!(certificate, PERSONAL_UPLOAD.as_bytes());
+                    assert_eq!(passphrase, PERSONAL_PASSPHRASE.as_bytes());
+                    assert_eq!(request.password, UPLOAD_PASSWORD);
+                    assert_eq!(request.totp, "123456");
+                }
+                crate::key_management::Action::UnlockPersonal { passphrase } => {
+                    assert_eq!(passphrase, PERSONAL_PASSPHRASE.as_bytes());
+                    assert!(request.password.is_empty() && request.totp.is_empty());
+                }
+                crate::key_management::Action::LockPersonal => {
+                    assert!(request.password.is_empty() && request.totp.is_empty());
+                }
+                _ => panic!("personal-key route dispatched a public-key action"),
+            }
+            // A deliberate backend refusal checks that secrets are never
+            // returned while proving the parser forwarded the exact inputs.
+            return crate::key_management::MutationOutcome {
+                result: Err(crate::key_management::Error::Unavailable),
+                audit_events: vec![],
+            };
+        }
         if context.user_agent == "OSMAP/KeyUpload" {
             let result = if request.password != UPLOAD_PASSWORD || request.totp != "123456" {
                 Err(crate::key_management::Error::Authentication)
@@ -304,6 +334,141 @@ impl BrowserGateway for KeyChangeSpy {
         }
     }
 }
+#[test]
+fn personal_key_routes_keep_upload_roles_and_secrets_separate_from_public_contacts() {
+    fn multipart(fields: &[(&str, &str)], files: &[(&str, &str, &str)]) -> HttpRequest {
+        let boundary = "personal-key-route-test";
+        let mut body = String::new();
+        for (name, value) in fields {
+            body.push_str(&format!("--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}\r\n"));
+        }
+        for (field, filename, bytes) in files {
+            body.push_str(&format!("--{boundary}\r\nContent-Disposition: form-data; name=\"{field}\"; filename=\"{filename}\"\r\nContent-Type: application/pgp-keys\r\n\r\n{bytes}\r\n"));
+        }
+        body.push_str(&format!("--{boundary}--\r\n"));
+        let raw = format!("POST /settings/keys/change HTTP/1.1\r\nHost: localhost\r\nOrigin: https://localhost\r\nUser-Agent: OSMAP/PersonalKeys\r\nCookie: osmap_session={}\r\nContent-Type: multipart/form-data; boundary={boundary}\r\nContent-Length: {}\r\n\r\n{body}", "a".repeat(64), body.len());
+        crate::http_parse::parse_http_request(&raw, &HttpPolicy::default()).unwrap()
+    }
+    let calls = Arc::new(AtomicUsize::new(0));
+    let app = BrowserApp::new(
+        HttpPolicy::default(),
+        KeyChangeSpy {
+            inner: StubGateway::default(),
+            calls: calls.clone(),
+        },
+    );
+    let csrf = StubGateway::validated_session().record.csrf_token;
+    let fields = [
+        ("key_action", "import_personal"),
+        ("binding_revision", "0"),
+        ("csrf_token", csrf.as_str()),
+        ("current_password", UPLOAD_PASSWORD),
+        ("totp_code", "123456"),
+        ("key_passphrase", PERSONAL_PASSPHRASE),
+    ];
+    let upload_request = multipart(
+        &fields,
+        &[("personal_certificate", "my-private.ASC", PERSONAL_UPLOAD)],
+    );
+    let (parsed, roles) = crate::http_form::parse_key_upload_form(
+        &upload_request.body,
+        upload_request.headers.get("content-type").unwrap(),
+        12,
+        256 * 1024,
+        ComposePolicy::default(),
+    )
+    .unwrap();
+    assert_eq!(roles, ["personal_certificate"]);
+    let debug = format!("{upload_request:?}{parsed:?}");
+    for secret in [
+        "PRIVATE-PARSER-FIXTURE",
+        PERSONAL_PASSPHRASE,
+        UPLOAD_PASSWORD,
+    ] {
+        assert!(!debug.contains(secret));
+    }
+    let uploaded = app.handle_request(&upload_request, "127.0.0.1");
+    assert_eq!(uploaded.response.status_code, 503);
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+    for action in ["unlock_personal", "lock_personal"] {
+        let body = format!(
+            "key_action={action}&binding_revision=0&csrf_token={csrf}{}",
+            if action == "unlock_personal" {
+                format!("&key_passphrase={}", url_encode(PERSONAL_PASSPHRASE))
+            } else {
+                String::new()
+            }
+        );
+        let mut req = request(
+            "POST",
+            "/settings/keys/change",
+            &authenticated_same_origin_headers(),
+            &body,
+        );
+        req.headers
+            .insert("user-agent".into(), "OSMAP/PersonalKeys".into());
+        let result = app.handle_request(&req, "127.0.0.1");
+        assert_eq!(result.response.status_code, 503);
+        let rendered = format!("{}{:?}", body_text(&result), result.audit_events);
+        for secret in [
+            PERSONAL_UPLOAD,
+            "PRIVATE-PARSER-FIXTURE",
+            PERSONAL_PASSPHRASE,
+            UPLOAD_PASSWORD,
+        ] {
+            assert!(!rendered.contains(secret));
+        }
+    }
+    assert_eq!(calls.load(Ordering::SeqCst), 3);
+    let public_revision = "a".repeat(64);
+    let public_fingerprint = "A".repeat(40);
+    let public_fields = [
+        ("key_action", "import_public"),
+        ("binding_revision", "0"),
+        ("csrf_token", csrf.as_str()),
+        ("current_password", UPLOAD_PASSWORD),
+        ("totp_code", "123456"),
+        ("public_inventory_revision", public_revision.as_str()),
+        ("expected_primary_fingerprint", public_fingerprint.as_str()),
+    ];
+    let mut mixed_text = fields.to_vec();
+    mixed_text.push(("certificate", PERSONAL_UPLOAD));
+    let invalid = [
+        multipart(&fields, &[("attachment", "key.asc", PERSONAL_UPLOAD)]),
+        multipart(
+            &public_fields,
+            &[("personal_certificate", "key.asc", PERSONAL_UPLOAD)],
+        ),
+        multipart(
+            &fields,
+            &[
+                ("personal_certificate", "key.asc", PERSONAL_UPLOAD),
+                ("attachment", "contact.asc", UPLOAD_CERTIFICATE),
+            ],
+        ),
+        multipart(
+            &mixed_text,
+            &[("personal_certificate", "key.asc", PERSONAL_UPLOAD)],
+        ),
+        multipart(&fields, &[]),
+    ];
+    for req in invalid {
+        let result = app.handle_request(&req, "127.0.0.1");
+        assert_eq!(result.response.status_code, 400);
+        assert_eq!(calls.load(Ordering::SeqCst), 3);
+        assert!(!body_text(&result).contains("PRIVATE-PARSER-FIXTURE"));
+        assert!(!body_text(&result).contains(PERSONAL_PASSPHRASE));
+    }
+    let rendered = format!("{}{:?}", body_text(&uploaded), uploaded.audit_events);
+    for secret in [
+        "PRIVATE-PARSER-FIXTURE",
+        PERSONAL_PASSPHRASE,
+        UPLOAD_PASSWORD,
+    ] {
+        assert!(!rendered.contains(secret));
+    }
+}
+
 #[test]
 fn key_management_post_reaches_gateway_only_after_session_csrf_and_strict_fields() {
     let calls = Arc::new(AtomicUsize::new(0));

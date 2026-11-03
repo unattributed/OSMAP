@@ -3,6 +3,7 @@
 use crate::identity::CanonicalUsername;
 use crate::openpgp_crypto::{Error as CryptoError, Operation, Outcome, SignatureState};
 use crate::openpgp_inventory::Error;
+use crate::openpgp_personal::{PersonalAction, PersonalError, PersonalState, PrivateSession};
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
@@ -28,6 +29,8 @@ struct Header {
     data_len: usize,
     signature_len: usize,
     mac: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    session: Option<PrivateSession>,
 }
 
 /// No Debug implementation: operation content must not appear in diagnostics.
@@ -114,6 +117,13 @@ impl Header {
         {
             return Err(Error::Expired);
         }
+        if self
+            .session
+            .as_ref()
+            .is_some_and(|session| !session.valid(now))
+        {
+            return Err(Error::Expired);
+        }
         if self.recipients.len() > 50
             || self.data_len.saturating_add(self.signature_len) > MAX_CONTENT
         {
@@ -179,6 +189,7 @@ impl Request {
                 data_len: data.len(),
                 signature_len: signature.len(),
                 mac: String::new(),
+                session: None,
             },
             data,
             signature,
@@ -201,6 +212,132 @@ impl Request {
     }
     pub fn account(&self) -> &str {
         &self.header.account
+    }
+    pub(crate) fn session(&self) -> Option<&PrivateSession> {
+        self.header.session.as_ref()
+    }
+    pub(crate) fn bind_session(
+        &mut self,
+        session: PrivateSession,
+        now: u64,
+        key: &[u8],
+    ) -> Result<(), Error> {
+        self.header.session = Some(session);
+        self.header.validate(now)?;
+        self.header.mac =
+            hex(
+                &authenticate(key, &self.header.payload()?, &self.data, &self.signature)?
+                    .finalize()
+                    .into_bytes(),
+            );
+        Ok(())
+    }
+    pub(crate) fn personal_name(&self) -> Option<&str> {
+        matches!(
+            self.header.operation.as_str(),
+            "personal_status" | "personal_import" | "personal_unlock" | "personal_lock"
+        )
+        .then_some(self.header.operation.as_str())
+    }
+    pub(crate) fn personal_parts(&self) -> Result<(&[u8], &[u8]), Error> {
+        if self.personal_name().is_none()
+            || self.header.session.is_none()
+            || self.header.signer.is_some()
+            || !self.header.recipients.is_empty()
+            || !self.signature.is_empty()
+        {
+            return Err(Error::Invalid);
+        }
+        if matches!(
+            self.personal_name(),
+            Some("personal_status" | "personal_lock")
+        ) {
+            return if self.data.is_empty() {
+                Ok((&[], &[]))
+            } else {
+                Err(Error::Invalid)
+            };
+        }
+        if self.data.len() < 8 {
+            return Err(Error::Invalid);
+        }
+        let certificate =
+            u32::from_be_bytes(self.data[..4].try_into().map_err(|_| Error::Invalid)?) as usize;
+        let passphrase =
+            u32::from_be_bytes(self.data[4..8].try_into().map_err(|_| Error::Invalid)?) as usize;
+        if certificate > crate::openpgp_personal::MAX_CERTIFICATE
+            || passphrase > crate::openpgp_personal::MAX_PASSPHRASE
+            || self.data.len() != 8 + certificate + passphrase
+            || (self.personal_name() == Some("personal_import")) != (certificate > 0)
+        {
+            return Err(Error::Invalid);
+        }
+        let (cert, pass) = self.data[8..].split_at(certificate);
+        if pass
+            .iter()
+            .any(|byte| matches!(*byte, b'\0' | b'\r' | b'\n'))
+        {
+            return Err(Error::Invalid);
+        }
+        Ok((cert, pass))
+    }
+    pub(crate) fn issue_personal(
+        account: &str,
+        session: &PrivateSession,
+        action: PersonalAction<'_>,
+        now: u64,
+        key: &[u8],
+    ) -> Result<Self, Error> {
+        let (name, certificate, passphrase) = match action {
+            PersonalAction::Status => ("personal_status", &[][..], &[][..]),
+            PersonalAction::Import {
+                certificate,
+                passphrase,
+            } => ("personal_import", certificate, passphrase),
+            PersonalAction::Unlock { passphrase } => ("personal_unlock", &[][..], passphrase),
+            PersonalAction::Lock => ("personal_lock", &[][..], &[][..]),
+        };
+        if certificate.len() > crate::openpgp_personal::MAX_CERTIFICATE
+            || passphrase.len() > crate::openpgp_personal::MAX_PASSPHRASE
+        {
+            return Err(Error::Limit);
+        }
+        let mut nonce = [0; 16];
+        getrandom::getrandom(&mut nonce).map_err(|_| Error::Unavailable)?;
+        let mut data = Vec::new();
+        if matches!(name, "personal_import" | "personal_unlock") {
+            data.extend_from_slice(&(certificate.len() as u32).to_be_bytes());
+            data.extend_from_slice(&(passphrase.len() as u32).to_be_bytes());
+            data.extend_from_slice(certificate);
+            data.extend_from_slice(passphrase);
+        }
+        let mut request = Self {
+            header: Header {
+                schema: SCHEMA.into(),
+                account: account.into(),
+                issued: now,
+                expires: now.checked_add(10).ok_or(Error::Invalid)?,
+                nonce: hex(&nonce),
+                operation: name.into(),
+                signer: None,
+                recipients: vec![],
+                data_len: data.len(),
+                signature_len: 0,
+                mac: String::new(),
+                session: Some(session.clone()),
+            },
+            data,
+            signature: vec![],
+        };
+        request.header.validate(now)?;
+        request.personal_parts()?;
+        request.header.mac =
+            hex(
+                &authenticate(key, &request.header.payload()?, &request.data, &[])?
+                    .finalize()
+                    .into_bytes(),
+            );
+        Ok(request)
     }
     pub fn expires(&self) -> u64 {
         self.header.expires
@@ -370,7 +507,11 @@ impl Verifier {
             data: data.to_vec(),
             signature: signature.to_vec(),
         };
-        r.operation(&["A".repeat(40)])?;
+        if r.personal_name().is_some() {
+            r.personal_parts()?;
+        } else {
+            r.operation(&["A".repeat(40)])?;
+        }
         self.consume(&r, false, now)?;
         Ok(r)
     }
@@ -420,10 +561,227 @@ impl Verifier {
         Ok(result)
     }
 }
+impl Drop for Request {
+    fn drop(&mut self) {
+        crate::openpgp_personal::clear(&mut self.data);
+        crate::openpgp_personal::clear(&mut self.signature);
+    }
+}
+
+pub(crate) fn personal_response(
+    request: &Request,
+    result: Result<PersonalState, PersonalError>,
+    key: &[u8],
+    now: u64,
+) -> Result<Vec<u8>, Error> {
+    request.header.validate(now)?;
+    if request.personal_name().is_none() {
+        return Err(Error::Invalid);
+    }
+    let body = serde_json::to_vec(&result).map_err(|_| Error::Invalid)?;
+    let mut header = ResponseHeader {
+        schema: SCHEMA.into(),
+        account: request.account().into(),
+        nonce: request.header.nonce.clone(),
+        operation: request.header.operation.clone(),
+        error: None,
+        content_len: body.len(),
+        signer_fingerprint: None,
+        primary_fingerprint: None,
+        signature: SignatureState::None,
+        hash_algorithm: None,
+        mac: String::new(),
+    };
+    header.mac = hex(&authenticate(key, &header.payload()?, &body, &[])?
+        .finalize()
+        .into_bytes());
+    frame(&header, &body, &[])
+}
+impl Verifier {
+    pub(crate) fn personal_response(
+        &mut self,
+        request: &Request,
+        bytes: &[u8],
+        key: &[u8],
+        now: u64,
+    ) -> Result<Result<PersonalState, PersonalError>, Error> {
+        request.header.validate(now)?;
+        let (meta, body) = split(bytes)?;
+        let header: ResponseHeader = serde_json::from_slice(meta).map_err(|_| Error::Invalid)?;
+        if request.personal_name().is_none()
+            || header.schema != SCHEMA
+            || header.account != request.account()
+            || header.nonce != request.header.nonce
+            || header.operation != request.header.operation
+            || header.content_len != body.len()
+            || body.len() > 4096
+            || header.error.is_some()
+            || header.signer_fingerprint.is_some()
+            || header.primary_fingerprint.is_some()
+            || header.signature != SignatureState::None
+            || header.hash_algorithm.is_some()
+        {
+            return Err(Error::Authentication);
+        }
+        verify(
+            authenticate(key, &header.payload()?, body, &[])?,
+            &header.mac,
+        )?;
+        self.consume(request, true, now)?;
+        let result: Result<PersonalState, PersonalError> =
+            serde_json::from_slice(body).map_err(|_| Error::Invalid)?;
+        let session = request.session().ok_or(Error::Invalid)?;
+        if result
+            .as_ref()
+            .is_ok_and(|state| !state.valid_for(session, now))
+        {
+            return Err(Error::Invalid);
+        }
+        Ok(result)
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn private_session() -> PrivateSession {
+        PrivateSession {
+            session_id: "a".repeat(64),
+            account_epoch: Some(7),
+            expires_at: 1000,
+        }
+    }
+    #[test]
+    fn personal_wire_authenticates_session_and_private_binary_body_without_header_secrets() {
+        let session = private_session();
+        let key = [42; 32];
+        let request = Request::issue_personal(
+            "alice@example.test",
+            &session,
+            PersonalAction::Import {
+                certificate: b"synthetic private certificate",
+                passphrase: b"synthetic passphrase",
+            },
+            100,
+            &key,
+        )
+        .unwrap();
+        let bytes = request.to_bytes().unwrap();
+        let (header, body) = split(&bytes).unwrap();
+        assert!(!header
+            .windows(b"synthetic".len())
+            .any(|part| part == b"synthetic"));
+        assert!(body
+            .windows(b"synthetic passphrase".len())
+            .any(|part| part == b"synthetic passphrase"));
+        let decoded = Verifier::default().request(&bytes, &key, 101).unwrap();
+        assert!(decoded.session() == Some(&session));
+        let (certificate, passphrase) = decoded.personal_parts().unwrap();
+        assert!(certificate == b"synthetic private certificate");
+        assert!(passphrase == b"synthetic passphrase");
+        let mut changed = bytes.clone();
+        *changed.last_mut().unwrap() ^= 1;
+        assert_eq!(
+            Verifier::default().request(&changed, &key, 101).err(),
+            Some(Error::Authentication)
+        );
+        let mut altered = request.header.clone();
+        altered.session.as_mut().unwrap().account_epoch = Some(8);
+        assert_eq!(
+            Verifier::default()
+                .request(&frame(&altered, &request.data, &[]).unwrap(), &key, 101)
+                .err(),
+            Some(Error::Authentication)
+        );
+        assert!(Request::issue_personal(
+            "alice@example.test",
+            &session,
+            PersonalAction::Import {
+                certificate: &[],
+                passphrase: b"x"
+            },
+            100,
+            &key
+        )
+        .is_err());
+        assert!(Request::issue_personal(
+            "alice@example.test",
+            &session,
+            PersonalAction::Unlock {
+                passphrase: b"line\nbreak"
+            },
+            100,
+            &key
+        )
+        .is_err());
+        assert!(Request::issue_personal(
+            "alice@example.test",
+            &session,
+            PersonalAction::Unlock {
+                passphrase: &vec![b'x'; 1025]
+            },
+            100,
+            &key
+        )
+        .is_err());
+    }
+    #[test]
+    fn personal_reply_is_nonce_bound_and_requests_expire_with_session() {
+        let mut session = private_session();
+        let key = [42; 32];
+        let request = Request::issue_personal(
+            "alice@example.test",
+            &session,
+            PersonalAction::Status,
+            100,
+            &key,
+        )
+        .unwrap();
+        let state = PersonalState {
+            primary_fingerprint: "A".repeat(40),
+            private_revision: "b".repeat(64),
+            installed: true,
+            protected_at_rest: true,
+            unlocked_for_session: true,
+            valid_until: Some(500),
+            cache_seconds: 28800,
+        };
+        let bytes = personal_response(&request, Ok(state), &key, 101).unwrap();
+        let result = Verifier::default()
+            .personal_response(&request, &bytes, &key, 101)
+            .unwrap()
+            .unwrap();
+        assert!(result.unlocked_for_session);
+        let other = Request::issue_personal(
+            "alice@example.test",
+            &session,
+            PersonalAction::Status,
+            100,
+            &key,
+        )
+        .unwrap();
+        assert_eq!(
+            Verifier::default()
+                .personal_response(&other, &bytes, &key, 101)
+                .err(),
+            Some(Error::Authentication)
+        );
+        session.expires_at = 105;
+        let request = Request::issue_personal(
+            "alice@example.test",
+            &session,
+            PersonalAction::Status,
+            100,
+            &key,
+        )
+        .unwrap();
+        assert_eq!(
+            Verifier::default()
+                .request(&request.to_bytes().unwrap(), &key, 105)
+                .err(),
+            Some(Error::Expired)
+        );
+    }
     fn op() -> Operation {
         Operation::Sign {
             signer_fingerprint: "A".repeat(40),

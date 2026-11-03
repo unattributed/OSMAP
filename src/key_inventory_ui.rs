@@ -513,12 +513,24 @@ pub(crate) fn render_key_management(
     render_key_management_panel(account, csrf, state, error, None)
 }
 
+#[cfg(test)]
 pub(crate) fn render_key_management_panel(
     account: &str,
     csrf: &str,
     state: &crate::key_management::State,
     error: Option<&str>,
     panel: Option<&str>,
+) -> TrustedHtml {
+    render_key_management_panel_with_personal(account, csrf, state, error, panel, "")
+}
+
+pub(crate) fn render_key_management_panel_with_personal(
+    account: &str,
+    csrf: &str,
+    state: &crate::key_management::State,
+    error: Option<&str>,
+    panel: Option<&str>,
+    personal: &str,
 ) -> TrustedHtml {
     let opened = |name| if panel == Some(name) { " open" } else { "" };
     let owned = state.canonical_username == account;
@@ -797,13 +809,13 @@ pub(crate) fn render_key_management_panel(
         "<div class=\"page-intro\"><h1>OpenPGP Key Management</h1><p>See imported keys, the email addresses they are used for, and the policies that apply.</p>{notice}</div>",
         "<div class=\"key-management-toolbar\"><p><a href=\"/settings?section=security\">Security</a> / <a href=\"/settings?section=openpgp\">OpenPGP</a> / Keys</p>{toolbar_actions}</div>",
         "<p class=\"sr-only\" role=\"status\">{state_label} · Binding revision {revision}</p>",
-        "<section id=\"public-inventory\" class=\"key-management-card key-inventory-list\" aria-labelledby=\"imported-keys-heading\"><h2 id=\"imported-keys-heading\">Imported keys</h2><p>Email addresses are read from imported public keys automatically. Encryption is off by default. Existing saved policies take precedence.</p>{rows}<p>{public_state}</p></section>",
+        "{personal}<section id=\"public-inventory\" class=\"key-management-card key-inventory-list\" aria-labelledby=\"imported-keys-heading\"><h2 id=\"imported-keys-heading\">Imported keys</h2><p>Email addresses are read from imported public keys automatically. Encryption is off by default. Existing saved policies take precedence.</p>{rows}<p>{public_state}</p></section>",
         "<div class=\"key-management-grid\"><section class=\"key-management-card\"><h2>Your email key and account policies</h2>{overview}{account_actions}{policy_summary}",
         "<details id=\"account-binding\"{account_open}><summary>{account_action}</summary>{account_form}</details><details id=\"protection-policy\"{policy_open}><summary>Protection policy</summary>{policy_form}</details><details><summary>Recover from unavailable or expired bindings</summary>{cleanup}</details></section>",
         "<section id=\"recipient-binding\" class=\"key-management-card\"><h2>Recipient keys and policies</h2>{recipients}",
         "<p class=\"key-inventory-notice\">Automatic online key discovery is off. Email addresses come from the public keys you import, not from independent identity verification. Compare full fingerprints through a trusted channel. Each saved change requires your current mailbox password and a fresh authenticator code. Importing a public key does not configure a private signing key.</p>",
         "<details id=\"public-import\"{import_open}><summary>Import public key</summary>{import_form}</details></section></div></main>"
-    ),account_open=opened("account"),policy_open=opened("policy"),import_open=opened("import"),notice=notice,revision=revision,account_form=account_form,account_actions=account_actions,policy_summary=policy_summary,policy_form=policy_form,cleanup=cleanup,recipients=recipients,rows=rows,overview=overview,account_action=if bound.is_some(){"Advanced: change private-key binding"}else{"Advanced: configure private-key binding"},header=app_header(account,csrf,"security"),state_label=if ready{"Verified public inventory and confirmed binding store"}else{"Binding changes unavailable"},toolbar_actions=toolbar_actions,import_form=import_form,public_state=public_state))
+    ),personal=personal,account_open=opened("account"),policy_open=opened("policy"),import_open=opened("import"),notice=notice,revision=revision,account_form=account_form,account_actions=account_actions,policy_summary=policy_summary,policy_form=policy_form,cleanup=cleanup,recipients=recipients,rows=rows,overview=overview,account_action=if bound.is_some(){"Advanced: change private-key binding"}else{"Advanced: configure private-key binding"},header=app_header(account,csrf,"security"),state_label=if ready{"Verified public inventory and confirmed binding store"}else{"Binding changes unavailable"},toolbar_actions=toolbar_actions,import_form=import_form,public_state=public_state))
 }
 
 #[cfg(test)]

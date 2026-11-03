@@ -229,6 +229,12 @@ pub trait BrowserGateway {
             audit_events: vec![],
         }
     }
+    fn personal_key_state(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Option<crate::openpgp_personal::PersonalState> {
+        None
+    }
     fn change_keys(
         &self,
         _context: &AuthenticationContext,

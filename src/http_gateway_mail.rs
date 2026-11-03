@@ -1090,7 +1090,7 @@ impl RuntimeBrowserGateway {
                         ),
                     }
                     let prepared = self
-                        .prepare_outbound_request(account, &request, now)
+                        .prepare_outbound_request(account, &request, now, Some(Self::private_key_session(validated_session)))
                         .map_err(|reason| {
                             preparation_events.push(
                                 LogEvent::new(
@@ -1253,7 +1253,7 @@ impl RuntimeBrowserGateway {
         request: &ComposeRequest,
         now: u64,
     ) -> Result<(crate::protected_submission::PreparedSubmission, u64), &'static str> {
-        self.prepare_outbound_request(account, request, now)
+        self.prepare_outbound_request(account, request, now, None)
             .map(|(prepared, revision, _)| (prepared, revision))
     }
 
@@ -1262,6 +1262,7 @@ impl RuntimeBrowserGateway {
         account: &str,
         request: &ComposeRequest,
         now: u64,
+        private_session: Option<crate::openpgp_personal::PrivateSession>,
     ) -> Result<
         (
             crate::protected_submission::PreparedSubmission,
@@ -1306,7 +1307,11 @@ impl RuntimeBrowserGateway {
                 .export_public(account.as_str(), &snapshot.revision, primary)
                 .map_err(|_| unavailable())
         };
-        let result = match &self.crypto_client() {
+        let crypto = self.crypto_client().map(|client| match private_session {
+            Some(session) => client.for_session(session),
+            None => client,
+        });
+        let result = match &crypto {
             Some(client) => crate::protected_submission::prepare_for_delivery(
                 client,
                 &account,

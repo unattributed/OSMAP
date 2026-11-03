@@ -26,12 +26,42 @@ pub struct FormParseError {
 }
 
 /// Parsed compose input plus any uploaded attachments.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct ParsedComposeForm {
     pub fields: BTreeMap<String, String>,
     pub attachments: Vec<UploadedAttachment>,
     /// A rejected local image; callers must stop submission and retain fields.
     pub upload_error: Option<String>,
+}
+
+impl std::fmt::Debug for ParsedComposeForm {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ParsedComposeForm")
+            .field("field_count", &self.fields.len())
+            .field("file_count", &self.attachments.len())
+            .finish_non_exhaustive()
+    }
+}
+
+/// Preserve the upload-control role for personal versus contact key forms.
+pub(crate) fn parse_key_upload_form(
+    body: &[u8],
+    content_type: &str,
+    max_fields: usize,
+    max_bytes: usize,
+    policy: ComposePolicy,
+) -> Result<(ParsedComposeForm, Vec<String>), FormParseError> {
+    let mut names = Vec::new();
+    let parsed = parse_multipart_compose_form(
+        body,
+        content_type,
+        max_fields,
+        max_bytes,
+        policy,
+        Some(&mut names),
+    )?;
+    Ok((parsed, names))
 }
 
 /// Parses a URL-encoded query string into a bounded key/value map.
@@ -91,7 +121,7 @@ pub fn parse_compose_form(
             upload_error: None,
         }),
         Some(value) if is_multipart_form_data(value) => {
-            parse_multipart_compose_form(body, value, max_fields, max_bytes, compose_policy)
+            parse_multipart_compose_form(body, value, max_fields, max_bytes, compose_policy, None)
         }
         Some(_) => Err(FormParseError {
             reason: "unsupported compose content-type".to_string(),
@@ -190,6 +220,7 @@ fn parse_multipart_compose_form(
     max_fields: usize,
     max_bytes: usize,
     compose_policy: ComposePolicy,
+    mut key_file_names: Option<&mut Vec<String>>,
 ) -> Result<ParsedComposeForm, FormParseError> {
     if body.len() > max_bytes {
         return Err(FormParseError {
@@ -300,9 +331,18 @@ fn parse_multipart_compose_form(
         }
         let filename = disposition.params.get("filename").cloned();
 
+        if filename.is_some() {
+            if let Some(names) = key_file_names.as_deref_mut() {
+                names.push(field_name.clone());
+            }
+        }
+
         match filename {
             Some(filename) => {
-                if field_name != "attachment" && field_name != "image_attachment" {
+                if field_name != "attachment"
+                    && field_name != "image_attachment"
+                    && !(key_file_names.is_some() && field_name == "personal_certificate")
+                {
                     return Err(FormParseError {
                         reason: "unsupported file field name".to_string(),
                     });

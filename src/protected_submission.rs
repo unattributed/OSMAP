@@ -473,4 +473,4 @@ mod tests;
 
 #[cfg(test)]
 #[path = "protected_submission_native_tests.rs"]
-mod native_tests;
+pub(crate) mod native_tests;

@@ -619,6 +619,18 @@ impl BrowserGateway for RuntimeBrowserGateway {
     ) -> crate::key_management::StateOutcome {
         self.key_management_state(context, session)
     }
+    fn personal_key_state(
+        &self,
+        session: &ValidatedSession,
+    ) -> Option<crate::openpgp_personal::PersonalState> {
+        self.crypto_client()?
+            .personal(
+                &session.record.canonical_username,
+                &Self::private_key_session(session),
+                crate::openpgp_personal::PersonalAction::Status,
+            )
+            .ok()
+    }
     fn change_keys(
         &self,
         context: &AuthenticationContext,

@@ -725,9 +725,11 @@ fn native_crypto_gateway_protected_send_roundtrip() {
         crate::mailbox::DoveadmMessageAppendBackend::new(SystemCommandExecutor, save.clone());
     let mut session = validated_session();
     session.record.canonical_username = "alice@example.test".into();
+    session.record.session_id = "a".repeat(64);
     session.record.issued_at = now;
     session.record.expires_at = now + 3600;
     session.record.last_seen_at = now;
+    assert!(RuntimeBrowserGateway::private_key_session(&session).valid(now));
     let context = test_context();
     let intent = crate::send_journal::mint_intent(now).unwrap();
     let attachments = [crate::send::UploadedAttachment::new(

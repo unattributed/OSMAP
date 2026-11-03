@@ -136,6 +136,7 @@ mod openpgp_inventory_process;
 pub mod openpgp_inventory_protocol;
 #[cfg(unix)]
 pub mod openpgp_inventory_runtime;
+pub mod openpgp_personal;
 #[cfg(unix)]
 pub mod openpgp_public_admin;
 #[cfg(unix)]

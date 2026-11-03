@@ -23,6 +23,8 @@ mod http_gateway;
 mod http_runtime;
 mod label_filter;
 mod notification_badge;
+#[path = "http/personal_key_ui.rs"]
+mod personal_key_ui;
 mod routes_after_archive;
 mod routes_appearance;
 mod routes_auth;
@@ -341,7 +343,7 @@ impl HttpMethod {
 }
 
 /// A small parsed HTTP request.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct HttpRequest {
     pub(crate) notification_context: std::cell::RefCell<notification_badge::RenderContext>,
     pub method: HttpMethod,
@@ -349,6 +351,16 @@ pub struct HttpRequest {
     pub query_params: BTreeMap<String, String>,
     pub headers: BTreeMap<String, String>,
     pub body: Vec<u8>,
+}
+
+impl std::fmt::Debug for HttpRequest {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("HttpRequest")
+            .field("method", &self.method)
+            .field("body_bytes", &self.body.len())
+            .finish_non_exhaustive()
+    }
 }
 
 /// A small HTTP response that can be written directly to a socket.

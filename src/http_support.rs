@@ -500,7 +500,7 @@ pub(crate) fn public_reason_message(reason: &str) -> &'static str {
         "openpgp_self_requires_encryption" => "Include my approved key requires encryption. Nothing was sent. Select Encrypt on send or clear Include my approved key.",
         "openpgp_self_key_unavailable" => "Your account has no eligible approved encryption key for Include my approved key. Nothing was sent. Review your account key in Manage keys.",
         "openpgp_inventory_unavailable" => "The OpenPGP public-key inventory is unavailable. Nothing was sent. Contact the mail operator and submit only after key status is restored.",
-        "openpgp_key_locked" => "A private OpenPGP key required for this message is locked. Nothing was sent. Keep this text and ask the mail operator to unlock the required key on the mail host through its native key agent before sending. Unlocking is temporary. Do not enter the key passphrase in webmail.",
+        "openpgp_key_locked" => "A private OpenPGP key required for this message is locked. Nothing was sent. Keep this text. Open Settings → Keys → Your personal key and unlock it, then return to this message. Unlocking is temporary; if personal-key controls are unavailable, contact the mail operator.",
         "openpgp_message_too_large" => "This message is too large after OpenPGP protection. Nothing was sent. Reduce its body or attachments before submitting again.",
         "openpgp_submission_unavailable" => "OpenPGP preparation could not be completed. Nothing was sent. Keep this text and contact the mail operator if the problem continues.",
         "invalid_second_factor" => "The supplied credentials were not accepted.",
@@ -576,13 +576,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn locked_private_key_guidance_preserves_text_and_keeps_passphrases_out_of_webmail() {
+    fn locked_private_key_guidance_preserves_text_and_opens_personal_key_controls() {
         let message = public_reason_message("openpgp_key_locked");
         assert!(message.contains("Nothing was sent."));
         assert!(message.contains("Keep this text"));
-        assert!(message.contains("unlock the required key on the mail host"));
+        assert!(message.contains("Settings → Keys → Your personal key"));
         assert!(message.contains("Unlocking is temporary"));
-        assert!(message.contains("Do not enter the key passphrase in webmail"));
+        assert!(message.contains("return to this message"));
     }
 
     #[test]
@@ -611,7 +611,7 @@ mod tests {
             (
                 "openpgp_key_locked",
                 "private OpenPGP key required for this message is locked",
-                "native key agent",
+                "Your personal key",
             ),
             (
                 "openpgp_public_certificate_unavailable",

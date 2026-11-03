@@ -97,7 +97,7 @@ impl CommandExecutor for &EnvelopeCapture {
     }
 }
 
-fn verify_with_only_attached_certificate(
+pub(crate) fn verify_with_only_attached_certificate(
     root: &Path,
     certificate: &[u8],
     entity: &[u8],

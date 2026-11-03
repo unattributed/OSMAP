@@ -26,6 +26,9 @@ pub enum Error {
     InvalidKey,
     KeyInUse,
     Unconfirmed,
+    PersonalLocked,
+    PersonalConflict,
+    PersonalInvalid,
 }
 impl Error {
     pub fn message(self) -> &'static str {
@@ -38,6 +41,9 @@ impl Error {
             Self::InvalidKey => "The selected public key is missing, expired, revoked, ambiguous or unsupported.",
             Self::KeyInUse => "Remove this key’s account and recipient bindings before changing its public certificate.",
             Self::Unconfirmed => "The change could not be confirmed. Reload and inspect the current state before retrying.",
+            Self::PersonalLocked => "The personal key could not be unlocked. Check its key passphrase. Nothing was sent.",
+            Self::PersonalConflict => "A personal private key is already stored for this account. Use Unlock; importing will not replace it.",
+            Self::PersonalInvalid => "The personal key or passphrase could not be accepted. Choose the matching private .asc file for your configured account key; other keys and key replacement are not accepted here.",
         }
     }
 }
@@ -70,6 +76,14 @@ pub struct StateOutcome {
 }
 
 pub enum Action<'a> {
+    ImportPersonal {
+        certificate: &'a [u8],
+        passphrase: &'a [u8],
+    },
+    UnlockPersonal {
+        passphrase: &'a [u8],
+    },
+    LockPersonal,
     ImportPublic {
         certificate: &'a [u8],
         expected_primary_fingerprint: &'a str,
@@ -315,6 +329,9 @@ pub fn mutate<B: PublicKeyBackend>(
     };
     match &request.action {
         Action::ImportPublic { .. } | Action::RemovePublic { .. } => unreachable!(),
+        Action::ImportPersonal { .. } | Action::UnlockPersonal { .. } | Action::LockPersonal => {
+            return Err(Error::Invalid);
+        }
         Action::SetAccount {
             primary_fingerprint,
             signing_fingerprint,
@@ -476,7 +493,7 @@ fn key_in_use(record: &BindingRecord, primary: &str) -> bool {
         .iter()
         .any(|b| b.primary_fingerprint == primary)
 }
-fn binding_error(error: BindingError) -> Error {
+pub(crate) fn binding_error(error: BindingError) -> Error {
     match error {
         BindingError::Stale => Error::Stale,
         BindingError::InvalidKey => Error::InvalidKey,

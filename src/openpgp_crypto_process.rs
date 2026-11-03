@@ -13,6 +13,12 @@ use std::time::{Duration, Instant};
 static CLEANUP_UNCONFIRMED: AtomicBool = AtomicBool::new(false);
 static UNREAPED: Mutex<Vec<Child>> = Mutex::new(Vec::new());
 
+/// Observation only: native diagnostics must never clear uncertain cleanup.
+#[cfg(test)]
+pub(crate) fn cleanup_unconfirmed_for_test() -> bool {
+    CLEANUP_UNCONFIRMED.load(Ordering::SeqCst)
+}
+
 #[cfg(test)]
 pub(crate) fn execute(
     worker: &Path,
@@ -67,6 +73,52 @@ pub(crate) fn run_public_admin(
         return Err(Error::Unavailable);
     }
     Ok(output)
+}
+pub(crate) fn run_personal(
+    command: Command,
+    input: &[u8],
+    deadline: Instant,
+) -> Result<(Vec<u8>, bool), Error> {
+    if input.len() > 65536 + 1024 + 1024 {
+        return Err(Error::Limit);
+    }
+    run_bounded(command, input, deadline, MAX_METADATA)
+}
+/// A daemon launcher may exit before its child leaves the original group.
+/// Only personal-agent Start uses a protocol handshake before owned-group kill.
+pub(crate) fn run_personal_start(
+    command: Command,
+    deadline: Instant,
+    ready: impl Fn(u32, Instant) -> Result<bool, Error>,
+) -> Result<(Vec<u8>, bool), Error> {
+    let deadline = deadline.min(Instant::now() + Duration::from_secs(10));
+    let handshake_deadline = deadline
+        .checked_sub(Duration::from_millis(100))
+        .unwrap_or(deadline);
+    let acknowledged = std::cell::Cell::new(false);
+    let result = run_limited_with_group_ops(
+        command,
+        &[],
+        deadline,
+        RunProfile {
+            output_limit: MAX_METADATA,
+            operation_limit: Duration::from_secs(10),
+            strict_group: false,
+        },
+        GroupOps {
+            kill: &|leader| {
+                acknowledged.set(ready(leader, handshake_deadline).unwrap_or(false));
+                // A refused/failed handshake must never skip owned cleanup.
+                crate::openbsd::kill_process_group(leader)
+            },
+            exists: &crate::openbsd::process_group_exists,
+        },
+        || Ok(false),
+    )?;
+    if !acknowledged.get() {
+        return Err(Error::Unavailable);
+    }
+    Ok(result)
 }
 /// Inventory regression seam; production uses the existing public-admin API.
 #[cfg(test)]
@@ -461,6 +513,37 @@ fn drain(
 mod tests {
     use super::*;
     use crate::auth::crypto_fixture_command as fixture;
+    #[test]
+    fn personal_start_failed_handshake_still_cleans_owned_group_and_allows_followup() {
+        // Synthetic exit qualifies cleanup ordering, not native agent readiness.
+        for refused in [Ok(false), Err(Error::Unavailable)] {
+            let witnessed = std::cell::Cell::new(0);
+            let result = run_personal_start(
+                fixture("success"),
+                Instant::now() + Duration::from_secs(2),
+                |leader, deadline| {
+                    assert!(Instant::now() < deadline);
+                    assert!(crate::openbsd::owned_child_exited_without_reap(leader).unwrap());
+                    witnessed.set(leader);
+                    refused
+                },
+            );
+            assert!(matches!(result, Err(Error::Unavailable)));
+            assert!(witnessed.get() > 1);
+            assert!(!crate::openbsd::process_id_exists(witnessed.get()).unwrap());
+            assert!(!crate::openbsd::process_group_exists(witnessed.get()).unwrap());
+            assert!(!cleanup_unconfirmed_for_test());
+        }
+        assert!(
+            run_personal_start(
+                fixture("success"),
+                Instant::now() + Duration::from_secs(2),
+                |_, _| Ok(true),
+            )
+            .unwrap()
+            .1
+        );
+    }
     #[test]
     #[ignore = "child process fixture; invoked by duplex process test"]
     fn worker_fixture() {

@@ -7,6 +7,7 @@ use crate::openpgp_inventory::Error;
 use crate::openpgp_inventory_runtime::{
     file, now, private_dir, remaining, secret, validate_socket,
 };
+use crate::openpgp_personal::{PersonalAction, PersonalError, PersonalState, PrivateSession};
 use serde::Deserialize;
 use std::collections::BTreeSet;
 use std::fs;
@@ -20,6 +21,8 @@ use std::time::{Duration, Instant};
 
 /// Native primitive tests alone do not qualify service principals/key custody.
 pub const NATIVE_CONFINEMENT_QUALIFIED: bool = true;
+#[path = "openpgp_crypto_personal.rs"]
+mod personal;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -33,6 +36,8 @@ struct Mapping {
     /// in this mapped account home. Native validation remains authoritative.
     #[serde(default)]
     allow_imported_recipients: bool,
+    #[serde(default)]
+    allow_web_personal_keys: bool,
 }
 fn valid_fingerprint(s: &str) -> bool {
     s.len() == 40
@@ -42,6 +47,13 @@ fn valid_fingerprint(s: &str) -> bool {
 impl Mapping {
     fn validate(&self) -> Result<(), Error> {
         CanonicalUsername::parse(&self.account).map_err(|_| Error::Invalid)?;
+        if self.allow_web_personal_keys
+            && (self.decrypt_fingerprints.len() != 1
+                || self.signer_fingerprint.is_none()
+                || !self.account.contains('@'))
+        {
+            return Err(Error::Invalid);
+        }
         if self
             .signer_fingerprint
             .as_ref()
@@ -172,6 +184,7 @@ pub struct Service {
     key: Vec<u8>,
     verifier: Mutex<Verifier>,
     admissions: Admissions,
+    personal: Mutex<personal::Manager>,
 }
 impl Service {
     pub fn from_operator_files(config: &Path, key: &Path) -> Result<Self, Error> {
@@ -181,6 +194,7 @@ impl Service {
             key: secret(key)?,
             verifier: Mutex::new(Verifier::default()),
             admissions: Admissions::default(),
+            personal: Mutex::new(personal::Manager::default()),
         })
     }
     fn process(
@@ -200,11 +214,50 @@ impl Service {
             .iter()
             .find(|m| m.account == request.account())
             .ok_or(Error::Authentication)?;
-        let operation = mapping.authorize(&request)?;
         let _permit = self.admissions.enter(request.account())?;
         let deadline = deadline
             .min(Instant::now() + Duration::from_secs(request.expires().saturating_sub(now()?)));
         remaining(deadline)?;
+        if let Some(action) = request.personal_name() {
+            let result = (|| {
+                let context = self.personal_context(mapping)?;
+                let session = request.session().ok_or(PersonalError::Invalid)?;
+                let (certificate, passphrase) = request
+                    .personal_parts()
+                    .map_err(|_| PersonalError::Invalid)?;
+                let action = match action {
+                    "personal_status" => PersonalAction::Status,
+                    "personal_import" => PersonalAction::Import {
+                        certificate,
+                        passphrase,
+                    },
+                    "personal_unlock" => PersonalAction::Unlock { passphrase },
+                    "personal_lock" => PersonalAction::Lock,
+                    _ => return Err(PersonalError::Invalid),
+                };
+                self.personal
+                    .lock()
+                    .map_err(|_| PersonalError::Unavailable)?
+                    .handle(context, session, action, deadline)
+            })();
+            return wire::personal_response(&request, result, &self.key, now()?);
+        }
+        let operation = mapping.authorize(&request)?;
+        if mapping.allow_web_personal_keys
+            && matches!(
+                operation,
+                Operation::Sign { .. } | Operation::Decrypt { .. }
+            )
+        {
+            let permitted = self.personal_context(mapping).ok().is_some_and(|context| {
+                self.personal.lock().is_ok_and(|mut manager| {
+                    manager.permitted(&context, request.session(), deadline)
+                })
+            });
+            if !permitted {
+                return wire::response(&request, Err(CryptoError::Locked), &self.key, now()?);
+            }
+        }
         let outcome = execute(
             &self.config.worker,
             &self.config.engine,
@@ -217,6 +270,25 @@ impl Service {
             Ok(v)
         });
         wire::response(&request, outcome, &self.key, now()?)
+    }
+    fn personal_context<'a>(
+        &'a self,
+        mapping: &'a Mapping,
+    ) -> Result<personal::Context<'a>, PersonalError> {
+        if !mapping.allow_web_personal_keys || mapping.decrypt_fingerprints.len() != 1 {
+            return Err(PersonalError::Unavailable);
+        }
+        Ok(personal::Context {
+            account: &mapping.account,
+            home: &mapping.home,
+            primary: &mapping.decrypt_fingerprints[0],
+            signer: mapping
+                .signer_fingerprint
+                .as_deref()
+                .ok_or(PersonalError::Unavailable)?,
+            worker: &self.config.worker,
+            engine: &self.config.engine,
+        })
     }
     #[cfg(test)]
     fn connection(&self, stream: UnixStream) -> Result<(), Error> {
@@ -409,7 +481,7 @@ struct ClientState {
     verifier: Mutex<Verifier>,
 }
 #[derive(Clone)]
-pub struct Client(Arc<ClientState>);
+pub struct Client(Arc<ClientState>, Option<PrivateSession>);
 impl std::fmt::Debug for Client {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CryptoClient")
@@ -430,12 +502,46 @@ impl Client {
     pub fn from_operator_files(socket: &Path, key: &Path, helper_uid: u32) -> Result<Self, Error> {
         crate::openbsd::disable_core_dumps().map_err(|_| Error::Unavailable)?;
         validate_socket(socket, helper_uid)?;
-        Ok(Self(Arc::new(ClientState {
-            socket: socket.into(),
-            helper_uid,
-            key: secret(key)?,
-            verifier: Mutex::new(Verifier::default()),
-        })))
+        Ok(Self(
+            Arc::new(ClientState {
+                socket: socket.into(),
+                helper_uid,
+                key: secret(key)?,
+                verifier: Mutex::new(Verifier::default()),
+            }),
+            None,
+        ))
+    }
+    pub fn for_session(&self, session: PrivateSession) -> Self {
+        Self(self.0.clone(), Some(session))
+    }
+    pub fn personal(
+        &self,
+        account: &str,
+        session: &PrivateSession,
+        action: PersonalAction<'_>,
+    ) -> Result<PersonalState, PersonalError> {
+        let convert = |error| match error {
+            Error::Expired => PersonalError::Expired,
+            Error::Invalid => PersonalError::Invalid,
+            _ => PersonalError::Unavailable,
+        };
+        let deadline = Instant::now() + Duration::from_secs(10);
+        let request = Request::issue_personal(
+            account,
+            session,
+            action,
+            now().map_err(convert)?,
+            &self.0.key,
+        )
+        .map_err(convert)?;
+        let bytes = self.exchange(&request, deadline).map_err(convert)?;
+        self.0
+            .verifier
+            .lock()
+            .map_err(|_| PersonalError::Unavailable)?
+            .personal_response(&request, &bytes, &self.0.key, now().map_err(convert)?)
+            .map_err(convert)?
     }
     pub fn execute(
         &self,
@@ -443,7 +549,18 @@ impl Client {
         operation: &Operation,
     ) -> Result<Result<Outcome, CryptoError>, Error> {
         let deadline = Instant::now() + Duration::from_secs(10);
-        let request = Request::issue(account, operation, now()?, &self.0.key)?;
+        let mut request = Request::issue(account, operation, now()?, &self.0.key)?;
+        if let Some(session) = &self.1 {
+            request.bind_session(session.clone(), now()?, &self.0.key)?;
+        }
+        let bytes = self.exchange(&request, deadline)?;
+        self.0
+            .verifier
+            .lock()
+            .map_err(|_| Error::Unavailable)?
+            .response(&request, &bytes, operation, &self.0.key, now()?)
+    }
+    fn exchange(&self, request: &Request, deadline: Instant) -> Result<Vec<u8>, Error> {
         validate_socket(&self.0.socket, self.0.helper_uid)?;
         let mut stream = crate::openbsd::connect_unix_before(&self.0.socket, deadline)
             .map_err(|_| Error::Unavailable)?;
@@ -453,12 +570,7 @@ impl Client {
             return Err(Error::Authentication);
         }
         write_frame(&mut stream, &request.to_bytes()?, deadline)?;
-        let bytes = read_frame(&mut stream, deadline)?;
-        self.0
-            .verifier
-            .lock()
-            .map_err(|_| Error::Unavailable)?
-            .response(&request, &bytes, operation, &self.0.key, now()?)
+        read_frame(&mut stream, deadline)
     }
 }
 fn read_frame(stream: &mut UnixStream, deadline: Instant) -> Result<Vec<u8>, Error> {
@@ -575,6 +687,7 @@ mod tests {
             decrypt_fingerprints: vec!["B".repeat(40)],
             recipient_fingerprints: vec!["C".repeat(40)],
             allow_imported_recipients: false,
+            allow_web_personal_keys: false,
         }
     }
     #[test]
@@ -682,6 +795,7 @@ mod tests {
             key: key.to_vec(),
             verifier: Mutex::new(Verifier::default()),
             admissions: Admissions::default(),
+            personal: Mutex::new(personal::Manager::default()),
         };
         let sign = |fp: String| Operation::Sign {
             signer_fingerprint: fp,

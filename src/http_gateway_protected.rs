@@ -52,7 +52,10 @@ impl RuntimeBrowserGateway {
     ) -> Result<RenderedMessageView, ProtectedError> {
         let source = assemble_source(message)?;
         validate_stored_transport(message, &source)?;
-        let client = self.crypto_client().ok_or(ProtectedError::Unavailable)?;
+        let client = self
+            .crypto_client()
+            .ok_or(ProtectedError::Unavailable)?
+            .for_session(Self::private_key_session(session));
         let bindings = self.protected_bindings(session, message)?;
         let processed = Processor::new(client, policy)
             .process(context, session, message, &source, &bindings)?;
@@ -72,7 +75,10 @@ impl RuntimeBrowserGateway {
     ) -> Result<DownloadedAttachment, ProtectedError> {
         let source = assemble_source(message)?;
         validate_stored_transport(message, &source)?;
-        let client = self.crypto_client().ok_or(ProtectedError::Unavailable)?;
+        let client = self
+            .crypto_client()
+            .ok_or(ProtectedError::Unavailable)?
+            .for_session(Self::private_key_session(session));
         let bindings = self.protected_bindings(session, message)?;
         let processed = Processor::new(client, self.render_policy)
             .process(context, session, message, &source, &bindings)?;

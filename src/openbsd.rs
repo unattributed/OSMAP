@@ -3055,6 +3055,12 @@ pub(crate) enum OpenPgpFixtureRole {
 /// A positive-PID existence witness only; signal0 never changes process state.
 #[cfg(all(test, unix))]
 pub(crate) fn openpgp_fixture_process_exists(pid: u32) -> io::Result<bool> {
+    process_id_exists(pid)
+}
+/// Read-only existence of an already observed positive process ID. Never use
+/// this observation as authority to signal a potentially reused PID.
+#[cfg(unix)]
+pub(crate) fn process_id_exists(pid: u32) -> io::Result<bool> {
     let pid = i32::try_from(pid).map_err(|_| io::ErrorKind::InvalidInput)?;
     if pid <= 1 {
         return Err(io::ErrorKind::InvalidInput.into());

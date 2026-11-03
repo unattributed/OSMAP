@@ -11,7 +11,7 @@ pub enum ReaderState {
 
 pub fn refusal_description(error: ProtectedError) -> &'static str {
     match error {
-        ProtectedError::Locked => "The mailbox key is locked. Unlock the mailbox agent through its operator-controlled key workflow, then reload this message.",
+        ProtectedError::Locked => "The mailbox key is locked. Open Settings → Keys → Your personal key and unlock it, then reload this message. If personal-key controls are unavailable, contact the mail operator.",
         ProtectedError::MissingKey => "No usable decryption key is available for this account. The encrypted content has not been displayed.",
         ProtectedError::UnknownSigner => "The signing key is unavailable. The signature could not be verified and protected content has not been displayed.",
         ProtectedError::ExpiredKey => "The configured sender key has expired. Its signature was not accepted and protected content has not been displayed.",

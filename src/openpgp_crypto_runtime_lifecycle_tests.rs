@@ -35,11 +35,13 @@ fn service(home: &Path) -> Arc<Service> {
                 decrypt_fingerprints: vec!["A".repeat(40)],
                 recipient_fingerprints: vec!["B".repeat(40)],
                 allow_imported_recipients: false,
+                allow_web_personal_keys: false,
             }],
         },
         key: vec![9; 32],
         verifier: Mutex::new(Verifier::default()),
         admissions: Admissions::default(),
+        personal: Mutex::new(personal::Manager::default()),
     })
 }
 fn sign() -> Operation {

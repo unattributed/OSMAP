@@ -611,6 +611,72 @@ pub(crate) fn crypto_worker_command(
         .current_dir(home);
     command
 }
+#[cfg(unix)]
+pub(crate) fn personal_crypto_worker_command(
+    worker: &std::path::Path,
+    engine: &std::path::Path,
+    home: &std::path::Path,
+) -> Command {
+    let mut command = crypto_worker_command(worker, engine, home);
+    command
+        .arg("--personal")
+        .env("OSMAP_PERSONAL_PINENTRY", "loopback");
+    command
+}
+#[cfg(unix)]
+pub(crate) enum PersonalAgentCommand {
+    Start,
+    Stop,
+    Pid,
+}
+#[cfg(unix)]
+pub(crate) fn personal_agent_command(
+    home: &std::path::Path,
+    action: PersonalAgentCommand,
+) -> Command {
+    let mut command = Command::new(match action {
+        PersonalAgentCommand::Start => "/usr/local/bin/gpg-agent",
+        PersonalAgentCommand::Stop => "/usr/local/bin/gpgconf",
+        PersonalAgentCommand::Pid => "/usr/local/bin/gpg-connect-agent",
+    });
+    command
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C")
+        .env("GNUPGHOME", home)
+        .env("HOME", home)
+        .current_dir(home);
+    match action {
+        PersonalAgentCommand::Start => {
+            command.args(["--no-options", "--homedir"]).arg(home).args([
+                "--pinentry-program",
+                "/usr/bin/false",
+                "--allow-loopback-pinentry",
+                "--no-allow-external-cache",
+                "--default-cache-ttl",
+                "28800",
+                "--max-cache-ttl",
+                "28800",
+                "--log-file",
+                "/dev/null",
+                "--daemon",
+            ]);
+        }
+        PersonalAgentCommand::Stop => {
+            command
+                .arg("--homedir")
+                .arg(home)
+                .args(["--kill", "gpg-agent"]);
+        }
+        PersonalAgentCommand::Pid => {
+            command
+                .arg("--homedir")
+                .arg(home)
+                .args(["--no-autostart", "GETINFO pid", "/bye"]);
+        }
+    }
+    command
+}
 
 #[cfg(all(test, unix))]
 pub(crate) fn crypto_fixture_command(mode: &str) -> Command {

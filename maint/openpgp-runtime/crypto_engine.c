@@ -1,6 +1,7 @@
 /* GPGME engine adapter. No shell, user configuration, network lookup, agent
  * autostart, interactive Pinentry, weak outgoing cipher or hash selection. */
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/resource.h>
 #ifndef CRYPTO_GPG
@@ -9,8 +10,9 @@
 int main(int argc, char **argv) {
  struct rlimit core = {0, 0};
  if (setrlimit(RLIMIT_CORE, &core) || argc < 1 || argc > 256) return 1;
+ const char *personal=getenv("OSMAP_PERSONAL_PINENTRY");
  const char *fixed[] = {CRYPTO_GPG, "--no-options", "--no-autostart", "--rfc4880",
-  "--batch", "--pinentry-mode", "error", "--no-auto-key-retrieve",
+  "--batch", "--pinentry-mode", personal&&!strcmp(personal,"loopback")?"loopback":"error", "--no-auto-key-retrieve",
   "--auto-key-locate", "clear", "--no-auto-check-trustdb",
   "--cipher-algo", "AES256", "--digest-algo", "SHA256",
   "--compress-algo", "none", "--no-emit-version", "--no-comments"};

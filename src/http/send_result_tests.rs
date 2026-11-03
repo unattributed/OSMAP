@@ -6,7 +6,7 @@ fn typed_openpgp_denials_keep_message_and_choices_without_dispatch() {
         (
             "pgp-locked@example.test",
             "private OpenPGP key required for this message is locked",
-            "ask the mail operator to unlock",
+            "Your personal key",
         ),
         (
             "pgp-blocked@example.test",
@@ -33,7 +33,12 @@ fn typed_openpgp_denials_keep_message_and_choices_without_dispatch() {
             url_encode(message),
         );
         let denied = app.handle_request(
-            &request("POST", "/send", &authenticated_same_origin_headers(), &fields),
+            &request(
+                "POST",
+                "/send",
+                &authenticated_same_origin_headers(),
+                &fields,
+            ),
             "127.0.0.1",
         );
         assert_eq!(denied.response.status_code, 503);

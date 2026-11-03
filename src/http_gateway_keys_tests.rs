@@ -130,6 +130,12 @@ fn native_runtime_key_management_journey() {
                 .unwrap()
                 .serve()
                 .unwrap(),
+            "inventory" => {
+                crate::openpgp_inventory_runtime::Service::from_operator_files(&config, &key)
+                    .unwrap()
+                    .serve()
+                    .unwrap()
+            }
             _ => panic!("unknown native fixture service"),
         }
         return;
@@ -725,6 +731,7 @@ fn native_runtime_key_management_journey() {
     for (path, bytes) in private {
         assert!(fs::read(path).unwrap() == bytes);
     }
+    native_personal_key_journey(&f, (&worker, &crypto_worker, &engine, &alice), &next_code());
     f.gateway
         .build_session_service()
         .revoke(&f.context, &f.session.record.session_id)
@@ -747,8 +754,501 @@ fn native_runtime_key_management_journey() {
     drop(crypto_service);
     drop(service);
 }
+
+// Same real HTTP/session/factor/native-helper fixture, with no preinstalled
+// private material in the target. Transport is an explicit Rust capture only.
+fn native_personal_key_journey(
+    f: &Fixture,
+    paths: (
+        &std::path::Path,
+        &std::path::Path,
+        &std::path::Path,
+        &std::path::Path,
+    ),
+    totp: &str,
+) {
+    use crate::auth::CommandExecutor;
+    use crate::openpgp_personal::{PersonalAction, PrivateSession};
+    use std::os::unix::fs::DirBuilderExt;
+    use std::process::{Command, Stdio};
+    use std::time::{Duration, Instant};
+    const TEST: &str =
+        "http::http_gateway::http_gateway_keys::tests::native_runtime_key_management_journey";
+    let (inventory_worker, crypto_worker, engine, source) = paths;
+    let primary = std::env::var("OSMAP_CRYPTO_NATIVE_ALICE_FP").unwrap();
+    let home = f.root.join("personal-home");
+    fs::DirBuilder::new().mode(0o700).create(&home).unwrap();
+    struct PersonalAgent(std::path::PathBuf);
+    impl Drop for PersonalAgent {
+        fn drop(&mut self) {
+            let stopped = crate::auth::SystemCommandExecutor
+                .run_with_stdin_bytes_timeout_and_output_limit(
+                    "/usr/local/bin/gpgconf",
+                    &[
+                        "--homedir".into(),
+                        self.0.to_string_lossy().into_owned(),
+                        "--kill".into(),
+                        "gpg-agent".into(),
+                    ],
+                    &[],
+                    Duration::from_secs(5),
+                    4096,
+                );
+            let deadline = Instant::now() + Duration::from_secs(1);
+            while self.0.join("S.gpg-agent").exists() && Instant::now() < deadline {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            assert!(
+                stopped.is_ok_and(|result| result.status_code == 0)
+                    && !self.0.join("S.gpg-agent").exists(),
+                "owned personal fixture agent cleanup unconfirmed"
+            );
+        }
+    }
+    let _agent = PersonalAgent(home.clone());
+    fs::DirBuilder::new()
+        .mode(0o700)
+        .create(home.join("private-keys-v1.d"))
+        .unwrap();
+    for name in ["pubring.kbx", "trustdb.gpg"] {
+        fs::copy(source.join(name), home.join(name)).unwrap();
+        fs::set_permissions(home.join(name), fs::Permissions::from_mode(0o600)).unwrap();
+    }
+    assert!(fs::read_dir(home.join("private-keys-v1.d"))
+        .unwrap()
+        .next()
+        .is_none());
+    let grant = f.root.join("personal-grant");
+    fs::write(&grant, [59; 32]).unwrap();
+    fs::set_permissions(&grant, fs::Permissions::from_mode(0o600)).unwrap();
+    let start = |kind: &str, body: serde_json::Value, socket: &std::path::Path| {
+        let config = f.root.join(format!("personal-{kind}.json"));
+        fs::write(&config, serde_json::to_vec(&body).unwrap()).unwrap();
+        fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).unwrap();
+        let mut service = NativeService(
+            Command::new(std::env::current_exe().unwrap())
+                .args(["--exact", TEST, "--ignored"])
+                .env("OSMAP_KEYS_NATIVE_SERVICE", kind)
+                .env("OSMAP_KEYS_NATIVE_CONFIG", &config)
+                .env("OSMAP_KEYS_NATIVE_KEY", &grant)
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn()
+                .unwrap(),
+        );
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while !socket.exists() {
+            assert!(service.0.try_wait().unwrap().is_none());
+            assert!(Instant::now() < deadline);
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        service
+    };
+    let uid = crate::openbsd::effective_uid();
+    let crypto_socket = f.root.join("pc.sock");
+    let crypto_service = start(
+        "crypto",
+        serde_json::json!({
+            "version":1,"worker":crypto_worker,"engine":engine,"socket":crypto_socket,"trusted_web_uid":uid,
+            "accounts":[{"account":ACCOUNT,"home":home,"signer_fingerprint":primary,"decrypt_fingerprints":[primary],"recipient_fingerprints":[primary],"allow_web_personal_keys":true}]
+        }),
+        &crypto_socket,
+    );
+    let inventory_socket = f.root.join("pi.sock");
+    let inventory_service = start(
+        "inventory",
+        serde_json::json!({
+            "version":1,"worker":inventory_worker,"engine":"/usr/local/bin/gpg","socket":inventory_socket,"trusted_web_uid":uid,
+            "accounts":[{"account":ACCOUNT,"home":home}]
+        }),
+        &inventory_socket,
+    );
+    let admin_socket = f.root.join("pa.sock");
+    let admin_state = f.root.join("personal-admin-state");
+    fs::DirBuilder::new()
+        .mode(0o700)
+        .create(&admin_state)
+        .unwrap();
+    let admin_service = start(
+        "admin",
+        serde_json::json!({
+            "version":1,"worker":inventory_worker,"engine":engine,"socket":admin_socket,"trusted_web_uid":uid,"state_directory":admin_state,
+            "accounts":[{"account":ACCOUNT,"home":home}]
+        }),
+        &admin_socket,
+    );
+    let client =
+        crate::openpgp_crypto_runtime::Client::from_operator_files(&crypto_socket, &grant, uid)
+            .unwrap();
+    let mut gateway = f.gateway.clone();
+    gateway.crypto_client = Some(client.clone());
+    gateway.public_inventory_client = Some(
+        crate::openpgp_inventory_runtime::Client::from_operator_files(
+            &inventory_socket,
+            &grant,
+            uid,
+        )
+        .unwrap(),
+    );
+    gateway.public_admin_client = Some(
+        crate::openpgp_public_admin_runtime::Client::from_operator_files(
+            &admin_socket,
+            &grant,
+            uid,
+        )
+        .unwrap(),
+    );
+    let inventory = gateway.inventory_client().unwrap().read(ACCOUNT).unwrap();
+    let store =
+        crate::openpgp_bindings::BindingStore::new(gateway.settings_dir.join("openpgp-bindings"));
+    let old = store.load(ACCOUNT).unwrap();
+    let bound = store
+        .replace_operator(
+            ACCOUNT,
+            old.revision,
+            crate::openpgp_bindings::Update {
+                account_binding: Some(crate::openpgp_bindings::AccountBinding {
+                    primary_fingerprint: primary.clone(),
+                    signing_fingerprint: Some(primary.clone()),
+                    decrypt_primary_fingerprints: vec![primary.clone()],
+                }),
+                recipient_bindings: vec![],
+                policy: crate::openpgp_bindings::ProtectionPolicy::default(),
+            },
+            &inventory,
+            SystemTimeProvider.unix_timestamp(),
+        )
+        .unwrap();
+    let private_session = PrivateSession {
+        session_id: f.session.record.session_id.clone(),
+        account_epoch: f.session.record.account_epoch,
+        expires_at: f.session.record.expires_at,
+    };
+    assert!(
+        !client
+            .personal(ACCOUNT, &private_session, PersonalAction::Status)
+            .unwrap()
+            .installed
+    );
+    let exported = crate::auth::SystemCommandExecutor
+        .run_with_stdin_bytes_timeout_and_output_limit(
+            "/usr/local/bin/gpg",
+            &[
+                "--no-options".into(),
+                "--homedir".into(),
+                source.to_string_lossy().into_owned(),
+                "--batch".into(),
+                "--no-autostart".into(),
+                "--armor".into(),
+                "--export-secret-keys".into(),
+                primary.clone(),
+            ],
+            &[],
+            Duration::from_secs(10),
+            crate::openpgp_personal::MAX_CERTIFICATE,
+        )
+        .unwrap();
+    assert_eq!(exported.status_code, 0);
+    let mut certificate = exported.stdout.into_bytes();
+    assert!(certificate.starts_with(b"-----BEGIN PGP PRIVATE KEY BLOCK-----"));
+    let app = crate::http::BrowserApp::new(crate::http::HttpPolicy::default(), gateway);
+    let fields = format!("--personal-native\r\nContent-Disposition: form-data; name=\"key_action\"\r\n\r\nimport_personal\r\n--personal-native\r\nContent-Disposition: form-data; name=\"binding_revision\"\r\n\r\n{}\r\n--personal-native\r\nContent-Disposition: form-data; name=\"csrf_token\"\r\n\r\n{}\r\n--personal-native\r\nContent-Disposition: form-data; name=\"current_password\"\r\n\r\n{PASSWORD}\r\n--personal-native\r\nContent-Disposition: form-data; name=\"totp_code\"\r\n\r\n{totp}\r\n--personal-native\r\nContent-Disposition: form-data; name=\"key_passphrase\"\r\n\r\n\r\n--personal-native\r\nContent-Disposition: form-data; name=\"personal_certificate\"; filename=\"own.ASC\"\r\nContent-Type: application/pgp-keys\r\n\r\n", bound.revision, f.session.record.csrf_token);
+    let mut upload = fields.into_bytes();
+    upload.extend_from_slice(&certificate);
+    upload.extend_from_slice(b"\r\n--personal-native--\r\n");
+    let raw = format!("POST /settings/keys/change HTTP/1.1\r\nHost: localhost\r\nOrigin: http://localhost\r\nUser-Agent: {}\r\nCookie: osmap_session={}\r\nContent-Type: multipart/form-data; boundary=personal-native\r\nContent-Length: {}\r\n\r\n", f.context.user_agent, f.token.as_str(), upload.len());
+    let mut raw = raw.into_bytes();
+    raw.extend_from_slice(&upload);
+    let mut request = crate::http::parse_http_request_bytes(&raw, app.policy()).unwrap();
+    let imported = app.handle_request(&request, "127.0.0.1");
+    crate::openpgp_personal::clear(&mut request.body);
+    crate::openpgp_personal::clear(&mut certificate);
+    crate::openpgp_personal::clear(&mut upload);
+    crate::openpgp_personal::clear(&mut raw);
+    assert_eq!(imported.response.status_code, 303);
+    let state = client
+        .personal(ACCOUNT, &private_session, PersonalAction::Status)
+        .unwrap();
+    assert!(state.installed && !state.protected_at_rest);
+    let post = |action: &str| {
+        let body = format!(
+            "key_action={action}&binding_revision={}&csrf_token={}&key_passphrase=",
+            bound.revision, f.session.record.csrf_token
+        );
+        let body = if action == "lock_personal" {
+            body.trim_end_matches("&key_passphrase=").to_owned()
+        } else {
+            body
+        };
+        let raw = format!("POST /settings/keys/change HTTP/1.1\r\nHost: localhost\r\nOrigin: http://localhost\r\nUser-Agent: {}\r\nCookie: osmap_session={}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {}\r\n\r\n{body}", f.context.user_agent, f.token.as_str(), body.len());
+        let request = crate::http::parse_http_request(&raw, app.policy()).unwrap();
+        app.handle_request(&request, "127.0.0.1")
+    };
+    assert_eq!(post("unlock_personal").response.status_code, 303);
+    assert!(
+        client
+            .personal(ACCOUNT, &private_session, PersonalAction::Status)
+            .unwrap()
+            .unlocked_for_session
+    );
+    let other = app
+        .gateway
+        .build_session_service()
+        .issue_with_epoch(
+            &f.context,
+            ACCOUNT,
+            RequiredSecondFactor::Totp,
+            f.session.record.account_epoch,
+        )
+        .unwrap();
+    let foreign = PrivateSession {
+        session_id: other.record.session_id,
+        account_epoch: other.record.account_epoch,
+        expires_at: other.record.expires_at,
+    };
+    let sign = crate::openpgp_crypto::Operation::Sign {
+        signer_fingerprint: primary.clone(),
+        data: b"personal private operation".to_vec(),
+    };
+    assert!(!matches!(
+        client.for_session(foreign).execute(ACCOUNT, &sign),
+        Ok(Ok(_))
+    ));
+    #[derive(Default)]
+    struct Capture(std::cell::RefCell<Vec<Vec<u8>>>);
+    impl crate::send::SubmissionBackend for &Capture {
+        fn submit_message(
+            &self,
+            _: &str,
+            _: &crate::send::ComposeRequest,
+        ) -> Result<(), crate::send::SubmissionBackendError> {
+            panic!("personal selected signing must use prepared bytes")
+        }
+        fn submit_prepared_message(
+            &self,
+            account: &str,
+            request: &crate::send::ComposeRequest,
+            prepared: &crate::protected_submission::PreparedSubmission,
+        ) -> Result<(), crate::send::SubmissionBackendError> {
+            assert_eq!(account, ACCOUNT);
+            prepared
+                .validate_for(
+                    &crate::identity::CanonicalUsername::parse(account).unwrap(),
+                    request,
+                )
+                .unwrap();
+            assert!(prepared.as_bytes().len() <= crate::pgp_mime::MAX_PGP_MIME_BYTES);
+            self.0.borrow_mut().push(prepared.as_bytes().to_vec());
+            Ok(())
+        }
+    }
+    let capture = Capture::default();
+    let submission = crate::send::SubmissionService::new(&capture);
+    let append = crate::mailbox::DoveadmMessageAppendBackend::new(
+        crate::auth::SystemCommandExecutor,
+        "/usr/bin/false",
+    );
+    let intent = crate::send_journal::mint_intent(SystemTimeProvider.unix_timestamp()).unwrap();
+    let send = || BrowserSendRequest {
+        sender_id: None,
+        send_intent: &intent,
+        draft_id: None,
+        draft_revision: None,
+        recipients: "unregistered@example.test",
+        cc_recipients: "",
+        bcc_recipients: "",
+        subject: "Personal native sign",
+        body: "Personal native clear body",
+        body_format: crate::compose_format::BodyFormat::Plain,
+        attachments: &[],
+        reply_thread: None,
+        protection: crate::send::ProtectionIntent {
+            sign: true,
+            binding_revision: Some(bound.revision),
+            ..Default::default()
+        },
+    };
+    let sent = app.gateway.send_message_with_backends(
+        &f.context,
+        &f.session,
+        send(),
+        &submission,
+        &append,
+    );
+    assert!(matches!(
+        sent.decision,
+        BrowserSendDecision::Submitted {
+            sent_copy_stored: false,
+            receipt_persisted: true
+        }
+    ));
+    assert_eq!(capture.0.borrow().len(), 1);
+    let wire = capture.0.borrow()[0].clone();
+    let crate::pgp_mime::PgpMimeMessage::Signed {
+        canonical_entity,
+        signature,
+        ..
+    } = crate::pgp_mime::classify(&wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap()
+    else {
+        panic!("personal gateway must emit signed MIME")
+    };
+    assert!(std::str::from_utf8(&canonical_entity)
+        .unwrap()
+        .contains("openpgp-public-key.asc"));
+    let raw_entity = std::str::from_utf8(&canonical_entity).unwrap();
+    let (headers, body) = raw_entity.split_once("\r\n\r\n").unwrap();
+    let signed_message = crate::mailbox::MessageView {
+        metadata: None,
+        mailbox_name: "Sent".into(),
+        uid: 1,
+        flags: vec![],
+        date_received: String::new(),
+        size_virtual: canonical_entity.len() as u64,
+        header_block: headers.into(),
+        body_text: body.into(),
+    };
+    let analysis = crate::mime::MimeAnalyzer::new(crate::mime::MimeAnalysisPolicy::default())
+        .analyze_message(&signed_message)
+        .unwrap();
+    let attached = analysis
+        .attachments
+        .iter()
+        .find(|attachment| attachment.filename.as_deref() == Some("openpgp-public-key.asc"))
+        .unwrap();
+    let public_certificate = crate::attachment::AttachmentDownloadService::new(
+        crate::attachment::AttachmentDownloadPolicy::default(),
+    )
+    .download_from_message(&signed_message, &attached.part_path)
+    .unwrap();
+    crate::protected_submission::native_tests::verify_with_only_attached_certificate(
+        &f.root,
+        &public_certificate.body,
+        &canonical_entity,
+        &signature,
+        &primary,
+    );
+    assert_eq!(
+        client
+            .execute(
+                ACCOUNT,
+                &crate::openpgp_crypto::Operation::Verify {
+                    data: canonical_entity,
+                    signature
+                }
+            )
+            .unwrap()
+            .unwrap()
+            .signature,
+        crate::openpgp_crypto::SignatureState::Valid
+    );
+    let plaintext =
+        b"Content-Type: text/plain; charset=UTF-8\r\n\r\nPersonal encrypted reader body\r\n";
+    let encrypted = client
+        .execute(
+            ACCOUNT,
+            &crate::openpgp_crypto::Operation::Encrypt {
+                recipient_fingerprints: vec![primary.clone()],
+                data: plaintext.to_vec(),
+            },
+        )
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        client
+            .for_session(private_session.clone())
+            .execute(
+                ACCOUNT,
+                &crate::openpgp_crypto::Operation::Decrypt {
+                    allowed_primary_fingerprints: vec![primary.clone()],
+                    ciphertext: encrypted.content.clone()
+                }
+            )
+            .unwrap()
+            .unwrap()
+            .content,
+        plaintext
+    );
+    let mime = crate::pgp_mime::build_encrypted(
+        &encrypted.content,
+        "personal-native-reader",
+        crate::pgp_mime::PgpMimePolicy::default(),
+    )
+    .unwrap();
+    let raw = std::str::from_utf8(&mime).unwrap();
+    let (header, body) = raw.split_once("\r\n\r\n").unwrap();
+    let message = crate::mailbox::MessageView {
+        metadata: None,
+        mailbox_name: "INBOX".into(),
+        uid: 1,
+        flags: vec![],
+        date_received: String::new(),
+        size_virtual: mime.len() as u64,
+        header_block: header.into(),
+        body_text: body.into(),
+    };
+    let rendered = app
+        .gateway
+        .render_protected_snapshot(
+            &f.context,
+            &f.session,
+            &message,
+            crate::rendering::RenderingPolicy::default(),
+        )
+        .unwrap();
+    assert!(rendered
+        .body_html
+        .as_str()
+        .contains("Personal encrypted reader body"));
+    assert!(
+        rendered.body_text_for_compose.is_empty(),
+        "reader plaintext must not enter the compose projection"
+    );
+    assert!(matches!(rendered.openpgp,
+        Some(crate::openpgp_reader_ui::ReaderState::Assessed(ref protection))
+            if protection.decrypted_on_mail_host
+                && protection.signature == crate::protected_message::SignatureValidity::Unsigned
+    ));
+    assert_eq!(post("lock_personal").response.status_code, 303);
+    assert!(
+        !client
+            .personal(ACCOUNT, &private_session, PersonalAction::Status)
+            .unwrap()
+            .unlocked_for_session
+    );
+    assert!(!matches!(
+        client
+            .for_session(private_session.clone())
+            .execute(ACCOUNT, &sign),
+        Ok(Ok(_))
+    ));
+    assert!(!matches!(
+        client.for_session(private_session).execute(
+            ACCOUNT,
+            &crate::openpgp_crypto::Operation::Decrypt {
+                allowed_primary_fingerprints: vec![primary],
+                ciphertext: encrypted.content
+            }
+        ),
+        Ok(Ok(_))
+    ));
+    app.gateway
+        .send_message_with_backends(&f.context, &f.session, send(), &submission, &append);
+    assert_eq!(
+        capture.0.borrow().len(),
+        1,
+        "recorded send never duplicates after lock"
+    );
+    drop(app);
+    drop(admin_service);
+    drop(inventory_service);
+    drop(crypto_service);
+}
 impl Drop for Fixture {
     fn drop(&mut self) {
+        if std::thread::panicking() {
+            eprintln!("RETAINED_PRIVATE_KEYS_FIXTURE={}", self.root.display());
+            return;
+        }
         fs::remove_dir_all(&self.root).unwrap();
     }
 }

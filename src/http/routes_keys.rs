@@ -4,12 +4,34 @@ use crate::key_management::{Action, Error, MutationRequest};
 use crate::openpgp_bindings::Requirement;
 use std::collections::BTreeMap;
 
+// Error pages are always rebuilt from metadata. Request-local copies of key
+// material and credentials are never retained for redisplay or Debug output.
+struct SensitiveKeyForm(BTreeMap<String, String>);
+impl std::ops::Deref for SensitiveKeyForm {
+    type Target = BTreeMap<String, String>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl std::ops::DerefMut for SensitiveKeyForm {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+impl Drop for SensitiveKeyForm {
+    fn drop(&mut self) {
+        for (_, value) in std::mem::take(&mut self.0) {
+            crate::openpgp_personal::clear(&mut value.into_bytes());
+        }
+    }
+}
+
 fn key_form(body: &[u8], content_type: Option<&str>) -> Result<BTreeMap<String, String>, Error> {
     if content_type.is_some_and(crate::http_form::is_multipart_form_data) {
         let limit = crate::key_management::MAX_PUBLIC_CERTIFICATE;
-        let mut parsed = parse_compose_form(
+        let (mut parsed, file_names) = crate::http_form::parse_key_upload_form(
             body,
-            content_type,
+            content_type.ok_or(Error::Invalid)?,
             12,
             256 * 1024,
             ComposePolicy {
@@ -20,9 +42,18 @@ fn key_form(body: &[u8], content_type: Option<&str>) -> Result<BTreeMap<String, 
             },
         )
         .map_err(|_| Error::Invalid)?;
+        let expected_file = match parsed.fields.get("key_action").map(String::as_str) {
+            Some("import_personal") => "personal_certificate",
+            Some("import_public") => "attachment",
+            _ => return Err(Error::Invalid),
+        };
         if parsed.upload_error.is_some()
+            || file_names != [expected_file]
             || parsed.fields.contains_key("certificate")
-            || parsed.fields.get("key_action").map(String::as_str) != Some("import_public")
+            || !matches!(
+                parsed.fields.get("key_action").map(String::as_str),
+                Some("import_public" | "import_personal")
+            )
             || parsed.attachments.len() != 1
         {
             return Err(Error::Invalid);
@@ -45,8 +76,10 @@ fn key_form(body: &[u8], content_type: Option<&str>) -> Result<BTreeMap<String, 
         Ok(parsed.fields)
     } else if allows_urlencoded_request_body(content_type) {
         let form = parse_urlencoded_form(body, 12, 256 * 1024).map_err(|_| Error::Invalid)?;
-        if form.get("key_action").map(String::as_str) == Some("import_public")
-            || form.contains_key("certificate")
+        if matches!(
+            form.get("key_action").map(String::as_str),
+            Some("import_public" | "import_personal")
+        ) || form.contains_key("certificate")
         {
             return Err(Error::Invalid);
         }
@@ -85,6 +118,9 @@ fn action<'a>(
             "public_inventory_revision",
         ],
         "remove_public" => &["primary_fingerprint", "public_inventory_revision"],
+        "import_personal" => &["certificate", "key_passphrase"],
+        "unlock_personal" => &["key_passphrase"],
+        "lock_personal" => &[],
         _ => return Err(Error::Invalid),
     };
     if form.keys().any(|k| {
@@ -120,6 +156,14 @@ fn action<'a>(
         None
     };
     let action = match name {
+        "import_personal" => Action::ImportPersonal {
+            certificate: value("certificate").as_bytes(),
+            passphrase: value("key_passphrase").as_bytes(),
+        },
+        "unlock_personal" => Action::UnlockPersonal {
+            passphrase: value("key_passphrase").as_bytes(),
+        },
+        "lock_personal" => Action::LockPersonal,
         "set_account" => Action::SetAccount {
             primary_fingerprint: value("primary_fingerprint"),
             signing_fingerprint: (!value("signing_fingerprint").is_empty())
@@ -179,17 +223,28 @@ impl<G: BrowserGateway> BrowserApp<G> {
         }
         let outcome = self.gateway.key_management(context, &session);
         audit_events.extend(outcome.audit_events);
+        let personal = personal_key_ui::render(
+            &session.record.canonical_username,
+            &session.record.csrf_token,
+            outcome
+                .state
+                .bindings
+                .as_ref()
+                .map_or(0, |record| record.revision),
+            self.gateway.personal_key_state(&session).as_ref(),
+        );
         HandledHttpResponse {
             response: html_response(
                 200,
                 "OK",
                 "OpenPGP Key Management",
-                crate::http_ui::key_inventory_ui::render_key_management_panel(
+                crate::http_ui::key_inventory_ui::render_key_management_panel_with_personal(
                     &session.record.canonical_username,
                     &session.record.csrf_token,
                     &outcome.state,
                     None,
                     panel,
+                    &personal,
                 ),
             ),
             audit_events,
@@ -210,6 +265,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 request.headers.get("content-type").map(String::as_str),
             )
             .ok()
+            .map(SensitiveKeyForm)
         } else {
             None
         };
@@ -219,7 +275,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     400,
                     "Bad Request",
                     "Key Change Not Saved",
-                    "<p>The key management form could not be read. Reload before retrying. To import a public key, choose one nonempty .asc file up to 64 KiB. Pasted certificates are not accepted.</p>",
+                    "<p>The key management form could not be read. Reload before retrying. Choose one nonempty .asc file up to 64 KiB in the correct personal or public key form. Pasted certificates are not accepted.</p>",
                 ),
                 audit_events,
             };
@@ -291,6 +347,16 @@ impl<G: BrowserGateway> BrowserApp<G> {
             Err(e) => {
                 let state = self.gateway.key_management(context, &session);
                 audit_events.extend(state.audit_events);
+                let personal = personal_key_ui::render(
+                    &session.record.canonical_username,
+                    &session.record.csrf_token,
+                    state
+                        .state
+                        .bindings
+                        .as_ref()
+                        .map_or(0, |record| record.revision),
+                    self.gateway.personal_key_state(&session).as_ref(),
+                );
                 let (status, reason) = match e {
                     Error::Authentication => (403, "Forbidden"),
                     Error::Throttled => (429, "Too Many Requests"),
@@ -303,7 +369,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                         status,
                         reason,
                         "Key Change Not Saved",
-                        crate::http_ui::key_inventory_ui::render_key_management_panel(
+                        crate::http_ui::key_inventory_ui::render_key_management_panel_with_personal(
                             &session.record.canonical_username,
                             &session.record.csrf_token,
                             &state.state,
@@ -315,6 +381,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                                 Some("remove_public") => "inventory",
                                 _ => "recipient",
                             }),
+                            &personal,
                         ),
                     ),
                     audit_events,
