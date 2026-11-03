@@ -2,7 +2,7 @@
 //! from the wire; certificate bytes have a fixed bound and are never Debug data.
 use crate::identity::CanonicalUsername;
 use crate::openpgp_inventory::Inventory;
-use crate::openpgp_public_admin::{AdminError, PublicSnapshot};
+use crate::openpgp_public_admin::{AdminError, PublicCertificate, PublicSnapshot};
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
@@ -43,13 +43,18 @@ impl From<AdminError> for Error {
 #[serde(rename_all = "snake_case")]
 pub(crate) enum Action {
     Snapshot,
+    ExportPublic,
     ImportPublic,
     RemovePublic,
 }
 impl Action {
     pub(crate) fn mutation(self) -> bool {
-        self != Self::Snapshot
+        matches!(self, Self::ImportPublic | Self::RemovePublic)
     }
+}
+pub(crate) enum Reply {
+    Snapshot(PublicSnapshot),
+    Certificate(PublicCertificate),
 }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -114,10 +119,16 @@ impl Header {
             return Err(Error::Limit);
         }
         if self.reply {
-            if self.fingerprint.is_some()
-                || self.error.is_some() && (self.body_len != 0 || self.revision.is_some())
+            if self.error.is_some()
+                && (self.body_len != 0 || self.revision.is_some() || self.fingerprint.is_some())
                 || self.error.is_none()
                     && (!self.revision.as_deref().is_some_and(revision) || self.body_len == 0)
+                || self.error.is_none()
+                    && if self.action == Action::ExportPublic {
+                        !self.fingerprint.as_deref().is_some_and(fingerprint)
+                    } else {
+                        self.fingerprint.is_some()
+                    }
             {
                 return Err(Error::Invalid);
             }
@@ -134,7 +145,7 @@ impl Header {
                     if self.revision.as_deref().is_some_and(revision)
                         && self.fingerprint.as_deref().is_some_and(fingerprint)
                         && self.body_len != 0 => {}
-                Action::RemovePublic
+                Action::RemovePublic | Action::ExportPublic
                     if self.revision.as_deref().is_some_and(revision)
                         && self.fingerprint.as_deref().is_some_and(fingerprint)
                         && self.body_len == 0 => {}
@@ -254,9 +265,18 @@ impl Request {
     pub(crate) fn to_bytes(&self) -> Result<Vec<u8>, Error> {
         frame(&self.header, &self.body)
     }
+    #[cfg(test)]
     pub(crate) fn response(
         &self,
         result: Result<PublicSnapshot, Error>,
+        key: &[u8],
+        now: u64,
+    ) -> Result<Vec<u8>, Error> {
+        self.response_value(result.map(Reply::Snapshot), key, now)
+    }
+    pub(crate) fn response_value(
+        &self,
+        result: Result<Reply, Error>,
         key: &[u8],
         now: u64,
     ) -> Result<Vec<u8>, Error> {
@@ -264,10 +284,31 @@ impl Request {
         header.reply = true;
         header.fingerprint = None;
         let body = match result {
-            Ok(snapshot) => {
+            Ok(Reply::Snapshot(snapshot)) => {
+                if self.action() == Action::ExportPublic {
+                    return Err(Error::Invalid);
+                }
                 header.revision = Some(snapshot.revision);
                 header.error = None;
                 snapshot.inventory.to_bytes().map_err(|_| Error::Invalid)?
+            }
+            Ok(Reply::Certificate(certificate)) => {
+                if self.action() != Action::ExportPublic
+                    || Some(certificate.revision.as_str()) != self.revision()
+                    || Some(certificate.primary_fingerprint.as_str()) != self.fingerprint()
+                {
+                    return Err(Error::Invalid);
+                }
+                let certificate = PublicCertificate::new(
+                    certificate.certificate,
+                    certificate.revision,
+                    certificate.primary_fingerprint,
+                )
+                .map_err(Error::from)?;
+                header.revision = Some(certificate.revision);
+                header.fingerprint = Some(certificate.primary_fingerprint);
+                header.error = None;
+                certificate.certificate
             }
             Err(error) => {
                 header.revision = None;
@@ -325,6 +366,7 @@ impl Verifier {
             body: body.to_vec(),
         })
     }
+    #[cfg(test)]
     pub(crate) fn response(
         &mut self,
         request: &Request,
@@ -332,6 +374,22 @@ impl Verifier {
         key: &[u8],
         now: u64,
     ) -> Result<Result<PublicSnapshot, Error>, Error> {
+        if request.action() == Action::ExportPublic {
+            return Err(Error::Invalid);
+        }
+        match self.response_value(request, bytes, key, now)? {
+            Ok(Reply::Snapshot(snapshot)) => Ok(Ok(snapshot)),
+            Ok(Reply::Certificate(_)) => Err(Error::Invalid),
+            Err(error) => Ok(Err(error)),
+        }
+    }
+    pub(crate) fn response_value(
+        &mut self,
+        request: &Request,
+        bytes: &[u8],
+        key: &[u8],
+        now: u64,
+    ) -> Result<Result<Reply, Error>, Error> {
         self.clock(now)?;
         let (header, body) = parse(bytes)?;
         header.validate(now)?;
@@ -349,14 +407,29 @@ impl Verifier {
         if let Some(error) = header.error {
             return Ok(Err(error));
         }
+        if request.action() == Action::ExportPublic {
+            if header.revision.as_deref() != request.revision()
+                || header.fingerprint.as_deref() != request.fingerprint()
+            {
+                return Err(Error::Authentication);
+            }
+            return Ok(Ok(Reply::Certificate(
+                PublicCertificate::new(
+                    body.to_vec(),
+                    header.revision.ok_or(Error::Invalid)?,
+                    header.fingerprint.ok_or(Error::Invalid)?,
+                )
+                .map_err(Error::from)?,
+            )));
+        }
         let inventory = Inventory::parse(body).map_err(|_| Error::Invalid)?;
         if inventory.keys().is_none() {
             return Err(Error::Invalid);
         }
-        Ok(Ok(PublicSnapshot {
+        Ok(Ok(Reply::Snapshot(PublicSnapshot {
             inventory,
             revision: header.revision.ok_or(Error::Invalid)?,
-        }))
+        })))
     }
 }
 #[cfg(test)]

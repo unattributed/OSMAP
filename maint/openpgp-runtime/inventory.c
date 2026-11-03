@@ -202,6 +202,25 @@ static int guard_removal(gpgme_ctx_t ctx,const char *expected,int *status_failed
 done:
  if(key)gpgme_key_unref(key);return ok;
 }
+/* Mode zero is public export. Never request SECRET, WITH_SECRET or an agent
+ * capability; selecting a subkey or a matching short key ID is refused. */
+static int public_export(gpgme_ctx_t ctx,const char *expected,int *status_failed) {
+ gpgme_key_t key=NULL;gpgme_data_t data=NULL;int ok=0;
+ if(fgetc(stdin)!=EOF||ferror(stdin)||gpgme_get_key(ctx,expected,&key,0)||!key||key->protocol!=GPGME_PROTOCOL_OpenPGP||!key->subkeys||!key->subkeys->fpr||strcmp(key->subkeys->fpr,expected))goto done;
+ if(gpgme_data_new(&data))goto done;
+ gpgme_set_armor(ctx,1);
+ if(gpgme_op_export(ctx,expected,0,data)||*status_failed||gpgme_data_seek(data,0,SEEK_SET)!=0)goto done;
+ used=0;
+ while(used<LIMIT) {
+  ssize_t count=gpgme_data_read(data,output+used,LIMIT-used);
+  if(count<0)goto done;if(!count)break;used+=(size_t)count;
+ }
+ char extra;
+ if(!used||gpgme_data_read(data,&extra,1)!=0||!certificate_envelope((const unsigned char *)output,used))goto done;
+ ok=1;
+done:
+ if(data)gpgme_data_release(data);if(key)gpgme_key_unref(key);return ok;
+}
 int main(int argc,char **argv) {
  /* Native GPG children must create private staging files regardless of the
   * launcher's inherited mask. This worker is a separate, single-use process. */
@@ -210,12 +229,15 @@ int main(int argc,char **argv) {
  closefrom(3);
 #endif
  gpgme_ctx_t ctx=NULL;gpgme_key_t key=NULL;gpgme_error_t err;int ok=0,status_failed=0;struct rlimit core={0,0};
- int selected=argc==5,guard=selected&&!strcmp(argv[2],"guard-removal"),mutation=selected&&!guard;const char *engine_path=selected?argv[4]:INVENTORY_ENGINE;
+ int selected=argc==5,guard=selected&&!strcmp(argv[2],"guard-removal"),exporting=selected&&!strcmp(argv[2],"export-public"),mutation=selected&&!guard&&!exporting;const char *engine_path=selected?argv[4]:INVENTORY_ENGINE;
  if(setrlimit(RLIMIT_CORE,&core)||(argc!=2&&!selected)||!valid_home(argv[1]))goto done;
  if(selected&&(!operation_fingerprint(argv[3])||!trusted_engine(engine_path)||!strcmp(engine_path,INVENTORY_ENGINE)))goto done;
  if(mutation) {
   struct rlimit cpu={10,10},data={128*1024*1024,128*1024*1024},files={4*1024*1024,4*1024*1024};
   if((strcmp(argv[2],"import-public")&&strcmp(argv[2],"remove-public"))||!staging_home(argv[1])||setrlimit(RLIMIT_CPU,&cpu)||setrlimit(RLIMIT_DATA,&data)||setrlimit(RLIMIT_FSIZE,&files)||!confine_mode(argv[1],1,engine_path,0))goto done;
+ } else if(exporting) {
+  struct rlimit cpu={10,10},data={128*1024*1024,128*1024*1024},files={0,0};
+  if(setrlimit(RLIMIT_CPU,&cpu)||setrlimit(RLIMIT_DATA,&data)||setrlimit(RLIMIT_FSIZE,&files)||!confine_mode(argv[1],0,engine_path,0))goto done;
  } else if(guard?!confine_mode(argv[1],0,engine_path,1):!confine(argv[1]))goto done;
  const char *library=gpgme_check_version("1.19.0");if(!version(library)||gpgme_new(&ctx))goto done;
  if(gpgme_set_protocol(ctx,GPGME_PROTOCOL_OpenPGP)||gpgme_ctx_set_engine_info(ctx,GPGME_PROTOCOL_OpenPGP,engine_path,argv[1]))goto done;
@@ -227,6 +249,7 @@ int main(int argc,char **argv) {
  if(!engine||!version(engine->version)||strcmp(engine->file_name,engine_path)||!engine->home_dir||strcmp(engine->home_dir,argv[1])||sscanf(engine->version,"%u.%u.%u",&major,&minor,&patch)!=3||major<2||(major==2&&(minor<1||(minor==1&&patch<23))))goto done;
  if(mutation&&!(strcmp(argv[2],"import-public")?public_remove(ctx,argv[3],&status_failed):public_import(ctx,argv[3],&status_failed)))goto done;
  if(guard&&!guard_removal(ctx,argv[3],&status_failed))goto done;
+ if(exporting) {if(!public_export(ctx,argv[3],&status_failed))goto done;ok=1;goto done;}
  if(!append("{\"version\":1,\"ok\":true,\"protocol\":\"openpgp\",\"gpgme_version\":\"%s\",\"engine_version\":\"%s\",\"keys\":[",library,engine->version)||gpgme_op_keylist_start(ctx,NULL,0))goto done;
  unsigned count=0;
  while(!(err=gpgme_op_keylist_next(ctx,&key))) {

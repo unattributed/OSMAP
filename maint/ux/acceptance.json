@@ -6645,6 +6645,11 @@
             "kind": "qa_execution",
             "path": "docs/UX_SLICE_S07_04.md",
             "scope": "2026-11-03 scoped installed engineering result: qualified Web8d2e loaded, HTTPS200/nine roles, protected/config/worker/account-authority checks PASS after normal signed source29fd7f4 publication. Broad visual/keyboard/final-reference and owner T09 remain pending. No full-control or owner acceptance inferred; earlier failure evidence retained."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "S07 signed-send followup: Current native three exact selections1PASS each0FAIL0ignored; actual GPGME public-only exact-primary export preserving keybox/trust/private state; fresh recipient imports attached certificate only and independently verifies; HTTP sign-only unregistered recipient succeeds with exact public certificate and real Dovecot Sent; Locked zeroSMTP/Sent and restoredsameintent/replay200 no duplicate. Native cleanup and nine-role postflight PASS. Owner unlock/Hotmail/acceptance and installation remain separate."
           }
         ]
       }
@@ -7024,6 +7029,11 @@
             "kind": "qa_execution",
             "path": "docs/UX_SLICE_S07_04.md",
             "scope": "2026-11-03 scoped installed engineering result: qualified Web8d2e loaded, HTTPS200/nine roles, protected/config/worker/account-authority checks PASS after normal signed source29fd7f4 publication. Broad visual/keyboard/final-reference and owner T09 remain pending. No full-control or owner acceptance inferred; earlier failure evidence retained."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "S07 signed-send followup: Current native three exact selections1PASS each0FAIL0ignored; actual GPGME public-only exact-primary export preserving keybox/trust/private state; fresh recipient imports attached certificate only and independently verifies; HTTP sign-only unregistered recipient succeeds with exact public certificate and real Dovecot Sent; Locked zeroSMTP/Sent and restoredsameintent/replay200 no duplicate. Native cleanup and nine-role postflight PASS. Owner unlock/Hotmail/acceptance and installation remain separate."
           }
         ]
       }
@@ -7156,6 +7166,11 @@
             "kind": "qa_execution",
             "path": "docs/UX_SLICE_S07_04.md",
             "scope": "2026-11-03 scoped installed engineering result: qualified Web8d2e loaded, HTTPS200/nine roles, protected/config/worker/account-authority checks PASS after normal signed source29fd7f4 publication. Broad visual/keyboard/final-reference and owner T09 remain pending. No full-control or owner acceptance inferred; earlier failure evidence retained."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "S07 signed-send followup: Current native three exact selections1PASS each0FAIL0ignored; actual GPGME public-only exact-primary export preserving keybox/trust/private state; fresh recipient imports attached certificate only and independently verifies; HTTP sign-only unregistered recipient succeeds with exact public certificate and real Dovecot Sent; Locked zeroSMTP/Sent and restoredsameintent/replay200 no duplicate. Native cleanup and nine-role postflight PASS. Owner unlock/Hotmail/acceptance and installation remain separate."
           }
         ]
       }

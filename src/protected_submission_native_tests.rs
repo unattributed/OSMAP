@@ -97,6 +97,108 @@ impl CommandExecutor for &EnvelopeCapture {
     }
 }
 
+fn verify_with_only_attached_certificate(
+    root: &Path,
+    certificate: &[u8],
+    entity: &[u8],
+    signature: &[u8],
+    fingerprint: &str,
+) {
+    let home = root.join("attached-certificate-recipient");
+    std::fs::DirBuilder::new()
+        .mode(0o700)
+        .create(&home)
+        .unwrap();
+    assert!(std::fs::read_dir(&home).unwrap().next().is_none());
+    let options = vec![
+        "--no-options".into(),
+        "--homedir".into(),
+        home.to_string_lossy().into_owned(),
+        "--batch".into(),
+        "--no-autostart".into(),
+        "--no-auto-key-retrieve".into(),
+        "--no-auto-check-trustdb".into(),
+    ];
+    let mut import = options.clone();
+    import.push("--import".into());
+    let imported = SystemCommandExecutor
+        .run_with_stdin_bytes_timeout_and_output_limit(
+            "/usr/local/bin/gpg",
+            &import,
+            certificate,
+            Duration::from_secs(10),
+            65536,
+        )
+        .expect("bounded import of only attached public certificate");
+    assert_eq!(
+        imported.status_code, 0,
+        "attached public certificate import"
+    );
+    let mut packets = options.clone();
+    packets.extend(["--list-only".into(), "--list-packets".into()]);
+    let public_packets = SystemCommandExecutor
+        .run_with_stdin_bytes_timeout_and_output_limit(
+            "/usr/local/bin/gpg",
+            &packets,
+            certificate,
+            Duration::from_secs(10),
+            65536,
+        )
+        .expect("bounded attached public packet inspection");
+    assert_eq!(public_packets.status_code, 0);
+    assert_eq!(
+        public_packets
+            .stdout
+            .lines()
+            .filter(|line| line.starts_with(":public key packet:"))
+            .count(),
+        1
+    );
+    assert!(public_packets
+        .stdout
+        .lines()
+        .any(|line| line.starts_with(":public sub key packet:")));
+    assert!(!public_packets.stdout.lines().any(|line| {
+        line.starts_with(":secret key packet:") || line.starts_with(":secret sub key packet:")
+    }));
+    let private = home.join("private-keys-v1.d");
+    assert!(!private.exists() || std::fs::read_dir(private).unwrap().next().is_none());
+    let signature_path = home.join("message.sig");
+    let entity_path = home.join("message.mime");
+    std::fs::write(&signature_path, signature).unwrap();
+    std::fs::write(&entity_path, entity).unwrap();
+    let mut verify = options;
+    verify.extend([
+        "--status-fd".into(),
+        "1".into(),
+        "--verify".into(),
+        signature_path.to_string_lossy().into_owned(),
+        entity_path.to_string_lossy().into_owned(),
+    ]);
+    let verified = SystemCommandExecutor
+        .run_with_stdin_bytes_timeout_and_output_limit(
+            "/usr/local/bin/gpg",
+            &verify,
+            &[],
+            Duration::from_secs(10),
+            65536,
+        )
+        .expect("bounded independent verification using attached certificate");
+    assert_eq!(
+        verified.status_code, 0,
+        "attached-certificate signature verification"
+    );
+    assert!(
+        verified.stdout.lines().any(|line| {
+            line.strip_prefix("[GNUPG:] VALIDSIG ")
+                .and_then(|value| value.split_whitespace().next())
+                == Some(fingerprint)
+        }),
+        "independent signature must identify the exact sender primary"
+    );
+    assert!(!home.join("S.gpg-agent").exists());
+}
+
 #[test]
 #[ignore = "native disposable GPGME outbound fixture; invoked by crypto native harness"]
 fn native_crypto_outbound_submission_roundtrip() {
@@ -133,6 +235,96 @@ fn native_crypto_outbound_submission_roundtrip() {
     assert_ne!(fixture.hidden_home, fixture.bob_home);
     assert_ne!(fixture.hidden_fp, fixture.alice_fp);
     assert_ne!(fixture.hidden_fp, fixture.bob_fp);
+    let export_state = scratch.join("outbound-public-admin-state");
+    std::fs::DirBuilder::new()
+        .mode(0o700)
+        .create(&export_state)
+        .unwrap();
+    let account = CanonicalUsername::parse("alice@example.test").unwrap();
+    let public_admin = crate::openpgp_public_admin::PublicAdminStore::from_operator_mappings(
+        export_state,
+        path("OSMAP_CRYPTO_NATIVE_INVENTORY_WORKER"),
+        fixture.engine.clone(),
+        vec![crate::openpgp_public_admin::AccountHome {
+            account: account.clone(),
+            home: fixture.alice_home.clone(),
+        }],
+    )
+    .unwrap();
+    let before_public = std::fs::read(fixture.alice_home.join("pubring.kbx")).unwrap();
+    let snapshot = public_admin
+        .snapshot(&account, Instant::now() + Duration::from_secs(10))
+        .unwrap();
+    let custody = || {
+        let mut paths = vec![
+            fixture.alice_home.join("pubring.kbx"),
+            fixture.alice_home.join("trustdb.gpg"),
+        ];
+        paths.extend(
+            std::fs::read_dir(fixture.alice_home.join("private-keys-v1.d"))
+                .unwrap()
+                .map(|entry| entry.unwrap().path()),
+        );
+        paths
+            .into_iter()
+            .map(|path| {
+                let digest = Sha256::digest(std::fs::read(&path).unwrap()).to_vec();
+                (path, digest)
+            })
+            .collect::<std::collections::BTreeMap<_, _>>()
+    };
+    let custody_before = custody();
+    let certificate = public_admin
+        .export_public(
+            &account,
+            &snapshot.revision,
+            &fixture.alice_fp,
+            Instant::now() + Duration::from_secs(10),
+        )
+        .unwrap();
+    assert_eq!(certificate.primary_fingerprint, fixture.alice_fp);
+    assert_eq!(certificate.revision, snapshot.revision);
+    let subkey = &snapshot
+        .inventory
+        .keys()
+        .unwrap()
+        .iter()
+        .find(|key| key.primary.fingerprint == fixture.alice_fp)
+        .unwrap()
+        .subkeys[0]
+        .fingerprint;
+    assert!(public_admin
+        .export_public(
+            &account,
+            &snapshot.revision,
+            subkey,
+            Instant::now() + Duration::from_secs(10)
+        )
+        .is_err());
+    let missing = "F".repeat(40);
+    assert!(!snapshot
+        .inventory
+        .keys()
+        .unwrap()
+        .iter()
+        .any(|key| key.primary.fingerprint == missing));
+    assert!(public_admin
+        .export_public(
+            &account,
+            &snapshot.revision,
+            &missing,
+            Instant::now() + Duration::from_secs(10)
+        )
+        .is_err());
+    assert_eq!(
+        custody(),
+        custody_before,
+        "public export preserves public/trust/private file hashes"
+    );
+    assert_eq!(
+        std::fs::read(fixture.alice_home.join("pubring.kbx")).unwrap(),
+        before_public
+    );
     let attachment = crate::send::UploadedAttachment::new(
         ComposePolicy::default(),
         "synthetic.bin",
@@ -148,13 +340,19 @@ fn native_crypto_outbound_submission_roundtrip() {
         vec![attachment],
     )
     .unwrap();
-    let account = CanonicalUsername::parse("alice@example.test").unwrap();
     let plan = OperationPlan {
         signer_fingerprint: Some(fixture.alice_fp.clone()),
         recipient_fingerprints: vec![fixture.bob_fp.clone()],
         encrypt_to_self: false,
     };
-    let prepared = prepare(&fixture, &account, &request, &plan).expect("actual native prepare");
+    let prepared = prepare_with_certificate(
+        &fixture,
+        &account,
+        &request,
+        &plan,
+        Some(&certificate.certificate),
+    )
+    .expect("actual native prepare with exported sender certificate");
     prepared.validate_for(&account, &request).unwrap();
     assert_eq!(
         prepared.protection(),
@@ -189,6 +387,7 @@ fn native_crypto_outbound_submission_roundtrip() {
         canonical_entity,
         fixture.signed_entity.borrow().as_ref().unwrap().as_slice()
     );
+    let independent_signature = signature.clone();
     assert!(canonical_entity.is_ascii());
     let verified = fixture
         .run(
@@ -251,9 +450,37 @@ fn native_crypto_outbound_submission_roundtrip() {
     let download = crate::attachment::AttachmentDownloadService::new(
         crate::attachment::AttachmentDownloadPolicy::default(),
     )
-    .download_from_message(&message, "1.2")
+    .download_from_message(
+        &message,
+        &analysis
+            .attachments
+            .iter()
+            .find(|attachment| attachment.filename.as_deref() == Some("synthetic.bin"))
+            .unwrap()
+            .part_path,
+    )
     .unwrap();
     assert_eq!(download.body, [0, 1, 255]);
+    let certificate_parts = analysis
+        .attachments
+        .iter()
+        .filter(|attachment| attachment.filename.as_deref() == Some("openpgp-public-key.asc"))
+        .collect::<Vec<_>>();
+    assert_eq!(certificate_parts.len(), 1);
+    let attached = crate::attachment::AttachmentDownloadService::new(
+        crate::attachment::AttachmentDownloadPolicy::default(),
+    )
+    .download_from_message(&message, &certificate_parts[0].part_path)
+    .unwrap();
+    assert_eq!(attached.content_type, "application/pgp-keys");
+    assert_eq!(attached.body, certificate.certificate);
+    verify_with_only_attached_certificate(
+        scratch,
+        &attached.body,
+        &canonical_entity,
+        &independent_signature,
+        &fixture.alice_fp,
+    );
     let sent =
         crate::mailbox::MessageAppendRequest::new("Sent", prepared.as_bytes().to_vec()).unwrap();
     assert_eq!(sent.message, prepared.as_bytes());

@@ -1,3 +1,5 @@
+2026-11-03 — **S07 signed-send owner UAT failure under investigation.** Configured binding confirmed; private signing refused Locked. Public certificate inclusion absent in current implementation. Bounded helper/MIME/UX correction in progress; owner acceptance remains pending.
+
 2026-11-03 — **S07-01–04 agent-owned engineering and Web deployment COMPLETE; T01–T08 PASS within scope.** Source29fd7f4 published through normal gate and fresh0/0; Web8d2e installed/loaded, HTTPS200, nine roles and protected-state preservation PASS. Owner T09/broader visual acceptance pending; formal orders remain IN_PROGRESS and mapped controls PARTIALLY_VERIFIED.
 
 2026-11-03 — Portable read-only inventory test now omits irrelevant authentication-script setup after observed pre-target ETXTBSY. Exact1 and full2165 Rust cases PASS; S07 native/product inputs unchanged; ordinary publication continues.
@@ -18,7 +20,7 @@
   "version": 1,
   "slice": "S07-04",
   "original_requirement": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
-  "source_baseline": "598d0a8c1c539638ab14247892ae35959eaf1047",
+  "source_baseline": "4abcf5c19fa4f7e78ce336dca589fffa487b9fbe",
   "state": "IN_PROGRESS",
   "integration_owner": "/root",
   "roles": {
@@ -70,7 +72,18 @@
     "maint/security/v10-claims-boundary.json",
     "maint/security/v10-fail-closed-remediation.json",
     "maint/security/v10-rust-assumption-audit.json",
-    "src/http_gateway_keys_tests.rs"
+    "src/http_gateway_keys_tests.rs",
+    "src/protected_submission.rs",
+    "src/http_gateway_mail.rs",
+    "src/openpgp_public_admin.rs",
+    "src/openpgp_public_admin_protocol.rs",
+    "src/openpgp_public_admin_runtime.rs",
+    "src/openpgp_public_admin_tests.rs",
+    "src/openpgp_public_admin_protocol_tests.rs",
+    "src/openpgp_public_admin_runtime_tests.rs",
+    "maint/openpgp-runtime/inventory.c",
+    "src/http_support.rs",
+    "docs/UX_DECISIONS.md"
   ],
   "outcomes": [
     {
@@ -84,7 +97,7 @@
       ],
       "frontend_backend_outcome": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
       "essential_qa": "Actual gateway sends to controlled Rust local sink; Real scoped Dovecot append stores protected prepared message; Read decrypt verify Sent and download binary attachment; Source remains encrypted; current source selection protected; Stale policy helper interruption and Sent-store failure do not downgrade or auto duplicate; Actual authenticated HTTP and draft transaction checks; Consolidated native build installed preservation and independent review",
-      "next_action": "Owner reviews the completed installed S07 engineering result later; T09 and broader visual/keyboard/final-reference acceptance remain pending. No further agent-owned implementation/native/install action identified.",
+      "next_action": "Normal signed source publication, then exact reviewed coordinated Web/admin-helper/admin-worker installation; owner private unlock and signed-send acceptance remain unproven.",
       "dependencies": [
         {
           "owner": "/root",
@@ -97,7 +110,7 @@
         "implementation": "PASS",
         "source_tests": "PASS",
         "native_tests": "PASS",
-        "deployed_qa": "PASS",
+        "deployed_qa": "PENDING",
         "independent_review": "PASS",
         "recovery": "PASS"
       },
@@ -133,19 +146,35 @@
         {
           "stage": "deployed_qa",
           "reference": "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/install.actual.log: exact qualified Web8d2e loaded; HTTPS200, nine roles, protected/config/environment/worker/account-authority preservation PASS; only Web restarted. Source29fd7f4 ordinary publication PASS and fresh parity0/0."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/{public-admin-source,compose-source,rust-full}.log: focused export23PASS2ignored, protected21PASS and full2173PASS85ignored; pending new native assertions."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-replay.actual.log; /home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-postflight-corrected.log. Current native three exact selections1PASS each0FAIL0ignored; actual GPGME public-only exact-primary export preserving keybox/trust/private state; fresh recipient imports attached certificate only and independently verifies; HTTP sign-only unregistered recipient succeeds with exact public certificate and real Dovecot Sent; Locked zeroSMTP/Sent and restoredsameintent/replay200 no duplicate. Native cleanup and nine-role postflight PASS. Owner unlock/Hotmail/acceptance and installation remain separate."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-replay.actual.log; /home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-postflight-corrected.log. Current native three exact selections1PASS each0FAIL0ignored; actual GPGME public-only exact-primary export preserving keybox/trust/private state; fresh recipient imports attached certificate only and independently verifies; HTTP sign-only unregistered recipient succeeds with exact public certificate and real Dovecot Sent; Locked zeroSMTP/Sent and restoredsameintent/replay200 no duplicate. Native cleanup and nine-role postflight PASS. Owner unlock/Hotmail/acceptance and installation remain separate."
+        },
+        {
+          "stage": "recovery",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-replay.actual.log; /home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-postflight-corrected.log. Current native three exact selections1PASS each0FAIL0ignored; actual GPGME public-only exact-primary export preserving keybox/trust/private state; fresh recipient imports attached certificate only and independently verifies; HTTP sign-only unregistered recipient succeeds with exact public certificate and real Dovecot Sent; Locked zeroSMTP/Sent and restoredsameintent/replay200 no duplicate. Native cleanup and nine-role postflight PASS. Owner unlock/Hotmail/acceptance and installation remain separate."
         }
       ]
     }
   ],
   "accountability": {
     "owner": "/root",
-    "functional_exit": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation with current Rust/native evidence and exact owned cleanup; owner reviews separately.",
+    "functional_exit": "Sign-only to a new recipient includes the own account-bound public certificate inside signed MIME; locked private key refuses without send/draft loss. No recipient key required. Native synthetic proof and installed delivery before owner retry.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Preserve accepted S04/S05/S06, old S07 bounded native/defaults/recovery evidence, Sent/owner failures and exact source differences. Earlier direct-capture/Sent shims are Python and cannot establish fresh Rust-only or actual Dovecot proof. Full source/preparation elapsed before this record UNKNOWN, not zero. Two delivery refusals retained in source-push.log and correction-push.log; combined root/protocol/QA reassessment recorded in docs/UX_SLICE_S07_04.md before the corrected ordinary push. No native failure or gate waiver inferred. Later delivery ETXTBSY and formatting refusals retained separately; bounded setup/newline corrections, full2165PASS/ClippyPASS/directfmtExit0 and second combined root/protocol/QA reassessment precede the next ordinary push.",
+    "history_reference": "Preserve accepted S04/S05/S06, old S07 bounded native/defaults/recovery evidence, Sent/owner failures and exact source differences. Earlier direct-capture/Sent shims are Python and cannot establish fresh Rust-only or actual Dovecot proof. Full source/preparation elapsed before this record UNKNOWN, not zero. Two delivery refusals retained in source-push.log and correction-push.log; combined root/protocol/QA reassessment recorded in docs/UX_SLICE_S07_04.md before the corrected ordinary push. No native failure or gate waiver inferred. Later delivery ETXTBSY and formatting refusals retained separately; bounded setup/newline corrections, full2165PASS/ClippyPASS/directfmtExit0 and second combined root/protocol/QA reassessment precede the next ordinary push. Owner S07 sign-only UAT failed Locked; settings proves only configured public binding. Code confirms five-minute native cache contract, live cache expiry not observed. Independent review confirms missing automatic own-public-certificate inclusion. This followup preserves earlier scoped passes without owner acceptance.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
-      "started_at": "2026-11-02T21:13:27Z",
+      "started_at": "2026-11-03T05:32:26Z",
       "elapsed_status": "UNKNOWN",
       "elapsed_seconds": null
     },
@@ -156,7 +185,7 @@
     "slice": "S07-04",
     "specification": {
       "path": "docs/UX_SLICE_S07_04.md",
-      "sha256": "b04383e63c41abcac3e16c125d5bf82b8635fa6d8b80d9181c2b8470ed7587a8"
+      "sha256": "796be5578fd2f2ac1ea76cb224f2503ee7a697a07f7ef6d2f53cdd3127e1d421"
     },
     "design": {
       "journey": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
@@ -325,18 +354,96 @@
         "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "FAIL",
+        "evidence": [
+          "Owner reported first S07 sign-only UAT failure to unregistered Hotmail recipient, native private key Locked; screenshots supplied2026-11-03."
+        ]
       }
     ],
     "engineering_exit": "Matching Rust source/native/installed proof and independent review plus normal signed publication for the configured runtime choices and existing policy boundary.",
     "human_exit": "Owner accepts the practical completed infrastructure/result later; no source inspection, packet decoding or technical troubleshooting requested from owner."
   },
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "Owner explicitly authorizes independent engineering through allS07slices and willreviewlater; acceptance is not inferred."
+    "status": "FAIL",
+    "reference": "Owner sign-only UAT returned Locked. Configured public binding confirmed; no successful owner signing or acceptance inferred."
   },
-  "next_action": "Owner reviews the completed installed S07 engineering result later; T09 and broader visual/keyboard/final-reference acceptance remain pending. No further agent-owned implementation/native/install action identified."
+  "next_action": "Normal signed source publication, then exact reviewed coordinated Web/admin-helper/admin-worker installation; owner private unlock and signed-send acceptance remain unproven.",
+  "followup": {
+    "outcome": "Sign-only to a new recipient includes the own account-bound public certificate inside signed MIME; locked private key refuses without send/draft loss. No recipient key required. Native synthetic proof and installed delivery before owner retry.",
+    "owners": {
+      "helper": "/root/s05_runtime_engineer",
+      "mime_runtime": "/root",
+      "ux": "/root/s05_protocol_review",
+      "independent_review": "/root/s05_scope_qa"
+    },
+    "bound": "One root compiler/native/host/Git queue; focused source then native synthetic keys/accounts and loopback only, bounded existing deadlines, no public-mail restart or owner credential/key/cache/policy/session/message mutation.",
+    "tests": [
+      "unregistered recipient sign-only no encryption",
+      "authenticated exact-primary public-only bounded export and mismatch/stale/tamper refusals",
+      "certificate signed and encrypted when selected; fresh recipient verifies using attachment only",
+      "locked/refused export produces zero SMTP and Sent, original request/draft preserved",
+      "existing ordinary/encrypt-only and exact Sent/replay invariants",
+      "normal signed preservation and scoped installed delivery"
+    ],
+    "stop": "Two failures at same boundary require root and independent reassessment before changed retry; preserve earliest sanitized failure and cleanup separately.",
+    "status": "NATIVE_QUALIFIED_INSTALL_PENDING",
+    "evidence": [
+      "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-replay.actual.log",
+      "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-postflight-corrected.log"
+    ],
+    "native": {
+      "source_archive_sha256": "28f02bd563ddb907fa4ff841593b01baa880024e272fe69e36226dc91fb1944a",
+      "recipe_sha256": "c658c8b4ee6b18ea89d15937cf18bf83d1d48d53c5dffab9d9a59df9182406a5",
+      "target": "obsd1.blackbagsecurity.com /home/foo/.osmap-s07-sign.em7QUk5a",
+      "review": "Root plus /root/s05_protocol_review independently reviewed existing producer/consumer chain; controlled native dispatch only. No owner/private action."
+    },
+    "failure_history": [
+      {
+        "boundary": "native_test_build_setup",
+        "status": "FAIL",
+        "cause": "Incomplete source archive omitted existing tests/fixtures consumed by include_str. Cargo101 before native test execution; no key/test fixture/owner action.",
+        "evidence": "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/test-build.incomplete.log",
+        "correction": "All git-tracked files packaged using their current worktree bytes; separate source-complete directory preserves failed original."
+      },
+      {
+        "boundary": "metadata_validator",
+        "status": "FAIL",
+        "cause": "ISO timestamp milliseconds unsupported by existing UTC field contract; corrected timestamp serialization only.",
+        "evidence": "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/acceptance-source.log",
+        "correction": "Seconds-resolution explicit UTC; corrected validator PASS."
+      },
+      {
+        "boundary": "native_gateway_replay_assertion",
+        "status": "FAIL",
+        "cause": "New replay assertion expected first-send303; actual product correctly returned200AlreadyRecorded after sign-only success, attachment verification and real Sent save.",
+        "evidence": "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/PRODUCTION_GATEWAY_ROUNDTRIP.log",
+        "correction": "Only test expectation corrected to existing200 recorded outcome, exact heading/intentreceipt/noSendform/zero duplicate counters. Independent root and reviewers confirm contract. No product relaxation. Retained fixture /tmp/osmap-crypto-fixture-fR20dmor with agents stopped; no matching fixture processes observed."
+      },
+      {
+        "boundary": "cleanup_process_inventory",
+        "status": "FAIL",
+        "cause": "Inline SSH shell argv contained its own fixture path and process guard matched the current shell. Refused before deletion.",
+        "evidence": "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-postflight.log",
+        "correction": "Same exact-owned cleanup executed from stdin so script text is absent from argv; durable log readback/agent-socket absence/namespace absence verified; synthetic failed fixture removed. Corrected postflightPASS."
+      }
+    ],
+    "native_corrected": {
+      "source_archive_sha256": "1001fc50332b4748e7e0e776edf96d6d035df1715f378ef4ba1345bfc13b66b6",
+      "recipe_sha256": "e7dc2c05284646e8d38a43638860b39aaf25a63f733bf70efe67bd5db65ca1bb",
+      "target": "obsd1.blackbagsecurity.com /home/foo/.osmap-s07-sign.em7QUk5a/source-complete",
+      "status": "PLANNED"
+    },
+    "native_recheck": {
+      "source_delta_sha256": "917298308908b1514e69820c7e5f2bda98b0e95425d22bf458fdd5f118409cb6",
+      "recipe_sha256": "3169377fb1d832d77c5a947ec85a0c403f64c2b2d9b8fdce56c1d7edc1ecf73b",
+      "status": "PASS"
+    },
+    "install": {
+      "script_sha256": "b66fe287dabb7151f4cce010559ffe91a21d7bf6597f65902988a1a13597a120",
+      "status": "PLANNED",
+      "scope": "Only Web/public-admin helper/admin inventory worker; do not stop crypto/private agent/public mail, no owner credential/key/cache/policy/session/message change."
+    }
+  }
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

@@ -23,6 +23,114 @@ fn snapshot() -> PublicSnapshot {
         revision: "b".repeat(64),
     }
 }
+fn export_request(now: u64) -> Request {
+    Request::issue(
+        "alice",
+        Action::ExportPublic,
+        Some(&"a".repeat(64)),
+        Some(&"A".repeat(40)),
+        &[],
+        now,
+        KEY,
+    )
+    .unwrap()
+}
+fn certificate() -> PublicCertificate {
+    PublicCertificate::new(b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nZml4dHVyZQ==\n-----END PGP PUBLIC KEY BLOCK-----\n".to_vec(), "a".repeat(64), "A".repeat(40)).unwrap()
+}
+#[test]
+fn public_export_is_authenticated_correlated_and_not_a_mutation() {
+    let request = export_request(100);
+    assert!(!request.action().mutation());
+    let decoded = Verifier::default()
+        .request(&request.to_bytes().unwrap(), KEY, 101)
+        .unwrap();
+    let reply = decoded
+        .response_value(Ok(Reply::Certificate(certificate())), KEY, 102)
+        .unwrap();
+    let mut verifier = Verifier::default();
+    let Reply::Certificate(result) = verifier
+        .response_value(&request, &reply, KEY, 102)
+        .unwrap()
+        .ok()
+        .unwrap()
+    else {
+        panic!("public export reply variant");
+    };
+    assert!(result.certificate == certificate().certificate);
+    assert_eq!(result.primary_fingerprint, "A".repeat(40));
+    assert_eq!(
+        verifier.response_value(&request, &reply, KEY, 102).err(),
+        Some(Error::Replay)
+    );
+    assert_eq!(
+        Verifier::default()
+            .response_value(&export_request(100), &reply, KEY, 102)
+            .err(),
+        Some(Error::Authentication)
+    );
+    assert_eq!(
+        Verifier::default()
+            .response_value(&request, &reply, KEY, 110)
+            .err(),
+        Some(Error::Expired)
+    );
+    let (original, body) = parse(&reply).unwrap();
+    for field in 0..4 {
+        let mut header = original.clone();
+        match field {
+            0 => header.account = "bob".into(),
+            1 => header.revision = Some("b".repeat(64)),
+            2 => header.fingerprint = Some("B".repeat(40)),
+            _ => header.nonce = "f".repeat(32),
+        };
+        header.mac = hex(&authenticate(KEY, &header, body)
+            .unwrap()
+            .finalize()
+            .into_bytes());
+        assert_eq!(
+            Verifier::default()
+                .response_value(&request, &frame(&header, body).unwrap(), KEY, 102)
+                .err(),
+            Some(Error::Authentication)
+        );
+    }
+    for body in [
+        b"-----BEGIN PGP PRIVATE KEY BLOCK-----\nAA==\n-----END PGP PRIVATE KEY BLOCK-----\n"
+            .as_slice(),
+        b"not a certificate",
+    ] {
+        let mut header = original.clone();
+        header.body_len = body.len();
+        header.mac = hex(&authenticate(KEY, &header, body)
+            .unwrap()
+            .finalize()
+            .into_bytes());
+        assert_eq!(
+            Verifier::default()
+                .response_value(&request, &frame(&header, body).unwrap(), KEY, 102)
+                .err(),
+            Some(Error::Invalid)
+        );
+    }
+    let negative = decoded.response_value(Err(Error::Stale), KEY, 102).unwrap();
+    assert!(matches!(
+        Verifier::default()
+            .response_value(&request, &negative, KEY, 102)
+            .unwrap(),
+        Err(Error::Stale)
+    ));
+    assert!(Request::issue(
+        "alice",
+        Action::ExportPublic,
+        Some(&"a".repeat(64)),
+        Some(&"A".repeat(40)),
+        b"body",
+        100,
+        KEY
+    )
+    .is_err());
+}
 #[test]
 fn every_operation_roundtrips_and_signed_errors_remain_typed() {
     for action in [Action::Snapshot, Action::ImportPublic, Action::RemovePublic] {

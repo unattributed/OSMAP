@@ -386,6 +386,8 @@ fn configured_openpgp_choices_show_intent_separately_from_eligible_keys_and_pres
     let assert_choices = |response: &HandledHttpResponse, selected: bool| {
         assert_eq!(response.response.status_code, 200);
         let html = body_text(response);
+        assert!(html.contains("Signing requires your private key to be unlocked on the mail host."));
+        assert!(html.contains("Public-key checks do not test whether it is unlocked."));
         let controls = html
             .split_once("data-openpgp-compose-controls=\"server-enforced\">")
             .expect("actual HTTP page must render configured controls")

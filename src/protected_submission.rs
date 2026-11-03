@@ -33,19 +33,24 @@ pub enum SubmissionError {
     BindingUnavailable,
     StaleBinding,
     InventoryUnavailable,
+    PublicCertificateUnavailable,
     ProtectionBlocked(Option<crate::openpgp_bindings::BlockReason>),
 }
 
 /// Reevaluation consumes trusted account-store state and optional fresh public
 /// inventory. The caller obtains both immediately before this invocation.
-pub fn prepare_for_delivery<E: CryptoExecutor>(
+pub fn prepare_for_delivery<E: CryptoExecutor, F>(
     executor: &E,
     account: &CanonicalUsername,
     request: &ComposeRequest,
     record: &crate::openpgp_bindings::BindingRecord,
     inventory: Option<&crate::openpgp_inventory::Inventory>,
     now: u64,
-) -> Result<PreparedSubmission, SubmissionError> {
+    certificate: F,
+) -> Result<PreparedSubmission, SubmissionError>
+where
+    F: FnOnce(&str) -> Result<crate::openpgp_public_admin::PublicCertificate, SubmissionError>,
+{
     record
         .ensure_account(account.as_str())
         .map_err(|_| SubmissionError::BindingUnavailable)?;
@@ -83,7 +88,29 @@ pub fn prepare_for_delivery<E: CryptoExecutor>(
     let plan = readiness.plan.ok_or(SubmissionError::ProtectionBlocked(
         readiness.reasons.first().copied(),
     ))?;
-    prepare(executor, account, request, &plan)
+    let public_key = if plan.signer_fingerprint.is_some() {
+        let binding = record
+            .account_binding
+            .as_ref()
+            .ok_or(SubmissionError::PublicCertificateUnavailable)?;
+        let certificate = certificate(&binding.primary_fingerprint)?;
+        if certificate.primary_fingerprint != binding.primary_fingerprint
+            || plan.signer_fingerprint != binding.signing_fingerprint
+            || !crate::openpgp_public_admin_protocol::revision(&certificate.revision)
+        {
+            return Err(SubmissionError::PublicCertificateUnavailable);
+        }
+        Some(certificate)
+    } else {
+        None
+    };
+    prepare_with_certificate(
+        executor,
+        account,
+        request,
+        &plan,
+        public_key.as_ref().map(|key| key.certificate.as_slice()),
+    )
 }
 
 pub(crate) struct UnavailableCrypto;
@@ -138,11 +165,24 @@ impl std::fmt::Debug for PreparedSubmission {
     }
 }
 
+#[cfg(test)]
 pub fn prepare<E: CryptoExecutor>(
     executor: &E,
     account: &CanonicalUsername,
     request: &ComposeRequest,
     plan: &OperationPlan,
+) -> Result<PreparedSubmission, SubmissionError> {
+    prepare_with_certificate(executor, account, request, plan, None)
+}
+
+/// The delivery boundary supplies only the authenticated, exact account-bound
+/// public export. It remains transient and is covered by the emitted signature.
+pub(crate) fn prepare_with_certificate<E: CryptoExecutor>(
+    executor: &E,
+    account: &CanonicalUsername,
+    request: &ComposeRequest,
+    plan: &OperationPlan,
+    certificate: Option<&[u8]>,
 ) -> Result<PreparedSubmission, SubmissionError> {
     let ordinary = validated_message(account, request)?;
     validate_plan(request, plan)?;
@@ -166,6 +206,25 @@ pub fn prepare<E: CryptoExecutor>(
     } else {
         plain_entity(request)?
     };
+    if let Some(certificate) = certificate {
+        if !sign
+            || certificate.is_empty()
+            || certificate.len() > crate::openpgp_public_admin_protocol::MAX_CERTIFICATE
+            || !certificate.starts_with(b"-----BEGIN PGP PUBLIC KEY BLOCK-----")
+            || !certificate
+                .windows(b"-----END PGP PUBLIC KEY BLOCK-----".len())
+                .any(|part| part == b"-----END PGP PUBLIC KEY BLOCK-----")
+        {
+            return Err(SubmissionError::PublicCertificateUnavailable);
+        }
+        let mixed = boundary()?;
+        let mut with_key =
+            format!("Content-Type: multipart/mixed; boundary=\"{mixed}\"\r\n\r\n--{mixed}\r\n")
+                .into_bytes();
+        with_key.extend_from_slice(&entity);
+        with_key.extend_from_slice(format!("\r\n--{mixed}\r\nContent-Type: application/pgp-keys; name=\"openpgp-public-key.asc\"\r\nContent-Disposition: attachment; filename=\"openpgp-public-key.asc\"\r\nContent-Transfer-Encoding: base64\r\n\r\n{}\r\n--{mixed}--\r\n", crate::send::base64_encode_wrapped(certificate)).as_bytes());
+        entity = with_key;
+    }
     let policy = PgpMimePolicy::default();
     entity = pgp_mime::canonical_signed_entity(&entity, policy.max_bytes)
         .map_err(SubmissionError::Mime)?;

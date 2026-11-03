@@ -2,9 +2,9 @@
 //! keybox paths. Web callers supply an authenticated account, never a home/command.
 use crate::identity::CanonicalUsername;
 use crate::openpgp_inventory_runtime::{file, private_dir, secret, validate_socket};
-pub use crate::openpgp_public_admin::PublicSnapshot;
 use crate::openpgp_public_admin::{AccountHome, PublicAdminStore};
-use crate::openpgp_public_admin_protocol::{Action, Error, Request, Verifier, MAX_FRAME};
+pub use crate::openpgp_public_admin::{PublicCertificate, PublicSnapshot};
+use crate::openpgp_public_admin_protocol::{Action, Error, Reply, Request, Verifier, MAX_FRAME};
 use crate::private_account_file::PrivateAccountFile;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -229,9 +229,21 @@ impl Service {
         })
     }
     fn process(&self, bytes: &[u8], deadline: Instant) -> Result<Vec<u8>, Error> {
-        self.process_with(bytes, deadline, |request, deadline| {
+        self.process_with_reply(bytes, deadline, |request, deadline| {
             let account =
                 CanonicalUsername::parse(request.account()).map_err(|_| Error::Invalid)?;
+            if request.action() == Action::ExportPublic {
+                return self
+                    .store
+                    .export_public(
+                        &account,
+                        request.revision().ok_or(Error::Invalid)?,
+                        request.fingerprint().ok_or(Error::Invalid)?,
+                        deadline,
+                    )
+                    .map(Reply::Certificate)
+                    .map_err(Error::from);
+            }
             match request.action() {
                 Action::Snapshot => self.store.snapshot(&account, deadline),
                 Action::ImportPublic => self.store.import_public(
@@ -247,15 +259,28 @@ impl Service {
                     request.fingerprint().ok_or(Error::Invalid)?,
                     deadline,
                 ),
+                Action::ExportPublic => Err(crate::openpgp_public_admin::AdminError::Invalid),
             }
+            .map(Reply::Snapshot)
             .map_err(Error::from)
         })
     }
+    #[cfg(test)]
     fn process_with(
         &self,
         bytes: &[u8],
         deadline: Instant,
         execute: impl FnOnce(&Request, Instant) -> Result<PublicSnapshot, Error>,
+    ) -> Result<Vec<u8>, Error> {
+        self.process_with_reply(bytes, deadline, |request, deadline| {
+            execute(request, deadline).map(Reply::Snapshot)
+        })
+    }
+    fn process_with_reply(
+        &self,
+        bytes: &[u8],
+        deadline: Instant,
+        execute: impl FnOnce(&Request, Instant) -> Result<Reply, Error>,
     ) -> Result<Vec<u8>, Error> {
         let accepted_at = now()?;
         let request = self
@@ -287,7 +312,7 @@ impl Service {
             remaining(deadline)?;
             execute(&request, deadline)
         })();
-        request.response(result, &self.key, now()?)
+        request.response_value(result, &self.key, now()?)
     }
     fn connection(&self, mut stream: UnixStream) -> Result<(), Error> {
         let deadline = Instant::now() + Duration::from_secs(10);
@@ -393,6 +418,25 @@ impl Client {
     pub fn snapshot(&self, account: &str) -> Result<PublicSnapshot, Error> {
         self.call(account, Action::Snapshot, None, None, &[])
     }
+    /// Exports only the authenticated account's selected public primary, at an
+    /// exact current public revision. This never consumes a mutation nonce.
+    pub fn export_public(
+        &self,
+        account: &str,
+        expected_revision: &str,
+        primary_fingerprint: &str,
+    ) -> Result<PublicCertificate, Error> {
+        match self.call_reply(
+            account,
+            Action::ExportPublic,
+            Some(expected_revision),
+            Some(primary_fingerprint),
+            &[],
+        )? {
+            Reply::Certificate(certificate) => Ok(certificate),
+            Reply::Snapshot(_) => Err(Error::Invalid),
+        }
+    }
     pub fn import_public(
         &self,
         account: &str,
@@ -430,6 +474,19 @@ impl Client {
         fingerprint: Option<&str>,
         body: &[u8],
     ) -> Result<PublicSnapshot, Error> {
+        match self.call_reply(account, action, revision, fingerprint, body)? {
+            Reply::Snapshot(snapshot) => Ok(snapshot),
+            Reply::Certificate(_) => Err(Error::Invalid),
+        }
+    }
+    fn call_reply(
+        &self,
+        account: &str,
+        action: Action,
+        revision: Option<&str>,
+        fingerprint: Option<&str>,
+        body: &[u8],
+    ) -> Result<Reply, Error> {
         let deadline = Instant::now() + Duration::from_secs(10);
         let request = Request::issue(
             account,
@@ -465,7 +522,7 @@ impl Client {
             .verifier
             .lock()
             .map_err(|_| uncertain(Error::Unavailable))?
-            .response(&request, &response, &self.0.key, now().map_err(uncertain)?)
+            .response_value(&request, &response, &self.0.key, now().map_err(uncertain)?)
             .map_err(uncertain)?
     }
 }

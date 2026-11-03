@@ -94,14 +94,19 @@ pub(crate) fn render(model: &ComposePageModel<'_>) -> String {
             details
         })
         .unwrap_or_default();
+    let signing_note = if model.protection.sign {
+        "<p class=\"muted\">Signing requires your private key to be unlocked on the mail host. Public-key checks do not test whether it is unlocked.</p>"
+    } else {
+        ""
+    };
     format!(concat!(
         "<section class=\"compose-preview compose-preflight\" aria-label=\"Pre-send check\"><h2>Pre-send check</h2>",
         "<p>This check shows the saved draft. After editing, check again. No message was sent.</p>{summary}{source}",
         "<dl class=\"message-meta\"><dt>Signing</dt><dd>{signing}</dd><dt>Encryption</dt><dd>{encryption}</dd><dt>Encrypt to self</dt><dd>{self_encryption}</dd><dt>Public-key snapshot</dt><dd>{key_snapshot}</dd>{public_keys}</dl>",
-        "<p class=\"muted\">This check does not sign, encrypt or send the message. Public-key results are a snapshot. Sending rechecks the current keys, account, draft and attachments.</p></section>"
+        "{signing_note}<p class=\"muted\">This check does not sign, encrypt or send the message. Public-key results are a snapshot. Sending rechecks the current keys, account, draft and attachments.</p></section>"
     ), summary = summary, source = source, signing = requested(model.protection.sign),
        encryption = requested(model.protection.encrypt), self_encryption = requested(model.protection.encrypt_to_self),
-       key_snapshot = key_snapshot, public_keys = public_keys)
+       key_snapshot = key_snapshot, public_keys = public_keys, signing_note = signing_note)
 }
 
 #[cfg(test)]
@@ -187,6 +192,8 @@ mod tests {
         assert!(html.contains("<dt>Encrypt to self</dt><dd>Requested</dd>"));
         assert!(html.contains("Public keys eligible in the saved-draft snapshot"));
         assert!(html.contains("This check does not sign, encrypt or send"));
+        assert!(html.contains("Signing requires your private key to be unlocked on the mail host."));
+        assert!(html.contains("Public-key checks do not test whether it is unlocked."));
         assert!(!html.contains("Signing and encryption are unavailable"));
         assert!(!html.contains("This message is unsigned and not encrypted"));
     }

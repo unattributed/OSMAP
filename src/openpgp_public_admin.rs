@@ -38,6 +38,56 @@ pub struct PublicSnapshot {
     /// Hash of the actual public keybox, not a claim about binding trust.
     pub revision: String,
 }
+/// Public certificate only. Deliberately no Debug representation of its bytes.
+#[derive(Clone)]
+pub struct PublicCertificate {
+    pub certificate: Vec<u8>,
+    pub revision: String,
+    pub primary_fingerprint: String,
+}
+impl PublicCertificate {
+    pub(crate) fn new(
+        certificate: Vec<u8>,
+        revision: String,
+        primary_fingerprint: String,
+    ) -> Result<Self, AdminError> {
+        if !valid_public_certificate(&certificate)
+            || !self::revision(&revision)
+            || !fingerprint_v4(&primary_fingerprint)
+        {
+            return Err(AdminError::Invalid);
+        }
+        Ok(Self {
+            certificate,
+            revision,
+            primary_fingerprint,
+        })
+    }
+}
+fn valid_public_certificate(bytes: &[u8]) -> bool {
+    if bytes.is_empty()
+        || bytes.len() > MAX_CERTIFICATE
+        || !bytes.is_ascii()
+        || bytes
+            .iter()
+            .any(|byte| *byte < 32 && !matches!(*byte, b'\r' | b'\n' | b'\t') || *byte == 127)
+    {
+        return false;
+    }
+    let Ok(text) = std::str::from_utf8(bytes) else {
+        return false;
+    };
+    let begin = "-----BEGIN PGP PUBLIC KEY BLOCK-----";
+    let end = "-----END PGP PUBLIC KEY BLOCK-----";
+    let trimmed = text.trim();
+    trimmed.lines().next() == Some(begin)
+        && trimmed.lines().last() == Some(end)
+        && trimmed.lines().count() >= 3
+        && trimmed.matches("-----BEGIN").count() == 1
+        && trimmed.matches("-----END").count() == 1
+        && !trimmed.contains("PRIVATE KEY")
+        && !trimmed.contains("SECRET KEY")
+}
 pub struct PublicAdminStore {
     directory: PathBuf,
     worker: PathBuf,
@@ -98,6 +148,42 @@ impl PublicAdminStore {
         let home = self.home(account)?;
         let _lock = self.locks.lock(account.as_str()).map_err(lock_error)?;
         self.read_snapshot(home, deadline)
+    }
+    /// Read-only export of one exact primary at the caller's current public
+    /// keybox revision. It never stages, imports, removes or opens an agent.
+    pub fn export_public(
+        &self,
+        account: &CanonicalUsername,
+        expected_revision: &str,
+        primary_fingerprint: &str,
+        deadline: Instant,
+    ) -> Result<PublicCertificate, AdminError> {
+        self.ready(deadline)?;
+        if !revision(expected_revision) || !fingerprint_v4(primary_fingerprint) {
+            return Err(AdminError::Invalid);
+        }
+        let home = self.home(account)?;
+        let _lock = self.locks.lock(account.as_str()).map_err(lock_error)?;
+        let before = read_public(&home.join("pubring.kbx"))?;
+        if digest(&before) != expected_revision {
+            return Err(AdminError::Stale);
+        }
+        let certificate = self.worker_output(
+            home,
+            Some(("export-public", primary_fingerprint)),
+            &[],
+            deadline,
+        )?;
+        self.ready(deadline)?;
+        if before != read_public(&home.join("pubring.kbx"))? {
+            return Err(AdminError::Stale);
+        }
+        PublicCertificate::new(
+            certificate,
+            expected_revision.into(),
+            primary_fingerprint.into(),
+        )
+        .map_err(|_| AdminError::Unavailable)
     }
     pub fn import_public(
         &self,
@@ -170,6 +256,20 @@ impl PublicAdminStore {
         input: &[u8],
         deadline: Instant,
     ) -> Result<Inventory, AdminError> {
+        let bytes = self.worker_output(home, operation, input, deadline)?;
+        let inventory = Inventory::parse(&bytes).map_err(|_| AdminError::Unavailable)?;
+        if inventory.keys().is_none() {
+            return Err(AdminError::Unavailable);
+        }
+        Ok(inventory)
+    }
+    fn worker_output(
+        &self,
+        home: &Path,
+        operation: Option<(&str, &str)>,
+        input: &[u8],
+        deadline: Instant,
+    ) -> Result<Vec<u8>, AdminError> {
         file(
             &self.worker,
             crate::openbsd::effective_uid(),
@@ -188,16 +288,12 @@ impl PublicAdminStore {
         if let Some((operation, fingerprint)) = operation {
             command.arg(operation).arg(fingerprint).arg(&self.engine);
         }
-        let bytes = crate::openpgp_crypto_process::run_public_admin(command, input, deadline)
-            .map_err(|error| match error {
+        crate::openpgp_crypto_process::run_public_admin(command, input, deadline).map_err(|error| {
+            match error {
                 crate::openpgp_crypto::Error::Expired => AdminError::Expired,
                 _ => AdminError::Unavailable,
-            })?;
-        let inventory = Inventory::parse(&bytes).map_err(|_| AdminError::Unavailable)?;
-        if inventory.keys().is_none() {
-            return Err(AdminError::Unavailable);
-        }
-        Ok(inventory)
+            }
+        })
     }
     fn mutate(
         &self,

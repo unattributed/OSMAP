@@ -1,5 +1,9 @@
 # S07-04: Wire compose/send/Sent/reply/forward with transaction and failure reconciliation
 
+## Current owner UAT followup
+
+Signed-send owner UAT is unaccepted after a Locked sender-private-key refusal. Public binding alone does not establish signing availability. This followup adds the missing sender public certificate within signed MIME and clarifies the public-only pre-check. Current focused Rust/native qualification passes. Coordinated helper/worker/Web delivery and owner retry remain pending. Existing earlier evidence below is historical and retains its narrower scope. See the signed-send followup in S07-04.
+
 ## Current delivery result — installed, owner review pending
 
 All agent-owned S07 engineering, source, scoped native and Web-deployment checks pass. T01–T08 are complete within the recorded scope; owner T09 and broader visual/keyboard/final-reference acceptance remain PENDING. The work orders remain IN_PROGRESS for that remaining acceptance, and the23 mapped approved-control results remain PARTIALLY_VERIFIED. No owner acceptance is inferred.
@@ -65,3 +69,19 @@ The focused actual case passes1/0/0, and the full parallel Rust suite then passe
 ## Formatting-only delivery correction
 
 The subsequent readonly-corrected-push.log proves2165 PASS/0 FAIL/85 ignored and strict Clippy PASS, then records the formatter refusal for one missing line break in the new private-directory format call. Root missed the direct formatter check before that fixture checkpoint. Applying the exact newline changes no behavior. The direct cargo fmt --check now exits0; existing documentation/V10 guards pass with11485/refined high0/medium4 and updated positional fingerprints. Root, protocol reviewer and QA jointly reassessed this refusal with the preceding ETXTBSY setup failure. Both remain distinct; no checks are weakened and no additional native run is justified. Next action remains the complete ordinary enabled publication path and then the already-reviewed Web-only installation.
+
+## Signed-send UAT followup — 2026-11-03
+
+Owner signing to a new unregistered recipient failed with Locked. This is not an encryption-policy refusal. Public binding does not prove private-key readiness; the existing native unlock utility sets a five-minute cache bound. Actual live cache expiry is unobserved. Separately, signed MIME does not yet attach the sender public certificate expected by the owner.
+
+Reuse authenticated public-admin read RPC, fixed public-only GPGME export, current account binding and public revision. Attach the exact own public certificate transiently before signing; keep it inside sign-then-encrypt. No browser certificate authority, secret export, new key cache/service, private-key web prompt, TTL change or owner private operation. Ordinary/encryption-only behavior and authored request/draft remain unchanged.
+
+Focused Rust tests cover new-recipient sign-only, export identity/revision/authentication/size failures, exact signed certificate and independent recipient verification, Locked zero submission, existing exact Sent/replay and encryption invariants. Native OpenBSD proof precedes installation; source, native, deployment and owner acceptance stay separate. Root owns compiler/native/host/Git queue; runtime engineer owns helper export, protocol reviewer owns UX copy, scope QA independently reviews. Two boundary failures require combined reassessment. Engineering bound four hours with bounded individual operations; elapsed prior investigation UNKNOWN.
+
+### Followup engineering qualification
+
+Current native three exact selections1PASS each0FAIL0ignored; actual GPGME public-only exact-primary export preserving keybox/trust/private state; fresh recipient imports attached certificate only and independently verifies; HTTP sign-only unregistered recipient succeeds with exact public certificate and real Dovecot Sent; Locked zeroSMTP/Sent and restoredsameintent/replay200 no duplicate. Native cleanup and nine-role postflight PASS. Owner unlock/Hotmail/acceptance and installation remain separate.
+
+Retained evidence: /home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-replay.actual.log, native-replay/{AUTHENTICATED_RUST_ROUNDTRIP,OUTBOUND_SIGN_ENCRYPT_BCC,PRODUCTION_GATEWAY_ROUNDTRIP}.log, qualified-source.sha256 and native-postflight-corrected.log. Native prepared artifacts: Web667898ad5d751c56f2f7ee81e3e866ddfba469045447a7bcc0c68862dc95176c; public-admin helper70aa94b0fcacd16a7f4f63e9bc2b67064534b42dbe277255371a605e3a806067; exact tested inventory worker8532130c77c0708a6340bf69aea2ed68d2f36bbd5fcb0cb6f9c1f6d5c8f82dbd. These are not yet installed.
+
+Failures remain retained: incomplete source archive caused compile101 before native dispatch; corrected complete archive adds existing fixtures with unchanged functional code and refreshed V10 metadata. New replay assertion incorrectly expected303 where the existing AlreadyRecorded contract returns200; corrected test adds recorded heading, original-intent receipt and no-Sendform assertions without product change. First cleanup guard matched its own inline command and refused before deletion; stdin-dispatched correction checked absence and removed only the owned synthetic failed fixture after durable failure-log hash readback. No gate was bypassed. Independent source/native/installer review passes; installer b66fe287 targets only Web/public-admin helper/admin inventory worker, preserves crypto agent and public mail, and includes bounded child drain/whole-set rollback. Normal signed preservation precedes installation.

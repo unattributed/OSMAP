@@ -37,15 +37,11 @@ impl Fixture {
         let worker = root.join("worker");
         let engine = root.join("engine");
         let script = format!(
-            "#!/usr/bin/env python3\nprint({:?})\n",
+            "#!/bin/sh\nprintf '%s\\n' '{}'\n",
             std::str::from_utf8(EMPTY).unwrap()
         );
         write(&worker, script.as_bytes(), 0o700);
-        write(
-            &engine,
-            b"#!/usr/bin/env python3\nraise SystemExit(1)\n",
-            0o700,
-        );
+        write(&engine, b"#!/bin/sh\nexit 1\n", 0o700);
         let config = root.join("config");
         let key = root.join("key");
         let socket = root.join("socket");
@@ -101,6 +97,42 @@ fn request(account: &str, action: Action, time: u64) -> Request {
 }
 fn deadline() -> Instant {
     Instant::now() + Duration::from_secs(5)
+}
+#[test]
+fn public_export_client_service_roundtrip_uses_read_only_store_without_mutation_nonce() {
+    use sha2::Digest;
+    let fixture = Fixture::new();
+    let armor="-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nZml4dHVyZQ==\n-----END PGP PUBLIC KEY BLOCK-----\n";
+    fs::write(fixture.root.join("worker"),format!("#!/bin/sh\n[ \"$2\" = export-public ] && [ \"$3\" = {} ] || exit 1\nprintf '%s' '{}'\n","A".repeat(40),armor)).unwrap();
+    let service = fixture.service();
+    let listener = fixture.listener();
+    let client = fixture.client();
+    let thread = std::thread::spawn(move || {
+        for _ in 0..2 {
+            let (stream, _) = listener.accept().unwrap();
+            service.connection(stream).unwrap();
+        }
+    });
+    let revision = format!("{:x}", sha2::Sha256::digest(b"synthetic public fixture"));
+    let result = client
+        .export_public("alice", &revision, &"A".repeat(40))
+        .unwrap();
+    assert!(result.certificate == armor.as_bytes());
+    assert_eq!(result.revision, revision);
+    assert!(matches!(
+        client.export_public("alice", &"0".repeat(64), &"A".repeat(40)),
+        Err(Error::Stale)
+    ));
+    thread.join().unwrap();
+    assert!(matches!(
+        client.export_public("alice", &revision, "short-key-id"),
+        Err(Error::Invalid)
+    ));
+    assert!(!fixture.root.join("state/nonces").exists());
+    assert!(
+        fs::read(fixture.root.join("home/pubring.kbx")).unwrap() == b"synthetic public fixture"
+    );
+    assert!(fs::read(fixture.root.join("home/trustdb.gpg")).unwrap() == b"synthetic trust fixture");
 }
 #[test]
 fn authenticated_operations_map_accounts_and_durable_replay_precedes_execution() {

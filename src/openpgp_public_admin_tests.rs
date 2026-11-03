@@ -76,6 +76,85 @@ fn snapshots_are_actual_keybox_revisions_and_foreign_accounts_refuse() {
     ));
 }
 #[test]
+fn public_export_is_revision_bound_read_only_and_account_scoped() {
+    let fixture = Fixture::new();
+    let armor = "-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nZml4dHVyZQ==\n-----END PGP PUBLIC KEY BLOCK-----\n";
+    // This controlled worker qualifies the store/transport contract only. The
+    // actual GPGME public export remains a separate native qualification.
+    fs::write(&fixture.store.worker, format!("#!/bin/sh\n[ \"$2\" = export-public ] && [ \"$3\" = {} ] || exit 1\nprintf '%s' '{}'\n", "A".repeat(40), armor)).unwrap();
+    let revision = digest(b"synthetic public fixture");
+    let certificate = fixture
+        .store
+        .export_public(
+            &fixture.account,
+            &revision,
+            &"A".repeat(40),
+            fixture.deadline(),
+        )
+        .unwrap();
+    assert!(certificate.certificate == armor.as_bytes());
+    assert_eq!(certificate.revision, revision);
+    assert_eq!(certificate.primary_fingerprint, "A".repeat(40));
+    assert!(matches!(
+        fixture.store.export_public(
+            &fixture.account,
+            &"0".repeat(64),
+            &"A".repeat(40),
+            fixture.deadline()
+        ),
+        Err(AdminError::Stale)
+    ));
+    assert!(matches!(
+        fixture.store.export_public(
+            &CanonicalUsername::parse("bob@example.test").unwrap(),
+            &revision,
+            &"A".repeat(40),
+            fixture.deadline()
+        ),
+        Err(AdminError::Invalid)
+    ));
+    assert!(matches!(
+        fixture.store.export_public(
+            &fixture.account,
+            &revision,
+            "short-key-id",
+            fixture.deadline()
+        ),
+        Err(AdminError::Invalid)
+    ));
+    let held = fixture.store.locks.lock(fixture.account.as_str()).unwrap();
+    assert!(matches!(
+        fixture.store.export_public(
+            &fixture.account,
+            &revision,
+            &"A".repeat(40),
+            fixture.deadline()
+        ),
+        Err(AdminError::Busy)
+    ));
+    drop(held);
+    assert!(fs::read(fixture.home.join("pubring.kbx")).unwrap() == b"synthetic public fixture");
+    assert!(fs::read(fixture.home.join("trustdb.gpg")).unwrap() == b"synthetic trust fixture");
+}
+#[test]
+fn public_certificate_framing_rejects_secret_mixed_nonascii_and_overflow() {
+    let public = b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nZml4dHVyZQ==\n-----END PGP PUBLIC KEY BLOCK-----\n";
+    assert!(valid_public_certificate(public));
+    assert!(!valid_public_certificate(
+        &[public.as_slice(), public.as_slice()].concat()
+    ));
+    assert!(!valid_public_certificate(
+        b"-----BEGIN PGP PRIVATE KEY BLOCK-----\nAA==\n-----END PGP PRIVATE KEY BLOCK-----"
+    ));
+    assert!(!valid_public_certificate(
+        &[public.as_slice(), b"\xff"].concat()
+    ));
+    assert!(!valid_public_certificate(&vec![b'A'; MAX_CERTIFICATE + 1]));
+    assert!(!valid_public_certificate(
+        b"-----BEGIN PGP PUBLIC KEY BLOCK-----AA==-----END PGP PUBLIC KEY BLOCK-----"
+    ));
+}
+#[test]
 fn account_lock_serializes_snapshot_and_mutation() {
     let fixture = Fixture::new();
     let held = fixture.store.locks.lock(fixture.account.as_str()).unwrap();

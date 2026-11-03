@@ -633,3 +633,11 @@ After new web admission, keep matching new pair images and completion state;
 stop admission on activation failure rather than downgrade stateful readers.
 Continue real non-leaf and label-filter implementation; no leaf-only waiver or
 human UAT before matching installed functional QA and independent audit PASS.
+
+## 2026-11-03 — S07 signed-send public certificate and private unlock boundary
+
+Owner sign-only to an unregistered recipient requires no recipient key or encryption policy. The sender private key must still be usable by the mail-host agent. Current observed agent configuration has300-second default/maximum cache; no proof of cache expiry at the failed request is available. Preserve the native private-key/passphrase boundary; do not weaken key protection or collect passphrases in webmail.
+
+Include the own account-bound public certificate automatically inside signed MIME using existing authenticated public-admin RPC, account lock, exact primary fingerprint and public-keybox revision. Native export is public mode0, read-only and agent-independent. Refuse export mismatch/unavailability before dispatch; retain the authored request/draft and existing Sent/replay behavior. Encryption-only/ordinary mail does not export a certificate. No new dependency, service, cryptography or persistent certificate cache.
+
+Release/WSTG impact: authenticated read-operation correlation, cross-account export refusal, revision races, public-only bounds, no downgrade/dispatch on failed export or Locked signer, signed attachment integrity, encrypted source and exact Sent/replay require matching focused Rust/native evidence. Broader Daybreak Blue code review and OWASP WSTG remain pending production-release gates; unit or fixture success is not owner UAT acceptance.

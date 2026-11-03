@@ -69,6 +69,12 @@ for unit in crypto crypto_engine inventory; do
     fi
 done
 print 'NATIVE_C_WORKER_BUILD=PASS'
+if [[ -n ${OSMAP_NATIVE_EVIDENCE_DIR:-} ]]; then
+    [[ -d "$OSMAP_NATIVE_EVIDENCE_DIR" && ! -L "$OSMAP_NATIVE_EVIDENCE_DIR" ]]
+    # Retain the actual public worker exercised below for exact artifact delivery.
+    cp "$fixture/inventory" "$OSMAP_NATIVE_EVIDENCE_DIR/inventory-worker"
+    sha256 "$OSMAP_NATIVE_EVIDENCE_DIR/inventory-worker"
+fi
 
 gpg_fixture() {
     key_home=$1

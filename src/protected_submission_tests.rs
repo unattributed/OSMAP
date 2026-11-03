@@ -11,6 +11,31 @@ const SIGNATURE: &[u8] =
     b"-----BEGIN PGP SIGNATURE-----\n\nZml4dHVyZQ==\n-----END PGP SIGNATURE-----\n";
 const CIPHERTEXT: &[u8] =
     b"-----BEGIN PGP MESSAGE-----\n\nZml4dHVyZQ==\n-----END PGP MESSAGE-----\n";
+const PUBLIC_CERTIFICATE: &[u8] =
+    b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nZml4dHVyZQ==\n-----END PGP PUBLIC KEY BLOCK-----\n";
+
+fn certificate() -> crate::openpgp_public_admin::PublicCertificate {
+    crate::openpgp_public_admin::PublicCertificate {
+        certificate: PUBLIC_CERTIFICATE.to_vec(),
+        revision: "a".repeat(64),
+        primary_fingerprint: SIGNER.into(),
+    }
+}
+
+// Existing policy tests retain their signatures; the real delivery entry now
+// additionally requires the account-bound helper export for signed messages.
+fn prepare_for_delivery<E: CryptoExecutor>(
+    executor: &E,
+    account: &CanonicalUsername,
+    request: &ComposeRequest,
+    record: &crate::openpgp_bindings::BindingRecord,
+    inventory: Option<&crate::openpgp_inventory::Inventory>,
+    now: u64,
+) -> Result<PreparedSubmission, SubmissionError> {
+    super::prepare_for_delivery(executor, account, request, record, inventory, now, |_| {
+        Ok(certificate())
+    })
+}
 
 struct Mock {
     results: RefCell<VecDeque<Result<Outcome, CryptoFailure>>>,
@@ -762,4 +787,124 @@ fn sender_identity_prepared_alias_keeps_canonical_crypto_account_and_exact_captu
         ),
         Err(SubmissionError::RequestMismatch)
     );
+}
+
+#[test]
+fn sign_only_new_recipient_includes_own_certificate_inside_signature_without_encryption() {
+    let executor = mock(vec![Ok(signed())]);
+    let mut request = request();
+    request.recipients = vec!["new@example.test".into()];
+    request.cc_recipients.clear();
+    request.attachments.push(UploadedAttachment {
+        filename: "bytes.bin".into(),
+        content_type: "application/octet-stream".into(),
+        body: vec![0, 1, 255],
+    });
+    request.protection = crate::send::ProtectionIntent {
+        sign: true,
+        encrypt: false,
+        encrypt_to_self: false,
+        binding_revision: Some(7),
+    };
+    let before = request.clone();
+    let result = prepare_for_delivery(
+        &executor,
+        &account(),
+        &request,
+        &bindings(),
+        Some(&inventory()),
+        100,
+    )
+    .unwrap();
+    result.validate_for(&account(), &before).unwrap();
+    assert_eq!(request.attachments, before.attachments);
+    let PgpMimeMessage::Signed { entity, .. } =
+        pgp_mime::classify(result.as_bytes(), PgpMimePolicy::default()).unwrap()
+    else {
+        panic!("signed MIME");
+    };
+    let text = std::str::from_utf8(entity).unwrap();
+    assert_eq!(
+        text.matches("Content-Type: application/pgp-keys;").count(),
+        1
+    );
+    assert!(text.contains(&crate::send::base64_encode_wrapped(PUBLIC_CERTIFICATE)));
+    assert!(text.contains("filename=\"bytes.bin\""));
+    assert!(text.contains(&crate::send::base64_encode_wrapped(
+        "Synthetic café body\r\nSecond line".as_bytes()
+    )));
+    assert!(
+        matches!(executor.operations.borrow().as_slice(), [Operation::Sign { data, .. }] if data == entity)
+    );
+}
+
+#[test]
+fn certificate_failure_and_foreign_primary_refuse_before_private_signing() {
+    let executor = mock(Vec::new());
+    let mut request = request();
+    request.protection = crate::send::ProtectionIntent {
+        sign: true,
+        encrypt: false,
+        encrypt_to_self: false,
+        binding_revision: Some(7),
+    };
+    for certificate in [
+        None,
+        Some(crate::openpgp_public_admin::PublicCertificate {
+            primary_fingerprint: RECIPIENT.into(),
+            ..certificate()
+        }),
+    ] {
+        let result = super::prepare_for_delivery(
+            &executor,
+            &account(),
+            &request,
+            &bindings(),
+            Some(&inventory()),
+            100,
+            |_| certificate.ok_or(SubmissionError::PublicCertificateUnavailable),
+        );
+        assert!(matches!(
+            result,
+            Err(SubmissionError::PublicCertificateUnavailable)
+        ));
+    }
+    assert!(executor.operations.borrow().is_empty());
+}
+
+#[test]
+fn unsigned_delivery_never_requests_certificate_and_signed_lock_remains_refused() {
+    let mut request = request();
+    let executor = mock(Vec::new());
+    let result = super::prepare_for_delivery(
+        &executor,
+        &account(),
+        &request,
+        &bindings(),
+        None,
+        100,
+        |_| panic!("unsigned export"),
+    );
+    assert_eq!(result.unwrap().protection(), SubmissionProtection::Ordinary);
+    request.protection = crate::send::ProtectionIntent {
+        sign: true,
+        encrypt: false,
+        encrypt_to_self: false,
+        binding_revision: Some(7),
+    };
+    let executor = mock(vec![Err(CryptoFailure::Engine(Error::Locked))]);
+    assert!(matches!(
+        prepare_for_delivery(
+            &executor,
+            &account(),
+            &request,
+            &bindings(),
+            Some(&inventory()),
+            100
+        ),
+        Err(SubmissionError::Crypto(CryptoFailure::Engine(
+            Error::Locked
+        )))
+    ));
+    assert_eq!(executor.operations.borrow().len(), 1);
 }

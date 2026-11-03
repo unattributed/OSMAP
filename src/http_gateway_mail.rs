@@ -1283,6 +1283,29 @@ impl RuntimeBrowserGateway {
             .inventory_client()
             .as_ref()
             .and_then(|client| client.read(account.as_str()).ok());
+        // Derive public export authority from the owned binding, never form
+        // data. Compare independently fetched inventories before exporting the
+        // current primary certificate from the helper-owned account keybox.
+        let certificate = |primary: &str| {
+            use crate::protected_submission::SubmissionError;
+            let unavailable = || SubmissionError::PublicCertificateUnavailable;
+            let admin = self.admin_client().ok_or_else(unavailable)?;
+            let snapshot = admin
+                .snapshot(account.as_str())
+                .map_err(|_| unavailable())?;
+            if crate::openpgp_bindings::inventory_revision(&snapshot.inventory)
+                .map_err(|_| unavailable())?
+                != crate::openpgp_bindings::inventory_revision(
+                    inventory.as_ref().ok_or_else(unavailable)?,
+                )
+                .map_err(|_| unavailable())?
+            {
+                return Err(unavailable());
+            }
+            admin
+                .export_public(account.as_str(), &snapshot.revision, primary)
+                .map_err(|_| unavailable())
+        };
         let result = match &self.crypto_client() {
             Some(client) => crate::protected_submission::prepare_for_delivery(
                 client,
@@ -1291,6 +1314,7 @@ impl RuntimeBrowserGateway {
                 &record,
                 inventory.as_ref(),
                 now,
+                certificate,
             ),
             None => crate::protected_submission::prepare_for_delivery(
                 &crate::protected_submission::UnavailableCrypto,
@@ -1299,6 +1323,7 @@ impl RuntimeBrowserGateway {
                 &record,
                 inventory.as_ref(),
                 now,
+                certificate,
             ),
         };
         let inventory_revision = if request.protection.sign
@@ -1351,6 +1376,9 @@ impl RuntimeBrowserGateway {
                 }
                 crate::protected_submission::SubmissionError::InventoryUnavailable => {
                     "openpgp_inventory_unavailable"
+                }
+                crate::protected_submission::SubmissionError::PublicCertificateUnavailable => {
+                    "openpgp_public_certificate_unavailable"
                 }
                 crate::protected_submission::SubmissionError::Crypto(
                     crate::protected_message::CryptoFailure::Engine(

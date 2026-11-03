@@ -1,5 +1,9 @@
 # S07-02: PGP/MIME signing and independent verification of emitted message
 
+## Current owner UAT followup
+
+Signed-send owner UAT is unaccepted after a Locked sender-private-key refusal. Public binding alone does not establish signing availability. This followup adds the missing sender public certificate within signed MIME and clarifies the public-only pre-check. Current focused Rust/native qualification passes. Coordinated helper/worker/Web delivery and owner retry remain pending. Existing earlier evidence below is historical and retains its narrower scope. See the signed-send followup in S07-04.
+
 ## Current delivery result — installed, owner review pending
 
 This slice's agent-owned engineering and matching shared Web deployment are complete. T01–T08 pass within the documented scope; owner T09 and broader visual/keyboard/final-reference acceptance remain pending. The qualified Web8d2e2813 is installed on obsd1 after complete normal signed source publication. See [S07-04 current delivery](UX_SLICE_S07_04.md#current-delivery-result--installed-owner-review-pending) for exact source/build identities, actual installation and preservation evidence. Earlier pending statements below remain historical; no separate owner acceptance is invented.
