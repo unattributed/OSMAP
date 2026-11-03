@@ -1,5 +1,13 @@
 # S07-02: PGP/MIME signing and independent verification of emitted message
 
+## Owner acceptance — 2026-11-03
+
+**S07-01–04 ACCEPTED; T01–T09 PASS within the delivered sprint scope.** Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok).
+
+The earlier signing failure is resolved. Existing scoped native proofs remain the evidence for encryption, self, Bcc, policy, Sent and negative cases; the screenshots do not independently retest all those cases. Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged.
+
+Accepted engineering source: signed e99455d84a253bc301364f9fe48a27eb6880fda8. Installed delivery record: signed 12b3da5c19af31be3e73cc8b3252a269cba2397c. This is a records-only closeout; no host/account/key/session/message/service changes. Pending/failure statements below remain historical checkpoints.
+
 ## Current owner UAT followup
 
 Signed-send owner UAT is unaccepted after a Locked sender-private-key refusal. Public binding alone does not establish signing availability. This followup adds the missing sender public certificate within signed MIME and clarifies the public-only pre-check. Current focused Rust/native qualification and coordinated helper/worker/Web delivery pass. Installed account-bound public export/readback under the actual Web principal passes. Owner private-key unlock and successful signed-send acceptance remain pending; the300-second cache policy is unchanged. Existing earlier evidence below is historical and retains its narrower scope. See the signed-send followup in S07-04.

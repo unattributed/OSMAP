@@ -1,3 +1,5 @@
+2026-11-03 (Asia/Bangkok) — **S07 ACCEPTED; S07-01–04 T01–T09 PASS within sprint scope.** Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok). Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged. Closeout: six mutable documentation files only. Root owns records/Git; independent protocol review verifies scope/history. Reuse matching tests, validate ledger/spec pins and frozen plan, then normal signed commit/push/fresh parity; stop on delivery failure. No host action. Private owner screenshots excluded from Git. Sent evidence SHA2566e6149081e5e7b5793257aaf6e53f564bbc3975db52af15e950eb3c492cacb03; Hotmail evidence SHA256d5f489d8fc8da039ac819a24225acec584be4f120352c91a89387f1df8456364.
+
 2026-11-03 — **S07 signed-send public-certificate followup installed and verified; owner Locked UAT remains open.** Source8b1107b published through normal enabled signed path/fresh0/0. Loaded Web667898/admin70aa94 and exact tested worker853213 pass coordinated deployment, HTTPS200/nine roles/protected preservation. Actual Web-principal account-bound public export/readback passes without a private operation; public revision unchanged and temporary probe removed. Private agent34227 and300-second policy unchanged. No owner unlock/signing/Hotmail send or T09 acceptance is inferred.
 
 2026-11-03 — **S07 signed-send owner UAT failure under investigation.** Configured binding confirmed; private signing refused Locked. Public certificate inclusion absent in current implementation. Bounded helper/MIME/UX correction in progress; owner acceptance remains pending.
@@ -23,7 +25,7 @@
   "slice": "S07-04",
   "original_requirement": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
   "source_baseline": "4abcf5c19fa4f7e78ce336dca589fffa487b9fbe",
-  "state": "IN_PROGRESS",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -133,7 +135,7 @@
       ],
       "frontend_backend_outcome": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
       "essential_qa": "Actual gateway sends to controlled Rust local sink; Real scoped Dovecot append stores protected prepared message; Read decrypt verify Sent and download binary attachment; Source remains encrypted; current source selection protected; Stale policy helper interruption and Sent-store failure do not downgrade or auto duplicate; Actual authenticated HTTP and draft transaction checks; Consolidated native build installed preservation and independent review",
-      "next_action": "Agent-owned personal-key source/native/installed qualification is complete. Owner UAT: use Settings/keys Your personal key Unlock for the existing key, then Sign on send to a new recipient with encryption off. No reimport or SSH is required; owner T09 remains unaccepted.",
+      "next_action": "S07 accepted and closed. Preserve earlier failures and current engineering/native/installed/owner proof. Publish this records-only closeout through normal signed gates and verify fresh parity. S08 is next in the plan; no host action or new feature in this closeout.",
       "dependencies": [
         {
           "owner": "/root",
@@ -231,7 +233,7 @@
     "slice": "S07-04",
     "specification": {
       "path": "docs/UX_SLICE_S07_04.md",
-      "sha256": "f6eff28135ac4da74f04aef15d3132ea0e0bd700c20bba2ec967a4887dad7cd7"
+      "sha256": "d90f51ee79bd5b70ade785829240b167067ab1c9c7209b68a60ce3475304926c"
     },
     "design": {
       "journey": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
@@ -401,9 +403,11 @@
         "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "FAIL",
+        "status": "PASS",
         "evidence": [
-          "Owner reported first S07 sign-only UAT failure to unregistered Hotmail recipient, native private key Locked; screenshots supplied2026-11-03."
+          "Owner reported first S07 sign-only UAT failure to unregistered Hotmail recipient, native private key Locked; screenshots supplied2026-11-03.",
+          "Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok).",
+          "Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged."
         ]
       }
     ],
@@ -411,10 +415,15 @@
     "human_exit": "Owner accepts the practical completed infrastructure/result later; no source inspection, packet decoding or technical troubleshooting requested from owner."
   },
   "human_acceptance": {
-    "status": "FAIL",
-    "reference": "Owner sign-only UAT returned Locked. Configured public binding confirmed; no successful owner signing or acceptance inferred."
+    "status": "PASS",
+    "reference": "Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok).",
+    "scope": "Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged.",
+    "previous_status": {
+      "status": "FAIL",
+      "reference": "Owner sign-only UAT returned Locked. Configured public binding confirmed; no successful owner signing or acceptance inferred."
+    }
   },
-  "next_action": "Implement the explicitly requested personal private-key import and browser unlock/lock journey in the existing isolated crypto helper; keep contacts public-only. Owner signing/T09 remains failed until matching installed functionality is qualified.",
+  "next_action": "S07 accepted and closed. Preserve earlier failures and current engineering/native/installed/owner proof. Publish this records-only closeout through normal signed gates and verify fresh parity. S08 is next in the plan; no host action or new feature in this closeout.",
   "personal_key_followup": {
     "authority": "2026-11-03 operator explicitly requests own private-key upload and optional key passphrase in Settings/keys, distinct from contacts public keys; supersedes operator-only D03 provisioning for this bounded implementation without changing frozen plan bytes.",
     "outcome": "Authenticated user uploads their currently provisioned own personal private .asc, unlocks it through OSMAP and signs/decrypts without SSH or service restarts. Contact key import remains public-only. Arbitrary primary rotation and private-key export are excluded.",
@@ -423,8 +432,8 @@
     "tests": ["personal versus contact upload separation and strict bounded forms", "actual account/session/epoch/CSRF and fresh import authentication", "native matching-primary import and cold passphrase proof with no-replace publication", "wrong passphrase including warm-agent case, wrong identity, multiple keys and interrupted import preserve active state", "session-bound unlock expiry/revocation and account-only lock", "actual Rust HTTP import/unlock then signed MIME, public certificate verification, decrypt and no duplicate submission", "OpenBSD confinement, installed preservation and normal signed GitHub parity"],
     "bound": "One root compiler/native/host queue. Existing operation deadlines and bounded subprocess cleanup. Synthetic keys/accounts and loopback mail only during engineering. No production mail restart/configuration change or owner private-key import/unlock by agent.",
     "stop": "Two failures at one functional boundary require root plus independent reassessment before a changed retry; preserve earliest diagnostic and cleanup separately. Never automatically retry uncertain private import or send.",
-    "status": "Agent-owned source/native/installed qualification PASS; ready for owner UAT. Independent protocol/QA GO, full2187PASS/0FAIL/87ignored and normal security-check PASS. Signed sourcee99455d published with fresh0/0; loaded source-bound Web/helper and exact tested C artifacts, HTTPS/nine roles/protected preservation and Web-principal Status PASS. No owner unlock/sign or human acceptance inferred.",
-    "installed_delivery": {"source_commit": "e99455d84a253bc301364f9fe48a27eb6880fda8", "publication": "Initial source-push.log completed all normal security checks then exited141 because GitHub SSH closed during long hook. Fresh fetch found1ahead0behind. Normal push repeated with per-command SSH keepalives; all hooks passed again, origin branch updated and fresh exactSHAequality0/0 plus clean tree verified. No hook bypass or force.", "installer_sha256": "61e03b419150dda31c8ea05ed716282045955ffdc086c5dec902500ab4b8ef36", "install_log_sha256": "89fc77aab68c7f59f31c80fc290a1c9e8a27b323f21a632aa1a94db175717828", "loaded": "Web0d70f98b PID93420/textinode129979; cryptohelper1cd78ec6 PID54822/textinode3758823; exact tested worker7ab4facd/engine12d7b21b. Root-backed atomic five-file installation enables only Duncan allow_web_personal_keys=true; actualconfigd00a748. HTTPS200/nine roles, other config/workers/environment/accountDB/authority/owner-agent and protected key/session/settings/draft content preserved. Only Web/crypto restarted; public mail untouched.", "installed_status": "Actual compiled Status-only probe under WebUID1001 reaches installed helper1002, confirms existing protected mapped Duncan key, cache28800 and no permission for the explicitly diagnostic session. No owner session authentication or private cryptographic operation is claimed. Log08f54a48514d34096c2405a23220760ddbd452954adac644b727cc4f34dea476; root-custody temporary probe removed; postread protected files/nine roles PASS.", "retention": "Failed synthetic fixtures remain private for diagnosis; read-only reconciliation finds no matching fixture agents/processes in all six retained namespaces. Successful native fixture removed. Earliest failed log was restored from its retained original after an evidence-copy name collision and its originalfc8aea89 hash reverified; passing logs use attempt-specific directories. No failed history lost.", "owner_uat": "NOT_RUN; fresh owner key unlock and successful signed-send acceptance required. Existing key is preserved and import is disabled when installed. No SSH/service restart for normal UI unlock; cap8h/sessionexpiry, Lock all account sessions and helper restart revoke RAM permissions."},
+    "status": "ACCEPTED. Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok).",
+    "installed_delivery": {"source_commit": "e99455d84a253bc301364f9fe48a27eb6880fda8", "publication": "Initial source-push.log completed all normal security checks then exited141 because GitHub SSH closed during long hook. Fresh fetch found1ahead0behind. Normal push repeated with per-command SSH keepalives; all hooks passed again, origin branch updated and fresh exactSHAequality0/0 plus clean tree verified. No hook bypass or force.", "installer_sha256": "61e03b419150dda31c8ea05ed716282045955ffdc086c5dec902500ab4b8ef36", "install_log_sha256": "89fc77aab68c7f59f31c80fc290a1c9e8a27b323f21a632aa1a94db175717828", "loaded": "Web0d70f98b PID93420/textinode129979; cryptohelper1cd78ec6 PID54822/textinode3758823; exact tested worker7ab4facd/engine12d7b21b. Root-backed atomic five-file installation enables only Duncan allow_web_personal_keys=true; actualconfigd00a748. HTTPS200/nine roles, other config/workers/environment/accountDB/authority/owner-agent and protected key/session/settings/draft content preserved. Only Web/crypto restarted; public mail untouched.", "installed_status": "Actual compiled Status-only probe under WebUID1001 reaches installed helper1002, confirms existing protected mapped Duncan key, cache28800 and no permission for the explicitly diagnostic session. No owner session authentication or private cryptographic operation is claimed. Log08f54a48514d34096c2405a23220760ddbd452954adac644b727cc4f34dea476; root-custody temporary probe removed; postread protected files/nine roles PASS.", "retention": "Failed synthetic fixtures remain private for diagnosis; read-only reconciliation finds no matching fixture agents/processes in all six retained namespaces. Successful native fixture removed. Earliest failed log was restored from its retained original after an evidence-copy name collision and its originalfc8aea89 hash reverified; passing logs use attempt-specific directories. No failed history lost.", "owner_uat": "PASS. Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok). Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged."},
     "qualification": {"source_inputs_sha256": "eae587eaf193fc99b7af7a476548d2ec410e9c839d3924e2f1741eb15cf4ec68", "native_personal": "native6-passing/PERSONAL_HTTP_RUNTIME_JOURNEY.log SHA31cd74b750cd3e2c3e1a96c3b64bd1880cab98104d90b7c9404e8ca05a6ec054 actual107.75s1PASS; protected3424c0a122911ec03262706dda99d165b52419a35a914b5798b0010d9af1788d actual3.23s1PASS; startup3e2b2ee0f63540ebaea96df138d8d53d466dc938ef9149ba4a5567223df218ef actual0.20s1PASS", "native_transport": "Legacy first0.39sFAIL retained as PRODUCTION_GATEWAY_ROUNDTRIP-personal-first.log SHAd7cd7801d017c7cad59a55e9911873e1fa82d413753323afc8f614b57e068688. Its old synthetic session-id was not a valid actual64hex wire session. Nativecase-only correction57abcb4e preserves production validation. Current matchinglibtest38c38416 in native-session-corrected.actual.log: auth/outbound/realSMTP+SentGateway all1PASS0FAIL0ignored, Gateway6.05s; DISPOSABLE_CLEANUPPASS. Personal proofs reused by unchanged product/test identity, not rerun for this test-only correction.", "artifacts": {"profile": "actual intended obsd1 UAT dev with debug0; no release claim", "web_sha256": "0d70f98b9f3c2d624445646a1db82cb3eb74a511f2dd62075c165636c5f13d50", "crypto_helper_sha256": "1cd78ec6e658ee0161da1c710694682c9ad3e2c50dc7d1099707cdb8116f07bc", "crypto_worker_sha256": "7ab4facd939daa6b1ced852e60995756fc0cc3adfd7c3337874720bcdf44fa83", "crypto_engine_sha256": "12d7b21be68694e2ecb2550017d14ef1a2a9f0c9f981e7245f92523fae524dac"}, "scope": "Mapped matching own key only; protected and unprotected native input, no overwrite/private export/arbitrary rotation. Actual account session/epoch/binding revision and CSRF, transient secrets and helper custody. All failures preserved; full action elapsed before captured commands UNKNOWN. No owner private operation, external recipient send, production mail change, comprehensive release security claim or human T09 PASS."},
     "startup_discriminator": {"result": "CONFIRMED: daemon inherited stderr remains open; adding fixed log-file /dev/null closes both streams without changing application deadlines.", "evidence": "/home/foo/Downloads/osmap-ux-s07/personal-keys-20261103/agent-start-diagnostic.actual.log SHAd93fe73e3deb12f7bda3bb89f863614dd168309addf5f37ec4b95d6fca0b015a", "correction": "src/auth.rs PersonalAgentCommand::Start fixed native logging destination only; focused14PASS/1ignored. Exact disposable agents stopped and separate process observation found no matching fixture process."},
     "native_attempt_2": {"recipe_sha256": "6d23702ce60587d2b4e35facaf34aba626150449d17f19b3867e2e18903b4436", "libtest_sha256": "35cfa59a2e1c3d1740a7ace5a1f03711046d64644ba30f4da96fb5d20288a21c", "result": "FAIL: Import now refuses Invalid in0.16seconds; timeout defect resolved, exact native validation predicate not yet established.", "evidence": "/home/foo/Downloads/osmap-ux-s07/personal-keys-20261103/PERSONAL_PROTECTED_LIFECYCLE-start-corrected.log SHAa90aaeb18bed0a8478777a8836488d5d055cd23c17accffcbf87ec8771b4bcc9", "retained_fixture": "/tmp/osmap-crypto-fixture-gSkTYHz6 on obsd1; outer stop reported yes, nested/process cleanup requires independent reconciliation", "reassessment": "Root, crypto author and independent reviewer agree no third full functional retry until one private copied-worker diagnostic distinguishes unchanged framing/confinement/preview/import predicates. No relaxed checks, target publication, session grant or owner private operation. Diagnostic source and exact producer/consumer are reviewed before execution."},
@@ -569,7 +578,7 @@
   "slice": "S07-03",
   "original_requirement": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling",
   "source_baseline": "598d0a8c1c539638ab14247892ae35959eaf1047",
-  "state": "IN_PROGRESS",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -628,7 +637,7 @@
       "requirement_ids": [],
       "frontend_backend_outcome": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling",
       "essential_qa": "Decrypt for visible recipient and hidden recipient; Refuse excluded sender with signing positive control; Add explicit self and prove successful decryption; Independently verify inner signature and attachment; Inspect public ciphertext PKESK IDs; no Bcc header leak; Refuse missing helper or stale inventory without downgrade; Consolidated native and installed review",
-      "next_action": "Owner reviews the completed installed S07 engineering result later; T09 and broader visual/keyboard/final-reference acceptance remain pending. No further agent-owned implementation/native/install action identified.",
+      "next_action": "S07 accepted and closed. Preserve earlier failures and current engineering/native/installed/owner proof. Publish this records-only closeout through normal signed gates and verify fresh parity. S08 is next in the plan; no host action or new feature in this closeout.",
       "dependencies": [
         {
           "owner": "/root",
@@ -696,7 +705,7 @@
     "slice": "S07-03",
     "specification": {
       "path": "docs/UX_SLICE_S07_03.md",
-      "sha256": "251360cbf8c2eb42f7bf32bc172771acf9cd83ad62dacc6fa44d310d432db90e"
+      "sha256": "3d184025fc4427aeda6111e3ca2d9fa1d5ef22bb783255917c9a5bd3296f96f5"
     },
     "design": {
       "journey": "Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling",
@@ -865,18 +874,26 @@
         "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok).",
+          "Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged."
+        ]
       }
     ],
     "engineering_exit": "Matching Rust source/native/installed proof and independent review plus normal signed publication for the configured runtime choices and existing policy boundary.",
     "human_exit": "Owner accepts the practical completed infrastructure/result later; no source inspection, packet decoding or technical troubleshooting requested from owner."
   },
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "Owner explicitly authorizes independent engineering through allS07slices and willreviewlater; acceptance is not inferred."
+    "status": "PASS",
+    "reference": "Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok).",
+    "scope": "Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged.",
+    "previous_status": {
+      "status": "PENDING",
+      "reference": "Owner explicitly authorizes independent engineering through allS07slices and willreviewlater; acceptance is not inferred."
+    }
   },
-  "next_action": "Owner reviews the completed installed S07 engineering result later; T09 and broader visual/keyboard/final-reference acceptance remain pending. No further agent-owned implementation/native/install action identified."
+  "next_action": "S07 accepted and closed. Preserve earlier failures and current engineering/native/installed/owner proof. Publish this records-only closeout through normal signed gates and verify fresh parity. S08 is next in the plan; no host action or new feature in this closeout."
 }
 ```
 <!-- /OSMAP_ARCHIVED_S07_03_PRE_NATIVE_20261103 -->
@@ -888,7 +905,7 @@
   "slice": "S07-02",
   "original_requirement": "PGP/MIME signing and independent verification of emitted message",
   "source_baseline": "598d0a8c1c539638ab14247892ae35959eaf1047",
-  "state": "IN_PROGRESS",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -947,7 +964,7 @@
       "requirement_ids": [],
       "frontend_backend_outcome": "PGP/MIME signing and independent verification of emitted message",
       "essential_qa": "Verify disposable-key detached signature independently; Reject tampered signed entity; Preserve UTF-8 binary attachment and line endings; Refuse missing signer without successful signed claim; Keep wire and Sent protected; authored recovery draft remains private; Qualify current native crypto worker; Consolidated native and installed review",
-      "next_action": "Owner reviews the completed installed S07 engineering result later; T09 and broader visual/keyboard/final-reference acceptance remain pending. No further agent-owned implementation/native/install action identified.",
+      "next_action": "S07 accepted and closed. Preserve earlier failures and current engineering/native/installed/owner proof. Publish this records-only closeout through normal signed gates and verify fresh parity. S08 is next in the plan; no host action or new feature in this closeout.",
       "dependencies": [
         {
           "owner": "/root",
@@ -1015,7 +1032,7 @@
     "slice": "S07-02",
     "specification": {
       "path": "docs/UX_SLICE_S07_02.md",
-      "sha256": "b309641741025246d2aa3a07e605bfeb72fbe4c954e2fd458c66a3c158dc1bec"
+      "sha256": "277afa4a3064a2dc3614ba1be16be853c8e9783bf8209db81bd7d6fb6259add9"
     },
     "design": {
       "journey": "PGP/MIME signing and independent verification of emitted message",
@@ -1184,18 +1201,26 @@
         "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok).",
+          "Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged."
+        ]
       }
     ],
     "engineering_exit": "Matching Rust source/native/installed proof and independent review plus normal signed publication for the configured runtime choices and existing policy boundary.",
     "human_exit": "Owner accepts the practical completed infrastructure/result later; no source inspection, packet decoding or technical troubleshooting requested from owner."
   },
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "Owner explicitly authorizes independent engineering through allS07slices and willreviewlater; acceptance is not inferred."
+    "status": "PASS",
+    "reference": "Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok).",
+    "scope": "Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged.",
+    "previous_status": {
+      "status": "PENDING",
+      "reference": "Owner explicitly authorizes independent engineering through allS07slices and willreviewlater; acceptance is not inferred."
+    }
   },
-  "next_action": "Owner reviews the completed installed S07 engineering result later; T09 and broader visual/keyboard/final-reference acceptance remain pending. No further agent-owned implementation/native/install action identified."
+  "next_action": "S07 accepted and closed. Preserve earlier failures and current engineering/native/installed/owner proof. Publish this records-only closeout through normal signed gates and verify fresh parity. S08 is next in the plan; no host action or new feature in this closeout."
 }
 ```
 <!-- /OSMAP_ARCHIVED_S07_02_PRE_NATIVE_20261103 -->
@@ -1207,7 +1232,7 @@
   "slice": "S07-01",
   "original_requirement": "Runtime-bound sign/encrypt/self settings and page 04 defaults Unsigned/Not encrypted/self Off; separate recipient readiness; green/orange/blocked preflight",
   "source_baseline": "598d0a8c1c539638ab14247892ae35959eaf1047",
-  "state": "IN_PROGRESS",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -1298,7 +1323,7 @@
       ],
       "frontend_backend_outcome": "The configured composer presents accurate off/requested choices and separate current recipient readiness; final existing trusted policy reevaluation prevents stale or forbidden submission.",
       "essential_qa": "Existing Rust configured HTTP preference fixture and policy/submission tests; current native Rust helper and controlled transport boundary proof only where changed or uncovered.",
-      "next_action": "Owner reviews the completed installed S07 engineering result later; T09 and broader visual/keyboard/final-reference acceptance remain pending. No further agent-owned implementation/native/install action identified.",
+      "next_action": "S07 accepted and closed. Preserve earlier failures and current engineering/native/installed/owner proof. Publish this records-only closeout through normal signed gates and verify fresh parity. S08 is next in the plan; no host action or new feature in this closeout.",
       "dependencies": [
         {
           "owner": "/root",
@@ -1366,7 +1391,7 @@
     "slice": "S07-01",
     "specification": {
       "path": "docs/UX_SLICE_S07_01.md",
-      "sha256": "7bc9f553d0b70161fc22a6330ae91664ed1a012158ef58f05d5e8774c0615fb2"
+      "sha256": "2ce79876f8153874636814a59030b2cb9bef6f78ce655bb9411551dbea8eed3e"
     },
     "design": {
       "journey": "Compose protection choices and recipient readiness govern the actual submission.",
@@ -1535,18 +1560,26 @@
         "preserved": "Owner accounts/keys/policy/messages/sessions, frozen plans,110legacy rows and public mail availability; disposable owned fixture state only.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok).",
+          "Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged."
+        ]
       }
     ],
     "engineering_exit": "Matching Rust source/native/installed proof and independent review plus normal signed publication for the configured runtime choices and existing policy boundary.",
     "human_exit": "Owner accepts the practical completed infrastructure/result later; no source inspection, packet decoding or technical troubleshooting requested from owner."
   },
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "Owner explicitly authorizes independent engineering through allS07slices and willreviewlater; acceptance is not inferred."
+    "status": "PASS",
+    "reference": "Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok).",
+    "scope": "Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged.",
+    "previous_status": {
+      "status": "PENDING",
+      "reference": "Owner explicitly authorizes independent engineering through allS07slices and willreviewlater; acceptance is not inferred."
+    }
   },
-  "next_action": "Owner reviews the completed installed S07 engineering result later; T09 and broader visual/keyboard/final-reference acceptance remain pending. No further agent-owned implementation/native/install action identified."
+  "next_action": "S07 accepted and closed. Preserve earlier failures and current engineering/native/installed/owner proof. Publish this records-only closeout through normal signed gates and verify fresh parity. S08 is next in the plan; no host action or new feature in this closeout."
 }
 ```
 <!-- /OSMAP_ARCHIVED_S07_01_PRE_NATIVE_20261103 -->

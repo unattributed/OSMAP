@@ -1,5 +1,13 @@
 # S07-03: Encryption and sign-then-encrypt, encrypt-to-self and privacy-aware Bcc envelope handling
 
+## Owner acceptance — 2026-11-03
+
+**S07-01–04 ACCEPTED; T01–T09 PASS within the delivered sprint scope.** Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok).
+
+The earlier signing failure is resolved. Existing scoped native proofs remain the evidence for encryption, self, Bcc, policy, Sent and negative cases; the screenshots do not independently retest all those cases. Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged.
+
+Accepted engineering source: signed e99455d84a253bc301364f9fe48a27eb6880fda8. Installed delivery record: signed 12b3da5c19af31be3e73cc8b3252a269cba2397c. This is a records-only closeout; no host/account/key/session/message/service changes. Pending/failure statements below remain historical checkpoints.
+
 ## Current delivery result — installed, owner review pending
 
 This slice's agent-owned engineering and matching shared Web deployment are complete. T01–T08 pass within the documented scope; owner T09 and broader visual/keyboard/final-reference acceptance remain pending. The qualified Web8d2e2813 is installed on obsd1 after complete normal signed source publication. See [S07-04 current delivery](UX_SLICE_S07_04.md#current-delivery-result--installed-owner-review-pending) for exact source/build identities, actual installation and preservation evidence. Earlier pending statements below remain historical; no separate owner acceptance is invented.
