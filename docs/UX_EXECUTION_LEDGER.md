@@ -106,7 +106,7 @@
       ],
       "frontend_backend_outcome": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
       "essential_qa": "Actual gateway sends to controlled Rust local sink; Real scoped Dovecot append stores protected prepared message; Read decrypt verify Sent and download binary attachment; Source remains encrypted; current source selection protected; Stale policy helper interruption and Sent-store failure do not downgrade or auto duplicate; Actual authenticated HTTP and draft transaction checks; Consolidated native build installed preservation and independent review",
-      "next_action": "Signed source admission then utility-only eight-hour UAT policy installation, actual result record and one ordinary complete push. Current agent not restarted/unlocked; Web self-service remains unimplemented.",
+      "next_action": "Normal final preservation of source/actual utility result; owner native unlock remains a private human operation. Final in-app Unlock/Lock requires separate implementation; owner signing/T09 remain unaccepted.",
       "dependencies": [
         {
           "owner": "/root",
@@ -198,7 +198,7 @@
     "slice": "S07-04",
     "specification": {
       "path": "docs/UX_SLICE_S07_04.md",
-      "sha256": "2279a677677a0d42deccd4d84612b57c13aa1ba836e2236a8559845dd876d164"
+      "sha256": "6ebf9f12d8ecb477c7d0da6b151a82538f7a931d85301d496131f63a658266ce"
     },
     "design": {
       "journey": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
@@ -381,7 +381,7 @@
     "status": "FAIL",
     "reference": "Owner sign-only UAT returned Locked. Configured public binding confirmed; no successful owner signing or acceptance inferred."
   },
-  "next_action": "Signed source admission then utility-only eight-hour UAT policy installation, actual result record and one ordinary complete push. Current agent not restarted/unlocked; Web self-service remains unimplemented.",
+  "next_action": "Normal final preservation of source/actual utility result; owner native unlock remains a private human operation. Final in-app Unlock/Lock requires separate implementation; owner signing/T09 remain unaccepted.",
   "followup": {
     "outcome": "Sign-only to a new recipient includes the own account-bound public certificate inside signed MIME; locked private key refuses without send/draft loss. No recipient key required. Native synthetic proof and installed delivery before owner retry.",
     "owners": {
@@ -479,7 +479,7 @@
     "approved_uat_unlock": {
       "owner_direction": "8 hours after native unlock (Recommended for UAT), explicit reply2026-11-03",
       "scope": "Fixed development Duncan account on obsd1 only; both native cache flags28800; retain encrypted key files, native Pinentry, no external cache, exact keys/home/peer/tty/service guards. Applies after next successful native unlock. No web secret flow, account/session capability or private operation added.",
-      "status": "NATIVE_QUALIFIED_INSTALL_PENDING",
+      "status": "UTILITY_INSTALLED_APPLIES_ON_NEXT_NATIVE_UNLOCK",
       "owners": {
         "implementation": "/root/s05_runtime_engineer",
         "integration": "/root",
@@ -493,13 +493,17 @@
       "operation_bound": "Existing root native/compiler/host queue and bounded fixture deadlines; utility-only install. Existing cumulative failures retained; two same-boundary failures stop for combined reassessment.",
       "evidence": [
         "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/eight-hour/rust-lifecycle-source.log",
-        "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/eight-hour/native.actual.log"
+        "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/eight-hour/native.actual.log",
+        "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/eight-hour/install.actual.log",
+        "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/eight-hour/UAT_POLICY_DEPLOYMENT.json"
       ],
       "install": {
         "sha256": "09c50f5ee6f600b65cb1f1c9a53dbe99e3c630a4ec43b48a1c1abb490b3215ba",
-        "status": "PLANNED",
+        "status": "PASS",
         "sequence": "Independent source/native review PASS; normal signed source checkpoint/signature before utility-only file installation; signed actual-result record then one fully enabled ordinary push of both/fresh0/0 before handoff. No rule requires extra broad unchanged suite between those milestones."
-      }
+      },
+      "current_live_agent": "Existing PID34227/policy unchanged; private warm NOT_RUN. Future successful native unlock launches both28800limits.",
+      "future_product": "In-app Unlock/Lock and private-operation session authorisation are NOT_IMPLEMENTED; Rust/native reuse is a recommended next product boundary, not completed code."
     }
   }
 }
