@@ -2,7 +2,7 @@
 
 ## Current owner UAT followup
 
-Signed-send owner UAT is unaccepted after a Locked sender-private-key refusal. Public binding alone does not establish signing availability. This followup adds the missing sender public certificate within signed MIME and clarifies the public-only pre-check. Current focused Rust/native qualification passes. Coordinated helper/worker/Web delivery and owner retry remain pending. Existing earlier evidence below is historical and retains its narrower scope. See the signed-send followup in S07-04.
+Signed-send owner UAT is unaccepted after a Locked sender-private-key refusal. Public binding alone does not establish signing availability. This followup adds the missing sender public certificate within signed MIME and clarifies the public-only pre-check. Current focused Rust/native qualification and coordinated helper/worker/Web delivery pass. Installed account-bound public export/readback under the actual Web principal passes. Owner private-key unlock and successful signed-send acceptance remain pending; the300-second cache policy is unchanged. Existing earlier evidence below is historical and retains its narrower scope. See the signed-send followup in S07-04.
 
 ## Current delivery result — installed, owner review pending
 

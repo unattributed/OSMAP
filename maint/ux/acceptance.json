@@ -6650,6 +6650,11 @@
             "kind": "native_execution",
             "path": "docs/UX_SLICE_S07_04.md",
             "scope": "S07 signed-send followup: Current native three exact selections1PASS each0FAIL0ignored; actual GPGME public-only exact-primary export preserving keybox/trust/private state; fresh recipient imports attached certificate only and independently verifies; HTTP sign-only unregistered recipient succeeds with exact public certificate and real Dovecot Sent; Locked zeroSMTP/Sent and restoredsameintent/replay200 no duplicate. Native cleanup and nine-role postflight PASS. Owner unlock/Hotmail/acceptance and installation remain separate."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "Current coordinated Web/admin/worker installation and actual Web-principal public export/readback pass with protected files unchanged. Owner private unlock/signing/UAT remain unaccepted; no private operation or external mail."
           }
         ]
       }
@@ -7034,6 +7039,11 @@
             "kind": "native_execution",
             "path": "docs/UX_SLICE_S07_04.md",
             "scope": "S07 signed-send followup: Current native three exact selections1PASS each0FAIL0ignored; actual GPGME public-only exact-primary export preserving keybox/trust/private state; fresh recipient imports attached certificate only and independently verifies; HTTP sign-only unregistered recipient succeeds with exact public certificate and real Dovecot Sent; Locked zeroSMTP/Sent and restoredsameintent/replay200 no duplicate. Native cleanup and nine-role postflight PASS. Owner unlock/Hotmail/acceptance and installation remain separate."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "Current coordinated Web/admin/worker installation and actual Web-principal public export/readback pass with protected files unchanged. Owner private unlock/signing/UAT remain unaccepted; no private operation or external mail."
           }
         ]
       }
@@ -7171,6 +7181,11 @@
             "kind": "native_execution",
             "path": "docs/UX_SLICE_S07_04.md",
             "scope": "S07 signed-send followup: Current native three exact selections1PASS each0FAIL0ignored; actual GPGME public-only exact-primary export preserving keybox/trust/private state; fresh recipient imports attached certificate only and independently verifies; HTTP sign-only unregistered recipient succeeds with exact public certificate and real Dovecot Sent; Locked zeroSMTP/Sent and restoredsameintent/replay200 no duplicate. Native cleanup and nine-role postflight PASS. Owner unlock/Hotmail/acceptance and installation remain separate."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "docs/UX_SLICE_S07_04.md",
+            "scope": "Current coordinated Web/admin/worker installation and actual Web-principal public export/readback pass with protected files unchanged. Owner private unlock/signing/UAT remain unaccepted; no private operation or external mail."
           }
         ]
       }

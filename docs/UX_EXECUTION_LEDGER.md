@@ -1,3 +1,5 @@
+2026-11-03 — **S07 signed-send public-certificate followup installed and verified; owner Locked UAT remains open.** Source8b1107b published through normal enabled signed path/fresh0/0. Loaded Web667898/admin70aa94 and exact tested worker853213 pass coordinated deployment, HTTPS200/nine roles/protected preservation. Actual Web-principal account-bound public export/readback passes without a private operation; public revision unchanged and temporary probe removed. Private agent34227 and300-second policy unchanged. No owner unlock/signing/Hotmail send or T09 acceptance is inferred.
+
 2026-11-03 — **S07 signed-send owner UAT failure under investigation.** Configured binding confirmed; private signing refused Locked. Public certificate inclusion absent in current implementation. Bounded helper/MIME/UX correction in progress; owner acceptance remains pending.
 
 2026-11-03 — **S07-01–04 agent-owned engineering and Web deployment COMPLETE; T01–T08 PASS within scope.** Source29fd7f4 published through normal gate and fresh0/0; Web8d2e installed/loaded, HTTPS200, nine roles and protected-state preservation PASS. Owner T09/broader visual acceptance pending; formal orders remain IN_PROGRESS and mapped controls PARTIALLY_VERIFIED.
@@ -100,7 +102,7 @@
       ],
       "frontend_backend_outcome": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
       "essential_qa": "Actual gateway sends to controlled Rust local sink; Real scoped Dovecot append stores protected prepared message; Read decrypt verify Sent and download binary attachment; Source remains encrypted; current source selection protected; Stale policy helper interruption and Sent-store failure do not downgrade or auto duplicate; Actual authenticated HTTP and draft transaction checks; Consolidated native build installed preservation and independent review",
-      "next_action": "Normal signed source publication, then exact reviewed coordinated Web/admin-helper/admin-worker installation; owner private unlock and signed-send acceptance remain unproven.",
+      "next_action": "Owner private-unlock workflow remains an open usability dependency; no automatic private operation or T09 acceptance. Source/native/installed public-certificate followup delivered; preserve final result through normal signed publication.",
       "dependencies": [
         {
           "owner": "/root",
@@ -113,7 +115,7 @@
         "implementation": "PASS",
         "source_tests": "PASS",
         "native_tests": "PASS",
-        "deployed_qa": "PENDING",
+        "deployed_qa": "PASS",
         "independent_review": "PASS",
         "recovery": "PASS"
       },
@@ -165,6 +167,10 @@
         {
           "stage": "recovery",
           "reference": "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-replay.actual.log; /home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-postflight-corrected.log. Current native three exact selections1PASS each0FAIL0ignored; actual GPGME public-only exact-primary export preserving keybox/trust/private state; fresh recipient imports attached certificate only and independently verifies; HTTP sign-only unregistered recipient succeeds with exact public certificate and real Dovecot Sent; Locked zeroSMTP/Sent and restoredsameintent/replay200 no duplicate. Native cleanup and nine-role postflight PASS. Owner unlock/Hotmail/acceptance and installation remain separate."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/install.actual.log; /home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/installed-public-read.actual.log: exact current Web/admin/worker deployment, actual account-bound public export under Web principal, protected files and nine rolesPASS; no owner private op."
         }
       ]
     }
@@ -188,7 +194,7 @@
     "slice": "S07-04",
     "specification": {
       "path": "docs/UX_SLICE_S07_04.md",
-      "sha256": "569abec6a4ed4e85f9016043d4b46255eda39abc7beb28c977b24cb5cd256000"
+      "sha256": "4475948931d991ffbbc79dc966d10449945e0132567fbd59ed1e79f5fbb3981a"
     },
     "design": {
       "journey": "Wire compose/send/Sent/reply/forward with transaction and failure reconciliation",
@@ -341,7 +347,8 @@
         "reviewer": "/root/s05_protocol_review",
         "status": "PASS",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/install.actual.log and format-corrected-push.log; matching selected native qualification and qualified-source-final.sha256 retained; scoped deployment/preservation independently reviewed."
+          "/home/foo/Downloads/osmap-ux-s07/completion-20261103-62oBKV/install.actual.log and format-corrected-push.log; matching selected native qualification and qualified-source-final.sha256 retained; scoped deployment/preservation independently reviewed.",
+          "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/install.actual.log; /home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/installed-public-read.actual.log; scoped independent reviewPASS; ownerT09FAILunchanged."
         ]
       },
       {
@@ -370,7 +377,7 @@
     "status": "FAIL",
     "reference": "Owner sign-only UAT returned Locked. Configured public binding confirmed; no successful owner signing or acceptance inferred."
   },
-  "next_action": "Normal signed source publication, then exact reviewed coordinated Web/admin-helper/admin-worker installation; owner private unlock and signed-send acceptance remain unproven.",
+  "next_action": "Owner private-unlock workflow remains an open usability dependency; no automatic private operation or T09 acceptance. Source/native/installed public-certificate followup delivered; preserve final result through normal signed publication.",
   "followup": {
     "outcome": "Sign-only to a new recipient includes the own account-bound public certificate inside signed MIME; locked private key refuses without send/draft loss. No recipient key required. Native synthetic proof and installed delivery before owner retry.",
     "owners": {
@@ -389,7 +396,7 @@
       "normal signed preservation and scoped installed delivery"
     ],
     "stop": "Two failures at same boundary require root and independent reassessment before changed retry; preserve earliest sanitized failure and cleanup separately.",
-    "status": "NATIVE_QUALIFIED_INSTALL_PENDING",
+    "status": "INSTALLED_PUBLIC_EXPORT_VERIFIED_OWNER_UNLOCK_PENDING",
     "evidence": [
       "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-replay.actual.log",
       "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/native-postflight-corrected.log"
@@ -457,8 +464,13 @@
     },
     "install": {
       "script_sha256": "b66fe287dabb7151f4cce010559ffe91a21d7bf6597f65902988a1a13597a120",
-      "status": "PLANNED",
-      "scope": "Only Web/public-admin helper/admin inventory worker; do not stop crypto/private agent/public mail, no owner credential/key/cache/policy/session/message change."
+      "status": "PASS",
+      "scope": "Only Web/public-admin helper/admin inventory worker; do not stop crypto/private agent/public mail, no owner credential/key/cache/policy/session/message change.",
+      "evidence": [
+        "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/install.actual.log",
+        "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/installed-public-read.actual.log",
+        "/home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/S07_SIGNED_SEND_DEPLOYMENT.json"
+      ]
     }
   }
 }
