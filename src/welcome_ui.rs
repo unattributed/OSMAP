@@ -20,6 +20,12 @@ pub(crate) fn render_mailboxes_page_with_storage(
     account_state: WelcomeAccountState<'_>,
 ) -> TrustedHtml {
     let openpgp = (account_state.openpgp, account_state.defaults);
+    let header = app_header_with_storage(
+        canonical_username,
+        csrf_token,
+        "mailboxes",
+        account_state.storage,
+    );
     let storage = crate::storage_ui::render_dashboard(canonical_username, account_state.storage);
     let (summaries, snooze_notice) = summaries;
     let key_summary = openpgp_summary(canonical_username, openpgp.0, openpgp.1);
@@ -185,7 +191,7 @@ pub(crate) fn render_mailboxes_page_with_storage(
         "<section class=\"welcome-panel welcome-storage\" aria-labelledby=\"welcome-storage-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-storage-title\">Storage Usage</h2></div><div class=\"welcome-storage-body\">{storage}</div></section></div>",
         "<section class=\"welcome-panel welcome-system\" aria-labelledby=\"welcome-system-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-system-title\">System Status</h2></div><ul>{system}</ul><details><summary>View status details</summary><p class=\"welcome-note\">Checks apply to <strong>{account}</strong> at page load. Mailbox listing does not verify SMTP or message delivery. Public key inventory does not verify private-key readiness. Session verification does not report every security service. OSMAP does not report host backup or system-update results.</p></details></section></div>",
         "<footer class=\"welcome-footer\"><span>OSMAP · Secure by Design. Private by Default.</span><span>Limited status checks</span><span aria-disabled=\"true\">Help unavailable</span><span aria-disabled=\"true\">Feedback unavailable</span></footer></main>"
-    ), header=app_header(canonical_username,csrf_token,"mailboxes"), account=escape_html(canonical_username), metrics=metrics, recent=recent, shortcuts=shortcuts, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), key_summary=key_summary, activity_rows=activity_rows(canonical_username, activity), search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system, storage=storage))
+    ), header=header, account=escape_html(canonical_username), metrics=metrics, recent=recent, shortcuts=shortcuts, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), key_summary=key_summary, activity_rows=activity_rows(canonical_username, activity), search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system, storage=storage))
 }
 
 fn openpgp_summary(
@@ -408,6 +414,17 @@ mod activity_tests {
                 html.as_str().contains("12 bytes used of 20 bytes"),
                 measured
             );
+            let rail = html
+                .as_str()
+                .split_once("class=\"rail-storage\"")
+                .unwrap()
+                .1
+                .split_once("</section>")
+                .unwrap()
+                .0;
+            assert_eq!(rail.contains("12 bytes of 20 bytes"), measured);
+            assert!(rail.contains(">View storage</a>"));
+            assert!(!rail.contains("Usage unavailable"));
             assert!(html.as_str().contains(if measured {
                 "Shared mailbox and Documents"
             } else {

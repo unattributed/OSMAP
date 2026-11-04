@@ -37,6 +37,24 @@ fn native_installed_mail_storage_report() -> Result<(), &'static str> {
     let config =
         AppConfig::from_process_env().map_err(|_| "installed configuration unavailable")?;
     let gateway = RuntimeBrowserGateway::from_config(&config);
+    let epoch: u64 = std::env::var("OSMAP_READINESS_EPOCH")
+        .map_err(|_| "current account epoch required")?
+        .parse()
+        .map_err(|_| "numeric account epoch required")?;
+    if !gateway.uses_account_runtime(&account) {
+        return Err("installed account authority required");
+    }
+    gateway
+        .account_runtime
+        .ready()
+        .ok_or("installed account authority unavailable")?
+        .admission()
+        .admit_before(
+            &account,
+            epoch,
+            std::time::Instant::now() + std::time::Duration::from_secs(10),
+        )
+        .map_err(|_| "installed signed account admission unavailable")?;
     // This is the same Runtime factory/Store chain used by mail_storage_report.
     // A SessionRecord is unnecessary because the only selector is the account.
     let report = gateway
@@ -97,6 +115,11 @@ fn native_installed_mail_storage_report() -> Result<(), &'static str> {
             },
         );
         for html in [dashboard.as_str(), general.as_str()] {
+            let rail = html
+                .split_once("<section class=\"rail-storage\"")
+                .and_then(|(_, rest)| rest.split_once("</section>"))
+                .map(|(rail, _)| rail)
+                .ok_or("native storage navigation missing")?;
             if html.len() > 512 * 1024
                 || html.contains(&format!("{expected_bytes} bytes")) != measured
                 || html.contains("Enforcement has not been verified") != measured
@@ -106,6 +129,9 @@ fn native_installed_mail_storage_report() -> Result<(), &'static str> {
                 return Err("native storage page projection refused");
             }
             if measured {
+                if rail.contains("Usage unavailable") || !rail.contains("Messages:") {
+                    return Err("native storage navigation contradicts measured report");
+                }
                 let label = match expected_limit {
                     None => "Not reported by the mail server".into(),
                     Some(0) => ">Unlimited<".into(),
@@ -120,6 +146,6 @@ fn native_installed_mail_storage_report() -> Result<(), &'static str> {
     if began.elapsed() > std::time::Duration::from_secs(20) {
         return Err("native report deadline exceeded");
     }
-    println!("INSTALLED_STORAGE_REPORT=PASS RUNTIME_HELPER=PASS OWNED_PAGE_RENDERERS=2 FOREIGN_PAGE_REFUSALS=2 OWNER_SESSION=NOT_USED OWNER_HTTP=NOT_RUN WRITES=NOT_DISPATCHED QUOTA_AUTHORITY=NOT_CLAIMED");
+    println!("INSTALLED_STORAGE_REPORT=PASS RUNTIME_HELPER=PASS ACCOUNT_ADMISSION=PASS OWNED_PAGE_RENDERERS=2 OWNED_RAILS=2 FOREIGN_PAGE_REFUSALS=2 OWNER_SESSION=NOT_USED OWNER_HTTP=NOT_RUN WRITES=NOT_DISPATCHED QUOTA_AUTHORITY=NOT_CLAIMED");
     Ok(())
 }

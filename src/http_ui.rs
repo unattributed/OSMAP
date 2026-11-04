@@ -369,6 +369,16 @@ fn header_theme_controls(csrf: &str, current: &str) -> String {
 }
 
 pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> String {
+    app_header_with_storage(canonical_username, csrf_token, current, None)
+}
+
+pub(crate) fn app_header_with_storage(
+    canonical_username: &str,
+    csrf_token: &str,
+    current: &str,
+    storage: Option<&crate::storage_ui::StorageView>,
+) -> String {
+    let rail_storage = crate::storage_ui::render_rail(canonical_username, storage);
     let clock = request_clock(crate::totp::TimeProvider::unix_timestamp(
         &crate::totp::SystemTimeProvider,
     ));
@@ -428,7 +438,7 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
         "<a class=\"skip-link\" href=\"#main-content\">Skip to content</a>",
         "<aside class=\"app-rail\" aria-label=\"Application navigation\">",
         "<details class=\"rail-disclosure\"><summary title=\"Navigation labels\">{}<span class=\"sr-only rail-expand-label\">Expand navigation</span><span class=\"sr-only rail-collapse-label\">Collapse navigation</span></summary><p class=\"sr-only\">Navigation labels are expanded.</p></details>",
-        "<nav class=\"rail-links\" aria-label=\"Primary navigation\">{}</nav><section class=\"rail-storage\" aria-label=\"Storage\"><strong>Storage</strong><p>Usage unavailable</p></section></aside>",
+        "<nav class=\"rail-links\" aria-label=\"Primary navigation\">{}</nav>{rail_storage}</aside>",
         "<header class=\"topbar{brand_variant}\" role=\"banner\" aria-label=\"Authenticated OSMAP shell\">",
         "<a class=\"brand\" href=\"/mailboxes\" aria-label=\"OSMAP mailboxes\"><span class=\"brand-mark\" aria-hidden=\"true\"><span class=\"ui-icon brand-icon\">{}</span></span>{brand_copy}</a>",
         "{}",
@@ -439,7 +449,7 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
         "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings?section=appearance\">Appearance</a><a href=\"/contacts\">Contacts</a><a href=\"/sessions\">Manage sessions</a>{}</div>",
         "</details>{theme_controls}</div></header>{clock}"
     ), shell_icon("menu"), links, brand_mark, search_menu, escape_html(&sender_initials(Some(canonical_username))), escape_html(canonical_username),
-        escape_html(canonical_username), shell_icon("chevron"), escape_html(canonical_username), logout_form(csrf_token), theme_controls = theme_controls, clock = clock, brand_copy = brand_copy, notification_link = notification_header_link(canonical_username, None), brand_variant = if welcome { " topbar-welcome" } else { "" })
+        escape_html(canonical_username), shell_icon("chevron"), escape_html(canonical_username), logout_form(csrf_token), theme_controls = theme_controls, clock = clock, brand_copy = brand_copy, notification_link = notification_header_link(canonical_username, None), brand_variant = if welcome { " topbar-welcome" } else { "" }, rail_storage = rail_storage)
 }
 
 fn request_clock(timestamp: u64) -> String {

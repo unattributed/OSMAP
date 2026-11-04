@@ -185,6 +185,12 @@ pub(crate) fn render_general_page_with_mark_read(
         "<section class=\"general-card\" aria-labelledby=\"general-security-title\"><h2 id=\"general-security-title\">Account Security</h2><ul class=\"general-status-list\">{}</ul>",
         "</section>"
     ), security_rows);
+    let header = app_header_with_storage(
+        model.canonical_username,
+        model.csrf_token,
+        "settings-general",
+        storage,
+    );
     let storage = format!(concat!(
         "<section class=\"general-card general-storage\" aria-labelledby=\"general-storage-title\"><h2 id=\"general-storage-title\">Storage &amp; Data</h2><div class=\"general-storage-columns\">",
         "{}</div></section>"
@@ -205,7 +211,7 @@ pub(crate) fn render_general_page_with_mark_read(
     TrustedHtml::from_template(format!(concat!(
         "{}<main id=\"main-content\" class=\"page-shell settings-page settings-general-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Settings</h1><p>Manage account, mailbox, appearance, composition, privacy and security preferences.</p></div>{}",
         "<div class=\"settings-layout settings-general-layout\">{}<div class=\"settings-general-grid\">{}{}{}{}{}{}{}<div class=\"general-overview-actions\"><a class=\"button-link\" href=\"/sessions\">Manage active sessions</a><span>Reset discards unsaved edits and reloads this section’s saved values. It does not restore defaults.</span><a class=\"button-link\" href=\"/settings?section=general\">Reset this section</a></div></div></div></main>"
-    ), app_header(model.canonical_username, model.csrf_token, "settings-general"), notices, settings_navigation("general"), profile, appearance, mailbox, composition, privacy, security, storage))
+    ), header, notices, settings_navigation("general"), profile, appearance, mailbox, composition, privacy, security, storage))
 }
 
 fn unavailable_input(id: &str, label: &str, value: &str) -> String {
@@ -318,6 +324,17 @@ mod tests {
             },
         );
         assert!(html.as_str().contains("4096 bytes used of 102400000 bytes"));
+        let rail = html
+            .as_str()
+            .split_once("class=\"rail-storage\"")
+            .unwrap()
+            .1
+            .split_once("</section>")
+            .unwrap()
+            .0;
+        assert!(rail.contains("4.0 KiB of 97.7 MiB"));
+        assert!(rail.contains(">View storage</a>"));
+        assert!(!rail.contains("Unavailable"));
         assert!(html
             .as_str()
             .contains("0 bytes of file contents, including 0 bytes in Bin"));

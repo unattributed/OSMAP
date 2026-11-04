@@ -115,7 +115,7 @@
       ],
       "frontend_backend_outcome": "The signed-in user uploads, finds, downloads, bins and restores private Documents while mail and Documents share one finite native quota; storage views report account-specific evidence.",
       "essential_qa": "Reuse Rust lifecycle/security tests; exact native transfer; native concurrent IMAP/LMTP/Documents capacity enforcement; interruption/retention cleanup; installed account-specific rendering and owner UAT.",
-      "next_action": "Owner reporting UAT exposed stale account authority after Dovecot metadata change. Credential-free admission FAIL reproduced; account-service then Web restart restored signed admission PASS with protected state unchanged. Owner now confirms Login successful after fresh MFA. Keep reporting acceptance separate and continue original open S08 obligations.",
+      "next_action": "Owner Login successful retained. Sidebar UAT hardcode corrected through the existing account report; Web-only install17a1395f and native6060c10a signed-admission/report/both-rail/foreign checks PASS. Fresh172605611/102400000 bytes. Preserve unchanged configuration/account/helper/crypto and no owner-session test scope. Complete normal signed delivery and owner refresh; reporting and full Documents acceptance stay separate.",
       "dependencies": [
         {
           "owner": "/root",
@@ -757,6 +757,24 @@
         },
         "reference": "http1/native-http.log SHA92d69a9b8c55e12d11fd36373dc6838a1521f20bdd6a98028f35a300091966d7. RealHTTPparser/Runtime/authenticatedhelper/native10MiB upload/exactdownload/forcedheaders/Bin/restore/confirmeddelete; CSRF/Origin403,foreign404,saves1,native/privatecleanupPASS.",
         "change_reference": "Syntheticpostauthsessions scopeonly; no login/TOTP/TLS/browser/standalonedaemon claim. Existingmatchingmax/recoveryproofretained."
+      },
+      {
+        "id": "S08-01-sidebar1",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "bc539761137ec208a2c5d5f29a3d89790fbe3dcc40e190f84cd80ff42a407cd1",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent applied source/fixed installer/QA carrier GO before install; direct matching receipt/hash/docs/CSS result review GO afterward. Native source tar binds17a1395f main/6060c10a tests. Browser pixel/UAT acceptance remains pending.",
+          "covers": ["producer", "cleanup", "consumer"]
+        },
+        "reference": "sidebar-20261105/install.log SHAe84488763980daf8c6d868a195c04c2ee7d6b51a0388d87e2a90a5693af99a90:WebonlyPASS/config/account/helper/agentsunchanged/HTTPS200/nineroles. qualify.log SHAe8e8ce7f2a7200e621508dc8ea8609e2f5095acc7d4e0e92146b94692d999fb3:actual1PASS0FAIL0.11s; Runtime/helper/signedaccountadmission/bothownedrails/twoforeignrefusals; native172605611/102400000.",
+        "change_reference": "Owner sidebar Usage unavailable FAIL preserved. Pure renderer reuses loaded account report, no new read/cache/store or write authority. OwnerHTTPNOTRUN; no password/TOTP or mail mutation; full Documents acceptance OPEN."
       }
     ],
     "next_attempt": null
@@ -766,7 +784,7 @@
     "slice": "S08-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_01.md",
-      "sha256": "df678ee4ac7f8f1161a9d196d494a836d9d278102996da49cd4fafa6c9436e92"
+      "sha256": "4447747ad09db681764cb7244387684e530186b557d9361a07b635682f975ad5"
     },
     "design": {
       "journey": "Upload, list, folders, search, sort, views, isolated download, Bin, restore and confirmed retention cleanup with shared account capacity.",
@@ -947,8 +965,8 @@
   "human_acceptance": {
     "status": "PENDING"
   },
-  "next_action": "Qualify isolated native FFS hard quota, then composed Documents and all ordinary mail writers; review Duncan-only rollout and installed QA before UAT.",
-  "independent_next_action": "Independent source/native review of exact FFS candidate and later rollout; preserve earlier failure evidence."
+  "next_action": "Installed sidebar correction and scoped signed-admission/Runtime/native qualification PASS; finish reviewed signed delivery and simple owner refresh. No mailbox migration or enforcement-authority change; original full Documents obligations remain open.",
+  "independent_next_action": "Matching sidebar source/carrier/result review GO. Preserve earlier failures and owner Login successful; owner refresh and broader original Documents obligations remain separate."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

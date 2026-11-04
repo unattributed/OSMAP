@@ -43,6 +43,53 @@ fn owned<'a>(account: &str, view: Option<&'a StorageView>) -> Option<&'a Storage
     view.filter(|view| view.account == account)
 }
 
+/// Reuse this page's already loaded account snapshot; never fetch for the rail.
+pub(crate) fn render_rail(account: &str, view: Option<&StorageView>) -> String {
+    let content = match owned(account, view) {
+        Some(StorageView {
+            quota: Some(quota), ..
+        }) => {
+            let state = if quota.used_bytes > quota.limit_bytes {
+                "<p><strong>Over quota</strong></p>"
+            } else if quota.used_bytes == quota.limit_bytes {
+                "<p>At quota</p>"
+            } else {
+                ""
+            };
+            format!(
+                "<p>{} of {}</p>{state}",
+                compact_byte_size(quota.used_bytes),
+                compact_byte_size(quota.limit_bytes)
+            )
+        }
+        Some(StorageView {
+            report: Some(report),
+            ..
+        }) => {
+            let limit = match report.configured_limit_bytes {
+                None => "Not reported".into(),
+                Some(0) => "Unlimited".into(),
+                Some(bytes) => compact_byte_size(bytes),
+            };
+            let exceeded = if report
+                .configured_limit_bytes
+                .is_some_and(|limit| limit > 0 && report.message_bytes > limit)
+            {
+                "<p><strong>Over configured quota</strong></p>"
+            } else {
+                ""
+            };
+            format!(
+                "<p>Messages: {}</p><p>Configured quota: {limit}</p>{exceeded}",
+                compact_byte_size(report.message_bytes)
+            )
+        }
+        _ if view.is_some() => "<p>Unavailable</p>".into(),
+        _ => String::new(),
+    };
+    format!("<section class=\"rail-storage\" aria-label=\"Storage\"><strong>Storage</strong>{content}<p><a href=\"/settings?section=general\">View storage</a></p></section>")
+}
+
 fn shared_usage(view: Option<&StorageView>) -> String {
     match view.and_then(|view| view.quota) {
         Some(quota) => format!(
@@ -102,6 +149,15 @@ pub(crate) fn render_settings(account: &str, view: Option<&StorageView>) -> Stri
 }
 
 fn byte_size(bytes: u64) -> String {
+    let formatted = compact_byte_size(bytes);
+    if bytes < 1024 {
+        formatted
+    } else {
+        format!("{formatted} ({bytes} bytes)")
+    }
+}
+
+fn compact_byte_size(bytes: u64) -> String {
     if bytes < 1024 {
         format!("{bytes} bytes")
     } else {
@@ -112,7 +168,7 @@ fn byte_size(bytes: u64) -> String {
         } else {
             ("GiB", 1_073_741_824.0)
         };
-        format!("{:.1} {unit} ({bytes} bytes)", bytes as f64 / divisor)
+        format!("{:.1} {unit}", bytes as f64 / divisor)
     }
 }
 
@@ -148,6 +204,68 @@ fn mailbox_storage(view: Option<&StorageView>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn storage_rail_reuses_owned_reporting_and_prefers_qualified_quota() {
+        let report = MailStorageReport {
+            account: "alice".into(),
+            message_bytes: 172_605_611,
+            configured_limit_bytes: Some(102_400_000),
+        };
+        let reported =
+            StorageView::from_reads("alice", None, None).with_report(Some(report.clone()));
+        let rail = render_rail("alice", Some(&reported));
+        assert!(rail.contains("Messages: 164.6 MiB"));
+        assert!(rail.contains("Configured quota: 97.7 MiB"));
+        assert!(rail.contains("Over configured quota"));
+        assert!(!rail.contains("Enforced") && !rail.contains("172605611 bytes"));
+        let qualified = StorageView::from_reads(
+            "alice",
+            Some(QuotaStatus {
+                used_bytes: 1024,
+                limit_bytes: 2048,
+            }),
+            None,
+        )
+        .with_report(Some(report));
+        let rail = render_rail("alice", Some(&qualified));
+        assert!(rail.contains("1.0 KiB of 2.0 KiB"));
+        assert!(!rail.contains("164.6") && !rail.contains("Messages:"));
+    }
+
+    #[test]
+    fn storage_rail_separates_unloaded_failed_and_foreign_snapshots() {
+        let unloaded = render_rail("alice", None);
+        assert!(unloaded.contains(">View storage</a>"));
+        assert!(!unloaded.contains("Unavailable") && !unloaded.contains("unavailable"));
+        let failed = StorageView::from_reads("alice", None, None);
+        let foreign =
+            StorageView::from_reads("bob", None, None).with_report(Some(MailStorageReport {
+                account: "bob".into(),
+                message_bytes: 987_654,
+                configured_limit_bytes: Some(1_234_567),
+            }));
+        for view in [&failed, &foreign] {
+            let rail = render_rail("alice", Some(view));
+            assert!(rail.contains("Unavailable") && rail.contains(">View storage</a>"));
+            assert!(!rail.contains("987") && !rail.contains("bob"));
+        }
+    }
+
+    #[test]
+    fn storage_rail_distinguishes_unlimited_and_unreported_configured_limits() {
+        for (limit, expected) in [(Some(0), "Unlimited"), (None, "Not reported")] {
+            let view =
+                StorageView::from_reads("alice", None, None).with_report(Some(MailStorageReport {
+                    account: "alice".into(),
+                    message_bytes: 0,
+                    configured_limit_bytes: limit,
+                }));
+            let rail = render_rail("alice", Some(&view));
+            assert!(rail.contains("Messages: 0 bytes") && rail.contains(expected));
+            assert!(!rail.contains("Unavailable") && !rail.contains("Over configured quota"));
+        }
+    }
 
     fn index(account: &str, pending: bool) -> Index {
         serde_json::from_value(serde_json::json!({

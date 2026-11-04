@@ -1,5 +1,46 @@
 # S08-01 — Documents and authoritative account storage
 
+## Storage sidebar UAT correction — 2026-11-05
+
+Owner UAT showed correct measured values in the dashboard card while the shared
+sidebar still hardcoded `Usage unavailable`. This was a presentation wiring
+defect. The sidebar now reuses the same already-loaded account snapshot on the
+dashboard and General Settings, with compact message bytes, configured quota
+and an over-configured-quota indicator. It adds no helper query, cache, database
+or service. Pages without a loaded report offer `View storage`; an attempted
+failed read remains unavailable. Exact account checks suppress foreign values.
+Qualified quota and advisory reporting remain distinct, with unlimited and
+unreported configured limits handled separately.
+
+Focused Rust validation passes three rail cases, one real route regression,
+12 welcome cases and 10 General Settings cases; strict all-target Clippy and
+formatting pass. Independent source and installer/qualification review is GO.
+The matching OpenBSD build passed. Web-only installation loaded main SHA256
+`17a1395f9a87fa57ff955fd9f49eb67d376bb93faa67eb5a80c4a234e02f21cd`.
+Configuration, account-service PID, mailbox-helper PID and crypto-agent PIDs
+compare unchanged. HTTPS login returned200 and all nine checked roles run.
+No Dovecot reload or account-service/mailbox-helper/crypto restart was needed.
+
+Matching OpenBSD test SHA256
+`6060c10a7e48a61d9f5fae28393a4f327936a4bbca5b7e19a0b78039c583d137`
+actually ran the existing installed report case as the Web principal: one PASS,
+zero failures in0.11seconds. It now requires current signed account-epoch
+admission as well as the actual Runtime/authenticated-helper read, both owned
+page sidebars and two foreign-page refusals. Fresh native values remain
+172605611 message bytes and102400000 configured quota bytes. No owner session,
+password or TOTP is used; owner HTTP/browser acceptance is not inferred.
+
+Private receipts in `sidebar-20261105` under the existing sprint root:
+
+- `source.tar`: SHA256 `bc539761137ec208a2c5d5f29a3d89790fbe3dcc40e190f84cd80ff42a407cd1`.
+- `install.log`: SHA256 `e84488763980daf8c6d868a195c04c2ee7d6b51a0388d87e2a90a5693af99a90`.
+- `qualify.log`: SHA256 `e8e8ce7f2a7200e621508dc8ea8609e2f5095acc7d4e0e92146b94692d999fb3`.
+
+The previous owner `Login successful` confirmation remains recorded below.
+The sidebar correction awaits a simple owner refresh; full Documents shared-
+quota and broader S08 acceptance remain open. Normal signed delivery checks and
+fresh branch equality are required separately before claiming preservation.
+
 ## Owner login regression and service recovery — 2026-11-05
 
 Owner UAT reported sign-in failure using the saved Proton Pass credentials.

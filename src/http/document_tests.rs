@@ -20,6 +20,14 @@ fn advisory_mail_storage_reaches_both_pages_without_write_authority_or_foreign_v
         assert!(html.contains("172605611 bytes"));
         assert!(html.contains("102400000 bytes"));
         assert!(html.contains("Enforcement has not been verified"));
+        let rail = html
+            .split_once("<section class=\"rail-storage\"")
+            .and_then(|(_, rest)| rest.split_once("</section>"))
+            .map(|(rail, _)| rail)
+            .expect("storage navigation");
+        assert!(rail.contains("164.6 MiB"));
+        assert!(rail.contains("97.7 MiB"));
+        assert!(!rail.contains("Usage unavailable"));
         let mut foreign = get;
         foreign.headers.insert("cookie".into(), format!("osmap_session={}", "b".repeat(64)));
         let response = app.handle_request(&foreign, "127.0.0.1");
