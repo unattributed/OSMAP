@@ -51712,3 +51712,16 @@ cryptoSHA256bd1c9d5f4c21e569211d6b5a3844082b97c264962a8c8dff38002f3f22df6685.
 Independent source/native-recipe/installation-template review GO. Evidence is
 private under /home/foo/Downloads/osmap-ux-s07/remembered-key-20261104; no tokens,
 passphrases or key material enter Git. Installation and owner UAT remain pending.
+
+Delivery qualification follow-up: initial normal security-check refused stale
+V10 source inventory totals/hashes after the added Rust regression cases. Existing
+audit/remediation generators were rerun and claims refreshed from their actual
+summaries (11864total; refined high relevance remains0); no gate or runtime
+control changed. V10 governance readback PASS. Source checkpointc1a54d3 has a
+verified Shopkeeper signature. Default SSH publication and one explicit existing
+SSH identity were rejected by GitHub; no key/credential changes made. Independent
+transport reassessment selected the existing gh keyring HTTPS credential;
+read-only same-repository/ref check confirms remote7efa4df. Normal non-forced Git
+push/hooks and fresh exact parity remain required; no API-created replacement
+commit or unsigned fallback. Generated receipts do not alter the qualified Rust
+artifacts. Installation remains pending normal delivery qualification.
