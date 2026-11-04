@@ -117,7 +117,7 @@ use crate::http_support::{
 };
 use crate::http_ui::{
     render_compose_page, render_draft_list_page, render_login_page,
-    render_mailboxes_page_with_policy, render_message_list_page, render_message_search_page,
+    render_mailboxes_page_with_storage, render_message_list_page, render_message_search_page,
     render_navigation_notice, render_sessions_page, ComposePageModel, DraftListPageModel,
     MailReaderContext, MessageListBulkActions, MessageListSortLinks, MessageSearchContext,
     SelectedMessagePane, SettingsPageModel,

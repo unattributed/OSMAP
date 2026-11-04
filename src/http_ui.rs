@@ -743,7 +743,7 @@ pub(crate) fn render_login_page(error_message: Option<&str>) -> TrustedHtml {
 
 #[path = "welcome_ui.rs"]
 mod welcome_ui;
-pub(crate) use welcome_ui::render_mailboxes_page_with_policy;
+pub(crate) use welcome_ui::{render_mailboxes_page_with_storage, WelcomeAccountState};
 
 const MESSAGE_SORT_COLUMNS: [MessageSortColumn; 6] = [
     MessageSortColumn::Uid,

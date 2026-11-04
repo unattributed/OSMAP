@@ -1,5 +1,31 @@
 use super::*;
 
+#[test]
+fn document_storage_reads_reach_dashboard_and_general_for_the_authenticated_account() {
+    let (app, root, store) = fixture();
+    let csrf = StubGateway::validated_session().record.csrf_token;
+    assert_eq!(app.handle_request(&upload_request(&csrf, 0), "127.0.0.1").response.status_code, 303);
+    let index = store.load("alice@example.com").unwrap();
+    let payload = b"Exact document body".len();
+    for route in ["/mailboxes", "/settings?section=general"] {
+        let get = request("GET", route, &authenticated_same_origin_headers(), "");
+        let response = app.handle_request(&get, "127.0.0.1");
+        assert_eq!(response.response.status_code, 200, "{route}");
+        let html = String::from_utf8_lossy(&response.response.body);
+        assert!(html.contains("0 bytes used of 1048576 bytes"), "{route}");
+        assert!(html.contains(&format!("{payload} bytes of file contents, including 0 bytes in Bin")), "{route}");
+        let mut bob = get;
+        bob.headers.insert("cookie".into(), format!("osmap_session={}", "b".repeat(64)));
+        let response = app.handle_request(&bob, "127.0.0.1");
+        assert_eq!(response.response.status_code, 200);
+        let html = String::from_utf8_lossy(&response.response.body);
+        assert!(html.contains("0 bytes of file contents, including 0 bytes in Bin"));
+        assert!(!html.contains(&format!("{payload} bytes of file contents")));
+    }
+    assert_eq!(store.load("alice@example.com").unwrap(), index, "storage reads do not mutate the index");
+    std::fs::remove_dir_all(root).unwrap();
+}
+
 fn fixture() -> (BrowserApp<StubGateway>, std::path::PathBuf, crate::documents::Store<crate::documents::test_support::FixtureBackend>) {
     let root = std::env::temp_dir().join(format!("osmap-document-http-{}", crate::draft::generate_draft_id().unwrap()));
     let store = crate::documents::Store::new(root.clone(), crate::documents::test_support::FixtureBackend::new(true));

@@ -14,6 +14,7 @@ pub(crate) struct GeneralPageState<'a> {
     pub mark_read: Option<&'a crate::mark_read::Preference>,
     pub timezone: Option<&'a crate::timezone::Preference>,
     pub security: GeneralSecurityState<'a>,
+    pub storage: Option<&'a crate::storage_ui::StorageView>,
 }
 
 #[cfg(test)]
@@ -49,6 +50,7 @@ pub(crate) fn render_general_page_with_mark_read(
         mark_read,
         timezone,
         security,
+        storage,
     } = state;
     let profile_input = |id: &str, label: &str, value: Option<&str>| {
         match value {
@@ -183,12 +185,10 @@ pub(crate) fn render_general_page_with_mark_read(
         "<section class=\"general-card\" aria-labelledby=\"general-security-title\"><h2 id=\"general-security-title\">Account Security</h2><ul class=\"general-status-list\">{}</ul>",
         "</section>"
     ), security_rows);
-    let storage = concat!(
+    let storage = format!(concat!(
         "<section class=\"general-card general-storage\" aria-labelledby=\"general-storage-title\"><h2 id=\"general-storage-title\">Storage &amp; Data</h2><div class=\"general-storage-columns\">",
-        "<div><h3>Mailbox usage</h3><p>Unknown</p><span>Usage and quota are unavailable.</span></div>",
-        "<div><h3>Documents usage</h3><p>Unknown</p><span>Shared storage usage is unavailable.</span></div>",
-        "<div><h3>Retention</h3><p>Unknown</p><span>No retention policy is available to this page.</span></div></div></section>"
-    );
+        "{}</div></section>"
+    ), crate::storage_ui::render_settings(model.canonical_username, storage));
     let mut notices = String::new();
     if let Some(message) = model.success_message {
         notices.push_str(&format!(
@@ -288,6 +288,70 @@ mod tests {
         )
         .as_str()
         .to_owned()
+    }
+
+    #[test]
+    fn general_storage_shows_owned_reads_without_adding_document_bytes_to_quota() {
+        let index: crate::documents::Index = serde_json::from_value(serde_json::json!({
+            "version":1,"account":"synthetic@example.test","revision":0,
+            "documents":[],"folders":[]
+        }))
+        .unwrap();
+        let storage = crate::storage_ui::StorageView::from_reads(
+            "synthetic@example.test",
+            Some(crate::documents::QuotaStatus {
+                used_bytes: 4096,
+                limit_bytes: 102400000,
+            }),
+            Some(&index),
+        );
+        let html = render_general_page_with_mark_read(
+            &model(),
+            &crate::appearance::AppearanceSettings::default(),
+            None,
+            None,
+            None,
+            None,
+            GeneralPageState {
+                storage: Some(&storage),
+                ..Default::default()
+            },
+        );
+        assert!(html.as_str().contains("4096 bytes used of 102400000 bytes"));
+        assert!(html
+            .as_str()
+            .contains("0 bytes of file contents, including 0 bytes in Bin"));
+        assert!(html.as_str().contains("restore within 30 days"));
+        assert!(html.as_str().contains("href=\"/documents\""));
+        assert!(!html
+            .as_str()
+            .contains("No retention policy is available to this page"));
+
+        let foreign = crate::storage_ui::StorageView::from_reads(
+            "foreign@example.test",
+            Some(crate::documents::QuotaStatus {
+                used_bytes: 987654,
+                limit_bytes: 1000000,
+            }),
+            None,
+        );
+        for storage in [None, Some(&foreign)] {
+            let html = render_general_page_with_mark_read(
+                &model(),
+                &crate::appearance::AppearanceSettings::default(),
+                None,
+                None,
+                None,
+                None,
+                GeneralPageState {
+                    storage,
+                    ..Default::default()
+                },
+            );
+            assert!(html.as_str().contains("Documents retention unavailable"));
+            assert!(!html.as_str().contains("987654"));
+            assert!(!html.as_str().contains("restore within 30 days"));
+        }
     }
 
     #[test]

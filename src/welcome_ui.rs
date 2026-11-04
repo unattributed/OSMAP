@@ -1,9 +1,14 @@
 //! PAGE-01 welcome surface. Only supplied mailbox identities are projected.
 use super::*;
 
-// Preserve the existing PAGE-01 input contract and add the server-owned policy.
+pub(crate) struct WelcomeAccountState<'a> {
+    pub openpgp: &'a crate::key_management::State,
+    pub defaults: Option<crate::composition_preferences::OpenPgpDefaults>,
+    pub storage: Option<&'a crate::storage_ui::StorageView>,
+}
+
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn render_mailboxes_page_with_policy(
+pub(crate) fn render_mailboxes_page_with_storage(
     canonical_username: &str,
     csrf_token: &str,
     mailboxes: &[MailboxEntry],
@@ -12,11 +17,10 @@ pub(crate) fn render_mailboxes_page_with_policy(
     sent_count: Option<usize>,
     activity: &crate::http::BrowserSessionListDecision,
     open_on_select: bool,
-    openpgp: (
-        &crate::key_management::State,
-        Option<crate::composition_preferences::OpenPgpDefaults>,
-    ),
+    account_state: WelcomeAccountState<'_>,
 ) -> TrustedHtml {
+    let openpgp = (account_state.openpgp, account_state.defaults);
+    let storage = crate::storage_ui::render_dashboard(canonical_username, account_state.storage);
     let (summaries, snooze_notice) = summaries;
     let key_summary = openpgp_summary(canonical_username, openpgp.0, openpgp.1);
     let has = |name: &str| mailboxes.iter().any(|mailbox| mailbox.name == name);
@@ -178,10 +182,10 @@ pub(crate) fn render_mailboxes_page_with_policy(
         "{key_summary}</div>",
         "<div class=\"welcome-secondary-grid\"><section class=\"welcome-panel welcome-activity\" aria-labelledby=\"welcome-activity-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-activity-title\">Recent Activity</h2></div>{activity_rows}</section>",
         "<div class=\"welcome-middle-stack\"><section class=\"welcome-panel welcome-actions\" aria-labelledby=\"welcome-actions-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-actions-title\">Quick Actions</h2></div><div class=\"welcome-action-grid\"><a href=\"/search\">{search_icon}<strong>Search</strong><span>Find messages</span></a><a href=\"{filter_target}\">{filter_icon}<strong>Filters</strong><span>{filter_description}</span></a><a href=\"/labels\">{label_icon}<strong>Labels</strong><span>Organize messages</span></a><details><summary>{more_icon}<strong>More</strong><span>Available tools</span></summary><div><a href=\"/contacts\">Contacts</a><a href=\"/sessions\">Sessions</a><a href=\"/drafts\">Saved drafts</a></div></details></div>{search}</section>",
-        "<section class=\"welcome-panel welcome-storage\" aria-labelledby=\"welcome-storage-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-storage-title\">Storage Usage</h2></div><div class=\"welcome-storage-body\"><div><strong>Usage and quota unknown</strong><p>Mailbox, document and other storage totals are unavailable.</p></div><button type=\"button\" disabled>Manage Storage</button></div></section></div>",
+        "<section class=\"welcome-panel welcome-storage\" aria-labelledby=\"welcome-storage-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-storage-title\">Storage Usage</h2></div><div class=\"welcome-storage-body\">{storage}</div></section></div>",
         "<section class=\"welcome-panel welcome-system\" aria-labelledby=\"welcome-system-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-system-title\">System Status</h2></div><ul>{system}</ul><details><summary>View status details</summary><p class=\"welcome-note\">Checks apply to <strong>{account}</strong> at page load. Mailbox listing does not verify SMTP or message delivery. Public key inventory does not verify private-key readiness. Session verification does not report every security service. OSMAP does not report host backup or system-update results.</p></details></section></div>",
         "<footer class=\"welcome-footer\"><span>OSMAP · Secure by Design. Private by Default.</span><span>Limited status checks</span><span aria-disabled=\"true\">Help unavailable</span><span aria-disabled=\"true\">Feedback unavailable</span></footer></main>"
-    ), header=app_header(canonical_username,csrf_token,"mailboxes"), account=escape_html(canonical_username), metrics=metrics, recent=recent, shortcuts=shortcuts, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), key_summary=key_summary, activity_rows=activity_rows(canonical_username, activity), search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system))
+    ), header=app_header(canonical_username,csrf_token,"mailboxes"), account=escape_html(canonical_username), metrics=metrics, recent=recent, shortcuts=shortcuts, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), key_summary=key_summary, activity_rows=activity_rows(canonical_username, activity), search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system, storage=storage))
 }
 
 fn openpgp_summary(
@@ -351,6 +355,69 @@ fn activity_rows(account: &str, decision: &crate::http::BrowserSessionListDecisi
 mod activity_tests {
     use super::*;
     use crate::http::{BrowserSessionListDecision as Decision, BrowserVisibleSession};
+
+    #[test]
+    fn welcome_storage_projects_only_owned_values_and_offers_details() {
+        let keys = crate::key_management::State {
+            canonical_username: "alice".into(),
+            inventory: None,
+            bindings: None,
+            binding_changes_available: false,
+            public_key_changes_available: false,
+            public_inventory_revision: None,
+        };
+        let storage = crate::storage_ui::StorageView::from_reads(
+            "alice",
+            Some(crate::documents::QuotaStatus {
+                used_bytes: 12,
+                limit_bytes: 20,
+            }),
+            None,
+        );
+        let foreign = crate::storage_ui::StorageView::from_reads(
+            "bob",
+            Some(crate::documents::QuotaStatus {
+                used_bytes: 987654,
+                limit_bytes: 1000000,
+            }),
+            None,
+        );
+        for (storage, measured) in [
+            (Some(&storage), true),
+            (None, false),
+            (Some(&foreign), false),
+        ] {
+            let html = render_mailboxes_page_with_storage(
+                "alice",
+                "csrf",
+                &[],
+                (None, None),
+                None,
+                None,
+                &Decision::Denied {
+                    public_reason: "unavailable".into(),
+                },
+                false,
+                WelcomeAccountState {
+                    openpgp: &keys,
+                    defaults: None,
+                    storage,
+                },
+            );
+            assert_eq!(
+                html.as_str().contains("12 bytes used of 20 bytes"),
+                measured
+            );
+            assert!(html.as_str().contains("Shared mailbox and Documents"));
+            assert!(html.as_str().contains("Documents retention unavailable"));
+            assert!(html
+                .as_str()
+                .contains("href=\"/settings?section=general\">View storage details"));
+            assert!(!html.as_str().contains("987654"));
+            assert!(!html.as_str().contains("disabled>Manage Storage"));
+            assert!(!html.as_str().contains("Usage and quota unknown"));
+        }
+    }
     #[test]
     fn welcome_recent_opening_preserves_card_markup_and_public_identity() {
         let mut message = MessageSummary {

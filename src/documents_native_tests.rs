@@ -18,6 +18,187 @@ use std::time::{Duration, Instant};
 const ACCOUNT: &str = "alice@osmap-documents.invalid";
 const NATIVE_LIMIT: Duration = Duration::from_secs(120);
 
+fn quota_test_message(kind: &str, id: usize, bytes: usize) -> Vec<u8> {
+    assert!(matches!(kind, "seed" | "candidate"));
+    let mut message = format!(
+        "From: local@osmap.invalid\r\nTo: {ACCOUNT}\r\nMessage-ID: <quota-{kind}-{id}@osmap.invalid>\r\nX-OSMAP-Quota-Test: {kind}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=us-ascii\r\n\r\n"
+    ).into_bytes();
+    assert!(message.len() + 2 <= bytes);
+    while message.len() + 82 <= bytes {
+        message.extend_from_slice(&[b'x'; 78]);
+        message.extend_from_slice(b"\r\n");
+    }
+    message.resize(bytes - 2, b'x');
+    message.extend_from_slice(b"\r\n");
+    assert_eq!(message.len(), bytes);
+    message
+}
+
+fn native_concurrent_quota_saves(root: &Path, config: &Path, userdb: &Path) {
+    let executor = ScopedExecutor {
+        config: config.into(),
+        diagnostic: false,
+    };
+    let backend = DoveadmDocumentsBackend::new(
+        executor.clone(),
+        "/usr/local/bin/doveadm",
+        "/usr/local/bin/doveconf",
+    )
+    .with_userdb_socket_path(Some(userdb.into()));
+    let initial = backend
+        .quota_status(ACCOUNT)
+        .expect("native_documents_concurrent_quota stage=initial_quota result=unavailable")
+        .expect("native_documents_concurrent_quota stage=initial_quota result=not_ready");
+    assert_eq!(initial.limit_bytes, 64 * 1024);
+    assert_eq!(initial.used_bytes, 0);
+    let args = vec![
+        "-o".into(),
+        format!("auth_socket_path={}", userdb.display()),
+        "save".into(),
+        "-u".into(),
+        ACCOUNT.into(),
+        "-m".into(),
+        "INBOX".into(),
+    ];
+    let seeded = executor
+        .run_with_stdin_bytes_timeout_and_output_limit(
+            "/usr/local/bin/doveadm",
+            &args,
+            &quota_test_message("seed", 0, 48 * 1024),
+            Duration::from_secs(5),
+            4096,
+        )
+        .expect("native_documents_concurrent_quota stage=seed result=transport_unknown");
+    assert_eq!(
+        seeded.status_code, 0,
+        "native_documents_concurrent_quota stage=seed result=refused"
+    );
+    let seeded_quota = backend
+        .quota_status(ACCOUNT)
+        .expect("native_documents_concurrent_quota stage=seed_quota result=unavailable")
+        .expect("native_documents_concurrent_quota stage=seed_quota result=not_ready");
+    assert_eq!(seeded_quota.used_bytes, 48 * 1024);
+    let outcomes = thread::scope(|scope| {
+        // A bounded ready/release barrier also terminates safely if a worker
+        // cannot start; an unbounded Barrier::wait would strand its peers.
+        let (ready, prepared) = std::sync::mpsc::channel();
+        let mut handles = Vec::new();
+        let mut releases = Vec::new();
+        for (id, mailbox) in ["INBOX", "OSMAP.Documents", "OSMAP.DocumentsBin"]
+            .into_iter()
+            .enumerate()
+        {
+            let executor = executor.clone();
+            let mut args = args.clone();
+            *args.last_mut().unwrap() = mailbox.into();
+            let ready = ready.clone();
+            let (release, start) = std::sync::mpsc::channel();
+            releases.push(release);
+            handles.push(scope.spawn(move || {
+                let message = quota_test_message("candidate", id, 12 * 1024);
+                ready.send(()).unwrap();
+                start.recv_timeout(Duration::from_secs(2)).expect(
+                    "native_documents_concurrent_quota stage=launch result=release_timeout",
+                );
+                executor.run_with_stdin_bytes_timeout_and_output_limit(
+                    "/usr/local/bin/doveadm",
+                    &args,
+                    &message,
+                    Duration::from_secs(5),
+                    4096,
+                )
+            }));
+        }
+        for _ in 0..3 {
+            prepared.recv_timeout(Duration::from_secs(2)).expect(
+                "native_documents_concurrent_quota stage=launch result=preparation_timeout",
+            );
+        }
+        for release in releases {
+            release.send(()).unwrap();
+        }
+        handles
+            .into_iter()
+            .map(|handle| handle.join().unwrap())
+            .collect::<Vec<_>>()
+    });
+    // Inspect only the controlled fixture's three owned mailboxes, independently of
+    // quota-plugin counters and command success. No production mailbox read.
+    let mut candidates = 0usize;
+    let mut exact_virtual_bytes = 0u64;
+    for mailbox in ["", ".OSMAP.Documents", ".OSMAP.DocumentsBin"] {
+        for directory in ["cur", "new"] {
+            for entry in
+                fs::read_dir(root.join("alice/Maildir").join(mailbox).join(directory)).unwrap()
+            {
+                let path = entry.unwrap().path();
+                let metadata = fs::symlink_metadata(&path).unwrap();
+                assert!(metadata.is_file() && metadata.len() <= 64 * 1024);
+                let bytes = fs::read(path).unwrap();
+                // Maildir may normalize CRLF to LF. Dovecot vsize counts CRLF.
+                let lf = bytes.iter().filter(|byte| **byte == b'\n').count();
+                let crlf = bytes.windows(2).filter(|pair| *pair == b"\r\n").count();
+                exact_virtual_bytes += bytes.len() as u64 + (lf - crlf) as u64;
+                if bytes
+                    .windows(b"X-OSMAP-Quota-Test: candidate".len())
+                    .any(|part| part == b"X-OSMAP-Quota-Test: candidate")
+                {
+                    candidates += 1;
+                }
+            }
+        }
+    }
+    let quota = backend
+        .quota_status(ACCOUNT)
+        .expect("native_documents_concurrent_quota stage=post_quota result=unavailable")
+        .expect("native_documents_concurrent_quota stage=post_quota result=not_ready");
+    let accepted = outcomes
+        .iter()
+        .filter(|result| result.as_ref().is_ok_and(|done| done.status_code == 0))
+        .count();
+    let transport_known = outcomes.iter().all(Result::is_ok);
+    println!("native_documents_concurrent_quota stage=three_native_saves candidates={candidates} accepted={accepted} virtual_bytes={exact_virtual_bytes} reported_bytes={} limit_bytes={} transport_known={transport_known}", quota.used_bytes, quota.limit_bytes);
+    assert!(
+        transport_known,
+        "native_documents_concurrent_quota stage=save result=transport_unknown"
+    );
+    assert_eq!(
+        accepted, candidates,
+        "native_documents_concurrent_quota stage=reconcile result=status_storage_mismatch"
+    );
+    assert_eq!(
+        candidates, 1,
+        "native_documents_concurrent_quota stage=three_native_saves result=not_exactly_one"
+    );
+    assert_eq!(
+        exact_virtual_bytes,
+        60 * 1024,
+        "native_documents_concurrent_quota stage=reconcile result=seed_or_candidate_bytes_changed"
+    );
+    assert!(
+        exact_virtual_bytes <= quota.limit_bytes && quota.used_bytes <= quota.limit_bytes,
+        "native_documents_concurrent_quota stage=three_native_saves result=limit_exceeded"
+    );
+    assert_eq!(
+        quota.used_bytes, exact_virtual_bytes,
+        "native_documents_concurrent_quota stage=reconcile result=quota_counter_mismatch"
+    );
+    println!("native_documents_concurrent_quota native_save_processes=3 joint_limit=PASS all_protocols=NOT_QUALIFIED");
+}
+
+#[test]
+fn documents_quota_control_messages_count_exact_wire_bytes() {
+    for (kind, bytes) in [("seed", 48 * 1024), ("candidate", 12 * 1024)] {
+        let message = quota_test_message(kind, 0, bytes);
+        assert_eq!(message.len(), bytes);
+        assert!(message.ends_with(b"\r\n"));
+        assert_eq!(
+            message.iter().filter(|byte| **byte == b'\n').count(),
+            message.windows(2).filter(|pair| *pair == b"\r\n").count()
+        );
+    }
+}
+
 fn process_numeric_id(flag: &str) -> u32 {
     assert!(matches!(flag, "-u" | "-g"));
     let result = SystemCommandExecutor
@@ -187,13 +368,21 @@ struct Fixture {
     root_lease: (u64, u64, u32, u32, u32),
     stop: Arc<AtomicBool>,
     userdb: Option<thread::JoinHandle<()>>,
+    retain_on_failure: bool,
 }
 
 impl Drop for Fixture {
     fn drop(&mut self) {
         self.stop.store(true, Ordering::SeqCst);
         if let Some(thread) = self.userdb.take() {
-            let _ = thread.join();
+            if thread.join().is_err() {
+                println!("native_documents_fixture failure_state=RETAINED root={} cleanup=NOT_CLAIMED reason=userdb_join_failed", self.root.display());
+                return;
+            }
+        }
+        if self.retain_on_failure && thread::panicking() {
+            println!("native_documents_fixture failure_state=RETAINED root={} device={} inode={} uid={} gid={} mode={:o} native_log=native.log cleanup=NOT_CLAIMED", self.root.display(),self.root_lease.0,self.root_lease.1,self.root_lease.2,self.root_lease.3,self.root_lease.4);
+            return;
         }
         if fs::symlink_metadata(&self.root)
             .ok()
@@ -208,7 +397,9 @@ impl Drop for Fixture {
                     ) == self.root_lease
             })
         {
-            let _ = fs::remove_dir_all(&self.root);
+            if fs::remove_dir_all(&self.root).is_err() {
+                println!("native_documents_fixture failure_state=RETAINED root={} cleanup=NOT_CLAIMED reason=owned_remove_failed", self.root.display());
+            }
         }
     }
 }
@@ -270,6 +461,9 @@ fn fixture_userdb(fixture: &mut Fixture, uid: u32, gid: u32) -> PathBuf {
                 } else {
                     writeln!(stream, "NOTFOUND\t{id}").unwrap();
                 }
+                // One lookup per owned connection. Close both handles after
+                // replying so the serial fixture listener can admit peers.
+                break;
             }
         }
     }));
@@ -367,6 +561,7 @@ fn isolated_openbsd_documents_first_upload_without_reserved_mailbox() {
         ),
         stop: Arc::new(AtomicBool::new(false)),
         userdb: None,
+        retain_on_failure: true,
     };
     assert_eq!(owner.uid(), process_uid);
     assert_eq!(owner.mode() & 0o777, 0o700);
@@ -500,7 +695,7 @@ fn isolated_openbsd_documents_first_upload_without_reserved_mailbox() {
         "/usr/local/bin/doveadm",
         "/usr/local/bin/doveconf",
     )
-    .with_userdb_socket_path(Some(userdb));
+    .with_userdb_socket_path(Some(userdb.clone()));
     let fault_store = Store::new(root.join("documents-index"), fault_backend);
     assert_eq!(
         fault_store.upload(
@@ -517,8 +712,10 @@ fn isolated_openbsd_documents_first_upload_without_reserved_mailbox() {
     assert!(after_fault.documents.is_empty());
     assert_eq!(after_fault.revision, deleted.revision + 2);
     println!("native_documents_bin predispatch_refusal_no_pending_or_mutation=PASS");
+    native_concurrent_quota_saves(&root, &config, &userdb);
     assert!(whole.elapsed() < NATIVE_LIMIT);
     assert_eq!(standard_metadata(), before);
+    fixture.retain_on_failure = false;
     drop(fixture);
     assert!(!Path::new(&root).exists());
     println!("native_documents_first_upload owned_cleanup=PASS standard_two_path_metadata_unchanged=PASS");

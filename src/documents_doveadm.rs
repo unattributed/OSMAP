@@ -30,6 +30,13 @@ const CONFIG_OUTPUT_MAX: usize = 32 * 1024;
 const INDEX_OUTPUT_MAX: usize = 128 * 1024;
 const FETCH_OUTPUT_MAX: usize = 15 * 1024 * 1024;
 
+// No native driver is yet qualified for the required shared concurrent limit.
+// In the isolated OpenBSD three-mailbox race, count accepted 86,016 bytes
+// against 65,536 despite zero grace and correct accounting. TODO: admit a
+// concrete authority only after its reservation and all-writer paths are
+// implemented and exercised; configuration text alone cannot establish this.
+const QUALIFIED_CONCURRENT_QUOTA_DRIVERS: &[&str] = &[];
+
 #[derive(Debug, Clone)]
 pub struct DoveadmDocumentsBackend<E> {
     executor: E,
@@ -331,7 +338,8 @@ impl<E: CommandExecutor> Backend for DoveadmDocumentsBackend<E> {
             return Err(Error::Invalid);
         }
         // Parse the current effective Dovecot configuration on every write.
-        // The native quota plugin, not this preflight, enforces concurrent saves.
+        // Configuration is necessary but does not prove concurrent enforcement.
+        // Only a qualified native driver may attest shared write authority.
         let config = self.run(&self.doveconf, &["-n".into()], b"", CONFIG_OUTPUT_MAX)?;
         if config.status_code != 0 || !quota_config_ready(&config.stdout) {
             return Ok(None);
@@ -629,7 +637,10 @@ fn quota_config_ready(output: &str) -> bool {
     // is required for its own quota enforcement; protocol-only enables are
     // insufficient even when quota get returns a finite limit.
     quota_backend.is_some_and(|backend| {
-        !backend.is_empty() && (!backend.starts_with("count:") || quota_vsizes)
+        let driver = backend.split(':').next().unwrap_or("");
+        QUALIFIED_CONCURRENT_QUOTA_DRIVERS.contains(&driver)
+            && !backend.is_empty()
+            && (!backend.starts_with("count:") || quota_vsizes)
     }) && grace_zero
         && has_quota(global)
         && effective_quota(lmtp)
@@ -862,23 +873,134 @@ mod tests {
         assert!(!quota_config_ready(
             "mail_plugins = quota\nquota = count:User quota\nquota_grace = 0%\n"
         ));
-        assert!(quota_config_ready(
+        assert!(!quota_config_ready(
             "mail_plugins = quota\nquota = count:User quota\nquota_vsizes = yes\nquota_grace = 0%\n"
         ));
-        assert!(quota_config_ready("mail_plugins = quota\nquota = count:User quota\nquota_vsizes = yes\nquota_grace = 0%\nprotocol lmtp {\n mail_plugins = $mail_plugins sieve\n}\n"));
+        assert!(!quota_config_ready("mail_plugins = quota\nquota = count:User quota\nquota_vsizes = yes\nquota_grace = 0%\nprotocol lmtp {\n mail_plugins = $mail_plugins sieve\n}\n"));
         assert!(!quota_config_ready("mail_plugins = quota\nquota = count:User quota\nquota_vsizes = yes\nquota_grace = 0%\nprotocol lmtp {\n mail_plugins = sieve\n}\n"));
         assert!(!quota_config_ready(
             "mail_plugins = quota\nquota = count:User quota\nquota_vsizes = yes\nquota_grace = 0%\nquota_rule = OSMAP.Documents:ignore\n"
         ));
         assert!(!quota_config_ready("mail_plugins = quota\nquota = count:User quota\nquota_vsizes = yes\nquota_grace = 0%\nquota_rule2 = OSMAP.DocumentsBin:ignore\n"));
         assert!(!quota_config_ready("mail_plugins = quota\nquota = count:User quota\nquota_vsizes = yes\nquota_grace = 0%\nquota_rule2 = OSMAP.Documents:storage=+100M\n"));
-        assert!(quota_config_ready(
+        assert!(!quota_config_ready(
             "mail_plugins = quota\nquota = count:User quota\nquota_vsizes = yes\nquota_grace = 0%\nquota_rule = Trash:ignore\n"
         ));
         assert!(!quota_config_ready("quota = count:User quota\nquota_vsizes = yes\nquota_grace = 0%\nprotocol lmtp {\n plugin {\n  mail_plugins = quota\n }\n mail_plugins = sieve\n}\nprotocol imap {\n mail_plugins = quota\n}\n"));
         assert!(!quota_config_ready(
             "mail_plugins = quota\nquota = count:User quota\nquota_vsizes = yes\nquota_grace = 10%\n"
         ));
+    }
+
+    #[test]
+    fn unqualified_quota_drivers_do_not_grant_shared_concurrent_write_authority() {
+        for driver in [
+            "count", "dict", "dirsize", "fs", "imapc", "maildir", "unknown",
+        ] {
+            assert!(!quota_config_ready(&format!(
+                "mail_plugins = quota\nquota = {driver}:User quota\nquota_vsizes = yes\nquota_grace = 0%\n"
+            )));
+        }
+    }
+
+    #[test]
+    fn count_quota_refuses_append_bin_restore_before_any_native_mailbox_dispatch() {
+        #[derive(Clone)]
+        struct CountConfig(Arc<std::sync::atomic::AtomicUsize>);
+        impl CommandExecutor for CountConfig {
+            fn run_with_stdin_bytes(
+                &self,
+                _: &str,
+                _: &[String],
+                _: &[u8],
+            ) -> Result<CommandExecution, CommandExecutionError> {
+                panic!("bounded execution required");
+            }
+            fn run_with_stdin_bytes_timeout_and_output_limit(
+                &self,
+                program: &str,
+                args: &[String],
+                input: &[u8],
+                timeout: Duration,
+                output_cap: usize,
+            ) -> Result<CommandExecution, CommandExecutionError> {
+                assert_eq!(
+                    program, "/fixed/doveconf",
+                    "quota refusal must precede every doveadm lookup/create/save/move"
+                );
+                assert_eq!(args, ["-n"]);
+                assert!(input.is_empty());
+                assert_eq!(timeout, COMMAND_TIMEOUT);
+                assert_eq!(output_cap, CONFIG_OUTPUT_MAX);
+                self.0.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                Ok(CommandExecution { status_code: 0,
+                    stdout: "mail_plugins = quota\nplugin {\n quota = count:User quota\n quota_rule = *:storage=64K\n quota_vsizes = yes\n quota_grace = 0%\n}\n".into(),
+                    stderr: String::new() })
+            }
+        }
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let backend = DoveadmDocumentsBackend::new(
+            CountConfig(calls.clone()),
+            "/fixed/doveadm",
+            "/fixed/doveconf",
+        );
+        let account = "alice@example.test";
+        let id = "a".repeat(32);
+        assert_eq!(backend.quota_status(account), Ok(None));
+        assert_eq!(
+            backend.append(
+                account,
+                &id,
+                "file.bin",
+                "application/octet-stream",
+                b"bytes"
+            ),
+            Err(Error::PreDispatchUnavailable)
+        );
+        let mut location = Location {
+            mailbox: ACTIVE_MAILBOX.into(),
+            uid: 1,
+            mailbox_guid: "b".repeat(32),
+            message_guid: "c".repeat(32),
+        };
+        assert_eq!(
+            backend.move_to_bin(account, &id, &location),
+            Err(Error::PreDispatchUnavailable)
+        );
+        location.mailbox = BIN_MAILBOX.into();
+        assert_eq!(
+            backend.restore(account, &id, &location),
+            Err(Error::PreDispatchUnavailable)
+        );
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 4);
+        // Exercise the existing Store rollback with this real backend refusal,
+        // so a refused upload cannot leave a durable pending document row.
+        use std::os::unix::fs::DirBuilderExt;
+        let root = std::env::temp_dir().join(format!(
+            "osmap-documents-unqualified-{}-{}",
+            std::process::id(),
+            crate::draft::generate_draft_id().unwrap()
+        ));
+        std::fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&root)
+            .unwrap();
+        let store = crate::documents::Store::new(root.clone(), backend);
+        assert_eq!(
+            store.upload(
+                account,
+                0,
+                "file.bin",
+                "application/octet-stream",
+                b"bytes",
+                100
+            ),
+            Err(Error::PreDispatchUnavailable)
+        );
+        let index = store.load(account).unwrap();
+        assert!(index.documents.is_empty() && !index.has_unconfirmed_change());
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 5);
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

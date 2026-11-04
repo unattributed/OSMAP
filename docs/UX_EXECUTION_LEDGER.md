@@ -1,3 +1,412 @@
+2026-11-04 — **S08-01 shared-authority BLOCKER; safety correction and storage source work prepared.** Local Rust/HTTP checks pass. Native lifecycle passed before the joint-quota test failed: 86016 bytes accepted under65536. Unqualified native quota cannot enable Documents writes. No public mail/account/quota change or installed readiness/UAT claim. Accepted S07 and all earlier failures remain preserved; root owns the single queue.
+
+<!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S08-01",
+  "original_requirement": "Approved Documents upload/list/folders/search/sort/views/download/bin/restore; shared authoritative mailbox/storage quota and retention",
+  "source_baseline": "0c31a1ff7618ca82dff15f98a189bd301e0058e7",
+  "state": "BLOCKED",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/remembered_key_helper",
+      "/root/s05_protocol_review"
+    ],
+    "qa": [
+      "/root/remembered_key_review"
+    ],
+    "security_review": [
+      "/root/remembered_key_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/UX_DECISIONS.md",
+    "docs/UX_SLICE_S08_01.md",
+    "docs/README.md",
+    "maint/ux/acceptance.json",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "src/documents.rs",
+    "src/documents_doveadm.rs",
+    "src/documents_native_tests.rs",
+    "src/mailbox_helper_documents.rs",
+    "src/mailbox_helper_documents_tests.rs",
+    "src/mailbox_helper.rs",
+    "src/http_gateway_documents.rs",
+    "src/http_gateway.rs",
+    "src/http_browser.rs",
+    "src/http.rs",
+    "src/http/routes_documents.rs",
+    "src/http/document_tests.rs",
+    "src/http/documents.css",
+    "src/http/routes_mail.rs",
+    "src/http/routes_settings.rs",
+    "src/http_runtime.rs",
+    "src/http_support.rs",
+    "src/http_form.rs",
+    "src/http_ui.rs",
+    "src/lib.rs",
+    "src/config.rs",
+    "src/main.rs",
+    "src/storage_ui.rs",
+    "src/welcome_ui.rs",
+    "src/http/welcome_data.rs",
+    "src/http/welcome_data_tests.rs",
+    "src/settings_general_ui.rs",
+    "src/settings_copies_ui.rs"
+  ],
+  "outcomes": [
+    {
+      "id": "S08-01-documents",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX14-001",
+        "R2-07-001",
+        "R2-07-002",
+        "R2-07-003",
+        "R2-07-004",
+        "R2-07-005",
+        "R2-07-006",
+        "R2-07-007",
+        "R2-07-008",
+        "R2-07-009",
+        "R2-07-010",
+        "R2-07-011",
+        "R2-07-012",
+        "R2-07-013",
+        "R2-07-014",
+        "R2-07-015",
+        "R2-07-016",
+        "R2-07-017",
+        "R2-07-018",
+        "R2-07-019",
+        "R2-09-011",
+        "R2-09-013",
+        "R2-11-027",
+        "R2-11-028",
+        "R2-11-029"
+      ],
+      "frontend_backend_outcome": "The signed-in user uploads, finds, downloads, bins and restores private Documents while mail and Documents share one finite native quota; storage views report account-specific evidence.",
+      "essential_qa": "Reuse Rust lifecycle/security tests; exact native transfer; native concurrent IMAP/LMTP/Documents capacity enforcement; interruption/retention cleanup; installed account-specific rendering and owner UAT.",
+      "next_action": "Finish focused safety regression/review and normal signed preservation, then prepare a bounded obsd1-only hard-quota design; no activation, service/config/account change or owner UAT until the authority gap is resolved.",
+      "dependencies": [
+        {
+          "owner": "/root",
+          "condition": "The isolated count-backend race stored/reported86016bytes against65536; no native driver has a demonstrated joint reservation authority. All mailboxes use UID/GID2000, so a simple filesystem quota would combine accounts. Finishing strict per-account enforcement requires qualified mail-storage infrastructure outside the current no-public-config boundary.",
+          "status": "PENDING",
+          "next_action": "Resolve per-account native hard quota with reviewed isolated proof and any required explicit host authority; raising the numeric quota alone does not fix the race."
+        }
+      ],
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": []
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Installed account-private Documents lifecycle and truthful shared storage pass native/all-writer quota, security/recovery checks and separate owner UAT.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Retain docs/UX_EXECUTION_LEDGER.md historical Documents entries originally at lines 14559-14787, including transport/identity/first-save/cleanup/concurrency gaps. Earlier costs are UNKNOWN and earlier fixture successes are not current installed qualification. This compact activation preserves accepted S07 history verbatim.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-04T13:23:51Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
+    },
+    "attempts": [
+      {
+        "id": "S08-01-native1",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/native1/test-build.log: missing embedded maint resources; no test ran.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "ed40d693ba9ffe0cce0c1e707eab69c669b38814ff67a1b1a75b6d7118c5c5d6",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent source/producer/cleanup/consumer review and combined setup reassessment retained in root chat; docs/UX_SLICE_S08_01.md records observations.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Initial reviewed isolated source/native lifecycle and concurrency recipe."
+      },
+      {
+        "id": "S08-01-native2",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/native2/test-build.log:123s compilePASS; native.log:0.03s SUN_LEN bind failure before writes.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "2ee81b0ab5025c0af428b2c52cd0c38ef231cabacf807fb3b2506e4c55fcca3f",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent source/producer/cleanup/consumer review and combined setup reassessment retained in root chat; docs/UX_SLICE_S08_01.md records observations.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Include existing maint fixtures and reuse established compiler data limit; no product source change."
+      },
+      {
+        "id": "S08-01-native3",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/native2/native3.log:2.47s lifecyclePASS followed by shared-quotaFAIL; retained scratch; cleanup NOT_CLAIMED.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "2ee81b0ab5025c0af428b2c52cd0c38ef231cabacf807fb3b2506e4c55fcca3f",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent source/producer/cleanup/consumer review and combined setup reassessment retained in root chat; docs/UX_SLICE_S08_01.md records observations.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Same exact compiledbinary ba13f4b; explicit TMPDIR=/tmp and separate bounded native3 log after combined reassessment.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/remembered_key_review"
+          ],
+          "reference": "Both setup failures were directly inspected; exact matching compiled binary and short socket path reviewed before native3 dispatch. No product expectation relaxed.",
+          "next_action": "One bounded samebinary run with TMPDIR=/tmp; preserve both setup failures and retain any product failure.",
+          "failed_attempt_ids": [
+            "S08-01-native1",
+            "S08-01-native2"
+          ]
+        }
+      }
+    ]
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S08-01",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_01.md",
+      "sha256": "c92c92e4f66e3f5e316076587af4c5d8b532eccbdb19e1ed4a677287ec6f78ad"
+    },
+    "design": {
+      "journey": "Upload, list, folders, search, sort, views, isolated download, Bin, restore and confirmed retention cleanup with shared account capacity.",
+      "frontend": "Reuse existing Documents routes and controls; shared storage_ui renders per-account native quota and separate raw document payload totals; Folders stays primary and Documents is secondary.",
+      "backend": "Reuse Rust Documents Store, fixed authenticated mailbox-helper operations and native Dovecot quota; no general filesystem access or command execution.",
+      "interfaces": "Existing BrowserGateway/Documents helper request and native fixed-command boundaries; existing message/account authorization remains authoritative.",
+      "persistence": "Reuse account-private Documents metadata with opaque IDs, revision/CAS and explicit pending states; payload MIME stays in reserved native mailboxes and shares mail quota.",
+      "security": "Enforce account isolation, CSRF, upload/name/MIME limits, fixed commands and attachment isolation. Absent enforcement authority refuses writes; public services/config are not changed under fixture authority.",
+      "failure_recovery": "Keep uncertain writes explicit; inspect exact GUID/UID before reconciliation, never repeat an ambiguous save, release capacity only after confirmed owned deletion, and retain failed attempts."
+    },
+    "tests": [
+      {
+        "id": "S08-01-T01",
+        "outcome_ids": [
+          "S08-01-documents"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current source and read-only obsd1 inventory; historical Documents failures retained.",
+        "action": "Map existing stores/helper/HTTP/native tests and fresh finite quota/config facts.",
+        "expected": "Reuse and gaps identify exact account-scoped authority; no disabled plugin is reported as enforcement.",
+        "preserved": "Accepted S07, public mail availability and authoritative mail data remain unchanged.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/native2/topology.log",
+          "docs/UX_SLICE_S08_01.md"
+        ]
+      },
+      {
+        "id": "S08-01-T02",
+        "outcome_ids": [
+          "S08-01-documents"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Existing Rust Documents and authenticated helper tests.",
+        "action": "Exercise foreign account/opaque ID, stale revision, unsafe filename/MIME, size and CSRF rejection plus validated summaries.",
+        "expected": "Requests refuse safely with unchanged foreign records, account revisions and protected bytes.",
+        "preserved": "No guessed paths, shell commands or unauthorized metadata mutation.",
+        "owner": "/root/remembered_key_helper",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/rust-first.log",
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/quota-refusal.log:9 PASS, includes current Store/native no-dispatch safety regression"
+        ]
+      },
+      {
+        "id": "S08-01-T03",
+        "outcome_ids": [
+          "S08-01-documents"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Owned disposable Dovecot fixture with finite effective quota and fixed cleanup; 120-second existing lifecycle bound.",
+        "action": "Run first upload with absent reserved mailbox, exact download, folder/list/search/sort/views and Bin/restore.",
+        "expected": "One save resolves exact GUID identity and original downloaded bytes survive Bin/restore.",
+        "preserved": "Fixture cleanup is bounded and never deletes unrelated messages or directories.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/native2/native3.log: lifecycle passes before joint quota failure; no current enforcement-qualified success"
+        ]
+      },
+      {
+        "id": "S08-01-T04",
+        "outcome_ids": [
+          "S08-01-documents"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Owned isolated native quota authority and fixed 300-second maximum changed concurrency run; no public config action.",
+        "action": "Overlap Documents saves and ordinary IMAP APPEND/LMTP writes near the common limit; separately remove quota authority.",
+        "expected": "Accepted stored MIME bytes stay within account limit across all writers; unavailable authority refuses Documents writes. Documents-only races remain partial until ordinary protocols qualify.",
+        "preserved": "Existing charged data and unaccepted payloads remain intact; no application mutex is substituted for native enforcement.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "FAIL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/native2/native3.log:86016>65536; all_protocols NOT_QUALIFIED"
+        ]
+      },
+      {
+        "id": "S08-01-T05",
+        "outcome_ids": [
+          "S08-01-documents"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Matching Rust Web/helper chain using disposable authenticated account and finite authority.",
+        "action": "Exercise 10 MiB upload, exact forced-attachment download and HTTP/helper negatives for foreign IDs, stale revision, CSRF, MIME and names.",
+        "expected": "Valid transfer preserves all bytes and isolation headers; invalid requests refuse without cross-account writes or rendered active content.",
+        "preserved": "Passwords/TOTP/proofs stay out of retained output; no owner mailbox mutation.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/rust-first.log: Rust HTTP/helper10MiB and isolation; native Runtime chain NOT_RUN"
+        ]
+      },
+      {
+        "id": "S08-01-T06",
+        "outcome_ids": [
+          "S08-01-documents"
+        ],
+        "kind": "recovery",
+        "level": "native",
+        "prerequisites": "Owned interrupted-upload/delete fixture with retained exact mutation state and bounded inspection.",
+        "action": "Interrupt writes and reconcile Uploading/move/deletion uncertainty through exact native identity inspection.",
+        "expected": "No blind repeated save, duplicate release or unproved orphan deletion; uncertainty remains explicit until reconciled.",
+        "preserved": "Original metadata, unrelated stored messages and reservations are preserved unless confirmed ownership permits cleanup.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/rust-first.log: Rust ambiguous append/reconciliation; native interruption NOT_RUN"
+        ]
+      },
+      {
+        "id": "S08-01-T07",
+        "outcome_ids": [
+          "S08-01-documents"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Owned Bin records with controlled retention clock and native quota readback.",
+        "action": "Check Bin charging, premature/uncertain deletion refusal, then eligible confirmed expunge.",
+        "expected": "Bin consumes shared storage until confirmed deletion; only confirmed eligible expunge releases measured authoritative bytes.",
+        "preserved": "Noneligible/foreign documents and unconfirmed reservations are retained.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/native2/native3.log:confirmed expunge releases quota; full retention/concurrency authority NOT_QUALIFIED"
+        ]
+      },
+      {
+        "id": "S08-01-T08",
+        "outcome_ids": [
+          "S08-01-documents"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Independently qualified matching artifacts, source carry and reviewed rollback; live quota activation separately resolved if needed.",
+        "action": "Install only necessary OSMAP roles and verify user-specific dashboard/General/Documents storage plus protected state and HTTPS.",
+        "expected": "Matching installed reads show the signed-in account and truthful authority/absence; native and source evidence are independently reviewed.",
+        "preserved": "Public Dovecot/Postfix/MariaDB remain available and unchanged without additional explicit authority; owner accounts/key state remain intact.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S08-01-T09",
+        "outcome_ids": [
+          "S08-01-documents"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Engineering T01-T08 PASS and concise owner test on installed obsd1.",
+        "action": "Owner uploads a controlled file, finds and downloads it, moves it to Bin, restores it, and checks storage for the signed-in account.",
+        "expected": "Owner confirms the ordinary Documents journey and storage information are useful and correct.",
+        "preserved": "No production mailbox synchronization, private-key operation or owner acceptance is inferred from agent tests.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "Every required nonhuman test and all six delivery stages PASS against matching source/native/installed evidence, with complete all-writer quota enforcement and reviewed rollback.",
+    "human_exit": "Owner reports Documents upload/find/download/Bin/restore and user-specific storage UAT PASS; only then accept S08-01."
+  },
+  "human_acceptance": {
+    "status": "PENDING"
+  },
+  "next_action": "Finish focused safety regression/review and normal signed preservation, then prepare a bounded obsd1-only hard-quota design; no activation, service/config/account change or owner UAT until the authority gap is resolved.",
+  "blocker": "The isolated count-backend race stored/reported86016bytes against65536; no native driver has a demonstrated joint reservation authority. All mailboxes use UID/GID2000, so a simple filesystem quota would combine accounts. Finishing strict per-account enforcement requires qualified mail-storage infrastructure outside the current no-public-config boundary.",
+  "independent_next_action": "Finish focused safety regression/review and normal signed preservation, then prepare a bounded obsd1-only hard-quota design; no activation, service/config/account change or owner UAT until the authority gap is resolved."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
 2026-11-04 (Asia/Bangkok) — **Remembered personal-key access UAT PASS; ACCEPTED and APPROVED.** The owner explicitly reports: “UAT is PASS / UAT accepted, and approved”, following the fixed-deadline fresh-sign-in check and the requested ordinary Sign out check. The supplied fresh-sign-in screenshot shows both current-session and remembered access expiring at the unchanged 2026-11-04 18:29:58 UTC deadline. This closes the remembered-key follow-up to the accepted S07 result. It records owner functional acceptance of the installed result; broader epic and production-release security obligations remain separate. Implementation and installed qualification are retained below.
 
 Acceptance closeout is documentation-only against signed baseline274df731545633920591051d7765e27d5376788b. Root owns the single Git queue; remembered_key_review independently checks the acceptance scope and public-safe diff. Reuse the matching Rust/native/installed qualification; no host, account, key, configuration or executable changes. Exit: accurate owner acceptance record, normal commit/push hooks, verified Shopkeeper signature and fresh exact equality on feat/ux-completion-20260929. Retain any delivery failure and stop for reconciliation rather than force or bypass.
@@ -26,7 +435,7 @@ Acceptance closeout is documentation-only against signed baseline274df7315456339
 
 2026-11-03 (Asia/Bangkok) — **S07-01 IN_PROGRESS; independent S07-01–04 completion authorized.** Review/reuse working code; Rust functional/native tests; smallest failure-driven correction and verified delivery. S06 accepted evidence preserved.
 
-<!-- OSMAP_ACTIVE_WORK_ORDER -->
+<!-- OSMAP_HISTORICAL_WORK_ORDER_S07_04 -->
 ```json
 {
   "version": 1,
@@ -577,7 +986,7 @@ Acceptance closeout is documentation-only against signed baseline274df7315456339
   }
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_HISTORICAL_WORK_ORDER_S07_04 -->
 
 <!-- OSMAP_ARCHIVED_S07_03_PRE_NATIVE_20261103 -->
 ```json

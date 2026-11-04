@@ -612,12 +612,18 @@ where
                     .ok()
                     .map(|preferences| preferences.openpgp);
                 let visible_mailboxes = filter_user_visible_mailboxes(&mailboxes);
+                let documents = self.gateway.load_documents(&validated_session).ok();
+                let storage = crate::storage_ui::StorageView::from_reads(
+                    &canonical_username,
+                    self.gateway.documents_quota_status(&validated_session),
+                    documents.as_ref(),
+                );
                 HandledHttpResponse {
                     response: html_response(
                         200,
                         "OK",
                         "Mailboxes",
-                        render_mailboxes_page_with_policy(
+                        render_mailboxes_page_with_storage(
                             &canonical_username,
                             &validated_session.record.csrf_token,
                             &visible_mailboxes,
@@ -630,7 +636,11 @@ where
                                 .is_ok_and(|preference| {
                                     preference.policy == crate::mark_read::Policy::OnOpen
                                 }),
-                            (&keys.state, openpgp_defaults),
+                            crate::http_ui::WelcomeAccountState {
+                                openpgp: &keys.state,
+                                defaults: openpgp_defaults,
+                                storage: Some(&storage),
+                            },
                         ),
                     ),
                     audit_events,

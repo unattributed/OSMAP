@@ -98,6 +98,14 @@ pub struct QuotaStatus {
     pub limit_bytes: u64,
 }
 
+/// Validated Documents payload bytes, not physical storage or quota authority.
+/// Bin payload is already included in `used_bytes`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct StorageSummary {
+    pub used_bytes: u64,
+    pub bin_bytes: u64,
+}
+
 impl Index {
     fn empty(account: &str) -> Self {
         Self {
@@ -169,6 +177,33 @@ impl Index {
 
     pub fn used_bytes(&self) -> u64 {
         self.documents.iter().map(|document| document.size).sum()
+    }
+
+    pub fn storage_summary(&self, account: &str) -> Result<StorageSummary, Error> {
+        valid_account(account)?;
+        self.validate(account)?;
+        if self.has_unconfirmed_change() {
+            return Err(Error::Unconfirmed);
+        }
+        self.documents.iter().try_fold(
+            StorageSummary {
+                used_bytes: 0,
+                bin_bytes: 0,
+            },
+            |mut summary, document| {
+                summary.used_bytes = summary
+                    .used_bytes
+                    .checked_add(document.size)
+                    .ok_or(Error::Unavailable)?;
+                if document.state == State::InBin {
+                    summary.bin_bytes = summary
+                        .bin_bytes
+                        .checked_add(document.size)
+                        .ok_or(Error::Unavailable)?;
+                }
+                Ok(summary)
+            },
+        )
     }
 
     pub fn has_unconfirmed_change(&self) -> bool {
@@ -851,6 +886,75 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     type Records = Arc<Mutex<BTreeMap<(String, String), Vec<u8>>>>;
+
+    #[test]
+    fn storage_summary_validates_owner_schema_payload_and_bin_without_double_counting() {
+        let account = "alice@example.test";
+        let mut index = Index::empty(account);
+        assert_eq!(
+            index.storage_summary(account),
+            Ok(StorageSummary {
+                used_bytes: 0,
+                bin_bytes: 0
+            })
+        );
+        let document = |id: &str, size, state| Document {
+            id: id.repeat(32),
+            name: "file.bin".into(),
+            media_type: "application/octet-stream".into(),
+            size,
+            sha256: "a".repeat(64),
+            created_at: 100,
+            modified_at: 100,
+            folder: String::new(),
+            state,
+            location: Some(Fixture::location("OSMAP.Documents")),
+            binned_at: (state == State::InBin).then_some(100),
+        };
+        index.documents = vec![
+            document("a", 5, State::Available),
+            document("b", 7, State::InBin),
+        ];
+        assert_eq!(
+            index.storage_summary(account),
+            Ok(StorageSummary {
+                used_bytes: 12,
+                bin_bytes: 7
+            })
+        );
+        assert_eq!(
+            index.storage_summary("bob@example.test"),
+            Err(Error::Unavailable)
+        );
+        assert_eq!(
+            index.storage_summary("invalid account"),
+            Err(Error::Invalid)
+        );
+        let mut invalid = index.clone();
+        invalid.version = 99;
+        assert_eq!(invalid.storage_summary(account), Err(Error::Unavailable));
+        let mut invalid = index.clone();
+        invalid.documents[0].size = u64::MAX;
+        assert_eq!(invalid.storage_summary(account), Err(Error::Unavailable));
+        let mut invalid = index.clone();
+        invalid.documents[0].sha256.clear();
+        assert_eq!(invalid.storage_summary(account), Err(Error::Unavailable));
+        for state in [
+            State::Uploading,
+            State::MovingToBin,
+            State::Restoring,
+            State::Deleting,
+        ] {
+            let mut pending = index.clone();
+            pending.documents.truncate(1);
+            let document = &mut pending.documents[0];
+            document.state = state;
+            document.location =
+                (state != State::Uploading).then(|| Fixture::location("OSMAP.Documents"));
+            document.binned_at = matches!(state, State::Restoring | State::Deleting).then_some(100);
+            assert_eq!(pending.storage_summary(account), Err(Error::Unconfirmed));
+        }
+    }
 
     #[derive(Clone)]
     struct Fixture {

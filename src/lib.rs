@@ -96,6 +96,7 @@ pub mod settings;
 pub mod signature;
 pub mod snooze;
 pub mod state;
+mod storage_ui;
 pub mod throttle;
 pub mod timezone;
 pub mod totp;
