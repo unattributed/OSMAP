@@ -181,3 +181,152 @@ fn source_attachment_identity_is_required_and_legacy_or_changed_drafts_stay_edit
     }
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn schedule_materializes_verified_source_bytes_into_the_saved_snapshot() {
+    let (app, root, store) = fixture();
+    let saved = post(
+        &app,
+        "/drafts/save",
+        &format!("{}&compose_action=schedule", fields()),
+        "normal",
+    );
+    assert_eq!(saved.response.status_code, 303);
+    let destination = location_header(&saved);
+    assert!(destination.starts_with("/scheduled/new?draft="));
+    let id = destination
+        .strip_prefix("/scheduled/new?draft=")
+        .unwrap()
+        .split('&')
+        .next()
+        .unwrap();
+    let draft = FileDraftStore::new(&root, DraftPolicy::default())
+        .load("alice@example.com", id, 100)
+        .unwrap()
+        .unwrap();
+    assert!(draft.source_attachments.is_none());
+    assert_eq!(draft.request.attachments.len(), 1);
+    assert_eq!(draft.request.attachments[0].filename, "report.pdf");
+    assert_eq!(draft.request.attachments[0].body, b"%PDF-stub%");
+    assert_eq!(draft.revision, Some(1));
+    assert_eq!(
+        saved
+            .audit_events
+            .iter()
+            .filter(|e| e.action == "stub_source_read")
+            .count(),
+        1
+    );
+    assert!(app.gateway.submitted.lock().unwrap().is_empty());
+    assert_eq!(store.list("alice@example.com", 100).unwrap().len(), 1);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn schedule_source_changes_refuse_before_saving_or_creating_any_job() {
+    let (app, root, store) = fixture();
+    for ua in [
+        "SourceStale",
+        "SourceWrongAccount",
+        "SourceWrongSession",
+        "SourceUnavailable",
+    ] {
+        let refused = post(
+            &app,
+            "/drafts/save",
+            &format!("{}&compose_action=schedule", fields()),
+            ua,
+        );
+        assert_eq!(
+            refused.response.status_code,
+            if ua == "SourceUnavailable" { 503 } else { 409 }
+        );
+        assert!(body_text(&refused).contains("Retained source notes"));
+        assert_eq!(
+            refused
+                .audit_events
+                .iter()
+                .filter(|event| event.action == "stub_source_read")
+                .count(),
+            1,
+            "{ua}: source resolution must be reached rather than an unrelated early refusal"
+        );
+        assert!(!refused
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value.starts_with("/scheduled")));
+        assert!(store.list("alice@example.com", 100).unwrap().is_empty());
+    }
+    assert!(app.gateway.submitted.lock().unwrap().is_empty());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn schedule_materialized_source_keeps_saved_attachment_removal_and_combined_caps() {
+    let (app, root, store) = fixture();
+    let saved = post(&app, "/drafts/save", &fields(), "normal");
+    let destination = location_header(&saved);
+    let id = destination.trim_start_matches("/draft?id=");
+    let mut draft = store.load("alice@example.com", id, 100).unwrap().unwrap();
+    // Fill the ordinary saved-file allowance, then select an additional source
+    // file in the next compose action. A saved reference already counts toward
+    // the same allowance and cannot be used to construct an over-limit fixture.
+    draft.source_attachments = None;
+    for index in 0..ComposePolicy::default().max_attachments {
+        draft.request.attachments.push(
+            UploadedAttachment::new(
+                ComposePolicy::default(),
+                format!("saved-{index}.txt"),
+                "text/plain",
+                vec![index as u8],
+            )
+            .unwrap(),
+        );
+    }
+    store.save(&draft, 100).unwrap();
+    let saved_revision = store
+        .load("alice@example.com", id, 100)
+        .unwrap()
+        .unwrap()
+        .revision
+        .unwrap();
+    let form = format!(
+        "draft_id={id}&draft_revision={saved_revision}&compose_action=schedule&{}",
+        fields()
+    );
+    let refused = post(&app, "/drafts/save", &form, "normal");
+    assert_ne!(refused.response.status_code, 303);
+    let unchanged = store.load("alice@example.com", id, 100).unwrap().unwrap();
+    assert_eq!(unchanged.revision, Some(saved_revision));
+    assert!(unchanged.source_attachments.is_none());
+    assert_eq!(
+        unchanged.request.attachments.len(),
+        ComposePolicy::default().max_attachments
+    );
+    let accepted = post(
+        &app,
+        "/drafts/save",
+        &format!("{form}&remove_saved_attachment_0=1"),
+        "normal",
+    );
+    assert_eq!(accepted.response.status_code, 303);
+    let materialized = store.load("alice@example.com", id, 100).unwrap().unwrap();
+    assert!(materialized.source_attachments.is_none());
+    assert_eq!(
+        materialized.request.attachments.len(),
+        ComposePolicy::default().max_attachments
+    );
+    assert!(!materialized
+        .request
+        .attachments
+        .iter()
+        .any(|file| file.filename == "saved-0.txt"));
+    assert!(materialized
+        .request
+        .attachments
+        .iter()
+        .any(|file| file.filename == "report.pdf" && file.body == b"%PDF-stub%"));
+    assert!(app.gateway.submitted.lock().unwrap().is_empty());
+    fs::remove_dir_all(root).unwrap();
+}

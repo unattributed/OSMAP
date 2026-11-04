@@ -1,7 +1,7 @@
 use std::io::Write as _;
 use std::net::{TcpListener, TcpStream};
 use std::panic::{catch_unwind, AssertUnwindSafe};
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -27,6 +27,47 @@ const HTTP_RESPONSE_WRITE_FAILURE_ESCALATION_THRESHOLD: u32 = 5;
 const HTTP_REQUEST_SLOW_THRESHOLD_MILLIS: u128 = 1000;
 const HTTP_OVER_CAPACITY_RETRY_AFTER_SECS: u64 = 1;
 const HTTP_WORKER_THREAD_NAME: &str = "osmap-http-conn";
+
+#[cfg(all(test, target_os = "openbsd"))]
+#[path = "http_runtime_scheduled_native_tests.rs"]
+mod scheduled_native_tests;
+
+struct ScheduledWorkerThread {
+    stop: Arc<AtomicBool>,
+    handle: Option<thread::JoinHandle<()>>,
+}
+impl ScheduledWorkerThread {
+    fn start(gateway: RuntimeBrowserGateway, logger: Logger) -> Result<Self, String> {
+        let stop = Arc::new(AtomicBool::new(false));
+        let thread_stop = Arc::clone(&stop);
+        let handle = thread::Builder::new().name("osmap-scheduled".into()).spawn(move || {
+            while !thread_stop.load(Ordering::Acquire) {
+                let result = catch_unwind(AssertUnwindSafe(|| gateway.run_scheduled_once(&logger)));
+                if !matches!(result, Ok(Ok(_))) {
+                    logger.emit(&LogEvent::new(LogLevel::Warn, EventCategory::Submission,
+                        "scheduled_worker_unavailable", "scheduled pass could not be confirmed; persisted uncertain attempts will not be retried"));
+                }
+                // Short checks let a normal server shutdown stop the worker.
+                for _ in 0..15 {
+                    if thread_stop.load(Ordering::Acquire) { return }
+                    thread::sleep(Duration::from_secs(1));
+                }
+            }
+        }).map_err(|_| "scheduled worker thread could not start".to_string())?;
+        Ok(Self {
+            stop,
+            handle: Some(handle),
+        })
+    }
+}
+impl Drop for ScheduledWorkerThread {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Release);
+        if let Some(handle) = self.handle.take() {
+            let _ = handle.join();
+        }
+    }
+}
 
 pub(super) struct ResponseWriteFailureContext<'a> {
     pub(super) remote_addr: String,
@@ -308,6 +349,15 @@ where
                 self.handle_appearance_update(request, &context)
             }
             (HttpMethod::Get, "/snoozed") => self.handle_snoozed(request, &context),
+            (HttpMethod::Get, "/scheduled") => self.handle_scheduled(request, &context),
+            (HttpMethod::Get, "/scheduled/new") => self.handle_scheduled_new(request, &context),
+            (HttpMethod::Post, "/scheduled/create") => {
+                self.handle_scheduled_create(request, &context)
+            }
+            (HttpMethod::Post, "/scheduled/edit") => self.handle_scheduled_edit(request, &context),
+            (HttpMethod::Post, "/scheduled/change") => {
+                self.handle_scheduled_change(request, &context)
+            }
             (HttpMethod::Get, "/snooze") => self.handle_snooze(request, &context),
             (HttpMethod::Post, "/snooze/change") => self.handle_snooze_change(request, &context),
             (HttpMethod::Get, "/notifications") => self.handle_notifications(request, &context),
@@ -438,6 +488,7 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
     for event in gateway.helper_client_status_events() {
         logger.emit(&event);
     }
+    let _scheduled_worker = ScheduledWorkerThread::start(gateway.clone(), logger.clone())?;
     let app = Arc::new(BrowserApp::new(HttpPolicy::from_config(config), gateway));
     let active_connections = Arc::new(AtomicUsize::new(0));
     let peak_connections = Arc::new(AtomicUsize::new(0));

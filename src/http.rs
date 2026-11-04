@@ -80,6 +80,7 @@ mod routes_reply;
 mod routes_send_receipt;
 mod routes_settings;
 
+mod routes_scheduled;
 mod routes_signature;
 mod routes_snooze;
 mod routes_source_attachments;
@@ -931,6 +932,9 @@ mod tests {
     #[cfg(unix)]
     mod authenticator_tests {
         include!("http/authenticator_tests.rs");
+    }
+    mod scheduled_tests {
+        include!("http/scheduled_tests.rs");
     }
     mod snooze_tests {
         include!("http/snooze_tests.rs");
@@ -5456,6 +5460,17 @@ mod tests {
             }) => BrowserSendDecision::DraftSaved {
                 draft_id: crate::send_journal::draft_id_text(&draft_id),
                 save_confirmed,
+            },
+            Ok(crate::send_journal::JournalResult {
+                outcome:
+                    crate::send_journal::AttemptOutcome::Scheduled {
+                        job_id,
+                        schedule_confirmed,
+                    },
+                ..
+            }) => BrowserSendDecision::Scheduled {
+                job_id: crate::send_journal::draft_id_text(&job_id),
+                schedule_confirmed,
             },
             _ => BrowserSendDecision::Unconfirmed {
                 public_reason: "send_attempt_paused".into(),

@@ -11,6 +11,7 @@ use crate::private_account_file::{LockedAccountFile, PrivateAccountFile};
 use crate::send::ComposeRequest;
 
 pub(crate) const INTENT_LIFETIME: u64 = 30 * 24 * 60 * 60;
+const SCHEDULE_BINDING_LIFETIME: u64 = 3 * INTENT_LIFETIME;
 const MAX_ATTEMPTS: usize = 4096;
 const MAX_BYTES: usize = 1024 * 1024;
 
@@ -44,6 +45,11 @@ pub(crate) enum AttemptOutcome {
     DraftSaved {
         draft_id: [u8; 16],
         save_confirmed: bool,
+    },
+    /// The compose intent was retired into this job, never SMTP-submitted here.
+    Scheduled {
+        job_id: [u8; 16],
+        schedule_confirmed: bool,
     },
 }
 
@@ -114,6 +120,109 @@ pub(crate) struct AccountGuard {
 }
 
 impl AccountGuard {
+    pub(crate) fn account(&self) -> &str {
+        &self.account
+    }
+    pub(crate) fn begin_schedule(
+        &mut self,
+        intent: &str,
+        id: &str,
+        digest: &str,
+    ) -> Result<(), JournalError> {
+        self.require_unconsumed(intent)?;
+        let job_id = parse_draft_id(id)?;
+        if !lower_hex(digest, 64) {
+            return Err(JournalError::ChangedSnapshot);
+        }
+        if self.record.attempts.iter().any(|entry| {
+            matches!(entry.state, State::ScheduleReserved { job_id: bound } | State::Scheduled { job_id: bound } if bound == job_id)
+        }) {
+            return Err(JournalError::Consumed);
+        }
+        prune_accepted(&mut self.record, self.now)?;
+        if self.record.attempts.len() >= MAX_ATTEMPTS {
+            return Err(JournalError::Capacity);
+        }
+        self.record.high_water = self.now;
+        self.record.attempts.push(Entry {
+            intent: intent.into(),
+            snapshot: digest.into(),
+            state: State::ScheduleReserved { job_id },
+            sent_copy_requested: None,
+            sent_location: None,
+        });
+        self.journal.write(&self.lock, &self.record, false)
+    }
+    pub(crate) fn finish_schedule(
+        &mut self,
+        intent: &str,
+        id: &str,
+        digest: &str,
+    ) -> Result<(), JournalError> {
+        let job_id = parse_draft_id(id)?;
+        if !lower_hex(digest, 64) {
+            return Err(JournalError::ChangedSnapshot);
+        }
+        let entry = self
+            .record
+            .attempts
+            .iter_mut()
+            .find(|entry| entry.intent == intent)
+            .ok_or(JournalError::InvalidRecord)?;
+        if !matches!(entry.state,State::ScheduleReserved{job_id:bound}|State::Scheduled{job_id:bound} if bound==job_id)
+            || entry.snapshot != digest
+        {
+            return Err(JournalError::ChangedSnapshot);
+        }
+        if matches!(entry.state, State::Scheduled { .. }) {
+            return Ok(());
+        }
+        entry.state = State::Scheduled { job_id };
+        self.record.high_water = self.now;
+        self.journal.write(&self.lock, &self.record, true)
+    }
+    /// The guard's canonical account chooses the journal. This returns only an
+    /// already durable source intent, never permission to submit that intent.
+    pub(crate) fn require_schedule_binding(
+        &self,
+        id: &str,
+        digest: &str,
+    ) -> Result<&str, JournalError> {
+        let job_id = parse_draft_id(id)?;
+        if !lower_hex(digest, 64) {
+            return Err(JournalError::ChangedSnapshot);
+        }
+        let entry = self.record.attempts.iter().find(|entry| {
+            matches!(entry.state, State::ScheduleReserved { job_id: bound } | State::Scheduled { job_id: bound } if bound == job_id)
+        }).ok_or(JournalError::InvalidRecord)?;
+        if entry.snapshot != digest {
+            return Err(JournalError::ChangedSnapshot);
+        }
+        Ok(&entry.intent)
+    }
+    /// Explicit content edit CAS, after the job became non-dispatchable Staged.
+    /// Old and new binding cannot both authorize the worker after this write.
+    pub(crate) fn replace_schedule_binding(
+        &mut self,
+        id: &str,
+        old_digest: &str,
+        new_digest: &str,
+    ) -> Result<(), JournalError> {
+        let job_id = parse_draft_id(id)?;
+        if !lower_hex(old_digest, 64) || !lower_hex(new_digest, 64) {
+            return Err(JournalError::ChangedSnapshot);
+        }
+        let entry = self.record.attempts.iter_mut().find(|entry| {
+            matches!(entry.state, State::ScheduleReserved { job_id: bound } | State::Scheduled { job_id: bound } if bound == job_id)
+        }).ok_or(JournalError::InvalidRecord)?;
+        if entry.snapshot != old_digest {
+            return Err(JournalError::ChangedSnapshot);
+        }
+        entry.snapshot = new_digest.into();
+        entry.state = State::ScheduleReserved { job_id };
+        self.record.high_water = self.now;
+        self.journal.write(&self.lock, &self.record, false)
+    }
     fn validate_intent(&self, intent: &str) -> Result<(), JournalError> {
         let issued = intent_time(intent)?;
         if issued > self.now {
@@ -368,6 +477,8 @@ enum State {
     Unconfirmed,
     SaveReserved { draft_id: [u8; 16] },
     DraftSaved { draft_id: [u8; 16] },
+    ScheduleReserved { job_id: [u8; 16] },
+    Scheduled { job_id: [u8; 16] },
 }
 
 impl State {
@@ -389,6 +500,14 @@ impl State {
             Self::DraftSaved { draft_id } => AttemptOutcome::DraftSaved {
                 draft_id,
                 save_confirmed: true,
+            },
+            Self::ScheduleReserved { job_id } => AttemptOutcome::Scheduled {
+                job_id,
+                schedule_confirmed: false,
+            },
+            Self::Scheduled { job_id } => AttemptOutcome::Scheduled {
+                job_id,
+                schedule_confirmed: true,
             },
         }
     }
@@ -434,6 +553,7 @@ impl Record {
             return Err(JournalError::InvalidRecord);
         }
         let mut seen = HashSet::new();
+        let mut scheduled_jobs = HashSet::new();
         for entry in &record.attempts {
             let issued = intent_time(&entry.intent).map_err(|_| JournalError::InvalidRecord)?;
             if issued > record.high_water
@@ -442,6 +562,11 @@ impl Record {
             {
                 return Err(JournalError::InvalidRecord);
             }
+            if let State::ScheduleReserved { job_id } | State::Scheduled { job_id } = entry.state {
+                if !scheduled_jobs.insert(job_id) {
+                    return Err(JournalError::InvalidRecord);
+                }
+            }
             if entry.sent_location.as_ref().is_some_and(|location| {
                 !location.valid()
                     || entry.sent_copy_requested.is_some()
@@ -449,6 +574,8 @@ impl Record {
                         entry.state,
                         State::SaveReserved { .. }
                             | State::DraftSaved { .. }
+                            | State::ScheduleReserved { .. }
+                            | State::Scheduled { .. }
                             | State::AcceptedWithoutSentCopy
                     )
                     || (!location.available() && matches!(entry.state, State::AcceptedStored))
@@ -464,6 +591,8 @@ impl Record {
                         | State::AcceptedUnconfirmed
                         | State::SaveReserved { .. }
                         | State::DraftSaved { .. }
+                        | State::ScheduleReserved { .. }
+                        | State::Scheduled { .. }
                 ) && entry.sent_copy_requested.is_some())
             {
                 return Err(JournalError::InvalidRecord);
@@ -474,14 +603,28 @@ impl Record {
 }
 
 fn prune_accepted(record: &mut Record, now: u64) -> Result<(), JournalError> {
+    // A job may be scheduled from a compose intent almost 30 days old and keep
+    // its captured payload another 60 days. Keep its source retirement through
+    // that whole interval, and longer while that exact content is unresolved.
+    let unresolved: HashSet<_> = record
+        .attempts
+        .iter()
+        .filter(|entry| matches!(entry.state, State::Reserved | State::Unconfirmed))
+        .map(|entry| entry.snapshot.clone())
+        .collect();
     let mut retained = Vec::with_capacity(record.attempts.len());
     for entry in record.attempts.drain(..) {
         let issued = intent_time(&entry.intent).map_err(|_| JournalError::InvalidRecord)?;
         let age = now.checked_sub(issued).ok_or(JournalError::InvalidRecord)?;
         if matches!(
             entry.state,
-            State::Reserved | State::Unconfirmed | State::SaveReserved { .. }
-        ) || age < INTENT_LIFETIME
+            State::Reserved
+                | State::Unconfirmed
+                | State::SaveReserved { .. }
+                | State::ScheduleReserved { .. }
+        ) || (matches!(entry.state, State::Scheduled { .. })
+            && (age < SCHEDULE_BINDING_LIFETIME || unresolved.contains(&entry.snapshot)))
+            || age < INTENT_LIFETIME
         {
             retained.push(entry);
         }
@@ -603,6 +746,37 @@ impl SendJournal {
             .iter()
             .find(|entry| entry.intent == intent)
             .map(|entry| entry.state.outcome()))
+    }
+
+    /// Read-only scheduler reconciliation requires the exact captured content,
+    /// as well as the owned delivery intent. A mismatched receipt never grants
+    /// either acceptance or permission to resume a supposedly absent attempt.
+    pub(crate) fn receipt_for_snapshot(
+        &self,
+        account: &str,
+        intent: &str,
+        digest: &str,
+    ) -> Result<Option<AttemptOutcome>, JournalError> {
+        crate::identity::MailboxIdentity::parse(account)
+            .map_err(|_| JournalError::InvalidAccount)?;
+        intent_time(intent)?;
+        if digest.len() != 64
+            || !digest
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        {
+            return Err(JournalError::InvalidRecord);
+        }
+        let record = Record::read(
+            self.file
+                .read(account)
+                .map_err(|_| JournalError::StoreUnavailable)?,
+        )?;
+        match record.attempts.iter().find(|entry| entry.intent == intent) {
+            Some(entry) if entry.snapshot != digest => Err(JournalError::ChangedSnapshot),
+            Some(entry) => Ok(Some(entry.state.outcome())),
+            None => Ok(None),
+        }
     }
 
     /// Read-only presence check for route guards, not dispatch permission.
@@ -759,6 +933,8 @@ impl SendJournal {
                 entry.state,
                 State::SaveReserved { .. }
                     | State::DraftSaved { .. }
+                    | State::ScheduleReserved { .. }
+                    | State::Scheduled { .. }
                     | State::RecoveryRefused { .. }
             ) {
                 return Ok(LocatedPreparedResult::Outcome(LocatedResult {
@@ -845,7 +1021,9 @@ impl SendJournal {
             AttemptOutcome::AcceptedWithoutSentCopy => State::AcceptedWithoutSentCopy,
             AttemptOutcome::Unconfirmed => State::Unconfirmed,
             AttemptOutcome::RecoveryRefused { capacity } => State::RecoveryRefused { capacity },
-            AttemptOutcome::DraftSaved { .. } => return Err(JournalError::InvalidRecord),
+            AttemptOutcome::DraftSaved { .. } | AttemptOutcome::Scheduled { .. } => {
+                return Err(JournalError::InvalidRecord)
+            }
         };
         let receipt_persisted = self.write(&lock, &record, true).is_ok();
         Ok(LocatedPreparedResult::Outcome(LocatedResult {
@@ -857,6 +1035,11 @@ impl SendJournal {
             },
         }))
     }
+}
+
+#[cfg(test)]
+mod schedule_tests {
+    include!("scheduled_send_journal_tests.rs");
 }
 
 #[cfg(test)]

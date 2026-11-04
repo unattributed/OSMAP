@@ -21,7 +21,11 @@ impl Scratch {
 }
 impl Drop for Scratch {
     fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.0);
+        if std::thread::panicking() {
+            println!("native_gateway_fixture root={} cleanup=NOT_CLAIMED failure_state=RETAINED", self.0.display());
+        } else {
+            let _ = fs::remove_dir_all(&self.0);
+        }
     }
 }
 struct Services(Vec<Child>);
@@ -338,6 +342,7 @@ fn smtp_sink(
     listener: TcpListener,
     wire: Arc<Mutex<Vec<Vec<u8>>>>,
     stop: Arc<std::sync::atomic::AtomicBool>,
+    drop_ack: Option<Arc<std::sync::atomic::AtomicBool>>,
 ) -> std::thread::JoinHandle<()> {
     listener.set_nonblocking(true).unwrap();
     std::thread::spawn(move || {
@@ -366,6 +371,9 @@ fn smtp_sink(
                     if line == b".\r\n" {
                         wire.lock().unwrap().push(std::mem::take(&mut message));
                         data = false;
+                        if drop_ack.as_ref().is_some_and(|fault| fault.load(std::sync::atomic::Ordering::SeqCst)) {
+                            break; // Real DATA accepted, final acknowledgement deliberately lost.
+                        }
                         stream.write_all(b"250 fixture queued\r\n").unwrap();
                     } else {
                         if line.starts_with(b"..") {
@@ -541,6 +549,21 @@ fn native_send_request<'a>(
 #[test]
 #[ignore = "actual OpenBSD authenticated gateway helpers and disposable SMTP/Sent fixture"]
 fn native_crypto_gateway_protected_send_roundtrip() {
+    run_native_gateway(false);
+}
+
+#[test]
+#[ignore = "actual OpenBSD scheduled store/admission RPC/private grant/SMTP/Sent fixture"]
+fn native_crypto_gateway_scheduled_send_roundtrip() {
+    run_native_gateway(true);
+}
+
+mod scheduled_native {
+    use super::*;
+    include!("protected_send_gateway_scheduled_native_tests.rs");
+}
+
+fn run_native_gateway(scheduled_only: bool) {
     assert_eq!(std::env::consts::OS, "openbsd");
     if native_service_child() {
         return;
@@ -579,7 +602,7 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     let inventory_socket = scratch.0.join("i.sock");
     let admin_socket = scratch.0.join("a.sock");
     let uid = crate::openbsd::effective_uid();
-    let crypto_config=scratch.write("crypto.json",&serde_json::to_vec(&serde_json::json!({"version":1,"worker":worker,"engine":engine,"socket":crypto_socket,"trusted_web_uid":uid,"accounts":[{"account":"alice@example.test","home":alice,"signer_fingerprint":afp,"decrypt_fingerprints":[afp],"recipient_fingerprints":[afp,bfp]},{"account":"bob@example.test","home":bob,"signer_fingerprint":bfp,"decrypt_fingerprints":[bfp],"recipient_fingerprints":[afp,bfp]}]})).unwrap(),0o600);
+    let crypto_config=scratch.write("crypto.json",&serde_json::to_vec(&serde_json::json!({"version":1,"worker":worker,"engine":engine,"socket":crypto_socket,"trusted_web_uid":uid,"accounts":[{"account":"alice@example.test","home":alice,"signer_fingerprint":afp,"decrypt_fingerprints":[afp],"recipient_fingerprints":[afp,bfp],"allow_web_personal_keys":scheduled_only},{"account":"bob@example.test","home":bob,"signer_fingerprint":bfp,"decrypt_fingerprints":[bfp],"recipient_fingerprints":[afp,bfp]}]})).unwrap(),0o600);
     let inventory_config=scratch.write("inventory.json",&serde_json::to_vec(&serde_json::json!({"version":1,"worker":inventory_worker,"engine":"/usr/local/bin/gpg","socket":inventory_socket,"trusted_web_uid":uid,"accounts":[{"account":"alice@example.test","home":alice}]})).unwrap(),0o600);
     let admin_state = scratch.0.join("public-admin-state");
     fs::create_dir(&admin_state).unwrap();
@@ -670,9 +693,10 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     let port = listener.local_addr().unwrap().port();
     let smtp = Arc::new(Mutex::new(Vec::<Vec<u8>>::new()));
     let stop = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let drop_ack = Arc::new(std::sync::atomic::AtomicBool::new(false));
     let _sink = SinkGuard {
         stop: stop.clone(),
-        thread: Some(smtp_sink(listener, smtp.clone(), stop)),
+        thread: Some(smtp_sink(listener, smtp.clone(), stop, scheduled_only.then_some(drop_ack.clone()))),
     };
     // This executable substitutes only the process transport destination. The
     // production sendmail backend still validates and submits PreparedSubmission.
@@ -739,6 +763,20 @@ fn native_crypto_gateway_protected_send_roundtrip() {
         vec![0, 1, 255],
     )
     .unwrap()];
+
+    if scheduled_only {
+        scheduled_native::run(scheduled_native::Inputs {
+            gateway: &mut gateway, scratch: &scratch, crypto: &crypto,
+            submission: &submission, append: &append, smtp: &smtp,
+            drop_ack: &drop_ack, sent_mailbox: &sent_mailbox,
+            sent_path: &sent_path, sent_count: &sent_count,
+            primary: &afp, recipient_primary: &bfp,
+            binding_revision: record.revision, attachments: &attachments,
+            public_certificate: &exported.certificate,
+        });
+        sent_mailbox.finish();
+        return;
+    }
 
     let outcome = gateway.send_message_with_backends(
         &context,

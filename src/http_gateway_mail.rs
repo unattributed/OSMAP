@@ -1,3 +1,6 @@
+use super::http_gateway_scheduled_send::{
+    DispatchAuthority, PreparedDispatchInput, SendAuditOrigin,
+};
 use super::*;
 use crate::totp::TimeProvider;
 
@@ -57,8 +60,27 @@ fn mailbox_list_contains(mailboxes: &[MailboxEntry], mailbox_name: &str) -> bool
 
 // Called only after submission acceptance. An append error cannot establish
 // whether the backend stored the copy, and must never cause another dispatch.
+#[cfg(test)]
 fn store_prepared_sent_copy(
     context: &AuthenticationContext,
+    canonical_username: &str,
+    request: &ComposeRequest,
+    prepared: &crate::protected_submission::PreparedSubmission,
+    backend: &impl MessageAppendBackend,
+    location: Option<&crate::sent_location::CapturedLocation>,
+) -> (bool, LogEvent) {
+    store_prepared_sent_copy_for(
+        SendAuditOrigin::Browser(context),
+        canonical_username,
+        request,
+        prepared,
+        backend,
+        location,
+    )
+}
+
+pub(super) fn store_prepared_sent_copy_for(
+    audit: SendAuditOrigin<'_>,
     canonical_username: &str,
     request: &ComposeRequest,
     prepared: &crate::protected_submission::PreparedSubmission,
@@ -117,10 +139,11 @@ fn store_prepared_sent_copy(
     };
     (
         stored,
-        event
-            .with_field("canonical_username", canonical_username)
-            .with_field("mailbox_name", mailbox_name)
-            .with_field("request_id", context.request_id.clone()),
+        audit.request(
+            event
+                .with_field("canonical_username", canonical_username)
+                .with_field("mailbox_name", mailbox_name),
+        ),
     )
 }
 
@@ -187,6 +210,17 @@ pub(super) fn journal_send_decision(
     result: Result<crate::send_journal::JournalResult, crate::send_journal::JournalError>,
 ) -> BrowserSendDecision {
     match result {
+        Ok(crate::send_journal::JournalResult {
+            outcome:
+                crate::send_journal::AttemptOutcome::Scheduled {
+                    job_id,
+                    schedule_confirmed,
+                },
+            ..
+        }) => BrowserSendDecision::Scheduled {
+            job_id: crate::send_journal::draft_id_text(&job_id),
+            schedule_confirmed,
+        },
         Ok(crate::send_journal::JournalResult {
             outcome: crate::send_journal::AttemptOutcome::AcceptedWithoutSentCopy,
             receipt_persisted,
@@ -268,7 +302,7 @@ impl RuntimeBrowserGateway {
         }
         Ok(status.guid().into())
     }
-    fn capture_sent_location(
+    pub(super) fn capture_sent_location(
         &self,
         account: &str,
     ) -> Result<Option<crate::sent_location::CapturedLocation>, crate::sent_location::Error> {
@@ -1043,7 +1077,18 @@ impl RuntimeBrowserGateway {
                                     public_reason: "send_attempt_paused".into(),
                                 });
                             }
-                            if send_request.sender_id.is_some_and(|id| id != snapshot.request.sender_identity.sender().map(|s|s.id()).unwrap_or(crate::sender_authority::CANONICAL_ID)) {return Err(BrowserSendDecision::Unconfirmed {public_reason:"send_attempt_paused".into()});}
+                            if send_request.sender_id.is_some_and(|id| {
+                                id != snapshot
+                                    .request
+                                    .sender_identity
+                                    .sender()
+                                    .map(|s| s.id())
+                                    .unwrap_or(crate::sender_authority::CANONICAL_ID)
+                            }) {
+                                return Err(BrowserSendDecision::Unconfirmed {
+                                    public_reason: "send_attempt_paused".into(),
+                                });
+                            }
                             snapshot.request.sender_identity.clone()
                         }
                         _ => {
@@ -1061,7 +1106,17 @@ impl RuntimeBrowserGateway {
                         })?
                         .preferences
                 };
-                if !consumed { request.sender_identity = self.requested_sender(validated_session,request.sender_identity,send_request.sender_id).map_err(|_|BrowserSendDecision::Unconfirmed {public_reason:"send_attempt_paused".into()})?; }
+                if !consumed {
+                    request.sender_identity = self
+                        .requested_sender(
+                            validated_session,
+                            request.sender_identity,
+                            send_request.sender_id,
+                        )
+                        .map_err(|_| BrowserSendDecision::Unconfirmed {
+                            public_reason: "send_attempt_paused".into(),
+                        })?;
+                }
                 request.reply_thread = send_request.reply_thread.cloned();
                 request.protection = send_request.protection;
                 // Replay skips current throttle state. For fresh attempts the check
@@ -1090,7 +1145,12 @@ impl RuntimeBrowserGateway {
                         ),
                     }
                     let prepared = self
-                        .prepare_outbound_request(account, &request, now, Some(Self::private_key_session(validated_session)))
+                        .prepare_outbound_request(
+                            account,
+                            &request,
+                            now,
+                            Some(Self::private_key_session(validated_session)),
+                        )
                         .map_err(|reason| {
                             preparation_events.push(
                                 LogEvent::new(
@@ -1102,7 +1162,10 @@ impl RuntimeBrowserGateway {
                                 .with_field("stage", "pre_dispatch")
                                 .with_field("reason", send_preparation_audit_reason(reason))
                                 .with_field("request_id", context.request_id.clone())
-                                .with_field("session_id", validated_session.record.session_id.clone()),
+                                .with_field(
+                                    "session_id",
+                                    validated_session.record.session_id.clone(),
+                                ),
                             );
                             BrowserSendDecision::Denied {
                                 public_reason: reason.into(),
@@ -1123,115 +1186,44 @@ impl RuntimeBrowserGateway {
                             .save_sent
                     }
                 };
-                let capture=match captured_copy {Some(captured)=>captured,None=>crate::sent_location::SentCopyCapture{requested:save_sent,location:if save_sent {self.capture_sent_location(account).map_err(|_|BrowserSendDecision::Denied{public_reason:"sent_location_preference_unavailable".into(),retry_after_seconds:None})?}else{None}}};
+                let capture = match captured_copy {
+                    Some(captured) => captured,
+                    None => crate::sent_location::SentCopyCapture {
+                        requested: save_sent,
+                        location: if save_sent {
+                            self.capture_sent_location(account).map_err(|_| {
+                                BrowserSendDecision::Denied {
+                                    public_reason: "sent_location_preference_unavailable".into(),
+                                    retry_after_seconds: None,
+                                }
+                            })?
+                        } else {
+                            None
+                        },
+                    },
+                };
                 Ok((request, capture))
             },
             |request, capture| {
-                let save_sent=capture.requested;
-                let recovery = crate::send_recovery::SendRecovery::new(
-                    self.settings_dir.join("send-recovery"),
-                );
-                let request = match recovery.capture(
-                    &journal,
-                    &self.build_draft_store(),
-                    account,
-                    send_request.send_intent,
-                    request,
-                    now,
-                ) {
-                    Ok(prepared) => prepared,
-                    Err(error) => {
-                        dispatch_events.push(build_http_warning_event(
-                            "send_recovery_unconfirmed",
-                            "attempt recovery was not confirmed; submission was not invoked",
+                self.dispatch_prepared_attempt(
+                    PreparedDispatchInput {
+                        authority: DispatchAuthority::Browser {
                             context,
-                        ));
-                        return crate::send_journal::AttemptOutcome::RecoveryRefused {
-                            capacity: error == crate::send_recovery::RecoveryError::Capacity,
-                        };
-                    }
-                };
-                let Some((prepared, binding_revision, inventory_revision)) = prepared_wire.borrow_mut().take() else {
-                    return crate::send_journal::AttemptOutcome::Unconfirmed;
-                };
-                // Serialize the final revision check and SMTP dispatch with
-                // PAGE21 policy/binding writers. The journal lock is acquired
-                // first by both fresh and replayed attempts; no writer can
-                // change required protection between this check and dispatch.
-                let outcome = match crate::openpgp_bindings::BindingStore::new(
-                    self.settings_dir.join("openpgp-bindings"),
+                            session: validated_session,
+                        },
+                        journal: &journal,
+                        intent: send_request.send_intent,
+                        now,
+                        request,
+                        capture,
+                        prepared: prepared_wire.borrow_mut().take(),
+                        throttle: &throttle_service,
+                        deadline: None,
+                    },
+                    submission,
+                    append,
+                    &mut dispatch_events,
                 )
-                .with_locked_inventory_revision(account, binding_revision, inventory_revision,
-                    || self.inventory_client().as_ref().ok_or(crate::openpgp_bindings::BindingError::Unavailable)?
-                        .read(account).map_err(|_| crate::openpgp_bindings::BindingError::Unavailable),
-                    || submission.submit_prepared_for_validated_session(
-                        context,
-                        validated_session,
-                        &request,
-                        &prepared,
-                    )
-                ) {
-                    Ok(outcome) => outcome,
-                    Err(_) => return crate::send_journal::AttemptOutcome::Unconfirmed,
-                };
-                let SubmissionOutcome {
-                    decision,
-                    audit_event,
-                } = outcome;
-                dispatch_events.push(audit_event);
-
-                match decision {
-                    SubmissionDecision::Submitted { .. } => {
-                        let (sent_copy_stored, sent_copy_event) = if save_sent && capture.location.as_ref().is_some_and(|location| !location.available()) {
-                            (false,LogEvent::new(LogLevel::Warn,EventCategory::Submission,"sent_copy_destination_unavailable","submission accepted; captured copy destination unavailable; append not invoked").with_field("mailbox_name",capture.location.as_ref().map_or("",|location|location.name())).with_field("request_id",context.request_id.clone()))
-                        } else if save_sent {
-                            store_prepared_sent_copy(
-                                context,
-                                &validated_session.record.canonical_username,
-                                &request,
-                                &prepared,
-                                append,
-                                capture.location.as_ref(),
-                            )
-                        } else {
-                            (
-                                false,
-                                LogEvent::new(
-                                    LogLevel::Info,
-                                    EventCategory::Submission,
-                                    "sent_copy_not_requested",
-                                    "outbound message accepted; no Sent copy requested",
-                                )
-                                .with_field("request_id", context.request_id.clone()),
-                            )
-                        };
-                        dispatch_events.push(sent_copy_event);
-
-                        match throttle_service.record_submission(
-                            context,
-                            &validated_session.record.canonical_username,
-                        ) {
-                            Ok(record) => dispatch_events.extend(record.audit_events),
-                            Err(error) => dispatch_events.push(
-                                self.build_submission_throttle_store_error_event(
-                                    "submission_throttle_record_failed",
-                                    "submission throttle recording failed",
-                                    context,
-                                    &error,
-                                ),
-                            ),
-                        }
-
-                        if save_sent {
-                            crate::send_journal::AttemptOutcome::Accepted { sent_copy_stored }
-                        } else {
-                            crate::send_journal::AttemptOutcome::AcceptedWithoutSentCopy
-                        }
-                    }
-                    SubmissionDecision::Unconfirmed { .. } | SubmissionDecision::Denied { .. } => {
-                        crate::send_journal::AttemptOutcome::Unconfirmed
-                    }
-                }
             },
         );
         preparation_events.extend(dispatch_events);
@@ -1257,7 +1249,7 @@ impl RuntimeBrowserGateway {
             .map(|(prepared, revision, _)| (prepared, revision))
     }
 
-    fn prepare_outbound_request(
+    pub(super) fn prepare_outbound_request(
         &self,
         account: &str,
         request: &ComposeRequest,

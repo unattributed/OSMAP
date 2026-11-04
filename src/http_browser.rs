@@ -421,6 +421,56 @@ pub trait BrowserGateway {
     fn snooze_clock(&self) -> u64 {
         crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider)
     }
+    fn scheduled_clock(&self) -> u64 {
+        crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider)
+    }
+    fn scheduled_list(
+        &self,
+        _: &ValidatedSession,
+    ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+        Err(crate::scheduled_send::Error::Unavailable)
+    }
+    fn scheduled_payload(
+        &self,
+        _: &ValidatedSession,
+        _: &str,
+    ) -> Result<crate::send::ComposeRequest, crate::scheduled_send::Error> {
+        Err(crate::scheduled_send::Error::Unavailable)
+    }
+    fn scheduled_from_draft(
+        &self,
+        _: &ValidatedSession,
+        _: &str,
+        _: u64,
+        _: u64,
+    ) -> Result<String, crate::scheduled_send::Error> {
+        Err(crate::scheduled_send::Error::Unavailable)
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn scheduled_edit(
+        &self,
+        _: &ValidatedSession,
+        _: &str,
+        _: u64,
+        _: u64,
+        _: &str,
+        _: &str,
+        _: &str,
+        _: &str,
+        _: &str,
+    ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+        Err(crate::scheduled_send::Error::Unavailable)
+    }
+    fn scheduled_change(
+        &self,
+        _: &ValidatedSession,
+        _: &str,
+        _: u64,
+        _: &str,
+        _: Option<u64>,
+    ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+        Err(crate::scheduled_send::Error::Unavailable)
+    }
     fn snooze_load(
         &self,
         _session: &ValidatedSession,
@@ -1508,6 +1558,10 @@ pub struct BrowserSendOutcome {
 /// Send decisions visible to the browser layer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserSendDecision {
+    Scheduled {
+        job_id: String,
+        schedule_confirmed: bool,
+    },
     RecoveryRefused {
         capacity: bool,
     },

@@ -1969,6 +1969,16 @@ pub(crate) fn native_t04_fixture_command(role: u8) -> Result<Command, &'static s
     Ok(command)
 }
 
+/// Fixed native Serve actor; callers supply only the owned fixture root and port.
+#[cfg(all(test, unix, target_os = "openbsd"))]
+pub(crate) fn scheduled_serve_fixture_command() -> io::Result<Command> {
+    let mut command = Command::new(std::env::current_exe()?);
+    command.args(["--exact", "http::http_runtime::scheduled_native_tests::native_confined_serve_scheduled_worker_refuses_unavailable_account", "--ignored", "--nocapture", "--test-threads=1"])
+        .env_clear().env("PATH", "/usr/bin:/bin:/usr/local/bin")
+        .env("LC_ALL", "C").env("TZ", "UTC").current_dir("/");
+    Ok(command)
+}
+
 #[cfg(test)]
 mod tests {
     /// Fixed directory target refuses through the actual Unix spawn boundary.

@@ -114,6 +114,97 @@ fn cleanup_blobs(
 }
 
 impl FileDraftStore {
+    /// Settle recognized interrupted writes and count current private file bytes.
+    /// The caller owns journal/job coordination; this takes only the codec lock
+    /// and deliberately performs no expiry cleanup or payload allocation.
+    pub(crate) fn settle_storage_usage(&self, account: &str) -> Result<(usize, u64), DraftError> {
+        crate::identity::CanonicalUsername::parse(account).map_err(|_| unavailable())?;
+        let _lock = self.acquire_exclusive_lock(account)?;
+        for owner in self.checked_owners(account)? {
+            for (index, entry) in fs::read_dir(owner).map_err(|_| unavailable())?.enumerate() {
+                if index >= 256 {
+                    return Err(unavailable());
+                }
+                let entry = entry.map_err(|_| unavailable())?;
+                if entry
+                    .file_name()
+                    .to_str()
+                    .is_none_or(|id| validate_draft_id(id).is_err())
+                {
+                    return Err(unavailable());
+                }
+            }
+        }
+        let records = self.records_for_owner(account)?;
+        let mut total = 0_u64;
+        for (directory, record, _) in &records {
+            let metadata = crate::private_account_file::read_record(
+                &directory.join(DRAFT_METADATA_FILE),
+                self.policy.metadata_max_bytes as usize,
+            )
+            .map_err(|_| unavailable())?
+            .ok_or_else(unavailable)?;
+            let text = std::str::from_utf8(&metadata).map_err(|_| unavailable())?;
+            let mut keep = BTreeSet::new();
+            for index in 0..record.request.attachments.len() {
+                let prefix = format!("attachment_{index}_body_file=");
+                let mut names = text.lines().filter_map(|line| line.strip_prefix(&prefix));
+                let name = names.next().ok_or_else(unavailable)?;
+                if names.next().is_some() {
+                    return Err(unavailable());
+                }
+                keep.insert(name.to_owned());
+            }
+            // Validate all entries before deleting recognized orphan files.
+            // Unknown names, directories, links and unsafe modes are never zero.
+            let max_file_bytes = self
+                .policy
+                .compose_policy
+                .attachment_max_bytes
+                .max(self.policy.metadata_max_bytes as usize);
+            for (index, entry) in fs::read_dir(directory)
+                .map_err(|_| unavailable())?
+                .enumerate()
+            {
+                if index > 64 {
+                    return Err(unavailable());
+                }
+                let entry = entry.map_err(|_| unavailable())?;
+                let name = entry.file_name();
+                let name = name.to_str().ok_or_else(unavailable)?;
+                let legacy = (0..self.policy.compose_policy.max_attachments)
+                    .any(|index| name == attachment_body_file_name(index));
+                if name != DRAFT_METADATA_FILE
+                    && !is_blob_name(name)
+                    && !is_temporary_name(name)
+                    && !legacy
+                {
+                    return Err(unavailable());
+                }
+                crate::private_account_file::read_record(&entry.path(), max_file_bytes)
+                    .map_err(|_| unavailable())?
+                    .ok_or_else(unavailable)?;
+            }
+            cleanup_blobs(directory, &keep, self.policy)?;
+            sync_directory(directory)?;
+            total = total
+                .checked_add(metadata.len() as u64)
+                .ok_or_else(unavailable)?;
+            for name in keep {
+                let bytes = crate::private_account_file::read_record(
+                    &directory.join(name),
+                    self.policy.compose_policy.attachment_max_bytes,
+                )
+                .map_err(|_| unavailable())?
+                .ok_or_else(unavailable)?;
+                total = total
+                    .checked_add(bytes.len() as u64)
+                    .ok_or_else(unavailable)?;
+            }
+        }
+        Ok((records.len(), total))
+    }
+
     /// Proves every recoverable relationship before any location is mutated.
     /// Legal legacy state is one backup alone or one backup plus a newer final.
     pub(super) fn validate_legacy_backups_in(

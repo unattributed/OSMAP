@@ -18,6 +18,7 @@ pub(crate) fn footer_more(model: &ComposePageModel<'_>) -> String {
         "<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"minimize\">Save and close</button>",
         "<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"preview\">Preview</button>",
         "<a href=\"/contacts\" target=\"_blank\" rel=\"noopener\">Contacts<span class=\"sr-only\"> (opens in a new tab)</span></a>",
+        "<a href=\"/scheduled\" target=\"_blank\" rel=\"noopener\">Scheduled messages<span class=\"sr-only\"> (opens in a new tab)</span></a>",
         "</div></details>"
     ), disabled = disabled)
 }
@@ -37,8 +38,8 @@ pub(crate) fn send_controls(model: &ComposePageModel<'_>) -> String {
         "<details class=\"compose-send-options\" name=\"compose-delivery-menu\">",
         "<summary aria-label=\"Send options\" title=\"Send options\">⌄</summary>",
         "<div class=\"compose-delivery-menu\">",
-        "<button type=\"button\" disabled aria-describedby=\"compose-send-schedule-status\">Schedule</button>",
-        "<p id=\"compose-send-schedule-status\" class=\"muted\">Scheduling is unavailable.</p>{paused}",
+        "<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"schedule\" aria-describedby=\"compose-send-schedule-status\">Schedule</button>",
+        "<p id=\"compose-send-schedule-status\" class=\"muted\">Save this draft and choose when to send it.</p>{paused}",
         "</div></details></div>"
     ), disabled = disabled, paused = paused)
 }

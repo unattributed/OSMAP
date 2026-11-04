@@ -19,6 +19,27 @@ impl<G: BrowserGateway> BrowserApp<G> {
         decision: Result<Option<BrowserSendDecision>, String>,
     ) -> HttpResponse {
         let (mut status, title, message, recovery) = receipt_copy(&decision);
+        if let Ok(Some(BrowserSendDecision::Scheduled {
+            job_id,
+            schedule_confirmed,
+        })) = &decision
+        {
+            return receipt_page(
+                session,
+                200,
+                "Scheduled message handoff",
+                if *schedule_confirmed {
+                    "This original form was retired into a scheduled message. This receipt does not establish its later submission or delivery."
+                } else {
+                    "This original form was reserved for scheduling. Publication was not confirmed. Inspect the saved job before taking another action; this form cannot send it again."
+                },
+                &format!(
+                    "<p><a href=\"/scheduled?id={}\">View scheduled message</a></p>",
+                    escape_html(&url_encode(job_id))
+                ),
+                false,
+            );
+        }
         if let Ok(Some(BrowserSendDecision::SubmittedTo {
             mailbox_name,
             sent_copy_stored: true,

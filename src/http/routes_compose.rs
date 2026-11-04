@@ -852,16 +852,18 @@ where
                     audit_events,
                 }
             }
-            BrowserSendDecision::DraftSaved { .. } => HandledHttpResponse {
-                response: self.send_receipt_response(
-                    context,
-                    &validated_session,
-                    form.get("send_intent")
-                        .map(String::as_str)
-                        .unwrap_or_default(),
-                ),
-                audit_events,
-            },
+            BrowserSendDecision::Scheduled { .. } | BrowserSendDecision::DraftSaved { .. } => {
+                HandledHttpResponse {
+                    response: self.send_receipt_response(
+                        context,
+                        &validated_session,
+                        form.get("send_intent")
+                            .map(String::as_str)
+                            .unwrap_or_default(),
+                    ),
+                    audit_events,
+                }
+            }
             BrowserSendDecision::RecoveryRefused { capacity } => HandledHttpResponse {
                 response: submission_result_response(
                     &validated_session,

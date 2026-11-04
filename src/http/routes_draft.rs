@@ -612,7 +612,7 @@ where
         };
         let contact_result = if matches!(
             form.get("compose_action").map(String::as_str),
-            Some("theme-light" | "theme-dark")
+            Some("theme-light" | "theme-dark" | "schedule")
         ) {
             Ok(())
         } else {
@@ -738,6 +738,8 @@ where
                     };
                 }
             };
+        let scheduling = form.get("compose_action").map(String::as_str) == Some("schedule");
+        let mut accepted_attachments = parsed_form.attachments;
         let source_attachments = match self.resolve_source_attachments(
             context,
             &validated_session,
@@ -746,6 +748,13 @@ where
             &mut audit_events,
             "original_attachment_save",
         ) {
+            Ok(Some((_, materialized))) if scheduling => {
+                // A scheduled snapshot must not depend on source mail still
+                // existing when its later send time arrives. These bytes were
+                // resolved from the exact owned message version above.
+                accepted_attachments.extend(materialized);
+                None
+            }
             Ok(value) => value.map(|(reference, _)| reference),
             Err(error) => {
                 let (status, reason, public_reason) = error.response();
@@ -762,6 +771,19 @@ where
                 };
             }
         };
+        if scheduling
+            && (removed_attachment_indices(&form).is_err()
+                || crate::send::validate_attachment_set(
+                    ComposePolicy::default(),
+                    &accepted_attachments,
+                )
+                .is_err())
+        {
+            return HandledHttpResponse {
+                response: self.retained_compose_input_error(&validated_session, &form, reply_reference.as_ref(), "The combined saved and selected attachments could not be accepted. Check attachment selections and limits; nothing was scheduled or sent."),
+                audit_events,
+            };
+        }
         // Pre-send check is an explicit review of the current public binding
         // snapshot. Only this action may replace a saved draft's pinned revision;
         // ordinary saves, autosaves and resumed drafts keep their original pin.
@@ -850,7 +872,7 @@ where
                 subject: &subject,
                 body: &body,
                 body_format: super::compose_actions::body_format(&form).unwrap_or_default(),
-                attachments: &parsed_form.attachments,
+                attachments: &accepted_attachments,
                 removed_attachment_indices: &removed_attachment_indices(&form).unwrap_or_default(),
                 source_attachments: source_attachments.as_ref(),
             },
@@ -930,6 +952,35 @@ where
                     audit_events,
                 }
             }
+            BrowserDraftSaveDecision::Saved { draft_id }
+                if form.get("compose_action").map(String::as_str) == Some("schedule") =>
+            {
+                let loaded = self
+                    .gateway
+                    .load_draft(context, &validated_session, &draft_id);
+                audit_events.extend(loaded.audit_events);
+                let target = match loaded.decision {
+                    BrowserDraftLoadDecision::Loaded {
+                        canonical_username,
+                        draft,
+                    } if canonical_username == validated_session.record.canonical_username
+                        && draft.canonical_username == canonical_username
+                        && draft.draft_id == draft_id =>
+                    {
+                        draft.revision.map(|revision| {
+                            format!(
+                                "/scheduled/new?draft={}&revision={revision}",
+                                url_encode(&draft_id)
+                            )
+                        })
+                    }
+                    _ => None,
+                };
+                HandledHttpResponse { response: match target {
+                    Some(target) => redirect_response(303,"See Other",&target),
+                    None => html_response(503,"Service Unavailable","Schedule not confirmed","<p>Your saved draft must be reloaded before choosing a send time. Nothing was scheduled or sent.</p>"),
+                },audit_events }
+            }
             BrowserDraftSaveDecision::Saved { draft_id } => HandledHttpResponse {
                 response: redirect_response(
                     303,
@@ -963,7 +1014,7 @@ where
                     response: super::routes_compose::submission_result_response(
                         &validated_session,
                         &form,
-                        &parsed_form.attachments,
+                        &accepted_attachments,
                         crate::compose_result_ui::SubmissionResult::Paused,
                     ),
                     audit_events,

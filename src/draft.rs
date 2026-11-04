@@ -1894,6 +1894,9 @@ mod tests {
     mod atomic_tests {
         include!("draft_atomic_tests.rs");
     }
+    mod storage_usage_tests {
+        include!("draft_storage_usage_tests.rs");
+    }
 
     fn temp_dir(label: &str) -> PathBuf {
         let mut path = std::env::temp_dir();

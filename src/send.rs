@@ -610,6 +610,44 @@ pub struct SubmissionService<B> {
     backend: B,
 }
 
+#[derive(Clone, Copy)]
+enum SubmissionAuditOrigin<'a> {
+    Browser {
+        context: &'a AuthenticationContext,
+        session_id: &'a str,
+    },
+    Scheduled {
+        job_id: &'a str,
+    },
+}
+impl SubmissionAuditOrigin<'_> {
+    fn identity(self, event: LogEvent) -> LogEvent {
+        match self {
+            Self::Browser { session_id, .. } => {
+                event.with_field("session_ref", audit_session_ref(session_id))
+            }
+            Self::Scheduled { job_id } => event
+                .with_field("submission_origin", "scheduled")
+                .with_field("scheduled_job_ref", job_id),
+        }
+    }
+    fn context(self, event: LogEvent) -> LogEvent {
+        match self {
+            Self::Browser { context, .. } => event
+                .with_field("request_id", &context.request_id)
+                .with_field("remote_addr", &context.remote_addr)
+                .with_field("user_agent", &context.user_agent),
+            Self::Scheduled { .. } => event,
+        }
+    }
+    fn denied(self, event: LogEvent) -> LogEvent {
+        match self {
+            Self::Browser { context, .. } => event.with_field("request_id", &context.request_id),
+            Self::Scheduled { .. } => self.identity(event),
+        }
+    }
+}
+
 impl<B> SubmissionService<B>
 where
     B: SubmissionBackend,
@@ -650,31 +688,79 @@ where
         else {
             return Self::prepared_denied(context, validated_session);
         };
-        if prepared.validate_for(&account, request).is_err() {
-            return Self::prepared_denied(context, validated_session);
+        self.submit_prepared_for_account(
+            &account,
+            SubmissionAuditOrigin::Browser {
+                context,
+                session_id: &validated_session.record.session_id,
+            },
+            request,
+            prepared,
+        )
+    }
+
+    /// The caller must freshly admit the claimed job's account/epoch and enforce
+    /// journal, sender, key/policy and private-grant checks before this boundary.
+    /// This performs one backend call, not retry or job-state reconciliation.
+    pub(crate) fn submit_prepared_for_scheduled_job(
+        &self,
+        claim: &crate::scheduled_send::ClaimedJob,
+        prepared: &crate::protected_submission::PreparedSubmission,
+    ) -> SubmissionOutcome {
+        let origin = SubmissionAuditOrigin::Scheduled { job_id: claim.id() };
+        let Ok(account) = crate::identity::CanonicalUsername::parse(claim.account()) else {
+            return Self::prepared_denied_for(claim.account(), origin);
+        };
+        if crate::send_journal::snapshot_digest(account.as_str(), claim.request()) != claim.digest()
+        {
+            return Self::prepared_denied_for(account.as_str(), origin);
+        }
+        self.submit_prepared_for_account(&account, origin, claim.request(), prepared)
+    }
+
+    fn submit_prepared_for_account(
+        &self,
+        account: &crate::identity::CanonicalUsername,
+        origin: SubmissionAuditOrigin<'_>,
+        request: &ComposeRequest,
+        prepared: &crate::protected_submission::PreparedSubmission,
+    ) -> SubmissionOutcome {
+        if prepared.validate_for(account, request).is_err() {
+            return Self::prepared_denied_for(account.as_str(), origin);
         }
         let result = self
             .backend
             .submit_prepared_message(account.as_str(), request, prepared);
-        Self::submission_outcome(context, validated_session, request, result)
+        Self::submission_outcome_for(account.as_str(), origin, request, result)
     }
 
     fn prepared_denied(
         context: &AuthenticationContext,
         session: &ValidatedSession,
     ) -> SubmissionOutcome {
+        Self::prepared_denied_for(
+            &session.record.canonical_username,
+            SubmissionAuditOrigin::Browser {
+                context,
+                session_id: &session.record.session_id,
+            },
+        )
+    }
+
+    fn prepared_denied_for(account: &str, origin: SubmissionAuditOrigin<'_>) -> SubmissionOutcome {
         SubmissionOutcome {
             decision: SubmissionDecision::Denied {
                 public_reason: SubmissionPublicFailureReason::InvalidRequest,
             },
-            audit_event: LogEvent::new(
-                LogLevel::Warn,
-                EventCategory::Submission,
-                "prepared_submission_denied",
-                "prepared submission account or request was invalid",
-            )
-            .with_field("canonical_username", &session.record.canonical_username)
-            .with_field("request_id", &context.request_id),
+            audit_event: origin.denied(
+                LogEvent::new(
+                    LogLevel::Warn,
+                    EventCategory::Submission,
+                    "prepared_submission_denied",
+                    "prepared submission account or request was invalid",
+                )
+                .with_field("canonical_username", account),
+            ),
         }
     }
 
@@ -684,78 +770,85 @@ where
         request: &ComposeRequest,
         result: Result<(), SubmissionBackendError>,
     ) -> SubmissionOutcome {
+        Self::submission_outcome_for(
+            &validated_session.record.canonical_username,
+            SubmissionAuditOrigin::Browser {
+                context,
+                session_id: &validated_session.record.session_id,
+            },
+            request,
+            result,
+        )
+    }
+
+    fn submission_outcome_for(
+        account: &str,
+        origin: SubmissionAuditOrigin<'_>,
+        request: &ComposeRequest,
+        result: Result<(), SubmissionBackendError>,
+    ) -> SubmissionOutcome {
         match result {
             Ok(()) => SubmissionOutcome {
                 decision: SubmissionDecision::Submitted {
-                    canonical_username: validated_session.record.canonical_username.clone(),
+                    canonical_username: account.to_owned(),
                     recipients: request.all_recipients(),
                 },
-                audit_event: LogEvent::new(
-                    LogLevel::Info,
-                    EventCategory::Submission,
-                    "message_submitted",
-                    "outbound message accepted for submission",
-                )
-                .with_field(
-                    "canonical_username",
-                    validated_session.record.canonical_username.clone(),
-                )
-                .with_field(
-                    "session_ref",
-                    audit_session_ref(&validated_session.record.session_id),
-                )
-                .with_field(
-                    "recipient_count",
-                    request.total_recipient_count().to_string(),
-                )
-                .with_field("attachment_count", request.attachments.len().to_string())
-                .with_field(
-                    "attachment_bytes_total",
-                    total_attachment_bytes(&request.attachments).to_string(),
-                )
-                .with_field(
-                    "has_subject",
-                    if request.subject.is_empty() {
-                        "false"
-                    } else {
-                        "true"
-                    },
-                )
-                .with_field("request_id", context.request_id.clone())
-                .with_field("remote_addr", context.remote_addr.clone())
-                .with_field("user_agent", context.user_agent.clone()),
+                audit_event: origin.context(
+                    origin
+                        .identity(
+                            LogEvent::new(
+                                LogLevel::Info,
+                                EventCategory::Submission,
+                                "message_submitted",
+                                "outbound message accepted for submission",
+                            )
+                            .with_field("canonical_username", account),
+                        )
+                        .with_field(
+                            "recipient_count",
+                            request.total_recipient_count().to_string(),
+                        )
+                        .with_field("attachment_count", request.attachments.len().to_string())
+                        .with_field(
+                            "attachment_bytes_total",
+                            total_attachment_bytes(&request.attachments).to_string(),
+                        )
+                        .with_field(
+                            "has_subject",
+                            if request.subject.is_empty() {
+                                "false"
+                            } else {
+                                "true"
+                            },
+                        ),
+                ),
             },
             Err(error) => SubmissionOutcome {
                 decision: SubmissionDecision::Unconfirmed {
                     public_reason: SubmissionPublicFailureReason::TemporarilyUnavailable,
                 },
-                audit_event: LogEvent::new(
-                    LogLevel::Warn,
-                    EventCategory::Submission,
-                    "message_submit_unconfirmed",
-                    "outbound message submission acceptance could not be confirmed",
-                )
-                .with_field(
-                    "canonical_username",
-                    validated_session.record.canonical_username.clone(),
-                )
-                .with_field(
-                    "session_ref",
-                    audit_session_ref(&validated_session.record.session_id),
-                )
-                .with_field("attachment_count", request.attachments.len().to_string())
-                .with_field(
-                    "public_reason",
-                    SubmissionPublicFailureReason::TemporarilyUnavailable.as_str(),
-                )
-                .with_field(
-                    "audit_reason",
-                    SubmissionAuditFailureReason::BackendUnavailable.as_str(),
-                )
-                .with_field("backend", error.backend)
-                .with_field("request_id", context.request_id.clone())
-                .with_field("remote_addr", context.remote_addr.clone())
-                .with_field("user_agent", context.user_agent.clone()),
+                audit_event: origin.context(
+                    origin
+                        .identity(
+                            LogEvent::new(
+                                LogLevel::Warn,
+                                EventCategory::Submission,
+                                "message_submit_unconfirmed",
+                                "outbound message submission acceptance could not be confirmed",
+                            )
+                            .with_field("canonical_username", account),
+                        )
+                        .with_field("attachment_count", request.attachments.len().to_string())
+                        .with_field(
+                            "public_reason",
+                            SubmissionPublicFailureReason::TemporarilyUnavailable.as_str(),
+                        )
+                        .with_field(
+                            "audit_reason",
+                            SubmissionAuditFailureReason::BackendUnavailable.as_str(),
+                        )
+                        .with_field("backend", error.backend),
+                ),
             },
         }
     }
@@ -1493,6 +1586,9 @@ mod tests {
     use super::*;
     mod protected_tests {
         include!("send_protected_tests.rs");
+    }
+    mod scheduled_tests {
+        include!("send_scheduled_tests.rs");
     }
     use crate::auth::{AuthenticationPolicy, CommandExecution, CommandExecutionError};
     use crate::config::LogFormat;

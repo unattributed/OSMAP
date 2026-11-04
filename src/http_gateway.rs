@@ -29,6 +29,10 @@ mod http_gateway_password;
 pub(super) mod http_gateway_protected;
 #[path = "http_gateway_recovery.rs"]
 mod http_gateway_recovery;
+#[path = "http_gateway_scheduled.rs"]
+mod http_gateway_scheduled;
+#[path = "http_gateway_scheduled_send.rs"]
+mod http_gateway_scheduled_send;
 #[path = "http_gateway_settings.rs"]
 mod http_gateway_settings;
 #[path = "http_mailbox_backends.rs"]
@@ -935,6 +939,52 @@ impl BrowserGateway for RuntimeBrowserGateway {
         )
     }
 
+    fn scheduled_list(
+        &self,
+        s: &ValidatedSession,
+    ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+        self.scheduled_list_impl(s)
+    }
+    fn scheduled_payload(
+        &self,
+        s: &ValidatedSession,
+        id: &str,
+    ) -> Result<crate::send::ComposeRequest, crate::scheduled_send::Error> {
+        self.scheduled_payload_impl(s, id)
+    }
+    fn scheduled_from_draft(
+        &self,
+        s: &ValidatedSession,
+        id: &str,
+        revision: u64,
+        due: u64,
+    ) -> Result<String, crate::scheduled_send::Error> {
+        self.scheduled_from_draft_impl(s, id, revision, due)
+    }
+    fn scheduled_edit(
+        &self,
+        s: &ValidatedSession,
+        id: &str,
+        revision: u64,
+        due: u64,
+        to: &str,
+        cc: &str,
+        bcc: &str,
+        subject: &str,
+        body: &str,
+    ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+        self.scheduled_edit_impl(s, id, revision, due, to, cc, bcc, subject, body)
+    }
+    fn scheduled_change(
+        &self,
+        s: &ValidatedSession,
+        id: &str,
+        revision: u64,
+        action: &str,
+        due: Option<u64>,
+    ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+        self.scheduled_change_impl(s, id, revision, action, due)
+    }
     fn snooze_load(
         &self,
         session: &ValidatedSession,
