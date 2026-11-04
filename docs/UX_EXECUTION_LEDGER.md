@@ -77,7 +77,8 @@
     "src/documents_native_migration_tests.rs",
     "maint/openbsd/rc.d/osmap_duncan_storage",
     "maint/openbsd/DUNCAN_STORAGE.md",
-    "src/documents_native_http_tests.rs"
+    "src/documents_native_http_tests.rs",
+    "maint/security/v15-dependency-admission.json"
   ],
   "outcomes": [
     {

@@ -1,7 +1,7 @@
 {
   "cargo_baseline": {
     "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
-    "cargo_toml_sha256": "858533abc39dd82bac5127e27e65d2047cfe073131d30c002913b920b9d3cead",
+    "cargo_toml_sha256": "ee4a425aab038b596fda739e129c615a25f3873611f22d055d8986fc7168d5b8",
     "locked_package_count": 83
   },
   "dependencies": [
@@ -542,9 +542,9 @@
     }
   ],
   "manifest_target_review": {
-    "change": "Add exact qrcodegen1.8.0/default-features=false for browser recovery local QR. Existing targets retained. No transitive addition; native NOT_RUN.",
-    "dependency_graph_changed": true,
-    "reference": "docs/UX_SLICE_S04_04.md"
+    "change": "Add the fixed read-only storage-quota binary target for S08-01. Cargo dependency declarations, features and Cargo.lock are unchanged; native FFS worker, confinement and HTTP composition qualify the new target separately.",
+    "dependency_graph_changed": false,
+    "reference": "docs/UX_SLICE_S08_01.md"
   },
   "policy": {
     "admission_model": "risk_based",
