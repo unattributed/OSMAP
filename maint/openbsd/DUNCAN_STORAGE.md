@@ -2,7 +2,7 @@
 
 This is the bounded obsd1 S08 deployment profile, not a general storage service.
 It preserves vmail UID/GID2000 and gives Duncan an account-exclusive FFS
-filesystem with a 512000000-byte hard quota. Other accounts retain their current
+filesystem with the owner-selected200MiB (209715200-byte) hard quota. Other accounts retain their current
 storage. No production mail host, password, private-key or continuous mailbox
 replication operation is part of this recipe.
 
@@ -10,6 +10,10 @@ The source `rc.d/osmap_duncan_storage` never creates an image, formats a device,
 sets a quota limit, migrates mail, changes SQL or stops Dovecot. Its `check` is a
 read-only mounted-image/kernel-quota check. Initial provisioning and migration
 are separately bounded root operations; do not run them from a boot hook.
+
+The owner selected200MiB on2026-11-05. Earlier512000000-byte native receipts
+remain historical qualification of that earlier limit; they are not proof that
+the current kernel limit has been aligned. Require fresh readback before use.
 
 ## Layout and fixed operator inputs
 
@@ -107,11 +111,11 @@ next initial fsck trying to check an unattached vnd device.
    Attach an unused exact vnd association, prepare its disklabel/a partition and
    format only that verified new device. This step is never repeated at boot.
 4. Provision user quota for UID2000 on this one filesystem. The raw hard limit
-   is1000000 DEV_BSIZE512 blocks; soft limit0 (or exactly the hard limit).
+   is409600 DEV_BSIZE512 blocks; soft limit0 (or exactly the hard limit).
    Use the installed native edquota/quotacheck/quotaon contract, inspecting its
    actual formatter and units first. Edquota text units must not be guessed
    from raw kernel block units. Require readback through the actual self-UID
-   worker: `limit_bytes=512000000`, finite measured usage, exact mount and
+   worker: `limit_bytes=209715200`, finite measured usage, exact mount and
    metadata-device separation. Do not invoke quotaon/quotacheck with `-a`.
    The host pass0 row is insufficient for quotacheck even with an explicit
    target: it may exit0 after skipping the filesystem. Use the private native
@@ -162,7 +166,7 @@ next initial fsck trying to check an unattached vnd device.
 
 The actual final mount can be provisioned and tested while Duncan's SQL home
 still points to the old Maildir. That gives the rc script its real UID2000,
-mount, metadata and512000000-byte policy without copying live mail into it.
+mount, metadata and209715200-byte policy without copying live mail into it.
 It is not evidence of account migration. Freshly verify the chosen unused vnd
 slot, available physical backing space and absence of every new path first.
 A1GiB fully allocated image provides room above the data cap; do not use a
@@ -176,7 +180,7 @@ only this new FFS row to add `userquota`, keeping pass0. Never add pass2 to the
 host file. Mount the newly prepared filesystem root-only and create its empty
 root:wheel0600 quota.user. Capture the actual installed edquota formatter
 before using a fixed private editor. The native formatter's `KBytes` are1024
-bytes: hard500000 means512000000 bytes, or1000000 raw512-byte blocks. Preserve
+bytes: hard204800 means209715200 bytes, or409600 raw512-byte blocks. Preserve
 the existing usage fields; edquota changes limits rather than current usage.
 
 The following is a private execution-artifact editor, not an installed service.
@@ -204,7 +208,7 @@ awk '
     NR==2 {
         prefix="/var/osmap-storage/accounts/duncan: KBytes in use: "
         if (index($0,prefix)!=1 || substr($0,length(prefix)+1)!~/^[0-9]+, limits \(soft = 0, hard = 0\)$/) bad=1
-        sub(/limits \(soft = 0, hard = 0\)$/, "limits (soft = 0, hard = 500000)")
+        sub(/limits \(soft = 0, hard = 0\)$/, "limits (soft = 0, hard = 204800)")
     }
     NR==3 {if ($0!~/^\tinodes in use: [0-9]+, limits \(soft = 0, hard = 0\)$/) bad=1}
     {print}
@@ -218,7 +222,7 @@ cmp -s "$candidate" "$1"
 
 Run the editor-driven native edquota under a finite outer deadline and retain
 its actual output. Its exit status alone is not acceptance: inspect all eight
-u32 fields at UID2000's32-byte quota record and require hard1000000/soft0.
+u32 fields at UID2000's32-byte quota record and require hard409600/soft0.
 Native od may zero-pad these decimal fields; validate digits and normalize
 explicitly in base10 before comparing limits or calculating bytes.
 Restore the exact permanent host fstab without `userquota` before rc startup.
@@ -268,7 +272,7 @@ refused. Native qualification must demonstrate recomputation of known nonzero
 allocated usage as well as preservation of the hard limit.
 
 The script reads only UID2000's32-byte quota record and checks the actual
-1000000-block hard/soft policy before and after recount. It unmounts the guard,
+409600-block hard/soft policy before and after recount. It unmounts the guard,
 removes its known files, and mounts at the final location with root-only mode
 preserved. It checks the quota record again before native quotaon. Only after
 quotaon succeeds does it expose root0755 and verify the kernel record as vmail.

@@ -123,7 +123,7 @@
       ],
       "frontend_backend_outcome": "The signed-in user uploads, finds, downloads, bins and restores private Documents while mail and Documents share one finite native quota; storage views report account-specific evidence.",
       "essential_qa": "Reuse Rust lifecycle/security tests; exact native transfer; native concurrent IMAP/LMTP/Documents capacity enforcement; interruption/retention cleanup; installed account-specific rendering and owner UAT.",
-      "next_action": "Global Documents filename search and optional advisory native mapping compatibility delivered. Native HTTP/search exact10MiB1PASS/0FAIL18.77s, installed Web/helper9f9c4cf4 and signed account-admission/storage/rails/foreign1PASS0FAIL0.11s; independentGO. Owner quota choice remains pending before Documents activation/migration. Continue S08-03/04 independently, preserve all original Documents obligations.",
+      "next_action": "Owner selected200MiB. Configured DB quota CAS and installed signed account-admission/storage report209715200PASS; unused filesystem kernel209715200/rc checkPASS with unchanged usage/userdb and restoredfstab. No owner migration or Toronto change. Documents filename search remains installed. Preserve all original Documents obligations and continue S08-03/04 independently; full Documents activation/acceptance remains OPEN.",
       "dependencies": [
         {
           "owner": "/root",
@@ -818,7 +818,7 @@
     "slice": "S08-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_01.md",
-      "sha256": "4b738027554ab6713903133b216546291483741b06ead30723c6918bd2f9772a"
+      "sha256": "77d30985e3c2280c561bbe2990770e9e8fb0b34196bb460b53a693f4cb0a5b08"
     },
     "design": {
       "journey": "Upload, list, folders, search, sort, views, isolated download, Bin, restore and confirmed retention cleanup with shared account capacity.",
@@ -52821,3 +52821,41 @@ document. That refusal occurred before GitHub publication. The smallest correcti
 adds its ordinary docs/README link; original failed hook output is retained in
 continuation-20261105/push.log. Normal signed follow-up and full push hooks remain
 required; no bypass, force or acceptance change is authorized or performed.
+
+## 2026-11-05 — owner-selected200MiB development quota
+
+The owner answers `set quota at 200 MiB`. One native conditional obsd1 database
+update affected one row and reads back209715200bytes. Password-related columns,
+account epoch, active mailbox mapping and configuration remain unchanged. Toronto
+was not touched. Matching installed testaae65338 passes current signed admission,
+actual Runtime/helper storage report, owned rails and foreign refusal1PASS0FAIL
+0.11seconds: message bytes172605611/configured209715200.
+
+Independent review found the unused-filesystem alignment carrier needed an
+explicit original account-mapping guard before containment. Correctedd9f0e378
+requires exact home/mail/UID/GID/advisory fields, then native edquota changes only
+that filesystem's UID2000 hard limit to204800KiB. Actual kernel worker reads
+209715200 and identical usage. fstab compares restored; installed account rc
+01288073 check passes; active userdb remains original and nine roles run. No owner
+mailbox migration/copy or public mail configuration/service operation occurred.
+Private alignment result SHA2566d48d58e43c086fabd58e95179e836540d5e1665cb5665c4bcb91ab524508732.
+Historical512000000 preparations are preserved; numerical reporting/profile
+alignment does not establish shared enforcement on the active original mailbox.
+
+The separate new no-root quota-plugin compatibility control initially failed
+inside the existing test executor, before native save: its blanket `-u` assertion
+refused the product's ordinary explicit-account `doveadm user` query. Private
+fixture/diagnostics remain retained; failure SHA256dba704b0dc96f1e82a8d39d7d336b273d03dd6843a6983e0c2698da4611118df.
+No live account was used. Correct only the exact account-query command shape;
+never permit arbitrary unscoped commands. This is not a product mail failure or
+permission to change public mail configuration. Matching retest remains pending.
+
+The changed no-root executor now admits only the exact owned account-lookup
+producer; ordinary `-u` operations retain their existing account gate. Matching
+OpenBSD test5da218a4 actually passes1case/0failures0.34seconds: quota plugin
+without account root preserves exact4096-byte native save/fetch, Documents
+quota remains unavailable and owned cleanup passes. Live accounts/configuration
+were not touched; IMAP/LMTP and cutover remain NOT QUALIFIED. The first wrapper
+failure remains separate. Local exact negative-gate case passes1/0 after a
+short-name `--exact` invocation selected zero tests; no pass was inferred from
+the zero-test invocation.

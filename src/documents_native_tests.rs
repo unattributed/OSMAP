@@ -267,8 +267,27 @@ impl CommandExecutor for ScopedExecutor {
             .iter()
             .any(|arg| matches!(arg.as_str(), "-A" | "-F" | "-c")));
         if program.ends_with("doveadm") {
-            let position = args.iter().position(|arg| arg == "-u").unwrap();
-            assert_eq!(args.get(position + 1).map(String::as_str), Some(ACCOUNT));
+            if let Some(position) = args.iter().position(|arg| arg == "-u") {
+                assert_eq!(args.get(position + 1).map(String::as_str), Some(ACCOUNT));
+            } else {
+                // The production quota probe uses `doveadm user ACCOUNT`, not
+                // a mail operation with -u. Admit only its exact owned shape.
+                let socket = self.config.parent().unwrap().join("auth-userdb");
+                assert_eq!(
+                    args,
+                    [
+                        "-o".into(),
+                        "stats_writer_socket_path=".into(),
+                        "-o".into(),
+                        format!("auth_socket_path={}", socket.display()),
+                        "-f".into(),
+                        "json".into(),
+                        "user".into(),
+                        ACCOUNT.into(),
+                    ]
+                );
+                assert!(input.is_empty() && output_limit <= 4096);
+            }
         } else {
             assert_eq!(args, ["-n"]);
             assert!(input.is_empty());
@@ -560,6 +579,24 @@ fn documents_native_executor_refuses_other_program_or_account_before_dispatch() 
         ]
     )
     .is_err());
+    let mut lookup = [
+        "-o",
+        "stats_writer_socket_path=",
+        "-o",
+        "auth_socket_path=/dev/auth-userdb",
+        "-f",
+        "json",
+        "user",
+        "bob@osmap-documents.invalid",
+    ]
+    .map(str::to_owned);
+    assert!(run("/usr/local/bin/doveadm", &lookup).is_err());
+    lookup[7] = ACCOUNT.into();
+    lookup[3] = "auth_socket_path=/another-account/socket".into();
+    assert!(run("/usr/local/bin/doveadm", &lookup).is_err());
+    lookup[3] = "auth_socket_path=/dev/auth-userdb".into();
+    lookup[6] = "save".into();
+    assert!(run("/usr/local/bin/doveadm", &lookup).is_err());
 }
 
 #[test]
@@ -569,6 +606,263 @@ fn documents_native_fixture_uses_process_identity_not_scratch_group() {
     let gid = process_numeric_id("-g");
     assert!(uid > 0 && gid > 0);
     assert!(std::panic::catch_unwind(|| process_numeric_id("-G")).is_err());
+}
+
+#[test]
+#[ignore = "non-root OpenBSD isolated Dovecot quota-plugin/no-root compatibility"]
+fn isolated_openbsd_quota_plugin_without_account_root_preserves_ordinary_mail() {
+    use std::os::unix::fs::OpenOptionsExt;
+
+    assert_eq!(std::env::consts::OS, "openbsd");
+    let whole = Instant::now();
+    let before = standard_metadata();
+    let uid = process_numeric_id("-u");
+    let gid = process_numeric_id("-g");
+    assert!(uid > 0 && gid > 0);
+    let root = std::env::temp_dir().join(format!(
+        "osmap-nq-{}-{}",
+        std::process::id(),
+        crate::draft::generate_draft_id().unwrap()
+    ));
+    fs::DirBuilder::new().mode(0o700).create(&root).unwrap();
+    let owner = fs::symlink_metadata(&root).unwrap();
+    let mut fixture = Fixture {
+        root: root.clone(),
+        root_lease: (
+            owner.dev(),
+            owner.ino(),
+            owner.uid(),
+            owner.gid(),
+            owner.mode() & 0o777,
+        ),
+        stop: Arc::new(AtomicBool::new(false)),
+        userdb: None,
+        retain_on_failure: true,
+    };
+    assert_eq!(owner.uid(), uid);
+    assert_eq!(owner.mode() & 0o777, 0o700);
+    for directory in [
+        "run",
+        "state",
+        "alice/Maildir/cur",
+        "alice/Maildir/new",
+        "alice/Maildir/tmp",
+    ] {
+        fs::create_dir_all(root.join(directory)).unwrap();
+        fs::set_permissions(root.join(directory), fs::Permissions::from_mode(0o700)).unwrap();
+    }
+    let config = root.join("dovecot.conf");
+    fs::write(&config, format!(
+        "base_dir = {0}/run\nstate_dir = {0}/state\nmail_location = maildir:~/Maildir\nmail_uid = {uid}\nmail_gid = {gid}\nfirst_valid_uid = {uid}\nprotocols =\nlisten = 127.0.0.1\nssl = no\nmail_plugins = quota\nplugin {{\n quota_grace = 0%\n}}\nprotocol imap {{\n mail_plugins = quota\n}}\nprotocol lmtp {{\n mail_plugins = quota sieve\n}}\nstats_writer_socket_path =\nauth_socket_path = {0}/never-default\nlog_path = {0}/native.log\ninfo_log_path = {0}/native.log\nnamespace inbox {{\n inbox = yes\n separator =\n}}\n", root.display()
+    )).unwrap();
+    fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).unwrap();
+    // No account quota fields and no global quota root: this models an
+    // unaffected account, not an enforcement-ready Documents account.
+    let userdb = fixture_userdb(&mut fixture, uid, gid);
+    let executor = ScopedExecutor {
+        config,
+        diagnostic: false,
+    };
+    // Retain each actual bounded result before any interpretation or assertion.
+    // Fixture Drop keeps these owner-only files on failure, never stdout logs.
+    let retain = |phase: &str, result: Result<CommandExecution, CommandExecutionError>| {
+        assert!(matches!(
+            phase,
+            "effective" | "save" | "fetch" | "backend0" | "backend1" | "backend2" | "backend3"
+        ));
+        let write_private = |suffix: &str, bytes: &[u8]| {
+            let mut file = fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .mode(0o600)
+                .open(root.join(format!("{phase}.{suffix}.private")))
+                .unwrap();
+            file.write_all(bytes).unwrap();
+            file.sync_all().unwrap();
+            fs::File::open(&root).unwrap().sync_all().unwrap();
+        };
+        match result {
+            Ok(done) => {
+                write_private("stdout", done.stdout.as_bytes());
+                write_private("stderr", done.stderr.as_bytes());
+                write_private("status", format!("exit={}\n", done.status_code).as_bytes());
+                done
+            }
+            Err(error) => {
+                write_private("status", b"transport=UNKNOWN\n");
+                let reason = error.reason.as_bytes();
+                write_private("error", &reason[..reason.len().min(4096)]);
+                panic!("native_quota_no_root stage={phase} result=transport_unknown");
+            }
+        }
+    };
+    let effective = retain(
+        "effective",
+        executor.run_with_stdin_bytes_timeout_and_output_limit(
+            "/usr/local/bin/doveconf",
+            &["-n".into()],
+            b"",
+            Duration::from_secs(5),
+            32768,
+        ),
+    );
+    assert_eq!(
+        effective.status_code, 0,
+        "native_quota_no_root stage=config result=refused"
+    );
+    assert!(effective
+        .stdout
+        .lines()
+        .any(|line| line == "mail_plugins = quota"));
+    assert!(!effective
+        .stdout
+        .lines()
+        .any(|line| line.trim().starts_with("quota =")));
+    // Keep the actual backend's configuration and account lookup results too.
+    struct QuotaProbe<'a> {
+        executor: &'a ScopedExecutor,
+        retain:
+            &'a dyn Fn(&str, Result<CommandExecution, CommandExecutionError>) -> CommandExecution,
+        next: std::sync::atomic::AtomicUsize,
+    }
+    impl CommandExecutor for QuotaProbe<'_> {
+        fn run_with_stdin_bytes(
+            &self,
+            _: &str,
+            _: &[String],
+            _: &[u8],
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            panic!("native_quota_no_root requires bounded probe");
+        }
+        fn run_with_stdin_bytes_timeout_and_output_limit(
+            &self,
+            program: &str,
+            args: &[String],
+            input: &[u8],
+            timeout: Duration,
+            output_limit: usize,
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            let index = self.next.fetch_add(1, Ordering::Relaxed);
+            let phase = ["backend0", "backend1", "backend2", "backend3"]
+                .get(index)
+                .expect("native_quota_no_root unexpected probe count");
+            let result = self.executor.run_with_stdin_bytes_timeout_and_output_limit(
+                program,
+                args,
+                input,
+                timeout,
+                output_limit,
+            );
+            Ok((self.retain)(phase, result))
+        }
+    }
+    let backend = DoveadmDocumentsBackend::new(
+        QuotaProbe {
+            executor: &executor,
+            retain: &retain,
+            next: std::sync::atomic::AtomicUsize::new(0),
+        },
+        "/usr/local/bin/doveadm",
+        "/usr/local/bin/doveconf",
+    )
+    .with_userdb_socket_path(Some(userdb.clone()));
+    assert!(
+        matches!(backend.quota_status(ACCOUNT), Ok(None)),
+        "native_quota_no_root stage=before_save result=false_quota_authority"
+    );
+    let message = quota_test_message("seed", 99, 4096);
+    let mut args = vec![
+        "-o".into(),
+        format!("auth_socket_path={}", userdb.display()),
+    ];
+    args.extend(["save", "-u", ACCOUNT, "-m", "INBOX"].map(str::to_owned));
+    let saved = retain(
+        "save",
+        executor.run_with_stdin_bytes_timeout_and_output_limit(
+            "/usr/local/bin/doveadm",
+            &args,
+            &message,
+            Duration::from_secs(5),
+            4096,
+        ),
+    );
+    assert_eq!(
+        saved.status_code, 0,
+        "native_quota_no_root stage=save result=refused"
+    );
+    let mut args = vec![
+        "-o".into(),
+        format!("auth_socket_path={}", userdb.display()),
+    ];
+    args.extend(
+        [
+            "-f", "json", "fetch", "-u", ACCOUNT, "text", "mailbox", "INBOX", "all",
+        ]
+        .map(str::to_owned),
+    );
+    let fetched = retain(
+        "fetch",
+        executor.run_with_stdin_bytes_timeout_and_output_limit(
+            "/usr/local/bin/doveadm",
+            &args,
+            b"",
+            Duration::from_secs(5),
+            16384,
+        ),
+    );
+    assert_eq!(
+        fetched.status_code, 0,
+        "native_quota_no_root stage=fetch result=refused"
+    );
+    let rows: serde_json::Value = serde_json::from_str(&fetched.stdout)
+        .expect("native_quota_no_root stage=fetch result=invalid_json");
+    let rows = rows
+        .as_array()
+        .expect("native_quota_no_root stage=fetch result=wrong_shape");
+    assert_eq!(rows.len(), 1);
+    let expected = std::str::from_utf8(&message).unwrap().replace("\r\n", "\n");
+    let fetched = rows[0]
+        .get("text")
+        .and_then(serde_json::Value::as_str)
+        .expect("native_quota_no_root stage=fetch result=missing_text");
+    assert!(
+        fetched.replace("\r\n", "\n") == expected,
+        "native_quota_no_root stage=fetch result=bytes_changed"
+    );
+    let mut stored = 0;
+    for directory in ["cur", "new"] {
+        for entry in fs::read_dir(root.join("alice/Maildir").join(directory)).unwrap() {
+            let path = entry.unwrap().path();
+            let metadata = fs::symlink_metadata(&path).unwrap();
+            assert!(
+                metadata.is_file()
+                    && !metadata.file_type().is_symlink()
+                    && metadata.uid() == uid
+                    && metadata.len() <= message.len() as u64
+            );
+            let bytes = fs::read(path).unwrap();
+            assert!(
+                bytes == expected.as_bytes() || bytes == message,
+                "native_quota_no_root stage=stored result=bytes_changed"
+            );
+            stored += 1;
+        }
+    }
+    assert_eq!(stored, 1);
+    assert!(
+        matches!(backend.quota_status(ACCOUNT), Ok(None)),
+        "native_quota_no_root stage=after_save result=false_quota_authority"
+    );
+    assert!(!root.join("alice/Maildir/.OSMAP.Documents").exists());
+    assert!(!root.join("alice/Maildir/.OSMAP.DocumentsBin").exists());
+    assert_eq!(standard_metadata(), before);
+    assert!(whole.elapsed() < Duration::from_secs(45));
+    println!("native_quota_no_root ordinary_save_read=PASS exact_owned_message=PASS wire_bytes=4096 documents_quota=UNAVAILABLE live_accounts=NOT_TOUCHED imap_lmtp=NOT_QUALIFIED");
+    fixture.retain_on_failure = false;
+    drop(fixture);
+    assert!(!root.exists());
+    assert_eq!(standard_metadata(), before);
+    println!("native_quota_no_root owned_cleanup=PASS");
 }
 
 #[test]

@@ -46,6 +46,35 @@ the owner explicitly directs continuing unfinished S08 work.
 
 ## Current continuation — 2026-11-05
 
+### Owner-selected 200 MiB development quota
+
+The owner selects **200 MiB** for Duncan on obsd1. A single conditional native
+MariaDB update changed only the active account's quota from102400000 to209715200
+bytes. Affected-row count was one and independent readback matched. Credential,
+account epoch, mailbox mapping, Dovecot configuration and OSMAP configuration
+observations remain unchanged; Toronto was not changed. No password, TOTP or
+browser session was used. Private result `quota-200mib.log` SHA256
+`156eb5bc16e64c6e061b6c86034b3e72b39ae0c41db66d19585437d142855073`
+retains the exact operation and comparisons.
+
+The matching installed Rust report/admission case passes1case/0failures in
+0.11seconds with172605611 message bytes and209715200 configured quota bytes.
+Its receipt `quota200-qualify.log` SHA256 is
+`e6a2dcbda2e595426f8f1097b182e2611e9b73caedd25aca47882c062ddbf08b`.
+This establishes reporting and current signed admission, not browser acceptance
+or enforcement on the active original mailbox.
+
+The separate, unused vnd3 Documents profile now also reports209715200 bytes
+through the actual native kernel quota worker. Native edquota changed only that
+filesystem's UID2000 hard limit from500000 to204800 KiB. Kernel usage compared
+unchanged, the temporary fstab discovery entry was restored exactly, current
+userdb remained on the original mailbox and all nine checked roles run.
+The account-specific rc check passes with409600 raw512-byte blocks. Independent
+review approved the corrected recipe's original-mapping/advisory guard before
+containment. No owner message was migrated and no public mail configuration or
+service was changed. Previous512000000-byte preparation receipts remain history.
+Full Documents activation and acceptance remain open.
+
 After accepting the sidebar, the owner directs completion of unfinished S08.
 Reuse the existing Documents store, native quota worker and qualified fixture
 journeys. The current advisory userdb scalar must coexist with the seven native
@@ -475,3 +504,15 @@ native FFI to remain in the existing reviewed openbsd.rs boundary. The manifest
 record was refreshed without dependencies/features/lock changes; narrow typed
 native wrappers now centralize FFI without changing the guard allowlist. Earlier
 native receipts remain tied to their exact earlier binaries.
+
+The corrected no-root compatibility control now passes on OpenBSD:
+`isolated_openbsd_quota_plugin_without_account_root_preserves_ordinary_mail`,
+one test/zero failures in0.34seconds, matching test SHA256
+`5da218a4661e8139cd51a3d1e1ad925c30b85216767ee2ebd6ff5baf0ccfb07e`.
+With the quota plugin loaded but no account quota root, actual native save/fetch
+preserves the exact controlled4096-byte message; Documents authority remains
+unavailable, reserved Documents folders stay absent and owned cleanup passes.
+The fixture's previous blanket `-u` assertion was corrected only for the exact
+owned `doveadm user` query; negative foreign-account/socket/unscoped-command
+checks pass. Native outcomes are retained privately before interpretation.
+This proves ordinary Doveadm compatibility, not live IMAP/LMTP or owner cutover.

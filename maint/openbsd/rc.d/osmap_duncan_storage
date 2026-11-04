@@ -15,7 +15,7 @@ storage_config=/etc/osmap/duncan-storage.conf
 storage_mount=/var/osmap-storage/accounts/duncan
 storage_home=$storage_mount/Maildir
 storage_uid=2000
-storage_limit=512000000
+storage_limit=209715200
 storage_guard=/root/osmap-duncan-check
 storage_log=
 
@@ -128,7 +128,7 @@ kernel_ready() {
     [[ $(stat -f '%u:%g:%Lp' "$storage_mount") = 0:0:755 ]] || return 1
     # Every interpolated path is fixed or admitted by profile's restricted charset.
     answer=$(bounded /usr/bin/su -m vmail -c "cd / && exec $daemon $storage_home $storage_uid $storage_limit $storage_mount $storage_index $storage_control") || return 1
-    print -r -- "$answer" | grep -Eq '^\{"used_bytes":[0-9]+,"limit_bytes":512000000\}$'
+    print -r -- "$answer" | grep -Eq '^\{"used_bytes":[0-9]+,"limit_bytes":209715200\}$'
 }
 
 block_access() {
@@ -171,8 +171,8 @@ on_disk_quota() {
         [[ -n $field && ${#field} -le 10 && $field != *[!0-9]* ]] || return 1
         fields[$index]=$((10#$field))
     done
-    [[ ${fields[0]} = 1000000 && ( ${fields[1]} = 0 || ${fields[1]} = 1000000 ) ]] || return 1
-    print -r -- "ON_DISK_QUOTA=PASS UID=2000 HARD_BYTES=512000000 USED_BYTES=$((${fields[2]}*512))" >> "$storage_log"
+    [[ ${fields[0]} = 409600 && ( ${fields[1]} = 0 || ${fields[1]} = 409600 ) ]] || return 1
+    print -r -- "ON_DISK_QUOTA=PASS UID=2000 HARD_BYTES=209715200 USED_BYTES=$((${fields[2]}*512))" >> "$storage_log"
 }
 
 guard_recount() {
@@ -269,7 +269,7 @@ rc_start() (
     must kernel_ready
     storage_complete=yes
     print 'DUNCAN_STORAGE_START=PASS' >> "$storage_log"
-    print 'DUNCAN_STORAGE_START=PASS UID=2000 HARD_BYTES=512000000'
+    print 'DUNCAN_STORAGE_START=PASS UID=2000 HARD_BYTES=209715200'
 )
 
 rc_stop() (
