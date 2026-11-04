@@ -153,3 +153,24 @@ state preservation pass. First unlock after the helper update is required.
 Owner UAT remains pending; the short workflow is recorded in the execution ledger.
 This follows the previously accepted S07 scope and does not imply production
 release, broad WSTG completion or new owner acceptance.
+
+
+### Remembered-key owner UAT acceptance — 2026-11-04
+
+**UAT PASS; ACCEPTED and APPROVED.** The owner states:
+
+> UAT is PASS
+> UAT accepted, and approved
+
+The owner first supplied the fresh email/password/TOTP sign-in result showing
+current-session and remembered access with the same original deadline:
+2026-11-04 18:29:58 UTC. The final acceptance follows the requested ordinary
+Sign out, fresh sign-in and locked-key check. Record the complete proposed UAT
+workflow as accepted by the owner; do not infer an independently observed
+eight-hour wall-clock wait from the screenshot. Fixed expiry is additionally
+covered by the retained Rust/native tests.
+
+This closes the remembered-key follow-up to S07. The installed code and its
+qualification are unchanged. Broader epic, cross-platform and production-release
+security-review/WSTG obligations retain their existing scope. This closeout
+changes only mutable documentation and normal signed Git delivery records.

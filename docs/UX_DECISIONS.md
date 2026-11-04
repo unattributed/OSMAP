@@ -695,3 +695,10 @@ Remembered access additionally requires an authoritative account credential epoc
 Legacy session-only accounts without that epoch may still unlock within a session,
 but cannot establish or resume cross-session remembered permission. This prevents
 legacy credential changes from carrying an old remembered lease into a new login.
+
+
+2026-11-04 owner acceptance: the optional remembered-browser personal-key
+workflow is UAT PASS, accepted and approved. Its original eight-hour deadline
+stays fixed, normal email/password/TOTP admission remains required, and ordinary
+Sign out clears remembered permission. This closes the follow-up within S07;
+longer persistence and broader release assurance are separate decisions.
