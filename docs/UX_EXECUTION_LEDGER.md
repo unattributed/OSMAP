@@ -51558,3 +51558,111 @@ Owner can refresh /settings and read the four account-specific rows; no repeat
 key upload/unlock or authentication mutation is assigned. Owner visual UAT for
 this correction is NOT_RUN; full S09 and release obligations remain separate.
 Final normal signed Git preservation/fresh parity is the remaining delivery step.
+
+## S06-02 own-signer assessment followup — 2026-11-04 (Asia/Bangkok)
+
+Operator reports a successfully decrypted, cryptographically valid own Sent
+message with identity binding unknown and key validity not established, then
+authorizes the smallest sound correction. Root owns implementation, integration,
+native/Web/Git queue and records; /root/s05_protocol_review independently reviews.
+Baseline is 2e33352220ad861cbf1e28d79b48f6c38bab4ccf; initial tree clean.
+Live read-only inspection confirms a matching own account binding and current
+public material. Root cause: sender projection searches only recipient bindings;
+verification couples key status to that lookup. No credential fault is inferred.
+
+Exit: an actual verified own message uses the account binding without a self
+contact; key facts follow the verified primary independently of identity trust.
+Preserve signature/digest enforcement, foreign/snapshot boundaries, unavailable,
+ambiguous/mismatched sender states and expired/revoked refusal. Own binding wins
+over conflicting contacts; absent own binding must not fall back to a contact.
+Existing recipient key/policy, personal grants, MIME bytes and safe rendering
+stay intact. No encryption-default change, resend, account/key/contact/policy
+mutation or public Dovecot/Postfix/MariaDB service/configuration action.
+
+Scope: protected_message.rs and existing gateway/processor/native tests,
+openpgp_reader_ui.rs fixed refusal wording, mailbox_helper_native_reader_tests.rs
+own-Sent assertions, existing V10 generated registers and mutable status records.
+Minimum qualification: composed owned snapshot/verification/reader positives and
+negatives; focused Rust tests; existing three-case OpenBSD native runner with
+real disposable own-Sent HTTP/body/source/download assertions; normal delivery
+gates and independent review; exact Web-only install/backup/rollback with
+protected-state and helper/native-agent preservation. Owner refresh only after
+agent qualification. Planned native/install/UAT results initially NOT_RUN.
+Native build bounded600s/test phase; existing native runner240s+15s stop;
+installation150s action/345s recovery. Retain all failures; two at the same
+functional boundary require independent reassessment. Whole elapsed/token costs
+UNKNOWN until measured; no agent-created approval expiry.
+
+Initial local compile refused a test helper returning a borrowed message view.
+Corrected it to return owned ProtectionState only. A subsequent filename-based
+filter selected zero tests; this is NOT a pass. Actual Rust test listing supplied
+the module path; corrected selection10PASS, processor13PASS, readerUI4PASS.
+Original logs retained under the private signer-assessment-20261104 evidence
+directory. Independent source review GO, with explicit no-account-binding
+regression and generic signing-key expiry/revocation wording incorporated.
+Final source/native qualification and installation remain pending.
+
+Source/native result: focused23PASS/0FAIL, readerUI4PASS, strict all-target
+Clippy PASS. Full normal Rust suite2193PASS/0FAIL/87 explicit native ignores;
+remaining normal acceptance gates in progress. Current V10 generated maps and
+coupled pins refreshed with unchanged scanner/gate rules;11801 total, refined
+high0/medium3,11717 source-test assumptions. No Python functional test added.
+The complete1440 tracked-file package9607007d/manifest461ef1c0/build50854c0e
+was independently checked against every current byte before native dispatch.
+Evidence: /home/foo/Downloads/osmap-ux-s06/signer-assessment-20261104.
+Native root /home/foo/.osmap-signer.NWc6yfT7: test compile2m02s, gateway10PASS,
+exact native authenticated1/outbound1/productionGateway1 allPASS; real own-Sent
+HTTP now asserts matched binding/current after crypto and actual isolated
+Dovecot save. Existing body/source/download/Locked/foreign preservation remains
+in that executed journey. Disposable cleanup PASS. Web dev/debug0 build50.34s,
+SHA256 fe91a7af81ec69f69ae1992dd41491bc769033b4aeb496a3e682b91b83c13f8c.
+Actual native log SHA256
+33d0a8a7e92c4915143dde3673c9a9073ee59ac525e398fb170ebf257a72a0a4.
+Ten existing native dead-code warnings retained; no warning-free claim.
+Initial public source archive/manifest inherited local664; local and remote
+inputs normalized to600 without changing qualified bytes; private native parent
+and extraction directories700 throughout. No source recreation or native retry.
+Independent final source, exact package, native result and installer-template GO.
+Only two new-Web scalar bindings may change the reviewed templatef0a3a848.
+Installation/owner refresh and normal signed Git preservation remain pending.
+
+Normal acceptance-check completed exit0 (log43a9d4db), including developer,
+V10/V11/V12/V13 and required unchanged gate tests. Independent bound-installer
+review GO00414dfa; exact remote script/candidate hashes and nine-role preflight
+PASS. Source commit pre-hook PASS, but cached-only Shopkeeper signing refused
+No pinentry; no commit was created and no unsigned fallback ran. Operator asked
+to warm the existing native signing agent; source/installation dispatch remains
+pending that concrete prerequisite. This is a signing-cache blocker, not a
+product/native failure or an owner mailbox-key issue. Original refusal retained
+in source-commit.log; staged public-safe source remains intact.
+
+Independent sequencing reassessment: the prior signed-checkpoint-before-install
+condition was agent-added, not a current task-specific rule. Direct operator
+authority permits this exact reviewed/native-qualified Web update. Root and
+reviewer withdraw that ordering restriction: install separately while the real
+Git signing/push prerequisite remains pending. No unsigned commit, hook bypass
+or completed-preservation claim. Existing package/native/gate proofs unchanged;
+only subsequent ledger result prose differs from the frozen source archive.
+
+Installed result: exact00414dfa installer exit0. Loaded Webfe91a7af
+PID87722/inode130022, HTTPS/login200 and nine roles PASS. Protected state,
+environment/config/helper/worker bytes, system account files and account-authority
+PID preserved; crypto-helper/native-agent PID sets unchanged. Only Web restarted;
+no owner unlock/private operation, credential/contact/key/policy mutation or
+external send. No assertion that a naturally expiring owner grant remains usable.
+Rollback not needed; known-byte backup retained at
+/var/backups/osmap-signer-assessment-20261104-01.
+Actual install log SHA256
+85c85fe982e7e69bd0c76b23f08c33565bfb8cf6b47f7c644b3b16264d5e5790.
+Minimal owner UAT: refresh the existing successfully decrypted signed Sent
+message; expect valid signature, matches confirmed sender binding, current key
+validity. No resend/reimport/self-contact is needed. Owner result NOT_RUN.
+Signed checkpoint, ordinary push and fresh exact parity remain blocked only by
+the unavailable Shopkeeper cache; source/staged work and original refusal retained.
+
+Operator subsequently replied Signing ready and supplied the native launcher's
+successful signing/cache-check output. Resume the normal signed checkpoint and
+ordinary push/fresh-parity path; retain the original No pinentry refusal. No
+source/native/host change or repeated owner key operation is required. The
+delivery logs and signed Git history establish actual publication outcomes;
+owner refresh of existing Sent273 remains NOT_RUN until separately reported.

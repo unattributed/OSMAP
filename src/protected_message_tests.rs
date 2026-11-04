@@ -127,6 +127,7 @@ fn bindings() -> InboundBindings {
     InboundBindings {
         account: CanonicalUsername::parse("bob").unwrap(),
         decrypt_primary_fingerprints: vec![DECRYPT_FP.into()],
+        signer_key_validities: BTreeMap::new(),
         signer: Some(SignerIdentityBinding {
             primary_fingerprint: FP.into(),
             mailbox: MailboxIdentity::parse("alice@example.test").unwrap(),
@@ -365,6 +366,23 @@ fn invalid_duplicate_missing_private_bindings_refuse_before_engine() {
         assert!(Processor::new(&engine, RenderingPolicy::default())
             .process(&context(), &session(), &original(&wire), &wire, &binding)
             .is_err());
+        assert!(engine.operations.borrow().is_empty());
+    }
+    for facts in [
+        BTreeMap::from([("short".into(), KeyValidity::Current)]),
+        (0..33)
+            .map(|n| (format!("{n:040X}"), KeyValidity::Current))
+            .collect(),
+    ] {
+        let mut binding = bindings();
+        binding.signer_key_validities = facts;
+        let engine = mock(Vec::new());
+        assert_eq!(
+            Processor::new(&engine, RenderingPolicy::default())
+                .process(&context(), &session(), &original(&wire), &wire, &binding)
+                .unwrap_err(),
+            ProtectedError::InvalidBinding
+        );
         assert!(engine.operations.borrow().is_empty());
     }
 }

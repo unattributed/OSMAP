@@ -46,6 +46,7 @@ pub(crate) fn run_decryption_fixture(
     assert!(decrypted.primary_fingerprint.as_deref() == Some(alice_fp));
     let processor = Processor::new(client.clone(), RenderingPolicy::default());
     let bindings = |account, fingerprint: &str| InboundBindings {
+        signer_key_validities: Default::default(),
         account: CanonicalUsername::parse(account).unwrap(),
         decrypt_primary_fingerprints: vec![fingerprint.into()],
         signer: None,
@@ -309,6 +310,7 @@ pub(crate) fn run_missing_signer_fixture(client: &Client, alice_fp: &str) -> ser
     let mut alice_session = tests::session();
     alice_session.record.canonical_username = "alice".into();
     let bindings = |account| InboundBindings {
+        signer_key_validities: Default::default(),
         account: CanonicalUsername::parse(account).unwrap(),
         decrypt_primary_fingerprints: Vec::new(),
         signer: None,
@@ -418,6 +420,7 @@ pub(crate) fn run_client_fixture(client: &Client, alice_fp: &str, bob_fp: &str) 
     let source = tests::source(&entity);
     let original = tests::original(&source);
     let bindings = InboundBindings {
+        signer_key_validities: Default::default(),
         account: CanonicalUsername::parse("bob").unwrap(),
         decrypt_primary_fingerprints: vec![bob_fp.into()],
         signer: Some(SignerIdentityBinding {

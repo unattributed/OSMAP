@@ -661,6 +661,9 @@ impl ProtectedSentMailbox {
     assert!(text(&positive).contains("Second line"));
     assert!(text(&positive).contains("Decrypted on mail host"));
     assert!(text(&positive).contains("cryptographically valid"));
+    assert!(text(&positive).contains("matches the confirmed sender binding"));
+    assert!(text(&positive).contains("<dt>Key validity</dt><dd>current</dd>"));
+    assert!(!text(&positive).contains("identity binding unknown"));
     assert_eq!(fs::read(&stored).unwrap(), normalized);
     let source_href = stored_content_href(text(&positive), "View source");
     let source = get(&app, &session, &source_href);

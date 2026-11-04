@@ -88,8 +88,8 @@
     "audit_script": "maint/security/osmap-v10-rust-assumption-audit.py",
     "audit_script_present": true,
     "classification_complete": true,
-    "current_scanner_count": 11785,
-    "inventory_sha256": "88655967987cdba5eafe31f4c56e4aa83caf184db3346c01a57b1e6165a3f520",
+    "current_scanner_count": 11801,
+    "inventory_sha256": "b97bf9e350104833548ec6bdf04886759ab2ae62e067ae2382a354aea6ca5151",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
@@ -134,7 +134,7 @@
     "remediation_script": "maint/security/osmap-v10-fail-closed-remediation.py",
     "remediation_script_present": true,
     "selected_target": "src_test_module_assumption_reclassification",
-    "source_test_module_assumption_count": 11689,
-    "refined_inventory_sha256": "7845ed6dc50ca045cdd44ee592f46877e1598758caef4113c61a013dadda90f3"
+    "source_test_module_assumption_count": 11717,
+    "refined_inventory_sha256": "629a20fa73ad3ace016badd8b2e52d7dc738317ca8d35ae366d3a3c9464e07fe"
   }
 }

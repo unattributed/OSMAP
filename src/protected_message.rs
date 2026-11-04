@@ -13,7 +13,7 @@ use crate::openpgp_crypto::{Error as CryptoError, Operation, Outcome};
 use crate::pgp_mime::{self, PgpMimeError, PgpMimeMessage, PgpMimePolicy, SignatureDigest};
 use crate::rendering::{PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy};
 use crate::session::ValidatedSession;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CryptoFailure {
@@ -65,6 +65,8 @@ pub struct InboundBindings {
     pub account: CanonicalUsername,
     pub decrypt_primary_fingerprints: Vec<String>,
     pub signer: Option<SignerIdentityBinding>,
+    /// Current authenticated public facts, independent of email identity trust.
+    pub signer_key_validities: BTreeMap<String, KeyValidity>,
 }
 
 impl InboundBindings {
@@ -76,6 +78,11 @@ impl InboundBindings {
         if keys.len() > 32
             || keys.iter().any(|fp| !profile_fingerprint(fp))
             || keys.iter().collect::<BTreeSet<_>>().len() != keys.len()
+            || self.signer_key_validities.len() > 32
+            || self
+                .signer_key_validities
+                .keys()
+                .any(|fp| !profile_fingerprint(fp))
             || self
                 .signer
                 .as_ref()
@@ -112,34 +119,47 @@ pub fn bindings_for_message(
         .as_ref()
         .map(|binding| binding.decrypt_primary_fingerprints.clone())
         .unwrap_or_default();
+    let signer_key_validities: BTreeMap<_, _> = inventory
+        .and_then(crate::openpgp_inventory::Inventory::keys)
+        .into_iter()
+        .flatten()
+        .filter(|key| profile_fingerprint(&key.primary.fingerprint))
+        .map(|key| {
+            let primary = &key.primary;
+            let validity = if primary.revoked {
+                KeyValidity::Revoked
+            } else if primary.expired || primary.expires != 0 && primary.expires <= now {
+                KeyValidity::Expired
+            } else if primary.disabled || primary.invalid || primary.created > now {
+                KeyValidity::Unknown
+            } else {
+                KeyValidity::Current
+            };
+            (primary.fingerprint.clone(), validity)
+        })
+        .collect();
     let signer = single_sender(message).and_then(|sender| {
         let address = crate::mail_address::comparison_key(sender.as_str());
-        let binding = record
-            .recipient_bindings
-            .iter()
-            .find(|binding| crate::mail_address::comparison_key(&binding.address) == address)?;
-        let key = inventory
-            .and_then(crate::openpgp_inventory::Inventory::keys)
-            .and_then(|keys| {
-                keys.iter()
-                    .find(|key| key.primary.fingerprint == binding.primary_fingerprint)
-            });
-        let key_validity = key
-            .map(|key| {
-                let primary = &key.primary;
-                if primary.revoked {
-                    KeyValidity::Revoked
-                } else if primary.expired || primary.expires != 0 && primary.expires <= now {
-                    KeyValidity::Expired
-                } else if primary.disabled || primary.invalid || primary.created > now {
-                    KeyValidity::Unknown
-                } else {
-                    KeyValidity::Current
-                }
-            })
+        // The account's own configured key is authoritative for its address.
+        // A contact entry must not replace it, and a matching From alone never
+        // confirms identity: verify() compares the actual signature afterward.
+        let primary_fingerprint = if address
+            == crate::mail_address::comparison_key(account.as_str())
+        {
+            &record.account_binding.as_ref()?.primary_fingerprint
+        } else {
+            &record
+                .recipient_bindings
+                .iter()
+                .find(|binding| crate::mail_address::comparison_key(&binding.address) == address)?
+                .primary_fingerprint
+        };
+        let key_validity = signer_key_validities
+            .get(primary_fingerprint)
+            .copied()
             .unwrap_or(KeyValidity::Unknown);
         Some(SignerIdentityBinding {
-            primary_fingerprint: binding.primary_fingerprint.clone(),
+            primary_fingerprint: primary_fingerprint.clone(),
             mailbox: sender,
             key_validity,
         })
@@ -148,6 +168,7 @@ pub fn bindings_for_message(
         account: account.clone(),
         decrypt_primary_fingerprints,
         signer,
+        signer_key_validities,
     };
     result.validate(account)?;
     Ok(result)
@@ -504,7 +525,19 @@ impl<E: CryptoExecutor> Processor<E> {
         protection.signature = SignatureValidity::Valid;
         protection.signer_primary_fingerprint = verified.primary_fingerprint.clone();
         protection.signer_identity = SignerIdentityState::Unknown;
-        protection.key_validity = Some(KeyValidity::Unknown);
+        protection.key_validity = Some(
+            verified
+                .primary_fingerprint
+                .as_ref()
+                .and_then(|fp| bindings.signer_key_validities.get(fp))
+                .copied()
+                .unwrap_or(KeyValidity::Unknown),
+        );
+        match protection.key_validity {
+            Some(KeyValidity::Expired) => return Err(ProtectedError::ExpiredKey),
+            Some(KeyValidity::Revoked) => return Err(ProtectedError::RevokedKey),
+            _ => (),
+        }
         if let Some(binding) = &bindings.signer {
             if verified.primary_fingerprint.as_deref() != Some(binding.primary_fingerprint.as_str())
             {
