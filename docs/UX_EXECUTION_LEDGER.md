@@ -221,7 +221,7 @@
     "slice": "S08-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_01.md",
-      "sha256": "c92c92e4f66e3f5e316076587af4c5d8b532eccbdb19e1ed4a677287ec6f78ad"
+      "sha256": "409ea67aa7d91a1828f89273bf53ea26cc84f8487ad3465afbb65db0ec6c2f9d"
     },
     "design": {
       "journey": "Upload, list, folders, search, sort, views, isolated download, Bin, restore and confirmed retention cleanup with shared account capacity.",
@@ -268,7 +268,9 @@
         "status": "PASS",
         "evidence": [
           "/home/foo/Downloads/osmap-ux-s08/completion-20261104/rust-first.log",
-          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/quota-refusal.log:9 PASS, includes current Store/native no-dispatch safety regression"
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/quota-refusal.log:9 PASS, includes current Store/native no-dispatch safety regression",
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/push.log:Rust2213PASS then fixtureClippy refusal retained",
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/clippy-corrected.log:strict all-target Clippy PASS after equivalent cleanup simplification"
         ]
       },
       {

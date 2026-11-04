@@ -18054,6 +18054,14 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
+      "line": 408
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/documents_native_tests.rs",
+      "kind": "unwrap_call",
       "line": 409
     },
     {
@@ -18061,16 +18069,8 @@
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
-      "kind": "unwrap_call",
-      "line": 410
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/documents_native_tests.rs",
       "kind": "panic_macro",
-      "line": 422
+      "line": 421
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18078,7 +18078,15 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 426
+      "line": 425
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/documents_native_tests.rs",
+      "kind": "unwrap_call",
+      "line": 428
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18102,7 +18110,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 431
+      "line": 436
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18110,7 +18118,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 437
+      "line": 442
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18118,7 +18126,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 443
+      "line": 459
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18126,7 +18134,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 460
+      "line": 461
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18134,7 +18142,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 462
+      "line": 548
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18142,7 +18150,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 549
+      "line": 550
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18158,7 +18166,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 552
+      "line": 574
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18166,7 +18174,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 575
+      "line": 583
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18181,8 +18189,8 @@
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
-      "kind": "unwrap_call",
-      "line": 585
+      "kind": "panic_macro",
+      "line": 599
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18198,15 +18206,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "panic_macro",
-      "line": 601
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/documents_native_tests.rs",
-      "kind": "panic_macro",
-      "line": 616
+      "line": 615
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18214,7 +18214,15 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 622
+      "line": 621
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/documents_native_tests.rs",
+      "kind": "unwrap_call",
+      "line": 639
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18230,7 +18238,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 641
+      "line": 642
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18238,7 +18246,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 643
+      "line": 645
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18246,7 +18254,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 646
+      "line": 651
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18262,7 +18270,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 653
+      "line": 656
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18278,7 +18286,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 658
+      "line": 662
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18286,7 +18294,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 663
+      "line": 665
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18294,7 +18302,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 666
+      "line": 668
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18302,7 +18310,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 669
+      "line": 670
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18318,7 +18326,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 672
+      "line": 675
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18326,7 +18334,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 676
+      "line": 678
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18334,7 +18342,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 679
+      "line": 680
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18342,7 +18350,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 681
+      "line": 682
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18350,15 +18358,7 @@
       "fail_closed_relevance": "low",
       "file": "src/documents_native_tests.rs",
       "kind": "unwrap_call",
-      "line": 683
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/documents_native_tests.rs",
-      "kind": "unwrap_call",
-      "line": 711
+      "line": 710
     },
     {
       "classification": "production_adjacent_assumption",
@@ -95161,7 +95161,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-11-04T13:52:59Z",
+  "generated_at_utc": "2026-11-04T13:57:38Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -95217,7 +95217,7 @@
       "unwrap_call": 10337
     },
     "classification_complete": true,
-    "inventory_sha256": "41738adc18c6edc5b8bfcda35777dd8cb6f16722439698c9a45c60fd3266604e",
+    "inventory_sha256": "cbed3603e9e2ac84312f801bd30c023aa147f8e82273df204970737f925d0747",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,

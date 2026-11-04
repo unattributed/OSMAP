@@ -396,10 +396,9 @@ impl Drop for Fixture {
                         metadata.mode() & 0o777,
                     ) == self.root_lease
             })
+            && fs::remove_dir_all(&self.root).is_err()
         {
-            if fs::remove_dir_all(&self.root).is_err() {
-                println!("native_documents_fixture failure_state=RETAINED root={} cleanup=NOT_CLAIMED reason=owned_remove_failed", self.root.display());
-            }
+            println!("native_documents_fixture failure_state=RETAINED root={} cleanup=NOT_CLAIMED reason=owned_remove_failed", self.root.display());
         }
     }
 }

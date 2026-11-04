@@ -111,3 +111,11 @@ public mail configuration, service restart or owner key/password change has
 been performed. Five checked service roles remain healthy. T04 is FAIL; native
 chain, installation and T09 remain open. Do not request owner functional UAT
 while the shared authority is unresolved.
+
+Normal source preservation retained a first pre-push refusal: the full Rust
+suite passed 2213 tests (0 failures, 87 explicit native ignores), then strict
+Clippy rejected a collapsible cleanup conditional in the native fixture. The
+conditional was collapsed without changing ownership or cleanup behaviour;
+strict all-target Clippy and formatting then passed. The ordinary final push
+hook remains mandatory. Signed source preservation is independent of the
+failed native quota requirement and does not complete this slice.
