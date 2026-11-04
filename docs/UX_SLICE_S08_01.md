@@ -16,7 +16,8 @@ read observed 172605611 virtual message bytes and 102400000 configured quota
 bytes. The UI labels message bytes separately from filesystem overhead and
 states that enforcement has not been verified. The reporting code includes
 native parser, signed helper round-trip, account-isolation and both-page tests.
-Matching installed qualification is pending; this is not full slice acceptance.
+Matching installed reporting qualification now passes as recorded below; this
+is not full Documents slice acceptance.
 
 Current reporting-source validation: five backend/authenticated-helper tests,
 the dashboard/General route regression, storage rendering and welcome tests pass.
@@ -29,6 +30,38 @@ processes loaded. Both attempts restored the previous binary and running roles;
 configuration and crypto-agent readbacks match. The second probe's initial
 HTTP code was not retained and remains unknown. Independent reassessment reuses
 the established bounded readiness polling before another installation attempt.
+
+### Installed report result
+
+The instrumented third installation passed. Both Web and mailbox-helper loaded
+main binary SHA256
+`391cdc7499f7b88e025ff54194923c7765cc373b4a72ffca364b3d8f3d42d6ff`.
+Its retained readiness probes returned HTTP502 followed by HTTP200; this
+establishes that interval for this attempt, not the earlier unknown code. Eight
+service roles, unchanged configuration and unchanged crypto-agent PIDs passed.
+
+The exact ignored OpenBSD test
+`http::http_gateway::storage_native_tests::native_installed_mail_storage_report`
+actually ran one case with zero failures in 0.09seconds. As the existing Web UID,
+it used the production Runtime factory and authenticated installed helper,
+compared fresh native values, rendered both full pages and rejected two foreign
+projections. No owner session was fabricated or read; owner HTTP/browser/login
+UAT is not claimed. The local route regression separately verifies authenticated
+page wiring, foreign-session suppression and anonymous redirect.
+
+Private receipts under the existing sprint root:
+
+- `report1/native-installed.log`, SHA256 `cbe5962e23cd9662c2f69abcc734a48a305f40a28f40a6145434d1f5aeecf779`.
+- `report1/install3-dispatch.log`, SHA256 `9f97d84670d2b69059a5f54bc2838101c7c3d9cb51be03927054301ef3728b83`.
+- `report1/metadata-dispatch.log`, SHA256 `d4140bc7c3fd4b74b80a2ab55b8ea0b79a9d403dc36f6a55c3f5e1b6f53d4b81`.
+
+Independent source/carrier/result review is GO for this reporting scope. Owner
+visual review is simply to refresh `/mailboxes` and
+`/settings?section=general`: the current observation displays164.6MiB of messages
+and97.7MiB configured quota, with exact bytes and enforcement-unverified text.
+Mailbox migration remains set aside; the original Documents enforcement and
+other S08 obligations remain open. Existing native filesystem experiments are
+retained separately and do not supply reporting authority or owner acceptance.
 
 ## Outcome and scope
 

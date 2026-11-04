@@ -114,7 +114,7 @@
       ],
       "frontend_backend_outcome": "The signed-in user uploads, finds, downloads, bins and restores private Documents while mail and Documents share one finite native quota; storage views report account-specific evidence.",
       "essential_qa": "Reuse Rust lifecycle/security tests; exact native transfer; native concurrent IMAP/LMTP/Documents capacity enforcement; interruption/retention cleanup; installed account-specific rendering and owner UAT.",
-      "next_action": "Deliver read-only account-specific Dovecot message bytes and PostfixAdmin configured quota through existing Rust helper/UI. Mailbox migration is set aside under latest operator simplification; Documents enforcement remains OPEN.",
+      "next_action": "Installed account-specific read-only storage reporting passes native Runtime/helper and both-page rendering; record owner visual review separately. Original Documents shared-quota enforcement remains OPEN; migration is set aside. Continue remaining S08 obligations using existing code.",
       "dependencies": [
         {
           "owner": "/root",
@@ -765,7 +765,7 @@
     "slice": "S08-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_01.md",
-      "sha256": "f87e1a5ae75db5f33c483f651f1d94a3e27df20a0b795aa7569a94b7f5c73b00"
+      "sha256": "409ae1ddee08d7b3111fb1451a7b23350cd9dad8abb94255c6432870a2f216be"
     },
     "design": {
       "journey": "Upload, list, folders, search, sort, views, isolated download, Bin, restore and confirmed retention cleanup with shared account capacity.",
