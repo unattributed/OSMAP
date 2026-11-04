@@ -1041,6 +1041,9 @@ fn product_fixture() -> ProductFixture {
                 "osmap_quota_mount".into(),
                 data.to_string_lossy().into_owned(),
             ),
+            // The ordinary reporting scalar coexists with the independently
+            // verified kernel limit and must not replace its authority.
+            ("osmap_configured_quota".into(), "102400000".into()),
         ],
     );
     let config = root.join("dovecot.conf");

@@ -21,7 +21,7 @@ fn http(
     origin: &str,
 ) -> HandledHttpResponse {
     assert!(matches!(method, "GET" | "POST"));
-    assert!(path.starts_with("/documents") && path.len() <= 256);
+    assert!((path.starts_with("/documents") || path.starts_with("/search?category=documents&")) && path.len() <= 256);
     assert!(body.len() <= MAX_FILE_BYTES + 4096);
     let cookie = session.map_or(String::new(), |session| {
         format!("Cookie: osmap_session={}\r\n", session.token.as_str())
@@ -267,6 +267,15 @@ fn isolated_openbsd_ffs_documents_http() {
     assert_eq!(document.size, MAX_FILE_BYTES as u64);
     assert_eq!(document.sha256, format!("{:x}", Sha256::digest(&payload)));
     let id = document.id.clone();
+    let searched = page(&app, &alice, "/search?category=documents&q=MAXIMUM");
+    assert_eq!(searched.response.status_code, 200);
+    assert!(html(&searched).contains("Documents (1)"));
+    assert!(html(&searched).contains("maximum.bin"));
+    assert!(html(&searched).contains(&format!("/documents?selected={id}")));
+    let foreign_search = page(&app, &bob, "/search?category=documents&q=maximum");
+    assert_eq!(foreign_search.response.status_code, 200);
+    assert!(html(&foreign_search).contains("Documents (0)"));
+    assert!(!html(&foreign_search).contains("maximum.bin"));
     let selected = page(&app, &alice, &format!("/documents?selected={id}"));
     assert!(
         html(&selected).contains("maximum.bin")
@@ -297,6 +306,9 @@ fn isolated_openbsd_ffs_documents_http() {
     );
     let bin = page(&app, &alice, &format!("/documents?bin=1&selected={id}"));
     assert!(html(&bin).contains("maximum.bin") && html(&bin).contains("10485760 bytes"));
+    let binned_search = page(&app, &alice, "/search?category=documents&q=maximum");
+    assert!(html(&binned_search).contains("Documents (0)"));
+    assert!(!html(&binned_search).contains("maximum.bin"));
     assert_eq!(
         observer
             .load(ACCOUNT)
@@ -318,6 +330,10 @@ fn isolated_openbsd_ffs_documents_http() {
         &page(&app, &alice, &format!("/documents/download?id={id}")),
         &payload,
     );
+    assert!(
+        html(&page(&app, &alice, "/search?category=documents&q=maximum")).contains("Documents (1)")
+    );
+    println!("native_ffs_http stage=documents_search result=PASS owner_match=1 foreign_match=0 bin_excluded=PASS restored_match=1 content_indexing=NONE");
     let restored = page(&app, &alice, &format!("/documents?selected={id}"));
     change(
         &app,

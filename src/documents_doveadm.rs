@@ -872,18 +872,33 @@ fn filesystem_authority(output: &str) -> Option<FilesystemAuthority> {
         return None;
     }
     let rows: Vec<Field> = serde_json::from_str(output).ok()?;
-    if rows.len() != 7 {
+    if !(7..=8).contains(&rows.len()) {
         return None;
     }
     let mut fields = std::collections::BTreeMap::new();
     for row in rows {
         if !matches!(
             row.field.as_str(),
-            "uid" | "gid" | "home" | "mail" | "quota" | "quota_rule" | "osmap_quota_mount"
+            "uid"
+                | "gid"
+                | "home"
+                | "mail"
+                | "quota"
+                | "quota_rule"
+                | "osmap_quota_mount"
+                | "osmap_configured_quota"
         ) || row.value.len() > 1024
             || row.value.chars().any(char::is_control)
             || fields.insert(row.field, row.value).is_some()
         {
+            return None;
+        }
+    }
+    // The readonly PostfixAdmin scalar is advisory, including zero/unlimited.
+    // It never supplies or changes the native filesystem enforcement facts.
+    if let Some(value) = fields.get("osmap_configured_quota") {
+        let configured_bytes = value.parse::<u64>().ok()?;
+        if configured_bytes.to_string() != *value {
             return None;
         }
     }
@@ -1187,6 +1202,55 @@ mod tests {
         assert_eq!(authority.limit_bytes, 512000000);
         assert_eq!(authority.worker_args().len(), 6);
         assert_eq!(authority.worker_args()[3], "/var/vmail/example.test/alice");
+        for configured in ["102400000", "0", "18446744073709551615"] {
+            let mut reported = rows.clone();
+            reported.as_array_mut().unwrap().push(serde_json::json!({
+                "field":"osmap_configured_quota", "value":configured
+            }));
+            let with_report = filesystem_authority(&reported.to_string()).unwrap();
+            assert_eq!(with_report, authority);
+            assert_eq!(with_report.worker_args(), authority.worker_args());
+        }
+        for configured in [
+            "",
+            "00",
+            "0102400000",
+            "+1",
+            "-1",
+            "1.0",
+            " 1",
+            "1 ",
+            "1M",
+            "18446744073709551616",
+            "1\n",
+        ] {
+            let mut bad = rows.clone();
+            bad.as_array_mut().unwrap().push(serde_json::json!({
+                "field":"osmap_configured_quota", "value":configured
+            }));
+            assert!(filesystem_authority(&bad.to_string()).is_none());
+        }
+        let mut reported = rows.clone();
+        reported.as_array_mut().unwrap().push(serde_json::json!({
+            "field":"osmap_configured_quota", "value":"102400000"
+        }));
+        for missing in 0..7 {
+            let mut bad = reported.clone();
+            bad.as_array_mut().unwrap().remove(missing);
+            assert!(filesystem_authority(&bad.to_string()).is_none());
+        }
+        let mut duplicate_report = reported.clone();
+        duplicate_report
+            .as_array_mut()
+            .unwrap()
+            .push(reported[7].clone());
+        assert!(filesystem_authority(&duplicate_report.to_string()).is_none());
+        let mut duplicate_field = reported.clone();
+        duplicate_field[6] = reported[7].clone();
+        assert!(filesystem_authority(&duplicate_field.to_string()).is_none());
+        let mut foreign_field = reported.clone();
+        foreign_field[7]["field"] = "bob@example.test/osmap_configured_quota".into();
+        assert!(filesystem_authority(&foreign_field.to_string()).is_none());
         for (index, value) in [
             (0, "0"),
             (0, "02000"),

@@ -1,11 +1,11 @@
-//! Bounded mixed search over authenticated mail summaries and saved contacts.
-//! Documents remain unavailable until their actual S08 adapter is implemented.
+//! Bounded mixed search over authenticated messages, Documents and saved contacts.
 use super::*;
 use std::time::{Duration, Instant};
 
 const PAGE_SIZE: usize = crate::mail_navigation::ALL_SEARCH_PAGE_SIZE;
 const MAX_PAGES: usize = (crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS
-    + crate::contacts::MAX_CONTACTS)
+    + crate::contacts::MAX_CONTACTS
+    + crate::documents::MAX_DOCUMENTS)
     .div_ceil(PAGE_SIZE);
 
 enum Category<T> {
@@ -52,8 +52,8 @@ impl<G: BrowserGateway> BrowserApp<G> {
                         &filters,
                         &Category::NotSearched,
                         &Category::NotSearched,
+                        &Category::NotSearched,
                         (false, crate::timezone::FixedOffset::default()),
-                        None,
                     ),
                 ),
                 audit_events,
@@ -115,13 +115,26 @@ impl<G: BrowserGateway> BrowserApp<G> {
             .gateway
             .load_mark_read_policy(&session)
             .is_ok_and(|preference| preference.policy == crate::mark_read::Policy::OnOpen);
-        let (messages, people) = if Instant::now() < deadline {
-            (messages, people)
+        let documents = if Instant::now() < deadline {
+            match self.document_search_matches(&session, query) {
+                Ok(documents) if Instant::now() < deadline => Category::Available(documents),
+                _ => Category::Unavailable,
+            }
         } else {
-            (Category::Unavailable, Category::Unavailable)
+            Category::Unavailable
+        };
+        let (messages, people, documents) = if Instant::now() < deadline {
+            (messages, people, documents)
+        } else {
+            (
+                Category::Unavailable,
+                Category::Unavailable,
+                Category::Unavailable,
+            )
         };
         let status = if matches!(messages, Category::Unavailable)
             && matches!(people, Category::Unavailable)
+            && matches!(documents, Category::Unavailable)
         {
             503
         } else {
@@ -141,6 +154,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 &filters,
                 &messages,
                 &people,
+                &documents,
                 (
                     on_open,
                     self.gateway
@@ -148,7 +162,6 @@ impl<G: BrowserGateway> BrowserApp<G> {
                         .map(|saved| saved.offset)
                         .unwrap_or_default(),
                 ),
-                None,
             ),
         );
         audit_events.push(self.release_request_budget(guard, "message_search", context, &session));
@@ -162,6 +175,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
 enum Row<'a> {
     Message(&'a MessageSearchResult),
     Person(&'a crate::contacts::Contact),
+    Document(&'a crate::documents::Document),
 }
 
 fn all_page(
@@ -170,8 +184,8 @@ fn all_page(
     filters: &crate::mail_navigation::SearchFilterContext,
     messages: &Category<Vec<MessageSearchResult>>,
     people: &Category<crate::contacts::ContactBook>,
+    documents: &Category<Vec<crate::documents::Document>>,
     reader_preferences: (bool, crate::timezone::FixedOffset),
-    error: Option<&str>,
 ) -> TrustedHtml {
     let (on_open, timezone) = reader_preferences;
     let requested_page = filters.view.requested_page;
@@ -198,10 +212,15 @@ fn all_page(
         Category::Available(rows) => rows.as_slice(),
         _ => &[],
     };
-    let count = message_rows.len() + contacts.len();
+    let document_rows = match documents {
+        Category::Available(rows) => rows.as_slice(),
+        _ => &[],
+    };
+    let count = message_rows.len() + contacts.len() + document_rows.len();
     let pages = count.div_ceil(PAGE_SIZE).max(1);
-    let measured =
-        matches!(messages, Category::Available(_)) || matches!(people, Category::Available(_));
+    let measured = matches!(messages, Category::Available(_))
+        || matches!(people, Category::Available(_))
+        || matches!(documents, Category::Available(_));
     let page = if measured {
         requested_page.min(pages)
     } else {
@@ -212,10 +231,15 @@ fn all_page(
     let rows = message_rows
         .iter()
         .map(Row::Message)
-        .chain(contacts.iter().copied().map(Row::Person));
+        .chain(contacts.iter().copied().map(Row::Person))
+        .chain(document_rows.iter().map(Row::Document));
     let mut markup = String::new();
     for row in rows.skip((page - 1) * PAGE_SIZE).take(PAGE_SIZE) {
         let (kind, control, detail, location, time, preview) = match row {
+            Row::Document(document) => {
+                markup.push_str(&super::routes_documents_search::document_row(document));
+                continue;
+            }
             Row::Message(message) => {
                 let title = message.subject.as_deref().unwrap_or("(No subject)");
                 let control = message.metadata.as_ref().and_then(|metadata| {
@@ -302,26 +326,30 @@ fn all_page(
         !matches!(people, Category::NotSearched),
         contacts.len(),
     );
-    let partial =
-        matches!(messages, Category::Unavailable) || matches!(people, Category::Unavailable);
+    let documents_label = label(
+        "Documents",
+        matches!(documents, Category::Available(_)),
+        !matches!(documents, Category::NotSearched),
+        document_rows.len(),
+    );
+    let partial = matches!(messages, Category::Unavailable)
+        || matches!(people, Category::Unavailable)
+        || matches!(documents, Category::Unavailable);
     let mut notices = String::new();
-    if let Some(error) = error {
-        notices.push_str(&format!("<p role=\"alert\">{}</p>", escape_html(error)));
-    }
     if partial && measured {
         notices.push_str("<p role=\"status\">Some categories are unavailable. Available results remain visible; unavailable does not mean no matches.</p>");
     } else if partial {
-        notices.push_str("<p role=\"status\">Messages and saved contacts are unavailable. No result count could be verified; this does not mean there are no matches.</p>");
+        notices.push_str("<p role=\"status\">Messages, Documents and saved contacts are unavailable. No result count could be verified; this does not mean there are no matches.</p>");
     }
     if markup.is_empty() {
         markup = if query.is_empty() {
-            "<li class=\"message-empty-state\">Enter keywords to search messages and saved contacts.</li>".into()
+            "<li class=\"message-empty-state\">Enter keywords to search messages, document file names and saved contacts.</li>".into()
         } else if !measured {
             "<li class=\"message-empty-state\">Search results unavailable. No category count could be measured.</li>".into()
         } else if partial {
             "<li class=\"message-empty-state\">No rows in the available categories. Unavailable categories have not been counted.</li>".into()
         } else {
-            "<li class=\"message-empty-state\">No messages or saved contacts match this bounded search. Documents search remains unavailable.</li>".into()
+            "<li class=\"message-empty-state\">No messages, document file names or saved contacts match this bounded search.</li>".into()
         };
     }
     let mut pagination = if query.is_empty() {
@@ -350,13 +378,14 @@ fn all_page(
         pagination.push_str("</nav>");
     }
     TrustedHtml::from_template(format!(concat!(
-        "{}<main id=\"main-content\" class=\"page-shell coordinated-mail search-results all-search\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>Search</h1><p>Find messages and people saved in your contacts.</p></div><section class=\"content-pane coordinated-list\"><h2 class=\"sr-only\">All available search results</h2>",
-        "<div class=\"search-query-panel\"><form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"category\" value=\"all\">{filter_state}<label class=\"sr-only\" for=\"all-query\">Search query</label><input id=\"all-query\" type=\"search\" name=\"q\" value=\"{}\" maxlength=\"256\" placeholder=\"Search messages and people…\"><button type=\"submit\">Search</button></form>{filter_controls}</div>",
-        "<nav class=\"search-result-tabs\" aria-label=\"Search types\"><span aria-current=\"page\">{all_label}</span><a href=\"{messages_href}\">{messages_label}</a><span aria-disabled=\"true\">Documents unavailable</span><a href=\"{people_href}\">{people_label}</a></nav>{notices}",
+        "{}<main id=\"main-content\" class=\"page-shell coordinated-mail search-results all-search\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>Search</h1><p>Find messages, document file names and saved contacts.</p></div><section class=\"content-pane coordinated-list\"><h2 class=\"sr-only\">All available search results</h2>",
+        "<div class=\"search-query-panel\"><form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"category\" value=\"all\">{filter_state}<label class=\"sr-only\" for=\"all-query\">Search query</label><input id=\"all-query\" type=\"search\" name=\"q\" value=\"{}\" maxlength=\"256\" placeholder=\"Search messages, file names and people…\"><button type=\"submit\">Search</button></form>{filter_controls}</div>",
+        "<nav class=\"search-result-tabs\" aria-label=\"Search types\"><span aria-current=\"page\">{all_label}</span><a href=\"{messages_href}\">{messages_label}</a><a href=\"{documents_href}\">{documents_label}</a><a href=\"{people_href}\">{people_label}</a></nav>{notices}",
         "<div class=\"search-result-headings\" aria-hidden=\"true\"><span>Type</span><span>Result</span><span>Location</span><span>Received / Modified</span><span></span></div><ul class=\"search-result-list\" aria-label=\"All available results\">{markup}</ul><div class=\"search-result-footer\">{pagination}</div>",
-        "<p class=\"search-capability-note muted\">Counts cover at most 250 loaded messages and 200 saved contacts. Messages appear first by mailbox and UID, then people by name and address. Documents search and contact modification times are unavailable. This is not a complete count of all content.</p><a href=\"/search?category=all\">Clear search</a></section></main>"),
+        "<p class=\"search-capability-note muted\">Counts cover at most 250 loaded messages, 200 saved contacts and 100 active document file names. Messages appear first by mailbox and UID, then people by name and address, then Documents by file name and ID. File contents are not searched; contact modification times are unavailable. This is not a complete count of all content.</p><a href=\"/search?category=all\">Clear search</a></section></main>"),
         crate::http_ui::app_header(&session.record.canonical_username, &session.record.csrf_token, "search"), escape_html(query), filter_state=crate::http_ui::category_filter_hidden(filters),
         filter_controls=crate::http_ui::render_search_category_filters(filters,query),
         messages_href=escape_html(&filters.href(crate::mail_navigation::SearchTab::Messages,query,None)),
-        people_href=escape_html(&filters.href(crate::mail_navigation::SearchTab::People,query,None)), all_label=all_label, messages_label=messages_label, people_label=people_label, notices=notices, markup=markup, pagination=pagination))
+        documents_href=escape_html(&filters.href(crate::mail_navigation::SearchTab::Documents,query,None)),
+        people_href=escape_html(&filters.href(crate::mail_navigation::SearchTab::People,query,None)), all_label=all_label, documents_label=documents_label, messages_label=messages_label, people_label=people_label, notices=notices, markup=markup, pagination=pagination))
 }

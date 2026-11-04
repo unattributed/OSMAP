@@ -18,14 +18,16 @@ pub(crate) struct SearchFilterContext {
 pub(crate) enum SearchTab {
     All,
     Messages,
+    Documents,
     People,
 }
 
 impl SearchFilterContext {
     pub fn parse(fields: &std::collections::BTreeMap<String, String>) -> Option<Self> {
         let max_page = match fields.get("category").map(String::as_str) {
-            Some("all") => 23,
+            Some("all") => 28,
             Some("people") => 10,
+            Some("documents") => 5,
             _ => return None,
         };
         if fields.keys().any(|key| {
@@ -108,6 +110,9 @@ impl SearchFilterContext {
             }
             SearchTab::People => {
                 fields.insert("category".into(), "people".into());
+            }
+            SearchTab::Documents => {
+                fields.insert("category".into(), "documents".into());
             }
             SearchTab::Messages if self.mailbox.is_none() => {
                 fields.insert("scope".into(), "all".into());
@@ -266,7 +271,7 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
         "/search"
             if matches!(
                 fields.get("category").map(String::as_str),
-                Some("all" | "people")
+                Some("all" | "people" | "documents")
             ) =>
         {
             SearchFilterContext::parse(&fields)?;

@@ -430,13 +430,13 @@ fn fixture_userdb_with_fields(
     let home = home.to_str().unwrap();
     assert!(home.len() <= 1024 && !home.chars().any(char::is_control));
     let home = home.to_owned();
-    assert!(extras.len() <= 4);
+    assert!(extras.len() <= 5);
     let mut names = std::collections::BTreeSet::new();
     let mut extra_fields = String::new();
     for (name, value) in extras {
         assert!(matches!(
             name.as_str(),
-            "mail" | "quota" | "quota_rule" | "osmap_quota_mount"
+            "mail" | "quota" | "quota_rule" | "osmap_quota_mount" | "osmap_configured_quota"
         ));
         assert!(names.insert(name.clone()));
         assert!(!value.is_empty() && value.len() <= 1024 && !value.chars().any(char::is_control));

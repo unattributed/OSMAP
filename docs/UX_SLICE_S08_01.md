@@ -37,11 +37,91 @@ Private receipts in `sidebar-20261105` under the existing sprint root:
 - `qualify.log`: SHA256 `e8e8ce7f2a7200e621508dc8ea8609e2f5095acc7d4e0e92146b94692d999fb3`.
 
 The previous owner `Login successful` confirmation remains recorded below.
-The sidebar correction awaits a simple owner refresh; full Documents shared-
-quota and broader S08 acceptance remain open. Normal signed delivery checks and
-fresh branch equality are required separately before claiming preservation.
+The owner subsequently states `UAT = PASS` (2026-11-05, Asia/Bangkok), accepting
+the installed storage sidebar correction. Signed implementation1af693c passed
+normal delivery gates, including2235 Rust tests with zero failures and87 explicit
+native/external ignores. Fresh fetched branch equality and clean status were
+verified. Full Documents shared-quota and broader S08 acceptance remain open;
+the owner explicitly directs continuing unfinished S08 work.
+
+## Current continuation — 2026-11-05
+
+After accepting the sidebar, the owner directs completion of unfinished S08.
+Reuse the existing Documents store, native quota worker and qualified fixture
+journeys. The current advisory userdb scalar must coexist with the seven native
+filesystem-authority fields without becoming write authority. Source correction
+and focused malformed/missing/duplicate/worker-argument regressions are required.
+
+Page09's global Documents search adapter remains missing even though the
+Documents page already has filename search. Extend the existing bounded All
+search and category navigation using the authenticated Documents index, active
+files only, case-insensitive filenames, deterministic ordering and existing
+opaque selection/download routes. Keep mail filters scoped to messages and
+explicitly label unavailable versus zero results. No file body/content indexing,
+new search store or privilege is needed. Essential tests cover owned results,
+foreign/corrupt/unconfirmed index refusal, Bin/pending exclusion, escaped names,
+pagination/category links, empty queries, request bounds and unchanged index.
+
+The existing 102400000-byte configured limit is below measured existing mail;
+the owner has a pending quota choice before any mailbox migration or write
+activation. Refresh the corrected existing inventory read first; preserve the
+failed null-field inventory and do not replay old worker/userdb admissions.
+S08-03/04 reuse assessments can proceed independently while that choice is
+pending. Full Documents acceptance and whole-S08 closure remain open.
+
+### Search and current native reporting compatibility
+
+The Documents authority parser now accepts the one optional native
+`osmap_configured_quota` scalar alongside its seven required fields. It remains
+advisory and never enters filesystem worker authority. Fourteen focused Rust
+cases pass, including malformed/duplicate/unknown/overflow refusal.
+
+Global Documents filename search is implemented through the existing
+owner-validated index and selection/download route. All search includes bounded
+Documents results; Bin, pending and unconfirmed records cannot become active
+results. Focused shared search regressions pass101 tests with zero failures and
+two explicit native ignores. Strict Clippy passes. Independent source review is
+GO. OpenBSD product build9f9c4cf4 and test buildaae65338 pass. The changed native
+journey passes1case/0failures in18.77seconds on a freshly activated32MiB kernel
+quota: exact10MiB upload/download, CSRF/origin refusal, foreign404, owner-only
+filename search, Bin exclusion, restore and confirmed deletion/cleanup. Native
+post-auth sessions do not qualify login/TOTP, public TLS or browser rendering.
+
+The fresh read-only source inventory passes26 mailboxes/475 messages, raw hashes,
+subscriptions and Sieve/non-mail accounting, with unchanged mapping/configuration
+and checked mail services. This is not a quiescent snapshot or migration parity.
+Its first run refused unsupported string-format native stat output before any
+backup/copy; numeric flags correct that observed utility contract. Both private
+receipts remain. No owner message was copied, moved, removed or reauthenticated.
+
+The first new build archive omitted existing tests/ MIME fixtures referenced by
+Rust include_str and failed compilation before any native journey. The corrected
+archive includes those unchanged fixtures; source code is unchanged. No product
+result is inferred from compilation or packaging. A later dispatcher used the
+wrong absolute vnconfig path and refused before control creation. Actual command
+discovery corrected it. The next native run exposed the fixture producer's old
+four-extra-field cap; its explicit cap/allowlist now admits the fifth advisory
+field, with product assertions unchanged. The next native run verified that
+eight-field output but refused missing live kernel quota on the reused volume,
+before upload. Historical preparation and a mount flag were insufficient.
+Combined independent reassessment selects the existing fresh64MiB FFS setup and
+actual kernel quota readback before another journey. Retained namespaces and
+failures remain private; no owner mail operation or configuration change ran.
+No new Python tooling is used.
+
+Installed Web36687 and mailbox-helper74933 both load9f9c4cf4. Configuration,
+account-service PID and crypto-agent PIDs remain unchanged; HTTPS login200 and
+nine roles pass. Matchingaae65338 test passes the installed signed current-epoch
+admission, Runtime/helper storage report, both owned rails and two foreign-page
+refusals in0.11seconds. Message bytes172605611 and configured quota102400000
+remain unchanged. Product source is identical to its main compiler receipt;
+only cfg(test) fixture code differs in the final test build. Rollback would
+restore on-disk17a1395f and restart Web/helper, not the historical helper391cdc
+inode/PID. No rollback was needed. Owner quota selection, installed Documents
+write journey and full-S08 acceptance remain pending.
 
 ## Owner login regression and service recovery — 2026-11-05
+
 
 Owner UAT reported sign-in failure using the saved Proton Pass credentials.
 Server logs classified the requests as primary-stage `backend_unavailable`

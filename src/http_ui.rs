@@ -1500,7 +1500,7 @@ pub(crate) fn render_search_category_filters(
     let mut folder = context.clone();
     folder.mailbox = None;
     filters.push_str(&format!("<details class=\"folder-filter\"><summary>Folder: {}</summary><form method=\"get\" action=\"/search\" aria-label=\"Folder filter\">{}<label>Folder<input name=\"mailbox\" maxlength=\"255\" value=\"{}\" placeholder=\"Mailbox name\"></label><button type=\"submit\">Apply folder</button><a href=\"{}\">All mailboxes</a><p class=\"muted\">Selected folder is checked under your account before Messages are searched.</p></form></details>",escape_html(context.mailbox.as_deref().unwrap_or("All mailboxes")),state(&folder),escape_html(context.mailbox.as_deref().unwrap_or("")),escape_html(&folder.href(SearchTab::All,query,None))));
-    format!("<div class=\"list-navigation search-category-filters\">{filters}</div><p class=\"search-filter-applicability muted\">Mail filters apply only to Messages. People is matched by saved name or email address; Documents is unavailable.</p>")
+    format!("<div class=\"list-navigation search-category-filters\">{filters}</div><p class=\"search-filter-applicability muted\">Mail filters apply only to Messages. People is matched by saved name or email address; Documents is matched by active file name.</p>")
 }
 
 fn render_list_navigation_parts(
@@ -2390,9 +2390,9 @@ pub(crate) fn render_message_search_page(
             "{}<main id=\"main-content\" class=\"page-shell coordinated-mail search-results{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>Search</h1><p>Find messages across your mailboxes.</p></div>",
             "<section class=\"content-pane coordinated-list\"><h2 class=\"section-title sr-only\">Search Results</h2>",
             "<div class=\"search-query-panel\"><form class=\"search-row compact-search\" method=\"get\" action=\"/search\">{}<label class=\"search-query-label\" for=\"search-query\"><span class=\"sr-only\">Search query</span><input id=\"search-query\" type=\"search\" name=\"q\" value=\"{}\" placeholder=\"Search mail…\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></div></details></form>{}</div>",
-            "<div class=\"search-result-tabs\" aria-label=\"Search types\"><a href=\"{all_href}\">All</a><span aria-current=\"true\">Messages{}</span><span aria-disabled=\"true\">Documents</span><a href=\"{people_href}\">People</a><span class=\"search-scope\">{}</span>{}</div>",
+            "<div class=\"search-result-tabs\" aria-label=\"Search types\"><a href=\"{all_href}\">All</a><span aria-current=\"true\">Messages{}</span><a href=\"{documents_href}\">Documents</a><a href=\"{people_href}\">People</a><span class=\"search-scope\">{}</span>{}</div>",
             "<div class=\"search-result-headings\" aria-hidden=\"true\"><span>Type</span><span>Result</span><span>Location</span><span>Received</span><span></span></div><ul role=\"list\" class=\"message-cards search-result-list\" aria-label=\"Search results\">{}</ul>",
-            "<div class=\"search-result-footer\">{}{}</div>{}<p class=\"search-capability-note muted\">Search covers accessible messages. OpenPGP filters use public MIME structure, not signature verification or decryption. Documents search is unavailable. People search covers your saved contacts.</p></section>{}</main>"
+            "<div class=\"search-result-footer\">{}{}</div>{}<p class=\"search-capability-note muted\">Search covers accessible messages. OpenPGP filters use public MIME structure, not signature verification or decryption. Documents search covers active file names. People search covers your saved contacts.</p></section>{}</main>"
         ),
         app_header(canonical_username, csrf_token, "search"),
         if view.selection.is_some() { " has-selection" } else { "" },
@@ -2402,6 +2402,7 @@ pub(crate) fn render_message_search_page(
         render_coordinated_reader_with_focus(&navigation_base, view, csrf_token, context.reader, canonical_username, &focus_targets),
         all_href = escape_html(&crate::mail_navigation::SearchFilterContext {view:view.clone(),mailbox:mailbox_name.map(str::to_string)}.href(crate::mail_navigation::SearchTab::All,query,None)),
         people_href = escape_html(&crate::mail_navigation::SearchFilterContext {view:view.clone(),mailbox:mailbox_name.map(str::to_string)}.href(crate::mail_navigation::SearchTab::People,query,None)),
+        documents_href = escape_html(&crate::mail_navigation::SearchFilterContext {view:view.clone(),mailbox:mailbox_name.map(str::to_string)}.href(crate::mail_navigation::SearchTab::Documents,query,None)),
     ))
 }
 

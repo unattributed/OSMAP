@@ -60,7 +60,6 @@ fn people_search_owned_bounded_escaped_paged_and_no_mail_dispatch() {
     assert_eq!(body_text(&page).matches("class=\"people-type\"").count(), 3);
     assert!(body_text(&page).contains("revision=23"));
     for p in [
-        "/search?category=documents",
         "/search?category=people&page=0",
         "/search?category=people&page=11",
         "/search?category=people&page=01",

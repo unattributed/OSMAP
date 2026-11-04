@@ -273,11 +273,37 @@ fn all_search_combined_paging_is_bounded_and_query_retained() {
         .rev()
         .map(|uid| all_row("INBOX", uid, "Public message"))
         .collect();
+    let store = crate::documents::Store::new(
+        fixture.root.join("documents"),
+        crate::documents::test_support::FixtureBackend::new(true),
+    );
+    let mut revision = 0;
+    for index in (0..100).rev() {
+        revision = store
+            .upload(
+                "alice@example.com",
+                revision,
+                &format!("Public document {index:03}"),
+                "text/plain",
+                b"x",
+                100,
+            )
+            .unwrap()
+            .revision;
+    }
     let app = fixture.app(Some(all_decision("Public", rows)));
+    let app = BrowserApp::new(
+        HttpPolicy::default(),
+        StubGateway {
+            document_store: Some(store),
+            ..app.gateway
+        },
+    );
     let first = all_get(&app, "/search?category=all&q=Public");
     let boundary = all_get(&app, "/search?category=all&q=Public&page=13");
-    let last = all_get(&app, "/search?category=all&q=Public&page=23");
-    assert!(body_text(&first).contains("450 loaded available results"));
+    let last = all_get(&app, "/search?category=all&q=Public&page=28");
+    assert!(body_text(&first).contains("550 loaded available results"));
+    assert!(body_text(&first).contains("Documents (100)"));
     assert_eq!(
         body_text(&boundary)
             .matches("class=\"search-result-row\"")
@@ -299,7 +325,15 @@ fn all_search_combined_paging_is_bounded_and_query_retained() {
             .count(),
         10
     );
-    assert!(body_text(&last).contains("Page 23 of 23"));
+    assert!(body_text(&last).contains("Page 28 of 28"));
+    assert_eq!(
+        body_text(&last).matches("<span>Document</span>").count(),
+        10
+    );
+    assert!(
+        body_text(&last).contains("Public document 090")
+            && body_text(&last).contains("Public document 099")
+    );
     assert!(!body_text(&last).contains("Next page"));
     for result in [&first, &boundary, &last] {
         budgets(result);
@@ -431,7 +465,7 @@ fn all_search_invalid_and_landing_requests_dispatch_no_search_worker() {
     for path in [
         "/search?category=all&scope=all",
         "/search?category=all&pgp=verified",
-        "/search?category=all&page=24",
+        "/search?category=all&page=29",
         "/search?category=all&page=0",
         "/search?category=all&page=01",
         "/search?category=all&q=%0D%0A",
@@ -521,7 +555,7 @@ fn all_search_return_context_is_finite_and_tabs_preserve_keywords() {
         Some("/search?category=all&page=23&q=Public+%26+Person")
     );
     for value in [
-        "/search?category=all&page=24",
+        "/search?category=all&page=29",
         "/search?category=all&q=%0A",
         "/search?category=all&q=public&selected_uid=1",
         "/search?category=all&scope=all",
@@ -1794,7 +1828,7 @@ fn all_reader_navigation_rejects_ignored_authority_context_without_mailbox_fallb
         "&field=subject",
         "&selected_uid=9",
         "&opened_read=1",
-        "&page=24",
+        "&page=29",
     ] {
         let destination = format!("{ALL_NAVIGATION_ORIGIN}{suffix}");
         let opening = format!(

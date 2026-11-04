@@ -153,6 +153,12 @@ where
             {
                 self.handle_all_search(request, &context)
             }
+            (HttpMethod::Get, "/search")
+                if request.query_params.get("category").map(String::as_str)
+                    == Some("documents") =>
+            {
+                self.handle_documents_search(request, &context)
+            }
             (HttpMethod::Get, "/search") if request.query_params.contains_key("category") => {
                 self.handle_people_search(request, &context)
             }

@@ -63,6 +63,7 @@ mod routes_access_recovery;
 mod routes_all_search;
 mod routes_bulk_delete;
 mod routes_delete;
+mod routes_documents_search;
 mod routes_folder_create;
 mod routes_folder_delete;
 mod routes_folder_rename;
@@ -1041,6 +1042,9 @@ mod tests {
     mod all_search_tests {
         include!("http/all_search_tests.rs");
     }
+    mod document_search_tests {
+        include!("http/document_search_tests.rs");
+    }
     mod contact_tests {
         include!("http/contact_tests.rs");
     }
@@ -1171,6 +1175,7 @@ mod tests {
         compose_imported_recipients: Option<crate::contacts::ImportedRecipientSnapshot>,
         document_store:
             Option<crate::documents::Store<crate::documents::test_support::FixtureBackend>>,
+        document_reads: Arc<AtomicUsize>,
         mail_storage_report: Option<crate::documents::MailStorageReport>,
         draft_store: Option<crate::draft::FileDraftStore>,
         fail_draft_delete: Option<String>,
@@ -1248,6 +1253,7 @@ mod tests {
                 contacts_store: None,
                 compose_imported_recipients: None,
                 document_store: None,
+                document_reads: Arc::new(AtomicUsize::new(0)),
                 mail_storage_report: None,
                 draft_store: None,
                 send_journal: fixture_send_journal(),
@@ -2099,6 +2105,7 @@ mod tests {
             &self,
             session: &ValidatedSession,
         ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_reads.fetch_add(1, Ordering::SeqCst);
             self.document_store
                 .as_ref()
                 .ok_or(crate::documents::Error::Unavailable)?
