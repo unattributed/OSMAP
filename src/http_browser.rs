@@ -235,13 +235,14 @@ pub trait BrowserGateway {
     ) -> Option<crate::openpgp_personal::PersonalState> {
         None
     }
-    fn personal_key_permission(
-        &self,
-        _session: &ValidatedSession,
-        _action: crate::openpgp_personal::PersonalAction<'_>,
-    ) -> Result<crate::openpgp_personal::PersonalState, crate::openpgp_personal::PersonalError>
-    {
-        Err(crate::openpgp_personal::PersonalError::Unavailable)
+    fn remember_personal_key(&self, _session: &ValidatedSession, _token: &[u8]) -> Option<u64> {
+        None
+    }
+    fn resume_personal_key(&self, _session: &ValidatedSession, _token: &[u8]) -> bool {
+        false
+    }
+    fn lock_personal_key(&self, _session: &ValidatedSession) -> bool {
+        false
     }
     fn forget_remembered_key(&self, _account: &str, _token: &[u8]) -> bool {
         false

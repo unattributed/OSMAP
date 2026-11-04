@@ -51725,3 +51725,18 @@ read-only same-repository/ref check confirms remote7efa4df. Normal non-forced Gi
 push/hooks and fresh exact parity remain required; no API-created replacement
 commit or unsigned fallback. Generated receipts do not alter the qualified Rust
 artifacts. Installation remains pending normal delivery qualification.
+
+Normal HTTPS pre-push subsequently reached the unchanged V12 boundary checker and
+refused remembered_key.rs. Independent exact-regex reassessment established the
+actual matches were the bare word process in two comments, not a helper call or
+native execution. An initial API-only correction left those comment matches and
+one wrapped renamed method call; the checker/compile refused again and those
+failures are retained. Combined independent reassessment completed the method
+rename, clarified comments as Web service RAM, and retained a narrower gateway
+API: browser handlers receive only deadline/bool permission results; helper action
+selection stays in RuntimeBrowserGateway. No gate/scanner policy changed.
+Exact V12 checker, both generated V10 checks, full Rust2203/0/87, strict Clippy and
+diff whitespace now PASS; independent source/receipt review GO. Earlier adapter
+compile failure is not passing evidence. Final source-input manifest and exact
+six-case native rerun/rebuild are in progress before installation; older artifact
+hashes above remain historical, not the final installation admission.

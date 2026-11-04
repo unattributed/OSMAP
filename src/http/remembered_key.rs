@@ -1,5 +1,5 @@
 //! Optional remembered key permission. Authentication is always separate. Only
-//! hashes and public account/deadline metadata live in this process's RAM.
+//! hashes and public account/deadline metadata live in the web service RAM.
 use super::*;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
@@ -7,6 +7,7 @@ use std::sync::Mutex;
 
 const COOKIE: &str = "__Host-osmap_key_access";
 const LIMIT: usize = 256;
+const REMEMBER_SECONDS: u64 = 8 * 60 * 60;
 struct Lease {
     account: String,
     until: u64,
@@ -56,11 +57,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 .values()
                 .any(|lease| lease.account == session.record.canonical_username);
             leases.retain(|_, lease| lease.account != session.record.canonical_username);
-            !had_permission
-                || self
-                    .gateway
-                    .personal_key_permission(session, crate::openpgp_personal::PersonalAction::Lock)
-                    .is_ok()
+            !had_permission || self.gateway.lock_personal_key(session)
         } else {
             false
         };
@@ -69,7 +66,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
     pub(super) fn forget_browser_key(&self, request: &HttpRequest) -> (String, bool) {
         let mut confirmed = true;
         // Remove web authority before touching the helper. Even if it is down,
-        // a copied cookie can no longer restore permission through this process.
+        // a copied cookie can no longer restore permission through this web service.
         if let Some(cookies) = request.headers.get("cookie") {
             if let Ok(mut leases) = self.remembered_keys.0.lock() {
                 for value in cookies.split(';').filter_map(|part| {
@@ -110,21 +107,10 @@ impl<G: BrowserGateway> BrowserApp<G> {
         if leases.len() >= LIMIT {
             return Err(());
         }
-        let state = self
+        let until = self
             .gateway
-            .personal_key_permission(
-                session,
-                crate::openpgp_personal::PersonalAction::Remember {
-                    token: value.as_bytes(),
-                },
-            )
-            .map_err(|_| ())?;
-        let until = state
-            .remembered_until
-            .filter(|until| {
-                *until > time
-                    && *until <= time.saturating_add(crate::openpgp_personal::CACHE_SECONDS)
-            })
+            .remember_personal_key(session, value.as_bytes())
+            .filter(|until| *until > time && *until <= time.saturating_add(REMEMBER_SECONDS))
             .ok_or(())?;
         leases.insert(
             hash(&value),
@@ -152,16 +138,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
         }
         // Hold the map lock across restoration so logout cannot race it into
         // recreating a grant after remembered authority has been removed.
-        if self
-            .gateway
-            .personal_key_permission(
-                session,
-                crate::openpgp_personal::PersonalAction::Resume {
-                    token: value.as_bytes(),
-                },
-            )
-            .is_err()
-        {
+        if !self.gateway.resume_personal_key(session, value.as_bytes()) {
             leases.remove(&key);
             self.gateway
                 .forget_remembered_key(&session.record.canonical_username, value.as_bytes());
