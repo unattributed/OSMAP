@@ -79,7 +79,8 @@
     "maint/openbsd/DUNCAN_STORAGE.md",
     "src/documents_native_http_tests.rs",
     "maint/security/v15-dependency-admission.json",
-    "src/http_gateway_storage_native_tests.rs"
+    "src/http_gateway_storage_native_tests.rs",
+    "maint/openbsd/README.md"
   ],
   "outcomes": [
     {
@@ -114,7 +115,7 @@
       ],
       "frontend_backend_outcome": "The signed-in user uploads, finds, downloads, bins and restores private Documents while mail and Documents share one finite native quota; storage views report account-specific evidence.",
       "essential_qa": "Reuse Rust lifecycle/security tests; exact native transfer; native concurrent IMAP/LMTP/Documents capacity enforcement; interruption/retention cleanup; installed account-specific rendering and owner UAT.",
-      "next_action": "Installed account-specific read-only storage reporting passes native Runtime/helper and both-page rendering; record owner visual review separately. Original Documents shared-quota enforcement remains OPEN; migration is set aside. Continue remaining S08 obligations using existing code.",
+      "next_action": "Owner reporting UAT exposed stale account authority after Dovecot metadata change. Credential-free admission FAIL reproduced; account-service then Web restart restored signed admission PASS with protected state unchanged. Owner now confirms Login successful after fresh MFA. Keep reporting acceptance separate and continue original open S08 obligations.",
       "dependencies": [
         {
           "owner": "/root",
@@ -765,7 +766,7 @@
     "slice": "S08-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_01.md",
-      "sha256": "409ae1ddee08d7b3111fb1451a7b23350cd9dad8abb94255c6432870a2f216be"
+      "sha256": "df678ee4ac7f8f1161a9d196d494a836d9d278102996da49cd4fafa6c9436e92"
     },
     "design": {
       "journey": "Upload, list, folders, search, sort, views, isolated download, Bin, restore and confirmed retention cleanup with shared account capacity.",

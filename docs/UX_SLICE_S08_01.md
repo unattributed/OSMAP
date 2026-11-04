@@ -1,5 +1,38 @@
 # S08-01 — Documents and authoritative account storage
 
+## Owner login regression and service recovery — 2026-11-05
+
+Owner UAT reported sign-in failure using the saved Proton Pass credentials.
+Server logs classified the requests as primary-stage `backend_unavailable`
+from `account-helper`, before TOTP verification. This was not a logged wrong-
+password result, and no password/TOTP reset was performed.
+
+The storage metadata edit/reload changed the protected Dovecot configuration
+after the persistent account service had captured its startup snapshot. Its
+intended snapshot recheck consequently refused admission. The storage/report
+test had explicitly excluded authentication; the deployment omitted this
+dependency refresh and therefore did not establish login readiness.
+
+The existing credential-free signed epoch-admission test reproduced FAIL in
+0.02seconds. Restarting `osmap_account_password` against current configuration,
+then restarting dependent `osmap_serve`, restored the authority chain. The same
+test actually ran one case with zero failures in3.10seconds. Protected account
+configuration, keys, epoch state, TOTP files, installed binaries and Dovecot SQL
+bytes compare unchanged across recovery. Six relevant service roles and HTTPS
+login availability pass; no password was submitted and no TOTP was consumed by
+agent testing. The owner subsequently confirmed a fresh MFA sign-in:
+`Login successful`. Login recovery is now functionally confirmed; this does not
+accept the remaining Documents or S08 functionality.
+
+Private receipts under `login-20261105` in the existing sprint root:
+
+- `epoch-before.log`, SHA256 `a44f743663a32c9c10610377bcc12e00ae3fd0c8cac5aa6ddbaa50d21ff90e0f`.
+- `recovery.log`, SHA256 `6e69bb9c3db8ede1e68e84c7f490ec594a36475a713305f23dac13c591e6337a`.
+
+The OpenBSD deployment instructions now require account-authority reobservation,
+Web endpoint refresh, signed epoch readiness and owner MFA login after an
+authorized Dovecot configuration change. Snapshot validation remains intact.
+
 ## Current reporting delivery — operator simplification, 2026-11-05
 
 Mailbox migration is set aside. The immediate delivery reports the signed-in
