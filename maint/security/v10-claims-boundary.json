@@ -134,7 +134,7 @@
     "remediation_script": "maint/security/osmap-v10-fail-closed-remediation.py",
     "remediation_script_present": true,
     "selected_target": "src_test_module_assumption_reclassification",
-    "source_test_module_assumption_count": 8797,
+    "source_test_module_assumption_count": 11783,
     "refined_inventory_sha256": "c5b62e276b263fea47f40cdb8acebdc267a9e822b7ddfdbde4ae6c52a869e368"
   }
 }

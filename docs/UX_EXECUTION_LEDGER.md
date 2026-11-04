@@ -1,3 +1,5 @@
+2026-11-04 — **Remembered personal-key access installed; ready for owner UAT.** The original fixed eight-hour deadline, fresh email/password/TOTP restoration and ordinary Sign out revocation are implemented. Full Rust 2204/0, strict Clippy, six exact native cases, disposable cleanup and independent review pass. The qualified Web/helper binaries are loaded on obsd1; HTTPS, nine service roles, protected files/configuration and native-agent preservation pass. Public mail services stayed available. Owner UAT is pending. Detailed results and retained failures appear in the final follow-up below; signed Git delivery and exact remote equality are checked separately.
+
 2026-11-04 — **Remembered personal-key access IN_PROGRESS.** Owner authorizes opt-in remembered-browser access across fresh email/password/TOTP logins, fixed original eight-hour unlock deadline, and ordinary Sign out clearing remembered permission. Baseline 7efa4df. Root owns HTTP/gateway/UI, integration, documentation and the single host/Git queue; remembered_key_helper owns native helper/protocol changes; remembered_key_review independently reviews source/security and evidence. Reuse existing Rust/native key-management journey and native GPG cache; no new dependencies, permanent passphrase storage, production-mail changes or automatic sign-in. Tests planned: opt-out; MFA-only restoration; fixed deadline/exact expiry; token/account/epoch/revision isolation; valid/expired-session logout and token replay; explicit Lock/restart; malformed/duplicate cookies; actual native signing after restore. NOT_RUN until recorded. Normal Rust delivery gates and signed Git publication apply. Technical operations stay bounded by existing test/helper timeouts; two failures at a functional boundary require combined reassessment. Installation restarts only necessary OSMAP roles and retains rollback; owner private key is not unlocked by agents. Owner UAT remains separate.
 
 2026-11-03 (Asia/Bangkok) — **S07 ACCEPTED; S07-01–04 T01–T09 PASS within sprint scope.** Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok). Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged. Closeout: six mutable documentation files only. Root owns records/Git; independent protocol review verifies scope/history. Reuse matching tests, validate ledger/spec pins and frozen plan, then normal signed commit/push/fresh parity; stop on delivery failure. No host action. Private owner screenshots excluded from Git. Sent evidence SHA2566e6149081e5e7b5793257aaf6e53f564bbc3975db52af15e950eb3c492cacb03; Hotmail evidence SHA256d5f489d8fc8da039ac819a24225acec584be4f120352c91a89387f1df8456364.
@@ -51754,3 +51756,46 @@ are regenerated for the added test (11867 total assumptions; refined high
 relevance remains zero). Full Rust passes 2204 tests with zero failures and 87 explicit native ignores;
 strict Clippy and V10 receipt readback pass. Final matching native build and
 installation remain pending; earlier native artifacts are not admitted for installation.
+
+
+### Installed remembered-key result — 2026-11-04
+
+Engineering and installed qualification complete; owner UAT remains separate.
+The final epoch-guard source is signed ef05600ff20fd28e4a560b84df8cc1d2191407dd.
+Input manifest SHA-256 is
+48924dcc33573baa1d2a5ea9fca92a0987d05cd10c99b3f9e87ae87e744e17dd.
+Native input readback before/after and independent local manifest check pass.
+Focused OpenBSD helper/browser/UI/session counts are 4/5/6/9 PASS. All six exact
+native cases execute one test each and pass, including the actual fresh MFA,
+restoration, native signing and logout/replay refusal journey (163.05 seconds);
+disposable cleanup passes. Full local Rust 2204 PASS/0 FAIL/87 native ignores,
+strict Clippy and normal security-check pass. Independent final review is GO.
+
+Installed Web SHA-256:
+0d5c520f1b3838f692d444ea511cd44e6cda3e842be064312d3c7e140b752c58.
+Installed crypto helper SHA-256:
+5bf3bf8e7b50de469743099d68fa54948fd19bb95f303899205fa6a6132f63be.
+Exact loaded executable hashes/inodes are verified (Web PID21834, crypto PID55931).
+HTTPS login200 and all nine service roles pass. Environment/configuration,
+account files/authority, public workers, protected application/key/session files
+and native crypto-agent PIDs are unchanged. Only Web and crypto helper restarted;
+public Postfix/Dovecot/MariaDB were not mutated. Known-byte backup retained at
+/var/backups/osmap-remembered-key-20261104-01. Private installation log reports
+INSTALL=PASS, PROTECTED_FILES=PASS and MAIL_SERVICE_MUTATION=NO.
+
+Delivery history remains explicit: normal security-check passed for ef05600, but
+GitHub rejected its HTTPS push with Internal Server Error after the checks. Fresh
+remote reconciliation confirms remote013060b and localef05600, ahead1/behind0;
+normal non-forced retry is required after the metadata checkpoint. Independent
+receipt review also found a metadata field selection mistake: source test module
+assumptions should be11783, not8797 (the latter counts a different classification).
+The claims receipt is corrected from the actual summary; runtime/native artifact
+identity is unchanged. Final metadata checkpoint and exact GitHub parity are delivery requirements;
+the actual subsequent outcome is retained in normal Git delivery receipts. No gate, hook, signature or runtime control is bypassed.
+
+Owner UAT is deliberately short: unlock once in Your personal key with Remember
+selected on a personal device; note the displayed original expiry; use /login
+for a fresh email/password/TOTP sign-in without Sign out and check the same
+remembered expiry; then ordinary Sign out and sign in again, confirming the key
+is locked. No terminal commands, packet inspection or decoding are needed.
+Earlier S07 acceptance remains historical and does not accept this new feature.

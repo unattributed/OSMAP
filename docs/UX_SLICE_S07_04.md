@@ -136,3 +136,20 @@ sign-in restoration. No permanent passphrase storage, private-key export or
 change to contacts' public keys. Agent-owned regression/native/installation and
 owner functional acceptance remain separate; the earlier S07 acceptance is
 preserved. Current implementation/QA progress is recorded in the execution ledger.
+
+
+### Remembered-key follow-up installed — 2026-11-04
+
+The owner-approved optional remembered-browser access is installed on obsd1.
+Remember is unchecked by default. The original eight-hour unlock deadline is
+fixed; new email/password/TOTP sign-ins and signing do not extend it. Ordinary
+Sign out clears remembered access. Remember/Resume require an authoritative
+credential epoch. Session-only unlock remains available to legacy accounts.
+
+Full Rust 2204/0/87 explicit native ignores, strict Clippy, all six exact native
+cases, disposable cleanup and independent review pass. Installed Web/helper
+hashes 0d5c520f/5bf3bf8e match the qualified build; HTTPS, nine roles and protected
+state preservation pass. First unlock after the helper update is required.
+Owner UAT remains pending; the short workflow is recorded in the execution ledger.
+This follows the previously accepted S07 scope and does not imply production
+release, broad WSTG completion or new owner acceptance.
