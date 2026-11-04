@@ -119,3 +119,116 @@ conditional was collapsed without changing ownership or cleanup behaviour;
 strict all-target Clippy and formatting then passed. The ordinary final push
 hook remains mandatory. Signed source preservation is independent of the
 failed native quota requirement and does not complete this slice.
+
+## Authorized continuation — 2026-11-04
+
+The owner explicitly directs autonomous S08 completion with full authority. This
+resolves the proposed obsd1-only native storage/quota authority question. Root
+first qualifies a fresh disposable 64 MiB FFS vnode volume using existing UID1000,
+with no passwd/group changes. A root-only Rust preparation sets a finite user
+hard quota; nonroot native workers exercise save/read/concurrency/expunge. Index
+and control files live on a different filesystem. The expected observation is
+that physical allocated bytes cannot exceed the hard limit, refused saves leave
+no visible complete candidate, and confirmed expunge restores capacity. Full
+Documents/helper/HTTP, IMAP and LMTP qualification follow; no driver is admitted
+from configuration or this narrower first test alone.
+
+Each native stage is bounded to 130 seconds; compilation to 600 seconds. Root
+verifies the exact new image/device/mount before format and quota operations,
+retains diagnostics on failure, and tears down only that owned volume. Two
+failures at one functional boundary require combined independent reassessment.
+After proof, a reviewed Duncan-only migration may use a distinct numeric UID,
+500 local PostfixAdmin units (512000000 bytes), user-only FFS hard quota and
+separate Dovecot index/control filesystem. Preserve mail availability, other
+accounts and rollback data. No production mail host change or mailbox sync.
+Prior failures and cumulative unknown costs remain unchanged.
+
+### Native hard-quota progress
+
+The first carrier stopped before device allocation because dd was under /bin,
+not /usr/bin. The exact failure and empty owned namespace are retained. The
+corrected reviewed carrier created a fresh 64 MiB FFS image and root preparation
+passed. Matching native Rust88e45ee0 passed nonroot serial save/exact fetch,
+three native writes within the kernel ceiling, expunge and capacity reuse in
+0.56 seconds. The three concurrent candidates were all refused; protocol-specific
+refusal qualification and mixed IMAP/LMTP/Documents paths remain pending.
+
+Fresh live inventory identifies the existing helper as vmail UID2000. The
+smaller reviewed rollout candidate therefore preserves UID2000 and uses an
+account-exclusive filesystem: quotas are scoped by filesystem and UID together.
+Other accounts remain on /var. Native mail index/control stay on another
+filesystem. The unmounted backing mountpoint must be root-owned and unwritable
+so absent mounting cannot permit unconstrained fallback. This supersedes the
+proposed distinct-UID migration, preserving existing native privilege boundaries.
+A small read-only unprivileged Rust worker performs Q_GETQUOTA outside the
+parent sandbox; the parent receives only bounded existing QuotaStatus JSON.
+Six focused pure worker/probe tests pass; no product driver is enabled yet.
+
+### Current integration result
+
+The later native protocol test passes actual IMAP APPEND, LMTP and native saves,
+including quota-specific refusals, concurrent mixed writers, exact stored-byte
+reconciliation and capacity reuse after expunge. The real Documents Store then
+passes upload/download/reopen/folders/Bin/restore/delete and wrong-limit refusal
+without save or pending metadata. Two native mailbox-backup rounds preserve
+GUIDs, UID validity/next, message UIDs/GUIDs, flags, dates, subscriptions and raw
+message hashes. These isolated results qualify the FFS candidate; they do not
+enable the installed account by themselves.
+
+The actual helper confinement plan and read-only worker pass in a separate
+sealed child. The first maximum-size helper upload exposed an additional real
+integration defect: native save succeeded, but the helper required a hexadecimal
+message GUID while Dovecot returned an opaque Maildir GUID. The uploading record
+and stored message are retained. Reuse the existing bounded MessageVersion
+parser and reconcile the original ID/size/hash without repeating its append,
+then qualify a fresh maximum-size journey. Preserve the earlier setup refusals
+and native failures separately; no deadline or ownership restriction is relaxed.
+
+The reviewed live layout keeps UID2000 and a root-owned filesystem mount root,
+with Duncan's Maildir in its account-owned child and INDEX/CONTROL off-device.
+The absent underlying mountpoint stays root-owned and unwritable. Native startup
+must verify the existing image and quota before exposing the account directory;
+it must never create a replacement volume or fall back to the old mail store.
+Installed migration, HTTP qualification and owner acceptance remain open.
+
+### Native startup and failure qualification
+
+The unused final UID2000 profile now passes native edquota limit provisioning,
+private-chroot quotacheck, filesystem mounting, quota activation and the actual
+read-only Rust worker. Its measured10240 allocated bytes equal the independently
+summed Maildir directory and controlled8KiB file. The kernel hard limit is
+512000000 bytes. The live Duncan userdb still points to the original Maildir;
+this is not completed migration or installed Documents acceptance.
+
+The first limit-application check refused before edquota or fstab publication:
+native od pads decimal fields with zeroes. All raw quota consumers now validate
+eight bounded decimal fields and normalize explicitly in base10. The corrected
+consumer passed on the actual retained producer text before the second native
+application. Both attempts and the unchanged-state readback remain recorded.
+
+Composed startup review also corrected rc.subr's default30-second daemon timer
+and stop signal fallback for this one-shot filesystem action. Actual root-to-
+vmail doas required authentication; the script instead uses the demonstrated
+native root su-m transition, with fixed/admitted command arguments and no doas
+policy expansion. Native startup passed after those concrete prerequisites.
+
+A controlled unused-profile failure confirms live writers prevent maintenance
+stop, root0700 blocks vmail traversal, and unhealthy mounted startup refuses
+repair while leaving root-only access. Exact unused/no-open-descriptor recovery
+then passes the ordinary cold-start path. Userdb, permanent fstab, probe bytes
+and checked mail/OSMAP services remain consistent. No reboot claim is made.
+
+Local current Rust QA passes2253 tests,0failures, with87 explicit native/external
+ignores; strict all-target Clippy passes. A narrow additional native HTTP test
+uses the real parser, Runtime gateway, authenticated helper and native backend
+with synthetic post-auth sessions. It does not claim login/TOTP, public TLS,
+browser rendering or the standalone helper accept loop. Its native result and
+actual account cutover remain pending.
+
+The added native HTTP composition journey now passes in18.57seconds on matching
+OpenBSD source/binary: one exact10MiB upload through parser/Runtime/peer-helper/
+native storage, exact download and forced-download headers, CSRF/Origin refusal,
+foreign-account404, Bin/restore and confirmed deletion. Native saves total one;
+private session/control cleanup and final native absence pass. The documented
+post-auth, daemon/TLS/browser scope limitations remain. Owner data migration and
+matching installed account journey are still open.

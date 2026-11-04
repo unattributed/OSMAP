@@ -2,7 +2,7 @@
 
 ## S08 Documents and storage
 
-- `UX_SLICE_S08_01.md` — [S08-01: Documents and shared storage](UX_SLICE_S08_01.md): account-specific storage source work and quota safety correction; native shared-quota failure blocks completion and UAT.
+- `UX_SLICE_S08_01.md` — [S08-01: Documents and shared storage](UX_SLICE_S08_01.md): account-specific shared storage, qualified native hard quota and authenticated Documents lifecycle; installed storage/cutover qualification and owner UAT remain open.
 
 ## S07 outbound protection qualification
 

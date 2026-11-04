@@ -25,3 +25,7 @@ path = "src/bin/account_passwd.rs"
 [[bin]]
 name = "account-recovery"
 path = "src/bin/account_recovery.rs"
+
+[[bin]]
+name = "storage-quota"
+path = "src/bin/storage_quota.rs"

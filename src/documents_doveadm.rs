@@ -30,12 +30,15 @@ const CONFIG_OUTPUT_MAX: usize = 32 * 1024;
 const INDEX_OUTPUT_MAX: usize = 128 * 1024;
 const FETCH_OUTPUT_MAX: usize = 15 * 1024 * 1024;
 
-// No native driver is yet qualified for the required shared concurrent limit.
-// In the isolated OpenBSD three-mailbox race, count accepted 86,016 bytes
-// against 65,536 despite zero grace and correct accounting. TODO: admit a
-// concrete authority only after its reservation and all-writer paths are
-// implemented and exercised; configuration text alone cannot establish this.
+// Count accepted 86,016 bytes against 65,536 in the retained native race.
+// Keep its configuration-only path closed. Filesystem authority additionally
+// requires the trusted userdb mapping and an actual read-only kernel probe.
 const QUALIFIED_CONCURRENT_QUOTA_DRIVERS: &[&str] = &[];
+// Native OpenBSD proof covers ordinary IMAP APPEND, LMTP and simultaneous
+// native saves against one kernel hard quota. Readiness still requires every
+// current mapping, ownership, mount and hard-limit check below to succeed.
+const FILESYSTEM_QUOTA_QUALIFIED: bool = true;
+const QUOTA_WORKER: &str = "/usr/local/libexec/osmap/storage-quota";
 
 #[derive(Debug, Clone)]
 pub struct DoveadmDocumentsBackend<E> {
@@ -341,7 +344,36 @@ impl<E: CommandExecutor> Backend for DoveadmDocumentsBackend<E> {
         // Configuration is necessary but does not prove concurrent enforcement.
         // Only a qualified native driver may attest shared write authority.
         let config = self.run(&self.doveconf, &["-n".into()], b"", CONFIG_OUTPUT_MAX)?;
-        if config.status_code != 0 || !quota_config_ready(&config.stdout) {
+        if config.status_code != 0 {
+            return Ok(None);
+        }
+        if FILESYSTEM_QUOTA_QUALIFIED && filesystem_config_ready(&config.stdout) {
+            let mut args = self.base();
+            args.extend(["-f".into(), "json".into(), "user".into(), account.into()]);
+            let user = self.run(&self.doveadm, &args, b"", QUOTA_OUTPUT_MAX)?;
+            let authority = (user.status_code == 0)
+                .then(|| filesystem_authority(&user.stdout))
+                .flatten();
+            let Some(authority) = authority else {
+                return Ok(None);
+            };
+            let measured = self.run(
+                Path::new(QUOTA_WORKER),
+                &authority.worker_args(),
+                b"",
+                QUOTA_OUTPUT_MAX,
+            )?;
+            if measured.status_code != 0 {
+                return Ok(None);
+            }
+            let kernel: QuotaStatus =
+                serde_json::from_str(&measured.stdout).map_err(|_| Error::Unavailable)?;
+            if kernel.limit_bytes != authority.limit_bytes || kernel.limit_bytes == 0 {
+                return Ok(None);
+            }
+            return Ok(Some(kernel));
+        }
+        if !quota_config_ready(&config.stdout) {
             return Ok(None);
         }
         let mut args = self.base();
@@ -554,6 +586,14 @@ pub(crate) fn native_quota_probe_flags(config: &str, quota: &str) -> (bool, bool
 }
 
 fn quota_config_ready(output: &str) -> bool {
+    quota_configuration(output, false)
+}
+
+fn filesystem_config_ready(output: &str) -> bool {
+    quota_configuration(output, true)
+}
+
+fn quota_configuration(output: &str, filesystem: bool) -> bool {
     if output.len() > CONFIG_OUTPUT_MAX {
         return false;
     }
@@ -566,6 +606,14 @@ fn quota_config_ready(output: &str) -> bool {
     let mut stack = Vec::new();
     for line in output.lines() {
         let trimmed = line.trim();
+        // The qualified filesystem profile uses one private Maildir location.
+        // A second namespace can put payload outside the account filesystem.
+        if filesystem && trimmed.starts_with("namespace ") && trimmed != "namespace inbox {" {
+            return false;
+        }
+        if filesystem && trimmed.starts_with("location =") && trimmed != "location =" {
+            return false;
+        }
         // An existing unrelated rule (for example Trash:ignore) does not
         // weaken Documents. Reserved-path overrides can increase allowance
         // or exempt storage, so refuse them without editing operator policy.
@@ -636,15 +684,133 @@ fn quota_config_ready(output: &str) -> bool {
     // `doveadm save` is not an IMAP or LMTP command. Global plugin admission
     // is required for its own quota enforcement; protocol-only enables are
     // insufficient even when quota get returns a finite limit.
-    quota_backend.is_some_and(|backend| {
-        let driver = backend.split(':').next().unwrap_or("");
-        QUALIFIED_CONCURRENT_QUOTA_DRIVERS.contains(&driver)
-            && !backend.is_empty()
-            && (!backend.starts_with("count:") || quota_vsizes)
-    }) && grace_zero
+    let driver_ready = if filesystem {
+        // Each admitted userdb row must supply its own exact fs root. A
+        // process-global root cannot establish the account-to-mount mapping.
+        quota_backend.is_none()
+    } else {
+        quota_backend.is_some_and(|backend| {
+            let driver = backend.split(':').next().unwrap_or("");
+            QUALIFIED_CONCURRENT_QUOTA_DRIVERS.contains(&driver)
+                && !backend.is_empty()
+                && (!backend.starts_with("count:") || quota_vsizes)
+        })
+    };
+    driver_ready
+        && grace_zero
         && has_quota(global)
         && effective_quota(lmtp)
         && effective_quota(imap)
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct FilesystemAuthority {
+    home: PathBuf,
+    uid: u32,
+    limit_bytes: u64,
+    mount: PathBuf,
+    index: PathBuf,
+    control: PathBuf,
+}
+
+impl FilesystemAuthority {
+    fn worker_args(&self) -> Vec<String> {
+        vec![
+            self.home.to_string_lossy().into_owned(),
+            self.uid.to_string(),
+            self.limit_bytes.to_string(),
+            self.mount.to_string_lossy().into_owned(),
+            self.index.to_string_lossy().into_owned(),
+            self.control.to_string_lossy().into_owned(),
+        ]
+    }
+}
+
+/// Only the fixed, bounded native user lookup supplies these values. No HTTP
+/// input selects a UID, filesystem or worker executable.
+fn filesystem_authority(output: &str) -> Option<FilesystemAuthority> {
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Field {
+        field: String,
+        value: String,
+    }
+    if output.len() > QUOTA_OUTPUT_MAX {
+        return None;
+    }
+    let rows: Vec<Field> = serde_json::from_str(output).ok()?;
+    if rows.len() != 7 {
+        return None;
+    }
+    let mut fields = std::collections::BTreeMap::new();
+    for row in rows {
+        if !matches!(
+            row.field.as_str(),
+            "uid" | "gid" | "home" | "mail" | "quota" | "quota_rule" | "osmap_quota_mount"
+        ) || row.value.len() > 1024
+            || row.value.chars().any(char::is_control)
+            || fields.insert(row.field, row.value).is_some()
+        {
+            return None;
+        }
+    }
+    let number = |key: &str| -> Option<u64> {
+        let value = fields.get(key)?;
+        let result = value.parse::<u64>().ok()?;
+        (result > 0 && result.to_string() == *value).then_some(result)
+    };
+    let uid = u32::try_from(number("uid")?).ok()?;
+    if uid > i32::MAX as u32 || number("gid")? > i32::MAX as u64 {
+        return None;
+    }
+    let path = |key: &str| -> Option<PathBuf> {
+        let path = PathBuf::from(fields.get(key)?);
+        (path.is_absolute()
+            && path
+                .components()
+                .all(|c| !matches!(c, std::path::Component::ParentDir))
+            && !path.to_str()?.contains(':'))
+        .then_some(path)
+    };
+    let home = path("home")?;
+    let mount = path("osmap_quota_mount")?;
+    if !home.starts_with(&mount) || mount == Path::new("/") {
+        return None;
+    }
+    let quota = fields.get("quota")?;
+    if quota != &format!("fs:User quota:user:mount={}", mount.display()) {
+        return None;
+    }
+    let limit = fields.get("quota_rule")?.strip_prefix("*:bytes=")?;
+    let limit_bytes = limit.parse::<u64>().ok()?;
+    if limit_bytes == 0 || limit_bytes.to_string() != limit || limit_bytes % 512 != 0 {
+        return None;
+    }
+    let parts: Vec<_> = fields
+        .get("mail")?
+        .strip_prefix("maildir:")?
+        .split(':')
+        .collect();
+    if parts.len() != 3 {
+        return None;
+    }
+    let mail = PathBuf::from(parts[0]);
+    if mail != home && mail != home.join("Maildir") {
+        return None;
+    }
+    let index = PathBuf::from(parts[1].strip_prefix("INDEX=")?);
+    let control = PathBuf::from(parts[2].strip_prefix("CONTROL=")?);
+    if !index.is_absolute() || !control.is_absolute() {
+        return None;
+    }
+    Some(FilesystemAuthority {
+        home,
+        uid,
+        limit_bytes,
+        mount,
+        index,
+        control,
+    })
 }
 
 #[cfg(test)]
@@ -688,6 +854,69 @@ mod tests {
                 stdout: stdout.into(),
                 stderr: String::new(),
             })
+        }
+    }
+
+    #[test]
+    fn filesystem_authority_requires_exact_native_mapping_and_limit() {
+        let rows = serde_json::json!([
+            {"field":"uid","value":"2000"},
+            {"field":"gid","value":"2000"},
+            {"field":"home","value":"/var/vmail/example.test/alice"},
+            {"field":"mail","value":"maildir:/var/vmail/example.test/alice:INDEX=/home/mail-index/alice:CONTROL=/home/mail-control/alice"},
+            {"field":"quota","value":"fs:User quota:user:mount=/var/vmail/example.test/alice"},
+            {"field":"quota_rule","value":"*:bytes=512000000"},
+            {"field":"osmap_quota_mount","value":"/var/vmail/example.test/alice"}
+        ]);
+        let authority = filesystem_authority(&rows.to_string()).unwrap();
+        assert_eq!(authority.uid, 2000);
+        assert_eq!(authority.limit_bytes, 512000000);
+        assert_eq!(authority.worker_args().len(), 6);
+        assert_eq!(authority.worker_args()[3], "/var/vmail/example.test/alice");
+        for (index, value) in [
+            (0, "0"),
+            (0, "02000"),
+            (0, "2147483648"),
+            (3, "maildir:/other:INDEX=/home/i:CONTROL=/home/c"),
+            (4, "fs:User quota:group:mount=/var/vmail/example.test/alice"),
+            (4, "fs:User quota:user:mount=/var/vmail/example.test/bob"),
+            (5, "*:bytes=0"),
+            (5, "*:bytes=513"),
+            (5, "*:bytes=0512000000"),
+            (6, "/var/vmail/example.test/alice/child"),
+        ] {
+            let mut bad = rows.clone();
+            bad[index]["value"] = value.into();
+            assert!(filesystem_authority(&bad.to_string()).is_none(), "{index}");
+        }
+        let mut extra = rows.clone();
+        extra
+            .as_array_mut()
+            .unwrap()
+            .push(serde_json::json!({"field":"namespace/other/location","value":"maildir:/other"}));
+        assert!(filesystem_authority(&extra.to_string()).is_none());
+        let mut unknown = rows.clone();
+        unknown[6]["field"] = "unapproved".into();
+        assert!(filesystem_authority(&unknown.to_string()).is_none());
+        let mut duplicate = rows.clone();
+        duplicate[6] = duplicate[0].clone();
+        assert!(filesystem_authority(&duplicate.to_string()).is_none());
+    }
+
+    #[test]
+    fn filesystem_configuration_requires_all_writers_and_one_private_location() {
+        let config="mail_plugins = quota\nplugin {\n quota_grace = 0%\n}\nnamespace inbox {\n location =\n}\nprotocol lmtp {\n mail_plugins = quota sieve\n}\nprotocol imap {\n mail_plugins = quota\n}\n";
+        assert!(filesystem_config_ready(config));
+        assert!(!quota_config_ready(config));
+        for bad in [
+            config.replace("mail_plugins = quota sieve", "mail_plugins = sieve"),
+            config.replace("quota_grace = 0%", "quota_grace = 10%"),
+            config.replace("location =", "location = maildir:/other"),
+            format!("{config}namespace shared {{\n}}\n"),
+            format!("{config}plugin {{\n quota = fs:User quota:user\n}}\n"),
+            format!("{config}plugin {{\n quota_rule2 = OSMAP.Documents:ignore\n}}\n"),
+        ] {
+            assert!(!filesystem_config_ready(&bad));
         }
     }
 

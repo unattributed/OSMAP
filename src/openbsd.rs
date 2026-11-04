@@ -1425,6 +1425,19 @@ impl OpenbsdConfinementPlan {
                 add_rule(&mut rules, &config.state_root, "r");
                 add_rule(&mut rules, &config.state_layout.runtime_dir, "rwc");
                 let dependency_error = add_doveadm_dependency_rules(&mut rules).err();
+                let dependency_error = dependency_error.or_else(|| {
+                    let worker = Path::new("/usr/local/libexec/osmap/storage-quota");
+                    if !worker.exists() {
+                        return None;
+                    }
+                    add_rule(&mut rules, worker, "x");
+                    add_installed_dependency_rules(
+                        &mut rules,
+                        worker,
+                        std::time::Instant::now() + std::time::Duration::from_secs(30),
+                    )
+                    .err()
+                });
                 add_rule(&mut rules, Path::new("/dev/null"), "rw");
 
                 if let Some(userdb_socket_path) = &config.doveadm_userdb_socket_path {
@@ -2072,6 +2085,7 @@ pub(crate) fn dependency_program_allowed(program: &Path) -> bool {
             "/usr/bin/fstat"
                 | "/usr/local/bin/doveadm"
                 | "/usr/local/bin/doveconf"
+                | "/usr/local/libexec/osmap/storage-quota"
                 | "/usr/local/bin/mariadb"
                 | "/usr/sbin/sendmail"
                 | "/usr/sbin/mailwrapper"

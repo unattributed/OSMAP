@@ -3,14 +3,127 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 const KEY: &[u8] = b"documents-synthetic-key-not-a-credential-123";
 const ACCOUNT: &str = "alice@example.test";
 const ID: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const NATIVE_MESSAGE_GUID: &str =
+    "1793807530.M69730P939.obsd1.blackbagsecurity.com,S=14165199,W=14349166";
 
 fn location(mailbox: &str) -> Location {
     Location {
         mailbox: mailbox.into(),
         uid: 7,
         mailbox_guid: "b".repeat(32),
-        message_guid: "c".repeat(32),
+        message_guid: NATIVE_MESSAGE_GUID.into(),
     }
+}
+
+#[test]
+fn native_message_guid_bounds_reuse_existing_message_version_contract() {
+    for guid in [
+        NATIVE_MESSAGE_GUID.to_string(),
+        "x".repeat(256),
+        "opaque;$(literal)-name".into(),
+    ] {
+        let mut value = location("OSMAP.Documents");
+        value.message_guid = guid.clone();
+        validate_location(&value, "OSMAP.Documents").unwrap();
+        assert_eq!(
+            crate::message_metadata::MessageVersion::new(value.mailbox_guid, value.message_guid)
+                .unwrap()
+                .message_guid,
+            guid
+        );
+    }
+    for guid in [
+        "".into(),
+        "x".repeat(257),
+        "bad\tguid".into(),
+        "bad\nguid".into(),
+        "bad\rguid".into(),
+        "bad\0guid".into(),
+        "bad guid".into(),
+        "café".into(),
+    ] {
+        let mut value = location("OSMAP.Documents");
+        value.message_guid = guid;
+        assert_eq!(
+            validate_location(&value, "OSMAP.Documents"),
+            Err(Error::Invalid)
+        );
+    }
+    let mut value = location("OSMAP.Documents");
+    value.uid = 0;
+    assert_eq!(
+        validate_location(&value, "OSMAP.Documents"),
+        Err(Error::Invalid)
+    );
+    let mut value = location("OSMAP.Documents");
+    value.mailbox_guid = "B".repeat(32);
+    assert_eq!(
+        validate_location(&value, "OSMAP.Documents"),
+        Err(Error::Invalid)
+    );
+    assert_eq!(
+        validate_location(&location("INBOX"), "OSMAP.Documents"),
+        Err(Error::Invalid)
+    );
+}
+
+#[test]
+fn native_opaque_guid_codec_signature_foreign_and_stale_checks_remain_exact() {
+    let request = signed(payload(Operation::Read {
+        id: ID.into(),
+        location: location("OSMAP.Documents"),
+    }));
+    let decoded = parse(&wire(&request)).unwrap();
+    assert_eq!(decoded.payload, request.payload);
+    verify(&decoded, KEY, 100, &Mutex::new(BTreeMap::new())).unwrap();
+    let response = Response {
+        request_hash: hash(&grant_bytes(&decoded.payload).unwrap()),
+        nonce: decoded.payload.nonce.clone(),
+        outcome: Outcome::Location {
+            location: location("OSMAP.Documents"),
+        },
+    };
+    let round_trip: Response =
+        serde_json::from_slice(&serde_json::to_vec(&response).unwrap()).unwrap();
+    assert_eq!(round_trip.outcome, response.outcome);
+    for mutation in 0..5 {
+        let mut changed = request.clone();
+        if mutation == 0 {
+            changed.payload.account = "bob@example.test".into();
+        }
+        if let Operation::Read { location, .. } = &mut changed.payload.operation {
+            match mutation {
+                1 => location.uid += 1,
+                2 => location.message_guid.push_str(".changed"),
+                3 => location.mailbox_guid = "e".repeat(32),
+                4 => location.mailbox = "OSMAP.DocumentsBin".into(),
+                _ => (),
+            }
+        }
+        assert!(verify(&changed, KEY, 100, &Mutex::new(BTreeMap::new())).is_err());
+    }
+    let backend = Fixture {
+        ready: true,
+        body: Mutex::new(b"exact".to_vec()),
+        mailbox: Mutex::new("OSMAP.Documents".into()),
+        ..Fixture::default()
+    };
+    assert_eq!(
+        backend
+            .read(ACCOUNT, ID, &location("OSMAP.Documents"))
+            .unwrap(),
+        b"exact"
+    );
+    assert_eq!(
+        backend.read("bob@example.test", ID, &location("OSMAP.Documents")),
+        Err(Error::NotFound)
+    );
+    let mut stale = location("OSMAP.Documents");
+    stale.message_guid.push_str(".changed");
+    assert_eq!(backend.read(ACCOUNT, ID, &stale), Err(Error::Stale));
+    stale = location("OSMAP.Documents");
+    stale.uid += 1;
+    assert_eq!(backend.read(ACCOUNT, ID, &stale), Err(Error::Stale));
 }
 fn payload(operation: Operation) -> Payload {
     Payload {
@@ -364,7 +477,7 @@ fn only_dedicated_reserved_mailboxes_and_typed_locations_are_accepted() {
     }))
     .is_err());
     let mut wrong_guid = location("OSMAP.Documents");
-    wrong_guid.message_guid = "x".repeat(32);
+    wrong_guid.message_guid = "x".repeat(257);
     assert!(validate(&payload(Operation::Read {
         id: ID.into(),
         location: wrong_guid

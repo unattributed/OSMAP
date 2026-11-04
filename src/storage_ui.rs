@@ -76,7 +76,7 @@ pub(crate) fn render_dashboard(account: &str, view: Option<&StorageView>) -> Str
     format!(concat!(
         "<div><strong>Shared mailbox and Documents</strong><p>{}</p>",
         "<strong>Document file contents</strong><p>{}</p>",
-        "<p>Documents share the mailbox quota; their file contents are not an additional total. Stored message sizes include overhead.</p>",
+        "<p>Documents share the mailbox quota; their file contents are not an additional total. Shared usage measures allocated filesystem storage, including message and directory overhead.</p>",
         "<p>{}</p><a href=\"/settings?section=general\">View storage details</a></div>"
     ), shared_usage(view), document_usage(view), retention(view))
 }
@@ -84,8 +84,8 @@ pub(crate) fn render_dashboard(account: &str, view: Option<&StorageView>) -> Str
 pub(crate) fn render_settings(account: &str, view: Option<&StorageView>) -> String {
     let view = owned(account, view);
     format!(concat!(
-        "<div><h3>Shared mailbox and Documents</h3><p>{}</p><span>Authoritative account quota. Includes stored document messages.</span></div>",
-        "<div><h3>Document file contents</h3><p>{}</p><span>Indexed payload only, already included in shared storage; stored message sizes include overhead.</span><p><a href=\"/documents\">Manage Documents</a></p></div>",
+        "<div><h3>Shared mailbox and Documents</h3><p>{}</p><span>Authoritative account quota measured as allocated filesystem storage, including stored document messages and directory overhead.</span></div>",
+        "<div><h3>Document file contents</h3><p>{}</p><span>Indexed file contents only, already included in shared storage.</span><p><a href=\"/documents\">Manage Documents</a></p></div>",
         "<div><h3>Retention</h3><p>{}</p></div>"
     ), shared_usage(view), document_usage(view), retention(view))
 }

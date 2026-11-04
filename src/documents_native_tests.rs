@@ -18,6 +18,16 @@ use std::time::{Duration, Instant};
 const ACCOUNT: &str = "alice@osmap-documents.invalid";
 const NATIVE_LIMIT: Duration = Duration::from_secs(120);
 
+#[cfg(target_os = "openbsd")]
+mod ffs {
+    include!("documents_native_ffs_tests.rs");
+}
+
+#[cfg(target_os = "openbsd")]
+mod migration {
+    include!("documents_native_migration_tests.rs");
+}
+
 fn quota_test_message(kind: &str, id: usize, bytes: usize) -> Vec<u8> {
     assert!(matches!(kind, "seed" | "candidate"));
     let mut message = format!(
@@ -404,10 +414,40 @@ impl Drop for Fixture {
 }
 
 fn fixture_userdb(fixture: &mut Fixture, uid: u32, gid: u32) -> PathBuf {
+    let home = fixture.root.join("alice");
+    fixture_userdb_with_fields(fixture, uid, gid, home, Vec::new())
+}
+
+fn fixture_userdb_with_fields(
+    fixture: &mut Fixture,
+    uid: u32,
+    gid: u32,
+    home: PathBuf,
+    extras: Vec<(String, String)>,
+) -> PathBuf {
+    assert!(uid > 0 && gid > 0);
+    assert!(home.is_absolute());
+    let home = home.to_str().unwrap();
+    assert!(home.len() <= 1024 && !home.chars().any(char::is_control));
+    let home = home.to_owned();
+    assert!(extras.len() <= 4);
+    let mut names = std::collections::BTreeSet::new();
+    let mut extra_fields = String::new();
+    for (name, value) in extras {
+        assert!(matches!(
+            name.as_str(),
+            "mail" | "quota" | "quota_rule" | "osmap_quota_mount"
+        ));
+        assert!(names.insert(name.clone()));
+        assert!(!value.is_empty() && value.len() <= 1024 && !value.chars().any(char::is_control));
+        extra_fields.push('\t');
+        extra_fields.push_str(&name);
+        extra_fields.push('=');
+        extra_fields.push_str(&value);
+    }
     let path = fixture.root.join("auth-userdb");
     let listener = UnixListener::bind(&path).unwrap();
     listener.set_nonblocking(true).unwrap();
-    let root = fixture.root.clone();
     let stop = fixture.stop.clone();
     fixture.userdb = Some(thread::spawn(move || {
         let deadline = Instant::now() + NATIVE_LIMIT;
@@ -453,8 +493,7 @@ fn fixture_userdb(fixture: &mut Fixture, uid: u32, gid: u32) -> PathBuf {
                 if fields[2] == ACCOUNT {
                     writeln!(
                         stream,
-                        "USER\t{id}\t{ACCOUNT}\tuid={uid}\tgid={gid}\thome={}",
-                        root.join("alice").display()
+                        "USER\t{id}\t{ACCOUNT}\tuid={uid}\tgid={gid}\thome={home}{extra_fields}"
                     )
                     .unwrap();
                 } else {

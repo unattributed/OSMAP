@@ -1,4 +1,4 @@
-2026-11-04 — **S08-01 shared-authority BLOCKER; safety correction and storage source work prepared.** Local Rust/HTTP checks pass. Native lifecycle passed before the joint-quota test failed: 86016 bytes accepted under65536. Unqualified native quota cannot enable Documents writes. No public mail/account/quota change or installed readiness/UAT claim. Accepted S07 and all earlier failures remain preserved; root owns the single queue.
+2026-11-04 — **S08-01 IN_PROGRESS under renewed full autonomous authority.** Qualify native FFS hard quota and necessary obsd1-only integration; earlier count race remains FAIL, Documents writes remain refused until actual enforcement is qualified.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
 ```json
@@ -7,7 +7,7 @@
   "slice": "S08-01",
   "original_requirement": "Approved Documents upload/list/folders/search/sort/views/download/bin/restore; shared authoritative mailbox/storage quota and retention",
   "source_baseline": "0c31a1ff7618ca82dff15f98a189bd301e0058e7",
-  "state": "BLOCKED",
+  "state": "IN_PROGRESS",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -68,7 +68,16 @@
     "src/http/welcome_data.rs",
     "src/http/welcome_data_tests.rs",
     "src/settings_general_ui.rs",
-    "src/settings_copies_ui.rs"
+    "src/settings_copies_ui.rs",
+    "src/documents_fs_quota.rs",
+    "src/documents_native_ffs_tests.rs",
+    "Cargo.toml",
+    "src/openbsd.rs",
+    "src/bin/storage_quota.rs",
+    "src/documents_native_migration_tests.rs",
+    "maint/openbsd/rc.d/osmap_duncan_storage",
+    "maint/openbsd/DUNCAN_STORAGE.md",
+    "src/documents_native_http_tests.rs"
   ],
   "outcomes": [
     {
@@ -103,13 +112,13 @@
       ],
       "frontend_backend_outcome": "The signed-in user uploads, finds, downloads, bins and restores private Documents while mail and Documents share one finite native quota; storage views report account-specific evidence.",
       "essential_qa": "Reuse Rust lifecycle/security tests; exact native transfer; native concurrent IMAP/LMTP/Documents capacity enforcement; interruption/retention cleanup; installed account-specific rendering and owner UAT.",
-      "next_action": "Finish focused safety regression/review and normal signed preservation, then prepare a bounded obsd1-only hard-quota design; no activation, service/config/account change or owner UAT until the authority gap is resolved.",
+      "next_action": "Qualify isolated native FFS hard quota, then composed Documents and all ordinary mail writers; review Duncan-only rollout and installed QA before UAT.",
       "dependencies": [
         {
           "owner": "/root",
-          "condition": "The isolated count-backend race stored/reported86016bytes against65536; no native driver has a demonstrated joint reservation authority. All mailboxes use UID/GID2000, so a simple filesystem quota would combine accounts. Finishing strict per-account enforcement requires qualified mail-storage infrastructure outside the current no-public-config boundary.",
+          "condition": "Count race retained; filesystem candidate requires actual isolated all-writer proof and per-account ownership. Latest user full authority authorizes required obsd1-only changes.",
           "status": "PENDING",
-          "next_action": "Resolve per-account native hard quota with reviewed isolated proof and any required explicit host authority; raising the numeric quota alone does not fix the race."
+          "next_action": "Qualify isolated native FFS hard quota, then composed Documents and all ordinary mail writers; review Duncan-only rollout and installed QA before UAT."
         }
       ],
       "stages": {
@@ -213,15 +222,548 @@
             "S08-01-native2"
           ]
         }
+      },
+      {
+        "id": "S08-01-ffs-prepare1",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "ffs1/prepare-volume.log empty; root image.log records /usr/bin/dd absent, before vnode allocation; old namespace retained.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "ede5393e2bae03a92e6d68210623172118a93e17682b75f506739782a80001e7",
+        "change_reference": "Observed /bin/dd correction and fresh namespace only.",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact carrier/fixture source and delta GO in root chat; actual output reviewed by root; scope limited to owned disposable native FFS fixture, full product NOT_QUALIFIED.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        }
+      },
+      {
+        "id": "S08-01-ffs-native1",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "ffs1/quota-prepare.log and native-ffs.log: root quota prepare PASS; native 0.56seconds serial/exact fetch/concurrent ceiling/expunge/reused capacity PASS. Full protocol/Store qualification pending; owned volume retained for next test.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.56,
+        "source_revision": "fa20d94eefe729443450b4371fbdf1768fdafe6e0b20591552113d5c0a85c030",
+        "change_reference": "Reviewed hard FFS quota on disposable volume; real nonroot writes, no production activation.",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact carrier/fixture source and delta GO in root chat; actual output reviewed by root; scope limited to owned disposable native FFS fixture, full product NOT_QUALIFIED.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/remembered_key_review"
+          ],
+          "reference": "Combined actual count-race and no-public-write proof led to reviewed disposable FFS kernel authority test. Carrier dd setup refusal corrected using observed native path before device allocation. No product assertion relaxed.",
+          "next_action": "One matching bounded FFS native run, retaining root-owned volume and all earlier failures; protocol and product follow separately.",
+          "failed_attempt_ids": [
+            "S08-01-native3",
+            "S08-01-ffs-prepare1"
+          ]
+        }
+      },
+      {
+        "id": "S08-01-ffs-protocol1",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "ffs2/native-ffs.log:0.46s IMAP positive/quota negative PASS, LMTP positive PASS; LMTP negative returned5.2.2 but expected reason marker false. Original stdout not retained; native.log absent, exact refusal reason UNKNOWN. Owned control/data retained.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.46,
+        "source_revision": "efd955476f42ff93fd7fd331b539fe0a209cc7048c14811af44d5a3d4421c488",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Exact independent protocol source GO before root native dispatch; missing original failure transcript identified on result readback.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Add actualIMAP/LMTP positive/quota negative and mixed native proof; no product driver admission."
+      },
+      {
+        "id": "S08-01-ffs-diagnostic1",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "ffs2/native-diagnostic.log 0.49s failed same reason predicate; actual5525.2.2 Not enough disk quota captured and hashed01a324f7. Kernel/IMAP/LMTP positive unaffected. Exact volume quotaoff/unmount/detach PASS; failed image/transcripts retained.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.49,
+        "source_revision": "f1ab5d8447a981562404ade00293ba310593a1dba8bda9c19abbc9c5ce587ba5",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Exact independent source/delta and actual LMTP response reassessment in root chat; narrow observed phrase correction only, no enforcement assertion weakened.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Preserve bounded exact native/protocol output before assertion, classifier unchanged to observe failed predicate."
+      },
+      {
+        "id": "S08-01-ffs-protocol2",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "ffs2/native-protocol-corrected.log:1.20s actualIMAP/LMTP positive exact stored/fetch and quota negatives,3nativequota-specificrefusals,mixedwriters/reconciliation/kernelbound,expunge/reusedcapacityPASS. Control cleanup PASS; volume retainedforStore. ProductStore/installedUI NOT_QUALIFIED.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 1.2,
+        "source_revision": "66e698701c8484928cfa4485108bd6bb55ff8e3467466af1331164711e4c9424",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Exact independent source/delta and actual LMTP response reassessment in root chat; narrow observed phrase correction only, no enforcement assertion weakened.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Recognize only exact observed Not enough disk quota phrase with mandatorycode/status/noSaved/storage/kernelchecks unchanged.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/remembered_key_review"
+          ],
+          "reference": "CapturedactualLMTP5.2.2 establishes testvocabulary false negative. Both priorfailed attempts retained. Exactphrasepuretests rejectgenericerrors,wrongcodeandSavedcontradictions; directdeltaGO beforeactualnative.",
+          "next_action": "One changed complete nativeprotocolrun, then actualStore/helper/installedqualification separately.",
+          "failed_attempt_ids": [
+            "S08-01-ffs-protocol1",
+            "S08-01-ffs-diagnostic1"
+          ]
+        }
+      },
+      {
+        "id": "S08-01-native-store1",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "store1/native-store.log: realkernel/read-onlyworker/Store lifecycle,foreign isolation,wronglimitno-save-no-pending andcontrolcleanupPASS.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 2.08,
+        "source_revision": "6945fc4e0497631b50d5eca34bad6d3267ade45c3659c20427547c5419c3283a",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent direct source GO before each exact native dispatch in root chat; matching5f904a2e binary result readback.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Qualify separate actual native product boundary; earlier count and classifier failures retained."
+      },
+      {
+        "id": "S08-01-native-migration1",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "store1/native-migration.log:twoactualnativebackuprounds preserveGUID/UIDvalidity/UIDnext/messageUIDGUID/flags/internaldate/subscriptions/rawhash,sourceunchanged,ownedcleanupPASS. No ownerdata accessed.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 1.39,
+        "source_revision": "4d3f1d2d830e62cd0a8b0418b2b6d9097e9a41aabb3c1bc2da98f4fb154f4e13",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent direct source GO before each exact native dispatch in root chat; matching5f904a2e binary result readback.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Qualify separate actual native product boundary; earlier count and classifier failures retained."
+      },
+      {
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "16fc8c1082f4b2977621fe877933f55ee1c9945ae7e67ebacb0b6d5d1a212add",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact-source GO in root chat for producer/helper/native Store, child seal and owned cleanup; wrapper custody corrections reviewed separately.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "id": "S08-01-helper-preflight1",
+        "reference": "Root chat: foo read of root0600 device receipt refused before quota preparation; no native test ran. Owned64MiB volume retained.",
+        "change_reference": "New maximum-helper boundary preparation with root-only custody; no permissions weakened."
+      },
+      {
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "16fc8c1082f4b2977621fe877933f55ee1c9945ae7e67ebacb0b6d5d1a212add",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact-source GO in root chat for producer/helper/native Store, child seal and owned cleanup; wrapper custody corrections reviewed separately.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "id": "S08-01-helper-preflight2",
+        "reference": "Root chat: corrected doas receipt read; unprivileged vnconfig read refused before quota preparation or native test.",
+        "change_reference": "Receipt read uses doas; subsequent native device custody read still needs root."
+      },
+      {
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.04,
+        "source_revision": "16fc8c1082f4b2977621fe877933f55ee1c9945ae7e67ebacb0b6d5d1a212add",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact-source GO in root chat for producer/helper/native Store, child seal and owned cleanup; wrapper custody corrections reviewed separately.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "id": "S08-01-helper-bootstrap1",
+        "reference": "helper1/native-helper-max.log SHA9239f91aae17aec44ccb7a4cd70dc13b3ee1004b7c709521604d5115cbd9f552: quota preparePASS then0.04s missing data/foo before helper/native save.",
+        "change_reference": "Root-only reads corrected together after independent combined reassessment; source unchanged.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/remembered_key_review"
+          ],
+          "reference": "Combined direct privilege reassessment: both custody reads must use doas, retain root600 receipt and device permissions; no quota/native failure inferred.",
+          "next_action": "Use root only for exact custody reads/preparation; nonroot unchanged reviewed maximum helper test.",
+          "failed_attempt_ids": [
+            "S08-01-helper-preflight1",
+            "S08-01-helper-preflight2"
+          ]
+        }
+      },
+      {
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "source_revision": "16fc8c1082f4b2977621fe877933f55ee1c9945ae7e67ebacb0b6d5d1a212add",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent direct exact source review and root-owned native queue; retained actual logs read back separately from cleanup.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "id": "S08-01-native-helper-max1",
+        "result": "FAIL",
+        "elapsed_seconds": 4.44,
+        "reference": "helper1/native-helper-max-corrected.log SHAa106af722ac5e5144cfc4077c40cbe5aed9dcec223d53d8bba87b7dbe01e20f0: native save/find succeeded, helper hex-only message GUID check returnedUnconfirmed; originalUploading and stored bytes retained.",
+        "change_reference": "Create only missing UID1000 data child after quota activation; verify32MiB native authority. No save repeated."
+      },
+      {
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "source_revision": "16fc8c1082f4b2977621fe877933f55ee1c9945ae7e67ebacb0b6d5d1a212add",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent direct exact source review and root-owned native queue; retained actual logs read back separately from cleanup.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "id": "S08-01-native-sealed-worker1",
+        "result": "PASS",
+        "elapsed_seconds": 2.34,
+        "reference": "helper1/native-helper-sealed.log SHAbbe1f6fe21258313bcc9db06ab63ae36d18b375cb95bdb84e7a0dfd93313d916: actual helper seal, installed worker positive and wrong-limit refusal, confirmed child exit/control cleanup.",
+        "change_reference": "Separate read-only confinement boundary; fresh off-device control root and unchanged reviewed native binary; retained uncertain upload untouched.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/remembered_key_review"
+          ],
+          "reference": "Combined independent causal review: bootstrap lacked required directory; actual upload reached native save but helper central validator wrongly assumed hexadecimal message GUID. Reuse existing MessageVersion parser; no append replay. Separate sealed-worker case is readonly and does not change or qualify the failed upload.",
+          "next_action": "Read-only actual sealed helper worker test; preserve original pending upload for later exact reconciliation.",
+          "failed_attempt_ids": [
+            "S08-01-helper-bootstrap1",
+            "S08-01-native-helper-max1"
+          ]
+        }
+      },
+      {
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "source_revision": "7a996bc997071ff42dd43c811ef325b48868bdd73e8bb747b3e09cb7237c2b00",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact correction/recovery source GO inrootchat beforematching dbb10a45 nativeexecution; earlier combinedGUIDcausalreassessmentretained.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "id": "S08-01-native-reconcile1",
+        "elapsed_seconds": 13.11,
+        "reference": "recovery1/native-reconcile.log SHA9492ef3f9ad124bbb7bdd8a8082bf0eead591aa8f622bfd74799b4003a8a6a35: actual authenticated helper recovery of original10MiB Uploading record, originalpayloadhash/nativefilecountunchanged,saves0, cooldown399Busy/400success, confirmed cleanup and retainedreceipt.",
+        "change_reference": "Reuse existing MessageVersion opaque GUID contract; actual pending record reconciled without append. Originalpreimagearchivef93f1295 retained and remote/localSHAequal."
+      },
+      {
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "source_revision": "7a996bc997071ff42dd43c811ef325b48868bdd73e8bb747b3e09cb7237c2b00",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact correction/recovery source GO inrootchat beforematching dbb10a45 nativeexecution; earlier combinedGUIDcausalreassessmentretained.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "id": "S08-01-native-helper-max2",
+        "elapsed_seconds": 17.51,
+        "reference": "recovery1/native-helper-max.log SHA0db30302c1bc7fd016178d4b375ca8f809030753ddb5615c3424ec1bdeacf5f2: actual10MiB peer/HMAC/nonce helper upload/download/hash/reopen/Bin/restore/delete,overlimit+1 no-save,foreign refusal,nativecapacityrelease/controlcleanupPASS.",
+        "change_reference": "Only after original ambiguity settled, unchanged maximum journey in separatelyfresh controlroot; nativebackend and kernelquota real."
+      },
+      {
+        "id": "S08-01-unused-storage-prepare1",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "9b335285a27bed260c6acb25a9b9094bdb376ddc788c5720456896f20ff3a545",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact private preparation carrier review inrootchat; native first-provision only, no activeuserdb/fstab/service mutation. Sourcebootprofile2a2e4fa2 and README65d5f48b independentlyreviewed.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Qualify actual new unused finalUID2000exclusiveFFSprofile after corrected maximum-helper and reconciliation passes; no production mail host or ownerdata touched.",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "storage1/prepare-unused.ksh SHA9b335285; native storage-prepare.log SHA34428053349d1ccccc9bacb94020e92c914e3056605119143a648f0c8f31540a. New exclusive1GiB FFS vnd3 image inode1503372, root-only mount and controlledUID2000probe; active userdb unchanged; quota not enabled."
+      },
+      {
+        "id": "S08-01-native-edquota-capture1",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "35b04a5f5366370a2ca8e2e7752493bfe5c09169e63ba086e7d60121162e2160",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent private capture carrier GO before dispatch; actual native formatter consumed; exact permanent fstab restored.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reference": "storage1/capture-edquota.ksh; remote edquota-capture-dispatch.log SHAcbedc8f65c83cf161ca75711044858a9db4e22864f90a5c7284ff9ec09b06017. Native formatter3lines confirms KBytes/zero limits; permanent fstab753c8630 contains2newnoauto/pass0 rows withoutuserquota. Activeuserdbunchanged,noquotaON.",
+        "change_reference": "Actual formatter prerequisite for native limit editor; no owner data or credentials changed."
+      },
+      {
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact carrier review plus native captured decimal producer/consumer check in root chat.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "id": "S08-01-native-edquota-apply1",
+        "source_revision": "3d7692910b58f99532f2b9c5833980d6ed85947d2b9372a3a7074feebd21f4b1",
+        "result": "FAIL",
+        "reference": "edquota-apply-dispatch.log SHA9247366f6afc1f37bbd5d31fc0fff80b608bcf692803dd980d7d808ec6aacd2e: native od zero-padded decimal fields rejected by lexical comparisons before editor/fstab window. Actualeightzero record,permanentfstab/root700/userdb confirmedunchanged.",
+        "change_reference": "Normalize validated8fields explicitbase10; retain firstattemptfiles, usefreshapply2receipt."
+      },
+      {
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact carrier review plus native captured decimal producer/consumer check in root chat.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "id": "S08-01-native-quota-decimal1",
+        "source_revision": "3d1ff2e33d5dad04b80dc10c9f25e0b32d31f22a727436c5c85c8e2656178c3e",
+        "result": "PASS",
+        "reference": "Nativeksh extractedcurrentrcconsumer onactualcapturedodfilea4b778f8; paddedzero/hard/usage andmalformedcasesPASS; loge3901ab594588ba39edff47307dabf34971793b488765d836846d9e9cb08563c.",
+        "change_reference": "Actualproduceroutput exercisedbeforechangedquotaapplication."
+      },
+      {
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact carrier review plus native captured decimal producer/consumer check in root chat.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "id": "S08-01-native-edquota-apply2",
+        "source_revision": "edcfd1cc16cbf00ea9a89b7a9dbc71fcc51885bcad213cdb2ff9151278eb449a",
+        "result": "PASS",
+        "reference": "edquota-apply2-dispatch.log SHA99d509bb5a208361ef446906ebc8b0f46da43ea6f876231b69e26608f138cc20. Nativeedquota sameinodeeditor thenrawhard1000000/soft0/otherfields0; permanentfstab restored,nativequotaactivationnotrun,root700,userdbunchanged.",
+        "change_reference": "Freshapply2receiptpreservesfirstfailure; noownerdata/SQL/servicechange."
+      },
+      {
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exactsource/carrier review inrootchat; native actualproducerconsumerandfinitefailure/recoverychain inspected.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "id": "S08-01-unused-storage-start1",
+        "source_revision": "40ef70e5d7925af29b292d766bfa1895f41b961f9040452190f7cd76da0bc782",
+        "reference": "storage-start1-dispatch.log SHA86df581974b100948cfb6deffe2cf237f3f24ffbc33a54db03f366f8d8e816cf. Nativefsck/privatechrootquotacheck/quotaon/readonlyworkerPASS; workerused10240exacthome+probeallocatedbytes; limit512000000. Olduserdb/fstab/servicesunchanged,privateguardremoved. Startupwholecoarseclock0secondsnotclaimedmeasuredzero.",
+        "change_reference": "Provennative root su-m vmail replaces unavailabledoas-as-vmail; fixedoneshotrc_timeout/signalling; noownerdata/SQLcutover."
+      },
+      {
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exactsource/carrier review inrootchat; native actualproducerconsumerandfinitefailure/recoverychain inspected.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "id": "S08-01-unused-storage-negative1",
+        "source_revision": "b65faa13f322923ada4ee410a4fa87fb3d1f29917daf2ecb6e7db0b2e3fb84e1",
+        "reference": "storage-negative1-dispatch.log SHA47d50d8abc9b502205558e0fbd572f88ace1a5d97e41db0b1bac2d0cf7d353bf. LivewritersstoprefusalPASS; controlledunusedroot700traversal/check/startrefusalPASSwithquota/userdb/servicespreserved; noFD/associationverifiedquotaoff/unmountthenactualcoldstartuprecoveryPASSworkerunchanged10240/512M.",
+        "change_reference": "Actualfailureprotectionandnativebootrecovery onunusedprofile, no productionmailhost/ownerdata mutation."
+      },
+      {
+        "id": "S08-01-native-http1",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "39909b526ef5f7ea9aa4f80c1fd0e49d9b6b46a4c9dbe5ad94961d7d4a2f8e10",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 18.57,
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent actualHTTPfixturef064610f andFFSb8212e sourceGO beforematching native40a4f569execution; parser/Runtime/peer/native/cleanup reviewed.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reference": "http1/native-http.log SHA92d69a9b8c55e12d11fd36373dc6838a1521f20bdd6a98028f35a300091966d7. RealHTTPparser/Runtime/authenticatedhelper/native10MiB upload/exactdownload/forcedheaders/Bin/restore/confirmeddelete; CSRF/Origin403,foreign404,saves1,native/privatecleanupPASS.",
+        "change_reference": "Syntheticpostauthsessions scopeonly; no login/TOTP/TLS/browser/standalonedaemon claim. Existingmatchingmax/recoveryproofretained."
       }
-    ]
+    ],
+    "next_attempt": null
   },
   "slice_contract": {
     "version": 1,
     "slice": "S08-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_01.md",
-      "sha256": "409ea67aa7d91a1828f89273bf53ea26cc84f8487ad3465afbb65db0ec6c2f9d"
+      "sha256": "696c7b2321ea4febf860cbbc796a509aa6f2b2d08a1f7c6f74d9ab55f054ab3e"
     },
     "design": {
       "journey": "Upload, list, folders, search, sort, views, isolated download, Bin, restore and confirmed retention cleanup with shared account capacity.",
@@ -402,9 +944,8 @@
   "human_acceptance": {
     "status": "PENDING"
   },
-  "next_action": "Finish focused safety regression/review and normal signed preservation, then prepare a bounded obsd1-only hard-quota design; no activation, service/config/account change or owner UAT until the authority gap is resolved.",
-  "blocker": "The isolated count-backend race stored/reported86016bytes against65536; no native driver has a demonstrated joint reservation authority. All mailboxes use UID/GID2000, so a simple filesystem quota would combine accounts. Finishing strict per-account enforcement requires qualified mail-storage infrastructure outside the current no-public-config boundary.",
-  "independent_next_action": "Finish focused safety regression/review and normal signed preservation, then prepare a bounded obsd1-only hard-quota design; no activation, service/config/account change or owner UAT until the authority gap is resolved."
+  "next_action": "Qualify isolated native FFS hard quota, then composed Documents and all ordinary mail writers; review Duncan-only rollout and installed QA before UAT.",
+  "independent_next_action": "Independent source/native review of exact FFS candidate and later rollout; preserve earlier failure evidence."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

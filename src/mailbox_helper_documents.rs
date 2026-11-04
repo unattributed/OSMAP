@@ -116,10 +116,14 @@ fn valid_hex(value: &str, length: usize) -> bool {
             .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
 }
 fn validate_location(location: &Location, expected: &str) -> Result<(), Error> {
+    let version = crate::message_metadata::MessageVersion::new(
+        location.mailbox_guid.clone(),
+        location.message_guid.clone(),
+    )
+    .map_err(|_| Error::Invalid)?;
     if location.mailbox != expected
         || location.uid == 0
-        || !valid_hex(&location.mailbox_guid, 32)
-        || !valid_hex(&location.message_guid, 32)
+        || version.mailbox_guid != location.mailbox_guid
     {
         return Err(Error::Invalid);
     }
@@ -697,6 +701,30 @@ impl Backend for MailboxHelperDocumentsBackend {
             _ => Err(Error::Unconfirmed),
         }
     }
+}
+
+#[cfg(all(test, target_os = "openbsd"))]
+pub(crate) fn native_test_stream(
+    backend: &dyn Backend,
+    stream: &mut UnixStream,
+    key: &[u8],
+    peer_uid: u32,
+    replay: &Mutex<BTreeMap<String, u64>>,
+) -> Result<(), &'static str> {
+    let trusted = MailboxHelperTrustedCallerPolicy {
+        trusted_peer_uid: peer_uid,
+        grant_key: key.to_vec(),
+    };
+    let actual = helper_stream_peer_uid(stream).map_err(|_| "native Documents peer unavailable")?;
+    authorize_helper_peer_uid(actual, &trusted).map_err(|_| "native Documents peer refused")?;
+    let policy = MailboxHelperPolicy::default();
+    configure_stream_timeouts(stream, policy);
+    let bytes =
+        read_request_bytes(stream, policy).map_err(|_| "native Documents request unavailable")?;
+    if !handle(&bytes, Some(backend), stream, key, replay) {
+        return Err("native Documents request prefix refused");
+    }
+    Ok(())
 }
 
 #[cfg(all(test, unix))]

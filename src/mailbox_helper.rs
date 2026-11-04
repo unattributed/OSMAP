@@ -829,6 +829,11 @@ pub(crate) fn prove_native_stored_signed_profile(
 #[cfg(all(test, unix))]
 pub(crate) use tests::native_reader_tests::ProtectedSentMailbox as NativeProtectedSentMailbox;
 
+// Test-only bridge exercises the production Documents peer/grant/framing path
+// against a caller-owned real native backend and private socket.
+#[cfg(all(test, target_os = "openbsd"))]
+pub(crate) use mailbox_helper_documents::native_test_stream as native_documents_test_stream;
+
 #[cfg(test)]
 mod tests {
     #[cfg(unix)]

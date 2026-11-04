@@ -49,6 +49,9 @@ pub mod contacts;
 pub mod conversation;
 pub mod documents;
 pub mod documents_doveadm;
+mod documents_fs_quota;
+#[doc(hidden)]
+pub use documents_fs_quota::worker as storage_quota_worker;
 pub mod draft;
 pub mod draft_content;
 mod draft_list;
