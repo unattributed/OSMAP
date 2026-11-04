@@ -95,7 +95,8 @@
     "src/http_gateway_scheduled_send_tests.rs",
     "src/http/protected_send_gateway_native_tests.rs",
     "src/http/protected_send_gateway_scheduled_native_tests.rs",
-    "src/http/source_attachment_tests.rs"
+    "src/http/source_attachment_tests.rs",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json"
   ],
   "outcomes": [
     {
@@ -152,7 +153,7 @@
     "slice": "S08-03",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "99b77e8c1f76a2f2ea0b8d1387e78f923c3ed00422466496f6bd0e256e02186f"
+      "sha256": "c8517f31b0c8e5d1e95635f4273f4aceb7318b1a7e624c7edc373c1146bc506e"
     },
     "design": {
       "journey": "Schedule captured mail, inspect/edit/cancel pending jobs, observe truthful submission state; snooze expires without moving messages.",

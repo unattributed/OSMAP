@@ -198,3 +198,13 @@ No owner credential, key or external message was used. Strict Clippy, formatting
 and existing V10 consistency checks pass. Native main build and Web-only install
 are the next boundaries; installation must preserve the running mailbox helper,
 account authority, crypto agents, configuration and public mail services.
+
+## Delivery inventory correction — 2026-11-05
+
+The first normal push refused publication because the five new scheduling routes
+were missing from the existing WSTG attack-surface inventory. Full Rust2294PASS,
+zero failures,89 explicit native/external ignores and preceding checks had passed.
+The smallest correction adds the actual methods, query/form fields and existing
+authorization/input/CSRF/business-logic test mappings to that inventory. No runner,
+gate or product route changes. This inventory consistency result does not establish
+a complete live WSTG security assessment. Original failure output is retained.
