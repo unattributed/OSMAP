@@ -51740,3 +51740,17 @@ diff whitespace now PASS; independent source/receipt review GO. Earlier adapter
 compile failure is not passing evidence. Final source-input manifest and exact
 six-case native rerun/rebuild are in progress before installation; older artifact
 hashes above remain historical, not the final installation admission.
+
+
+### Final credential-epoch safeguard — 2026-11-04
+
+Normal signed publication through 013060b and the complete security-check passed.
+Independent review then identified that a legacy session without an authoritative
+credential epoch must not create or resume remembered authority. Remember and
+Resume now refuse that case; ordinary session-only unlock, status and removal
+retain existing behavior. The focused regression passes (four remembered-helper
+cases), and independent source review is GO. The existing source-audit receipts
+are regenerated for the added test (11867 total assumptions; refined high
+relevance remains zero). Full Rust passes 2204 tests with zero failures and 87 explicit native ignores;
+strict Clippy and V10 receipt readback pass. Final matching native build and
+installation remain pending; earlier native artifacts are not admitted for installation.

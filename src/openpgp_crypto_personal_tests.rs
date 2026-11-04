@@ -160,6 +160,49 @@ fn unlocked_grant(manager: &mut Manager, fixture: &Fixture, session: &PrivateSes
 }
 
 #[test]
+fn personal_remembered_requires_epoch_but_preserves_legacy_session_only_access() {
+    let fixture = Fixture::new(true);
+    let mut manager = Manager::default();
+    let mut legacy = session();
+    legacy.account_epoch = None;
+    let deadline = Instant::now() + Duration::from_secs(2);
+    unlocked_grant(&mut manager, &fixture, &legacy, time().unwrap() + 600);
+    assert!(manager.permitted(&fixture.context(), Some(&legacy), deadline));
+    assert!(
+        manager
+            .handle(fixture.context(), &legacy, PersonalAction::Status, deadline)
+            .unwrap()
+            .unlocked_for_session
+    );
+    let token = [b'a'; 64];
+    for action in [
+        PersonalAction::Remember { token: &token },
+        PersonalAction::Resume { token: &token },
+    ] {
+        assert_eq!(
+            manager
+                .handle(fixture.context(), &legacy, action, deadline)
+                .err(),
+            Some(Error::Unsupported)
+        );
+        assert!(manager.remembered.is_empty());
+        assert!(manager.permitted(&fixture.context(), Some(&legacy), deadline));
+    }
+    // Forget remains an authority-reducing action for legacy sessions.
+    assert!(
+        manager
+            .handle(
+                fixture.context(),
+                &legacy,
+                PersonalAction::Forget { token: &token },
+                deadline,
+            )
+            .unwrap()
+            .unlocked_for_session
+    );
+}
+
+#[test]
 fn personal_remembered_resume_keeps_original_deadline_across_short_sessions() {
     let fixture = Fixture::new(true);
     let mut manager = Manager::default();

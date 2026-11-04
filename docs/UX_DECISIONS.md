@@ -690,3 +690,8 @@ but reports cleanup unconfirmed rather than claiming all earlier helper grants
 are gone. The current auth session is signed out independently; the owner can
 reconcile through account Lock. Longer/multi-day persistence, automatic sign-in,
 shared-computer opt-in and production-release assurance are outside this change.
+
+Remembered access additionally requires an authoritative account credential epoch.
+Legacy session-only accounts without that epoch may still unlock within a session,
+but cannot establish or resume cross-session remembered permission. This prevents
+legacy credential changes from carrying an old remembered lease into a new login.

@@ -75230,7 +75230,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 167
+      "line": 169
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75238,7 +75238,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 180
+      "line": 174
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75246,7 +75246,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 198
+      "line": 200
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75254,7 +75254,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 209
+      "line": 210
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75262,7 +75262,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 222
+      "line": 223
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75270,7 +75270,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 258
+      "line": 241
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75278,7 +75278,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 266
+      "line": 252
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75286,7 +75286,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 303
+      "line": 265
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75294,7 +75294,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 306
+      "line": 301
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75302,7 +75302,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 318
+      "line": 309
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75310,7 +75310,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 319
+      "line": 346
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75318,7 +75318,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 331
+      "line": 349
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75326,7 +75326,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 354
+      "line": 361
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75342,22 +75342,6 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 363
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 371
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
       "line": 374
     },
     {
@@ -75366,31 +75350,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 386
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 387
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 389
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 396
+      "line": 397
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75406,6 +75366,14 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
+      "line": 406
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
       "line": 414
     },
     {
@@ -75414,7 +75382,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 444
+      "line": 417
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75422,7 +75390,31 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 445
+      "line": 429
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 430
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 432
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 439
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75438,47 +75430,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 458
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 461
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "panic_macro",
-      "line": 463
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 470
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 474
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "expect_call",
-      "line": 485
+      "line": 457
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75494,7 +75446,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 492
+      "line": 488
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75502,15 +75454,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 495
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 499
+      "line": 491
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75526,14 +75470,6 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 503
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
       "line": 504
     },
     {
@@ -75541,8 +75477,8 @@
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 505
+      "kind": "panic_macro",
+      "line": 506
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75550,7 +75486,15 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 518
+      "line": 513
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 517
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75558,7 +75502,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "expect_call",
-      "line": 581
+      "line": 528
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75566,7 +75510,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 585
+      "line": 530
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75574,7 +75518,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 588
+      "line": 535
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75582,7 +75526,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 591
+      "line": 538
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75590,7 +75534,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 594
+      "line": 542
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75598,7 +75542,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 595
+      "line": 544
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75606,7 +75550,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 597
+      "line": 546
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75614,7 +75558,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 600
+      "line": 547
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75622,7 +75566,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 604
+      "line": 548
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75630,7 +75574,15 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 605
+      "line": 561
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "expect_call",
+      "line": 624
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75638,7 +75590,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 606
+      "line": 628
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75646,7 +75598,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 608
+      "line": 631
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75654,7 +75606,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 610
+      "line": 634
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75662,7 +75614,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 625
+      "line": 637
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75670,7 +75622,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 626
+      "line": 638
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75678,7 +75630,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 639
+      "line": 640
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75686,7 +75638,31 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 641
+      "line": 643
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 647
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 648
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 649
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75702,7 +75678,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 667
+      "line": 653
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75718,7 +75694,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 670
+      "line": 669
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75726,7 +75702,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 671
+      "line": 682
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75734,7 +75710,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 672
+      "line": 684
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75742,7 +75718,55 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 673
+      "line": 694
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 710
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 711
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 713
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 714
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 715
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 716
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75750,7 +75774,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "panic_macro",
-      "line": 687
+      "line": 730
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75758,7 +75782,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 690
+      "line": 733
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75766,7 +75790,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 691
+      "line": 734
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75774,7 +75798,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 697
+      "line": 740
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75782,7 +75806,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 706
+      "line": 749
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75790,7 +75814,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 709
+      "line": 752
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75798,7 +75822,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 721
+      "line": 764
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75806,7 +75830,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 727
+      "line": 770
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75814,7 +75838,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 728
+      "line": 771
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75822,7 +75846,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 737
+      "line": 780
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75830,7 +75854,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 738
+      "line": 781
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75838,55 +75862,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 757
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 765
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 778
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 779
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 789
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 794
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 804
+      "line": 800
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75902,7 +75878,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 825
+      "line": 821
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75910,7 +75886,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 835
+      "line": 822
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75918,7 +75894,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 841
+      "line": 832
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75926,7 +75902,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 844
+      "line": 837
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75934,7 +75910,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 855
+      "line": 847
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75942,7 +75918,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 865
+      "line": 851
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75950,7 +75926,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 866
+      "line": 868
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75958,7 +75934,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 875
+      "line": 878
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75966,7 +75942,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 876
+      "line": 884
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75974,7 +75950,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 891
+      "line": 887
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75982,55 +75958,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 892
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 893
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 896
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 902
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 905
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 906
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/openpgp_crypto_personal_tests.rs",
-      "kind": "unwrap_call",
-      "line": 907
+      "line": 898
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -76054,7 +75982,7 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 910
+      "line": 918
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -76062,7 +75990,103 @@
       "fail_closed_relevance": "low",
       "file": "src/openpgp_crypto_personal_tests.rs",
       "kind": "unwrap_call",
-      "line": 911
+      "line": 919
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 934
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 935
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 936
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 939
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 945
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 948
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 949
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 950
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 951
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 952
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 953
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_crypto_personal_tests.rs",
+      "kind": "unwrap_call",
+      "line": 954
     },
     {
       "classification": "production_adjacent_assumption",
@@ -94913,7 +94937,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-11-04T09:56:58Z",
+  "generated_at_utc": "2026-11-04T10:08:50Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -94955,25 +94979,25 @@
       "panic_path_assumption": 91,
       "production_adjacent_assumption": 2962,
       "startup_or_global_invariant": 10,
-      "test_or_fixture_assumption": 8794
+      "test_or_fixture_assumption": 8797
     },
     "by_fail_closed_relevance": {
       "high": 3053,
-      "low": 8794,
+      "low": 8797,
       "medium": 17
     },
     "by_kind": {
       "expect_call": 1167,
       "panic_macro": 351,
       "unreachable_macro": 30,
-      "unwrap_call": 10316
+      "unwrap_call": 10319
     },
     "classification_complete": true,
-    "inventory_sha256": "dbce25e16115fa415b970354b0f13c2994aef51421ce1e346c2f86ec440cafab",
+    "inventory_sha256": "e4c3fa3b7de24f920e0a2166796ff40b255c95f9a54cd69206260ffde210a1b1",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 11864
+    "total_count": 11867
   }
 }

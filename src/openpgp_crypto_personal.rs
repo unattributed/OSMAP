@@ -483,6 +483,14 @@ impl Manager {
         if !session.valid(now) {
             return Err(Error::Expired);
         }
+        if session.account_epoch.is_none()
+            && matches!(
+                action,
+                PersonalAction::Remember { .. } | PersonalAction::Resume { .. }
+            )
+        {
+            return Err(Error::Unsupported);
+        }
         if self.uncertain.contains(context.account) {
             return Err(Error::Unconfirmed);
         }
