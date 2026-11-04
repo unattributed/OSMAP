@@ -3,6 +3,7 @@
 ## S08 Documents and storage
 
 - `UX_SLICE_S08_01.md` — [S08-01: Documents and shared storage](UX_SLICE_S08_01.md): account-specific shared storage, qualified native hard quota and authenticated Documents lifecycle; installed storage/cutover qualification and owner UAT remain open.
+- `UX_SLICE_S08_03.md` — [S08-03: Scheduled send and snooze](UX_SLICE_S08_03.md): bounded jobs, existing submission reuse, authority revalidation and restart-safe reconciliation; implementation and qualification remain open.
 
 ## S07 outbound protection qualification
 

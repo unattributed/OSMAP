@@ -52810,3 +52810,14 @@ for a fresh email/password/TOTP sign-in without Sign out and check the same
 remembered expiry; then ordinary Sign out and sign in again, confirming the key
 is locked. No terminal commands, packet inspection or decoding are needed.
 Earlier S07 acceptance remains historical and does not accept this new feature.
+
+### 2026-11-05 Documents search checkpoint publication
+
+Signed source checkpoint2bc72a1 retains the installed search/parser correction,
+accepted sidebar UAT and scoped native/installed evidence. The first normal push
+hook passed2238 Rust tests with zero failures and87 explicit ignores, then
+refused a missing documentation-index entry for the newly added S08-03 planning
+document. That refusal occurred before GitHub publication. The smallest correction
+adds its ordinary docs/README link; original failed hook output is retained in
+continuation-20261105/push.log. Normal signed follow-up and full push hooks remain
+required; no bypass, force or acceptance change is authorized or performed.
