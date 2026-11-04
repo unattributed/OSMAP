@@ -1171,6 +1171,7 @@ mod tests {
         compose_imported_recipients: Option<crate::contacts::ImportedRecipientSnapshot>,
         document_store:
             Option<crate::documents::Store<crate::documents::test_support::FixtureBackend>>,
+        mail_storage_report: Option<crate::documents::MailStorageReport>,
         draft_store: Option<crate::draft::FileDraftStore>,
         fail_draft_delete: Option<String>,
         drafts: Arc<Mutex<BTreeMap<String, DraftRecord>>>,
@@ -1247,6 +1248,7 @@ mod tests {
                 contacts_store: None,
                 compose_imported_recipients: None,
                 document_store: None,
+                mail_storage_report: None,
                 draft_store: None,
                 send_journal: fixture_send_journal(),
                 recovery_now: None,
@@ -1471,6 +1473,12 @@ mod tests {
                     )),
                 audit_events: vec![],
             }
+        }
+        fn mail_storage_report(
+            &self,
+            _session: &ValidatedSession,
+        ) -> Option<crate::documents::MailStorageReport> {
+            self.mail_storage_report.clone()
         }
         fn documents_quota_status(
             &self,

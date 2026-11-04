@@ -1855,6 +1855,229 @@ pub(crate) fn real_uid() -> u32 {
     unsafe { libc::getuid() }
 }
 
+/// Copies a fixed kernel field without reading beyond its declared array.
+#[cfg(any(target_os = "openbsd", test))]
+fn quota_kernel_field(value: &[libc::c_char]) -> io::Result<Vec<u8>> {
+    let end = value
+        .iter()
+        .position(|byte| *byte == 0)
+        .filter(|end| *end > 0)
+        .ok_or(io::ErrorKind::InvalidData)?;
+    Ok(value[..end].iter().map(|byte| *byte as u8).collect())
+}
+
+/// Read-only filesystem facts from an owned descriptor which pins the directory.
+/// Returns (mount point, mounted device). Only FFS is admitted; fixed kernel
+/// arrays must contain a bounded terminator.
+#[cfg(target_os = "openbsd")]
+pub(crate) fn ffs_mount_info(directory: &fs::File) -> io::Result<(PathBuf, PathBuf)> {
+    use std::os::unix::ffi::OsStringExt as _;
+    let mut status = std::mem::MaybeUninit::<libc::statfs>::zeroed();
+    // SAFETY: the borrowed File keeps its descriptor live, and the buffer is
+    // valid for the exact native statfs size. It is read only after success.
+    if unsafe { libc::fstatfs(directory.as_raw_fd(), status.as_mut_ptr()) } != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let status = unsafe { status.assume_init() };
+    if quota_kernel_field(&status.f_fstypename)? != b"ffs" {
+        return Err(io::ErrorKind::Unsupported.into());
+    }
+    let mount = PathBuf::from(std::ffi::OsString::from_vec(quota_kernel_field(
+        &status.f_mntonname,
+    )?));
+    let source = PathBuf::from(std::ffi::OsString::from_vec(quota_kernel_field(
+        &status.f_mntfromname,
+    )?));
+    if !mount.is_absolute() {
+        return Err(io::ErrorKind::InvalidData.into());
+    }
+    Ok((mount, source))
+}
+
+#[cfg(any(target_os = "openbsd", test))]
+fn quota_native_uid(uid: u32) -> io::Result<libc::c_int> {
+    if uid == 0 {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    libc::c_int::try_from(uid).map_err(|_| io::ErrorKind::InvalidInput.into())
+}
+
+#[cfg(any(target_os = "openbsd", test))]
+fn quota_native_path(path: &Path) -> io::Result<std::ffi::CString> {
+    let bytes = path.as_os_str().as_encoded_bytes();
+    if !path.is_absolute()
+        || bytes.is_empty()
+        || bytes.len() > 1024
+        || bytes.iter().any(u8::is_ascii_control)
+        || path
+            .components()
+            .any(|part| matches!(part, std::path::Component::ParentDir))
+    {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    std::ffi::CString::new(bytes).map_err(|_| io::ErrorKind::InvalidInput.into())
+}
+
+// OpenBSD <ufs/ufs/quota.h>: eight uint32_t members, exactly 32 bytes. This
+// private C-layout record never crosses the safe interface as a raw pointer.
+#[cfg(target_os = "openbsd")]
+#[repr(C)]
+#[derive(Default)]
+struct NativeUserQuota {
+    fields: [u32; 8],
+}
+
+#[cfg(target_os = "openbsd")]
+const _: [(); 32] = [(); std::mem::size_of::<NativeUserQuota>()];
+
+#[cfg(target_os = "openbsd")]
+unsafe extern "C" {
+    fn quotactl(
+        path: *const libc::c_char,
+        command: libc::c_int,
+        id: libc::c_int,
+        address: *mut libc::c_void,
+    ) -> libc::c_int;
+}
+
+/// Fixed read-only QCMD(Q_GETQUOTA, USRQUOTA), returning copied native fields.
+/// Account/mount/device/finite-limit authority remains checked by the caller.
+#[cfg(target_os = "openbsd")]
+pub(crate) fn read_user_quota(mount: &Path, uid: u32) -> io::Result<[u32; 8]> {
+    let path = quota_native_path(mount)?;
+    let uid = quota_native_uid(uid)?;
+    let mut quota = NativeUserQuota::default();
+    // SAFETY: both C path and correctly sized writable native record are live;
+    // the fixed GET command writes only that record. No caller selects an op.
+    if unsafe {
+        quotactl(
+            path.as_ptr(),
+            0x0300 << 8,
+            uid,
+            (&mut quota as *mut NativeUserQuota).cast(),
+        )
+    } != 0
+    {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(quota.fields)
+}
+
+// Root mutation exists only in the ignored, disposable OpenBSD test fixture.
+// The production worker exposes no quota activation or modification operation.
+#[cfg(all(test, target_os = "openbsd"))]
+fn quota_fixture_mount(data: &Path) -> io::Result<fs::File> {
+    use std::os::unix::fs::{MetadataExt as _, OpenOptionsExt as _};
+    if real_uid() != 0 || effective_uid() != 0 {
+        return Err(io::ErrorKind::PermissionDenied.into());
+    }
+    let base = data.parent().ok_or(io::ErrorKind::InvalidInput)?;
+    let suffix = base
+        .file_name()
+        .and_then(|name| name.to_str())
+        .and_then(|name| name.strip_prefix("s8q."))
+        .ok_or(io::ErrorKind::InvalidInput)?;
+    if base.parent() != Some(Path::new("/tmp"))
+        || data.file_name() != Some(std::ffi::OsStr::new("data"))
+        || suffix.len() != 16
+        || !suffix
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        || fs::canonicalize(data)? != data
+    {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    let parent = fs::symlink_metadata(base)?;
+    let owner = fs::symlink_metadata(data)?;
+    if !parent.is_dir()
+        || parent.uid() != 0
+        || parent.mode() & 0o777 != 0o711
+        || !owner.is_dir()
+        || owner.uid() != 0
+        || owner.mode() & 0o777 != 0o755
+        || owner.dev() == parent.dev()
+    {
+        return Err(io::ErrorKind::PermissionDenied.into());
+    }
+    let directory = fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC)
+        .open(data)?;
+    let opened = directory.metadata()?;
+    if (opened.dev(), opened.ino()) != (owner.dev(), owner.ino()) {
+        return Err(io::ErrorKind::InvalidData.into());
+    }
+    let (mounted, source) = ffs_mount_info(&directory)?;
+    if mounted != data
+        || !["/dev/vnd0a", "/dev/vnd1a", "/dev/vnd2a", "/dev/vnd3a"]
+            .iter()
+            .any(|value| source == Path::new(value))
+    {
+        return Err(io::ErrorKind::InvalidData.into());
+    }
+    let quota = fs::symlink_metadata(data.join("quota.user"))?;
+    if !quota.is_file()
+        || quota.uid() != 0
+        || quota.mode() & 0o777 != 0o600
+        || quota.nlink() != 1
+        || quota.len() != 1001 * 32
+    {
+        return Err(io::ErrorKind::InvalidData.into());
+    }
+    Ok(directory)
+}
+
+#[cfg(all(test, target_os = "openbsd"))]
+pub(crate) fn prepare_ffs_fixture_quota(data: &Path, hard_bytes: u32) -> io::Result<()> {
+    if !matches!(hard_bytes, 262144 | 1048576 | 33554432) {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    let _pinned = quota_fixture_mount(data)?;
+    let mount = quota_native_path(data)?;
+    let quota_path = quota_native_path(&data.join("quota.user"))?;
+    // SAFETY: fixed QUOTAON expects the live NUL-terminated quota-file path.
+    if unsafe {
+        quotactl(
+            mount.as_ptr(),
+            0x0100 << 8,
+            0,
+            quota_path.as_ptr().cast_mut().cast(),
+        )
+    } != 0
+    {
+        return Err(io::Error::last_os_error());
+    }
+    let mut quota = NativeUserQuota {
+        fields: [hard_bytes / 512, 0, 0, 0, 0, 0, 0, 0],
+    };
+    // SAFETY: fixed SETQUOTA reads the live 32-byte native record. The fixture
+    // fixes UID 1000, soft zero and one admitted finite hard limit, never usage.
+    if unsafe {
+        quotactl(
+            mount.as_ptr(),
+            0x0400 << 8,
+            1000,
+            (&mut quota as *mut NativeUserQuota).cast(),
+        )
+    } != 0
+    {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(())
+}
+
+#[cfg(all(test, target_os = "openbsd"))]
+pub(crate) fn disable_ffs_fixture_quota(data: &Path) -> io::Result<()> {
+    let _pinned = quota_fixture_mount(data)?;
+    let mount = quota_native_path(data)?;
+    // SAFETY: fixed QUOTAOFF takes no buffer and acts only on the admitted
+    // disposable fixture mount. This interface is absent from production.
+    if unsafe { quotactl(mount.as_ptr(), 0x0200 << 8, 0, std::ptr::null_mut()) } != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(())
+}
+
 #[cfg(all(unix, test))]
 pub(crate) fn effective_gid() -> u32 {
     // SAFETY: getegid has no pointer or ownership precondition.
@@ -3162,6 +3385,40 @@ pub(crate) fn openpgp_fixture_child_profile(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn quota_boundary_refuses_unterminated_fields_and_invalid_native_arguments() {
+        let field = |bytes: &[u8]| {
+            bytes
+                .iter()
+                .map(|byte| *byte as libc::c_char)
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            super::quota_kernel_field(&field(b"ffs\0trailing")).unwrap(),
+            b"ffs"
+        );
+        for bytes in [b"".as_slice(), b"\0", b"ffs"] {
+            assert!(super::quota_kernel_field(&field(bytes)).is_err());
+        }
+        assert_eq!(super::quota_native_uid(1000).unwrap(), 1000);
+        for uid in [0, i32::MAX as u32 + 1, u32::MAX] {
+            assert!(super::quota_native_uid(uid).is_err());
+        }
+        assert!(super::quota_native_path(std::path::Path::new("/tmp/data")).is_ok());
+        for path in [
+            "relative",
+            "/tmp/../data",
+            "/tmp/bad\npath",
+            "/tmp/bad\0path",
+        ] {
+            assert!(super::quota_native_path(std::path::Path::new(path)).is_err());
+        }
+        assert!(
+            super::quota_native_path(std::path::Path::new(&format!("/{}", "x".repeat(1024))))
+                .is_err()
+        );
+    }
+
     #[cfg(unix)]
     #[test]
     fn completed_request_peer_check_is_nonblocking_nonconsuming_and_fail_closed() {

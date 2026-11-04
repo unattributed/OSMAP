@@ -1,7 +1,6 @@
 // Explicit isolated FFS candidate. This never admits a production quota driver.
 use super::*;
 use sha2::Sha256;
-use std::ffi::{CStr, CString};
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs::OpenOptionsExt;
 
@@ -11,12 +10,8 @@ mod http {
 
 const QUOTA_UID: u32 = 1000;
 const BLOCK_BYTES: u32 = 512;
-const Q_QUOTAON: i32 = 0x0100 << 8;
-const Q_QUOTAOFF: i32 = 0x0200 << 8;
-const Q_GETQUOTA: i32 = 0x0300 << 8;
-const Q_SETQUOTA: i32 = 0x0400 << 8;
 
-// OpenBSD <ufs/ufs/quota.h>: eight uint32_t fields; not the Linux ABI.
+// Copied quota fields returned by the reviewed platform boundary.
 #[repr(C)]
 #[derive(Default, Clone, Copy)]
 struct Dqblk {
@@ -28,14 +23,6 @@ struct Dqblk {
     inodes: u32,
     btime: u32,
     itime: u32,
-}
-unsafe extern "C" {
-    fn quotactl(
-        path: *const libc::c_char,
-        cmd: libc::c_int,
-        id: libc::c_int,
-        addr: *mut libc::c_void,
-    ) -> libc::c_int;
 }
 
 pub(super) fn fixture_path(variable: &str, prefix: &str) -> PathBuf {
@@ -69,10 +56,6 @@ pub(super) fn hard_bytes() -> u32 {
     }
 }
 
-fn cpath(path: &Path) -> CString {
-    CString::new(path.as_os_str().as_bytes()).unwrap()
-}
-
 pub(super) fn checked_mount(base: &Path) -> PathBuf {
     let owner = fs::symlink_metadata(base).unwrap();
     assert!(owner.is_dir() && owner.uid() == 0 && owner.mode() & 0o777 == 0o711);
@@ -81,41 +64,33 @@ pub(super) fn checked_mount(base: &Path) -> PathBuf {
     let owner = fs::symlink_metadata(&data).unwrap();
     assert!(owner.is_dir() && owner.uid() == 0 && owner.mode() & 0o777 == 0o755);
     assert_ne!(owner.dev(), fs::metadata(base).unwrap().dev());
-    let mut status = std::mem::MaybeUninit::<libc::statfs>::uninit();
-    // SAFETY: live C path and writable statfs buffer; inspected only on success.
-    assert_eq!(
-        unsafe { libc::statfs(cpath(&data).as_ptr(), status.as_mut_ptr()) },
-        0
-    );
-    let status = unsafe { status.assume_init() };
-    // SAFETY: kernel statfs strings are bounded NUL-terminated ABI arrays.
-    let kind = unsafe { CStr::from_ptr(status.f_fstypename.as_ptr()) };
-    let mounted = unsafe { CStr::from_ptr(status.f_mntonname.as_ptr()) };
-    let source = unsafe { CStr::from_ptr(status.f_mntfromname.as_ptr()) }.to_bytes();
-    assert_eq!(kind.to_bytes(), b"ffs");
-    assert_eq!(mounted.to_bytes(), data.as_os_str().as_bytes());
+    let directory = fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC)
+        .open(&data)
+        .unwrap();
+    let (mounted, source) = crate::openbsd::ffs_mount_info(&directory).unwrap();
+    assert_eq!(mounted, data);
     assert!(matches!(
-        source,
+        source.as_os_str().as_bytes(),
         b"/dev/vnd0a" | b"/dev/vnd1a" | b"/dev/vnd2a" | b"/dev/vnd3a"
     ));
     data
 }
 
 fn get_quota(data: &Path) -> Dqblk {
-    let mut quota = Dqblk::default();
-    // SAFETY: OpenBSD native ABI verified against quota.h; command fills dqblk.
-    assert_eq!(
-        unsafe {
-            quotactl(
-                cpath(data).as_ptr(),
-                Q_GETQUOTA,
-                QUOTA_UID as i32,
-                (&mut quota as *mut Dqblk).cast(),
-            )
-        },
-        0,
-        "ffs stage=getquota result=refused"
-    );
+    let [bhard, bsoft, blocks, ihard, isoft, inodes, btime, itime] =
+        crate::openbsd::read_user_quota(data, QUOTA_UID).unwrap();
+    let quota = Dqblk {
+        bhard,
+        bsoft,
+        blocks,
+        ihard,
+        isoft,
+        inodes,
+        btime,
+        itime,
+    };
     assert_eq!(quota.bsoft, 0);
     assert_eq!(quota.bhard * BLOCK_BYTES, hard_bytes());
     assert!(
@@ -153,37 +128,7 @@ fn isolated_openbsd_ffs_root_prepare() {
         (meta.uid(), meta.mode() & 0o777, meta.len()),
         (0, 0o600, 1001 * 32)
     );
-    let path = cpath(&quota_path);
-    // SAFETY: Q_QUOTAON expects a live NUL-terminated quota-file path, not dqblk.
-    assert_eq!(
-        unsafe {
-            quotactl(
-                cpath(&data).as_ptr(),
-                Q_QUOTAON,
-                0,
-                path.as_ptr().cast_mut().cast(),
-            )
-        },
-        0,
-        "ffs stage=quotaon result=refused"
-    );
-    let mut quota = Dqblk {
-        bhard: hard_bytes() / BLOCK_BYTES,
-        ..Dqblk::default()
-    };
-    // SAFETY: command reads the exact native dqblk; no usage fields are forged.
-    assert_eq!(
-        unsafe {
-            quotactl(
-                cpath(&data).as_ptr(),
-                Q_SETQUOTA,
-                QUOTA_UID as i32,
-                (&mut quota as *mut Dqblk).cast(),
-            )
-        },
-        0,
-        "ffs stage=setquota result=refused"
-    );
+    crate::openbsd::prepare_ffs_fixture_quota(&data, hard_bytes()).unwrap();
     let actual = get_quota(&data);
     assert_eq!(actual.blocks, 0);
     println!(
@@ -206,12 +151,7 @@ fn isolated_openbsd_ffs_root_quota_off() {
             && file.len() == 1001 * 32
     );
     let _ = get_quota(&data);
-    // SAFETY: Q_QUOTAOFF takes no buffer and acts only on the admitted mount.
-    assert_eq!(
-        unsafe { quotactl(cpath(&data).as_ptr(), Q_QUOTAOFF, 0, std::ptr::null_mut()) },
-        0,
-        "ffs stage=quotaoff result=refused"
-    );
+    crate::openbsd::disable_ffs_fixture_quota(&data).unwrap();
     println!("native_ffs_quotaoff result=PASS volume_cleanup=ROOT_OWNED");
 }
 

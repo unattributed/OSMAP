@@ -1,12 +1,13 @@
 //! Read-only account storage presentation. Document payload is not added to
 //! shared quota: Dovecot already counts its stored document messages there.
-use crate::documents::{Index, QuotaStatus, StorageSummary};
+use crate::documents::{Index, MailStorageReport, QuotaStatus, StorageSummary};
 
 #[derive(Debug)]
 pub(crate) struct StorageView {
     account: String,
     quota: Option<QuotaStatus>,
     documents: Option<StorageSummary>,
+    report: Option<MailStorageReport>,
 }
 
 impl StorageView {
@@ -24,7 +25,17 @@ impl StorageView {
             documents: valid_account
                 .then(|| index.and_then(|index| index.storage_summary(account).ok()))
                 .flatten(),
+            report: None,
         }
+    }
+
+    /// Reporting is deliberately separate from the authority used for writes.
+    pub(crate) fn with_report(mut self, report: Option<MailStorageReport>) -> Self {
+        self.report = report.filter(|report| {
+            report.account == self.account
+                && crate::identity::CanonicalUsername::parse(&report.account).is_ok()
+        });
+        self
     }
 }
 
@@ -74,20 +85,64 @@ fn retention(view: Option<&StorageView>) -> String {
 pub(crate) fn render_dashboard(account: &str, view: Option<&StorageView>) -> String {
     let view = owned(account, view);
     format!(concat!(
-        "<div><strong>Shared mailbox and Documents</strong><p>{}</p>",
+        "<div>{}",
         "<strong>Document file contents</strong><p>{}</p>",
-        "<p>Documents share the mailbox quota; their file contents are not an additional total. Shared usage measures allocated filesystem storage, including message and directory overhead.</p>",
+        "<p>Document file contents are reported separately and are not added again to mailbox storage.</p>",
         "<p>{}</p><a href=\"/settings?section=general\">View storage details</a></div>"
-    ), shared_usage(view), document_usage(view), retention(view))
+    ), mailbox_storage(view), document_usage(view), retention(view))
 }
 
 pub(crate) fn render_settings(account: &str, view: Option<&StorageView>) -> String {
     let view = owned(account, view);
     format!(concat!(
-        "<div><h3>Shared mailbox and Documents</h3><p>{}</p><span>Authoritative account quota measured as allocated filesystem storage, including stored document messages and directory overhead.</span></div>",
+        "<div>{}</div>",
         "<div><h3>Document file contents</h3><p>{}</p><span>Indexed file contents only, already included in shared storage.</span><p><a href=\"/documents\">Manage Documents</a></p></div>",
         "<div><h3>Retention</h3><p>{}</p></div>"
-    ), shared_usage(view), document_usage(view), retention(view))
+    ), mailbox_storage(view), document_usage(view), retention(view))
+}
+
+fn byte_size(bytes: u64) -> String {
+    if bytes < 1024 {
+        format!("{bytes} bytes")
+    } else {
+        let (unit, divisor) = if bytes < 1_048_576 {
+            ("KiB", 1024.0)
+        } else if bytes < 1_073_741_824 {
+            ("MiB", 1_048_576.0)
+        } else {
+            ("GiB", 1_073_741_824.0)
+        };
+        format!("{:.1} {unit} ({bytes} bytes)", bytes as f64 / divisor)
+    }
+}
+
+fn mailbox_storage(view: Option<&StorageView>) -> String {
+    if view.is_some_and(|view| view.quota.is_some()) {
+        return format!(
+            "<h3>Shared mailbox and Documents</h3><p>{}</p><p>Enforced account quota measured as allocated filesystem storage, including message and directory overhead.</p>",
+            shared_usage(view)
+        );
+    }
+    let Some(report) = view.and_then(|view| view.report.as_ref()) else {
+        return "<h3>Mailbox storage</h3><p>Unavailable</p><p>Current storage values could not be read from the mail server.</p>".into();
+    };
+    let limit = match report.configured_limit_bytes {
+        None => "Not reported by the mail server".into(),
+        Some(0) => "Unlimited".into(),
+        Some(bytes) => byte_size(bytes),
+    };
+    let exceeded = if report
+        .configured_limit_bytes
+        .is_some_and(|limit| limit > 0 && report.message_bytes > limit)
+    {
+        "<p><strong>Message size exceeds the configured limit.</strong></p>"
+    } else {
+        ""
+    };
+    format!(
+        "<h3>Mailbox messages</h3><p>{}</p><strong>Configured mailbox quota</strong><p>{limit}</p>{exceeded}<p>Message-size total reported by your mail server; disk overhead is excluded. The configured quota is reported here. Enforcement has not been verified.</p>",
+        byte_size(report.message_bytes)
+    )
 }
 
 #[cfg(test)]
@@ -135,6 +190,57 @@ mod tests {
             assert!(!html.contains("<form"));
             assert!(!html.contains("automatically"));
         }
+    }
+
+    #[test]
+    fn mail_reporting_displays_complete_measurement_without_claiming_enforcement() {
+        let view =
+            StorageView::from_reads("alice", None, None).with_report(Some(MailStorageReport {
+                account: "alice".into(),
+                message_bytes: 172_605_611,
+                configured_limit_bytes: Some(102_400_000),
+            }));
+        for html in [
+            render_dashboard("alice", Some(&view)),
+            render_settings("alice", Some(&view)),
+        ] {
+            assert!(html.contains("164.6 MiB (172605611 bytes)"));
+            assert!(html.contains("97.7 MiB (102400000 bytes)"));
+            assert!(html.contains("Message size exceeds the configured limit."));
+            assert!(html.contains("disk overhead is excluded"));
+            assert!(html.contains("Enforcement has not been verified"));
+            assert!(!html.contains("Enforced account quota"));
+            assert!(!html.contains("allocated filesystem storage"));
+        }
+    }
+
+    #[test]
+    fn mail_reporting_distinguishes_missing_unlimited_and_foreign_values() {
+        for (limit, expected) in [
+            (None, "Not reported by the mail server"),
+            (Some(0), "Unlimited"),
+        ] {
+            let view =
+                StorageView::from_reads("alice", None, None).with_report(Some(MailStorageReport {
+                    account: "alice".into(),
+                    message_bytes: 0,
+                    configured_limit_bytes: limit,
+                }));
+            let html = render_settings("alice", Some(&view));
+            assert!(html.contains("<p>0 bytes</p>"));
+            assert!(html.contains(expected));
+            assert!(!html.contains("exceeds the configured limit"));
+        }
+        let foreign =
+            StorageView::from_reads("alice", None, None).with_report(Some(MailStorageReport {
+                account: "bob".into(),
+                message_bytes: 987_654,
+                configured_limit_bytes: Some(1_234_567),
+            }));
+        let html = render_settings("alice", Some(&foreign));
+        assert!(html.contains("<p>Unavailable</p>"));
+        assert!(!html.contains("987654"));
+        assert!(!html.contains("1234567"));
     }
 
     #[test]

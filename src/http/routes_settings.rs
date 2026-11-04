@@ -352,7 +352,8 @@ where
                             &validated_session.record.canonical_username,
                             self.gateway.documents_quota_status(&validated_session),
                             documents.as_ref(),
-                        );
+                        )
+                        .with_report(self.gateway.mail_storage_report(&validated_session));
                         crate::http_ui::render_general_page_with_mark_read(
                             &model,
                             &presentation,

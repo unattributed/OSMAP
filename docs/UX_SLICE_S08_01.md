@@ -1,5 +1,35 @@
 # S08-01 — Documents and authoritative account storage
 
+## Current reporting delivery — operator simplification, 2026-11-05
+
+Mailbox migration is set aside. The immediate delivery reports the signed-in
+account's existing message-size total and configured quota using two existing
+Dovecot reads through the authenticated Rust helper. `MailStorageReport` is
+separate from enforcement-qualified `QuotaStatus` and cannot enable writes.
+Missing quota, explicitly unlimited quota and failed reads stay distinct.
+
+On obsd1, the metadata-only userdb query addition exposes the existing
+PostfixAdmin `quota` column as `osmap_configured_quota`; the original home, mail,
+UID and GID read back unchanged. Authentication queries and database privileges
+are unchanged. Bounded Dovecot reload and service checks passed. A fresh native
+read observed 172605611 virtual message bytes and 102400000 configured quota
+bytes. The UI labels message bytes separately from filesystem overhead and
+states that enforcement has not been verified. The reporting code includes
+native parser, signed helper round-trip, account-isolation and both-page tests.
+Matching installed qualification is pending; this is not full slice acceptance.
+
+Current reporting-source validation: five backend/authenticated-helper tests,
+the dashboard/General route regression, storage rendering and welcome tests pass.
+The full local library suite passes 2232 tests with 87 explicit native ignores;
+strict Clippy and the unchanged CWE guard pass. Matching OpenBSD focused tests
+pass five cases; the installed smoke is explicitly ignored until dispatched.
+Two installation-check failures are retained separately: an OpenBSD shell role
+selector failed, then an immediate HTTPS check failed after both candidate
+processes loaded. Both attempts restored the previous binary and running roles;
+configuration and crypto-agent readbacks match. The second probe's initial
+HTTP code was not retained and remains unknown. Independent reassessment reuses
+the established bounded readiness polling before another installation attempt.
+
 ## Outcome and scope
 
 Complete the existing account-private Documents journey: upload, list, folders,
@@ -232,3 +262,29 @@ foreign-account404, Bin/restore and confirmed deletion. Native saves total one;
 private session/control cleanup and final native absence pass. The documented
 post-auth, daemon/TLS/browser scope limitations remain. Owner data migration and
 matching installed account journey are still open.
+
+### Operator simplification — 2026-11-04 UTC
+
+The owner asks whether this is over engineered and directs the simplest method
+for reading existing Postfix/Dovecot reporting data. Mailbox migration is set
+aside for this reporting result. The first migration inventory failed before
+probe removal or backup: jq producers emitted null fields. No owner mail was
+copied or moved, and the original data/mapping remain authoritative.
+
+Deliver a distinct read-only MailStorageReport through the existing authenticated
+Rust helper: complete account-scoped Dovecot virtual-message bytes plus the
+PostfixAdmin configured quota exposed as one readonly native userdb scalar.
+Missing limits, explicit zero/unlimited and failed/partial measurements remain
+distinct. Reported message bytes exclude disk overhead; configured quota is not
+an enforcement claim. Neither this report nor its presence enables Documents
+writes. Reuse existing Dashboard/General storage views and account checks.
+No new daemon, SQL broker, storage volume, quota-plugin activation or mailbox
+move is required for reporting. Documents' full shared-quota write outcome and
+T09 remain OPEN; do not relabel this narrower useful result slice completion.
+
+Normal preservation gates retained two source delivery refusals: the new binary
+needed its Cargo target admission record refreshed, then the CWE guard required
+native FFI to remain in the existing reviewed openbsd.rs boundary. The manifest
+record was refreshed without dependencies/features/lock changes; narrow typed
+native wrappers now centralize FFI without changing the guard allowlist. Earlier
+native receipts remain tied to their exact earlier binaries.

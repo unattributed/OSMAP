@@ -7,7 +7,7 @@ use std::time::Duration;
 use serde::Deserialize;
 
 use crate::auth::CommandExecutor;
-use crate::documents::{Backend, Error, Location, QuotaStatus, MAX_FILE_BYTES};
+use crate::documents::{Backend, Error, Location, MailStorageReport, QuotaStatus, MAX_FILE_BYTES};
 
 pub const ACTIVE_MAILBOX: &str = "OSMAP.Documents";
 pub const BIN_MAILBOX: &str = "OSMAP.DocumentsBin";
@@ -336,6 +336,43 @@ impl<E: CommandExecutor> DoveadmDocumentsBackend<E> {
 }
 
 impl<E: CommandExecutor> Backend for DoveadmDocumentsBackend<E> {
+    fn storage_report(&self, account: &str) -> Result<MailStorageReport, Error> {
+        let canonical =
+            crate::identity::CanonicalUsername::parse(account).map_err(|_| Error::Invalid)?;
+        if canonical.as_str() != account {
+            return Err(Error::Invalid);
+        }
+        let mut args = self.base();
+        args.extend([
+            "-o".into(),
+            "maildir_stat_dirs=yes".into(),
+            "-f".into(),
+            "json".into(),
+            "mailbox".into(),
+            "status".into(),
+            "-u".into(),
+            account.into(),
+            "vsize".into(),
+            "*".into(),
+        ]);
+        let usage = self.run(&self.doveadm, &args, b"", INDEX_OUTPUT_MAX)?;
+        if usage.status_code != 0 {
+            return Err(Error::Unavailable);
+        }
+        let message_bytes = parse_message_bytes(&usage.stdout)?;
+        let mut args = self.base();
+        args.extend(["-f".into(), "json".into(), "user".into(), account.into()]);
+        let user = self.run(&self.doveadm, &args, b"", QUOTA_OUTPUT_MAX)?;
+        if user.status_code != 0 {
+            return Err(Error::Unavailable);
+        }
+        Ok(MailStorageReport {
+            account: account.into(),
+            message_bytes,
+            configured_limit_bytes: parse_configured_limit(&user.stdout)?,
+        })
+    }
+
     fn quota_status(&self, account: &str) -> Result<Option<QuotaStatus>, Error> {
         if crate::identity::CanonicalUsername::parse(account).is_err() {
             return Err(Error::Invalid);
@@ -499,6 +536,102 @@ impl<E: CommandExecutor> Backend for DoveadmDocumentsBackend<E> {
         }
         Ok(found)
     }
+}
+
+fn decimal_bytes(value: &str) -> Result<u64, Error> {
+    if value.is_empty() || value.len() > 20 || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err(Error::Unavailable);
+    }
+    value.parse().map_err(|_| Error::Unavailable)
+}
+
+fn parse_message_bytes(output: &str) -> Result<u64, Error> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Counter {
+        Number(u64),
+        Decimal(String),
+    }
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Row {
+        mailbox: String,
+        vsize: Counter,
+    }
+    if output.len() > INDEX_OUTPUT_MAX {
+        return Err(Error::Unavailable);
+    }
+    let rows: Vec<Row> = serde_json::from_str(output).map_err(|_| Error::Unavailable)?;
+    if rows.is_empty() || rows.len() > 1024 {
+        return Err(Error::Unavailable);
+    }
+    let mut names = std::collections::BTreeSet::new();
+    let mut total = 0u64;
+    for row in rows {
+        if row.mailbox.is_empty()
+            || row.mailbox.len() > 1024
+            || row.mailbox.chars().any(char::is_control)
+        {
+            return Err(Error::Unavailable);
+        }
+        let name = if row.mailbox.eq_ignore_ascii_case("INBOX") {
+            "INBOX"
+        } else {
+            &row.mailbox
+        };
+        if !names.insert(name.to_owned()) {
+            return Err(Error::Unavailable);
+        }
+        let bytes = match row.vsize {
+            Counter::Number(bytes) => bytes,
+            Counter::Decimal(value) => decimal_bytes(&value)?,
+        };
+        total = total.checked_add(bytes).ok_or(Error::Unavailable)?;
+    }
+    Ok(total)
+}
+
+fn parse_configured_limit(output: &str) -> Result<Option<u64>, Error> {
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Field {
+        field: String,
+        value: String,
+    }
+    if output.len() > QUOTA_OUTPUT_MAX {
+        return Err(Error::Unavailable);
+    }
+    let rows: Vec<Field> = serde_json::from_str(output).map_err(|_| Error::Unavailable)?;
+    if rows.is_empty() || rows.len() > 32 {
+        return Err(Error::Unavailable);
+    }
+    let mut fields = std::collections::BTreeMap::new();
+    for row in rows {
+        if row.field.is_empty()
+            || row.field.len() > 128
+            || row.field.chars().any(char::is_control)
+            || row.value.len() > 1024
+            || row.value.chars().any(char::is_control)
+            || fields.insert(row.field, row.value).is_some()
+        {
+            return Err(Error::Unavailable);
+        }
+    }
+    for key in ["uid", "gid", "home", "mail"] {
+        if fields.get(key).is_none_or(String::is_empty) {
+            return Err(Error::Unavailable);
+        }
+    }
+    for key in ["uid", "gid"] {
+        let value = decimal_bytes(&fields[key])?;
+        if value == 0 || value > i32::MAX as u64 {
+            return Err(Error::Unavailable);
+        }
+    }
+    fields
+        .get("osmap_configured_quota")
+        .map(|value| decimal_bytes(value))
+        .transpose()
 }
 
 #[derive(Deserialize)]
@@ -819,6 +952,187 @@ mod tests {
     use crate::auth::{CommandExecution, CommandExecutionError, CommandExecutor};
     use std::collections::VecDeque;
     use std::sync::{Arc, Mutex};
+
+    fn report_user(limit: Option<&str>) -> String {
+        let mut rows = serde_json::json!([
+            {"field":"uid","value":"2000"},
+            {"field":"gid","value":"2000"},
+            {"field":"home","value":"/mail/alice"},
+            {"field":"mail","value":"maildir:/mail/alice"}
+        ]);
+        if let Some(value) = limit {
+            rows.as_array_mut()
+                .unwrap()
+                .push(serde_json::json!({"field":"osmap_configured_quota","value":value}));
+        }
+        rows.to_string()
+    }
+
+    #[test]
+    fn mail_storage_report_parses_all_message_bytes_without_quota_attestation() {
+        assert_eq!(
+            parse_message_bytes(r#"[{"mailbox":"INBOX","vsize":"0"}]"#),
+            Ok(0)
+        );
+        assert_eq!(
+            parse_message_bytes(
+                r#"[{"mailbox":"INBOX","vsize":"00012"},{"mailbox":"Sent","vsize":7},{"mailbox":"OSMAP.Documents","vsize":"5"},{"mailbox":"OSMAP.DocumentsBin","vsize":"3"}]"#
+            ),
+            Ok(27)
+        );
+        assert_eq!(parse_configured_limit(&report_user(None)), Ok(None));
+        assert_eq!(parse_configured_limit(&report_user(Some("0"))), Ok(Some(0)));
+        assert_eq!(
+            parse_configured_limit(&report_user(Some("512000000"))),
+            Ok(Some(512000000))
+        );
+        let mut fields: serde_json::Value = serde_json::from_str(&report_user(None)).unwrap();
+        fields
+            .as_array_mut()
+            .unwrap()
+            .push(serde_json::json!({"field":"quota_rule","value":"*:storage=102400000"}));
+        assert_eq!(parse_configured_limit(&fields.to_string()), Ok(None));
+    }
+
+    #[test]
+    fn mail_storage_report_refuses_incomplete_duplicate_malformed_and_overflow_facts() {
+        for output in [
+            "",
+            "[]",
+            "[",
+            r#"[{"mailbox":"INBOX"}]"#,
+            r#"[{"mailbox":"INBOX","vsize":0,"vsize":1}]"#,
+            r#"[{"mailbox":"INBOX","vsize":0,"extra":1}]"#,
+            r#"[{"mailbox":"INBOX","vsize":"-1"}]"#,
+            r#"[{"mailbox":"INBOX","vsize":"+1"}]"#,
+            r#"[{"mailbox":"INBOX","vsize":"1.0"}]"#,
+            r#"[{"mailbox":"INBOX","vsize":"1e3"}]"#,
+            r#"[{"mailbox":"INBOX","vsize":"18446744073709551616"}]"#,
+            r#"[{"mailbox":"INBOX","vsize":"18446744073709551615"},{"mailbox":"Sent","vsize":1}]"#,
+            r#"[{"mailbox":"INBOX","vsize":0},{"mailbox":"inbox","vsize":1}]"#,
+            r#"[{"mailbox":"Sent","vsize":0},{"mailbox":"Sent","vsize":1}]"#,
+            r#"[{"mailbox":"bad\nname","vsize":0}]"#,
+        ] {
+            assert_eq!(
+                parse_message_bytes(output),
+                Err(Error::Unavailable),
+                "{output}"
+            );
+        }
+        for value in ["", "-1", "+1", "1 KiB", "1e3", "18446744073709551616"] {
+            assert_eq!(
+                parse_configured_limit(&report_user(Some(value))),
+                Err(Error::Unavailable)
+            );
+        }
+        for duplicate in ["uid", "osmap_configured_quota"] {
+            let mut fields: serde_json::Value =
+                serde_json::from_str(&report_user(Some("1"))).unwrap();
+            fields
+                .as_array_mut()
+                .unwrap()
+                .push(serde_json::json!({"field":duplicate,"value":"1"}));
+            assert_eq!(
+                parse_configured_limit(&fields.to_string()),
+                Err(Error::Unavailable)
+            );
+        }
+        assert_eq!(parse_configured_limit("[]"), Err(Error::Unavailable));
+        assert_eq!(
+            parse_message_bytes(&" ".repeat(INDEX_OUTPUT_MAX + 1)),
+            Err(Error::Unavailable)
+        );
+        assert_eq!(
+            parse_configured_limit(&" ".repeat(QUOTA_OUTPUT_MAX + 1)),
+            Err(Error::Unavailable)
+        );
+    }
+
+    type StorageReportSteps = Arc<Mutex<VecDeque<(String, usize, i32, String)>>>;
+    #[derive(Clone)]
+    struct StorageReportScript(StorageReportSteps);
+    impl CommandExecutor for StorageReportScript {
+        fn run_with_stdin_bytes(
+            &self,
+            _: &str,
+            _: &[String],
+            _: &[u8],
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            panic!("storage reporting requires bounded native execution")
+        }
+        fn run_with_stdin_bytes_timeout_and_output_limit(
+            &self,
+            program: &str,
+            args: &[String],
+            input: &[u8],
+            timeout: Duration,
+            cap: usize,
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            let (expected, expected_cap, status_code, stdout) =
+                self.0.lock().unwrap().pop_front().unwrap();
+            assert_eq!(program, "/fixed/doveadm");
+            assert_eq!(
+                args,
+                &expected.split(' ').map(str::to_owned).collect::<Vec<_>>()
+            );
+            assert!(input.is_empty() && timeout == COMMAND_TIMEOUT && cap == expected_cap);
+            Ok(CommandExecution {
+                status_code,
+                stdout,
+                stderr: String::new(),
+            })
+        }
+    }
+
+    #[test]
+    fn mail_storage_report_native_queries_are_fixed_account_bound_and_read_only() {
+        let usage = "-o stats_writer_socket_path= -o auth_socket_path=/fixed/userdb -o maildir_stat_dirs=yes -f json mailbox status -u alice@example.test vsize *";
+        let user = "-o stats_writer_socket_path= -o auth_socket_path=/fixed/userdb -f json user alice@example.test";
+        for limit in [None, Some("0"), Some("512000000")] {
+            let script = StorageReportScript(Arc::new(Mutex::new(VecDeque::from([
+                (
+                    usage.into(),
+                    INDEX_OUTPUT_MAX,
+                    0,
+                    r#"[{"mailbox":"INBOX","vsize":"0"},{"mailbox":"Sent","vsize":"123"}]"#.into(),
+                ),
+                (user.into(), QUOTA_OUTPUT_MAX, 0, report_user(limit)),
+            ]))));
+            let backend = DoveadmDocumentsBackend::new(
+                script.clone(),
+                "/fixed/doveadm",
+                "/never-used/doveconf",
+            )
+            .with_userdb_socket_path(Some("/fixed/userdb".into()));
+            assert_eq!(
+                backend.storage_report("alice@example.test"),
+                Ok(MailStorageReport {
+                    account: "alice@example.test".into(),
+                    message_bytes: 123,
+                    configured_limit_bytes: limit.map(|value| value.parse().unwrap())
+                })
+            );
+            assert!(script.0.lock().unwrap().is_empty());
+            assert_eq!(
+                backend.storage_report("not an account"),
+                Err(Error::Invalid)
+            );
+        }
+        let script = StorageReportScript(Arc::new(Mutex::new(VecDeque::from([(
+            usage.into(),
+            INDEX_OUTPUT_MAX,
+            75,
+            r#"[{"mailbox":"INBOX","vsize":"0"}]"#.into(),
+        )]))));
+        let backend =
+            DoveadmDocumentsBackend::new(script.clone(), "/fixed/doveadm", "/never-used/doveconf")
+                .with_userdb_socket_path(Some("/fixed/userdb".into()));
+        assert_eq!(
+            backend.storage_report("alice@example.test"),
+            Err(Error::Unavailable)
+        );
+        assert!(script.0.lock().unwrap().is_empty());
+    }
 
     type MailboxScriptSteps = Arc<Mutex<VecDeque<(&'static str, i32, &'static str)>>>;
 

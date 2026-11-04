@@ -150,8 +150,23 @@ struct Fixture {
     ready: bool,
     body: Mutex<Vec<u8>>,
     mailbox: Mutex<String>,
+    reported_limit: Option<u64>,
+    report_account: Option<String>,
 }
 impl Backend for Fixture {
+    fn storage_report(&self, account: &str) -> Result<MailStorageReport, Error> {
+        if account != ACCOUNT {
+            return Err(Error::NotFound);
+        }
+        Ok(MailStorageReport {
+            account: self
+                .report_account
+                .clone()
+                .unwrap_or_else(|| ACCOUNT.into()),
+            message_bytes: 123,
+            configured_limit_bytes: self.reported_limit,
+        })
+    }
     fn quota_status(&self, account: &str) -> Result<Option<QuotaStatus>, Error> {
         Ok(self.quota_ready(account)?.then_some(QuotaStatus {
             used_bytes: self.body.lock().unwrap().len() as u64,
@@ -232,6 +247,145 @@ impl Backend for Fixture {
         self.mailbox.lock().unwrap().clear();
         Ok(())
     }
+}
+
+#[test]
+fn storage_report_grants_bind_owner_operation_nonce_and_do_not_enable_writes() {
+    let request = signed(payload(Operation::StorageReport));
+    let parsed = parse(&wire(&request)).unwrap();
+    let replay = Mutex::new(BTreeMap::new());
+    verify(&parsed, KEY, 100, &replay).unwrap();
+    assert!(verify(&parsed, KEY, 100, &replay).is_err());
+    for operation in [Operation::Quota, Operation::Inspect { id: ID.into() }] {
+        let mut changed = request.clone();
+        changed.payload.operation = operation;
+        assert!(verify(&changed, KEY, 100, &Mutex::new(BTreeMap::new())).is_err());
+    }
+    let mut foreign = request.clone();
+    foreign.payload.account = "bob@example.test".into();
+    assert!(verify(&foreign, KEY, 100, &Mutex::new(BTreeMap::new())).is_err());
+    for limit in [None, Some(0), Some(512000000)] {
+        let backend = Fixture {
+            reported_limit: limit,
+            ..Fixture::default()
+        };
+        assert_eq!(
+            dispatch(&backend, &request.payload),
+            Ok(Outcome::StorageReport {
+                report: MailStorageReport {
+                    account: ACCOUNT.into(),
+                    message_bytes: 123,
+                    configured_limit_bytes: limit
+                }
+            })
+        );
+        assert_eq!(backend.quota_status(ACCOUNT), Ok(None));
+        assert_eq!(backend.writes.load(Ordering::SeqCst), 0);
+        assert_eq!(backend.reads.load(Ordering::SeqCst), 0);
+        let store = crate::documents::Store::new("/never-read-for-report".into(), backend);
+        assert_eq!(
+            store
+                .storage_report(ACCOUNT)
+                .unwrap()
+                .configured_limit_bytes,
+            limit
+        );
+        assert_eq!(store.quota_ready(ACCOUNT), Ok(false));
+    }
+    let backend = Fixture {
+        report_account: Some("bob@example.test".into()),
+        ..Fixture::default()
+    };
+    assert_eq!(
+        dispatch(&backend, &request.payload),
+        Err(Error::Unavailable)
+    );
+    let store = crate::documents::Store::new("/never-read-for-report".into(), backend);
+    assert_eq!(store.storage_report(ACCOUNT), Err(Error::Unavailable));
+    assert_eq!(store.storage_report("invalid account"), Err(Error::Invalid));
+    let mut extra = serde_json::to_value(MailStorageReport {
+        account: ACCOUNT.into(),
+        message_bytes: 0,
+        configured_limit_bytes: None,
+    })
+    .unwrap();
+    extra["enforced"] = true.into();
+    assert!(serde_json::from_value::<MailStorageReport>(extra).is_err());
+}
+
+#[test]
+fn storage_report_socket_round_trip_refuses_foreign_response_and_keeps_quota_closed() {
+    let root = std::env::temp_dir().join(format!(
+        "osmap-doc-report-{}",
+        crate::draft::generate_draft_id().unwrap()
+    ));
+    fs::create_dir(&root).unwrap();
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    let owner = fs::symlink_metadata(&root).unwrap().uid();
+    let socket = root.join("helper.sock");
+    let key = root.join("grant.key");
+    fs::write(&key, KEY).unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    let listener = UnixListener::bind(&socket).unwrap();
+    let fixture = Arc::new(Fixture::default());
+    let backend = Arc::clone(&fixture);
+    let server = thread::spawn(move || {
+        let replay = Mutex::new(BTreeMap::new());
+        for round in 0..3 {
+            let (mut stream, _) = listener.accept().unwrap();
+            let trusted = MailboxHelperTrustedCallerPolicy {
+                trusted_peer_uid: owner,
+                grant_key: KEY.to_vec(),
+            };
+            authorize_helper_peer_uid(helper_stream_peer_uid(&stream).unwrap(), &trusted).unwrap();
+            configure_stream_timeouts(&stream, MailboxHelperPolicy::default());
+            let bytes = read_request_bytes(&mut stream, MailboxHelperPolicy::default()).unwrap();
+            if round < 2 {
+                assert!(handle(
+                    &bytes,
+                    Some(backend.as_ref()),
+                    &mut stream,
+                    KEY,
+                    &replay
+                ));
+            } else {
+                let request = parse(&bytes).unwrap();
+                verify(&request, KEY, current_unix_time_secs().unwrap(), &replay).unwrap();
+                let response = Response {
+                    request_hash: hash(&grant_bytes(&request.payload).unwrap()),
+                    nonce: request.payload.nonce,
+                    outcome: Outcome::StorageReport {
+                        report: MailStorageReport {
+                            account: "bob@example.test".into(),
+                            message_bytes: 123,
+                            configured_limit_bytes: Some(0),
+                        },
+                    },
+                };
+                stream
+                    .write_all(&serde_json::to_vec(&response).unwrap())
+                    .unwrap();
+                stream.shutdown(Shutdown::Write).unwrap();
+            }
+        }
+    });
+    let client = MailboxHelperDocumentsBackend::new(&socket, &key, MailboxHelperPolicy::default())
+        .with_helper_uid(owner);
+    assert_eq!(
+        client.storage_report(ACCOUNT).unwrap(),
+        MailStorageReport {
+            account: ACCOUNT.into(),
+            message_bytes: 123,
+            configured_limit_bytes: None
+        }
+    );
+    assert_eq!(client.quota_ready(ACCOUNT), Ok(false));
+    assert_eq!(client.storage_report(ACCOUNT), Err(Error::Unavailable));
+    server.join().unwrap();
+    assert_eq!(fixture.writes.load(Ordering::SeqCst), 0);
+    assert_eq!(fixture.reads.load(Ordering::SeqCst), 0);
+    fs::remove_dir_all(&root).unwrap();
+    assert!(!root.exists());
 }
 fn append(body: &[u8]) -> Operation {
     Operation::Append {

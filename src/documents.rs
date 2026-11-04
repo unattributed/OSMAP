@@ -98,6 +98,17 @@ pub struct QuotaStatus {
     pub limit_bytes: u64,
 }
 
+/// Read-only native message-byte accounting and operator-configured allowance.
+/// This does not attest physical allocation or enforced write admission.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MailStorageReport {
+    pub account: String,
+    pub message_bytes: u64,
+    /// None means unreported; Some(0) means explicitly unlimited.
+    pub configured_limit_bytes: Option<u64>,
+}
+
 /// Validated Documents payload bytes, not physical storage or quota authority.
 /// Bin payload is already included in `used_bytes`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -221,6 +232,9 @@ impl Index {
 /// enforcement on the native save path, not a local free-space estimate.
 pub trait Backend {
     fn quota_status(&self, account: &str) -> Result<Option<QuotaStatus>, Error>;
+    fn storage_report(&self, _account: &str) -> Result<MailStorageReport, Error> {
+        Err(Error::Unavailable)
+    }
     fn quota_ready(&self, account: &str) -> Result<bool, Error> {
         Ok(self.quota_status(account)?.is_some())
     }
@@ -372,6 +386,15 @@ impl<B: Backend> Store<B> {
     pub fn quota_status(&self, account: &str) -> Result<Option<QuotaStatus>, Error> {
         valid_account(account)?;
         self.backend.quota_status(account)
+    }
+
+    pub fn storage_report(&self, account: &str) -> Result<MailStorageReport, Error> {
+        valid_account(account)?;
+        let report = self.backend.storage_report(account)?;
+        if report.account != account {
+            return Err(Error::Unavailable);
+        }
+        Ok(report)
     }
 
     pub fn create_folder(

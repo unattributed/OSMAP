@@ -408,7 +408,11 @@ mod activity_tests {
                 html.as_str().contains("12 bytes used of 20 bytes"),
                 measured
             );
-            assert!(html.as_str().contains("Shared mailbox and Documents"));
+            assert!(html.as_str().contains(if measured {
+                "Shared mailbox and Documents"
+            } else {
+                "Mailbox storage"
+            }));
             assert!(html.as_str().contains("Documents retention unavailable"));
             assert!(html
                 .as_str()

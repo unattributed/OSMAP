@@ -1,6 +1,6 @@
 //! Dedicated Documents transport. Ordinary mailbox response budgets are unchanged.
 use super::*;
-use crate::documents::{Backend, Error, Location, QuotaStatus, MAX_FILE_BYTES};
+use crate::documents::{Backend, Error, Location, MailStorageReport, QuotaStatus, MAX_FILE_BYTES};
 #[cfg(test)]
 use crate::documents_doveadm::reserved_documents_mailbox as reserved_mailbox;
 use hmac::{Hmac, Mac};
@@ -16,6 +16,7 @@ pub const MAX_DOCUMENTS_WIRE_BYTES: usize = BASE64_BYTES + 8192;
 #[serde(tag = "action", rename_all = "snake_case", deny_unknown_fields)]
 enum Operation {
     Quota,
+    StorageReport,
     Inspect {
         id: String,
     },
@@ -66,6 +67,9 @@ enum Outcome {
     Done,
     Quota {
         quota: Option<QuotaStatus>,
+    },
+    StorageReport {
+        report: MailStorageReport,
     },
     Locations {
         locations: Vec<Location>,
@@ -174,7 +178,7 @@ fn validate(payload: &Payload) -> Result<(), Error> {
         return Err(Error::Invalid);
     }
     match &payload.operation {
-        Operation::Quota => Ok(()),
+        Operation::Quota | Operation::StorageReport => Ok(()),
         Operation::Inspect { id } => {
             if valid_hex(id, 32) {
                 Ok(())
@@ -335,6 +339,13 @@ fn error(kind: Failure) -> Error {
 fn dispatch(backend: &dyn Backend, payload: &Payload) -> Result<Outcome, Error> {
     let account = &payload.account;
     match &payload.operation {
+        Operation::StorageReport => {
+            let report = backend.storage_report(account)?;
+            if report.account != *account {
+                return Err(Error::Unavailable);
+            }
+            Ok(Outcome::StorageReport { report })
+        }
         Operation::Quota => backend.quota_status(account).and_then(|quota| {
             if quota.as_ref().is_some_and(|quota| quota.limit_bytes == 0) {
                 return Err(Error::Unavailable);
@@ -607,6 +618,12 @@ impl MailboxHelperDocumentsBackend {
     }
 }
 impl Backend for MailboxHelperDocumentsBackend {
+    fn storage_report(&self, account: &str) -> Result<MailStorageReport, Error> {
+        match self.exchange(account, Operation::StorageReport)? {
+            Outcome::StorageReport { report } if report.account == account => Ok(report),
+            _ => Err(Error::Unavailable),
+        }
+    }
     fn quota_ready(&self, account: &str) -> Result<bool, Error> {
         self.quota_status(account).map(|quota| quota.is_some())
     }

@@ -1,4 +1,4 @@
-2026-11-04 — **S08-01 IN_PROGRESS under renewed full autonomous authority.** Qualify native FFS hard quota and necessary obsd1-only integration; earlier count race remains FAIL, Documents writes remain refused until actual enforcement is qualified.
+2026-11-05 — **S08-01 IN_PROGRESS under full autonomous authority.** Follow the operator's simplest reporting route: reuse Dovecot message totals and local PostfixAdmin quota for the authenticated account. Set aside mailbox migration. Earlier count race remains FAIL; advisory reporting never grants Documents write authority.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
 ```json
@@ -78,7 +78,8 @@
     "maint/openbsd/rc.d/osmap_duncan_storage",
     "maint/openbsd/DUNCAN_STORAGE.md",
     "src/documents_native_http_tests.rs",
-    "maint/security/v15-dependency-admission.json"
+    "maint/security/v15-dependency-admission.json",
+    "src/http_gateway_storage_native_tests.rs"
   ],
   "outcomes": [
     {
@@ -113,13 +114,13 @@
       ],
       "frontend_backend_outcome": "The signed-in user uploads, finds, downloads, bins and restores private Documents while mail and Documents share one finite native quota; storage views report account-specific evidence.",
       "essential_qa": "Reuse Rust lifecycle/security tests; exact native transfer; native concurrent IMAP/LMTP/Documents capacity enforcement; interruption/retention cleanup; installed account-specific rendering and owner UAT.",
-      "next_action": "Qualify isolated native FFS hard quota, then composed Documents and all ordinary mail writers; review Duncan-only rollout and installed QA before UAT.",
+      "next_action": "Deliver read-only account-specific Dovecot message bytes and PostfixAdmin configured quota through existing Rust helper/UI. Mailbox migration is set aside under latest operator simplification; Documents enforcement remains OPEN.",
       "dependencies": [
         {
           "owner": "/root",
-          "condition": "Count race retained; filesystem candidate requires actual isolated all-writer proof and per-account ownership. Latest user full authority authorizes required obsd1-only changes.",
+          "condition": "Latest user direction prioritizes simple existing mail-stack reporting. A configured quota is not enforcement authority; no mailbox move or quota-plugin activation is needed for reporting.",
           "status": "PENDING",
-          "next_action": "Qualify isolated native FFS hard quota, then composed Documents and all ordinary mail writers; review Duncan-only rollout and installed QA before UAT."
+          "next_action": "Deliver read-only account-specific Dovecot message bytes and PostfixAdmin configured quota through existing Rust helper/UI. Mailbox migration is set aside under latest operator simplification; Documents enforcement remains OPEN."
         }
       ],
       "stages": {
@@ -764,7 +765,7 @@
     "slice": "S08-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_01.md",
-      "sha256": "696c7b2321ea4febf860cbbc796a509aa6f2b2d08a1f7c6f74d9ab55f054ab3e"
+      "sha256": "f87e1a5ae75db5f33c483f651f1d94a3e27df20a0b795aa7569a94b7f5c73b00"
     },
     "design": {
       "journey": "Upload, list, folders, search, sort, views, isolated download, Bin, restore and confirmed retention cleanup with shared account capacity.",

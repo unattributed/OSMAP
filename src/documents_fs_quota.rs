@@ -79,8 +79,8 @@ fn encode_status(status: QuotaStatus) -> Result<Vec<u8>, Error> {
 pub fn worker(arguments: &[OsString]) -> Result<Vec<u8>, Error> {
     let arguments = worker_arguments(arguments)?;
     #[cfg(unix)]
-    if unsafe { libc::getuid() } != arguments.account_uid
-        || unsafe { libc::geteuid() } != arguments.account_uid
+    if crate::openbsd::real_uid() != arguments.account_uid
+        || crate::openbsd::effective_uid() != arguments.account_uid
     {
         return Err(Error::Unavailable);
     }
@@ -214,23 +214,9 @@ fn mount_matches(
 #[cfg(target_os = "openbsd")]
 mod native {
     use super::*;
-    use std::ffi::{CString, OsString};
     use std::fs::{self, File, OpenOptions};
-    use std::os::fd::AsRawFd;
-    use std::os::unix::ffi::{OsStrExt, OsStringExt};
     use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
     use std::path::PathBuf;
-
-    // QCMD(Q_GETQUOTA=0x0300, USRQUOTA=0), from <ufs/ufs/quota.h>.
-    const GET_USER_QUOTA: libc::c_int = 0x0300 << 8;
-    unsafe extern "C" {
-        fn quotactl(
-            path: *const libc::c_char,
-            command: libc::c_int,
-            id: libc::c_int,
-            address: *mut libc::c_void,
-        ) -> libc::c_int;
-    }
 
     struct Directory {
         path: PathBuf,
@@ -282,32 +268,13 @@ mod native {
         }
 
         fn mount(&self) -> Result<PathBuf, Error> {
-            let mut status = std::mem::MaybeUninit::<libc::statfs>::zeroed();
-            // The descriptor pins this validated directory during the read.
-            if unsafe { libc::fstatfs(self.file.as_raw_fd(), status.as_mut_ptr()) } != 0 {
-                return Err(Error::Unavailable);
-            }
-            let status = unsafe { status.assume_init() };
-            if field(&status.f_fstypename)? != b"ffs" {
-                return Err(Error::Unavailable);
-            }
-            let mount = PathBuf::from(OsString::from_vec(field(&status.f_mntonname)?));
+            let (mount, _) =
+                crate::openbsd::ffs_mount_info(&self.file).map_err(|_| Error::Unavailable)?;
             if !mount.is_absolute() || !self.path.starts_with(&mount) {
                 return Err(Error::Unavailable);
             }
             Ok(mount)
         }
-    }
-
-    fn field(value: &[libc::c_char]) -> Result<Vec<u8>, Error> {
-        let end = value
-            .iter()
-            .position(|byte| *byte == 0)
-            .ok_or(Error::Unavailable)?;
-        if end == 0 {
-            return Err(Error::Unavailable);
-        }
-        Ok(value[..end].iter().map(|byte| *byte as u8).collect())
     }
 
     pub(super) fn probe(
@@ -318,7 +285,7 @@ mod native {
         mail_index_dir: &Path,
         mail_control_dir: &Path,
     ) -> Result<QuotaStatus, Error> {
-        let uid = quota_uid(account_uid)?;
+        quota_uid(account_uid)?;
         let data = Directory::open(data_home)?;
         let index = Directory::open(mail_index_dir)?;
         let control = Directory::open(mail_control_dir)?;
@@ -331,21 +298,10 @@ mod native {
         if mount.facts.device != data.facts.device || mount.mount()? != mount_path {
             return Err(Error::Unavailable);
         }
-        let path =
-            CString::new(mount_path.as_os_str().as_bytes()).map_err(|_| Error::Unavailable)?;
-        let mut quota = DiskQuota::default();
-        // Read-only Q_GETQUOTA. No QUOTAON, SETQUOTA, SETUSE or SYNC operation.
-        if unsafe {
-            quotactl(
-                path.as_ptr(),
-                GET_USER_QUOTA,
-                uid,
-                (&mut quota as *mut DiskQuota).cast(),
-            )
-        } != 0
-        {
-            return Err(Error::Unavailable);
-        }
+        let quota = DiskQuota {
+            fields: crate::openbsd::read_user_quota(&mount_path, account_uid)
+                .map_err(|_| Error::Unavailable)?,
+        };
         let result = quota_status(&quota, expected_bytes)?;
         for directory in [&data, &index, &control, &mount] {
             directory.revalidate()?;

@@ -1,5 +1,9 @@
 use super::*;
 
+#[cfg(all(test, target_os = "openbsd"))]
+#[path = "http_gateway_storage_native_tests.rs"]
+mod storage_native_tests;
+
 #[path = "http_gateway_account.rs"]
 mod http_gateway_account;
 use http_gateway_account::AccountRuntimeCapability;
@@ -467,6 +471,15 @@ impl BrowserGateway for RuntimeBrowserGateway {
             revision,
             crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
         )
+    }
+    fn mail_storage_report(
+        &self,
+        session: &ValidatedSession,
+    ) -> Option<crate::documents::MailStorageReport> {
+        self.document_store()
+            .ok()?
+            .storage_report(&session.record.canonical_username)
+            .ok()
     }
     fn documents_quota_status(
         &self,

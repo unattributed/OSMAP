@@ -119,6 +119,12 @@ pub trait BrowserGateway {
             audit_events: Vec::new(),
         }
     }
+    fn mail_storage_report(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Option<crate::documents::MailStorageReport> {
+        None
+    }
     fn documents_quota_status(
         &self,
         _session: &ValidatedSession,

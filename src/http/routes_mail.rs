@@ -617,7 +617,8 @@ where
                     &canonical_username,
                     self.gateway.documents_quota_status(&validated_session),
                     documents.as_ref(),
-                );
+                )
+                .with_report(self.gateway.mail_storage_report(&validated_session));
                 HandledHttpResponse {
                     response: html_response(
                         200,

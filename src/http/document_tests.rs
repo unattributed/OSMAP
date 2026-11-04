@@ -1,6 +1,39 @@
 use super::*;
 
 #[test]
+fn advisory_mail_storage_reaches_both_pages_without_write_authority_or_foreign_values() {
+    let app = BrowserApp::new(HttpPolicy::default(), StubGateway {
+        browser_fixture_accounts: true,
+        mail_storage_report: Some(crate::documents::MailStorageReport {
+            account: "alice@example.com".into(),
+            message_bytes: 172_605_611,
+            configured_limit_bytes: Some(102_400_000),
+        }),
+        ..StubGateway::default()
+    });
+    assert!(!app.gateway.documents_quota_ready(&StubGateway::validated_session()));
+    for route in ["/mailboxes", "/settings?section=general"] {
+        let get = request("GET", route, &authenticated_same_origin_headers(), "");
+        let response = app.handle_request(&get, "127.0.0.1");
+        assert_eq!(response.response.status_code, 200);
+        let html = String::from_utf8_lossy(&response.response.body);
+        assert!(html.contains("172605611 bytes"));
+        assert!(html.contains("102400000 bytes"));
+        assert!(html.contains("Enforcement has not been verified"));
+        let mut foreign = get;
+        foreign.headers.insert("cookie".into(), format!("osmap_session={}", "b".repeat(64)));
+        let response = app.handle_request(&foreign, "127.0.0.1");
+        assert_eq!(response.response.status_code, 200);
+        let html = String::from_utf8_lossy(&response.response.body);
+        assert!(!html.contains("172605611"));
+        assert!(!html.contains("102400000"));
+        let response = app.handle_request(&request("GET", route, &[], ""), "127.0.0.1");
+        assert_eq!(response.response.status_code, 303);
+        assert!(!String::from_utf8_lossy(&response.response.body).contains("172605611"));
+    }
+}
+
+#[test]
 fn document_storage_reads_reach_dashboard_and_general_for_the_authenticated_account() {
     let (app, root, store) = fixture();
     let csrf = StubGateway::validated_session().record.csrf_token;
