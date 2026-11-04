@@ -235,6 +235,17 @@ pub trait BrowserGateway {
     ) -> Option<crate::openpgp_personal::PersonalState> {
         None
     }
+    fn personal_key_permission(
+        &self,
+        _session: &ValidatedSession,
+        _action: crate::openpgp_personal::PersonalAction<'_>,
+    ) -> Result<crate::openpgp_personal::PersonalState, crate::openpgp_personal::PersonalError>
+    {
+        Err(crate::openpgp_personal::PersonalError::Unavailable)
+    }
+    fn forget_remembered_key(&self, _account: &str, _token: &[u8]) -> bool {
+        false
+    }
     fn change_keys(
         &self,
         _context: &AuthenticationContext,

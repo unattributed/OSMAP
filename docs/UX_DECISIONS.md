@@ -659,3 +659,34 @@ Private-key upload requires real fresh primary/TOTP verification and the current
 An isolated fresh-agent proof must reject an incorrect passphrase even when the live agent cache is warm. Only after candidate proof may the helper publish absent private material without replacing existing files, or warm/start the exact mapped account agent. No OSMAP or public mail-service restart is part of normal user unlocking. Preserve passphrase protection for protected input; label unprotected input truthfully under helper-only private-file custody. The passphrase itself is transient input and is not saved alongside the key, in drafts, logs, argv, environment or browser preferences. Best-effort buffer clearing does not claim complete erasure of allocator copies or swap. Server key custody remains explicit.
 
 The personal lifecycle and composed HTTP/native qualification subsequently passed, followed by the source-bound obsd1 Web/crypto installation and Status-only readback under the actual Web principal. Duncan's existing protected key and other account state were preserved. This establishes agent-owned installed readiness within the mapped-key scope; actual owner unlock/signing and T09 acceptance remain separate and pending.
+
+## 2026-11-04 — Opt-in remembered-browser personal-key access
+
+The owner authorizes remembering personal-key access across fresh authenticated
+sign-ins on a personal browser. Every sign-in still uses email, password and
+TOTP. The checkbox is unchecked by default; ordinary Sign out removes remembered
+permission. Public/contact keys and the accepted S07 mail workflows are unchanged.
+
+A proven unlock establishes one fixed 28,800-second deadline. Remember/Resume,
+status and private operations cannot extend it; each derived session grant is
+also capped by that session's expiry. Web/helper RAM retain token hashes only;
+the host-only Secure/HttpOnly/SameSite=Strict cookie contains a random revocable
+credential, never the passphrase. Existing native GPG memory caching remains a
+separate prerequisite. No persistent passphrase store or new cryptography.
+
+Restoration follows successful ordinary MFA admission and new-session validation,
+with helper account/epoch/private-revision/deadline checks. Natural auth expiry
+can be followed by fresh MFA and restoration within the original deadline.
+Logout also removes the capability when the auth session is absent/expired;
+ambiguous cookies refuse restoration but all valid presented capabilities can
+be revoked. Explicit session-management revocation conservatively locks personal
+key access account-wide. Account Lock/new proven unlock revoke earlier leases.
+A key-service restart loses helper grants; Web restart loses remembered
+restoration records, although an already-valid session grant may remain usable
+until its existing deadline. Server-side key custody is unchanged.
+
+Helper revocation failure removes Web restoration authority and browser cookies,
+but reports cleanup unconfirmed rather than claiming all earlier helper grants
+are gone. The current auth session is signed out independently; the owner can
+reconcile through account Lock. Longer/multi-day persistence, automatic sign-in,
+shared-computer opt-in and production-release assurance are outside this change.

@@ -631,6 +631,24 @@ impl BrowserGateway for RuntimeBrowserGateway {
             )
             .ok()
     }
+    fn personal_key_permission(
+        &self,
+        session: &ValidatedSession,
+        action: crate::openpgp_personal::PersonalAction<'_>,
+    ) -> Result<crate::openpgp_personal::PersonalState, crate::openpgp_personal::PersonalError>
+    {
+        self.crypto_client()
+            .ok_or(crate::openpgp_personal::PersonalError::Unavailable)?
+            .personal(
+                &session.record.canonical_username,
+                &Self::private_key_session(session),
+                action,
+            )
+    }
+    fn forget_remembered_key(&self, account: &str, token: &[u8]) -> bool {
+        self.crypto_client()
+            .is_some_and(|client| client.forget_remembered(account, token).is_ok())
+    }
     fn change_keys(
         &self,
         context: &AuthenticationContext,

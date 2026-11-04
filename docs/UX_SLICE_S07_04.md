@@ -121,3 +121,18 @@ Eight-hour UAT policy native qualification PASS: five exact existing native case
 Eight-hour UAT policy actual installation PASS after signed sourcef1b88759ce6bb5203fc48d3079859ad19a7763a0/signature verification. Exact utility7ebeaac6 is installed root:wheel555 at /usr/local/libexec/osmap/deployment_unlock.py; previous83b01source retained under /var/backups/osmap-s07-eight-hour-20261103-01. Installer09c50f5e, actual install logSHAa7fc0b660e146e639f1183c8478862d35903d66df4651466c7a8a153e56155ed, private-key/config preservationPASS and nine healthy roles. Agent34227 unchanged; no private unlock or service restart. The eight-hour limits apply at the next successful native warm; the existing live agent still has its earlier policy.
 
 Retained /home/foo/Downloads/osmap-ux-s07/signed-send-followup-20261103/eight-hour/UAT_POLICY_DEPLOYMENT.json/portable sidecar, install.actual.log and native.actual.log bind the observed scope. Independent source/native/installed review passes. Final record and source use one normal fully enabled push/fresh0/0 before handoff. No final browser Unlock/Lock flow, session-bound private-operation grants, owner signed-send success or T09 acceptance is inferred.
+
+## Remembered personal-key follow-up — 2026-11-04
+
+Owner-approved optional remembered-browser access preserves the existing normal
+email/password/TOTP login. In Settings → Keys → Your personal key → Unlock,
+select the initially unchecked “Remember key access on this browser for eight
+hours” only on a personal device. After one successful unlock, later fresh MFA
+sign-ins on that browser may restore access until the original fixed deadline;
+use/sign-in never slides that deadline. Sign out removes remembered permission.
+Account Lock and explicit session-management revocation clear key permissions;
+key-service restart requires unlocking again. Web restart clears remembered
+sign-in restoration. No permanent passphrase storage, private-key export or
+change to contacts' public keys. Agent-owned regression/native/installation and
+owner functional acceptance remain separate; the earlier S07 acceptance is
+preserved. Current implementation/QA progress is recorded in the execution ledger.

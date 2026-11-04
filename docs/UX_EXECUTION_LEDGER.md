@@ -1,3 +1,5 @@
+2026-11-04 — **Remembered personal-key access IN_PROGRESS.** Owner authorizes opt-in remembered-browser access across fresh email/password/TOTP logins, fixed original eight-hour unlock deadline, and ordinary Sign out clearing remembered permission. Baseline 7efa4df. Root owns HTTP/gateway/UI, integration, documentation and the single host/Git queue; remembered_key_helper owns native helper/protocol changes; remembered_key_review independently reviews source/security and evidence. Reuse existing Rust/native key-management journey and native GPG cache; no new dependencies, permanent passphrase storage, production-mail changes or automatic sign-in. Tests planned: opt-out; MFA-only restoration; fixed deadline/exact expiry; token/account/epoch/revision isolation; valid/expired-session logout and token replay; explicit Lock/restart; malformed/duplicate cookies; actual native signing after restore. NOT_RUN until recorded. Normal Rust delivery gates and signed Git publication apply. Technical operations stay bounded by existing test/helper timeouts; two failures at a functional boundary require combined reassessment. Installation restarts only necessary OSMAP roles and retains rollback; owner private key is not unlocked by agents. Owner UAT remains separate.
+
 2026-11-03 (Asia/Bangkok) — **S07 ACCEPTED; S07-01–04 T01–T09 PASS within sprint scope.** Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok). Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged. Closeout: six mutable documentation files only. Root owns records/Git; independent protocol review verifies scope/history. Reuse matching tests, validate ledger/spec pins and frozen plan, then normal signed commit/push/fresh parity; stop on delivery failure. No host action. Private owner screenshots excluded from Git. Sent evidence SHA2566e6149081e5e7b5793257aaf6e53f564bbc3975db52af15e950eb3c492cacb03; Hotmail evidence SHA256d5f489d8fc8da039ac819a24225acec584be4f120352c91a89387f1df8456364.
 
 2026-11-03 — **S07 signed-send public-certificate followup installed and verified; owner Locked UAT remains open.** Source8b1107b published through normal enabled signed path/fresh0/0. Loaded Web667898/admin70aa94 and exact tested worker853213 pass coordinated deployment, HTTPS200/nine roles/protected preservation. Actual Web-principal account-bound public export/readback passes without a private operation; public revision unchanged and temporary probe removed. Private agent34227 and300-second policy unchanged. No owner unlock/signing/Hotmail send or T09 acceptance is inferred.
@@ -51666,3 +51668,47 @@ ordinary push/fresh-parity path; retain the original No pinentry refusal. No
 source/native/host change or repeated owner key operation is required. The
 delivery logs and signed Git history establish actual publication outcomes;
 owner refresh of existing Sent273 remains NOT_RUN until separately reported.
+
+## 2026-11-04 — Remembered key engineering qualification
+
+Implementation complete within the owner-approved follow-up scope. Opt-in native
+unlock creates a fixed original 28,800-second lease. Fresh normal email/password/
+TOTP sign-in can restore only the remembered browser/account/epoch/key within that
+lease; each session grant is capped separately. Ordinary Sign out removes Web
+restoration authority/cookie and requests removal of helper token-derived grants,
+including absent/expired auth-session logout. Helper uncertainty is explicit.
+Explicit session-management revocation conservatively clears remembered access
+for the account when it exists; ordinary session-only deployments do not acquire
+a new helper dependency. See UX_DECISIONS.md for restart and custody boundaries.
+
+Failures retained: coordinated compile-only missing-field/Drop-owned revision and
+native-test session-move corrections; one HTTP duplicate-cookie logout test
+expected the former redirect instead of the new helper-unavailable partial503;
+strict Clippy caught test-module placement and was corrected without suppression.
+Focused session-revoke regression caught four changed200versus303 results when
+no remembered permission existed; the smallest correction skips unnecessary
+helper Lock in that case. Final full Rust:2203PASS/0FAIL/87native ignores; strict
+Clippy PASS. Existing normal commit/push delivery gates remain required.
+
+First native HTTP journey refused at its original120-second synthetic TOTP wait;
+no installed product action occurred. Failure and cleanup are separate:
+OWNED_AGENT_STOP=yes, private fixture retained. Independent reassessment confirmed
+two added fresh MFA logins need additional real30-second windows. Only disposable
+fixture wait210/admission240 limits changed, inside the unchanged300-second outer
+bound; product timeouts and eight-hour deadline unchanged. Native retry passes
+all six exactly selected cases, including actual protected-key import/unlock,
+remember/resume/native signing, fixed deadline, token-only Forget/replay refusal,
+and composed HTTP missing-TOTP refusal/fresh-MFA restore/native sign/no-auth-session
+logout/copied-cookie+fresh-MFA no restore. HTTP case165.61seconds. Outbound/Gateway
+regressions and disposable cleanup PASS. No external recipient or owner key used.
+
+Source archive6c4ad201de45e7cb8f60ca1f7cbaecfb9b8f7aa54616ed162329e999a07f93a8
+qualified native composition. Final three-file delta (no-remembered-record
+revocation guard, accurate restart copy and native-checkbox styling) is bound by
+final-inputs.sha256 covering all Cargo/src/native inputs. Final OpenBSD remembered
+HTTP5/UI6/session-revoke9 tests PASS; matching Rust Web/crypto binaries rebuilt
+with profileDEV_DEBUG0. WebSHA256ca2cbe0d7900c014a3076112375106bf31287620d657133f5cf69e98d082788c;
+cryptoSHA256bd1c9d5f4c21e569211d6b5a3844082b97c264962a8c8dff38002f3f22df6685.
+Independent source/native-recipe/installation-template review GO. Evidence is
+private under /home/foo/Downloads/osmap-ux-s07/remembered-key-20261104; no tokens,
+passphrases or key material enter Git. Installation and owner UAT remain pending.

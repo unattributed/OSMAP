@@ -25,6 +25,8 @@ mod label_filter;
 mod notification_badge;
 #[path = "http/personal_key_ui.rs"]
 mod personal_key_ui;
+#[path = "http/remembered_key.rs"]
+mod remembered_key;
 mod routes_after_archive;
 mod routes_appearance;
 mod routes_auth;
@@ -637,6 +639,7 @@ pub struct BrowserApp<G> {
     policy: HttpPolicy,
     gateway: G,
     request_budgets: RequestBudgets,
+    remembered_keys: remembered_key::RememberedKeys,
 }
 
 impl<G> BrowserApp<G> {
@@ -647,6 +650,7 @@ impl<G> BrowserApp<G> {
             policy,
             gateway,
             request_budgets,
+            remembered_keys: Default::default(),
         }
     }
 
@@ -1112,7 +1116,7 @@ mod tests {
     }
 
     #[derive(Debug, Clone)]
-    struct StubGateway {
+    pub(super) struct StubGateway {
         access_views: AccessViewQueue,
         access_outcomes: AccessOutcomeQueue,
         access_calls: Arc<Mutex<Vec<String>>>,
@@ -1303,7 +1307,7 @@ mod tests {
                 })
         }
 
-        fn validated_session() -> ValidatedSession {
+        pub(super) fn validated_session() -> ValidatedSession {
             ValidatedSession {
                 record: SessionRecord {
                     account_epoch: None,
@@ -5392,7 +5396,7 @@ mod tests {
         }
     }
 
-    fn app() -> BrowserApp<StubGateway> {
+    pub(super) fn app() -> BrowserApp<StubGateway> {
         BrowserApp::new(HttpPolicy::default(), StubGateway::default())
     }
 

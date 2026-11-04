@@ -35,6 +35,15 @@ pub enum PersonalAction<'a> {
     Unlock {
         passphrase: &'a [u8],
     },
+    Remember {
+        token: &'a [u8],
+    },
+    Resume {
+        token: &'a [u8],
+    },
+    Forget {
+        token: &'a [u8],
+    },
     Lock,
 }
 #[derive(Clone, Serialize, Deserialize)]
@@ -46,6 +55,8 @@ pub struct PersonalState {
     pub protected_at_rest: bool,
     pub unlocked_for_session: bool,
     pub valid_until: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub remembered_until: Option<u64>,
     pub cache_seconds: u64,
 }
 impl PersonalState {
@@ -58,6 +69,14 @@ impl PersonalState {
                 .bytes()
                 .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
             && self.cache_seconds == CACHE_SECONDS
+            && self.remembered_until.is_none_or(|until| {
+                self.unlocked_for_session
+                    && until > now
+                    && until <= now.saturating_add(CACHE_SECONDS)
+                    && self
+                        .valid_until
+                        .is_some_and(|session_until| session_until <= until)
+            })
             && (self.installed || (!self.protected_at_rest && !self.unlocked_for_session))
             && if self.unlocked_for_session {
                 self.valid_until.is_some_and(|until| {
@@ -69,6 +88,13 @@ impl PersonalState {
                 self.valid_until.is_none()
             }
     }
+}
+
+pub(crate) fn valid_remember_token(token: &[u8]) -> bool {
+    token.len() == 64
+        && token
+            .iter()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(b))
 }
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]

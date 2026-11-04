@@ -235,18 +235,34 @@ impl Request {
     pub(crate) fn personal_name(&self) -> Option<&str> {
         matches!(
             self.header.operation.as_str(),
-            "personal_status" | "personal_import" | "personal_unlock" | "personal_lock"
+            "personal_status"
+                | "personal_import"
+                | "personal_unlock"
+                | "personal_lock"
+                | "personal_remember"
+                | "personal_resume"
+                | "personal_forget"
         )
         .then_some(self.header.operation.as_str())
     }
     pub(crate) fn personal_parts(&self) -> Result<(&[u8], &[u8]), Error> {
         if self.personal_name().is_none()
-            || self.header.session.is_none()
+            || (self.header.session.is_none() && self.personal_name() != Some("personal_forget"))
             || self.header.signer.is_some()
             || !self.header.recipients.is_empty()
             || !self.signature.is_empty()
         {
             return Err(Error::Invalid);
+        }
+        if matches!(
+            self.personal_name(),
+            Some("personal_remember" | "personal_resume" | "personal_forget")
+        ) {
+            return if crate::openpgp_personal::valid_remember_token(&self.data) {
+                Ok((&[], &self.data))
+            } else {
+                Err(Error::Invalid)
+            };
         }
         if matches!(
             self.personal_name(),
@@ -288,6 +304,23 @@ impl Request {
         now: u64,
         key: &[u8],
     ) -> Result<Self, Error> {
+        Self::issue_personal_inner(account, Some(session), action, now, key)
+    }
+    pub(crate) fn issue_forget(
+        account: &str,
+        token: &[u8],
+        now: u64,
+        key: &[u8],
+    ) -> Result<Self, Error> {
+        Self::issue_personal_inner(account, None, PersonalAction::Forget { token }, now, key)
+    }
+    fn issue_personal_inner(
+        account: &str,
+        session: Option<&PrivateSession>,
+        action: PersonalAction<'_>,
+        now: u64,
+        key: &[u8],
+    ) -> Result<Self, Error> {
         let (name, certificate, passphrase) = match action {
             PersonalAction::Status => ("personal_status", &[][..], &[][..]),
             PersonalAction::Import {
@@ -296,6 +329,9 @@ impl Request {
             } => ("personal_import", certificate, passphrase),
             PersonalAction::Unlock { passphrase } => ("personal_unlock", &[][..], passphrase),
             PersonalAction::Lock => ("personal_lock", &[][..], &[][..]),
+            PersonalAction::Remember { token } => ("personal_remember", &[][..], token),
+            PersonalAction::Resume { token } => ("personal_resume", &[][..], token),
+            PersonalAction::Forget { token } => ("personal_forget", &[][..], token),
         };
         if certificate.len() > crate::openpgp_personal::MAX_CERTIFICATE
             || passphrase.len() > crate::openpgp_personal::MAX_PASSPHRASE
@@ -309,6 +345,11 @@ impl Request {
             data.extend_from_slice(&(certificate.len() as u32).to_be_bytes());
             data.extend_from_slice(&(passphrase.len() as u32).to_be_bytes());
             data.extend_from_slice(certificate);
+            data.extend_from_slice(passphrase);
+        } else if matches!(
+            name,
+            "personal_remember" | "personal_resume" | "personal_forget"
+        ) {
             data.extend_from_slice(passphrase);
         }
         let mut request = Self {
@@ -324,7 +365,7 @@ impl Request {
                 data_len: data.len(),
                 signature_len: 0,
                 mac: String::new(),
-                session: Some(session.clone()),
+                session: session.cloned(),
             },
             data,
             signature: vec![],
@@ -630,6 +671,20 @@ impl Verifier {
         self.consume(request, true, now)?;
         let result: Result<PersonalState, PersonalError> =
             serde_json::from_slice(body).map_err(|_| Error::Invalid)?;
+        // Token-only forgetting can only reduce authority. Its response must
+        // never claim any usable private-key permission.
+        if request.session().is_none() {
+            if request.personal_name() != Some("personal_forget")
+                || result.as_ref().is_ok_and(|state| {
+                    state.unlocked_for_session
+                        || state.valid_until.is_some()
+                        || state.remembered_until.is_some()
+                })
+            {
+                return Err(Error::Invalid);
+            }
+            return Ok(result);
+        }
         let session = request.session().ok_or(Error::Invalid)?;
         if result
             .as_ref()
@@ -644,6 +699,55 @@ impl Verifier {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn personal_remembered_wire_binds_token_session_and_revocation_only_exception() {
+        let session = private_session();
+        let key = [42; 32];
+        let token = [b'a'; 64];
+        for action in [
+            PersonalAction::Remember { token: &token },
+            PersonalAction::Resume { token: &token },
+        ] {
+            let mut request =
+                Request::issue_personal("alice@example.test", &session, action, 100, &key).unwrap();
+            assert_eq!(request.personal_parts().unwrap(), (&[][..], &token[..]));
+            request.header.session = None;
+            assert!(request.personal_parts().is_err());
+        }
+        let request = Request::issue_forget("alice@example.test", &token, 100, &key).unwrap();
+        assert!(request.session().is_none());
+        assert_eq!(request.personal_parts().unwrap(), (&[][..], &token[..]));
+        assert!(Verifier::default()
+            .request(&request.to_bytes().unwrap(), &key, 100)
+            .is_ok());
+        let mut tampered = request.to_bytes().unwrap();
+        let last = tampered.len() - 1;
+        tampered[last] = b'b';
+        assert!(Verifier::default().request(&tampered, &key, 100).is_err());
+        assert!(Request::issue_forget("alice@example.test", b"invalid", 100, &key).is_err());
+        let state = PersonalState {
+            primary_fingerprint: "A".repeat(40),
+            private_revision: "0".repeat(64),
+            installed: false,
+            protected_at_rest: false,
+            unlocked_for_session: false,
+            valid_until: None,
+            remembered_until: None,
+            cache_seconds: 28800,
+        };
+        let bytes = personal_response(&request, Ok(state.clone()), &key, 100).unwrap();
+        assert!(Verifier::default()
+            .personal_response(&request, &bytes, &key, 100)
+            .unwrap()
+            .is_ok());
+        let mut unsafe_state = state;
+        unsafe_state.unlocked_for_session = true;
+        unsafe_state.valid_until = Some(150);
+        let bytes = personal_response(&request, Ok(unsafe_state), &key, 100).unwrap();
+        assert!(Verifier::default()
+            .personal_response(&request, &bytes, &key, 100)
+            .is_err());
+    }
     fn private_session() -> PrivateSession {
         PrivateSession {
             session_id: "a".repeat(64),
@@ -740,6 +844,7 @@ mod tests {
         let state = PersonalState {
             primary_fingerprint: "A".repeat(40),
             private_revision: "b".repeat(64),
+            remembered_until: None,
             installed: true,
             protected_at_rest: true,
             unlocked_for_session: true,

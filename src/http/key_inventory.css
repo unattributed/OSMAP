@@ -46,3 +46,5 @@
 @media(max-width:900px){.key-management-grid{grid-template-columns:minmax(0,1fr)}.key-management-toolbar{align-items:flex-start}}
 @media(max-width:580px){.key-management-card{padding:14px}.imported-key-card{padding:12px}.public-key-bindings li{grid-template-columns:minmax(0,1fr)}.key-management-card dl{grid-template-columns:minmax(0,1fr);gap:4px}.key-management-card dd{margin-bottom:8px}.key-management-actions{flex-direction:column;align-items:flex-start}}
 @media(forced-colors:active){.key-management-card,.key-account-state,.key-inventory-notice,.imported-key-card{background:Canvas;color:CanvasText;border-color:CanvasText}.public-key-row,.recipient-key-card,.public-key-bindings li+li{border-color:CanvasText}.key-management-card summary:focus-visible,.key-management-actions a:focus-visible{outline-color:Highlight}}
+.personal-key-panel .personal-key-remember{display:flex;align-items:center;gap:.6rem}
+.personal-key-panel .personal-key-remember input[type=checkbox]{display:inline-block;width:1.1rem;min-width:1.1rem;height:1.1rem;margin:0;padding:0;flex:0 0 auto}

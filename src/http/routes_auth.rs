@@ -94,6 +94,15 @@ where
                 reading,
                 ..
             } => {
+                // Only the successful ordinary password/TOTP login can restore
+                // remembered key permission, using the newly validated session.
+                let fresh = self
+                    .gateway
+                    .validate_session(context, session_token.as_str());
+                audit_events.extend(fresh.audit_events);
+                if let BrowserSessionDecision::Valid { validated_session } = fresh.decision {
+                    self.resume_browser_key(request, &validated_session);
+                }
                 let recorded = self.record_session_notice(
                     context,
                     &canonical_username,
@@ -348,6 +357,10 @@ where
                 crate::notifications::NotificationKind::SessionRevoked,
                 &mut audit_events,
             );
+        // Explicit session revocation is a security action, unlike natural
+        // expiry. Conservatively end this account's remembered key access.
+        let remembered_cookie =
+            has_new_revocation.then(|| self.revoke_account_remembered_keys(&validated_session));
         match outcome.decision {
             BrowserSessionRevokeDecision::Revoked {
                 revoked_current_session,
@@ -377,6 +390,22 @@ where
                             self.policy.secure_session_cookie,
                         ),
                     );
+                }
+                if let Some((cookie, confirmed)) = remembered_cookie {
+                    if !confirmed {
+                        audit_events.push(build_http_warning_event("personal_key_session_revoke_cleanup_unconfirmed", "session revocation complete; remembered restoration removed; helper key cleanup unconfirmed", context));
+                        response = html_response(200, "OK", "Session Revocation Complete", "<p>Your session revocation succeeded and remembered sign-in restoration was removed. Key-service cleanup could not be confirmed. Open Personal Key settings and lock the account key to reconcile remaining permissions.</p><p><a href=\"/settings/keys\">Personal key settings</a></p>");
+                        if revoked_current_session {
+                            response = response.with_header(
+                                "Set-Cookie",
+                                clear_session_cookie(
+                                    self.policy.session_cookie_name,
+                                    self.policy.secure_session_cookie,
+                                ),
+                            );
+                        }
+                    }
+                    response = response.with_header("Set-Cookie", cookie);
                 }
 
                 HandledHttpResponse {
@@ -482,14 +511,24 @@ where
             audit_events.extend(outcome.audit_events);
         }
 
+        let (remembered_cookie, key_cleanup_confirmed) = self.forget_browser_key(request);
+        if !key_cleanup_confirmed {
+            audit_events.push(build_http_warning_event(
+                "personal_key_logout_cleanup_unconfirmed",
+                "browser remembered permission removed; helper grant cleanup unconfirmed",
+                context,
+            ));
+        }
         HandledHttpResponse {
-            response: redirect_response(303, "See Other", "/login").with_header(
-                "Set-Cookie",
-                clear_session_cookie(
-                    self.policy.session_cookie_name,
-                    self.policy.secure_session_cookie,
-                ),
-            ),
+            response: (if key_cleanup_confirmed { redirect_response(303, "See Other", "/login") } else { html_response(503, "Service Unavailable", "Key Cleanup Unconfirmed", "<p>Your browser has been signed out and its remembered permission was removed. Cleanup of earlier private-key permissions in the key service could not be confirmed. Sign in and use Lock this account’s personal key to reconcile key access.</p><p><a href=\"/login\">Sign in</a></p>") })
+                .with_header(
+                    "Set-Cookie",
+                    clear_session_cookie(
+                        self.policy.session_cookie_name,
+                        self.policy.secure_session_cookie,
+                    ),
+                )
+                .with_header("Set-Cookie", remembered_cookie),
             audit_events,
         }
     }

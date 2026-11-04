@@ -221,10 +221,27 @@ impl Service {
         if let Some(action) = request.personal_name() {
             let result = (|| {
                 let context = self.personal_context(mapping)?;
-                let session = request.session().ok_or(PersonalError::Invalid)?;
                 let (certificate, passphrase) = request
                     .personal_parts()
                     .map_err(|_| PersonalError::Invalid)?;
+                if action == "personal_forget" && request.session().is_none() {
+                    let mut manager = self
+                        .personal
+                        .lock()
+                        .map_err(|_| PersonalError::Unavailable)?;
+                    manager.forget(request.account(), passphrase)?;
+                    return Ok(PersonalState {
+                        primary_fingerprint: context.primary.into(),
+                        private_revision: "0".repeat(64),
+                        installed: false,
+                        protected_at_rest: false,
+                        unlocked_for_session: false,
+                        valid_until: None,
+                        remembered_until: None,
+                        cache_seconds: crate::openpgp_personal::CACHE_SECONDS,
+                    });
+                }
+                let session = request.session().ok_or(PersonalError::Invalid)?;
                 let action = match action {
                     "personal_status" => PersonalAction::Status,
                     "personal_import" => PersonalAction::Import {
@@ -233,6 +250,9 @@ impl Service {
                     },
                     "personal_unlock" => PersonalAction::Unlock { passphrase },
                     "personal_lock" => PersonalAction::Lock,
+                    "personal_remember" => PersonalAction::Remember { token: passphrase },
+                    "personal_resume" => PersonalAction::Resume { token: passphrase },
+                    "personal_forget" => PersonalAction::Forget { token: passphrase },
                     _ => return Err(PersonalError::Invalid),
                 };
                 self.personal
@@ -542,6 +562,23 @@ impl Client {
             .map_err(|_| PersonalError::Unavailable)?
             .personal_response(&request, &bytes, &self.0.key, now().map_err(convert)?)
             .map_err(convert)?
+    }
+    /// Revoke a remembered capability even after its browser session expired.
+    /// This authenticated transport action cannot grant private-key access.
+    pub fn forget_remembered(&self, account: &str, token: &[u8]) -> Result<(), PersonalError> {
+        let convert = |_| PersonalError::Unavailable;
+        let request = Request::issue_forget(account, token, now().map_err(convert)?, &self.0.key)
+            .map_err(convert)?;
+        let bytes = self
+            .exchange(&request, Instant::now() + Duration::from_secs(10))
+            .map_err(convert)?;
+        self.0
+            .verifier
+            .lock()
+            .map_err(|_| PersonalError::Unavailable)?
+            .personal_response(&request, &bytes, &self.0.key, now().map_err(convert)?)
+            .map_err(convert)?
+            .map(|_| ())
     }
     pub fn execute(
         &self,

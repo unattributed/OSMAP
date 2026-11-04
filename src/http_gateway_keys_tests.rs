@@ -233,7 +233,7 @@ fn native_runtime_key_management_journey() {
             let admit_count = admit_count.clone();
             move || {
                 use crate::openpgp_inventory_runtime::{now, read_frame, write_frame};
-                let end = Instant::now() + Duration::from_secs(150);
+                let end = Instant::now() + Duration::from_secs(240);
                 let mut verifier = crate::account_admission::Verifier::default();
                 while !stop.load(Ordering::SeqCst) {
                     assert!(Instant::now() < end, "synthetic admission fixture deadline");
@@ -351,7 +351,9 @@ fn native_runtime_key_management_journey() {
     let mut next_code = || {
         counter = counter.max(SystemTimeProvider.unix_timestamp() / 30);
         while counter > SystemTimeProvider.unix_timestamp() / 30 + 1 {
-            assert!(began.elapsed() < Duration::from_secs(120));
+            // Additional fresh MFA logins consume real 30-second TOTP steps.
+            // Keep their finite wait inside the existing 300-second native bound.
+            assert!(began.elapsed() < Duration::from_secs(210));
             std::thread::sleep(Duration::from_millis(100));
         }
         let code =
@@ -731,7 +733,13 @@ fn native_runtime_key_management_journey() {
     for (path, bytes) in private {
         assert!(fs::read(path).unwrap() == bytes);
     }
-    native_personal_key_journey(&f, (&worker, &crypto_worker, &engine, &alice), &next_code());
+    let personal_code = next_code();
+    native_personal_key_journey(
+        &f,
+        (&worker, &crypto_worker, &engine, &alice),
+        &personal_code,
+        &mut next_code,
+    );
     f.gateway
         .build_session_service()
         .revoke(&f.context, &f.session.record.session_id)
@@ -766,6 +774,7 @@ fn native_personal_key_journey(
         &std::path::Path,
     ),
     totp: &str,
+    next_code: &mut dyn FnMut() -> String,
 ) {
     use crate::auth::CommandExecutor;
     use crate::openpgp_personal::{PersonalAction, PrivateSession};
@@ -951,7 +960,13 @@ fn native_personal_key_journey(
     assert_eq!(exported.status_code, 0);
     let mut certificate = exported.stdout.into_bytes();
     assert!(certificate.starts_with(b"-----BEGIN PGP PRIVATE KEY BLOCK-----"));
-    let app = crate::http::BrowserApp::new(crate::http::HttpPolicy::default(), gateway);
+    let app = crate::http::BrowserApp::new(
+        crate::http::HttpPolicy {
+            secure_session_cookie: true,
+            ..Default::default()
+        },
+        gateway,
+    );
     let fields = format!("--personal-native\r\nContent-Disposition: form-data; name=\"key_action\"\r\n\r\nimport_personal\r\n--personal-native\r\nContent-Disposition: form-data; name=\"binding_revision\"\r\n\r\n{}\r\n--personal-native\r\nContent-Disposition: form-data; name=\"csrf_token\"\r\n\r\n{}\r\n--personal-native\r\nContent-Disposition: form-data; name=\"current_password\"\r\n\r\n{PASSWORD}\r\n--personal-native\r\nContent-Disposition: form-data; name=\"totp_code\"\r\n\r\n{totp}\r\n--personal-native\r\nContent-Disposition: form-data; name=\"key_passphrase\"\r\n\r\n\r\n--personal-native\r\nContent-Disposition: form-data; name=\"personal_certificate\"; filename=\"own.ASC\"\r\nContent-Type: application/pgp-keys\r\n\r\n", bound.revision, f.session.record.csrf_token);
     let mut upload = fields.into_bytes();
     upload.extend_from_slice(&certificate);
@@ -1222,7 +1237,7 @@ fn native_personal_key_journey(
         Ok(Ok(_))
     ));
     assert!(!matches!(
-        client.for_session(private_session).execute(
+        client.for_session(private_session.clone()).execute(
             ACCOUNT,
             &crate::openpgp_crypto::Operation::Decrypt {
                 allowed_primary_fingerprints: vec![primary],
@@ -1238,6 +1253,131 @@ fn native_personal_key_journey(
         1,
         "recorded send never duplicates after lock"
     );
+    // Real route -> password/TOTP admission -> newly issued session -> native
+    // helper restoration. No password or TOTP is bypassed by the key cookie.
+    let remembered = post("unlock_personal&remember_key=1");
+    assert_eq!(remembered.response.status_code, 303);
+    let key_cookie = remembered
+        .response
+        .headers
+        .iter()
+        .find(|(name, value)| name == "Set-Cookie" && value.starts_with("__Host-osmap_key_access="))
+        .unwrap()
+        .1
+        .clone();
+    assert!(
+        key_cookie.contains("Secure")
+            && key_cookie.contains("HttpOnly")
+            && key_cookie.contains("SameSite=Strict")
+    );
+    let key_cookie = key_cookie.split(';').next().unwrap();
+    let original_until = client
+        .personal(ACCOUNT, &private_session, PersonalAction::Status)
+        .unwrap()
+        .remembered_until
+        .unwrap();
+    let login = |code: &str| {
+        let password: String = PASSWORD.bytes().map(|b| format!("%{b:02X}")).collect();
+        let body = format!("username={ACCOUNT}&password={password}&totp_code={code}");
+        let raw = format!("POST /login HTTP/1.1\r\nHost: localhost\r\nOrigin: http://localhost\r\nUser-Agent: {}\r\nCookie: {key_cookie}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {}\r\n\r\n{body}", f.context.user_agent, body.len());
+        app.handle_request(
+            &crate::http::parse_http_request(&raw, app.policy()).unwrap(),
+            "127.0.0.1",
+        )
+    };
+    assert_eq!(
+        login("").response.status_code,
+        401,
+        "remembered key never bypasses TOTP"
+    );
+    let signed_in = login(&next_code());
+    assert_eq!(signed_in.response.status_code, 303);
+    let auth_cookie = signed_in
+        .response
+        .headers
+        .iter()
+        .find(|(name, value)| name == "Set-Cookie" && value.starts_with("osmap_session="))
+        .unwrap()
+        .1
+        .split(';')
+        .next()
+        .unwrap();
+    let auth_token = auth_cookie.split_once('=').unwrap().1;
+    let validated = app.gateway.validate_session(&f.context, auth_token);
+    let BrowserSessionDecision::Valid {
+        validated_session: restored,
+    } = validated.decision
+    else {
+        panic!("fresh login must validate")
+    };
+    let restored_private = RuntimeBrowserGateway::private_key_session(&restored);
+    let restored_state = client
+        .personal(ACCOUNT, &restored_private, PersonalAction::Status)
+        .unwrap();
+    assert!(restored_state.unlocked_for_session);
+    assert_eq!(restored_state.remembered_until, Some(original_until));
+    assert!(matches!(
+        client
+            .for_session(restored_private.clone())
+            .execute(ACCOUNT, &sign),
+        Ok(Ok(_))
+    ));
+    // Logout without a live authentication cookie still removes remembered
+    // authority; replay plus another correct MFA login cannot restore it.
+    let raw = format!("POST /logout HTTP/1.1\r\nHost: localhost\r\nOrigin: http://localhost\r\nCookie: {key_cookie}\r\nContent-Length: 0\r\n\r\n");
+    let logged_out = app.handle_request(
+        &crate::http::parse_http_request(&raw, app.policy()).unwrap(),
+        "127.0.0.1",
+    );
+    assert!(logged_out
+        .response
+        .headers
+        .iter()
+        .any(|(name, value)| name == "Set-Cookie"
+            && value.starts_with("__Host-osmap_key_access=;")
+            && value.contains("Max-Age=0")));
+    assert!(!matches!(
+        client.for_session(restored_private).execute(ACCOUNT, &sign),
+        Ok(Ok(_))
+    ));
+    let replay = login(&next_code());
+    assert_eq!(
+        replay.response.status_code, 303,
+        "ordinary MFA login still succeeds"
+    );
+    let replay_token = replay
+        .response
+        .headers
+        .iter()
+        .find(|(name, value)| name == "Set-Cookie" && value.starts_with("osmap_session="))
+        .unwrap()
+        .1
+        .split(';')
+        .next()
+        .unwrap()
+        .split_once('=')
+        .unwrap()
+        .1;
+    let BrowserSessionDecision::Valid {
+        validated_session: replay_session,
+    } = app
+        .gateway
+        .validate_session(&f.context, replay_token)
+        .decision
+    else {
+        panic!("MFA login")
+    };
+    assert!(
+        !client
+            .personal(
+                ACCOUNT,
+                &RuntimeBrowserGateway::private_key_session(&replay_session),
+                PersonalAction::Status
+            )
+            .unwrap()
+            .unlocked_for_session
+    );
+    assert_eq!(post("lock_personal").response.status_code, 303);
     drop(app);
     drop(admin_service);
     drop(inventory_service);

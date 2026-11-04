@@ -1475,3 +1475,17 @@ Matching source tests and independent review are recorded in the active ledger.
 Native helper/epoch/session integration, complete WSTG journey and S04-02
 acceptance remain unqualified. Historical failures and retained165 resources
 remain preserved.
+
+## 2026-11-04 remembered personal-key access follow-up
+
+Changed security surface: optional persistent browser credential for bounded
+key-permission restoration, never authentication. Required focused Rust/native
+coverage: unchecked default; fresh password/TOTP admission; original absolute
+8-hour expiry without sliding; account/epoch/key/token isolation; valid and
+missing/expired-session logout; duplicate-cookie refusal/revocation; copied-token
+replay; explicit session revocation/account Lock; helper restart; authenticated
+removal-only RPC and truthful helper-unavailable cleanup. Cookie is host-only,
+Secure, HttpOnly, SameSite=Strict and contains no passphrase/key data. Native GPG
+cache and server key custody remain separate. Execution results belong in the
+current ledger. These scoped regressions do not constitute complete OWASP WSTG,
+Daybreak Blue review, cross-platform UAT or production release qualification.

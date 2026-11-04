@@ -288,6 +288,26 @@ impl<G: BrowserGateway> BrowserApp<G> {
         ) {
             return r;
         }
+        let remember = match form.remove("remember_key") {
+            None => false,
+            Some(value)
+                if value == "1"
+                    && form.get("key_action").map(String::as_str) == Some("unlock_personal") =>
+            {
+                true
+            }
+            Some(_) => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Key Request",
+                        "<p>Reload the key form before retrying.</p>",
+                    ),
+                    audit_events,
+                }
+            }
+        };
         for key in [
             "primary_fingerprint",
             "signing_fingerprint",
@@ -340,10 +360,29 @@ impl<G: BrowserGateway> BrowserApp<G> {
             }
         };
         match result {
-            Ok(()) => HandledHttpResponse {
-                response: redirect_response(303, "See Other", "/settings/keys"),
-                audit_events,
-            },
+            Ok(()) => {
+                let personal_change = matches!(
+                    form.get("key_action").map(String::as_str),
+                    Some("unlock_personal" | "lock_personal" | "import_personal")
+                );
+                let mut response = redirect_response(303, "See Other", "/settings/keys");
+                if remember {
+                    match self.remember_browser_key(request, &session) {
+                        Ok(cookie) => response = response.with_header("Set-Cookie", cookie),
+                        Err(()) => {
+                            response = html_response(200, "OK", "Personal Key Unlocked", "<p>Your key was unlocked for this session, but remembered access could not be established. Do not repeat the import. <a href=\"/settings/keys\">Review personal-key access</a>.</p>")
+                                .with_header("Set-Cookie", self.forget_browser_key(request).0);
+                        }
+                    }
+                } else if personal_change {
+                    response =
+                        response.with_header("Set-Cookie", self.forget_browser_key(request).0);
+                }
+                HandledHttpResponse {
+                    response,
+                    audit_events,
+                }
+            }
             Err(e) => {
                 let state = self.gateway.key_management(context, &session);
                 audit_events.extend(state.audit_events);

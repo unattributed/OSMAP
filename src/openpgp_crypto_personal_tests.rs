@@ -90,7 +90,9 @@ fn personal_grants_bind_session_epoch_expiry_and_exact_private_revision() {
         Grant {
             epoch: session.account_epoch,
             until: time().unwrap() + 60,
+            unlock_until: time().unwrap() + 60,
             revision: private_files(context.home).unwrap().revision.clone(),
+            remembered: None,
         },
     );
     assert!(manager.permitted(&context, Some(&session), deadline));
@@ -143,6 +145,239 @@ fn personal_bad_input_rate_limit_precedes_any_candidate_agent_or_file_write() {
     assert_eq!(before, fs::read_dir(&fixture.root).unwrap().count());
     assert_eq!(manager.failures["alice@example.test"].len(), 5);
 }
+
+fn unlocked_grant(manager: &mut Manager, fixture: &Fixture, session: &PrivateSession, until: u64) {
+    manager.grants.insert(
+        (fixture.context().account.into(), session.session_id.clone()),
+        Grant {
+            epoch: session.account_epoch,
+            until: until.min(session.expires_at),
+            unlock_until: until,
+            revision: private_files(&fixture.root).unwrap().revision.clone(),
+            remembered: None,
+        },
+    );
+}
+
+#[test]
+fn personal_remembered_resume_keeps_original_deadline_across_short_sessions() {
+    let fixture = Fixture::new(true);
+    let mut manager = Manager::default();
+    let mut first = session();
+    let now = time().unwrap();
+    first.expires_at = now + 60;
+    let original = now + CACHE_SECONDS - 100;
+    unlocked_grant(&mut manager, &fixture, &first, original);
+    let token = b"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let state = manager
+        .handle(
+            fixture.context(),
+            &first,
+            PersonalAction::Remember { token },
+            deadline,
+        )
+        .unwrap();
+    assert_eq!(state.valid_until, Some(first.expires_at));
+    assert_eq!(state.remembered_until, Some(original));
+    // A fresh session alone has no access, even on the same account.
+    let mut next = first.clone();
+    next.session_id = "b".repeat(64);
+    next.expires_at = now + CACHE_SECONDS;
+    assert!(!manager.permitted(&fixture.context(), Some(&next), deadline));
+    // Expiry/removal of the original session grant does not extend or delete
+    // the independently bounded remembered lease.
+    manager.grants.clear();
+    let state = manager
+        .handle(
+            fixture.context(),
+            &next,
+            PersonalAction::Resume { token },
+            deadline,
+        )
+        .unwrap();
+    assert_eq!(state.valid_until, Some(original));
+    assert_eq!(state.remembered_until, Some(original));
+    // Re-remembering the resumed session cannot extend or replace the lease.
+    let state = manager
+        .handle(
+            fixture.context(),
+            &next,
+            PersonalAction::Remember { token },
+            deadline,
+        )
+        .unwrap();
+    assert_eq!(state.remembered_until, Some(original));
+    assert_eq!(
+        manager
+            .handle(
+                fixture.context(),
+                &next,
+                PersonalAction::Remember { token: &[b'c'; 64] },
+                deadline
+            )
+            .err(),
+        Some(Error::Conflict)
+    );
+    manager.forget(fixture.context().account, token).unwrap();
+    assert!(manager.remembered.is_empty());
+    assert!(!manager.permitted(&fixture.context(), Some(&first), deadline));
+    assert!(!manager.permitted(&fixture.context(), Some(&next), deadline));
+    assert_eq!(
+        manager
+            .handle(
+                fixture.context(),
+                &next,
+                PersonalAction::Resume { token },
+                deadline
+            )
+            .err(),
+        Some(Error::Locked)
+    );
+}
+
+#[test]
+fn personal_remembered_refuses_account_epoch_key_agent_expiry_and_invalid_tokens() {
+    let fixture = Fixture::new(true);
+    let token = b"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    let original = session();
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let mut manager = Manager::default();
+    // A valid token does not create a lease without a proven session unlock.
+    assert_eq!(
+        manager
+            .handle(
+                fixture.context(),
+                &original,
+                PersonalAction::Remember { token },
+                deadline
+            )
+            .err(),
+        Some(Error::Locked)
+    );
+    unlocked_grant(&mut manager, &fixture, &original, time().unwrap() + 600);
+    manager
+        .handle(
+            fixture.context(),
+            &original,
+            PersonalAction::Remember { token },
+            deadline,
+        )
+        .unwrap();
+    let mut next = original.clone();
+    next.session_id = "b".repeat(64);
+    for invalid in [&b"short"[..], &[b'A'; 64], &[b'g'; 64]] {
+        assert_eq!(
+            manager
+                .handle(
+                    fixture.context(),
+                    &next,
+                    PersonalAction::Resume { token: invalid },
+                    deadline
+                )
+                .err(),
+            Some(Error::Invalid)
+        );
+    }
+    let mut other = fixture.context();
+    other.account = "bob@example.test";
+    assert_eq!(
+        manager
+            .handle(other, &next, PersonalAction::Resume { token }, deadline)
+            .err(),
+        Some(Error::Locked)
+    );
+    next.account_epoch = Some(8);
+    assert_eq!(
+        manager
+            .handle(
+                fixture.context(),
+                &next,
+                PersonalAction::Resume { token },
+                deadline
+            )
+            .err(),
+        Some(Error::Locked)
+    );
+    next.account_epoch = original.account_epoch;
+    let hash = Manager::token_hash(token).unwrap();
+    let key = (fixture.context().account.into(), hash);
+    let revision = manager.remembered[&key].revision.clone();
+    manager.remembered.get_mut(&key).unwrap().revision = "changed".into();
+    assert_eq!(
+        manager
+            .handle(
+                fixture.context(),
+                &next,
+                PersonalAction::Resume { token },
+                deadline
+            )
+            .err(),
+        Some(Error::Locked)
+    );
+    manager.remembered.get_mut(&key).unwrap().revision = revision;
+    fs::remove_file(fixture.root.join("S.gpg-agent")).unwrap();
+    assert_eq!(
+        manager
+            .handle(
+                fixture.context(),
+                &next,
+                PersonalAction::Resume { token },
+                deadline
+            )
+            .err(),
+        Some(Error::Locked)
+    );
+    manager.remembered.get_mut(&key).unwrap().unlock_until = 0;
+    assert_eq!(
+        manager
+            .handle(
+                fixture.context(),
+                &next,
+                PersonalAction::Resume { token },
+                deadline
+            )
+            .err(),
+        Some(Error::Locked)
+    );
+    assert!(manager.remembered.is_empty());
+}
+
+#[test]
+fn personal_forgetting_one_browser_preserves_other_browser_and_session_only_grants() {
+    let fixture = Fixture::new(true);
+    let first = session();
+    let mut second = first.clone();
+    second.session_id = "b".repeat(64);
+    let mut manager = Manager::default();
+    let deadline = Instant::now() + Duration::from_secs(2);
+    unlocked_grant(&mut manager, &fixture, &first, time().unwrap() + 600);
+    manager
+        .handle(
+            fixture.context(),
+            &first,
+            PersonalAction::Remember { token: &[b'a'; 64] },
+            deadline,
+        )
+        .unwrap();
+    unlocked_grant(&mut manager, &fixture, &second, time().unwrap() + 600);
+    manager
+        .handle(
+            fixture.context(),
+            &second,
+            PersonalAction::Remember { token: &[b'b'; 64] },
+            deadline,
+        )
+        .unwrap();
+    manager
+        .forget(fixture.context().account, &[b'a'; 64])
+        .unwrap();
+    assert!(!manager.permitted(&fixture.context(), Some(&first), deadline));
+    assert!(manager.permitted(&fixture.context(), Some(&second), deadline));
+    manager.revoke(fixture.context().account);
+    assert!(manager.remembered.is_empty());
+    assert!(manager.grants.is_empty());
+}
 #[test]
 fn personal_partial_link_rollback_retains_unknown_identity_and_continues_known_cleanup() {
     let fixture = Fixture::new(true);
@@ -175,7 +410,9 @@ fn personal_lock_cannot_enter_during_authorized_private_dispatch() {
         Grant {
             epoch: session.account_epoch,
             until: now + 60,
+            unlock_until: now + 60,
             revision: private_files(&fixture.root).unwrap().revision.clone(),
+            remembered: None,
         },
     );
     let service = Service {
@@ -455,7 +692,7 @@ fn native_personal_protected_import_unlock_lock_roundtrip() {
             }
         })
     };
-    let server = start(15);
+    let server = start(22);
     let client =
         Client::from_operator_files(&socket, &key, crate::openbsd::effective_uid()).unwrap();
     let session = session();
@@ -521,6 +758,66 @@ fn native_personal_protected_import_unlock_lock_roundtrip() {
         .is_ok());
     let mut foreign = session.clone();
     foreign.session_id = "b".repeat(64);
+    assert_eq!(
+        client
+            .for_session(foreign.clone())
+            .execute("alice@example.test", &sign())
+            .unwrap()
+            .err(),
+        Some(CryptoError::Locked)
+    );
+    let remembered_token = [b'a'; 64];
+    let remembered = client
+        .personal(
+            "alice@example.test",
+            &session,
+            PersonalAction::Remember {
+                token: &remembered_token,
+            },
+        )
+        .unwrap();
+    let original_deadline = remembered.remembered_until.unwrap();
+    assert!(original_deadline > session.expires_at);
+    let resumed = client
+        .personal(
+            "alice@example.test",
+            &foreign,
+            PersonalAction::Resume {
+                token: &remembered_token,
+            },
+        )
+        .unwrap();
+    assert_eq!(resumed.remembered_until, Some(original_deadline));
+    assert!(client
+        .for_session(foreign.clone())
+        .execute("alice@example.test", &sign())
+        .unwrap()
+        .is_ok());
+    let repeated = client
+        .personal(
+            "alice@example.test",
+            &foreign,
+            PersonalAction::Remember {
+                token: &remembered_token,
+            },
+        )
+        .unwrap();
+    assert_eq!(repeated.remembered_until, Some(original_deadline));
+    client
+        .forget_remembered("alice@example.test", &remembered_token)
+        .unwrap();
+    assert_eq!(
+        client
+            .personal(
+                "alice@example.test",
+                &foreign,
+                PersonalAction::Resume {
+                    token: &remembered_token
+                }
+            )
+            .err(),
+        Some(Error::Locked)
+    );
     assert_eq!(
         client
             .for_session(foreign)

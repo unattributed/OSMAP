@@ -21,14 +21,18 @@ pub(super) struct Context<'a> {
     pub worker: &'a Path,
     pub engine: &'a Path,
 }
+#[derive(Clone)]
 struct Grant {
     epoch: Option<u64>,
     until: u64,
+    unlock_until: u64,
     revision: String,
+    remembered: Option<[u8; 32]>,
 }
 #[derive(Default)]
 pub(super) struct Manager {
     grants: BTreeMap<(String, String), Grant>,
+    remembered: BTreeMap<(String, [u8; 32]), Grant>,
     failures: BTreeMap<String, Vec<u64>>,
     uncertain: BTreeSet<String>,
 }
@@ -392,6 +396,20 @@ fn prove(
 impl Manager {
     fn revoke(&mut self, account: &str) {
         self.grants.retain(|(owner, _), _| owner != account);
+        self.remembered.retain(|(owner, _), _| owner != account);
+    }
+    fn token_hash(token: &[u8]) -> Result<[u8; 32], Error> {
+        if !crate::openpgp_personal::valid_remember_token(token) {
+            return Err(Error::Invalid);
+        }
+        Ok(Sha256::digest(token).into())
+    }
+    pub(super) fn forget(&mut self, account: &str, token: &[u8]) -> Result<(), Error> {
+        let hash = Self::token_hash(token)?;
+        self.remembered.remove(&(account.into(), hash));
+        self.grants
+            .retain(|(owner, _), grant| owner != account || grant.remembered != Some(hash));
+        Ok(())
     }
     pub(super) fn permitted(
         &mut self,
@@ -401,6 +419,7 @@ impl Manager {
     ) -> bool {
         let Ok(now) = time() else { return false };
         self.grants.retain(|_, grant| grant.until > now);
+        self.remembered.retain(|_, grant| grant.unlock_until > now);
         let Some(session) = session.filter(|s| s.valid(now)) else {
             return false;
         };
@@ -441,6 +460,14 @@ impl Manager {
                 None
             },
             cache_seconds: CACHE_SECONDS,
+            remembered_until: if permitted {
+                self.grants
+                    .get(&(context.account.into(), session.session_id.clone()))
+                    .filter(|grant| grant.remembered.is_some())
+                    .map(|grant| grant.unlock_until)
+            } else {
+                None
+            },
         })
     }
     pub(super) fn handle(
@@ -452,6 +479,7 @@ impl Manager {
     ) -> Result<PersonalState, Error> {
         let now = time()?;
         self.grants.retain(|_, grant| grant.until > now);
+        self.remembered.retain(|_, grant| grant.unlock_until > now);
         if !session.valid(now) {
             return Err(Error::Expired);
         }
@@ -468,6 +496,62 @@ impl Manager {
         }
         match action {
             PersonalAction::Status => return self.state(&context, session, deadline),
+            PersonalAction::Forget { token } => {
+                self.forget(context.account, token)?;
+                return self.state(&context, session, deadline);
+            }
+            PersonalAction::Remember { token } => {
+                let hash = Self::token_hash(token)?;
+                if !self.permitted(&context, Some(session), deadline) {
+                    return Err(Error::Locked);
+                }
+                if self.remembered.len() >= 256
+                    && !self
+                        .remembered
+                        .contains_key(&(context.account.into(), hash))
+                {
+                    return Err(Error::Unavailable);
+                }
+                let grant = self
+                    .grants
+                    .get_mut(&(context.account.into(), session.session_id.clone()))
+                    .ok_or(Error::Locked)?;
+                // A renewed session can never mint a fresh eight-hour lease.
+                // The absolute deadline originates only at a proven unlock.
+                if grant.unlock_until <= now {
+                    return Err(Error::Expired);
+                }
+                if grant.remembered.is_some_and(|prior| prior != hash) {
+                    return Err(Error::Conflict);
+                }
+                grant.remembered = Some(hash);
+                self.remembered
+                    .insert((context.account.into(), hash), grant.clone());
+                return self.state(&context, session, deadline);
+            }
+            PersonalAction::Resume { token } => {
+                let hash = Self::token_hash(token)?;
+                let mut grant = self
+                    .remembered
+                    .get(&(context.account.into(), hash))
+                    .cloned()
+                    .ok_or(Error::Locked)?;
+                let files = private_files(context.home)?;
+                if grant.epoch != session.account_epoch
+                    || grant.revision != files.revision
+                    || grant.unlock_until <= now
+                    || !endpoint(context.home, deadline).unwrap_or(false)
+                {
+                    return Err(Error::Locked);
+                }
+                let key = (context.account.into(), session.session_id.clone());
+                if self.grants.len() >= 256 && !self.grants.contains_key(&key) {
+                    return Err(Error::Unavailable);
+                }
+                grant.until = grant.unlock_until.min(session.expires_at);
+                self.grants.insert(key, grant);
+                return self.state(&context, session, deadline);
+            }
             PersonalAction::Lock => {
                 self.revoke(context.account);
                 if stop_agent(context.home, deadline).is_err() {
@@ -577,15 +661,16 @@ impl Manager {
             });
         }
         let files = private_files(context.home)?;
-        let until = session
-            .expires_at
-            .min(time()?.saturating_add(CACHE_SECONDS));
+        let unlock_until = time()?.saturating_add(CACHE_SECONDS);
+        let until = session.expires_at.min(unlock_until);
         self.grants.insert(
             (context.account.into(), session.session_id.clone()),
             Grant {
                 epoch: session.account_epoch,
                 until,
+                unlock_until,
                 revision: files.revision.clone(),
+                remembered: None,
             },
         );
         self.failures.remove(context.account);

@@ -24,6 +24,7 @@ pub(crate) fn render(
         },
         Some(_) => "Personal key installed. Signing access is locked for this browser session.".into(),
     };
+    let remembered = state.and_then(|value| value.remembered_until).map(|until| format!("<p>Key access remembered on this browser until {}. The deadline does not extend when you sign in or use your key. Sign out clears remembered access. A key-service restart requires unlocking again. Restarting the web service clears remembered sign-in restoration.</p>", escape_html(&crate::logging::format_unix_timestamp_utc(until).replace('T', " ").replace('Z', " UTC")))).unwrap_or_default();
     let key_details = state.map(|value| {
         let protection = if !value.installed {
             "Import the matching private key for this configured account fingerprint. Import does not replace an existing key or change your account key."
@@ -48,7 +49,7 @@ pub(crate) fn render(
         concat!(
             "<section id=\"personal-key\" class=\"key-management-card personal-key-panel\" aria-labelledby=\"personal-key-heading\">",
             "<h2 id=\"personal-key-heading\">Your personal key</h2><p>For <strong>{account}</strong>. Use your own private key to sign and decrypt mail. Contacts’ public keys are managed separately below.</p>",
-            "<p class=\"key-account-state\" data-personal-key-status>{status}</p>{key_details}",
+            "<p class=\"key-account-state\" data-personal-key-status>{status}</p>{remembered}{key_details}",
             "<p>Your personal key is stored on this OSMAP server. Signing and decryption happen here and are checked again when used; access permission does not guarantee that an operation will succeed.</p>",
             "<details{import_open}><summary>Import your personal private key</summary>",
             "<p>Choose the matching private-key .asc file for the configured fingerprint, not a contact’s public key. Import does not replace an existing key or change your account key. Passphrase-protected keys keep their protection. Keys supplied without passphrase protection are stored with restricted access.</p>",
@@ -61,12 +62,13 @@ pub(crate) fn render(
             "<details{unlock_open}><summary>Unlock your personal key</summary><p>Enter your key passphrase to permit signing and decryption for this browser session. Leave it empty only if your imported key has no passphrase. Unlocking ends earlier personal-key permissions for this account.</p>",
             "<form method=\"post\" action=\"/settings/keys/change\">{unlock_fields}<fieldset{unlock_disabled}><legend>Unlock personal-key access</legend>",
             "<label for=\"personal-unlock-passphrase\">Key passphrase</label><input id=\"personal-unlock-passphrase\" type=\"password\" name=\"key_passphrase\" autocomplete=\"off\" spellcheck=\"false\"{unlock_required}>",
+            "<label class=\"personal-key-remember\" for=\"remember-personal-key\"><input id=\"remember-personal-key\" type=\"checkbox\" name=\"remember_key\" value=\"1\"> Remember key access on this browser for eight hours</label><p>Optional. Use only on your own device. New sign-ins still require your email, password and TOTP. The original eight-hour deadline stays fixed; ordinary Sign out clears remembered access. Your passphrase is not saved in this browser.</p>",
             "<button type=\"submit\">Unlock personal key</button></fieldset></form></details>",
             "<form method=\"post\" action=\"/settings/keys/change\">{lock_fields}<fieldset{lock_disabled}><legend>Lock personal-key access</legend>",
             "<p>Lock signing and decryption access for all OSMAP browser sessions for this account.</p><button type=\"submit\">Lock this account’s personal key</button></fieldset></form>",
             "</section>"
         ),
-        account = escape_html(account), status = escape_html(&status), key_details = key_details,
+        account = escape_html(account), status = escape_html(&status), key_details = key_details, remembered = remembered,
         import_fields = fields("import_personal"), import_disabled = disabled(available && !installed),
         import_open = if available && !installed { " open" } else { "" },
         unlock_fields = fields("unlock_personal"), unlock_disabled = disabled(installed),
@@ -89,6 +91,7 @@ mod tests {
             unlocked_for_session: false,
             valid_until: None,
             cache_seconds: 28800,
+            remembered_until: None,
         }
     }
 
@@ -165,6 +168,28 @@ mod tests {
         let unknown = render("alice@example.test", "csrf", 7, Some(&value));
         assert!(unknown.contains("Signing permission could not be confirmed"));
         assert!(!unknown.contains("Signing access permitted"));
+    }
+    #[test]
+    fn remembering_is_opt_in_and_original_deadline_and_logout_are_visible() {
+        let mut value = state();
+        value.unlocked_for_session = true;
+        value.valid_until = Some(1704067200);
+        value.remembered_until = Some(1704067300);
+        let html = render("alice@example.test", "csrf", 7, Some(&value));
+        let input = html
+            .split("id=\"remember-personal-key\"")
+            .nth(1)
+            .unwrap()
+            .split('>')
+            .next()
+            .unwrap();
+        assert!(!input.contains("checked"));
+        assert!(html.contains("Remember key access on this browser for eight hours"));
+        assert!(
+            html.contains("Key access remembered on this browser until 2024-01-01 00:01:40 UTC")
+        );
+        assert!(html.contains("Sign out clears remembered access"));
+        assert!(html.contains("email, password and TOTP"));
     }
 
     #[test]
