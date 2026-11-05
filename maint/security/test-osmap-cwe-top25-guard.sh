@@ -184,4 +184,44 @@ PYCODE
     assert_fails_with "$registered_repo" "$fixture"
 done
 
+# Native scheduler fixtures are excluded only while their exact test-only
+# registration chain is intact. Removing any link exposes the hostile fixture.
+for boundary in runtime_cfg runtime_path scheduled_cfg scheduled_parent scheduled_include; do
+    registered_repo=$(make_repo "$boundary")
+    mkdir -p "$registered_repo/src/http"
+    cp "$repo_root/src/http_runtime.rs" "$registered_repo/src/http_runtime.rs"
+    cp "$repo_root/src/http_gateway_mail.rs" "$registered_repo/src/http_gateway_mail.rs"
+    cp "$repo_root/src/http/protected_send_gateway_native_tests.rs" "$registered_repo/src/http/protected_send_gateway_native_tests.rs"
+    case "$boundary" in
+        runtime_*) fixture=http_runtime_scheduled_positive_native_tests.rs ;;
+        scheduled_*) fixture=http/protected_send_gateway_scheduled_native_tests.rs ;;
+    esac
+    cat > "$registered_repo/src/$fixture" <<'EOF'
+pub fn hostile_scanner_fixture() {
+    let _ = "/bin/sh";
+    let _ = std::process::Command::new("/usr/bin/id");
+}
+EOF
+    assert_passes "$registered_repo"
+    python3 - "$registered_repo" "$boundary" <<'PYCODE'
+from pathlib import Path
+import sys
+root = Path(sys.argv[1])
+boundaries = {
+    "runtime_cfg": ("src/http_runtime.rs", '#[cfg(all(test, target_os = "openbsd"))]\n#[path = "http_runtime_scheduled_positive_native_tests.rs"]', '#[path = "http_runtime_scheduled_positive_native_tests.rs"]'),
+    "runtime_path": ("src/http_runtime.rs", '#[path = "http_runtime_scheduled_positive_native_tests.rs"]', ''),
+    "scheduled_cfg": ("src/http_gateway_mail.rs", '#[cfg(test)]\nmod tests {', 'mod tests {'),
+    "scheduled_parent": ("src/http_gateway_mail.rs", 'include!("http/protected_send_gateway_native_tests.rs");', ''),
+    "scheduled_include": ("src/http/protected_send_gateway_native_tests.rs", 'include!("protected_send_gateway_scheduled_native_tests.rs");', ''),
+}
+relative, marker, replacement = boundaries[sys.argv[2]]
+path = root / relative
+source = path.read_text()
+if source.count(marker) != 1:
+    raise SystemExit("exact native registration marker required")
+path.write_text(source.replace(marker, replacement, 1))
+PYCODE
+    assert_fails_with "$registered_repo" "$fixture"
+done
+
 echo "CWE Top 25 guard regression checks passed"

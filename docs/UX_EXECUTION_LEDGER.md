@@ -101,7 +101,9 @@
     "docs/UX_SLICE_S08_01.md",
     "src/http_runtime_scheduled_positive_native_tests.rs",
     "src/http_gateway_account.rs",
-    "src/openbsd.rs"
+    "src/openbsd.rs",
+    "maint/security/osmap-cwe-top25-guard.py",
+    "maint/security/test-osmap-cwe-top25-guard.sh"
   ],
   "outcomes": [
     {
@@ -182,7 +184,7 @@
     "slice": "S08-03",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "c3f3dc0c9ba0036ac5661014be8f25cc30796f7e54acb953904c7f1be37e5ec1"
+      "sha256": "0bfd7cd9af96afed5e6ece0d0addd3ebe9f49003ffbe55c5298a645a2921f6f2"
     },
     "design": {
       "journey": "Schedule captured mail, inspect/edit/cancel pending jobs, observe truthful submission state; snooze expires without moving messages.",
