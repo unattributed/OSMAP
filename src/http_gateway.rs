@@ -1328,6 +1328,32 @@ impl BrowserGateway for RuntimeBrowserGateway {
             crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
         )
     }
+    fn mark_all_notifications_read(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        crate::notifications::NotificationStore::new(&self.settings_dir).mark_all_read(
+            &session.record.canonical_username,
+            revision,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn delete_notification(
+        &self,
+        session: &ValidatedSession,
+        id: &str,
+        revision: u64,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        crate::notifications::NotificationStore::new(&self.settings_dir).delete(
+            &session.record.canonical_username,
+            id,
+            revision,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
     fn set_notification_read(
         &self,
         session: &ValidatedSession,

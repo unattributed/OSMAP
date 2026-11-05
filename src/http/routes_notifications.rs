@@ -102,7 +102,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             }
         })();
         match result {
-            Ok(_) => {
+            Ok(saved) => {
                 audit_events.push(build_http_info_event(
                     "notification_preference_saved",
                     "in-app notification presentation preference saved",
@@ -112,16 +112,19 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     response: redirect_response(
                         303,
                         "See Other",
-                        "/settings?section=notifications",
+                        &format!(
+                            "/settings?section=notifications&saved_revision={}",
+                            saved.revision
+                        ),
                     ),
                     audit_events,
                 }
             }
             Err(error) => {
                 let (status, reason, text) = match error {
-                    Error::Invalid => (400, "Bad Request", "The digest preference request was invalid. Reload Notification settings."),
+                    Error::Invalid => (400, "Bad Request", "The notification preferences request was invalid. Reload Notification settings."),
                     Error::Stale => (409, "Conflict", "Notification preferences changed. Review the current saved value before saving again."),
-                    _ => (503, "Service Unavailable", "The digest preference save could not be confirmed. Reload Notification settings to check the saved state; no automatic retry will occur."),
+                    _ => (503, "Service Unavailable", "The notification preferences save could not be confirmed. Reload Notification settings to check the saved state; no automatic retry will occur."),
                 };
                 audit_events.push(build_http_warning_event(
                     "notification_preference_unconfirmed",
@@ -138,6 +141,125 @@ impl<G: BrowserGateway> BrowserApp<G> {
                             &session.record.canonical_username,
                             &session.record.csrf_token,
                             current.as_ref(),
+                            Some(text),
+                        ),
+                    ),
+                    audit_events,
+                }
+            }
+        }
+    }
+    pub(super) fn handle_notification_manage(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        let (session, mut audit_events) = match self.require_validated_session(request, context) {
+            Ok(value) => value,
+            Err(response) => return response,
+        };
+        let deleting = request.path == "/notifications/delete";
+        let form = if allows_urlencoded_request_body(
+            request.headers.get("content-type").map(String::as_str),
+        ) {
+            parse_urlencoded_form(&request.body, 3, 512).ok()
+        } else {
+            None
+        };
+        let Some(form) = form else {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Notification Request",
+                    "<p>Reload Notifications before changing this inbox.</p>",
+                ),
+                audit_events,
+            };
+        };
+        if let Some(response) = self.require_valid_csrf(
+            request,
+            form.get("csrf_token").map(String::as_str),
+            &session,
+            context,
+        ) {
+            return response;
+        }
+        let result = (|| {
+            if !request.query_params.is_empty()
+                || form.len() != if deleting { 3 } else { 2 }
+                || form.keys().any(|name| {
+                    !(matches!(name.as_str(), "csrf_token" | "revision")
+                        || deleting && name == "event_id")
+                })
+            {
+                return Err(NotificationError::Invalid);
+            }
+            let revision = form
+                .get("revision")
+                .and_then(|value| {
+                    value
+                        .parse::<u64>()
+                        .ok()
+                        .filter(|parsed| parsed.to_string() == *value)
+                })
+                .ok_or(NotificationError::Invalid)?;
+            if deleting {
+                self.gateway.delete_notification(
+                    &session,
+                    form.get("event_id").ok_or(NotificationError::Invalid)?,
+                    revision,
+                )
+            } else {
+                self.gateway.mark_all_notifications_read(&session, revision)
+            }
+        })();
+        match result {
+            Ok(_) => {
+                audit_events.push(build_http_info_event(
+                    if deleting {
+                        "notification_deleted"
+                    } else {
+                        "notifications_marked_read"
+                    },
+                    if deleting {
+                        "notification dismissed from owned inbox"
+                    } else {
+                        "all retained notifications marked read"
+                    },
+                    context,
+                ));
+                HandledHttpResponse {
+                    response: redirect_response(303, "See Other", "/notifications"),
+                    audit_events,
+                }
+            }
+            Err(error) => {
+                let (status,reason,text)=match error {
+                    NotificationError::Stale=>(409,"Conflict","Notifications changed. Review the current inbox before changing it."),
+                    NotificationError::Invalid|NotificationError::Missing=>(400,"Bad Request","The notification request was not valid for this account. Reload Notifications."),
+                    _=>(503,"Service Unavailable","The notification change could not be confirmed. Reload Notifications to check the saved state; no automatic retry will occur."),
+                };
+                audit_events.push(build_http_warning_event(
+                    "notification_change_unconfirmed",
+                    "notification inbox change was not confirmed",
+                    context,
+                ));
+                let inbox = self.gateway.notification_inbox(&session).ok();
+                let preference = self.gateway.load_notification_preference(&session).ok();
+                request.notification_context.borrow_mut().count = Some(
+                    super::notification_badge::visible_unread(inbox.as_ref(), preference.as_ref()),
+                );
+                HandledHttpResponse {
+                    response: super::notification_delivery::response(
+                        status,
+                        reason,
+                        "Notifications",
+                        crate::http_ui::render_notification_inbox(
+                            &session.record.canonical_username,
+                            &session.record.csrf_token,
+                            inbox.as_ref(),
+                            preference.as_ref(),
                             Some(text),
                         ),
                     ),

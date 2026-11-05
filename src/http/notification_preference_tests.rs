@@ -121,6 +121,86 @@ fn notification_settings_generated_digest_form_is_editable() {
 }
 
 #[test]
+fn notification_preference_confirmation_uses_reloaded_owned_revision_and_reports_all_choice_failures(
+) {
+    let f = Fixture::new();
+    let mut fields = f.fields();
+    fields.insert("choice_version".into(), "1".into());
+    fields.insert("openpgp".into(), "1".into());
+    fields.insert("sound".into(), "1".into());
+    let saved = f.post(&Fixture::encoded(&fields), false);
+    assert_eq!(saved.response.status_code, 303);
+    let location = saved
+        .response
+        .headers
+        .iter()
+        .find(|(name, _)| name == "Location")
+        .unwrap()
+        .1
+        .clone();
+    assert_eq!(location, "/settings?section=notifications&saved_revision=1");
+    let get = |path: &str, bob: bool| {
+        let mut req = request("GET", path, &authenticated_headers(), "");
+        if bob {
+            req.headers
+                .insert("cookie".into(), format!("osmap_session={}", "b".repeat(64)));
+        }
+        f.app.handle_request(&req, "127.0.0.1")
+    };
+    const RELOADED: &str =
+        "Saved notification preferences reloaded. These are your current saved choices.";
+    assert!(!body_text(&f.get()).contains(RELOADED));
+    let loaded = get(&location, false);
+    assert_eq!(loaded.response.status_code, 200);
+    assert!(body_text(&loaded).contains(RELOADED));
+    assert!(body_text(&loaded).contains("name=\"openpgp\" value=\"1\" checked"));
+    assert!(body_text(&loaded).contains("name=\"sound\" value=\"1\" checked"));
+    assert!(!body_text(&loaded).contains("name=\"mentions\" value=\"1\" checked"));
+    assert!(!body_text(&get(&location, true)).contains(RELOADED));
+    for revision in ["0", "01", "18446744073709551616", "%3Cscript%3E"] {
+        let read = get(
+            &format!("/settings?section=notifications&saved_revision={revision}"),
+            false,
+        );
+        assert_eq!(read.response.status_code, 200);
+        assert!(body_text(&read).contains("confirmation link was invalid"));
+        assert!(!body_text(&read).contains(RELOADED));
+        assert!(!body_text(&read).contains("<script>"));
+    }
+    let changed = f
+        .store
+        .save("alice@example.com", 1, DigestMode::Individual)
+        .unwrap();
+    assert_eq!(changed.revision, 2);
+    let outdated = get(&location, false);
+    assert!(body_text(&outdated).contains("requested preference revision is no longer current"));
+    assert!(!body_text(&outdated).contains(RELOADED));
+    let mut invalid = f.fields();
+    invalid.insert("sound".into(), "on".into());
+    invalid.insert("choice_version".into(), "1".into());
+    let refused = f.post(&Fixture::encoded(&invalid), false);
+    assert_eq!(refused.response.status_code, 400);
+    assert!(body_text(&refused).contains("notification preferences request was invalid"));
+    let path = fs::read_dir(f.root.join("settings"))
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .find(|path| fs::read_to_string(path).is_ok_and(|text| text.contains("\"digest\"")))
+        .unwrap();
+    fs::write(&path, b"{broken").unwrap();
+    let unavailable = get("/settings?section=notifications&saved_revision=2", false);
+    assert_eq!(unavailable.response.status_code, 503);
+    assert!(
+        body_text(&unavailable).contains("Saved notification preferences could not be reloaded")
+    );
+    assert!(!body_text(&unavailable).contains(RELOADED));
+    invalid.remove("sound");
+    let refused = f.post(&Fixture::encoded(&invalid), false);
+    assert_eq!(refused.response.status_code, 503);
+    assert!(body_text(&refused).contains("notification preferences save could not be confirmed"));
+    assert_eq!(fs::read(path).unwrap(), b"{broken");
+}
+
+#[test]
 fn notification_preference_generated_save_restart_stale_invalid_csrf_foreign_and_other_section_preservation(
 ) {
     let f = Fixture::new();

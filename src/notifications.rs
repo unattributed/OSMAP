@@ -121,6 +121,9 @@ struct Stored {
     #[serde(default)]
     discarded_through: u64,
     events: Vec<NotificationEvent>,
+    /// Inbox dismissals retain their source event for bounded replay suppression.
+    #[serde(default)]
+    dismissed: Vec<String>,
 }
 #[derive(Debug, Clone)]
 pub struct NotificationStore {
@@ -162,6 +165,7 @@ impl NotificationStore {
                 high_water: now,
                 discarded_through: 0,
                 events: vec![],
+                dismissed: vec![],
             });
         };
         let record: Stored =
@@ -172,6 +176,7 @@ impl NotificationStore {
             || record.high_water == 0
             || record.discarded_through > record.high_water
             || record.events.len() > MAX_EVENTS
+            || record.dismissed.len() > record.events.len()
         {
             return Err(NotificationError::Corrupt);
         }
@@ -187,6 +192,14 @@ impl NotificationStore {
                 return Err(NotificationError::Corrupt);
             }
             previous = event.occurred_at;
+        }
+        let mut dismissed = HashSet::new();
+        if record
+            .dismissed
+            .iter()
+            .any(|id| !valid_id(id) || !ids.contains(id) || !dismissed.insert(id))
+        {
+            return Err(NotificationError::Corrupt);
         }
         if now < record.high_water {
             return Err(NotificationError::ClockRollback);
@@ -215,12 +228,22 @@ impl NotificationStore {
         record
             .events
             .retain(|event| now - event.occurred_at < RETENTION_SECONDS);
+        Self::prune_dismissed(record);
         old != record.events.len()
+    }
+    fn prune_dismissed(record: &mut Stored) {
+        record
+            .dismissed
+            .retain(|id| record.events.iter().any(|event| event.event_id == *id));
     }
     fn inbox(record: Stored) -> NotificationInbox {
         NotificationInbox {
             revision: record.revision,
-            events: record.events,
+            events: record
+                .events
+                .into_iter()
+                .filter(|event| !record.dismissed.contains(&event.event_id))
+                .collect(),
         }
     }
     pub fn load(&self, account: &str, now: u64) -> Result<NotificationInbox, NotificationError> {
@@ -264,6 +287,7 @@ impl NotificationStore {
                     .unwrap_or(0),
             );
             record.events.truncate(MAX_EVENTS);
+            Self::prune_dismissed(&mut record);
         }
         Self::write(&lock, &mut record, now)
     }
@@ -328,6 +352,7 @@ impl NotificationStore {
         if record.events.len() > MAX_EVENTS {
             let removed = record.events.pop().ok_or(NotificationError::Corrupt)?;
             record.discarded_through = record.discarded_through.max(removed.occurred_at);
+            Self::prune_dismissed(&mut record);
         }
         Self::write(&lock, &mut record, now)?;
         Ok(true)
@@ -351,6 +376,9 @@ impl NotificationStore {
         if record.revision != revision {
             return Err(NotificationError::Stale);
         }
+        if record.dismissed.iter().any(|id| id == event_id) {
+            return Err(NotificationError::Missing);
+        }
         let event = record
             .events
             .iter_mut()
@@ -358,6 +386,64 @@ impl NotificationStore {
             .ok_or(NotificationError::Missing)?;
         if event.read != read {
             event.read = read;
+            Self::write(&lock, &mut record, now)?;
+        }
+        Ok(Self::inbox(record))
+    }
+    /// Mark the complete retained visible inbox read, independent of preferences.
+    pub fn mark_all_read(
+        &self,
+        account: &str,
+        expected_revision: u64,
+        now: u64,
+    ) -> Result<NotificationInbox, NotificationError> {
+        let lock = self.lock(account)?;
+        let mut record = Self::read(&lock, account, now)?;
+        if Self::prune(&mut record, now) {
+            Self::write(&lock, &mut record, now)?;
+        }
+        if record.revision != expected_revision {
+            return Err(NotificationError::Stale);
+        }
+        let mut changed = false;
+        for event in &mut record.events {
+            if !event.read && !record.dismissed.contains(&event.event_id) {
+                event.read = true;
+                changed = true;
+            }
+        }
+        if changed {
+            Self::write(&lock, &mut record, now)?;
+        }
+        Ok(Self::inbox(record))
+    }
+    /// Dismiss an inbox event, including a mandatory notice, without deleting
+    /// its source operation. The retained event suppresses replay within the
+    /// existing 200-event/90-day history; a fresh observation beyond that
+    /// bounded history can produce a notice again.
+    pub fn delete(
+        &self,
+        account: &str,
+        event_id: &str,
+        expected_revision: u64,
+        now: u64,
+    ) -> Result<NotificationInbox, NotificationError> {
+        if !valid_id(event_id) {
+            return Err(NotificationError::Invalid);
+        }
+        let lock = self.lock(account)?;
+        let mut record = Self::read(&lock, account, now)?;
+        if Self::prune(&mut record, now) {
+            Self::write(&lock, &mut record, now)?;
+        }
+        if record.revision != expected_revision {
+            return Err(NotificationError::Stale);
+        }
+        if !record.events.iter().any(|event| event.event_id == event_id) {
+            return Err(NotificationError::Missing);
+        }
+        if !record.dismissed.iter().any(|id| id == event_id) {
+            record.dismissed.push(event_id.to_owned());
             Self::write(&lock, &mut record, now)?;
         }
         Ok(Self::inbox(record))

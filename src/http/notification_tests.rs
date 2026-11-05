@@ -1,6 +1,228 @@
 use super::*;
 use crate::notifications::{NotificationKind, NotificationStore};
 #[test]
+fn notification_mark_all_and_delete_are_native_owner_csrf_cas_and_hidden_category_scoped() {
+    let root = temp_dir(&format!(
+        "notification-manage-{}",
+        crate::draft::generate_draft_id().unwrap()
+    ));
+    let store = NotificationStore::new(root.join("settings"));
+    let now = || crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider);
+    for kind in [NotificationKind::SessionIssued, NotificationKind::NewMail] {
+        store.record("alice@example.com", kind, now()).unwrap();
+    }
+    store
+        .record("bob@example.com", NotificationKind::SessionIssued, now())
+        .unwrap();
+    let prefs = crate::notification_preferences::Store::new(root.join("settings"));
+    prefs
+        .save_choices(
+            "alice@example.com",
+            0,
+            crate::notification_preferences::DigestMode::Individual,
+            crate::notification_preferences::Choice {
+                new_mail: false,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    let app = BrowserApp::new(
+        HttpPolicy::default(),
+        StubGateway {
+            notification_store: Some(store.clone()),
+            notification_preference_store: Some(prefs),
+            browser_fixture_accounts: true,
+            ..Default::default()
+        },
+    );
+    let alice = store.load("alice@example.com", now()).unwrap();
+    let bob = store.load("bob@example.com", now()).unwrap();
+    let csrf = StubGateway::validated_session().record.csrf_token;
+    let request_post = |path: &str, body: &str, auth: bool, foreign_origin: bool| {
+        let headers = authenticated_same_origin_headers();
+        let mut req = request("POST", path, if auth { &headers } else { &[] }, body);
+        if foreign_origin {
+            req.headers
+                .insert("origin".into(), "https://foreign.invalid".into());
+        }
+        app.handle_request(&req, "127.0.0.1")
+    };
+    let body = format!("csrf_token={csrf}&revision={}", alice.revision);
+    assert_eq!(
+        request_post("/notifications/read-all", &body, false, false)
+            .response
+            .status_code,
+        303
+    );
+    assert_eq!(
+        request_post("/notifications/read-all", &body, true, true)
+            .response
+            .status_code,
+        403
+    );
+    assert_eq!(
+        request_post(
+            "/notifications/read-all",
+            &body.replace(&csrf, "invalid"),
+            true,
+            false
+        )
+        .response
+        .status_code,
+        403
+    );
+    for extra in ["&unexpected=1", "&event_id=abcd", "&revision=1"] {
+        assert_eq!(
+            request_post(
+                "/notifications/read-all",
+                &format!("{body}{extra}"),
+                true,
+                false
+            )
+            .response
+            .status_code,
+            400
+        );
+    }
+    assert_eq!(
+        request_post("/notifications/read-all?unexpected=1", &body, true, false)
+            .response
+            .status_code,
+        400
+    );
+    assert_eq!(store.load("alice@example.com", now()).unwrap(), alice);
+    let page = app.handle_request(
+        &request("GET", "/notifications", &authenticated_headers(), ""),
+        "127.0.0.1",
+    );
+    let html = body_text(&page);
+    assert!(html.contains("Mark all as read</button>"));
+    assert!(html.contains("including optional notices hidden by your choices"));
+    assert_eq!(html.matches("action=\"/notifications/delete\"").count(), 1);
+    assert!(!html.contains("New Inbox message observed"));
+    assert_eq!(
+        request_post("/notifications/read-all", &body, true, false)
+            .response
+            .status_code,
+        303
+    );
+    let read = store.load("alice@example.com", now()).unwrap();
+    assert!(read.events.iter().all(|event| event.read));
+    assert_eq!(store.load("bob@example.com", now()).unwrap(), bob);
+    assert_eq!(
+        request_post("/notifications/read-all", &body, true, false)
+            .response
+            .status_code,
+        409
+    );
+    let page = app.handle_request(
+        &request("GET", "/notifications", &authenticated_headers(), ""),
+        "127.0.0.1",
+    );
+    assert!(body_text(&page).contains("disabled>Mark all as read</button>"));
+    let id = read
+        .events
+        .iter()
+        .find(|event| event.kind == NotificationKind::SessionIssued)
+        .unwrap()
+        .event_id
+        .clone();
+    let delete = format!("csrf_token={csrf}&revision={}&event_id={id}", read.revision);
+    assert_eq!(
+        request_post(
+            "/notifications/delete",
+            &delete.replace(&csrf, "invalid"),
+            true,
+            false
+        )
+        .response
+        .status_code,
+        403
+    );
+    assert_eq!(
+        request_post("/notifications/delete", &delete, true, true)
+            .response
+            .status_code,
+        403
+    );
+    assert_eq!(
+        request_post(
+            "/notifications/delete",
+            &format!("{delete}&unexpected=1"),
+            true,
+            false
+        )
+        .response
+        .status_code,
+        400
+    );
+    assert_eq!(
+        request_post(
+            "/notifications/delete",
+            &format!(
+                "csrf_token={csrf}&revision={}&event_id={}",
+                read.revision, bob.events[0].event_id
+            ),
+            true,
+            false
+        )
+        .response
+        .status_code,
+        400
+    );
+    assert_eq!(store.load("alice@example.com", now()).unwrap(), read);
+    assert_eq!(
+        request_post("/notifications/delete", &delete, true, false)
+            .response
+            .status_code,
+        303
+    );
+    let deleted = store.load("alice@example.com", now()).unwrap();
+    assert!(deleted.events.iter().all(|event| event.event_id != id));
+    assert_eq!(deleted.events.len(), 1);
+    assert_eq!(
+        request_post("/notifications/delete", &delete, true, false)
+            .response
+            .status_code,
+        409
+    );
+    assert_eq!(store.load("bob@example.com", now()).unwrap(), bob);
+    // Both gateway implementations use the same owned native store contract.
+    let runtime = RuntimeBrowserGateway::for_test(&root);
+    let session = StubGateway::validated_session();
+    let unchanged = runtime
+        .mark_all_notifications_read(&session, deleted.revision)
+        .unwrap();
+    assert_eq!(unchanged, deleted);
+    let empty = runtime
+        .delete_notification(&session, &deleted.events[0].event_id, deleted.revision)
+        .unwrap();
+    assert!(empty.events.is_empty());
+    let page = app.handle_request(
+        &request("GET", "/notifications", &authenticated_headers(), ""),
+        "127.0.0.1",
+    );
+    assert!(body_text(&page).contains("disabled>Mark all as read</button>"));
+    assert!(!body_text(&page).contains("action=\"/notifications/delete\""));
+    let path = fs::read_dir(root.join("settings"))
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .find(|path| fs::read_to_string(path).is_ok_and(|text| text.contains(&id)))
+        .unwrap();
+    fs::write(&path, b"{broken").unwrap();
+    let refused = request_post(
+        "/notifications/read-all",
+        &format!("csrf_token={csrf}&revision={}", empty.revision),
+        true,
+        false,
+    );
+    assert_eq!(refused.response.status_code, 503);
+    assert!(body_text(&refused).contains("notification change could not be confirmed"));
+    assert_eq!(fs::read(path).unwrap(), b"{broken");
+    assert_eq!(store.load("bob@example.com", now()).unwrap(), bob);
+    fs::remove_dir_all(root).unwrap();
+}
+#[test]
 fn notification_native_owner_csrf_cas_and_corrupt_refusal() {
     let root = temp_dir("notification-route");
     let store = NotificationStore::new(root.join("inbox"));

@@ -67,7 +67,11 @@ fn fields(form: &str) -> BTreeMap<String, String> {
     let mut result = BTreeMap::new();
     for part in form.split("<input ").skip(1) {
         let tag = part.split('>').next().unwrap();
-        if (tag.contains("type=\"checkbox\"") || tag.contains("type=checkbox ")) && !tag.contains(" checked") { continue; }
+        if (tag.contains("type=\"checkbox\"") || tag.contains("type=checkbox "))
+            && !tag.contains(" checked")
+        {
+            continue;
+        }
         assert!(result
             .insert(attr(tag, "name"), attr(tag, "value"))
             .is_none());
@@ -95,7 +99,9 @@ fn setting(
     assert!(form.contains(&format!("value=\"{mode}\"")));
     let mut parsed = fields(form);
     assert_eq!(parsed["choice_version"], "1");
-    for name in ["new_mail", "mentions", "openpgp", "submission"] { assert_eq!(parsed[name], "1"); }
+    for name in ["new_mail", "mentions", "openpgp", "submission"] {
+        assert_eq!(parsed[name], "1");
+    }
     assert!(!parsed.contains_key("sound"));
     assert!(!parsed.contains_key("desktop"));
     assert_eq!(parsed["expected_revision"], revision.to_string());
@@ -116,11 +122,18 @@ fn projection(html: &str, inbox: &NotificationInbox, mode: &str, days: usize) {
     let unread = inbox.events.iter().filter(|e| !e.read).count();
     assert!(html.contains(&format!("data-unread=\"{unread}\"")));
     for event in &inbox.events {
-        assert_eq!(
-            html.matches(&format!("name=\"event_id\" value=\"{}\"", event.event_id))
-                .count(),
-            1
-        );
+        for action in ["/notifications/read", "/notifications/delete"] {
+            let prefix = format!("<form method=\"post\" action=\"{action}\"");
+            assert_eq!(
+                html.split(&prefix)
+                    .skip(1)
+                    .map(|tail| tail.split("</form>").next().unwrap())
+                    .filter(|form| form
+                        .contains(&format!("name=\"event_id\" value=\"{}\"", event.event_id)))
+                    .count(),
+                1
+            );
+        }
         assert!(html.contains(&format!(
             "datetime=\"{}\"",
             crate::logging::format_unix_timestamp_utc(event.occurred_at)

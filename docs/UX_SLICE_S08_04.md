@@ -1,6 +1,6 @@
 # S08-04 — Factual notifications and explicit browser delivery
 
-The owner directs continuing unfinished S08 autonomously. S08-03 engineering is installed and the ordinary positive post-seal worker qualification passes; owner T09 remains pending; S08-02 is accepted. S08-01 Documents shared enforcement remains open and mailbox migration remains set aside.
+The owner directs continuing unfinished S08 autonomously. S08-03 engineering is installed and the ordinary positive post-seal worker qualification passes; owner T09 remains pending; S08-02 is accepted. S08-01 Documents shared enforcement remains open; the owner approved the Duncan-only obsd1 cutover on2026-11-05. Toronto remains unchanged by this work.
 
 ## Smallest complete route
 
@@ -65,3 +65,21 @@ Web-only installation loads production candidate db3836658799b75aa2d7d9549a4783c
 Matching test7 current signed-admission/Runtime/helper/storage/owned-renderer/foreign-refusal check passes1/0 in0.11seconds; direct values172605611messagebytes and209715200configuredbytes agree. The exact native private Runtime notification persistence/grouping/read-CAS/stale/foreign/corrupt-recovery case passes1/0 in0.05seconds. Readiness receiptSHA256aa5d5dfb564c71336e83e6f0f34202f59c743486fefdb57bc80be21eef59572e. Owner session/HTTP, passwords/TOTP and owner private-key operations were not used. The actual authenticated Inbox/SMTP producer result remains the separately recorded controlled native actor, not this installed smoke. Independent review reconciles these exact results and gives engineering GO. No owner acceptance or full WSTG/production-release claim.
 
 For a simple owner check: sign in normally, open Notifications from the bell, mark one notice read and refresh. It should stay read. In Settings→Notifications change one optional choice, Save and reload; the saved choice should remain. Desktop/sound are optional: save that channel preference, then explicitly enable it in This browser. A denied/unsupported platform must say so; the API request alone does not prove a visible or audible alert.
+
+## Owner-requested inbox controls and saved feedback —2026-11-05
+
+The owner requested **Mark all as read** and **Delete notifications**, and reported uncertainty about whether preference changes persisted. Read-only inspection of Duncan's actual saved preference revision3 confirmed the displayed choices were saved. The missing save confirmation was a presentation defect, not evidence of lost preferences.
+
+The existing owner-private NotificationStore now supports one revision-checked bulk read operation and per-notice dismissal. Bulk read includes retained optional notices hidden by preferences. Deletion dismisses an inbox notice, including an explicitly selected mandatory notice, without undoing its source operation or changing separate audit records. Original bounded source facts remain available for replay suppression within the existing200-event/90-day history; permanent suppression beyond that retained history is not claimed. Old records default to an empty dismissal set. No new storage service, dependency or JavaScript authority is added.
+
+Both new native POST routes use the existing session, same-origin/CSRF, strict bounded form and revision-CAS protections. Save feedback follows the actual saved revision through the redirect and reloads the authenticated owner's current preferences. Stale, malformed or unavailable readback cannot claim confirmed saving.
+
+Independent source review gives GO. Focused Rust notification tests pass50/0 and strict all-target Clippy passes. The first focused compilation failed with a temporary-header lifetime in a new test; the named binding correction changes no product behaviour. Strict Clippy then identified an equivalent Boolean simplification in form-field validation; the accepted field set is unchanged. The first attempted pre-action validator mode refused because that mode is limited to S04-02; no host command was dispatched by that refused chain. The supported work-order-only check passes.
+
+Private follow-up evidence is retained under `osmap-ux-s08/completion-20261104/notification-controls-20261105`. Source12 was retained but not built after the Clippy correction; source13 SHA256 is2700b34f459842917ecd1cbd8b3b627473c7a4de2a90aec95ef58dc0068c0aa4.
+
+Matching native source13 builds pass: libtest SHA256dcde9013aa1bab30671f2594ecdf387d91de76b326274e64596518afbe1d476f and main086725b0d09b27404be0f95b76f299bc7b6392c9444b9889aef3877c5a0fded5. As actual Web UID1001, the OpenBSD notification suite passes50/0 with one separate opt-in case ignored in0.92seconds, including generated HTTP forms, RuntimeStore delegation, restart/readback, hidden-category bulk read, per-notice mandatory dismissal, stale/foreign/CSRF/corrupt refusals. Disposable state only; no owner session or notification mutation was used.
+
+The reviewed Web-only atomic install loads that main in ServePID14636. Account-service/helper/configuration and crypto-agent observations compare unchanged, HTTPS login200 and nine roles pass. The matching current signed-admission/installed-helper/report check passes1/0 in0.12seconds, with172605611 message bytes and209715200 configured bytes. Native test receiptSHA25667c7fa5ae6381432c2d49c2708f7080f3d1e58434992d83c6edeee36aca98e88. Ordinary signed delivery and owner UAT remain separate.
+
+Owner check: open Notifications from the bell, use **Mark all as read**, and refresh; retained notices should remain read. Delete one notice and refresh; it should remain absent from the inbox. Save a preference in Settings→Notifications; the page should show the reloaded saved-choice confirmation. This is a UAT invitation, not recorded acceptance.

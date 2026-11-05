@@ -13,7 +13,7 @@ pub(crate) fn render_notification_inbox(
         .is_some_and(|saved| saved.digest == crate::notification_preferences::DigestMode::Daily);
     let mode = preference.map_or("unavailable", |saved| saved.digest.value());
     let preference_notice = if preference.is_none() {
-        "<p class=\"notice\" role=\"status\">Digest preference could not be loaded. Individual notices are shown without hiding or changing any event; the saved preference was not reset.</p>"
+        "<p class=\"notice\" role=\"status\">Notification preferences could not be loaded. Individual notices are shown without hiding or changing any event; the saved preference was not reset.</p>"
     } else {
         ""
     };
@@ -26,6 +26,14 @@ pub(crate) fn render_notification_inbox(
         })
         .unwrap_or_default();
     let mut rows = String::new();
+    let mark_all = match inbox {
+        Some(inbox) => format!(
+            "<form method=\"post\" action=\"/notifications/read-all\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"revision\" value=\"{}\"><button class=\"secondary\" type=\"submit\"{}>Mark all as read</button></form><p class=\"muted\">Marks every retained notification read, including optional notices hidden by your choices.</p>",
+            escape_html(csrf), inbox.revision,
+            if inbox.events.iter().any(|event|!event.read){""}else{" disabled"}
+        ),
+        None=>"<button class=\"secondary\" type=\"button\" disabled>Mark all as read</button>".into(),
+    };
     let summary = match inbox {
         None => {
             rows.push_str("<li class=\"notification-empty\">Notifications could not be loaded. No read state can be changed until the saved inbox is available.</li>");
@@ -42,9 +50,10 @@ pub(crate) fn render_notification_inbox(
                 let title = event.kind.title();
                 let time = crate::logging::format_unix_timestamp_utc(event.occurred_at);
                 let row = format!(concat!(
-                    "<li class=\"notification-event\" data-read=\"{}\"><div><h2>{title}</h2><time datetime=\"{}\">{} UTC</time></div><span class=\"notification-read-state\">{}</span>",
-                    "<form method=\"post\" action=\"/notifications/read\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"revision\" value=\"{}\"><input type=\"hidden\" name=\"event_id\" value=\"{}\"><input type=\"hidden\" name=\"read\" value=\"{}\"><button class=\"secondary\" type=\"submit\">{}</button></form></li>"
-                ), event.read, escape_html(&time), escape_html(time.replace('T', " ").trim_end_matches('Z')), if event.read { "Read" } else { "Unread" }, escape_html(csrf), inbox.revision, escape_html(&event.event_id), if event.read { "0" } else { "1" }, if event.read { "Mark unread" } else { "Mark read" }, title=title);
+                    "<li class=\"notification-event\" data-read=\"{read}\"><div><h2>{title}</h2><time datetime=\"{iso}\">{time} UTC</time></div><span class=\"notification-read-state\">{read_state}</span><div class=\"notification-event-actions\">",
+                    "<form method=\"post\" action=\"/notifications/read\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"revision\" value=\"{revision}\"><input type=\"hidden\" name=\"event_id\" value=\"{id}\"><input type=\"hidden\" name=\"read\" value=\"{next_read}\"><button class=\"secondary\" type=\"submit\">{read_action}</button></form>",
+                    "<form method=\"post\" action=\"/notifications/delete\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"revision\" value=\"{revision}\"><input type=\"hidden\" name=\"event_id\" value=\"{id}\"><button class=\"secondary\" type=\"submit\">Delete notification</button></form></div></li>"
+                ), read=event.read, iso=escape_html(&time), time=escape_html(time.replace('T', " ").trim_end_matches('Z')),read_state=if event.read { "Read" } else { "Unread" },csrf=escape_html(csrf),revision=inbox.revision,id=escape_html(&event.event_id),next_read=if event.read { "0" } else { "1" },read_action=if event.read { "Mark unread" } else { "Mark read" }, title=title);
                 if daily {
                     let group = days.entry(event.occurred_at / 86400).or_default();
                     group.0 += 1;
@@ -80,8 +89,8 @@ pub(crate) fn render_notification_inbox(
     TrustedHtml::from_template(format!(concat!(
         "{}<main id=\"main-content\" class=\"page-shell notifications-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Notifications</h1><p>Recorded events for your account.</p></div>{notice}{preference_notice}",
         "<div class=\"notification-inbox-toolbar\"><p>{summary}</p><nav aria-label=\"Notification actions\"><a class=\"button-link secondary\" href=\"/notifications\">Refresh inbox</a><a class=\"button-link secondary\" href=\"/settings?section=notifications\">Notification settings</a></nav></div>",
-        "<ul class=\"notification-events\" data-digest=\"{mode}\" aria-label=\"Account notifications\">{rows}</ul><p class=\"notification-inbox-scope muted\">Up to 200 recorded notices are retained for 90 days. This is not a complete audit history or a security score. Optional choices filter presentation without deleting events; mandatory recovery and security notices remain visible. Digest groups the in-app inbox only. Submission acceptance does not prove delivery. New mail is observed on Inbox refresh; mentions are checked when readable message text is opened.</p>{browser}<a href=\"/sessions\">Manage sessions</a></main>"
-    ), app_header(account, csrf, "notifications"), notice=notice, preference_notice=preference_notice, mode=mode, summary=summary, rows=rows,browser=crate::http::notification_delivery::controls()))
+        "{mark_all}<ul class=\"notification-events\" data-digest=\"{mode}\" aria-label=\"Account notifications\">{rows}</ul><p class=\"notification-inbox-scope muted\">Up to 200 recorded notices are retained for 90 days. This is not a complete audit history or a security score. Optional preferences cannot hide mandatory recovery and security notices. Deleting a notification dismisses it from this inbox; it does not undo the underlying action or alter separate audit records. Digest groups the in-app inbox only. Submission acceptance does not prove delivery. New mail is observed on Inbox refresh; mentions are checked when readable message text is opened.</p>{browser}<a href=\"/sessions\">Manage sessions</a></main>"
+    ), app_header(account, csrf, "notifications"), notice=notice, preference_notice=preference_notice, mode=mode, summary=summary, rows=rows,mark_all=mark_all,browser=crate::http::notification_delivery::controls()))
 }
 
 #[cfg(test)]

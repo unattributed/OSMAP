@@ -456,6 +456,20 @@
       ]
     },
     {
+      "method": "POST",
+      "path": "/notifications/read-all",
+      "query_fields": [],
+      "form_fields": ["csrf_token", "revision"],
+      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]
+    },
+    {
+      "method": "POST",
+      "path": "/notifications/delete",
+      "query_fields": [],
+      "form_fields": ["csrf_token", "revision", "event_id"],
+      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]
+    },
+    {
       "method": "GET",
       "path": "/labels",
       "query_fields": [
@@ -510,6 +524,7 @@
       "query_fields": [
         "updated",
         "appearance_updated",
+        "saved_revision",
         "section",
         "q",
         "folder"

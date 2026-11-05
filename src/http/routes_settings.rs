@@ -164,6 +164,18 @@ where
             let preference = self
                 .gateway
                 .load_notification_preference(&validated_session);
+            // A confirmation URL is only a request to reload a revision. The
+            // message reflects this authenticated account's actual saved read,
+            // never proof that following an arbitrary URL performed a save.
+            let notification_notice = request.query_params.get("saved_revision").map(|value| {
+                let expected=value.parse::<u64>().ok().filter(|revision|*revision>0 && revision.to_string()==*value);
+                match (&preference, expected) {
+                    (Ok(saved),Some(expected)) if saved.revision==expected=>"Saved notification preferences reloaded. These are your current saved choices.",
+                    (Ok(_),Some(_))=>"The requested preference revision is no longer current. Your current saved notification choices are shown below.",
+                    (Ok(_),None)=>"The preference confirmation link was invalid. Your current saved notification choices are shown below.",
+                    (Err(_),_)=>"Saved notification preferences could not be reloaded. The result is unconfirmed; no automatic retry occurred.",
+                }
+            });
             return HandledHttpResponse {
                 response: super::notification_delivery::response(
                     if preference.is_ok() { 200 } else { 503 },
@@ -177,7 +189,7 @@ where
                         &validated_session.record.canonical_username,
                         &validated_session.record.csrf_token,
                         preference.as_ref().ok(),
-                        None,
+                        notification_notice,
                     ),
                 ),
                 audit_events,

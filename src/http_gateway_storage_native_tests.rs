@@ -1,4 +1,4 @@
-//! Installed read-only report + Runtime factory + page-renderer composition.
+//! Installed report/rendering and one generated Documents lifecycle.
 //! No owner session is fabricated, loaded or persisted; this is not login/HTTP UAT.
 use super::*;
 
@@ -148,5 +148,242 @@ fn native_installed_mail_storage_report() -> Result<(), &'static str> {
         return Err("native report deadline exceeded");
     }
     println!("INSTALLED_STORAGE_REPORT=PASS RUNTIME_HELPER=PASS ACCOUNT_ADMISSION=PASS OWNED_PAGE_RENDERERS=2 OWNED_RAILS=2 FOREIGN_PAGE_REFUSALS=2 OWNER_SESSION=NOT_USED OWNER_HTTP=NOT_RUN WRITES=NOT_DISPATCHED QUOTA_AUTHORITY=NOT_CLAIMED");
+    Ok(())
+}
+
+#[test]
+#[ignore = "operator-run installed Web UID Documents lifecycle; mutates only one generated test ID"]
+fn native_installed_documents_lifecycle() -> Result<(), &'static str> {
+    use crate::documents::{Error, Index, State};
+    use sha2::{Digest, Sha256};
+
+    fn checked<T>(
+        stage: &'static str,
+        id: &str,
+        result: Result<T, Error>,
+    ) -> Result<T, &'static str> {
+        result.map_err(|error| {
+            eprintln!("INSTALLED_DOCUMENTS_FAILURE stage={stage} id={id} result={error:?} automatic_retry=NONE state=RETAINED");
+            "installed Documents stage failed; retain known state for inspection"
+        })
+    }
+    fn preserves(index: &Index, original: &Index, generated: &str) -> bool {
+        index.folders == original.folders
+            && index
+                .documents
+                .iter()
+                .filter(|document| document.id != generated)
+                .cloned()
+                .collect::<Vec<_>>()
+                == original.documents
+    }
+
+    let began = std::time::Instant::now();
+    let deadline = began + std::time::Duration::from_secs(90);
+    if crate::openbsd::effective_uid() != 1001 {
+        return Err("installed Web identity required");
+    }
+    let account = std::env::var("OSMAP_STORAGE_REPORT_ACCOUNT")
+        .map_err(|_| "explicit Documents account required")?;
+    if account != "duncan@blackbagsecurity.com" {
+        return Err("only the explicitly assigned development account is admitted");
+    }
+    let canonical = crate::identity::CanonicalUsername::parse(&account)
+        .map_err(|_| "canonical Documents account required")?;
+    if canonical.as_str() != account {
+        return Err("canonical Documents account required");
+    }
+    let epoch_text =
+        std::env::var("OSMAP_READINESS_EPOCH").map_err(|_| "current account epoch required")?;
+    let epoch = epoch_text
+        .parse::<u64>()
+        .ok()
+        .filter(|epoch| epoch.to_string() == epoch_text)
+        .ok_or("canonical account epoch required")?;
+    let config =
+        AppConfig::from_process_env().map_err(|_| "installed configuration unavailable")?;
+    let gateway = RuntimeBrowserGateway::from_config(&config);
+    if !gateway.uses_account_runtime(&account) {
+        return Err("installed account authority required");
+    }
+    let admit = || -> Result<(), &'static str> {
+        if std::time::Instant::now() >= deadline {
+            return Err("installed Documents deadline reached; no next mutation dispatched");
+        }
+        gateway
+            .account_runtime
+            .ready()
+            .ok_or("installed account authority unavailable")?
+            .admission()
+            .admit_before(
+                &account,
+                epoch,
+                deadline.min(std::time::Instant::now() + std::time::Duration::from_secs(10)),
+            )
+            .map(|_| ())
+            .map_err(|_| {
+                "installed signed account admission unavailable; no next mutation dispatched"
+            })
+    };
+    admit()?;
+    let store = gateway
+        .document_store()
+        .map_err(|_| "installed Documents helper configuration unavailable")?;
+    if !checked("quota-ready", "NONE", store.quota_ready(&account))? {
+        return Err("installed finite shared quota authority is unavailable; no upload dispatched");
+    }
+    let quota = checked("quota-status", "NONE", store.quota_status(&account))?
+        .ok_or("installed finite quota observation required; no upload dispatched")?;
+    if quota.limit_bytes != 209_715_200 || quota.used_bytes >= quota.limit_bytes {
+        return Err("installed 200 MiB quota with free capacity required; no upload dispatched");
+    }
+    let original = checked("original-index", "NONE", store.load(&account))?;
+    checked(
+        "original-index-validation",
+        "NONE",
+        original.storage_summary(&account),
+    )?;
+    let nonce =
+        crate::draft::generate_draft_id().map_err(|_| "native Documents test name unavailable")?;
+    let name = format!("osmap-s08-native-{nonce}.bin");
+    if original
+        .documents
+        .iter()
+        .any(|document| document.name == name)
+    {
+        return Err("generated Documents name already exists; no upload dispatched");
+    }
+    let body: Vec<u8> = (0..4096).map(|value| ((value * 17) % 256) as u8).collect();
+    let digest = format!("{:x}", Sha256::digest(&body));
+    let now = || crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider);
+    admit()?;
+    let uploaded = match store.upload(
+        &account,
+        original.revision,
+        &name,
+        "application/octet-stream",
+        &body,
+        now(),
+    ) {
+        Ok(index) => index,
+        Err(error) => {
+            // Upload mints its ID inside the Store. An uncertain result permits
+            // only this read-only lookup; never replay upload or edit metadata.
+            let retained = store.load(&account);
+            let ids: Vec<_> = retained
+                .as_ref()
+                .ok()
+                .into_iter()
+                .flat_map(|index| index.documents.iter())
+                .filter(|document| {
+                    document.name == name
+                        && !original.documents.iter().any(|old| old.id == document.id)
+                })
+                .map(|document| document.id.as_str())
+                .collect();
+            let id = if ids.len() == 1 {
+                ids[0]
+            } else {
+                "UNAVAILABLE"
+            };
+            eprintln!("INSTALLED_DOCUMENTS_FAILURE stage=upload id={id} result={error:?} automatic_retry=NONE state=RETAINED");
+            return Err(
+                "installed Documents upload did not confirm; inspect retained state without replay",
+            );
+        }
+    };
+    let added: Vec<_> = uploaded
+        .documents
+        .iter()
+        .filter(|document| !original.documents.iter().any(|old| old.id == document.id))
+        .collect();
+    if added.len() != 1 || !preserves(&uploaded, &original, &added[0].id) {
+        return Err("installed upload changed unexpected metadata; retain state");
+    }
+    let generated = added[0];
+    let id = generated.id.clone();
+    println!("INSTALLED_DOCUMENTS_GENERATED id={id} bytes=4096");
+    if generated.name != name
+        || generated.size != body.len() as u64
+        || generated.sha256 != digest
+        || generated.state != State::Available
+        || !generated.folder.is_empty()
+    {
+        return Err("installed generated document metadata refused; retain known ID");
+    }
+    let reopened = gateway
+        .document_store()
+        .map_err(|_| "installed Documents reopen unavailable; retain known ID")?;
+    if checked("reopened-download", &id, reopened.download(&account, &id))?
+        != (name.clone(), body.clone())
+    {
+        return Err("installed reopened document byte mismatch; retain known ID");
+    }
+    admit()?;
+    let binned = checked(
+        "bin",
+        &id,
+        reopened.bin(&account, uploaded.revision, &id, now()),
+    )?;
+    if !preserves(&binned, &original, &id)
+        || binned
+            .documents
+            .iter()
+            .find(|document| document.id == id)
+            .map(|document| document.state)
+            != Some(State::InBin)
+    {
+        return Err("installed Bin metadata refused; retain known ID");
+    }
+    if reopened.download(&account, &id) != Err(Error::NotFound) {
+        return Err("installed Bin document remained downloadable; retain known ID");
+    }
+    admit()?;
+    let restored = checked(
+        "restore",
+        &id,
+        reopened.restore(&account, binned.revision, &id, now()),
+    )?;
+    if !preserves(&restored, &original, &id)
+        || checked("restored-download", &id, reopened.download(&account, &id))? != (name, body)
+    {
+        return Err("installed restored bytes or original metadata changed; retain known ID");
+    }
+    admit()?;
+    let binned = checked(
+        "cleanup-bin",
+        &id,
+        reopened.bin(&account, restored.revision, &id, now()),
+    )?;
+    if !preserves(&binned, &original, &id) {
+        return Err("installed cleanup Bin changed original metadata; retain known ID");
+    }
+    admit()?;
+    let deleted = checked(
+        "cleanup-delete",
+        &id,
+        reopened.delete_confirmed(&account, binned.revision, &id, now()),
+    )?;
+    let final_store = gateway
+        .document_store()
+        .map_err(|_| "installed final Store unavailable")?;
+    let final_index = checked("cleanup-readback", &id, final_store.load(&account))?;
+    if final_index != deleted
+        || final_index.documents != original.documents
+        || final_index.folders != original.folders
+        || final_index.revision <= original.revision
+        || final_store.download(&account, &id) != Err(Error::NotFound)
+    {
+        return Err("installed generated-ID cleanup or original metadata preservation unconfirmed");
+    }
+    let final_quota = checked("final-quota", &id, final_store.quota_status(&account))?
+        .ok_or("installed final quota observation unavailable")?;
+    if final_quota.limit_bytes != 209_715_200 || final_quota.used_bytes > final_quota.limit_bytes {
+        return Err("installed final finite quota differs from admitted authority");
+    }
+    if std::time::Instant::now() > deadline {
+        return Err("installed Documents lifecycle deadline exceeded");
+    }
+    println!("INSTALLED_DOCUMENTS_LIFECYCLE=PASS RUNTIME_HELPER=PASS ACCOUNT_ADMISSION=PASS WEB_UID=1001 HARD_LIMIT_BYTES=209715200 EXACT_BINARY_DOWNLOAD=PASS BIN_REFUSAL=PASS RESTORE=PASS GENERATED_ID_CLEANUP=PASS ORIGINAL_RECORDS_AND_FOLDERS=PRESERVED OWNER_SESSION=NOT_USED OWNER_HTTP=NOT_RUN");
     Ok(())
 }

@@ -2716,6 +2716,38 @@ mod tests {
                     crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
                 )
         }
+        fn mark_all_notifications_read(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+        ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+        {
+            self.notification_store
+                .as_ref()
+                .ok_or(crate::notifications::NotificationError::Unavailable)?
+                .mark_all_read(
+                    &session.record.canonical_username,
+                    revision,
+                    crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
+                )
+        }
+        fn delete_notification(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+            revision: u64,
+        ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+        {
+            self.notification_store
+                .as_ref()
+                .ok_or(crate::notifications::NotificationError::Unavailable)?
+                .delete(
+                    &session.record.canonical_username,
+                    id,
+                    revision,
+                    crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
+                )
+        }
         fn set_notification_read(
             &self,
             session: &ValidatedSession,
