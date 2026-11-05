@@ -28,11 +28,14 @@ pub(crate) fn render_notification_inbox(
     let mut rows = String::new();
     let mark_all = match inbox {
         Some(inbox) => format!(
-            "<form method=\"post\" action=\"/notifications/read-all\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"revision\" value=\"{}\"><button class=\"secondary\" type=\"submit\"{}>Mark all as read</button></form><p class=\"muted\">Marks every retained notification read, including optional notices hidden by your choices.</p>",
+            concat!("<div class=\"notification-bulk-actions\" role=\"group\" aria-label=\"All notifications\"><form method=\"post\" action=\"/notifications/read-all\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"revision\" value=\"{}\"><button class=\"secondary\" type=\"submit\"{}>Mark all as read</button></form>",
+            "<form method=\"post\" action=\"/notifications/delete-all\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"revision\" value=\"{}\"><button class=\"secondary\" type=\"submit\"{}>Delete all notifications</button></form></div>",
+            "<p class=\"muted\">Both controls include optional notices hidden by your choices. Delete all clears this account’s notification inbox; separate audit records are kept.</p>"),
             escape_html(csrf), inbox.revision,
-            if inbox.events.iter().any(|event|!event.read){""}else{" disabled"}
+            if inbox.events.iter().any(|event|!event.read){""}else{" disabled"},
+            escape_html(csrf), inbox.revision, if inbox.events.is_empty(){" disabled"}else{""}
         ),
-        None=>"<button class=\"secondary\" type=\"button\" disabled>Mark all as read</button>".into(),
+        None=>"<div class=\"notification-bulk-actions\" role=\"group\" aria-label=\"All notifications\"><button class=\"secondary\" type=\"button\" disabled>Mark all as read</button><button class=\"secondary\" type=\"button\" disabled>Delete all notifications</button></div>".into(),
     };
     let summary = match inbox {
         None => {
@@ -97,6 +100,62 @@ pub(crate) fn render_notification_inbox(
 mod tests {
     use super::*;
     use crate::notifications::NotificationKind;
+    #[test]
+    fn notification_bulk_controls_cover_hidden_read_notices_and_disable_empty_or_unavailable() {
+        let mut inbox = NotificationInbox {
+            revision: 4,
+            events: vec![crate::notifications::NotificationEvent {
+                event_id: "a".repeat(32),
+                kind: NotificationKind::NewMail,
+                occurred_at: 100,
+                read: true,
+            }],
+        };
+        let saved = crate::notification_preferences::Preference {
+            choices: crate::notification_preferences::Choice {
+                new_mail: false,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let html = render_notification_inbox(
+            "alice@example.test",
+            "<csrf&>",
+            Some(&inbox),
+            Some(&saved),
+            None,
+        );
+        let controls = html
+            .split("class=\"notification-bulk-actions\"")
+            .nth(1)
+            .unwrap()
+            .split("</div>")
+            .next()
+            .unwrap();
+        assert!(controls.contains("disabled>Mark all as read</button>"));
+        assert!(controls.contains("type=\"submit\">Delete all notifications</button>"));
+        assert_eq!(
+            controls
+                .matches("name=\"csrf_token\" value=\"&lt;csrf&amp;&gt;\"")
+                .count(),
+            2
+        );
+        assert_eq!(controls.matches("name=\"revision\" value=\"4\"").count(), 2);
+        assert!(!controls.contains("event_id"));
+        assert!(html.contains("0 retained notices · 0 unread · 1 optional notices hidden"));
+        inbox.events.clear();
+        for current in [Some(&inbox), None] {
+            let html = render_notification_inbox(
+                "alice@example.test",
+                "csrf",
+                current,
+                Some(&saved),
+                None,
+            );
+            assert!(html.contains("disabled>Mark all as read</button>"));
+            assert!(html.contains("disabled>Delete all notifications</button>"));
+        }
+    }
     #[test]
     fn optional_choices_hide_only_optional_events_without_removing_mandatory_read_controls() {
         use crate::notification_preferences::{Choice, Preference};

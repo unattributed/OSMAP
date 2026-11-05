@@ -159,6 +159,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             Err(response) => return response,
         };
         let deleting = request.path == "/notifications/delete";
+        let deleting_all = request.path == "/notifications/delete-all";
         let form = if allows_urlencoded_request_body(
             request.headers.get("content-type").map(String::as_str),
         ) {
@@ -210,6 +211,8 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     form.get("event_id").ok_or(NotificationError::Invalid)?,
                     revision,
                 )
+            } else if deleting_all {
+                self.gateway.delete_all_notifications(&session, revision)
             } else {
                 self.gateway.mark_all_notifications_read(&session, revision)
             }
@@ -217,12 +220,16 @@ impl<G: BrowserGateway> BrowserApp<G> {
         match result {
             Ok(_) => {
                 audit_events.push(build_http_info_event(
-                    if deleting {
+                    if deleting_all {
+                        "notifications_deleted"
+                    } else if deleting {
                         "notification_deleted"
                     } else {
                         "notifications_marked_read"
                     },
-                    if deleting {
+                    if deleting_all {
+                        "all retained notifications dismissed from owned inbox"
+                    } else if deleting {
                         "notification dismissed from owned inbox"
                     } else {
                         "all retained notifications marked read"

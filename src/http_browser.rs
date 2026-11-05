@@ -660,6 +660,14 @@ pub trait BrowserGateway {
     {
         Err(crate::notifications::NotificationError::Unavailable)
     }
+    fn delete_all_notifications(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        Err(crate::notifications::NotificationError::Unavailable)
+    }
     fn delete_notification(
         &self,
         _session: &ValidatedSession,

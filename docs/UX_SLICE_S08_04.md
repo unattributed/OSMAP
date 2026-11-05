@@ -1,5 +1,7 @@
 # S08-04 — Factual notifications and explicit browser delivery
 
+**Current scope, 2026-11-05:** notification bulk deletion only. The owner states Documents was removed and unapproved; its development and UAT are stopped. Older cutover descriptions below are preserved history, not current authorization.
+
 The owner directs continuing unfinished S08 autonomously. S08-03 engineering is installed and the ordinary positive post-seal worker qualification passes; owner T09 remains pending; S08-02 is accepted. S08-01 Documents shared enforcement remains open; the owner approved the Duncan-only obsd1 cutover on2026-11-05. Toronto remains unchanged by this work.
 
 ## Smallest complete route
@@ -91,3 +93,23 @@ gates passed. Fresh fetch, signature verification, exact origin equality, zero
 ahead/behind and clean status passed at that checkpoint. The later approved
 Documents cutover restarts OSMAP against the same installed notification source;
 it does not record owner acceptance of these controls.
+
+## Owner follow-up: Delete all notifications — 2026-11-05
+
+The current owner request is a **Delete all notifications** control beside **Mark all as read**. Extend the existing Rust owner-private store, CAS and native HTML POST route. One account lock and atomic write dismiss every retained inbox notice, including hidden optional and mandatory notices explicitly covered by this action. Keep retained source events for the existing bounded replay suppression and preserve separate audit records. Newly recorded events remain visible. No new schema, dependency, daemon, JavaScript authority or Python tooling. Empty/unavailable inbox controls are disabled; stale pages refuse rather than clearing a newer inbox.
+
+Verification plan: reuse existing notification tests and add mixed-state/reopen/replay/foreign/stale/clock/corrupt Store checks; exact generated POST, auth/CSRF/origin/strict-field/CAS/error and Runtime delegation checks; empty/unavailable/all-read/hidden UI checks. Run matching OpenBSD tests as the Web principal in disposable state, install only the Web binary with existing rollback and preserve services/configuration. Never clear owner notifications as an agent test. Then ordinary signed delivery and a short owner usability check.
+
+**Scope correction:** the owner states Documents was removed and not approved. Documents development and UAT are stopped. Historical execution and installed configuration are retained as facts, not current authorization or acceptance. This notification task changes no mailbox, quota, Documents code or mail-service configuration and performs no rollback of those systems.
+
+### Bulk-delete engineering verification
+
+The new control uses POST `/notifications/delete-all` with only CSRF and expected revision. The actual Runtime override and generated HTTP form are checked, including hidden/all-read/mandatory notices, existing dismissals, replay suppression, later new notices, other accounts, stale/clock/corrupt/unavailable and strict request refusals. Local focused notification checks pass **53/0** and strict all-target Clippy passes. One first compilation failed only because a new test indexed the response-header vector by a string; iteration fixed the test. Work-order validation initially refused an edited catalogue label; restoring its exact original requirement fixed declaration consistency. Neither failure was a product mutation.
+
+Independent source/recipe review gives GO. It identified an evidence-consumer gap accepting zero selected tests: the corrected existing carrier now requires a positive pass count, zero failures and each of the three new test names. The real matching local output is admitted; zero tests and a missing new test are refused. No new QA framework was added.
+
+Native source19 archive SHA256 a96bc17a3b826326884607ed23ceda7c06a63a9443c9708f2ddf60bbebe086ff builds test e33695203c5d2a9c801ba08ee66eb1c1ae6d2cd113f73aebab62cd2229b456f0 and Web main20b5185eba77af8b166b9463cc9baa5f66f51ccc85cf63d5d49137e8ae476513. As actual Web UID1001, matching OpenBSD tests pass **53/0**, with one separately opt-in case ignored, in0.96seconds. All three new cases ran. Disposable accounts/state only; owner notifications and credentials were not used. Result receiptSHA256f5c7d122cc461d1d5df5e3cd076da6850f4cb6781bd1e476b90f76cab5bc94c5.
+
+The reviewed Web-only atomic install loads that exact main in ServePID67146; helper/account/GPG processes and configuration hashes compare unchanged, all nine checked roles run and HTTPS login200 passes. The unauthenticated new POST redirects to sign-in303, without changing an inbox. Existing exact-binary rollback is retained; no mailbox, quota or Documents operation was dispatched. Private evidence lives under `osmap-ux-s08/completion-20261104/notification-delete-all-20261105`. Native/installed evidence remains distinct from owner UAT and ordinary signed delivery; final hook/signature/origin receipts follow the normal delivery SOP.
+
+Owner check: refresh Notifications. **Delete all notifications** appears beside **Mark all as read**. With notices present, deleting all then refreshing should leave an empty inbox and zero unread; future notices can still appear. Both controls are disabled when the inbox is empty. This is an invitation, not recorded acceptance.

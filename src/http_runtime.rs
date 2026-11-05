@@ -377,6 +377,9 @@ where
             (HttpMethod::Post, "/notifications/delete") => {
                 self.handle_notification_manage(request, &context)
             }
+            (HttpMethod::Post, "/notifications/delete-all") => {
+                self.handle_notification_manage(request, &context)
+            }
             (HttpMethod::Post, "/settings/notifications") => {
                 self.handle_notification_settings(request, &context)
             }

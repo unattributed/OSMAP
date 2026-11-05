@@ -1340,6 +1340,18 @@ impl BrowserGateway for RuntimeBrowserGateway {
             crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
         )
     }
+    fn delete_all_notifications(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        crate::notifications::NotificationStore::new(&self.settings_dir).delete_all(
+            &session.record.canonical_username,
+            revision,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
     fn delete_notification(
         &self,
         session: &ValidatedSession,

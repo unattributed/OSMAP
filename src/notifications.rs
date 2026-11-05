@@ -417,6 +417,32 @@ impl NotificationStore {
         }
         Ok(Self::inbox(record))
     }
+    /// Dismiss the complete retained inbox, including notices hidden by preferences.
+    /// Keep source events for bounded replay suppression and leave audit records alone.
+    pub fn delete_all(
+        &self,
+        account: &str,
+        expected_revision: u64,
+        now: u64,
+    ) -> Result<NotificationInbox, NotificationError> {
+        let lock = self.lock(account)?;
+        let mut record = Self::read(&lock, account, now)?;
+        if Self::prune(&mut record, now) {
+            Self::write(&lock, &mut record, now)?;
+        }
+        if record.revision != expected_revision {
+            return Err(NotificationError::Stale);
+        }
+        if record.dismissed.len() != record.events.len() {
+            record.dismissed = record
+                .events
+                .iter()
+                .map(|event| event.event_id.clone())
+                .collect();
+            Self::write(&lock, &mut record, now)?;
+        }
+        Ok(Self::inbox(record))
+    }
     /// Dismiss an inbox event, including a mandatory notice, without deleting
     /// its source operation. The retained event suppresses replay within the
     /// existing 200-event/90-day history; a fresh observation beyond that

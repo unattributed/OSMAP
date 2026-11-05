@@ -702,3 +702,7 @@ workflow is UAT PASS, accepted and approved. Its original eight-hour deadline
 stays fixed, normal email/password/TOTP admission remains required, and ordinary
 Sign out clears remembered permission. This closes the follow-up within S07;
 longer persistence and broader release assurance are separate decisions.
+
+## 2026-11-05 — Owner scope correction and bulk notification dismissal
+
+The owner states Documents was removed from the project and was not approved. Stop Documents development and its UAT invitation; preserve earlier execution/evidence without treating it as authority to continue or silently reverse the mailbox/quota cutover. The current task is only **Delete all notifications** beside **Mark all as read**. Reuse NotificationStore locking/CAS and the existing dismissal set in one atomic publication. Include hidden optional notices, retain source facts for bounded replay suppression, preserve separate audit records, and allow newly recorded events to appear. No new storage service, dependency or Python tooling.

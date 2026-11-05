@@ -2731,6 +2731,21 @@ mod tests {
                     crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
                 )
         }
+        fn delete_all_notifications(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+        ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+        {
+            self.notification_store
+                .as_ref()
+                .ok_or(crate::notifications::NotificationError::Unavailable)?
+                .delete_all(
+                    &session.record.canonical_username,
+                    revision,
+                    crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
+                )
+        }
         fn delete_notification(
             &self,
             session: &ValidatedSession,

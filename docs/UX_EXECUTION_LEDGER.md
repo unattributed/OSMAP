@@ -1,8 +1,322 @@
+2026-11-05 — **Notifications bulk delete UAT_READY. Documents removed by owner; development and UAT stopped.** Historical execution is preserved without treating it as current approval. No mailbox/quota/configuration change or rollback is authorized by this notification task.
+
 2026-11-05 — **S08-01 UAT_READY: installed first-use and existing-folder lifecycle PASS.** Approved200MiB cutover and retained parity pass; generated-ID cleanup and account/configuration/service preservation pass. Source/native/scoped independent review pass; signed delivery receipts remain separate. Historical lookup refusals retain cause UNKNOWN. Owner T09 and whole S08 acceptance remain open. Toronto unchanged.
 
 
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S08-04",
+  "original_requirement": "Notification inbox/badge/read state and all page 17 preferences, including explicitly consented desktop delivery",
+  "source_baseline": "fff478be01d9ddff87607248ea34069e369227bd",
+  "state": "UAT_READY",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root"
+    ],
+    "qa": [
+      "/root/remembered_key_review"
+    ],
+    "security_review": [
+      "/root/remembered_key_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/UX_SLICE_S08_04.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/UX_DECISIONS.md",
+    "src/notifications.rs",
+    "src/notification_event_tests.rs",
+    "src/notifications_ui.rs",
+    "src/http_browser.rs",
+    "src/http_gateway.rs",
+    "src/http.rs",
+    "src/http_runtime.rs",
+    "src/http/routes_notifications.rs",
+    "src/http/notification_tests.rs",
+    "src/http/notifications.css",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-claims-boundary.json"
+  ],
+  "outcomes": [
+    {
+      "id": "S08-04-factual-notifications",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX01-007",
+        "R2-01-021",
+        "R2-17-001",
+        "R2-17-002",
+        "R2-17-003",
+        "R2-17-004",
+        "R2-17-005",
+        "R2-17-006",
+        "R2-17-007",
+        "R2-17-008",
+        "R2-17-009",
+        "R2-17-010"
+      ],
+      "frontend_backend_outcome": "Keep existing factual notification features; the signed-in user clears the entire retained inbox in one revision-checked action without changing source operations or separate audit records.",
+      "essential_qa": "Mixed/hidden/mandatory/read/dismissed notices, restart, dedupe/new event, foreign account, stale CAS, strict authenticated POST and unavailable/corrupt refusal; actual Runtime delegation and matching native/Web install.",
+      "next_action": "Notification-only owner check: refresh /notifications, use Delete all notifications when notices exist, then refresh to confirm empty. Human acceptance pending. Complete normal signed delivery with external hook/signature/origin receipts; Documents development and UAT stopped.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "docs/UX_SLICE_S08_04.md#owner-follow-up-delete-all-notifications--2026-11-05"
+        },
+        {
+          "stage": "source_tests",
+          "reference": "docs/UX_SLICE_S08_04.md#owner-follow-up-delete-all-notifications--2026-11-05"
+        },
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S08_04.md#bulk-delete-engineering-verification"
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S08_04.md#bulk-delete-engineering-verification"
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S08_04.md#bulk-delete-engineering-verification"
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S08_04.md#bulk-delete-engineering-verification"
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Reviewed and matching installed bulk notification dismissal with preserved owner data boundaries; separate owner usability acceptance.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Earlier notification engineering and Documents execution are retained below. Owner removed Documents; its development/UAT are stopped and no rollback is part of this task.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-05T11:53:49Z",
+      "elapsed_status": "UNMEASURED",
+      "elapsed_seconds": null
+    },
+    "attempts": []
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S08-04",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_04.md",
+      "sha256": "7708fd784f67dbbefc8f4e293cb776adc4d409cd8e9a009a5e882235d7b38d66"
+    },
+    "design": {
+      "journey": "Open own Notifications; Delete all beside Mark all as read; reload empty; later new events appear.",
+      "frontend": "Native POST form, existing csrf and revision, adjacent responsive buttons; disabled empty/unavailable.",
+      "backend": "Existing NotificationStore lock/read/prune/write, retained dismissed IDs, RuntimeBrowserGateway delegation.",
+      "interfaces": "Authenticated owner session, same Origin and CSRF, strict bounded urlencoded form and expected revision; no submitted account selector.",
+      "persistence": "Same bounded notification record and dismissal set; source events retained for bounded dedupe; audit source records untouched.",
+      "security": "Cross-account isolation, CSRF/origin/CAS and unavailable fail closed; no owner credential/session fabrication or clearing owner notices in testing.",
+      "failure_recovery": "Stale or uncertain writes require reload, no automatic retry; retain failed evidence; Web-only atomic install has exact-binary rollback."
+    },
+    "tests": [
+      {
+        "id": "S08-04-T01",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current notification implementation; earlier evidence reused only where unchanged.",
+        "action": "Review current route/store/UI and previous passing notification evidence.",
+        "expected": "Reuse existing contracts and identify only missing bulk delete control.",
+        "preserved": "Other accounts, source/audit records, keys, credentials, mailbox/quota and mail services.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "notification-delete-all-20261105/focused3.log:53 Rust PASS0FAIL; clippy.log strict all-target PASS; current source and route inventory."
+        ]
+      },
+      {
+        "id": "S08-04-T02",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current notification implementation; earlier evidence reused only where unchanged.",
+        "action": "Exercise mixed-state bulk dismissal, reopen, hidden notices, source replay and later new event.",
+        "expected": "Owned inbox empty and stable; replay suppressed in retained history; new notices visible.",
+        "preserved": "Other accounts, source/audit records, keys, credentials, mailbox/quota and mail services.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "notification-delete-all-20261105/focused3.log:53 Rust PASS0FAIL; clippy.log strict all-target PASS; current source and route inventory."
+        ]
+      },
+      {
+        "id": "S08-04-T03",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current notification implementation; earlier evidence reused only where unchanged.",
+        "action": "Exercise stale/foreign/clock/corrupt/bad auth/CSRF/origin/fields and unavailable gateway.",
+        "expected": "Refuse without unauthorized mutation; another account and retained sources unchanged.",
+        "preserved": "Other accounts, source/audit records, keys, credentials, mailbox/quota and mail services.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "notification-delete-all-20261105/focused3.log:53 Rust PASS0FAIL; clippy.log strict all-target PASS; current source and route inventory."
+        ]
+      },
+      {
+        "id": "S08-04-T04",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current notification implementation; earlier evidence reused only where unchanged.",
+        "action": "Submit actual generated bulk form through HTTP harness and exercise Runtime gateway delegation.",
+        "expected": "Native redirect and reloaded empty inbox; fail-closed default not mistaken for Runtime support.",
+        "preserved": "Other accounts, source/audit records, keys, credentials, mailbox/quota and mail services.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "notification-delete-all-20261105/focused3.log:53 Rust PASS0FAIL; clippy.log strict all-target PASS; current source and route inventory."
+        ]
+      },
+      {
+        "id": "S08-04-T05",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current notification implementation; earlier evidence reused only where unchanged.",
+        "action": "Render mixed/all-read/empty/unavailable inbox and inspect adjacent controls and escaping.",
+        "expected": "Delete all enabled for hidden/read notices and disabled empty/unavailable; exact csrf/revision fields.",
+        "preserved": "Other accounts, source/audit records, keys, credentials, mailbox/quota and mail services.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "notification-delete-all-20261105/focused3.log:53 Rust PASS0FAIL; clippy.log strict all-target PASS; current source and route inventory."
+        ]
+      },
+      {
+        "id": "S08-04-T06",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current notification implementation; earlier evidence reused only where unchanged.",
+        "action": "Run matching OpenBSD notification suite as Web principal with disposable store state.",
+        "expected": "All selected functional and refusal cases pass under actual native principal.",
+        "preserved": "Other accounts, source/audit records, keys, credentials, mailbox/quota and mail services.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "notification-delete-all-20261105/native-tests19.log:53PASS0FAIL1separateignore/0.96s, actualWebUID1001/all3newcases."
+        ]
+      },
+      {
+        "id": "S08-04-T07",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Current notification implementation; earlier evidence reused only where unchanged.",
+        "action": "Install matching Web binary only and check loaded inode/hash, services, configs and login endpoint.",
+        "expected": "Web matches tested source; backend/key agents and mail config unchanged; no real owner inbox mutation.",
+        "preserved": "Other accounts, source/audit records, keys, credentials, mailbox/quota and mail services.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "notification-delete-all-20261105/install19.log and installed-http.log:matchingWeb/nineroles/config+PIDsunchanged/login200/unauthPOST303."
+        ]
+      },
+      {
+        "id": "S08-04-T08",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current notification implementation; earlier evidence reused only where unchanged.",
+        "action": "Independently inspect changed call chain, native/install evidence and preservation; ordinary signed delivery follows separately.",
+        "expected": "Scoped source/native/install review GO with mandatory gates/signature/origin results reported separately after normal delivery.",
+        "preserved": "Other accounts, source/audit records, keys, credentials, mailbox/quota and mail services.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "Independent source/native/install/result review GO by /root/remembered_key_review; matching53/0 source/native, Web install19 preservation and anonymousPOST303/login200."
+        ]
+      },
+      {
+        "id": "S08-04-T09",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "positive",
+        "level": "human",
+        "prerequisites": "Current notification implementation; earlier evidence reused only where unchanged.",
+        "action": "Owner uses Delete all on own Notifications and refreshes.",
+        "expected": "Owner confirms desired control and inbox result; only owner can accept UAT.",
+        "preserved": "Other accounts, source/audit records, keys, credentials, mailbox/quota and mail services.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "All required nonhuman follow-up tests and scoped review pass against matching source/native/installed artifacts; previous unaffected S08-04 evidence remains scoped.",
+    "human_exit": "Owner confirms bulk delete works as intended on own inbox."
+  },
+  "human_acceptance": {
+    "status": "PENDING"
+  },
+  "next_action": "Notification-only owner check: refresh /notifications, use Delete all notifications when notices exist, then refresh to confirm empty. Human acceptance pending. Complete normal signed delivery with external hook/signature/origin receipts; Documents development and UAT stopped.",
+  "independent_next_action": "Scoped source/native/installed result review GO; reconcile normal delivery results without new product tests unless a concrete failure occurs."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+## Preserved Documents checkpoint — owner subsequently removed scope; development and UAT stopped
+
 ```json
 {
   "version": 1,
@@ -1368,7 +1682,6 @@
   "independent_next_action": "Scoped source/native/installed review GO, including two actual18 journeys. Verify final records and normal delivery results; preserve historical failures and separate owner HTTP/T09 acceptance."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
 
 ## Preserved S08-03 engineering-ready checkpoint before approved Documents cutover
 

@@ -184,6 +184,71 @@ fn notification_record_once_publication_failure_keeps_original_state() {
 }
 
 #[test]
+fn notification_delete_all_preserves_sources_other_accounts_and_later_events() {
+    let root = Scratch::new();
+    let store = root.store();
+    let sources = [
+        (NotificationKind::PasswordChanged, "password:one"),
+        (NotificationKind::NewMail, "mail:one"),
+        (NotificationKind::Mention, "mention:one"),
+    ];
+    for (kind, source) in sources {
+        store.record_once(A, kind, source, 100, 100).unwrap();
+    }
+    store
+        .record(B, NotificationKind::SessionIssued, 100)
+        .unwrap();
+    let foreign = store.load(B, 100).unwrap();
+    let initial = store.load(A, 100).unwrap();
+    let read = store
+        .set_read(A, &initial.events[0].event_id, initial.revision, true, 100)
+        .unwrap();
+    let partial = store
+        .delete(A, &read.events[1].event_id, read.revision, 100)
+        .unwrap();
+    assert_eq!(
+        store.delete_all(A, initial.revision, 100),
+        Err(NotificationError::Stale)
+    );
+    assert_eq!(store.load(A, 100).unwrap(), partial);
+    assert_eq!(
+        store.delete_all("invalid account", 0, 100),
+        Err(NotificationError::Invalid)
+    );
+    assert_eq!(
+        store.delete_all(A, partial.revision, 99),
+        Err(NotificationError::ClockRollback)
+    );
+    let empty = store.delete_all(A, partial.revision, 100).unwrap();
+    assert!(empty.events.is_empty());
+    assert_eq!(empty.revision, partial.revision + 1);
+    assert_eq!(root.store().load(A, 101).unwrap(), empty);
+    assert_eq!(store.delete_all(A, empty.revision, 101).unwrap(), empty);
+    for (kind, source) in sources {
+        assert!(!root.store().record_once(A, kind, source, 100, 101).unwrap());
+    }
+    assert_eq!(store.load(A, 101).unwrap(), empty);
+    assert_eq!(store.load(B, 101).unwrap(), foreign);
+    store
+        .record_once(A, NotificationKind::NewMail, "mail:new", 102, 102)
+        .unwrap();
+    let later = store.load(A, 102).unwrap();
+    assert_eq!(later.events.len(), 1);
+    assert!(!later.events[0].read);
+    assert_eq!(
+        store.delete_all(A, empty.revision, 102),
+        Err(NotificationError::Stale)
+    );
+    assert_eq!(store.load(A, 102).unwrap(), later);
+    let lock = store.lock(A).unwrap();
+    let retained = NotificationStore::read(&lock, A, 102).unwrap();
+    assert_eq!(retained.events.len(), 4);
+    assert_eq!(retained.dismissed.len(), 3);
+    drop(lock);
+    assert_eq!(store.load(B, 102).unwrap(), foreign);
+}
+
+#[test]
 fn notification_mark_all_read_is_atomic_owner_bound_and_reopen_stable() {
     let root = Scratch::new();
     let store = root.store();

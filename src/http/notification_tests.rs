@@ -1,6 +1,241 @@
 use super::*;
 use crate::notifications::{NotificationKind, NotificationStore};
 #[test]
+fn notification_delete_all_generated_form_refuses_unsafe_requests_and_delegates_runtime() {
+    let root = temp_dir(&format!(
+        "notice-delete-all-{}",
+        crate::draft::generate_draft_id().unwrap()
+    ));
+    let store = NotificationStore::new(root.join("settings"));
+    let now = || crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider);
+    for kind in [NotificationKind::SessionIssued, NotificationKind::NewMail] {
+        store.record("alice@example.com", kind, now()).unwrap();
+    }
+    store
+        .record("bob@example.com", NotificationKind::SessionIssued, now())
+        .unwrap();
+    let bob = store.load("bob@example.com", now()).unwrap();
+    let prefs = crate::notification_preferences::Store::new(root.join("settings"));
+    prefs
+        .save_choices(
+            "alice@example.com",
+            0,
+            crate::notification_preferences::DigestMode::Individual,
+            crate::notification_preferences::Choice {
+                new_mail: false,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    let app = BrowserApp::new(
+        HttpPolicy::default(),
+        StubGateway {
+            notification_store: Some(store.clone()),
+            notification_preference_store: Some(prefs),
+            browser_fixture_accounts: true,
+            ..Default::default()
+        },
+    );
+    let before = store.load("alice@example.com", now()).unwrap();
+    let page = app.handle_request(
+        &request("GET", "/notifications", &authenticated_headers(), ""),
+        "127.0.0.1",
+    );
+    let html = body_text(&page);
+    let form = html
+        .split("<form method=\"post\" action=\"/notifications/delete-all\">")
+        .nth(1)
+        .unwrap()
+        .split("</form>")
+        .next()
+        .unwrap();
+    assert!(!form.contains("disabled"));
+    assert!(!form.contains("event_id"));
+    assert!(html.contains("1 optional notices hidden"));
+    assert!(html.contains("separate audit records are kept"));
+    let csrf = StubGateway::validated_session().record.csrf_token;
+    let body = format!("csrf_token={csrf}&revision={}", before.revision);
+    assert!(form.contains(&format!("name=\"revision\" value=\"{}\"", before.revision)));
+    assert!(form.contains(&format!("name=\"csrf_token\" value=\"{csrf}\"")));
+    let post = |path: &str, body: &str, auth: bool, foreign: bool| {
+        let headers = authenticated_same_origin_headers();
+        let mut req = request("POST", path, if auth { &headers } else { &[] }, body);
+        if foreign {
+            req.headers
+                .insert("origin".into(), "https://foreign.invalid".into());
+        }
+        app.handle_request(&req, "127.0.0.1")
+    };
+    assert_eq!(
+        post("/notifications/delete-all", &body, false, false)
+            .response
+            .status_code,
+        303
+    );
+    assert_eq!(
+        post("/notifications/delete-all", &body, true, true)
+            .response
+            .status_code,
+        403
+    );
+    assert_eq!(
+        post(
+            "/notifications/delete-all",
+            &body.replace(&csrf, "invalid"),
+            true,
+            false
+        )
+        .response
+        .status_code,
+        403
+    );
+    for extra in [
+        "&account=bob%40example.com",
+        "&event_id=abcd",
+        "&revision=1",
+        "&unexpected=1",
+    ] {
+        assert_eq!(
+            post(
+                "/notifications/delete-all",
+                &format!("{body}{extra}"),
+                true,
+                false
+            )
+            .response
+            .status_code,
+            400
+        );
+    }
+    for bad_revision in ["01", "-1", "18446744073709551616"] {
+        assert_eq!(
+            post(
+                "/notifications/delete-all",
+                &format!("csrf_token={csrf}&revision={bad_revision}"),
+                true,
+                false
+            )
+            .response
+            .status_code,
+            400
+        );
+    }
+    assert_eq!(
+        post("/notifications/delete-all?unexpected=1", &body, true, false)
+            .response
+            .status_code,
+        400
+    );
+    let mut wrong_type = request(
+        "POST",
+        "/notifications/delete-all",
+        &authenticated_same_origin_headers(),
+        &body,
+    );
+    wrong_type
+        .headers
+        .insert("content-type".into(), "application/json".into());
+    assert_eq!(
+        app.handle_request(&wrong_type, "127.0.0.1")
+            .response
+            .status_code,
+        400
+    );
+    let _ = app.handle_request(
+        &request(
+            "GET",
+            "/notifications/delete-all",
+            &authenticated_headers(),
+            "",
+        ),
+        "127.0.0.1",
+    );
+    assert_eq!(store.load("alice@example.com", now()).unwrap(), before);
+    let result = post("/notifications/delete-all", &body, true, false);
+    assert_eq!(result.response.status_code, 303);
+    assert_eq!(
+        result
+            .response
+            .headers
+            .iter()
+            .find(|(name, _)| name.eq_ignore_ascii_case("location"))
+            .map(|(_, value)| value.as_str()),
+        Some("/notifications")
+    );
+    let empty = store.load("alice@example.com", now()).unwrap();
+    assert!(empty.events.is_empty());
+    assert_eq!(
+        post("/notifications/delete-all", &body, true, false)
+            .response
+            .status_code,
+        409
+    );
+    let page = app.handle_request(
+        &request("GET", "/notifications", &authenticated_headers(), ""),
+        "127.0.0.1",
+    );
+    assert!(body_text(&page).contains("disabled>Delete all notifications</button>"));
+    assert_eq!(store.load("bob@example.com", now()).unwrap(), bob);
+    // Actual Runtime gateway must override the fail-closed BrowserGateway default.
+    store
+        .record(
+            "alice@example.com",
+            NotificationKind::PersonalKeyLocked,
+            now(),
+        )
+        .unwrap();
+    let runtime = RuntimeBrowserGateway::for_test(&root);
+    let session = StubGateway::validated_session();
+    let current = runtime.notification_inbox(&session).unwrap();
+    assert!(!current.events.is_empty());
+    assert_eq!(
+        runtime.delete_all_notifications(&session, empty.revision),
+        Err(crate::notifications::NotificationError::Stale)
+    );
+    let cleared = runtime
+        .delete_all_notifications(&session, current.revision)
+        .unwrap();
+    assert!(cleared.events.is_empty());
+    assert_eq!(
+        RuntimeBrowserGateway::for_test(&root)
+            .notification_inbox(&session)
+            .unwrap(),
+        cleared
+    );
+    assert_eq!(store.load("bob@example.com", now()).unwrap(), bob);
+    let path = fs::read_dir(root.join("settings"))
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .find(|path| {
+            fs::read_to_string(path).is_ok_and(|text| text.contains(&before.events[0].event_id))
+        })
+        .unwrap();
+    fs::write(&path, b"{broken").unwrap();
+    let failed = post(
+        "/notifications/delete-all",
+        &format!("csrf_token={csrf}&revision={}", cleared.revision),
+        true,
+        false,
+    );
+    assert_eq!(failed.response.status_code, 503);
+    assert!(body_text(&failed).contains("notification change could not be confirmed"));
+    assert_eq!(fs::read(path).unwrap(), b"{broken");
+    assert_eq!(store.load("bob@example.com", now()).unwrap(), bob);
+    let unavailable = BrowserApp::new(HttpPolicy::default(), StubGateway::default());
+    let failed = unavailable.handle_request(
+        &request(
+            "POST",
+            "/notifications/delete-all",
+            &authenticated_same_origin_headers(),
+            &body,
+        ),
+        "127.0.0.1",
+    );
+    assert_eq!(failed.response.status_code, 503);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn notification_mark_all_and_delete_are_native_owner_csrf_cas_and_hidden_category_scoped() {
     let root = temp_dir(&format!(
         "notification-manage-{}",
@@ -97,7 +332,7 @@ fn notification_mark_all_and_delete_are_native_owner_csrf_cas_and_hidden_categor
     );
     let html = body_text(&page);
     assert!(html.contains("Mark all as read</button>"));
-    assert!(html.contains("including optional notices hidden by your choices"));
+    assert!(html.contains("include optional notices hidden by your choices"));
     assert_eq!(html.matches("action=\"/notifications/delete\"").count(), 1);
     assert!(!html.contains("New Inbox message observed"));
     assert_eq!(
