@@ -27,9 +27,9 @@ with tempfile.TemporaryDirectory() as t,(a.output/'server.log').open('w') as log
    click('Save Draft')
   go('/drafts?sort=subject');assert p.locator('tbody tr').count()==8
   if not a.baseline:
-   p.locator('.draft-selection-menu > summary').press('Enter');p.get_by_role('link',name='Select up to 10 editable drafts shown',exact=True).press('Enter');p.wait_for_load_state('networkidle');assert p.locator('.draft-select input:checked').count()==8
+   p.locator('.draft-selection-menu > summary').press('Enter');p.get_by_role('link',name='Select up to 10 drafts shown',exact=True).press('Enter');p.wait_for_load_state('networkidle');assert p.locator('.draft-select input:checked').count()==8
    click('Review discard');p.get_by_role('link',name='Keep drafts',exact=True).click();p.wait_for_load_state('networkidle');assert p.locator('.draft-select input:checked').count()==0
-   p.locator('.draft-selection-menu > summary').press('Enter');p.get_by_role('link',name='Select up to 10 editable drafts shown',exact=True).click();p.wait_for_load_state('networkidle');p.locator('.draft-selection-menu > summary').press('Enter');p.get_by_role('link',name='Clear selection',exact=True).press('Enter');p.wait_for_load_state('networkidle');assert p.locator('.draft-select input:checked').count()==0
+   p.locator('.draft-selection-menu > summary').press('Enter');p.get_by_role('link',name='Select up to 10 drafts shown',exact=True).click();p.wait_for_load_state('networkidle');p.locator('.draft-selection-menu > summary').press('Enter');p.get_by_role('link',name='Clear selection',exact=True).press('Enter');p.wait_for_load_state('networkidle');assert p.locator('.draft-select input:checked').count()==0
    p.get_by_label('Draft filter',exact=True).select_option('attachments');click('Apply');assert p.locator('tbody tr').count()==3
    p.get_by_role('button',name='Star draft',exact=True).first.press('Enter');p.wait_for_load_state('networkidle');assert 'filter=attachments' in p.url
    p.get_by_label('Draft filter',exact=True).select_option('starred');click('Apply');assert p.locator('tbody tr').count()==1

@@ -1,6 +1,17 @@
 use super::*;
 
 #[test]
+fn bin_bulk_actions_precede_rows_with_one_form_owner() {
+    let page = mailbox_page("/mailbox?name=Trash");
+    assert_eq!(page.response.status_code, 200);
+    let body = body_text(&page);
+    assert_eq!(body.matches("id=\"bulk-move-form\"").count(), 1);
+    assert!(body.find("id=\"bulk-move-form\"").unwrap() < body.find("<table class=\"archive-table\"").unwrap());
+    assert!(body.contains("formaction=\"/messages/delete/review\""));
+    assert!(body.contains("form=\"bulk-move-form\" type=\"checkbox\""));
+}
+
+#[test]
 fn public_attachment_names_and_encoded_sizes_are_real_escaped_row_details() {
     for path in ["/mailbox?name=INBOX", "/mailbox?name=Sent", "/search?q=reader-fixture&field=subject&scope=all"] {
         let mut req = request("GET", path, &authenticated_headers(), "");

@@ -1,4 +1,6 @@
-2026-11-06 (Asia/Bangkok) — **S08-03 Drafts UAT FAILED; correction IN_PROGRESS.** Confirmed schedule source copies cannot be edited or discarded. Preserve the separate scheduled-delivery PASS. Smallest correction: remove exact source only after durable scheduling, permit explicit legacy-copy discard without job mutation/rearming; qualify native date producer UTC and exact-account Trash retention. Owner mailbox messages remain untouched in agent QA. Independent reassessment with /root/remembered_key_review retains prior failures and passing unchanged evidence.
+2026-11-06 (Asia/Bangkok) — **Drafts/Bin selection correction installed; engineering checks PASS, owner recheck pending.** Web main27 ca485795; helper/publicmail/account/GPG/config preserved. Actual Edge/Firefox desktop/mobile pointer/Space selection and source discard PASS; native8focused, single/bulk deletion and installed readonly retention PASS. Ordinary signed publication remains required before handoff. See current slice qualification; previous failed UAT preserved below.
+
+2026-11-06 (Asia/Bangkok) — **Repeated Drafts/Bin UAT FAILED; IN_PROGRESS.** Baseline045d639: scheduled-copy checkboxes remain disabled despite per-row delete. Bin pointer/keyboard selection works in the real synthetic browser, but its16px targets and below-table actions impede use. Root owns the smallest correction: enable confirmed-copy selection with existing revision-bound discard, show its job link/deletion directly, move existing Bin action form above rows and enlarge targets. Preserve uncertain/reserved refusal, confirmation, account isolation, jobs/receipts and all owner mail. No new service, Python tooling, mail configuration or Documents work. QA/security: /root/s08_selection_review. Essential exit: real browser pointer/keyboard/form-submission checks, Rust existing discard and native deletion regressions, matching obsd1 build/install, normal delivery gates. Retain prior failed UAT and previous scoped passes; no new whole-S08 readiness until review. Two failures at the same functional boundary stop retries for combined independent reassessment; use the existing cumulative work order, no allowance reset.
 
 2026-11-05 (Asia/Bangkok) — **S08-03 scheduled-delivery UAT PASS.** Owner explicitly states “Scheduled-delivery UAT: PASS” after showing the message “scheduled send for22h45” received in Proton Mail at23:45 local time, matching its original saved schedule. This accepts end-to-end scheduled delivery for that test. The corrected local-time input and separate cancellation checks remain pending; whole S08-03/S08 acceptance is not inferred. No code, deployed binary, schedule or mailbox data changes accompany this record.
 
@@ -10,7 +12,7 @@
   "version": 1,
   "slice": "S08-03",
   "original_requirement": "Scheduled send and snooze with bounded persisted jobs and restart/cancel/edit behavior",
-  "source_baseline": "5277fcf6259d84c5ddc8e43075e65910e7e18fb4",
+  "source_baseline": "045d63929522e0a4357de733c275a9fd13ead9eb",
   "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
@@ -24,9 +26,11 @@
       "/root"
     ],
     "qa": [
+      "/root/s08_selection_review",
       "/root/remembered_key_review"
     ],
     "security_review": [
+      "/root/s08_selection_review",
       "/root/remembered_key_review"
     ],
     "technical_writer": [
@@ -57,7 +61,15 @@
     "src/snooze_ui.rs",
     "src/http/routes_snooze.rs",
     "src/http/snooze_tests.rs",
-    "src/mailbox_helper_native_reader_tests.rs"
+    "src/mailbox_helper_native_reader_tests.rs",
+    "src/http/archive_ui.rs",
+    "src/http/drafts.css",
+    "src/http/approved.css",
+    "src/http/ux_browser_server.rs",
+    "src/http/mail_list_tests.rs",
+    "maint/ux/draft_fidelity_workflows.py",
+    "maint/ux/test_validate_acceptance.py",
+    "src/http_ui_state_tests.rs"
   ],
   "outcomes": [
     {
@@ -71,9 +83,9 @@
         "UX08-008",
         "UX08-011"
       ],
-      "frontend_backend_outcome": "Confirmed scheduling removes only its exact source draft after durable capture; legacy confirmed scheduled copies can be explicitly deleted without rearming or cancelling jobs; native message dates are UTC before account display conversion; obsd1 Trash supports retention-authorized confirmed deletion.",
+      "frontend_backend_outcome": "Confirmed scheduling removes only its exact source draft after durable capture; legacy confirmed scheduled copies can be explicitly deleted without rearming or cancelling jobs; native message dates are UTC before account display conversion; obsd1 Trash supports retention-authorized confirmed deletion. Confirmed source-copy checkboxes and bulk discard are usable; Bin actions are visible above rows with larger selection targets.",
       "essential_qa": "Strict local conversion, bounds, offset substitution/change/missing refusal, current auth/CSRF and exact fields, local-first rendering, cancellation/reopen readonly source projection, matching native tests/install and ordinary signed delivery. Existing installed read-only helper retention query, controlled native single/bulk deletion and complete S08 functional inventory after fixes; Documents excluded by owner. Snooze saved-offset forms/parse, stale/missing/forged context refusal, cancellation remains independent; full S08 retained-function audit.",
-      "next_action": "Complete independent result review and ordinary signed synchronization, then owner corrected Drafts/Trash/local-time/cancellation/Snooze UAT; preserve accepted scheduled-delivery and S08-02/04 evidence. Documents excluded.",
+      "next_action": "Ordinary signed publication with mandatory gates, then owner Drafts/Bin recheck and remaining local-time/cancel/Snooze acceptance; preserve prior accepted S08 scopes.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -107,6 +119,30 @@
         {
           "stage": "recovery",
           "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection"
+        },
+        {
+          "stage": "implementation",
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Repeated Drafts/Bin selection failure reopened"
+        },
+        {
+          "stage": "source_tests",
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Repeated Drafts/Bin selection failure reopened"
+        },
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Repeated Drafts/Bin selection failure reopened"
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Repeated Drafts/Bin selection failure reopened"
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Repeated Drafts/Bin selection failure reopened"
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Repeated Drafts/Bin selection failure reopened"
         }
       ]
     }
@@ -115,7 +151,7 @@
     "owner": "/root",
     "functional_exit": "Confirmed scheduling removes only its exact source draft after durable capture; legacy confirmed scheduled copies can be explicitly deleted without rearming or cancelling jobs; native message dates are UTC before account display conversion; obsd1 Trash supports retention-authorized confirmed deletion.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Original S08-03 qualification and latest owner screenshots; notification acceptance preserved below.",
+    "history_reference": "Original S08-03 qualification and latest owner screenshots; notification acceptance preserved below. Repeated Drafts/Bin failure at045d639 reopened this work; review evidence and scoped failures retained in selection-controls-20261106.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 7200,
@@ -422,6 +458,172 @@
           ]
         },
         "change_reference": "Sanitize public slice note and preserve original unpublished signed checkpoint privately; normal signed replacement checkpoint and full push gates remain required."
+      },
+      {
+        "id": "browser-selection-27",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Repeated Drafts/Bin selection failure reopened; Edge and independent Firefox desktop/mobile JSdisabled pointer/Space select2 review discard2 reload empty; Bin correct single form/review200; no owner mutation or external send.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "06b1ae7b6ca84d750c16bdd680ec7792004e425b36c2b8c70155a8fe3bb76f2e",
+        "success_chain_review": {
+          "reviewer": "/root/s08_selection_review",
+          "reference": "Independent exact source/recipe/result review; previous failures preserved.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Edge and independent Firefox desktop/mobile JSdisabled pointer/Space select2 review discard2 reload empty; Bin correct single form/review200; no owner mutation or external send."
+      },
+      {
+        "id": "native-build27",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Repeated Drafts/Bin selection failure reopened; Archive06b1ae7b built mainca485795 and testsae326703; eight focused native tests pass.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "06b1ae7b6ca84d750c16bdd680ec7792004e425b36c2b8c70155a8fe3bb76f2e",
+        "success_chain_review": {
+          "reviewer": "/root/s08_selection_review",
+          "reference": "Independent exact source/recipe/result review; previous failures preserved.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Archive06b1ae7b built mainca485795 and testsae326703; eight focused native tests pass."
+      },
+      {
+        "id": "web-install28",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Repeated Drafts/Bin selection failure reopened; Loaded Web inode matches main27; helper/account/GPG/publicmail PIDs and config unchanged, HTTPS200/nineroles.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "06b1ae7b6ca84d750c16bdd680ec7792004e425b36c2b8c70155a8fe3bb76f2e",
+        "success_chain_review": {
+          "reviewer": "/root/s08_selection_review",
+          "reference": "Independent exact source/recipe/result review; previous failures preserved.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Loaded Web inode matches main27; helper/account/GPG/publicmail PIDs and config unchanged, HTTPS200/nineroles."
+      },
+      {
+        "id": "native-tests29",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Repeated Drafts/Bin selection failure reopened; Actual synthetic single2.47s/bulk1.82s deletion PASS including neighbour/isolation/retention, no owner mail.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "06b1ae7b6ca84d750c16bdd680ec7792004e425b36c2b8c70155a8fe3bb76f2e",
+        "success_chain_review": {
+          "reviewer": "/root/s08_selection_review",
+          "reference": "Independent exact source/recipe/result review; previous failures preserved.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Actual synthetic single2.47s/bulk1.82s deletion PASS including neighbour/isolation/retention, no owner mail."
+      },
+      {
+        "id": "readiness30",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Repeated Drafts/Bin selection failure reopened; Current installed signed admission exact-account TrashAllowed InboxforeignUnavailable; readonly0.05s.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "06b1ae7b6ca84d750c16bdd680ec7792004e425b36c2b8c70155a8fe3bb76f2e",
+        "success_chain_review": {
+          "reviewer": "/root/s08_selection_review",
+          "reference": "Independent exact source/recipe/result review; previous failures preserved.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Current installed signed admission exact-account TrashAllowed InboxforeignUnavailable; readonly0.05s."
+      },
+      {
+        "id": "v14-r4-stale-fixture",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Repeated Drafts/Bin selection failure reopened; Existing R4 test falsely assumed all real followups BLOCKED despite historical PARTIALLY_VERIFIED account-status result; corrected deepcopy pending fixture,56PASS.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "06b1ae7b6ca84d750c16bdd680ec7792004e425b36c2b8c70155a8fe3bb76f2e",
+        "success_chain_review": {
+          "reviewer": "/root/s08_selection_review",
+          "reference": "Independent exact source/recipe/result review; previous failures preserved.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Existing R4 test falsely assumed all real followups BLOCKED despite historical PARTIALLY_VERIFIED account-status result; corrected deepcopy pending fixture,56PASS."
+      },
+      {
+        "id": "v14-css-test-literals",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Repeated Drafts/Bin selection failure reopened; Legacy runtime template scan rejected existing literal attack strings in cfgtest fixture; unchanged test relocated to existing test module, no scanner relaxation.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "06b1ae7b6ca84d750c16bdd680ec7792004e425b36c2b8c70155a8fe3bb76f2e",
+        "success_chain_review": {
+          "reviewer": "/root/s08_selection_review",
+          "reference": "Independent exact source/recipe/result review; previous failures preserved.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Legacy runtime template scan rejected existing literal attack strings in cfgtest fixture; unchanged test relocated to existing test module, no scanner relaxation.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s08_selection_review"
+          ],
+          "reference": "Combined current source reassessment: independent review identified stale R4 fixture premise and runtime scan hitting cfgtest attack literals. Preserve real acceptance progress, assertions and literal attack strings; use existing synthetic deepcopy/test module only. Native production unchanged. The earlier ordinary-prepush-publication-address refusal remains preserved; prior delivery already corrected that private-address publication issue without changing this branch preservation SOP.",
+          "next_action": "Run corrected existing gates once and retain all failures; no runtime retry or policy relaxation.",
+          "failed_attempt_ids": [
+            "ordinary-prepush-publication-address",
+            "v14-r4-stale-fixture"
+          ]
+        }
       }
     ]
   },
@@ -430,7 +632,7 @@
     "slice": "S08-03",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "823f04ec048ef5cb8d9f5a125fe5c509e05d44f3f5f4e5d26898ff54bbb6b8a2"
+      "sha256": "d6f0691c9214cae062d9fc09027ab4237b7758e753ebce28df74c17ca8711392"
     },
     "design": {
       "journey": "Schedule and Snooze use the saved account offset, captured jobs remain independent, confirmed source copies can be safely discarded, and explicitly confirmed exact-account Trash deletion is available.",
@@ -612,8 +814,8 @@
     "status": "PENDING",
     "reference": "Corrected owner UAT pending; historical Drafts FAIL and separate delivery PASS retained."
   },
-  "next_action": "Complete independent result review and ordinary signed synchronization, then owner corrected Drafts/Trash/local-time/cancellation/Snooze UAT; preserve accepted scheduled-delivery and S08-02/04 evidence. Documents excluded.",
-  "independent_next_action": "Independent engineering source/result review PASS. Preserve owner T09 pending; normal signed delivery hooks and fresh remote equality required before handoff."
+  "next_action": "Ordinary signed publication with mandatory gates, then owner Drafts/Bin recheck and remaining local-time/cancel/Snooze acceptance; preserve prior accepted S08 scopes.",
+  "independent_next_action": "Final public-safe source/documentation and ordinary publication review; corrected owner UAT remains pending."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

@@ -715,6 +715,17 @@ The owner requires scheduled-send entry in the timezone configured in OSMAP. Reu
 A confirmed journal transfer to scheduling projects the retired source draft as a read-only Scheduled copy linked to its job, without asserting that the job remains pending. Reserved or uncertain transfers remain Paused. Cancellation never rearms the consumed source draft. Existing immutable capture, duplicate-send, owner, CSRF and final-send policy controls remain in force.
 
 
+## 2026-11-06 — Make Drafts and Bin actions usable in the ordinary flow
+
+Repeated UAT showed that a hidden per-row delete action did not repair disabled
+scheduled-copy selection. Reuse the existing authenticated, revision-bound bulk
+discard review and confirmation for confirmed copies. Keep captured messages
+read-only and expose their existing scheduled-message link directly. Preserve
+uncertain-state refusal and captured jobs/consumed intents. Move the existing
+single Bin action form above rows and enlarge selection targets; actual mouse
+and keyboard checks qualify usability separately from retention/native deletion.
+Use isolated fixtures in the existing Rust browser test, no new Python tooling.
+
 ## 2026-11-06 — Retire scheduled sources without rearming delivery
 
 After durable capture and confirmed journal transfer, remove only the exact source revision. Legacy confirmed Scheduled copies may be explicitly discarded while keeping the captured job/payload and consumed intent. They stay noneditable: editing captured content belongs to Scheduled messages, and cancellation never rearms the source. Uncertain attempts remain protected.

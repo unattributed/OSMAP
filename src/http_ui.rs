@@ -3451,7 +3451,7 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
         None => String::new(),
     };
     let mut rows = String::new();
-    let mut editable_count = 0;
+    let mut selectable_count = 0;
     for draft in model.drafts {
         let mut matching = model
             .states
@@ -3462,10 +3462,15 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
             .filter(|_| matching.next().is_none())
             .map(|value| &value.state);
         if !matches!(state, Some(crate::http::BrowserDraftEditState::Editable)) {
-            rows.push_str(&render_locked_draft_row(draft, state, model.csrf_token));
+            let selectable = matches!(state, Some(crate::http::BrowserDraftEditState::Scheduled { job_id }) if crate::draft::validate_draft_id(job_id).is_ok());
+            selectable_count += usize::from(selectable);
+            rows.push_str(&render_locked_draft_row(
+                draft, state, model.csrf_token,
+                model.view.select_editable && selectable_count <= crate::draft_list::MAX_DRAFT_SELECTION,
+            ));
             continue;
         }
-        editable_count += 1;
+        selectable_count += 1;
         let resume_href = format!("/draft?id={}", url_encode(&draft.draft_id));
         rows.push_str(&format!(
             concat!(
@@ -3504,7 +3509,7 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
             escape_html(&draft.draft_id),
             draft.revision,
             render_draft_list_state(model.view),
-            checked = if model.view.select_editable && editable_count <= crate::draft_list::MAX_DRAFT_SELECTION { " checked" } else { "" },
+            checked = if model.view.select_editable && selectable_count <= crate::draft_list::MAX_DRAFT_SELECTION { " checked" } else { "" },
         ));
     }
     if rows.is_empty() {
@@ -3516,13 +3521,13 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
             "{}",
             "<main id=\"main-content\" class=\"page-shell drafts-page\" tabindex=\"-1\">",
             "<div class=\"page-intro\"><h1>Drafts</h1><p>Resume, organize and safely discard saved messages. Includes Drafts and Working drafts under one account limit.</p></div>{}{}",
-            "<div class=\"draft-list-toolbar\"><details class=\"draft-selection-menu\"><summary>Select drafts</summary><nav aria-label=\"Draft selection\"><a href=\"{select_href}\">Select up to 10 editable drafts shown</a><a href=\"{clear_href}\">Clear selection</a><p>This checks current editable rows only. Review discard before confirming any deletion.</p></nav></details><form method=\"get\" action=\"/drafts\"><label class=\"sr-only\" for=\"draft-filter\">Draft filter</label><select id=\"draft-filter\" name=\"filter\">{}</select><label class=\"sr-only\" for=\"draft-sort\">Draft order</label><select id=\"draft-sort\" name=\"sort\">{}</select><label class=\"sr-only\" for=\"draft-query\">Search drafts</label><input id=\"draft-query\" name=\"q\" value=\"{}\" maxlength=\"200\" placeholder=\"Search subjects or recipients\"><button type=\"submit\">Apply</button></form><a class=\"button-link primary-button\" href=\"/compose\">+ New Message</a></div>",
+            "<div class=\"draft-list-toolbar\"><details class=\"draft-selection-menu\"><summary>Select drafts</summary><nav aria-label=\"Draft selection\"><a href=\"{select_href}\">Select up to 10 drafts shown</a><a href=\"{clear_href}\">Clear selection</a><p>Select editable drafts and confirmed scheduled source copies. Review discard before confirming deletion.</p></nav></details><form method=\"get\" action=\"/drafts\"><label class=\"sr-only\" for=\"draft-filter\">Draft filter</label><select id=\"draft-filter\" name=\"filter\">{}</select><label class=\"sr-only\" for=\"draft-sort\">Draft order</label><select id=\"draft-sort\" name=\"sort\">{}</select><label class=\"sr-only\" for=\"draft-query\">Search drafts</label><input id=\"draft-query\" name=\"q\" value=\"{}\" maxlength=\"200\" placeholder=\"Search subjects or recipients\"><button type=\"submit\">Apply</button></form><a class=\"button-link primary-button\" href=\"/compose\">+ New Message</a></div>",
             "<div class=\"table-wrap draft-list\" role=\"region\" aria-label=\"Saved drafts\" tabindex=\"0\"><table>",
             "<thead><tr><th><span class=\"sr-only\">Select</span></th><th><span class=\"sr-only\">Star</span></th><th>Recipient</th><th>Subject</th><th>Attachment</th><th>Status</th><th>Saved</th><th><span class=\"sr-only\">Actions</span></th></tr></thead>",
             "<tbody>{}</tbody>",
             "</table></div>",
             "<p class=\"draft-list-status muted\" role=\"status\">Showing {} of {} saved drafts</p><p class=\"draft-storage-status muted\">{}</p>",
-            "<form id=\"draft-selection\" class=\"draft-selection-actions\" method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<p class=\"muted\">Select up to 10 editable drafts to discard together.</p><button type=\"submit\" name=\"stage\" value=\"review\"{review_disabled}>Review discard</button></form>",
+            "<form id=\"draft-selection\" class=\"draft-selection-actions\" method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<p class=\"muted\">Select up to 10 drafts or scheduled source copies. Scheduled messages and delivery status are kept.</p><button type=\"submit\" name=\"stage\" value=\"review\"{review_disabled}>Review discard</button></form>",
             "</main>"
         ),
         app_header(model.canonical_username, model.csrf_token, "drafts"),
@@ -3538,7 +3543,7 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
         escape_html(model.csrf_token), render_draft_list_state(model.view),
         select_href = escape_html(&format!("{}&select=editable",model.view.href())),
         clear_href = escape_html(&format!("{}&select=clear",model.view.href())),
-        review_disabled = if editable_count == 0 { " disabled" } else { "" },
+        review_disabled = if selectable_count == 0 { " disabled" } else { "" },
     ))
 }
 
@@ -3546,6 +3551,7 @@ fn render_locked_draft_row(
     draft: &DraftSummary,
     state: Option<&crate::http::BrowserDraftEditState>,
     csrf_token: &str,
+    checked: bool,
 ) -> String {
     use crate::http::BrowserDraftEditState as State;
     let (kind, label, explanation, intent) = match state {
@@ -3601,8 +3607,13 @@ fn render_locked_draft_row(
     } else {
         "<button disabled>Delete unavailable</button>".into()
     };
-    format!(concat!("<tr data-draft-state=\"{kind}\"><td class=\"draft-select\"><input type=\"checkbox\" disabled aria-label=\"Select draft: {title}\"></td><td class=\"draft-star\"><button disabled aria-label=\"Star unavailable\">{star}</button></td>",
-        "<td class=\"draft-recipient\"><div class=\"draft-recipient-person\"><span class=\"sender-avatar\" aria-hidden=\"true\">{initials}</span><span>{recipient}</span></div></td><td class=\"draft-subject\"><strong dir=\"auto\">{title}</strong><span class=\"muted\">{explanation}</span></td><td>{files}</td><td><span class=\"badge\">{label}</span></td><td><time datetime=\"{utc}\">{time}</time></td><td><details class=\"draft-discard\"><summary aria-label=\"Draft actions\">⋮</summary><div class=\"draft-action-menu\">{links}{discard}</div></details></td></tr>"),kind=kind,title=escape_html(title),star=if draft.starred {"★"} else {"☆"},initials=escape_html(&sender_initials(draft.recipient_preview.as_deref())),recipient=escape_html(draft.recipient_preview.as_deref().unwrap_or("No visible recipients")),explanation=explanation,files=if draft.attachment_count>0 {format!("{} files",draft.attachment_count)} else {"—".into()},label=label,utc=crate::logging::format_unix_timestamp_utc(draft.updated_at),time=crate::logging::format_unix_timestamp_utc(draft.updated_at).replace('T'," ").replace('Z'," UTC"),links=links,discard=discard)
+    let selection = if matches!(state, Some(State::Scheduled { job_id }) if crate::draft::validate_draft_id(job_id).is_ok()) {
+        format!("<input type=\"checkbox\" form=\"draft-selection\" name=\"selected_{}\" value=\"{}\"{} aria-label=\"Select draft: {}\">", escape_html(&draft.draft_id), draft.revision, if checked { " checked" } else { "" }, escape_html(title))
+    } else {
+        format!("<input type=\"checkbox\" disabled aria-label=\"Select draft: {}\">", escape_html(title))
+    };
+    format!(concat!("<tr data-draft-state=\"{kind}\"><td class=\"draft-select\">{selection}</td><td class=\"draft-star\"><button disabled aria-label=\"Star unavailable\">{star}</button></td>",
+        "<td class=\"draft-recipient\"><div class=\"draft-recipient-person\"><span class=\"sender-avatar\" aria-hidden=\"true\">{initials}</span><span>{recipient}</span></div></td><td class=\"draft-subject\"><strong dir=\"auto\">{title}</strong>{primary_link}<span class=\"muted\">{explanation}</span></td><td>{files}</td><td><span class=\"badge\">{label}</span></td><td><time datetime=\"{utc}\">{time}</time></td><td><details class=\"draft-discard\"><summary aria-label=\"Draft actions\">⋮</summary><div class=\"draft-action-menu\">{links}{discard}</div></details></td></tr>"),kind=kind,selection=selection,primary_link=if matches!(state, Some(State::Scheduled { .. })) {links.as_str()} else {""},title=escape_html(title),star=if draft.starred {"★"} else {"☆"},initials=escape_html(&sender_initials(draft.recipient_preview.as_deref())),recipient=escape_html(draft.recipient_preview.as_deref().unwrap_or("No visible recipients")),explanation=explanation,files=if draft.attachment_count>0 {format!("{} files",draft.attachment_count)} else {"—".into()},label=label,utc=crate::logging::format_unix_timestamp_utc(draft.updated_at),time=crate::logging::format_unix_timestamp_utc(draft.updated_at).replace('T'," ").replace('Z'," UTC"),links=links,discard=discard)
 }
 fn render_draft_storage(usage: &crate::http::BrowserDraftStorageUsage) -> String {
     let size = |bytes: u64| {
@@ -3631,7 +3642,7 @@ pub(crate) fn render_draft_selection_review(
     view: &DraftListView,
 ) -> TrustedHtml {
     let rows: String = drafts.iter().map(|draft| format!("<li><strong dir=\"auto\">{}</strong><span class=\"muted\"> · {} attachment(s)</span><input type=\"hidden\" name=\"selected_{}\" value=\"{}\"></li>", escape_html(if draft.subject.is_empty() { "(No subject)" } else { &draft.subject }), draft.attachment_count, escape_html(&draft.draft_id), draft.revision)).collect();
-    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Discard selected drafts?</h1><p>Review these {} saved drafts before discarding their text and saved attachments.</p></div><section class=\"content-pane\"><form method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<ul class=\"draft-discard-review\">{}</ul><p>Discard cannot be undone. If a draft changes, discard stops; any earlier completed deletions remain.</p><div class=\"inline-actions\"><a class=\"button-link\" href=\"{}\">Keep drafts</a><button type=\"submit\" name=\"stage\" value=\"confirm\">Discard {} drafts</button></div></form></section></main>", app_header(account, csrf, "drafts"), drafts.len(), escape_html(csrf), render_draft_list_state(view), rows, escape_html(&view.href()), drafts.len()))
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Discard selected drafts?</h1><p>Review these {} saved drafts before discarding their text and saved attachments.</p></div><section class=\"content-pane\"><form method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<ul class=\"draft-discard-review\">{}</ul><p>Discard cannot be undone. For scheduled source copies, only the copy in Drafts is removed; the scheduled message and delivery status are kept. If a draft changes, discard stops; any earlier completed deletions remain.</p><div class=\"inline-actions\"><a class=\"button-link\" href=\"{}\">Keep drafts</a><button type=\"submit\" name=\"stage\" value=\"confirm\">Discard {} drafts</button></div></form></section></main>", app_header(account, csrf, "drafts"), drafts.len(), escape_html(csrf), render_draft_list_state(view), rows, escape_html(&view.href()), drafts.len()))
 }
 
 #[cfg(test)]
@@ -3787,6 +3798,22 @@ fn draft_ui_unmatched_revision_and_duplicate_state_never_enable_editing() {
         usage: &BrowserDraftStorageUsage::Unknown,
     });
     assert_eq!(html.as_str().matches(" checked").count(), 10);
+    // The same ten-item selection bound includes confirmed source copies.
+    let mixed: Vec<_> = states.iter().enumerate().map(|(index, state)| {
+        let mut state = state.clone();
+        if index % 2 == 0 {
+            state.state = BrowserDraftEditState::Scheduled { job_id: "b".repeat(32) };
+        }
+        state
+    }).collect();
+    let html = render_draft_list_page(&DraftListPageModel {
+        canonical_username: "alice@example.test", csrf_token: "synthetic",
+        success_message: None, error_message: None, drafts: &drafts, view: &view,
+        total_count: 12, states: &mixed, usage: &BrowserDraftStorageUsage::Unknown,
+    });
+    assert_eq!(html.as_str().matches(" checked").count(), 10);
+    assert_eq!(html.as_str().matches("form=\"draft-selection\"").count(), 12);
+    assert!(!html.as_str().contains("value=\"review\" disabled"));
     assert!(!view.href().contains("select="));
     assert!(!render_draft_list_state(&view).contains("select="));
     assert!(DraftListView::parse(&[("select".into(), "all".into())].into()).is_err());
@@ -3806,50 +3833,3 @@ mod folder_delete_ui;
 mod folder_disposition_ui;
 pub(crate) use folder_delete_ui::{render_folder_delete, DeletePageModel};
 pub(crate) use folder_disposition_ui::{render_deleted_folders, render_folder_disposition};
-
-#[cfg(test)]
-#[test]
-fn scheduled_draft_row_links_job_without_claiming_pending_or_allowing_edit() {
-    let draft = DraftSummary {
-        draft_id: "a".repeat(32),
-        created_at: 100,
-        updated_at: 100,
-        expires_at: 200,
-        revision: 2,
-        starred: false,
-        storage_bytes: 1,
-        recipient_count: 0,
-        recipient_preview: None,
-        subject: "<script>synthetic</script>".into(),
-        subject_len: 30,
-        body_len: 1,
-        attachment_count: 0,
-        total_attachment_bytes: 0,
-    };
-    let state = crate::http::BrowserDraftEditState::Scheduled {
-        job_id: "b".repeat(32),
-    };
-    let html = render_locked_draft_row(&draft, Some(&state), "synthetic-csrf");
-    assert!(html.contains("Scheduled copy") && html.contains("Managed in Scheduled messages"));
-    assert!(html.contains(&format!("/scheduled?id={}", "b".repeat(32))));
-    assert!(html.contains("&lt;script&gt;synthetic&lt;/script&gt;"));
-    for wrong in [
-        "Submission state needs review",
-        "View attempt",
-        "action=\"/drafts/star\"",
-    ] {
-        assert!(!html.contains(wrong));
-    }
-    assert!(html.contains("checkbox\" disabled") && html.contains("Delete source copy"));
-    assert!(html.contains("action=\"/drafts/delete\"") && html.contains("synthetic-csrf"));
-    assert!(html.contains("name=\"draft_revision\" value=\"2\""));
-    let invalid = crate::http::BrowserDraftEditState::Scheduled {
-        job_id: "../foreign<script>".into(),
-    };
-    let html = render_locked_draft_row(&draft, Some(&invalid), "synthetic-csrf");
-    assert!(html.contains("href=\"/scheduled\""));
-    assert!(!html.contains("../foreign"));
-    assert!(!html.contains("action=\"/drafts/delete\""));
-    let html = render_locked_draft_row(&draft, None, "synthetic-csrf");
-    assert!(html.contains("Delete unavailable") && !html.contains("action=\"/drafts/delete\""));
-}

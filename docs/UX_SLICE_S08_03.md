@@ -1,4 +1,90 @@
-## 2026-11-06 — Drafts/Trash correction and retained S08 inspection
+## 2026-11-06 — Repeated Drafts/Bin selection failure reopened
+
+The repeated owner UAT failure at045d639 overrides the earlier readiness claim
+for these controls. Scheduled-copy rows still rendered disabled checkboxes and
+the bulk discard button counted only editable rows. The earlier per-row menu
+correction did not complete the ordinary selection journey.
+
+Confirmed scheduled source copies now use the existing revision-bound bulk
+review/confirmation form. A visible **View scheduled message** link replaces the
+need to find that link in a menu. Captured copies remain read-only; deleting
+their Drafts copy preserves the scheduled message, consumed intent and delivery
+status. Ordinary editable drafts retain their existing resume/edit workflow.
+Unknown, attempted, stale, duplicate or invalid states remain restricted.
+
+The original Bin checkboxes worked with a mouse and Space in Edge and Firefox;
+no backend selection failure was reproduced. Its16-pixel targets and action
+toolbar below all rows were independently observed usability defects. The
+existing single action form now appears above the rows, with24-pixel checkboxes
+and at least44-pixel selection labels. Retention, identity/revision, session,
+Origin, CSRF and explicit permanent-deletion confirmation are unchanged.
+
+Actual JavaScript-disabled Edge and independent Firefox desktop/mobile tests
+selected two synthetic scheduled copies with pointer and Space, reviewed two,
+confirmed discard and reloaded an empty list. Bin selected fields belonged to
+one correct form and opened permanent-deletion review. Firefox360x800 had no
+horizontal overflow; its Bin label was44pixels high. These browser tests used
+the existing Rust loopback fixture and no owner account, Send POST or external
+mail. Bin confirmation in the browser remained unsubmitted; native deletion
+evidence is separate. Existing Rust tests cover mixed ten-item bounds, stale
+and foreign revisions, missing auth/Origin/CSRF, partial failure, and retained
+scheduled jobs after source discard.
+
+Native archive27 SHA256
+06b1ae7b6ca84d750c16bdd680ec7792004e425b36c2b8c70155a8fe3bb76f2e
+built main27
+ca4857951bf9b96636924476d9dd7ff65987009fcbea71906778bec83c92c1cb
+and tests27
+ae326703281ff4ac2f28f4afd42f732f5298278cddedd2695bfbb9153a757d43.
+Eight focused native tests passed. Install28 verified Web's loaded text inode,
+nine services and HTTPS login200. Helper, account, GPG and public-mail PIDs and
+relevant configuration compared unchanged. No owner messages were deleted.
+The helper intentionally retains its prior running binary for this UI-only
+correction. Native29 single and bulk browser/helper/backend deletion passed in
+2.47s and1.82s using disposable owned messages, including retention, stale and
+foreign identity refusal and unchanged neighbouring mail. Readiness30 passed
+current installed signed account admission and exact-account Trash allowed,
+Inbox unavailable and foreign account unavailable in0.05s with no mutations.
+Normal signed delivery remains a separate final check.
+
+Preserved failures: the initial concat-based format needed an explicit named
+argument and compiled after that correction. The default synthetic Bin fixture
+denies deletion without retention; an explicit test-only allowed policy exercises
+the positive review. The default Playwright Firefox path was missing; an existing
+cached executable worked. A shared synthetic fixture had already been consumed;
+independent QA used its own fresh fixture. The V14 R4 test incorrectly assumed
+all real historical followups remained BLOCKED despite prior account-status
+progress; its existing counterexample now uses an explicitly pending deepcopy.
+All56 validator tests pass without changing the real acceptance register. No new
+Python tooling, dependency or general testing framework was introduced.
+The next legacy V14 scan treated hostile test strings in the runtime-template
+file as runtime scripts. Move that unchanged test to the existing cfg(test)
+http_ui_state_tests.rs module; retain the literal attack strings and assertions.
+The relocated Rust test passes; native27 predates this test-only relocation,
+whose production implementation is identical. Neither gate was weakened.
+The aggregate historical V14 target subsequently stops at its unchanged reader
+gate demanding the literal phrase "future decrypted content must still pass
+protected rendering". That phrase is already absent at baseline045d639, after
+actual OpenPGP rendering was implemented. This unrelated historical gate remains
+FAIL and is not represented as passing. Its repair is outside this selection
+correction. Normal mandatory commit/push security checks and actual Rust reader
+regressions remain required; no gate is skipped or changed for publication.
+
+Private evidence: osmap-ux-s08/completion-20261104/selection-controls-20261106.
+Independent QA/security: /root/s08_selection_review. The earlier S08 inspection
+matrix below remains applicable; Documents remains removed. Repeated failed
+UAT, earlier native failures and prior scoped acceptance are preserved.
+
+Engineering correction is ready for owner recheck after ordinary signed
+publication succeeds. In **Drafts**, tick a scheduled copy, choose **Review
+discard**, confirm and reload: that copy disappears while delivery status stays
+intact. In **Bin**, tick an expendable message and use the permanent-deletion
+review above the list; confirm and reload: only that item disappears. These two
+owner checks remain NOT_RUN for the corrected deployment. Whole-S08 acceptance
+also retains the local-time/cancel/Snooze checks below; existing accepted areas
+need not be repeated unless another defect is observed.
+
+## Earlier 2026-11-06 — Drafts/Trash correction and retained S08 inspection
 
 The owner reported Drafts UAT FAILED after separately accepting scheduled delivery.
 That failure is retained. The current correction removes the exact source draft
@@ -71,10 +157,10 @@ and ordinary signed synchronization are recorded separately from owner T09.
 
 ### Short owner UAT
 
-Sign in again after the OSMAP restart. (1) In Drafts, open a legacy Scheduled copy's
-three-dot menu, choose **Delete source copy**, refresh and confirm it is absent;
+Sign in again after the OSMAP restart. (1) In Drafts, tick a Scheduled copy's
+checkbox, choose **Review discard**, confirm discard, refresh and confirm it is absent;
 the existing Sent message/job status stays intact. (2) In Bin, select one expendable
-message, choose **Review permanent deletion of selected**, confirm, refresh and
+message, use **Review permanent deletion of selected** above the list, confirm, refresh and
 confirm only that item is gone. (3) Set/confirm your OSMAP timezone, schedule a
 new test for a future local time, confirm the displayed local time and that the
 source no longer appears in Drafts, then cancel the job and confirm it stays

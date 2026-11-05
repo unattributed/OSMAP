@@ -703,15 +703,23 @@ class R4ScopeTests(unittest.TestCase):
         return matrix
 
     def test_default_original57_and_explicit_approved46_keep_followups_open(self):
-        self.assertEqual(self.check(self.order(False))["required_obligations"], 57)
-        self.assertEqual(self.check(self.order())["required_obligations"], 46)
-        rows = {row["id"]: row for row in self.matrix["approved_control_cases"]}
+        # Exercise pending followups without assuming the live register has
+        # made no progress since R4. This is a synthetic counterexample only.
+        matrix = copy.deepcopy(self.matrix)
+        for row in matrix["approved_control_cases"]:
+            if row["id"] in self.followups:
+                row["result"] = {"status": "BLOCKED", "executed": False,
+                    "evidence": [{"kind": "gap", "path": "synthetic-pending-followup",
+                        "scope": "scope-overlay test only; no application status changed"}]}
+        self.assertEqual(self.check(self.order(False), matrix)["required_obligations"], 57)
+        self.assertEqual(self.check(self.order(), matrix)["required_obligations"], 46)
+        rows = {row["id"]: row for row in matrix["approved_control_cases"]}
         self.assertEqual(len(self.followups), 11)
         self.assertTrue(all(rows[identifier]["result"]["status"] == "BLOCKED" for identifier in self.followups))
         # No result, original expectation or owner history is modified by the overlay.
-        before = copy.deepcopy(self.matrix)
-        r4_scope(self.matrix, REPO)
-        self.assertEqual(self.matrix, before)
+        before = copy.deepcopy(matrix)
+        r4_scope(matrix, REPO)
+        self.assertEqual(matrix, before)
 
     def test_unapproved_unknown_and_unmanifested_scope_refused(self):
         order = self.order(); order["scope_revision"] = "R5"

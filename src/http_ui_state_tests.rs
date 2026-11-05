@@ -15,3 +15,52 @@ fn state_card_escapes_inert_content_and_keeps_only_native_link() {
     assert!(!html.contains("<script"));
     assert!(!html.contains("<form"));
 }
+
+#[cfg(test)]
+#[test]
+fn scheduled_draft_row_links_job_without_claiming_pending_or_allowing_edit() {
+    let draft = DraftSummary {
+        draft_id: "a".repeat(32),
+        created_at: 100,
+        updated_at: 100,
+        expires_at: 200,
+        revision: 2,
+        starred: false,
+        storage_bytes: 1,
+        recipient_count: 0,
+        recipient_preview: None,
+        subject: "<script>synthetic</script>".into(),
+        subject_len: 30,
+        body_len: 1,
+        attachment_count: 0,
+        total_attachment_bytes: 0,
+    };
+    let state = crate::http::BrowserDraftEditState::Scheduled {
+        job_id: "b".repeat(32),
+    };
+    let html = render_locked_draft_row(&draft, Some(&state), "synthetic-csrf", true);
+    assert!(html.contains("Scheduled copy") && html.contains("Managed in Scheduled messages"));
+    assert!(html.contains(&format!("/scheduled?id={}", "b".repeat(32))));
+    assert!(html.contains("&lt;script&gt;synthetic&lt;/script&gt;"));
+    for wrong in [
+        "Submission state needs review",
+        "View attempt",
+        "action=\"/drafts/star\"",
+    ] {
+        assert!(!html.contains(wrong));
+    }
+    assert!(html.contains("form=\"draft-selection\"") && html.contains("Delete source copy"));
+    assert!(html.contains("name=\"selected_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" value=\"2\" checked"));
+    assert!(html.contains("action=\"/drafts/delete\"") && html.contains("synthetic-csrf"));
+    assert!(html.contains("name=\"draft_revision\" value=\"2\""));
+    let invalid = crate::http::BrowserDraftEditState::Scheduled {
+        job_id: "../foreign<script>".into(),
+    };
+    let html = render_locked_draft_row(&draft, Some(&invalid), "synthetic-csrf", true);
+    assert!(html.contains("href=\"/scheduled\""));
+    assert!(!html.contains("../foreign"));
+    assert!(!html.contains("action=\"/drafts/delete\""));
+    assert!(html.contains("checkbox\" disabled") && !html.contains("name=\"selected_"));
+    let html = render_locked_draft_row(&draft, None, "synthetic-csrf", true);
+    assert!(html.contains("Delete unavailable") && !html.contains("action=\"/drafts/delete\""));
+}

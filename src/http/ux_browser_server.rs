@@ -107,6 +107,27 @@ fn ux_synthetic_browser_server() {
         )),
         ..StubGateway::default()
     };
+    // Explicit synthetic fixture for legacy source-copy selection. It never
+    // creates a job, runs a worker or reaches a mail host.
+    if std::env::var("OSMAP_UX_FIXTURE_SCHEDULED_COPIES").ok().as_deref() == Some("1") {
+        let store = gateway.draft_store.as_ref().unwrap();
+        let mut guard = gateway.send_journal.account_guard("alice@example.com", 100).unwrap();
+        for id in 1..=2 {
+            let draft = DraftRecord::new(DraftPolicy::default(), crate::draft::DraftRecordInput {
+                draft_id: format!("{id:032x}"), canonical_username: "alice@example.com".into(), now: 100,
+                recipients_text: "recipient@example.test".into(), cc_text: String::new(), bcc_text: String::new(),
+                subject: format!("Scheduled source {id}"), body: "Synthetic source only".into(),
+                attachments: vec![], source_attachments: None,
+            }).unwrap();
+            store.save(&draft, 100).unwrap();
+            let draft = store.load("alice@example.com", &draft.draft_id, 100).unwrap().unwrap();
+            let intent = guard.draft_intent(&draft).unwrap();
+            let job_id = format!("{:032x}", id + 10);
+            guard.begin_schedule(&intent, &job_id, &"d".repeat(64)).unwrap();
+            guard.finish_schedule(&intent, &job_id, &"d".repeat(64)).unwrap();
+        }
+        *gateway.delete_decision.lock().unwrap() = crate::mailbox::RetentionDecision::Allowed { revision: 1 };
+    }
     let app = BrowserApp::new(policy, gateway);
     let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Error);
     fs::write(root.join("ready.json"), serde_json::to_vec(&serde_json::json!({

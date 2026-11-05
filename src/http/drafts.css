@@ -22,7 +22,8 @@
  .drafts-page .draft-action-menu button:disabled,.drafts-page .draft-star button:disabled { color:GrayText; }
 }
 
-.drafts-page .draft-select input { margin:0; }
+.drafts-page .draft-select input { margin:0; width:1.5rem; height:1.5rem; cursor:pointer; }
+.drafts-page .draft-select input:disabled { cursor:not-allowed; }
 
 .drafts-page .page-intro { margin-bottom:.6rem; }
 /* PAGE06 column proportions and native toolbar review action. */
