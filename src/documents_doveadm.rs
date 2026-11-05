@@ -40,6 +40,26 @@ const QUALIFIED_CONCURRENT_QUOTA_DRIVERS: &[&str] = &[];
 const FILESYSTEM_QUOTA_QUALIFIED: bool = true;
 const QUOTA_WORKER: &str = "/usr/local/libexec/osmap/storage-quota";
 
+// Native output and account identifiers are private. Keep only fixed call-site
+// stages, outcomes and bounded stream accounting in the helper's stderr.
+fn reserved_native_observation(
+    stage: &'static str,
+    result: &'static str,
+    response: Option<&crate::auth::CommandExecution>,
+) -> String {
+    match response {
+        Some(response) => format!(
+            "DOCUMENTS_NATIVE stage={stage} result={result} native_exit={} stdout_bytes={} stderr_bytes={}",
+            response.status_code,
+            response.stdout.len(),
+            response.stderr.len()
+        ),
+        None => format!(
+            "DOCUMENTS_NATIVE stage={stage} result={result} native_exit=UNAVAILABLE stdout_bytes=UNKNOWN stderr_bytes=UNKNOWN observation=EXECUTOR_RESULT_UNAVAILABLE"
+        ),
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct DoveadmDocumentsBackend<E> {
     executor: E,
@@ -92,7 +112,12 @@ impl<E: CommandExecutor> DoveadmDocumentsBackend<E> {
     // `doveadm save -m` opens an existing mailbox; it does not create one.
     // Provision only the two account-private names owned by Documents, before
     // dispatching any document bytes or a move to the Bin.
-    fn reserved_mailbox_openable(&self, account: &str, mailbox: &str) -> Result<bool, Error> {
+    fn reserved_mailbox_openable(
+        &self,
+        account: &str,
+        mailbox: &str,
+        stage: &'static str,
+    ) -> Result<bool, Error> {
         if !matches!(mailbox, ACTIVE_MAILBOX | BIN_MAILBOX) {
             return Err(Error::Invalid);
         }
@@ -105,31 +130,53 @@ impl<E: CommandExecutor> DoveadmDocumentsBackend<E> {
             "guid".into(),
             mailbox.into(),
         ]);
-        let response = self
-            .run(&self.doveadm, &args, b"", QUOTA_OUTPUT_MAX)
-            .map_err(|_| Error::PreDispatchUnavailable)?;
+        let response = match self.run(&self.doveadm, &args, b"", QUOTA_OUTPUT_MAX) {
+            Ok(response) => response,
+            Err(_) => {
+                eprintln!("{}", reserved_native_observation(stage, "REFUSED", None));
+                return Err(Error::PreDispatchUnavailable);
+            }
+        };
         if response.status_code == 68 && response.stdout.is_empty() {
             // Actual Dovecot 2.3.21.1 returns 68 with no stdout for an absent
             // reserved Maildir. Other failures do not authorize a create.
+            eprintln!(
+                "{}",
+                reserved_native_observation(stage, "ABSENT", Some(&response))
+            );
             return Ok(false);
         }
         if response.status_code != 0 {
+            eprintln!(
+                "{}",
+                reserved_native_observation(stage, "EXIT_REFUSED", Some(&response))
+            );
             return Err(Error::PreDispatchUnavailable);
         }
         let prefix = format!("{mailbox} guid=");
-        let guid = response
+        let Some(guid) = response
             .stdout
             .strip_prefix(&prefix)
             .and_then(|value| value.strip_suffix('\n'))
-            .ok_or(Error::PreDispatchUnavailable)?;
+        else {
+            eprintln!(
+                "{}",
+                reserved_native_observation(stage, "SHAPE_REFUSED", Some(&response))
+            );
+            return Err(Error::PreDispatchUnavailable);
+        };
         if guid.len() != 32 || !guid.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            eprintln!(
+                "{}",
+                reserved_native_observation(stage, "GUID_REFUSED", Some(&response))
+            );
             return Err(Error::PreDispatchUnavailable);
         }
         Ok(true)
     }
 
     fn ensure_reserved_mailbox(&self, account: &str, mailbox: &str) -> Result<(), Error> {
-        if self.reserved_mailbox_openable(account, mailbox)? {
+        if self.reserved_mailbox_openable(account, mailbox, "reserved_initial_status")? {
             return Ok(());
         }
         let mut args = self.base();
@@ -142,8 +189,23 @@ impl<E: CommandExecutor> DoveadmDocumentsBackend<E> {
         ]);
         // A timeout or nonzero exit can have created a partial mailbox. Only
         // a successful exact GUID status proves it is openable for Save/move.
-        let _ = self.run(&self.doveadm, &args, b"", QUOTA_OUTPUT_MAX);
-        if self.reserved_mailbox_openable(account, mailbox)? {
+        let creation = self.run(&self.doveadm, &args, b"", QUOTA_OUTPUT_MAX);
+        eprintln!(
+            "{}",
+            reserved_native_observation(
+                "reserved_create",
+                if creation
+                    .as_ref()
+                    .is_ok_and(|response| response.status_code == 0)
+                {
+                    "EXIT_OK"
+                } else {
+                    "REFUSED"
+                },
+                creation.as_ref().ok()
+            )
+        );
+        if self.reserved_mailbox_openable(account, mailbox, "reserved_after_create_status")? {
             Ok(())
         } else {
             Err(Error::PreDispatchUnavailable)
@@ -163,34 +225,51 @@ impl<E: CommandExecutor> DoveadmDocumentsBackend<E> {
             mailbox.into(),
             "all".into(),
         ]);
-        let response = self.run(&self.doveadm, &args, b"", INDEX_OUTPUT_MAX)?;
-        if response.status_code != 0 || response.stdout.len() > INDEX_OUTPUT_MAX {
-            return Err(Error::Unavailable);
+        let response = self
+            .run(&self.doveadm, &args, b"", INDEX_OUTPUT_MAX)
+            .inspect_err(|_| {
+                eprintln!(
+                    "{}",
+                    reserved_native_observation("exact_id_lookup", "EXECUTOR_REFUSED", None)
+                );
+            })?;
+        let refused = |code| {
+            eprintln!(
+                "{}",
+                reserved_native_observation("exact_id_lookup", code, Some(&response))
+            );
+            Error::Unavailable
+        };
+        if response.status_code != 0 {
+            return Err(refused("EXIT_REFUSED"));
+        }
+        if response.stdout.len() > INDEX_OUTPUT_MAX {
+            return Err(refused("OUTPUT_LIMIT_REFUSED"));
         }
         let rows: Vec<IndexRow> =
-            serde_json::from_str(&response.stdout).map_err(|_| Error::Unavailable)?;
+            serde_json::from_str(&response.stdout).map_err(|_| refused("JSON_REFUSED"))?;
         if rows.len() > 101 {
-            return Err(Error::Unavailable);
+            return Err(refused("ROW_LIMIT_REFUSED"));
         }
         let mut found = None;
         for row in rows {
             if row.mailbox != mailbox {
-                return Err(Error::Unavailable);
+                return Err(refused("MAILBOX_REFUSED"));
             }
             if row.document_id.as_deref() != Some(id) {
                 continue;
             }
             if found.is_some() {
-                return Err(Error::Unavailable);
+                return Err(refused("DUPLICATE_ID_REFUSED"));
             }
             let uid = row
                 .uid
                 .parse::<u32>()
                 .ok()
                 .filter(|v| *v > 0)
-                .ok_or(Error::Unavailable)?;
+                .ok_or_else(|| refused("UID_REFUSED"))?;
             if row.uid != uid.to_string() || row.mailbox_guid.is_empty() || row.guid.is_empty() {
-                return Err(Error::Unavailable);
+                return Err(refused("LOCATION_REFUSED"));
             }
             found = Some(Location {
                 mailbox: row.mailbox,
@@ -433,10 +512,14 @@ impl<E: CommandExecutor> Backend for DoveadmDocumentsBackend<E> {
             return Err(Error::Invalid);
         }
         if !self.quota_ready(account).unwrap_or(false) {
+            eprintln!("DOCUMENTS_NATIVE stage=append_quota_preflight result=REFUSED observation=QUOTA_AUTHORITY_FALSE_OR_UNAVAILABLE");
             return Err(Error::PreDispatchUnavailable);
         }
         if self
-            .pre_dispatch_find(account, id, ACTIVE_MAILBOX)?
+            .pre_dispatch_find(account, id, ACTIVE_MAILBOX)
+            .inspect_err(|_| {
+                eprintln!("DOCUMENTS_NATIVE stage=append_exact_id_lookup result=REFUSED observation=NATIVE_LOOKUP_UNAVAILABLE");
+            })?
             .is_some()
         {
             return Err(Error::Stale);
@@ -967,6 +1050,27 @@ mod tests {
     use crate::auth::{CommandExecution, CommandExecutionError, CommandExecutor};
     use std::collections::VecDeque;
     use std::sync::{Arc, Mutex};
+
+    #[test]
+    fn reserved_native_diagnostics_retain_stage_and_exit_without_private_output() {
+        let response = CommandExecution {
+            status_code: 75,
+            stdout: "private-document-id-and-body".into(),
+            stderr: "private-account-and-token".into(),
+        };
+        assert_eq!(
+            reserved_native_observation("reserved_create", "REFUSED", Some(&response)),
+            format!(
+                "DOCUMENTS_NATIVE stage=reserved_create result=REFUSED native_exit=75 stdout_bytes={} stderr_bytes={}",
+                response.stdout.len(),
+                response.stderr.len()
+            )
+        );
+        assert_eq!(
+            reserved_native_observation("reserved_initial_status", "REFUSED", None),
+            "DOCUMENTS_NATIVE stage=reserved_initial_status result=REFUSED native_exit=UNAVAILABLE stdout_bytes=UNKNOWN stderr_bytes=UNKNOWN observation=EXECUTOR_RESULT_UNAVAILABLE"
+        );
+    }
 
     fn report_user(limit: Option<&str>) -> String {
         let mut rows = serde_json::json!([

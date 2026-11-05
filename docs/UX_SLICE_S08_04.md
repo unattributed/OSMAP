@@ -83,3 +83,11 @@ Matching native source13 builds pass: libtest SHA256dcde9013aa1bab30671f2594ecdf
 The reviewed Web-only atomic install loads that main in ServePID14636. Account-service/helper/configuration and crypto-agent observations compare unchanged, HTTPS login200 and nine roles pass. The matching current signed-admission/installed-helper/report check passes1/0 in0.12seconds, with172605611 message bytes and209715200 configured bytes. Native test receiptSHA25667c7fa5ae6381432c2d49c2708f7080f3d1e58434992d83c6edeee36aca98e88. Ordinary signed delivery and owner UAT remain separate.
 
 Owner check: open Notifications from the bell, use **Mark all as read**, and refresh; retained notices should remain read. Delete one notice and refresh; it should remain absent from the inbox. Save a preference in Settings→Notifications; the page should show the reloaded saved-choice confirmation. This is a UAT invitation, not recorded acceptance.
+
+Normal signed continuation delivery completed at
+`88c6b5f4742bc7cdd0dffc4d98b7816a7ea84c2d`: 2325 Rust tests passed, zero failed,
+89 native/external cases explicitly ignored, and all enabled ordinary delivery
+gates passed. Fresh fetch, signature verification, exact origin equality, zero
+ahead/behind and clean status passed at that checkpoint. The later approved
+Documents cutover restarts OSMAP against the same installed notification source;
+it does not record owner acceptance of these controls.

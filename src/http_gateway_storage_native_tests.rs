@@ -3,6 +3,72 @@
 use super::*;
 
 #[test]
+#[ignore = "operator-run existing sealed helper exact Documents lookup; read-only"]
+fn native_installed_documents_readonly_lookup() -> Result<(), &'static str> {
+    use crate::documents::Backend;
+
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
+    if crate::openbsd::effective_uid() != 1001 {
+        return Err("installed Web identity required");
+    }
+    let account =
+        std::env::var("OSMAP_STORAGE_REPORT_ACCOUNT").map_err(|_| "explicit account required")?;
+    let canonical = crate::identity::CanonicalUsername::parse(&account)
+        .map_err(|_| "canonical account required")?;
+    if canonical.as_str() != account {
+        return Err("canonical account required");
+    }
+    let epoch_text =
+        std::env::var("OSMAP_READINESS_EPOCH").map_err(|_| "current account epoch required")?;
+    let epoch = epoch_text
+        .parse::<u64>()
+        .ok()
+        .filter(|epoch| epoch.to_string() == epoch_text)
+        .ok_or("canonical account epoch required")?;
+    let config =
+        AppConfig::from_process_env().map_err(|_| "installed configuration unavailable")?;
+    let gateway = RuntimeBrowserGateway::from_config(&config);
+    if !gateway.uses_account_runtime(&account) {
+        return Err("installed account authority required");
+    }
+    gateway
+        .account_runtime
+        .ready()
+        .ok_or("installed account authority unavailable")?
+        .admission()
+        .admit_before(&account, epoch, deadline)
+        .map_err(|_| "installed signed account admission unavailable")?;
+    let backend = crate::mailbox_helper::MailboxHelperDocumentsBackend::new(
+        gateway
+            .mailbox_helper_socket_path
+            .as_ref()
+            .ok_or("installed helper socket unavailable")?,
+        gateway
+            .mailbox_helper_grant_key_path
+            .as_ref()
+            .ok_or("installed helper grant unavailable")?,
+        crate::mailbox_helper::MailboxHelperPolicy::default(),
+    )
+    .with_helper_uid(
+        gateway
+            .mailbox_helper_peer_uid
+            .ok_or("installed helper identity unavailable")?,
+    );
+    let id = crate::draft::generate_draft_id().map_err(|_| "lookup selector unavailable")?;
+    match backend.inspect(&account, &id) {
+        Ok(locations) if locations.is_empty() && std::time::Instant::now() < deadline => {
+            println!("INSTALLED_DOCUMENTS_READONLY_LOOKUP=PASS ACCOUNT_ADMISSION=PASS LIVE_SEALED_HELPER=USED RESERVED_MAILBOXES=2 WRITES=NOT_DISPATCHED OWNER_SESSION=NOT_USED OWNER_HTTP=NOT_RUN");
+            Ok(())
+        }
+        Ok(_) => Err("read-only lookup returned an unexpected location or exceeded its deadline"),
+        Err(error) => {
+            eprintln!("INSTALLED_DOCUMENTS_READONLY_LOOKUP=REFUSED result={error:?} WRITES=NOT_DISPATCHED");
+            Err("read-only lookup refused; retain helper fixed-stage diagnostic")
+        }
+    }
+}
+
+#[test]
 #[ignore = "operator-run installed helper storage report as Web UID; no credentials or mutations"]
 fn native_installed_mail_storage_report() -> Result<(), &'static str> {
     let began = std::time::Instant::now();

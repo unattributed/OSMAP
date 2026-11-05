@@ -1197,11 +1197,19 @@ mod tests {
         assert_eq!(binned.documents[0].state, State::InBin);
         assert_eq!(binned.used_bytes(), 9);
         assert_eq!(store.download(account, id), Err(Error::NotFound));
-        let restored = store.restore(account, binned.revision, id, 102).unwrap();
+        let restore_deadline = 101 + BIN_RETENTION_SECONDS;
+        assert_eq!(
+            store.restore(account, binned.revision, id, restore_deadline + 1),
+            Err(Error::Invalid)
+        );
+        assert_eq!(store.load(account).unwrap(), binned);
+        let restored = store
+            .restore(account, binned.revision, id, restore_deadline)
+            .unwrap();
         assert_eq!(restored.documents[0].state, State::Available);
         assert_eq!(store.download(account, id).unwrap().1, b"synthetic");
         assert_eq!(
-            store.restore(account, restored.revision, id, 103),
+            store.restore(account, restored.revision, id, restore_deadline + 1),
             Err(Error::Invalid)
         );
         std::fs::remove_dir_all(root).unwrap();

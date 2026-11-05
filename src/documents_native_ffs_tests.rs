@@ -986,6 +986,10 @@ struct ProductFixture {
 }
 
 fn product_fixture() -> ProductFixture {
+    product_fixture_with_reserved(true)
+}
+
+fn product_fixture_with_reserved(precreate_reserved: bool) -> ProductFixture {
     assert_eq!(process_numeric_id("-u"), QUOTA_UID);
     let gid = process_numeric_id("-g");
     let base = fixture_path("OSMAP_FFS_FIXTURE_ROOT", "s8q.");
@@ -1014,6 +1018,13 @@ fn product_fixture() -> ProductFixture {
         fs::create_dir(root.join(directory)).unwrap();
     }
     for mailbox in ["", ".OSMAP.Documents", ".OSMAP.DocumentsBin"] {
+        if !precreate_reserved && !mailbox.is_empty() {
+            assert!(
+                !home.join("Maildir").join(mailbox).exists(),
+                "ffs product stage=first_use result=reserved_path_already_exists"
+            );
+            continue;
+        }
         for directory in ["cur", "new", "tmp"] {
             fs::create_dir_all(home.join("Maildir").join(mailbox).join(directory)).unwrap();
         }
@@ -1092,7 +1103,7 @@ fn isolated_openbsd_ffs_documents_store() {
         home,
         executor,
         userdb,
-    } = product_fixture();
+    } = product_fixture_with_reserved(false);
     let config = executor.scoped.config.clone();
     let saves = executor.saves.clone();
     let backend = DoveadmDocumentsBackend::new(
@@ -1148,6 +1159,8 @@ fn isolated_openbsd_ffs_documents_store() {
         .unwrap();
     assert_eq!(uploaded.documents.len(), 1);
     assert!(!uploaded.has_unconfirmed_change());
+    assert!(home.join("Maildir/.OSMAP.Documents").is_dir());
+    assert!(!home.join("Maildir/.OSMAP.DocumentsBin").exists());
     let id = uploaded.documents[0].id.clone();
     assert_eq!(
         store.download(ACCOUNT, &id).unwrap(),
@@ -1172,6 +1185,7 @@ fn isolated_openbsd_ffs_documents_store() {
     assert_eq!(moved.documents[0].folder, folder_id);
     let binned = store.bin(ACCOUNT, moved.revision, &id, 103).unwrap();
     assert_eq!(binned.documents[0].state, State::InBin);
+    assert!(home.join("Maildir/.OSMAP.DocumentsBin").is_dir());
     let summary = binned.storage_summary(ACCOUNT).unwrap();
     assert_eq!(summary.used_bytes, payload.len() as u64);
     assert_eq!(summary.bin_bytes, payload.len() as u64);
@@ -1186,12 +1200,16 @@ fn isolated_openbsd_ffs_documents_store() {
     assert_eq!(restored.documents[0].state, State::Available);
     assert_eq!(store.download(ACCOUNT, &id).unwrap().1, payload);
     let binned = store.bin(ACCOUNT, restored.revision, &id, 105).unwrap();
+    // First-use provisioning leaves the Bin's directory allocation charged.
+    // Measure deletion against the complete current layout, not its earlier
+    // state before the Bin existed.
+    let used_before_delete = get_quota(&data).blocks;
     let deleted = store
         .delete_confirmed(ACCOUNT, binned.revision, &id, 106)
         .unwrap();
     assert!(deleted.documents.is_empty() && !deleted.has_unconfirmed_change());
     assert!(backend.inspect(ACCOUNT, &id).unwrap().is_empty());
-    assert!(get_quota(&data).blocks < used_with_document);
+    assert!(get_quota(&data).blocks < used_before_delete);
     println!(
         "native_ffs_product stage=upload_download_reload_folder_bin_restore_delete result=PASS"
     );

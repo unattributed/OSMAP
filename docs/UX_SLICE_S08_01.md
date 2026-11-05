@@ -62,6 +62,212 @@ The first normal push of signeda2eccb3 passed2325Rust tests with zero failures/8
 
 Before backup, root preserved and removed only the exact8192-byte synthetic provisioning probe, verified against its original device/inode/owner/mode/link-count/hash receipt, copied bytes and zero descriptor references. The backup's genuinely-empty target guard was retained. Source review caught the earlier unsupported stat formatter before dispatch; the executed candidate uses the qualified numeric flag field and explicitly checks the portable Sieve link. Private result/parity receipts are564c3aa589bc28176e3c73706da0302f27ece9c4828c8702c0ea9355387e2bdf andf5da81318ef4b7473db6a453766bfc5927a1531c05b7523d3f19e0dd9b381f7b. This is an unexposed online seed; the final hold, quiescent delta, mapping change and installed Documents journey remain pending.
 
+### Completed cutover and first installed Documents observation — 2026-11-05
+
+The approved Duncan-only obsd1 cutover completed in 61 seconds. The final held
+source, destination and retained post-release source compare exactly: 26
+mailboxes, 475 messages and 26 subscriptions, including native identities,
+persistent flags, internal dates, raw-message hashes and Sieve content. The
+canonical inventory remains SHA256
+`ee0e46ba91813565189a0b69580d9124ef58c82913d7e2968f087ababe2563d3`.
+The quiesced original-home archive is retained privately, SHA256
+`580a5028b0773a69b05c2d10780f54ab5a4b9198bcce5791d76d5acaf616afad`.
+The original home and earlier archive are also retained.
+
+The active native userdb now maps only this development account to its prepared
+filesystem with the existing external index/control paths and 209715200-byte
+shared quota. The already admitted SQL and quota configuration files were
+updated; the account service, mailbox helper and Web were constructed afresh.
+All nine checked roles run, the login page returns HTTPS200 and an unaffected
+account's actual native INBOX access succeeds. Private-instance process and
+protected-file reference checks independently report zero. Toronto was not
+contacted or changed. The owner's updates were acknowledged; no reboot was
+performed or qualified by this work.
+
+The first cutover attempt stopped before its final backup or release because a
+generic exit-zero check rejected Dovecot's exact exit68/no-users-kicked response.
+The original configuration was restored and independently verified. The changed
+attempt reuses the existing exact native acknowledgement contract, including
+empty stderr and separate zero-session/writer checks. No arbitrary nonzero
+result was admitted. Both attempts remain retained. Final result SHA256 is
+`04663238bbcd20fa23e5c32909b1f08d04ce045ae099581097379d286491b8a4`;
+independent source and result review give scoped cutover GO.
+
+The first actual installed Rust Documents journey then refused upload with
+`PreDispatchUnavailable` in 0.44 seconds. No document-body Save was dispatched;
+the Store removed its explicit no-write pending record and no reserved Documents
+mailbox appeared. Signed account admission, initial finite quota observation,
+post-run epoch/configuration preservation and service checks passed. The new
+mapping remains active; there was no upload replay or old-mapping rollback.
+This is a Documents functional failure, not slice readiness.
+
+Read-only native fetch returned an empty successful JSON array with both the
+current arguments and `maildir_stat_dirs=yes`; absent reserved-mailbox status
+returned the established exit68/empty-stdout response. These observations rule
+out changing lookup order as a supported correction. The previous isolated
+Store fixture precreated its reserved mailboxes, leaving first-use provisioning
+unexercised. The existing Rust case now starts them absent, and fixed helper
+diagnostics retain stage, native exit and stream lengths without native output,
+identifiers or content. Focused backend tests pass15/0; matching native first-use
+qualification and diagnosis remain pending. No new Python tooling was added.
+
+### Isolated first-use qualification and retained fixture closure — 2026-11-05
+
+The first isolated native16 Store case starts both reserved mailboxes absent.
+Actual native creation, upload, exact download, Bin, restore and confirmed
+deletion complete before its final allocation assertion fails; the single Store
+case remains FAIL in2.12seconds. Its comparison used the allocation measured
+before first-use Bin creation, so retained directory allocation could conceal
+the payload's released blocks. This is a fixture-baseline failure, not evidence
+of a weakened or exceeded native hard quota. The original stage output and
+fixture remain preserved; no owner mailbox or public configuration was used.
+
+Safe disposition of that retained vnd2 fixture first refused before quota-off:
+the closure assumed an unsupported `mount -p` interface. Quota, mount and device
+state were retained. The changed closure uses the actual default native mount
+row, requiring the exact device, mountpoint and FFS type, with positive and
+wrong-device/type/duplicate/missing-row consumer checks. Reviewed carrier
+`db0c87446ecf1e2f344b843e594790a5ec8c0d9b794a5c46445154467282e09d`
+then passes quota-off, exact descriptor/process absence, unmount and same-image
+detach. Result SHA256 is
+`4d4e27ef1e6a29ee2e5ee5bed0c754cfaf43ab12f826eac0bf0ab9a562a6bd9e`.
+The image, control directory, original failure and closure receipts are retained;
+cleanup PASS does not change the native16 functional FAIL.
+
+The sole test correction measures current allocation after the second Bin
+operation, immediately before confirmed deletion, and still requires a strict
+post-delete decrease. Fixture source SHA256
+`dda70fd4e892aaf4b3e813beb9c137d96042f7ead106d04fecdf528e9cc74b40`
+and backend source
+`1d3a282d05a20f134e80ed37e1c2cac3a63c90b8727be9c0516e51465fd29eb3`
+match retained source17. No quota limit, authority requirement or refusal was
+relaxed; strict all-target Clippy and independent source review pass.
+
+A fresh native17 namespace then passes the actual first-use Store journey with
+reserved mailboxes initially absent, native Active/Bin creation, upload/exact
+download/reopen, folder placement, Bin/restore, confirmed deletion and the
+wrong-worker-limit/no-save refusal. Carrier SHA256 is
+`1db70b494f3f4be9be82d333bdc98a2b510e360743c301d8e890f491d9aa3a0f`;
+matching libtest SHA256 is
+`ee5eb0bae58b7b8bc301e54204fb972233140f3b80436cff5c49d185fcfb4c5d`.
+Root quota preparation/off and exact-owned descriptor/process absence,
+unmount and detach also pass. The32MiB fixture image and diagnostics remain
+retained. Result SHA256 is
+`c07af47b4a1ef42efd8fdb82fe090f2725f1e1c83dc74ee0ff0adfcd2c34a629`.
+Both isolated continuations preserve the owner vnd3 association and leave public
+configuration unchanged; they do not repeat the mailbox cutover.
+
+Combined root/author/independent reassessment retains installed15's actual
+pre-Save refusal and native16's distinct baseline failure under the same
+Documents outcome. Native17 narrows the first-use fixture gap; it does not
+explain or turn the installed15 failure into PASS. The next changed installed17
+diagnostic journey must observe the actual helper/native stage and typed result
+before inferring a product correction or installed readiness. There is no
+automatic replay of an uncertain Save, no new quota authority, allowance reset
+or additional test framework. Installed Documents completion and owner T09
+remain open.
+
+The notification continuation is signed and synchronized at
+`88c6b5f4742bc7cdd0dffc4d98b7816a7ea84c2d` after 2325 Rust tests passed and all
+normal delivery gates completed. Signature verification, fresh exact origin
+equality, zero ahead/behind and clean status passed at that checkpoint. Later
+Documents diagnostics and these records remain a separate pending delivery.
+
+### Installed read-only lookup discriminator — 2026-11-05
+
+After the fresh isolated first-use PASS, diagnostic-only main17 was installed
+atomically for Web and mailbox helper. Both loaded executable identities match
+SHA256 `251944c348fafaa7bb8c30bc32a9209e13b25c4b63f0592e4bd4a0c6b0eaceef`.
+Configuration, account epoch, account service, crypto agents and grant metadata
+compare unchanged; nine roles and HTTPS200 pass. No recovery was needed.
+
+The changed installed17 attempt still refused upload before any Save or reserved
+mailbox creation, in 0.47 seconds. Its post-offset, identity-checked helper
+observation is `append_exact_id_lookup / NATIVE_LOOKUP_UNAVAILABLE`. The result
+manifest SHA256 is
+`7e0256381560f70f62b442a1bfb5e0ea981c89fcb8e1ca9f33a75c58ea09fe54`.
+This narrows the failure to lookup but does not distinguish native execution,
+nonzero exit or result parsing. Exact native read-only fetch with cleared
+environment still returns an empty successful JSON array. Checked recent native
+logs contain no matching Dovecot pledge/crash record; that limited negative
+observation does not prove confinement correctness.
+
+Combined independent review of installed15/17 therefore selects a refined fixed
+lookup diagnostic and the existing authenticated helper `inspect` operation.
+The subsequent ignored Rust discriminator used the actual Web identity, current signed
+account admission and a fresh opaque lookup selector. It constructed no Store,
+did not change the index, create a folder or Save a body, and fabricated no owner
+session. Its actual result and the independently reviewed next product discriminator
+are recorded below; no new API or broader confinement was introduced.
+
+### Installed Documents engineering ready — 2026-11-05
+
+S08-01 is **UAT_READY** for the approved obsd1 account. Essential implementation,
+source, native, deployed, recovery and independent-review stages pass. This
+current result supersedes earlier pending installed-diagnosis wording while
+preserving every failed attempt. Owner T09 remains **NOT_RUN**; full S08 remains
+open. The developer security gate passes; normal signed commit/push hooks and
+fresh remote equality remain required before the final delivery report.
+
+Diagnostic main17 installed successfully, but its installed lifecycle refused
+before Save in0.47seconds (manifest
+`7e0256381560f70f62b442a1bfb5e0ea981c89fcb8e1ca9f33a75c58ea09fe54`).
+Combined independent reassessment of installed15/17 selected finer fixed lookup
+observations and the existing authenticated read-only inspect discriminator
+before further mutation. No permissions, confinement or helper API were widened;
+no ambiguous Save was replayed and no failure/cost history was reset.
+
+Matching main18 Web/helper SHA256
+`6cb784557bfbbcd7edd503aecd9825cdf84bd333704334cbad043cc9d2f6a9db`
+installed with no recovery. Configuration, epoch, account service, crypto agents
+and grant metadata compare unchanged; nine roles and HTTPS200 pass. Matching
+libtest SHA256 is
+`ceaa9d9579cc1a09944d3e6336e14ada9ea92ddbfe5bb697367c5731b935347e`.
+The actual WebUID/current signed admission/sealed-helper read-only lookup passes
+in0.14seconds without writes or an owner session (manifest
+`1ae036c20308df471c6288d3560d0ab4799a3de88452a133c06c46fec5e2307f`).
+Its two reserved-mailbox lookup scopes do not imply that either mailbox existed.
+
+The installed lifecycle then passes1case/0failures in2.26seconds: absent reserved
+mailbox creation, one4096-byte binary upload, reopen/exact download, Bin and
+in-Bin download refusal, restore and confirmed generated-ID cleanup. Original
+records/folders, signed epoch, services and the finite209715200-byte shared quota
+are preserved (manifest
+`de3020811829875d338b5bd34140da08ec2f2b073de6b2cbee9ed9acf94b6faf`).
+A separately reviewed existing-folder journey passes in2.08seconds with one fresh
+nonce and confirmed deletion (manifest
+`1d1227a473d55c5a96b64ace434fe55100d72d72c94fa2a66e29b555d39787ac`).
+These are actual installed Runtime/helper/native journeys; owner HTTP/login,
+visual acceptance and private-key operations were not exercised. Historical
+installed15/17 root cause remains **UNKNOWN**; later success does not establish
+stability or a causal explanation.
+
+Current focused source15/0, strict all-target Clippy18 (45seconds) and formatting
+checks pass. Scoped independent source/native/installed review is GO. Retained
+FFS mixed IMAP/LMTP/Documents enforcement, real native HTTP10MiB/isolation,
+reconciliation and retention proofs qualify the unchanged corresponding paths;
+the earlier concurrent count-driver failure remains retained and that driver is
+still disabled. Isolated first-use17 and both fixture-closure outcomes remain
+separate evidence. No owner retention clock or browser acceptance is inferred.
+
+The remaining owner check is the ordinary Documents upload/download, folder,
+search, Bin and restore journey. Notifications controls and scheduled-send T09
+also remain pending; engineering readiness does not accept those slices.
+
+Final source qualification adds the missing restore-deadline assertion to the
+existing Rust Store test: expiry plus one second refuses with unchanged Bin
+metadata, while the exact 30-day boundary restores the original bytes. The
+focused case passes. This uses synthetic timestamps, not a 30-day elapsed-time
+experiment, and does not prohibit earlier explicit confirmed deletion. Native
+Bin charging and confirmed-expunge release are separate passing observations.
+The change is entirely inside `cfg(test)` after the installed18 build; production
+Rust remains the reviewed installed source. The complete developer gate passes
+2326 Rust tests, zero failures and89 explicit native/external ignores, including
+its normal security, Clippy and WSTG-mapping checks. Its retained log is
+`cutover-20261105/security-final18.log`; the added clock assertion also passes
+`cutover-20261105/retention-boundary.log`. Ordinary final push checks will cover
+the complete checkpoint again without bypass.
+
 ### Historical activation decision
 
 The configured200MiB report and global Documents filename search are implemented and installed; earlier pending-choice/search notes below are historical. Full Documents writes remain safely unavailable on the original active mailbox because the database scalar is advisory. Current source requires a qualified shared mail/Documents authority; the count-driver path remains disabled after its demonstrated concurrent overshoot. The separate200MiB native filesystem is prepared but unmapped.

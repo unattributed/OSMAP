@@ -1,4 +1,6 @@
-2026-11-05 — **Approved obsd1-only S08-01 Documents cutover IN_PROGRESS.** Duncan quota200MiB; Toronto unchanged. Notification save-feedback, Mark all read and delete follow-up proceeds alongside. S08-02 accepted; S08-03/04 owner acceptance remains pending.
+2026-11-05 — **S08-01 UAT_READY: installed first-use and existing-folder lifecycle PASS.** Approved200MiB cutover and retained parity pass; generated-ID cleanup and account/configuration/service preservation pass. Source/native/scoped independent review pass; signed delivery receipts remain separate. Historical lookup refusals retain cause UNKNOWN. Owner T09 and whole S08 acceptance remain open. Toronto unchanged.
+
+
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
 ```json
@@ -7,7 +9,7 @@
   "slice": "S08-01",
   "original_requirement": "Approved Documents upload/list/folders/search/sort/views/download/bin/restore; shared authoritative mailbox/storage quota and retention",
   "source_baseline": "31eeeafd3f5cd494d78ebb23881422ed09816971",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -135,24 +137,61 @@
       ],
       "frontend_backend_outcome": "The signed-in user uploads, finds, downloads, bins and restores private Documents while mail and Documents share one finite native quota; storage views report account-specific evidence.",
       "essential_qa": "Reuse Rust lifecycle/security tests; exact native transfer; native concurrent IMAP/LMTP/Documents capacity enforcement; interruption/retention cleanup; installed account-specific rendering and owner UAT.",
-      "next_action": "Initial online seed and exact native/raw/nonmail parity PASS with retained full source archive; active original mapping unchanged. Native200MiB profile and hold primitive qualified. Final quiescent cutover and actual installed Documents lifecycle remain pending under explicit owner approval.",
+      "next_action": "Installed first-use and existing-folder Runtime/helper Documents journeys PASS, with original records, signed epoch, native200MiB quota and service availability preserved. Complete normal signed delivery; then owner T09 uploads/downloads, finds, bins and restores a controlled file. Historical installed15/17 lookup cause remains UNKNOWN; no causal fix or sustained stability is claimed.",
       "dependencies": [
         {
           "owner": "/root",
-          "condition": "The owner explicitly approves the Duncan-only obsd1 Documents cutover. Existing reporting is delivered; finite shared enforcement still requires the final native hold/drain/delta/parity and exact mapping/configuration activation.",
-          "status": "PENDING",
-          "next_action": "Complete the reviewed final cutover with source preservation and rollback, fresh account authority/helper/Web readiness and the compiled installed Rust Documents lifecycle. Toronto remains unchanged; owner UAT follows actual installed qualification."
+          "condition": "Approved Duncan-only obsd1 shared-filesystem cutover completed with final source/target/native/raw/Sieve parity, retained original home/archive and independently verified service/mapping preservation.",
+          "status": "PASS",
+          "next_action": "Keep the approved active mapping and retained original home/archives. Current installed lifecycle verified; owner acceptance and normal signed delivery remain separate."
         }
       ],
       "stages": {
-        "implementation": "PENDING",
-        "source_tests": "PENDING",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
-      "evidence": []
+      "evidence": [
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S08_01.md#isolated-first-use-qualification-and-retained-fixture-closure--2026-11-05"
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S08_01.md#isolated-first-use-qualification-and-retained-fixture-closure--2026-11-05"
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S08_01.md#isolated-first-use-qualification-and-retained-fixture-closure--2026-11-05"
+        },
+        {
+          "stage": "implementation",
+          "reference": "docs/UX_SLICE_S08_01.md#installed-documents-engineering-ready--2026-11-05"
+        },
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S08_01.md#installed-documents-engineering-ready--2026-11-05"
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S08_01.md#installed-documents-engineering-ready--2026-11-05"
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S08_01.md#installed-documents-engineering-ready--2026-11-05"
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S08_01.md#installed-documents-engineering-ready--2026-11-05"
+        },
+        {
+          "stage": "source_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/security-final18.log:2326 Rust PASS0FAIL89explicit ignores/all enabled developer gates; retention-boundary.log:extra cfg(test)-only exact restore deadline and immutable refusal PASS."
+        }
+      ]
     }
   ],
   "accountability": {
@@ -821,6 +860,308 @@
         },
         "reference": "continuation-20261105/native-http4.log SHA1c09294881a577611706dc3e4378c6db99f4bc18f99d03a8cb1f5e9812bb5200:1PASS0FAIL18.77s. install.log SHA8afca69194ab85ff25cd30256144d9ae6c50102d4b1a0aeacdbe32b6dfc5d860; qualify.log SHA440520e602d35373ae0f4c19946bb804ab835b4cd340220383e650d0410a34d4:1PASS0FAIL0.11s. Web/helper9f9c4cf4 loaded; config/account/agents unchanged, nine roles/HTTPS200.",
         "change_reference": "Failures retained separately: missing tests/ packaging; vnconfig wrong absolute path pre-native; fixture4-vs5extra cap beforeuserdb/save; stale preparedvolume livequota unavailable beforeupload. Combined independent reassessment corrected fixture and reused existing fresh64MiBFFS actualQUOTAON/SET/GET. Advisory does not grant quota authority. Syntheticpostauthnative scope excludeslogin/TOTP/TLS/browser; ownerquota/completeDocuments pending."
+      },
+      {
+        "id": "S08-01-final-cutover1",
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "969ef3f7dfcda00c087cf9e0e1f720965f92985add0653bade919f19f8dd5391",
+        "reference": "final1 result ae39e04cf01229244135e1eda9b3be7a7a98db48813bb547022002f60486bf94: generic kick consumer rejected exact native68/no-users acknowledgement before final backup/release. Original SQL/quota restored, nine roles/HTTPS200 and private process/reference absence independently verified.",
+        "change_reference": "Retain original failure; subsequent changed attempt reuses established exact kick acknowledgement contract and fresh receipt.",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent frozen source and actual private result review in root chat; exact receipts retained under cutover-20261105.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        }
+      },
+      {
+        "id": "S08-01-final-cutover2",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 61,
+        "source_revision": "766eb1997ac918a498eb29357750607b2aec3a57cee411a961c02481a71bb2ac",
+        "reference": "final-readback.log SHA20130155293f85038ac70da909603fb4f26b5327c7ca0d6fded6be78291b2a04; result04663238bbcd20fa23e5c32909b1f08d04ce045ae099581097379d286491b8a4. Final held/raw/native/Sieve parity26mailboxes475messages26subscriptions;200MiB new mapping active; original home and archives retained; no recovery; private processes/references absent, unaffected native INBOX and nine roles/HTTPS200 PASS.",
+        "change_reference": "Only exact kick consumer and fresh receipt differ from reviewed first attempt. No general nonzero acceptance, no production mail outage or Toronto change.",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent frozen source and actual private result review in root chat; exact receipts retained under cutover-20261105.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/remembered_key_review"
+          ],
+          "reference": "Combined native quota and final cutover review: earlier native-edquota-apply1 parser failure and its verified base10 correction/readback remain retained; current kernel/userdb200MiB admission passes. Actual final1 kick68 exact no-users/stdout and empty stderr are a confirmed native no-op, not a failed hold or data copy. Exact consumer-only final2 source was independently reviewed before dispatch; no rollback after target release or arbitrary nonzero admission.",
+          "next_action": "Execute only the reviewed changed final2 cutover; retain both stores/archives and separately qualify the installed Documents lifecycle.",
+          "failed_attempt_ids": [
+            "S08-01-native-edquota-apply1",
+            "S08-01-final-cutover1"
+          ]
+        }
+      },
+      {
+        "id": "S08-01-installed-documents15",
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.44,
+        "source_revision": "4667fee06f1139414ffd45a55405994f4c0bc486ba979628b69d23501d056a1c",
+        "reference": "Installed binarybcb04aea7f6a179b62ead0334dd07c06f17558eb32ea7ef48dfb0984d8f1231d. positive15 receipt d905aacf03a6a532eca2fa484696f825ef516259e2c93a1614f82b1ff9c2cdae: upload PreDispatchUnavailable, no Save or generated retained ID; no reserved folders. Signed admission/initial native quota and post epoch/config/services preservation PASS. Exact native readonly absent fetch0/[] and status68 observations retained.",
+        "change_reference": "No upload replay or mapping rollback. Add fixed private stage/status/count diagnostics and exercise first-use absent reserved folders in existing native Rust Store fixture; no sequencing or authority change inferred.",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent frozen source and actual private result review in root chat; exact receipts retained under cutover-20261105.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        }
+      },
+      {
+        "id": "S08-01-first-use16",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/first-use16-store.log SHA611100d437dfa5f68c915dab2c7c358bd6194b31b231440d2d083e94d4c2a2f2: native Store case FAIL2.12s after real absent-reserved creation/upload/exact download/Bin/restore/confirmed deletion; final quota comparison used a pre-Bin directory-allocation baseline. Whole carrier elapsed remains UNKNOWN; failed image/control retained.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "2bd942e3593bd02276919be3e3fa0907d1a13119cc516677e85ced262bc3e21f",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact source, producer/consumer, safe disposition and actual result review retained in root chat; private cutover-20261105 receipts and public scoped summary in docs/UX_SLICE_S08_01.md.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Retain the functional failure. Correct only the test baseline to actual current allocation after second Bin, still requiring strict post-delete decrease; no quota/authority relaxation."
+      },
+      {
+        "id": "S08-01-first-use16-closure1",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/close-first-use16.log SHA400e68a449643ab01bbc8c285a45ccbda0bda279a1104991ec70000e2250674c: unsupported mount -p caused refusal before quota-off/unmount/detach; quota remained enabled and original failed fixture remained mounted/retained.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "3a6ec7c1c5aec2910c16dff28cae2a4d1914d432adb4407c83b77ccf57f4d754",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact source, producer/consumer, safe disposition and actual result review retained in root chat; private cutover-20261105 receipts and public scoped summary in docs/UX_SLICE_S08_01.md.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "No cleanup is inferred. Fresh closure2 changes only receipt and the actual default mount-output consumer; captured native row and wrong-device/type/duplicate/missing-point checks pass before execution.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/remembered_key_review"
+          ],
+          "failed_attempt_ids": [
+            "S08-01-installed-documents15",
+            "S08-01-first-use16"
+          ],
+          "reference": "Combined source/result review separated installed pre-Save lookup refusal from isolated post-delete allocation-baseline failure. The only next action was finite exact-owned safe disposition of the retained fixture, not another product upload. Native16 bytes and failure stayed retained; original closure1 review missed an unsupported mount option, whose actual pre-quota-off refusal remains recorded.",
+          "next_action": "Close only the known disposable volume with exact ownership/absence checks; retain uncertain resources and stop before any unproved teardown."
+        }
+      },
+      {
+        "id": "S08-01-first-use16-closure2",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/close-first-use16b.log SHAc3554b7ac936fa130dbe16073c720f3c37344b587d8bbfa9428a77ae15c1eed7; result4d4e27ef1e6a29ee2e5ee5bed0c754cfaf43ab12f826eac0bf0ab9a562a6bd9e: exact vnd2 quota-off, descriptor/process absence, unmount and same-image detach PASS; original failure evidence/image/control/logs retained. Owner vnd3 association unchanged; no public configuration mutation.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "db0c87446ecf1e2f344b843e594790a5ec8c0d9b794a5c46445154467282e09d",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact source, producer/consumer, safe disposition and actual result review retained in root chat; private cutover-20261105 receipts and public scoped summary in docs/UX_SLICE_S08_01.md.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Finite owned cleanup only; does not change native16 functional FAIL or qualify installed Documents.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/remembered_key_review",
+            "/root/s05_protocol_review"
+          ],
+          "failed_attempt_ids": [
+            "S08-01-first-use16-closure1"
+          ],
+          "reference": "Failed functional evidence and incomplete closure were retained. The unsupported native mount option was replaced only after actual default-row observation and exact consumer positive/negative checks; closure2 disposition was independently reviewed before execution. Cleanup PASS is distinct from functional PASS.",
+          "next_action": "Keep retained failed fixture artifacts; qualify the corrected first-use test in a fresh namespace, never replay the failed case as cleanup."
+        }
+      },
+      {
+        "id": "S08-01-first-use17",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/first-use17.log SHAb856272fac66979749db470e6cf87b6105b34d564ab5a0f390b668e21f222304; resultc07af47b4a1ef42efd8fdb82fe090f2725f1e1c83dc74ee0ff0adfcd2c34a629. Matching libtestee5eb0bae58b7b8bc301e54204fb972233140f3b80436cff5c49d185fcfb4c5d/source17 has fixturedda70fd4 and backend1d3a282d. Fresh reserved-absent Store lifecycle, strict current-baseline deletion release and wrong-worker/no-save refusal PASS; 32MiB quota setup/off/owned absence/unmount/detach PASS. Image retained, owner vnd3 association/public configuration unchanged.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "1db70b494f3f4be9be82d333bdc98a2b510e360743c301d8e890f491d9aa3a0f",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent exact source, producer/consumer, safe disposition and actual result review retained in root chat; private cutover-20261105 receipts and public scoped summary in docs/UX_SLICE_S08_01.md.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Only quota-baseline fixture assertion corrected after second Bin; source/native/current backend review and strict Clippy pass. This isolated PASS does not explain installed15 or qualify owner UAT.",
+        "independent_analysis": {
+          "reviewers": [
+            "/root",
+            "/root/remembered_key_review",
+            "/root/s05_protocol_review"
+          ],
+          "failed_attempt_ids": [
+            "S08-01-installed-documents15",
+            "S08-01-first-use16"
+          ],
+          "reference": "Combined same-outcome reassessment distinguishes the installed PreDispatchUnavailable/no-Save refusal from the isolated post-delete comparison baseline. Actual reserved creation and lifecycle reached in native16; source17 corrects only the allocation baseline and native17 passes. This does not establish the installed root cause, convert installed15 to PASS, reset cumulative cost/allowance or weaken any requirement. All failure/closure receipts remain retained.",
+          "next_action": "One independently reviewed changed installed17 diagnostic journey must retain actual stage/status/count and typed outcome before a supported correction or installed readiness claim; no ambiguous Save replay."
+        }
+      },
+      {
+        "id": "S08-01-installed-documents17",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/documents-positive17-details.log:0.47s PreDispatchUnavailable; exact lookup unavailable before reserved creation/Save; manifest7e0256381560f70f62b442a1bfb5e0ea981c89fcb8e1ca9f33a75c58ea09fe54.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "96bdf1871bd234ee1ab13a6fb4066fc47490f9e802c9a6ce92439e6f3d397978",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Exact source and actual fixed result reviewed in root chat; current scope and limits in docs/UX_SLICE_S08_01.md.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Existing bounded product operation, fresh private receipt, no owner session and no blind retry; earliest failure remains separately retained."
+      },
+      {
+        "id": "S08-01-installed-readonly18",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/documents-readonly18-details.log: actual sealed-helper two-scope lookup PASS0.14s, no writes; manifest1ae036c20308df471c6288d3560d0ab4799a3de88452a133c06c46fec5e2307f.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "2f84bb46d6dd967e4006185b8f1319b033679cb02d4c6b1546bfa183b21bfb56",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Exact source and actual fixed result reviewed in root chat; current scope and limits in docs/UX_SLICE_S08_01.md.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Existing bounded product operation, fresh private receipt, no owner session and no blind retry; earliest failure remains separately retained.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/remembered_key_review"
+          ],
+          "failed_attempt_ids": [
+            "S08-01-installed-documents17"
+          ],
+          "reference": "Combined historical installed15/17 review: both failed before Save at lookup, prior15 retained outside this bookkeeping window. Fixed find-level diagnostics and actual existing Inspect RPC were independently reviewed. No causal correction, wider permission or owner retry was presumed.",
+          "next_action": "Run the one read-only actual sealed-helper discriminator; only after its result review consider the distinct fully instrumented fresh generated-ID Append path."
+        }
+      },
+      {
+        "id": "S08-01-installed-documents18",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/documents-positive18-details.log: actual Runtime/helper first-use4096-byte upload/exact download/Bin refusal/restore/generated-ID deletion PASS2.26s; manifestde3020811829875d338b5bd34140da08ec2f2b073de6b2cbee9ed9acf94b6faf. Main/test18 matching, authority/configuration/services preserved.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "4f85607399b4b75fc1785cc7f858a376a8ac7f126612be81017b6d5de8c8947b",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Exact source and actual fixed result reviewed in root chat; current scope and limits in docs/UX_SLICE_S08_01.md.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Existing bounded product operation, fresh private receipt, no owner session and no blind retry; earliest failure remains separately retained."
+      },
+      {
+        "id": "S08-01-installed-documents18-existing",
+        "boundary": "S08-01-documents",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/documents-positive18-existing-details.log: same matching18 binary, fresh nonce and existing reserved folders; full exact lifecycle PASS2.08s, cleanup confirmed; manifest1d1227a473d55c5a96b64ace434fe55100d72d72c94fa2a66e29b555d39787ac. Historical15/17 cause remains UNKNOWN.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "8c40f0767f83bab2ee56a615d5345a882294d5edbabde6d0e721fd716461afea",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Exact source and actual fixed result reviewed in root chat; current scope and limits in docs/UX_SLICE_S08_01.md.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Existing bounded product operation, fresh private receipt, no owner session and no blind retry; earliest failure remains separately retained."
       }
     ],
     "next_attempt": null
@@ -830,7 +1171,7 @@
     "slice": "S08-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_01.md",
-      "sha256": "a317d35f31f6dcebb099664443253eefdf0108ade08c02d9e7a329296713c210"
+      "sha256": "1a2c266ee2c5d425bf31bb3067e35de7b886059854e3d1e5bdb38b7bb785d072"
     },
     "design": {
       "journey": "Upload, list, folders, search, sort, views, isolated download, Bin, restore and confirmed retention cleanup with shared account capacity.",
@@ -858,7 +1199,8 @@
         "status": "PASS",
         "evidence": [
           "/home/foo/Downloads/osmap-ux-s08/completion-20261104/native2/topology.log",
-          "docs/UX_SLICE_S08_01.md"
+          "docs/UX_SLICE_S08_01.md",
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/security-final18.log:all enabled developer gates pass2326 Rust tests,0failures/89explicit ignores; added cfg(test) boundary case separately PASS."
         ]
       },
       {
@@ -879,7 +1221,8 @@
           "/home/foo/Downloads/osmap-ux-s08/completion-20261104/rust-first.log",
           "/home/foo/Downloads/osmap-ux-s08/completion-20261104/quota-refusal.log:9 PASS, includes current Store/native no-dispatch safety regression",
           "/home/foo/Downloads/osmap-ux-s08/completion-20261104/push.log:Rust2213PASS then fixtureClippy refusal retained",
-          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/clippy-corrected.log:strict all-target Clippy PASS after equivalent cleanup simplification"
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/clippy-corrected.log:strict all-target Clippy PASS after equivalent cleanup simplification",
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/security-final18.log:all enabled developer gates pass2326 Rust tests,0failures/89explicit ignores; added cfg(test) boundary case separately PASS."
         ]
       },
       {
@@ -895,9 +1238,11 @@
         "preserved": "Fixture cleanup is bounded and never deletes unrelated messages or directories.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/native2/native3.log: lifecycle passes before joint quota failure; no current enforcement-qualified success"
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/native2/native3.log: lifecycle passes before joint quota failure; no current enforcement-qualified success",
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/first-use17.log: fresh actual reserved-absent native Store upload/exact download/reopen/folder/Bin/restore/deletion PASS; source17 matching libtestee5eb0ba. Installed diagnosis and broader slice completion remain pending.",
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/first-use17.log; documents-positive18.log and documents-positive18-existing.log: actual first-use and subsequent lifecycle PASS, two generated IDs cleaned; original records preserved."
         ]
       },
       {
@@ -913,9 +1258,10 @@
         "preserved": "Existing charged data and unaccepted payloads remain intact; no application mutex is substituted for native enforcement.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
-        "status": "FAIL",
+        "status": "PASS",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/native2/native3.log:86016>65536; all_protocols NOT_QUALIFIED"
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/native2/native3.log:86016>65536; all_protocols NOT_QUALIFIED",
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/ffs2/observations.tar:native-protocol-corrected.log actual mixed IMAP/LMTP/native saves quota-specific refusal and reconciliation PASS; store1/native-store.log real Store finite-authority/wrong-limit no-save PASS. Count driver remains disabled; current installed native kernel limit209715200 measured."
         ]
       },
       {
@@ -931,9 +1277,10 @@
         "preserved": "Passwords/TOTP/proofs stay out of retained output; no owner mailbox mutation.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/rust-first.log: Rust HTTP/helper10MiB and isolation; native Runtime chain NOT_RUN"
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/rust-first.log: Rust HTTP/helper10MiB and isolation; native Runtime chain NOT_RUN",
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/continuation-20261105/native-http4.log: real parser/Runtime/peer/native10MiB exact transfer, forced attachment, CSRF/Origin refusal, foreign404, owner filename search/Bin/restore PASS18.77s. Installed18 actual helper lifecycle PASS; no owner login/browser acceptance inferred."
         ]
       },
       {
@@ -949,9 +1296,10 @@
         "preserved": "Original metadata, unrelated stored messages and reservations are preserved unless confirmed ownership permits cleanup.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/rust-first.log: Rust ambiguous append/reconciliation; native interruption NOT_RUN"
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/rust-first.log: Rust ambiguous append/reconciliation; native interruption NOT_RUN",
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/recovery1/native-reconcile.log: retained10MiB original pending upload reconciles exact ID/size/hash with saves0, cooldown and original evidence preserved; confirmed cleanup PASS13.11s. Current native pipeline changes only fixed observations."
         ]
       },
       {
@@ -962,14 +1310,17 @@
         "kind": "positive",
         "level": "native",
         "prerequisites": "Owned Bin records with controlled retention clock and native quota readback.",
-        "action": "Check Bin charging, premature/uncertain deletion refusal, then eligible confirmed expunge.",
-        "expected": "Bin consumes shared storage until confirmed deletion; only confirmed eligible expunge releases measured authoritative bytes.",
+        "action": "Check the pure restore deadline boundary and Bin charging, preserve uncertain state, then perform explicit confirmed native expunge.",
+        "expected": "Expired restoration refuses with unchanged metadata, the exact boundary restores bytes, Bin stays charged until confirmed deletion, and only confirmed native deletion releases authoritative allocated bytes.",
         "preserved": "Noneligible/foreign documents and unconfirmed reservations are retained.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/native2/native3.log:confirmed expunge releases quota; full retention/concurrency authority NOT_QUALIFIED"
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/native2/native3.log:confirmed expunge releases quota; full retention/concurrency authority NOT_QUALIFIED",
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/first-use17.log: strict authoritative allocated-block decrease after confirmed expunge uses the complete current post-Bin layout; isolated32MiB fixture only. Native16 wrong baseline and safe closure retained; no owner retention/UAT acceptance inferred.",
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/first-use17.log: Bin allocation remains charged, exact restore and confirmed expunge strictly decreases current native allocation. Source restore deadline boundary qualification is recorded separately; explicit confirmed deletion does not require waiting30days.",
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/retention-boundary.log:existing Rust Store case passes expired refusal/unchanged index/exact30day boundary restore. Source-only clock decision; native Bin charging/strict expunge release qualified separately, no elapsed30day claim."
         ]
       },
       {
@@ -985,8 +1336,10 @@
         "preserved": "Public Dovecot/Postfix/MariaDB remain available and unchanged without additional explicit authority; owner accounts/key state remain intact.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/cutover-20261105/final-readback.log and install-diagnostic18.log: active Duncan-only mapping, signed authority, native parity and preserved services; matching main6cb78455/testceaa9d95; actual read-only and two full installed lifecycle receipts PASS. Prior sidebar/report owner acceptance retained; Documents owner HTTP remains NOT_RUN."
+        ]
       },
       {
         "id": "S08-01-T09",
@@ -1011,8 +1364,8 @@
   "human_acceptance": {
     "status": "PENDING"
   },
-  "next_action": "Complete the explicitly approved Duncan-only obsd1 cutover: verified native hold, bounded pre-hold writer drain, final delta/parity, exact native mapping/quota activation and fresh signed admission; then run the compiled installed Rust Documents lifecycle. Notification bulk-read/delete/save-feedback are installed and native-tested; finish normal signed delivery and owner UAT separately.",
-  "independent_next_action": "Reconcile final cutover recipe and actual results, preservation/rollback and installed Docs journey; review notification native50/0, Web-only install and signed-admission passes before normal source delivery. Owner acceptance remains separate."
+  "next_action": "Installed first-use and existing-folder Runtime/helper Documents journeys PASS, with original records, signed epoch, native200MiB quota and service availability preserved. Complete normal signed delivery; then owner T09 uploads/downloads, finds, bins and restores a controlled file. Historical installed15/17 lookup cause remains UNKNOWN; no causal fix or sustained stability is claimed. Notifications controls and scheduled-send owner acceptance remain pending.",
+  "independent_next_action": "Scoped source/native/installed review GO, including two actual18 journeys. Verify final records and normal delivery results; preserve historical failures and separate owner HTTP/T09 acceptance."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
