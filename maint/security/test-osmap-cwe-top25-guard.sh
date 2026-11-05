@@ -10,6 +10,21 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
+# Exercise the real downstream scans as well as their source-aware guard.
+legacy_scan="$tmp_root/legacy-scan.sh"
+printf '%s\n' 'set -eu' > "$legacy_scan"
+awk -v begin='echo "==> scanning for disallowed unsafe outside src/openbsd.rs"' \
+    -v end='echo "==> validating closeout ssh wrapper command assembly"' '
+    $0 == end { ended = 1; exit }
+    $0 == begin { found = 1 }
+    found { print }
+    END { if (!found || !ended) exit 1 }
+' "$repo_root/maint/security/osmap-security-check.sh" >> "$legacy_scan"
+combined_scan() (
+    cd "$1"
+    OSMAP_CWE_SCAN_ROOT="$1" sh "$guard" && sh "$legacy_scan"
+)
+
 make_repo() {
 	label=$1
 	root="$tmp_root/$label"
@@ -193,16 +208,21 @@ for boundary in runtime_cfg runtime_path scheduled_cfg scheduled_parent schedule
     cp "$repo_root/src/http_gateway_mail.rs" "$registered_repo/src/http_gateway_mail.rs"
     cp "$repo_root/src/http/protected_send_gateway_native_tests.rs" "$registered_repo/src/http/protected_send_gateway_native_tests.rs"
     case "$boundary" in
-        runtime_*) fixture=http_runtime_scheduled_positive_native_tests.rs ;;
-        scheduled_*) fixture=http/protected_send_gateway_scheduled_native_tests.rs ;;
+        runtime_*)
+            fixture=http_runtime_scheduled_positive_native_tests.rs
+            printf '%s\n' 'pub fn hostile_scanner_fixture() { let _ = "/bin/sh"; }' > "$registered_repo/src/$fixture"
+            ;;
+        scheduled_*)
+            fixture=http/protected_send_gateway_scheduled_native_tests.rs
+            printf '%s\n' 'pub fn hostile_scanner_fixture() { let _ = std::process::Command::new("/usr/bin/id"); }' > "$registered_repo/src/$fixture"
+            ;;
     esac
-    cat > "$registered_repo/src/$fixture" <<'EOF'
-pub fn hostile_scanner_fixture() {
-    let _ = "/bin/sh";
-    let _ = std::process::Command::new("/usr/bin/id");
-}
-EOF
     assert_passes "$registered_repo"
+    if ! combined_scan "$registered_repo" > "$tmp_root/combined.out" 2>&1; then
+        cat "$tmp_root/combined.out"
+        echo "registered native fixture failed downstream scans" >&2
+        exit 1
+    fi
     python3 - "$registered_repo" "$boundary" <<'PYCODE'
 from pathlib import Path
 import sys
@@ -222,6 +242,23 @@ if source.count(marker) != 1:
 path.write_text(source.replace(marker, replacement, 1))
 PYCODE
     assert_fails_with "$registered_repo" "$fixture"
+    if combined_scan "$registered_repo" > "$tmp_root/combined.out" 2>&1; then
+        echo "broken native registration passed combined scans" >&2
+        exit 1
+    fi
+    grep -q "$fixture" "$tmp_root/combined.out"
 done
+
+for production_repo in "$command_repo" "$shell_repo"; do
+    if combined_scan "$production_repo" > "$tmp_root/combined.out" 2>&1; then
+        echo "production command/shell sink passed combined scans" >&2
+        exit 1
+    fi
+    grep -q 'CWE-78' "$tmp_root/combined.out"
+done
+combined_scan "$repo_root" > "$tmp_root/combined.out" 2>&1 || {
+    cat "$tmp_root/combined.out"
+    exit 1
+}
 
 echo "CWE Top 25 guard regression checks passed"
