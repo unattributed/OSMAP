@@ -177,6 +177,28 @@
           ]
         },
         "change_reference": "Saved account-offset schedule entry plus confirmed journal source projection; existing jobs untouched."
+      },
+      {
+        "id": "ordinary-prepush-parallel",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "docs/UX_SLICE_S08_03.md delivery history; private push.log ExecutableFileBusy before security assertion; exact cause UNKNOWN",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "dcbc2072de9fbb5264494ba92e4d388b73c82a11",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent source/recipe/result GO 2026-11-05",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Ordinary full pre-push after successful independent developer gate."
       }
     ]
   },
@@ -185,7 +207,7 @@
     "slice": "S08-03",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "99a6db889898a1e1808288e140a2adf59f2f3092f33f94465310251aa2025350"
+      "sha256": "d216edaf8cd1f657f32c883cba334ba48827dd935ac36c800d2f16401aefff59"
     },
     "design": {
       "journey": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
@@ -365,7 +387,7 @@
     "status": "PENDING",
     "reference": "Owner follow-up UAT remains pending; original saved jobs have not reached their due times."
   },
-  "next_action": "Preserve this scoped UAT-ready result through normal signed commit/push; owner local-time schedule/cancel T09 remains pending.",
+  "next_action": "Exact affected test passes isolated; independent review GO for ordinary full push hooks with RUST_TEST_THREADS=1, retaining all assertions and explicit concurrency tests. Owner T09 pending.",
   "independent_next_action": "Review changed scheduling time interpretation and draft state; source/native results required before readiness. Documents remains stopped."
 }
 ```

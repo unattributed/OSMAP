@@ -304,3 +304,12 @@ zero failures and89 explicit native/external ignores, existing guard regressions
 and WSTG pack validation. This is the developer gate, not a new authenticated
 production WSTG assessment. Changed Rust source hashes match the native source20
 build. Shopkeeper-signed source synchronization proceeds through normal hooks.
+
+Delivery history: the first ordinary pre-push run stopped at a synthetic key-test
+script launch with Linux ExecutableFileBusy (Text file busy), before the security
+assertion:2334PASS/1FAIL/89explicitignores. Exact cause remains unconfirmed;
+independent review supports a fixture execution-race hypothesis. The exact
+genuine-session refusal test then passes isolated (1PASS/0FAIL). The bounded
+changed execution is ordinary complete push hooks with RUST_TEST_THREADS=1; no
+test/assertion/hook is disabled and no test retry/sleep is added to product code.
+Original failure and isolated receipts remain in the private artifact directory.
