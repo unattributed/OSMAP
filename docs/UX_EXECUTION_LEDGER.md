@@ -830,7 +830,7 @@
     "slice": "S08-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_01.md",
-      "sha256": "39e57c016c40ff2362f093f6b813cfc6c5980f61983f9dd3e384ae11f91fba01"
+      "sha256": "a317d35f31f6dcebb099664443253eefdf0108ade08c02d9e7a329296713c210"
     },
     "design": {
       "journey": "Upload, list, folders, search, sort, views, isolated download, Bin, restore and confirmed retention cleanup with shared account capacity.",

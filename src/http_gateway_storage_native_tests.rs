@@ -185,13 +185,17 @@ fn native_installed_documents_lifecycle() -> Result<(), &'static str> {
     }
     let account = std::env::var("OSMAP_STORAGE_REPORT_ACCOUNT")
         .map_err(|_| "explicit Documents account required")?;
-    if account != "duncan@blackbagsecurity.com" {
-        return Err("only the explicitly assigned development account is admitted");
-    }
     let canonical = crate::identity::CanonicalUsername::parse(&account)
         .map_err(|_| "canonical Documents account required")?;
     if canonical.as_str() != account {
         return Err("canonical Documents account required");
+    }
+    let mutation_account = std::env::var("OSMAP_DOCUMENTS_NATIVE_MUTATION_ACCOUNT")
+        .map_err(|_| "separate explicit Documents mutation account required")?;
+    let mutation_canonical = crate::identity::CanonicalUsername::parse(&mutation_account)
+        .map_err(|_| "canonical Documents mutation account required")?;
+    if mutation_canonical.as_str() != mutation_account || mutation_account != account {
+        return Err("explicit mutation account must exactly match the canonical report account");
     }
     let epoch_text =
         std::env::var("OSMAP_READINESS_EPOCH").map_err(|_| "current account epoch required")?;
