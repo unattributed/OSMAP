@@ -6,6 +6,25 @@ use crate::mailbox::{
     MessageDeleteError as E, MessageDeleteRequest, MessageDeleteResult, RetentionDecision,
 };
 use crate::message_metadata::MessageVersion;
+use sha2::{Digest, Sha256};
+
+fn trash_snapshot(targets: &[MessageDeleteRequest]) -> String {
+    let mut hash = Sha256::new();
+    for target in targets {
+        for value in [
+            target.canonical_username.as_str(),
+            target.mailbox_name.as_str(),
+            &target.uid.to_string(),
+            &target.version.mailbox_guid,
+            &target.version.message_guid,
+            &target.policy_revision.to_string(),
+        ] {
+            hash.update(value.len().to_be_bytes());
+            hash.update(value.as_bytes());
+        }
+    }
+    format!("{:x}", hash.finalize())
+}
 
 fn selected_deletions(
     fields: &BTreeMap<String, String>,
@@ -43,6 +62,10 @@ impl<G: BrowserGateway> BrowserApp<G> {
         context: &AuthenticationContext,
         review: bool,
     ) -> HandledHttpResponse {
+        let empty_trash = matches!(
+            request.path.as_str(),
+            "/trash/empty" | "/trash/empty/review"
+        );
         let (session, mut events) = match self.require_validated_session(request, context) {
             Ok(v) => v,
             Err(r) => return r,
@@ -53,7 +76,11 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 400,
                 "Bad Request",
                 "Invalid Deletion Selection",
-                "Select one to ten current messages in your saved Bin. No deletion was attempted.",
+                if empty_trash {
+                    "Open your Trash and choose Empty trash to review the current messages. No deletion was attempted."
+                } else {
+                    "Select one to ten current messages in your saved Bin. No deletion was attempted."
+                },
                 "/mailboxes",
                 events,
             )
@@ -74,7 +101,18 @@ impl<G: BrowserGateway> BrowserApp<G> {
         ) {
             return r;
         }
-        let common = if review {
+        let common = if empty_trash && review {
+            vec!["csrf_token", "mailbox", "return_to"]
+        } else if empty_trash {
+            vec![
+                "csrf_token",
+                "mailbox",
+                "return_to",
+                "policy_revision",
+                "confirm",
+                "snapshot",
+            ]
+        } else if review {
             [
                 "csrf_token",
                 "mailbox",
@@ -82,6 +120,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 "action",
                 "destination_mailbox",
             ]
+            .to_vec()
         } else {
             [
                 "csrf_token",
@@ -90,11 +129,11 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 "policy_revision",
                 "confirm",
             ]
+            .to_vec()
         };
-        if form
-            .keys()
-            .any(|key| !common.contains(&key.as_str()) && !key.starts_with("message_"))
-        {
+        if form.keys().any(|key| {
+            !common.contains(&key.as_str()) && (empty_trash || !key.starts_with("message_"))
+        }) {
             return invalid(events);
         }
         let Some(mailbox) = form
@@ -110,7 +149,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             return invalid(events);
         };
         let submitted = if review {
-            if form.get("action").map(String::as_str) != Some("review-delete") {
+            if !empty_trash && form.get("action").map(String::as_str) != Some("review-delete") {
                 return invalid(events);
             }
             None
@@ -132,13 +171,18 @@ impl<G: BrowserGateway> BrowserApp<G> {
             }
             Some(n)
         };
-        let Some(mut targets) = selected_deletions(
-            &form,
-            &session.record.canonical_username,
-            &mailbox,
-            submitted.unwrap_or(1),
-        ) else {
-            return invalid(events);
+        let mut targets = if empty_trash {
+            Vec::new()
+        } else {
+            match selected_deletions(
+                &form,
+                &session.record.canonical_username,
+                &mailbox,
+                submitted.unwrap_or(1),
+            ) {
+                Some(value) => value,
+                None => return invalid(events),
+            }
         };
         if !review && form.get("confirm").map(String::as_str) == Some("cancel") {
             return HandledHttpResponse {
@@ -212,6 +256,36 @@ impl<G: BrowserGateway> BrowserApp<G> {
         if canonical_username != session.record.canonical_username || mailbox_name != mailbox {
             return invalid(events);
         }
+        if empty_trash {
+            if messages.len() > crate::mailbox::DEFAULT_MAX_MESSAGES {
+                return unavailable(events);
+            }
+            let mut seen = std::collections::BTreeSet::new();
+            let mut mailbox_guid = None;
+            for message in &messages {
+                let Some(meta) = message.metadata.as_ref() else {
+                    return unavailable(events);
+                };
+                if message.mailbox_name != mailbox
+                    || !seen.insert(message.uid)
+                    || mailbox_guid.is_some_and(|guid| guid != &meta.version.mailbox_guid)
+                {
+                    return unavailable(events);
+                }
+                mailbox_guid = Some(&meta.version.mailbox_guid);
+                let Ok(target) = MessageDeleteRequest::new(
+                    &session.record.canonical_username,
+                    &mailbox,
+                    message.uid,
+                    meta.version.clone(),
+                    submitted.unwrap_or(1),
+                ) else {
+                    return unavailable(events);
+                };
+                targets.push(target);
+            }
+            targets.sort_by_key(|target| target.uid);
+        }
         let mut subjects = Vec::new();
         // Validate the complete selection before the first mutation. Body rendering is irrelevant.
         for target in &targets {
@@ -245,6 +319,27 @@ impl<G: BrowserGateway> BrowserApp<G> {
         }
         for target in &mut targets {
             target.policy_revision = revision;
+        }
+        if empty_trash {
+            let snapshot = trash_snapshot(&targets);
+            if !review && form.get("snapshot") != Some(&snapshot) {
+                return deletion_notice(&session,409,"Conflict","Trash changed","Your Trash changed after review. Nothing was deleted. Choose Empty trash again to review the current messages.",&back,events);
+            }
+            if targets.is_empty() {
+                return deletion_notice(
+                    &session,
+                    200,
+                    "OK",
+                    "Trash is empty",
+                    "There are no messages to delete.",
+                    &back,
+                    events,
+                );
+            }
+            if review {
+                drop(guard);
+                return HandledHttpResponse { response: html_response(200,"OK","Empty trash?",TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><section class=\"content-pane\"><h1>Empty trash?</h1><p>Permanently delete all {} messages in your Trash? This includes messages on other pages and hidden by filters. This cannot be undone.</p><form method=\"post\" action=\"/trash/empty\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\"><input type=\"hidden\" name=\"policy_revision\" value=\"{revision}\"><input type=\"hidden\" name=\"snapshot\" value=\"{snapshot}\"><button name=\"confirm\" value=\"cancel\">Cancel</button><button class=\"danger\" name=\"confirm\" value=\"delete\">Empty trash</button></form></section></main>",crate::http_ui::app_header(&session.record.canonical_username,&session.record.csrf_token,"bin"),targets.len(),escape_html(&session.record.csrf_token),escape_html(&mailbox),escape_html(&back)))), audit_events: events };
+            }
         }
         if review {
             let mut fields = [

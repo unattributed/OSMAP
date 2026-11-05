@@ -1,3 +1,81 @@
+### Trash correction qualification — 2026-11-06
+
+Native35 passed in2.06s through the actual new Empty-trash HTTP routes,
+RuntimeBrowserGateway, signed helper and disposable Dovecot mail. Review saw
+all4 messages, Cancel dispatched nothing, and a deliberate retention flip
+allowed exactly1 deletion then refused1 with2 not attempted. Remaining mail,
+predeleted neighbour, other account/Inbox bytes, flags and GUIDs stayed intact;
+owned scratch cleanup and standard host metadata checks passed. Tests34 SHA256
+`153364e84f8f4b2a7b045744d391059d2f87427f221de0639c7a9e91a610d690`
+comes from source34 archive
+`71a9856d71d15b72d916fb4cad921c1c15485ad5c9efd7278ccee83f0b2fb360`.
+The actual native log SHA256 is
+`0fa3a4ef268f9d07e981f16e8a81dc8ff7def10fe187a07adfb3f156587e2290`.
+
+Install33 passed: Web loaded main31 inode and SHA256 matched
+`5f6b7d18dd76ba3de73bf435e593d92ac2f0f8f338fd2071a96dc58190456fd7`;
+nine services and HTTPS login200 passed. Public mail, helper, account-service
+and GPG PIDs plus checked configuration hashes were unchanged. No owner mail
+was deleted. Independent source/security, recipe, Firefox browser and native
+receipt review passed. Ordinary signed delivery hooks remain the publication
+gate; this record does not convert owner Trash UAT into PASS.
+
+## 2026-11-06 — Practical Trash controls and Empty trash
+
+The owner rejected the general-purpose Bin toolbar. Trash now has a visible
+**Empty trash** action, **Restore to Inbox**, **Delete permanently**, visible
+selection/clear links and secondary **Move to folder** controls. Received dates
+replace the misleading Archived/Unknown column in Trash; Archive keeps its
+existing recorded-action date contract. The current selection limit remains
+ten messages. Empty trash is independent of selection, filters and pagination.
+
+Two POST routes, `/trash/empty/review` and `/trash/empty`, reuse the existing
+Rust deletion handler and helper-owned per-message deletion. Review loads the
+entire saved Trash through the native `mailbox ... all` listing. Its existing
+2000-message/output bounds fail closed rather than truncate. A compact SHA256
+snapshot covers sorted account/folder/UID/mailbox-GUID/message-GUID/policy
+revision tuples; no new pending-job store or wildcard expunge was introduced.
+Confirmation repeats account/session/Origin/CSRF, saved-folder, hierarchy,
+complete inventory, identity and retention checks. A changed snapshot refuses
+before mutation. Messages arriving after the final snapshot are not targeted.
+The existing 30-second request bound and stop-first-refusal/unknown behavior
+report exact confirmed/refused/unconfirmed/not-attempted counts; no automatic
+retry or false whole-folder-empty claim is made. Larger/incomplete/unavailable
+inventories refuse; this is not an unbounded mail-cleanup service.
+
+Five new Rust regressions pass: 75-message inventory beyond the visible page;
+Cancel and changed snapshot; new arrival/recreated mailbox GUID; authority,
+metadata and duplicate refusal; empty/oversize inventories, GET/foreign Origin
+and partial Unknown. Existing selected deletion tests remain unchanged. Actual
+JavaScript-disabled Edge and independent Firefox desktop/mobile checks cover
+whole-folder review/Cancel, selected deletion review/Cancel, pointer/Space
+selection and selected Restore. Firefox reviewed all125 synthetic messages
+from a filtered50-row view. Edge's final labels and Restore emptied two
+synthetic Trash rows; Empty trash on the empty folder reported no messages.
+No owner mail, real credential or external Send was used.
+
+Failures retained: the first GET test constructed an invalid GET body twice
+before app dispatch; independent reassessment corrected the request. The first
+broad source run exposed three Archive assertions affected by presentation;
+Archive title/date semantics were restored and its55 focused tests passed.
+Native32 reached actual one-deleted/one-refused/two-unattempted behavior, then
+failed a fixture-only expected-UID assertion inherited from selected deletion.
+Whole-folder ordering includes the predeleted neighbour; independent review
+approved expected UIDs from the full sorted inventory. Removal of the failed fixture’s scratch
+and unchanged installed binary/public services were verified before test retry.
+An earlier Edge tool timeout is retained separately from the successful fresh
+final fixture. None of these failures was rewritten as an owner UAT pass.
+
+Build31 archive SHA256:
+`d89cbeec4addf7e9d8d4647fad4bb5ea1096899289c747d402df342eb0bc24c8`.
+Native main31 SHA256:
+`5f6b7d18dd76ba3de73bf435e593d92ac2f0f8f338fd2071a96dc58190456fd7`.
+Native tests31 SHA256:
+`1c843f6c5e2453f850d7c89c14063b0292fb1b531a8a0abc6a2665ee1a975771`.
+The subsequent test-only correction does not change main31. Native35 results,
+Web-only install33 and signed normal-hook delivery are reconciled below when
+completed. Owner acceptance of the new Trash journey remains pending.
+
 ## 2026-11-06 — Repeated Drafts/Bin selection failure reopened
 
 The repeated owner UAT failure at045d639 overrides the earlier readiness claim

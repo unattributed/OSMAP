@@ -2139,8 +2139,13 @@ pub(crate) fn render_message_list_page(
         } else {
             format!("<label for=\"bulk-destination-mailbox\">Move selected to<select id=\"bulk-destination-mailbox\" name=\"destination_mailbox\">{options}</select></label><button type=\"submit\" name=\"action\" value=\"move\">Move Selected</button>")
         };
-        let mut buttons = String::from("<button type=\"submit\" formaction=\"/messages/labels/review\" name=\"action\" value=\"review\">Review labels for selected</button>");
-        if archive_actions_available {
+        let is_trash = sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name);
+        let mut buttons = if is_trash {
+            String::new()
+        } else {
+            String::from("<button type=\"submit\" formaction=\"/messages/labels/review\" name=\"action\" value=\"review\">Review labels for selected</button>")
+        };
+        if archive_actions_available && !is_trash {
             buttons.push_str("<button type=\"submit\" name=\"action\" value=\"archive\">Archive Selected</button>");
         }
         if sort_links
@@ -2163,12 +2168,22 @@ pub(crate) fn render_message_list_page(
                 .iter()
                 .any(|name| name == "INBOX")
         {
-            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"restore\">Restore Selected to Inbox</button>");
+            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"restore\">Restore to Inbox</button>");
         }
         if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name) {
-            buttons.push_str("<button type=\"submit\" formaction=\"/messages/delete/review\" name=\"action\" value=\"review-delete\">Review permanent deletion of selected</button>");
+            buttons.push_str("<button class=\"danger\" type=\"submit\" formaction=\"/messages/delete/review\" name=\"action\" value=\"review-delete\">Delete permanently</button>");
         }
-        format!("<form id=\"bulk-move-form\" class=\"bulk-move-controls\" method=\"post\" action=\"/messages/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\"><div class=\"toolbar\">{buttons}</div>{chooser}<p class=\"muted\">Select up to ten messages. Bin moves to your saved folder; restore returns to Inbox.</p></form>", escape_html(csrf_token), escape_html(mailbox_name), escape_html(&list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page)))
+        let chooser = if is_trash {
+            format!("<details class=\"trash-more\"><summary>Move to folder</summary>{chooser}</details>")
+        } else {
+            chooser
+        };
+        let help = if is_trash {
+            "Select up to ten messages for Restore, Delete permanently or Move. Empty trash includes every page and ignores filters."
+        } else {
+            "Select up to ten messages. Bin moves to your saved folder; restore returns to Inbox."
+        };
+        format!("<form id=\"bulk-move-form\" class=\"bulk-move-controls\" method=\"post\" action=\"/messages/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\"><div class=\"toolbar\">{buttons}{chooser}</div><p class=\"muted\">{help}</p></form>", escape_html(csrf_token), escape_html(mailbox_name), escape_html(&list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page)))
     } else {
         String::new()
     };

@@ -1,3 +1,5 @@
+2026-11-06 — Trash uses normal Restore/Delete/Empty trash controls. Empty trash reviews the full saved folder independently of filters/pagination, confirms an exact snapshot and reuses bounded identity/retention checks; no wildcard expunge, new service, Documents feature or owner-mail QA deletion. Selected-action limit stays ten; incomplete inventories refuse.
+
 # UX engineering decisions
 
 Original decisions: 2026-09-29. Source: S00 intake against

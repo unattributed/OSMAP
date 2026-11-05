@@ -4573,6 +4573,16 @@ fn start_bulk_retention_delete_http_helper(
 #[test]
 #[ignore = "explicit OpenBSD BrowserApp bulk delete partial-prefix proof; disposable tuples only"]
 fn isolated_openbsd_retention_bound_bulk_delete_browser() {
+    native_retention_bulk_delete_browser(false);
+}
+
+#[test]
+#[ignore = "explicit OpenBSD Empty trash BrowserApp/helper/backend proof; disposable mail only"]
+fn isolated_openbsd_retention_bound_empty_trash_browser() {
+    native_retention_bulk_delete_browser(true);
+}
+
+fn native_retention_bulk_delete_browser(empty_trash: bool) {
     use crate::mailbox::{
         DoveadmMessageDeleteBackend, FileMailboxRetentionPolicy, MessageDeleteRequest,
     };
@@ -4959,20 +4969,41 @@ fn isolated_openbsd_retention_bound_bulk_delete_browser() {
         native_list.list_messages(ALICE, &deleted_query).unwrap(),
         deleted
     );
-    let result = http(&app, Some(&alice), "POST", "/messages/delete", &form);
+    let result = if empty_trash {
+        let review = BTreeMap::from([
+            ("csrf_token".into(), alice.record.csrf_token.clone()),
+            ("mailbox".into(), "Deleted".into()),
+            ("return_to".into(), back.into()),
+        ]);
+        let reviewed = http(&app, Some(&alice), "POST", "/trash/empty/review", &review);
+        assert_eq!(reviewed.response.status_code, 200);
+        assert!(text(&reviewed).contains("all 4 messages"));
+        let mut confirmation = review;
+        confirmation.insert("policy_revision".into(), "7".into());
+        confirmation.insert("snapshot".into(), text(&reviewed).split("name=\"snapshot\" value=\"").nth(1).unwrap().split('"').next().unwrap().into());
+        confirmation.insert("confirm".into(), "cancel".into());
+        assert_eq!(http(&app, Some(&alice), "POST", "/trash/empty", &confirmation).response.status_code, 303);
+        assert_eq!(delete_admissions.load(Ordering::SeqCst), 0);
+        confirmation.insert("confirm".into(), "delete".into());
+        http(&app, Some(&alice), "POST", "/trash/empty", &confirmation)
+    } else { http(&app, Some(&alice), "POST", "/messages/delete", &form) };
     assert_eq!(result.response.status_code, 403);
+    let mut expected_uids: Vec<_> = if empty_trash { deleted.iter().map(|row| row.uid).collect() } else { targets.iter().map(|row| row.uid).collect() };
+    expected_uids.sort_unstable();
     assert!(
-        text(&result).contains("1 confirmed deleted; 1 refused; 0 unconfirmed; 1 not attempted.")
+        text(&result).contains(if empty_trash { "1 confirmed deleted; 1 refused; 0 unconfirmed; 2 not attempted." } else { "1 confirmed deleted; 1 refused; 0 unconfirmed; 1 not attempted." })
     );
     assert!(text(&result).contains(&format!(
         "Message #{}: Deleted: absence confirmed",
-        targets[0].uid
+        expected_uids[0]
     )));
     assert!(text(&result).contains(&format!(
         "Message #{}: Refused: retention policy",
-        targets[1].uid
+        expected_uids[1]
     )));
-    assert!(text(&result).contains(&format!("Message #{}: Not attempted", targets[2].uid)));
+    for uid in &expected_uids[2..] {
+        assert!(text(&result).contains(&format!("Message #{uid}: Not attempted")));
+    }
     assert!(text(&result).contains("Do not repeat completed or unconfirmed requests."));
     assert_eq!(
         delete_admissions.load(Ordering::SeqCst),

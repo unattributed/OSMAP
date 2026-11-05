@@ -152,6 +152,132 @@ impl Drop for BulkDeleteFixture {
     }
 }
 
+impl BulkDeleteFixture {
+    fn empty(&self, form: &BTreeMap<String, String>, review: bool) -> HandledHttpResponse {
+        let mut req = request("POST", if review { "/trash/empty/review" } else { "/trash/empty" }, &authenticated_same_origin_headers(), &Self::encode(form));
+        req.headers.insert("content-type".into(), "application/x-www-form-urlencoded".into());
+        req.headers.insert("user-agent".into(), "FolderTreeReaderUnavailable".into());
+        self.app.handle_request(&req, "127.0.0.1")
+    }
+    fn empty_review_form(&self) -> BTreeMap<String, String> {
+        self.form(0, true).into_iter().filter(|(k, _)| !["action", "destination_mailbox"].contains(&k.as_str())).collect()
+    }
+    fn empty_confirm_form(&self) -> BTreeMap<String, String> {
+        let response = self.empty(&self.empty_review_form(), true);
+        assert_eq!(response.response.status_code, 200);
+        let html = body_text(&response);
+        let snapshot = html.split("name=\"snapshot\" value=\"").nth(1).unwrap().split('"').next().unwrap();
+        let mut form = self.empty_review_form();
+        form.insert("snapshot".into(), snapshot.into());
+        form.insert("policy_revision".into(), "9".into());
+        form.insert("confirm".into(), "delete".into());
+        form
+    }
+}
+
+#[test]
+fn empty_trash_reviews_all_pages_then_deletes_exact_snapshot() {
+    let fixture = BulkDeleteFixture::new();
+    if let Some(BrowserMessageListDecision::Listed { messages, .. }) = fixture.app.gateway.delete_list_decision.lock().unwrap().as_mut() {
+        let first = messages[0].clone();
+        *messages = (1..=75).map(|uid| { let mut m = first.clone(); m.uid = uid; m.metadata = fixture.app.gateway.fixture_current_metadata(BULK_ACCOUNT, "Deleted", uid); m }).collect();
+    }
+    let review = fixture.empty(&fixture.empty_review_form(), true);
+    assert!(body_text(&review).contains("all 75 messages"));
+    fixture.zero();
+    let form = fixture.empty_confirm_form();
+    let response = fixture.empty(&form, false);
+    assert_eq!(response.response.status_code, 200);
+    assert_eq!(fixture.calls(), (1..=75).collect::<Vec<_>>());
+    fixture.idle();
+}
+
+#[test]
+fn empty_trash_changed_snapshot_and_cancel_are_zero_dispatch() {
+    let fixture = BulkDeleteFixture::new();
+    let mut form = fixture.empty_confirm_form();
+    form.insert("confirm".into(), "cancel".into());
+    assert_eq!(fixture.empty(&form, false).response.status_code, 303);
+    fixture.zero();
+    form.insert("confirm".into(), "delete".into());
+    if let Some(BrowserMessageListDecision::Listed { messages, .. }) = fixture.app.gateway.delete_list_decision.lock().unwrap().as_mut() {
+        messages.pop();
+    }
+    assert_eq!(fixture.empty(&form, false).response.status_code, 409);
+    fixture.zero();
+}
+
+#[test]
+fn empty_trash_new_arrival_or_recreated_folder_requires_fresh_review() {
+    for arrival in [true, false] {
+        let fixture = BulkDeleteFixture::new();
+        let form = fixture.empty_confirm_form();
+        if let Some(BrowserMessageListDecision::Listed { messages, .. }) = fixture.app.gateway.delete_list_decision.lock().unwrap().as_mut() {
+            if arrival {
+                let mut message = messages[0].clone();
+                message.uid = 99;
+                message.metadata = fixture.app.gateway.fixture_current_metadata(BULK_ACCOUNT, "Deleted", 99);
+                messages.push(message);
+            } else {
+                for message in messages { message.metadata.as_mut().unwrap().version.mailbox_guid = "c".repeat(32); }
+            }
+        }
+        assert_eq!(fixture.empty(&form, false).response.status_code, 409);
+        fixture.zero();
+    }
+}
+
+#[test]
+fn empty_trash_refuses_bad_authority_identity_and_snapshot_before_mutation() {
+    for fault in 0..8 {
+        let fixture = BulkDeleteFixture::new();
+        let mut form = fixture.empty_confirm_form();
+        match fault {
+            0 => { form.insert("csrf_token".into(), "wrong".into()); }
+            1 => { form.insert("mailbox".into(), "INBOX".into()); }
+            2 => { form.insert("snapshot".into(), "0".repeat(64)); }
+            3 => { form.insert("policy_revision".into(), "8".into()); }
+            4 => { *fixture.app.gateway.delete_decision.lock().unwrap() = D::Denied; }
+            5 => { form.insert("message_1".into(), "forged".into()); }
+            _ => {
+                if let Some(BrowserMessageListDecision::Listed { messages, .. }) = fixture.app.gateway.delete_list_decision.lock().unwrap().as_mut() {
+                    if fault == 6 { messages[0].metadata = None; } else { messages.push(messages[0].clone()); }
+                }
+            }
+        }
+        assert_ne!(fixture.empty(&form, false).response.status_code, 200, "fault {fault}");
+        fixture.zero();
+    }
+}
+
+#[test]
+fn empty_trash_empty_oversize_foreign_origin_get_and_partial_unknown() {
+    let fixture = BulkDeleteFixture::new();
+    let form = fixture.empty_confirm_form();
+    fixture.queue([Ok(MessageDeleteResult::Deleted), Err(E::Unknown)]);
+    let response = fixture.empty(&form, false);
+    assert_eq!(fixture.calls(), vec![1, 2]);
+    assert!(body_text(&response).contains("1 confirmed deleted; 0 refused; 1 unconfirmed; 9 not attempted"));
+    fixture.idle();
+    for count in [0, 2001] {
+        let fixture = BulkDeleteFixture::new();
+        if let Some(BrowserMessageListDecision::Listed { messages, .. }) = fixture.app.gateway.delete_list_decision.lock().unwrap().as_mut() {
+            messages.resize(count, messages[0].clone());
+        }
+        assert_eq!(fixture.empty(&fixture.empty_review_form(), true).response.status_code, if count == 0 { 200 } else { 503 });
+        fixture.zero();
+    }
+    for method in ["GET", "POST"] {
+        let fixture = BulkDeleteFixture::new();
+        let encoded = BulkDeleteFixture::encode(&fixture.empty_review_form());
+        let mut req = request(method, "/trash/empty", &authenticated_same_origin_headers(), if method == "GET" { "" } else { &encoded });
+        req.headers.insert("origin".into(), "https://foreign.example.test".into());
+        req.headers.insert("content-type".into(), "application/x-www-form-urlencoded".into());
+        assert_ne!(fixture.app.handle_request(&req, "127.0.0.1").response.status_code, 200);
+        fixture.zero();
+    }
+}
+
 #[test]
 fn bulk_delete_review_and_cancel_are_zero_mutation_native_forms() {
     let fixture = BulkDeleteFixture::new();

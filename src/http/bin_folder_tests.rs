@@ -746,9 +746,9 @@ fn bin_folder_top_level_page_and_reader_offer_actual_bin_then_restore_forms() {
     assert_eq!(bin_page.response.status_code, 200);
     let html = body_text(&bin_page);
     assert!(html.contains("class=\"page-shell coordinated-mail archive-page has-selection\""));
-    assert!(html.contains("<h1>Archive / Bin</h1>"));
+    assert!(html.contains("<h1>Trash</h1>"));
     assert!(html.contains("aria-label=\"Archive and Bin messages\""));
-    assert!(html.contains("aria-current=\"page\">Bin</a>"));
+    assert!(html.contains("aria-current=\"page\">Trash</a>"));
     assert!(html.contains("aria-label=\"Restore message to Inbox\""));
     let restore = rendered_bin_move_fields(&html, uid, "restore");
     assert_eq!(restore.get("mailbox").map(String::as_str), Some("Deleted"));

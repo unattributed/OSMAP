@@ -1,3 +1,7 @@
+2026-11-06 — **Practical Trash / Empty trash installed; owner UAT pending.** Native35 PASS and Web-only install33 PASS, main31 SHA5f6b7d18. Public mail/helper/account/GPG/config unchanged; owner messages untouched. Native32 fixture assertion failure retained, corrected by independent full-folder-order review. See slice qualification.
+
+2026-11-06 — **Bin UX rejected; Empty trash correction IN_PROGRESS.** Owner requests normal Trash controls and Empty trash. Reuse exact-tuple Rust deletion; full native folder snapshot (bounded at 2000), compact snapshot confirmation, current account/saved Bin/hierarchy/retention checks, 30-second sequential stop on refusal/unknown. No owner-mail deletion in agent QA, no mail configuration change, no Documents. Essential tests: full-folder versus visible-page, snapshot change, cancel, invalid authority, partial unknown, browser keyboard/pointer, native build and existing native deletion path. Root implementation; independent QA/security /root/s08_selection_review. Prior UAT failures and scoped passes remain recorded.
+
 2026-11-06 (Asia/Bangkok) — **Drafts/Bin selection correction installed; engineering checks PASS, owner recheck pending.** Web main27 ca485795; helper/publicmail/account/GPG/config preserved. Actual Edge/Firefox desktop/mobile pointer/Space selection and source discard PASS; native8focused, single/bulk deletion and installed readonly retention PASS. Ordinary signed publication remains required before handoff. See current slice qualification; previous failed UAT preserved below.
 
 2026-11-06 (Asia/Bangkok) — **Repeated Drafts/Bin UAT FAILED; IN_PROGRESS.** Baseline045d639: scheduled-copy checkboxes remain disabled despite per-row delete. Bin pointer/keyboard selection works in the real synthetic browser, but its16px targets and below-table actions impede use. Root owns the smallest correction: enable confirmed-copy selection with existing revision-bound discard, show its job link/deletion directly, move existing Bin action form above rows and enlarge targets. Preserve uncertain/reserved refusal, confirmation, account isolation, jobs/receipts and all owner mail. No new service, Python tooling, mail configuration or Documents work. QA/security: /root/s08_selection_review. Essential exit: real browser pointer/keyboard/form-submission checks, Rust existing discard and native deletion regressions, matching obsd1 build/install, normal delivery gates. Retain prior failed UAT and previous scoped passes; no new whole-S08 readiness until review. Two failures at the same functional boundary stop retries for combined independent reassessment; use the existing cumulative work order, no allowance reset.
@@ -12,7 +16,7 @@
   "version": 1,
   "slice": "S08-03",
   "original_requirement": "Scheduled send and snooze with bounded persisted jobs and restart/cancel/edit behavior",
-  "source_baseline": "045d63929522e0a4357de733c275a9fd13ead9eb",
+  "source_baseline": "81ce5b358ecb9255e443c47bf33e3b89bfe13270",
   "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
@@ -69,7 +73,11 @@
     "src/http/mail_list_tests.rs",
     "maint/ux/draft_fidelity_workflows.py",
     "maint/ux/test_validate_acceptance.py",
-    "src/http_ui_state_tests.rs"
+    "src/http_ui_state_tests.rs",
+    "src/http/routes_bulk_delete.rs",
+    "src/http_runtime.rs",
+    "src/http_bulk_delete_tests.rs",
+    "src/http/bin_folder_tests.rs"
   ],
   "outcomes": [
     {
@@ -83,10 +91,12 @@
         "UX08-008",
         "UX08-011"
       ],
-      "frontend_backend_outcome": "Confirmed scheduling removes only its exact source draft after durable capture; legacy confirmed scheduled copies can be explicitly deleted without rearming or cancelling jobs; native message dates are UTC before account display conversion; obsd1 Trash supports retention-authorized confirmed deletion. Confirmed source-copy checkboxes and bulk discard are usable; Bin actions are visible above rows with larger selection targets.",
+      "frontend_backend_outcome": "Practical Trash controls and whole saved-folder Empty trash through exact snapshot review/confirmation; bounded native exact-tuple deletion with current owned Bin/retention authority and truthful stop results. Existing scheduled source copies remain selectable/discardable; prior local-time scheduling work preserved.",
       "essential_qa": "Strict local conversion, bounds, offset substitution/change/missing refusal, current auth/CSRF and exact fields, local-first rendering, cancellation/reopen readonly source projection, matching native tests/install and ordinary signed delivery. Existing installed read-only helper retention query, controlled native single/bulk deletion and complete S08 functional inventory after fixes; Documents excluded by owner. Snooze saved-offset forms/parse, stale/missing/forged context refusal, cancellation remains independent; full S08 retained-function audit.",
-      "next_action": "Ordinary signed publication with mandatory gates, then owner Drafts/Bin recheck and remaining local-time/cancel/Snooze acceptance; preserve prior accepted S08 scopes.",
-      "dependencies": [],
+      "next_action": "Normal signed delivery hooks and non-forced branch synchronization; owner UAT of practical Trash controls/Empty trash remains pending. Preserve separate local-time/cancellation/Snooze acceptance obligations.",
+      "dependencies": [
+
+      ],
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
@@ -143,6 +153,10 @@
         {
           "stage": "recovery",
           "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Repeated Drafts/Bin selection failure reopened"
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S08_03.md: Trash correction qualification 2026-11-06, Native35/install33 PASS; owner mail untouched"
         }
       ]
     }
@@ -665,7 +679,7 @@
     "slice": "S08-03",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "50c201d012e21b17199221fb6cd3fd260489208efdaf5ca755b3adca35718ec4"
+      "sha256": "219a7747d2595e30b0619ebb3839c52545c00fd3b0e4c6d704d1f0a690e28278"
     },
     "design": {
       "journey": "Schedule and Snooze use the saved account offset, captured jobs remain independent, confirmed source copies can be safely discarded, and explicitly confirmed exact-account Trash deletion is available.",

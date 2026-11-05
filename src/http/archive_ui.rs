@@ -43,12 +43,13 @@ pub(super) fn row(
         on_open,
         None,
     );
+    let date_label = if is_bin { "Received" } else { "Archived" };
     let delete = if is_bin {
-        message.metadata.as_ref().map(|metadata| format!("<a class=\"button-link\" href=\"/message/delete?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}&amp;return_to={}\">Review permanent deletion</a>", url_encode(&message.mailbox_name), message.uid, url_encode(&metadata.version.mailbox_guid), url_encode(&metadata.version.message_guid), url_encode(return_to))).unwrap_or_default()
+        message.metadata.as_ref().map(|metadata| format!("<a class=\"button-link\" href=\"/message/delete?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}&amp;return_to={}\">Delete permanently</a>", url_encode(&message.mailbox_name), message.uid, url_encode(&metadata.version.mailbox_guid), url_encode(&metadata.version.message_guid), url_encode(return_to))).unwrap_or_default()
     } else {
         String::new()
     };
-    format!("<tr data-selected=\"{selected}\"><td>{selection}</td><td data-label=\"From\" class=\"archive-sender\">{}</td><td data-label=\"Subject\">{subject}{labels}</td><td data-label=\"Folder\">{}</td><td data-label=\"Archived\">{}</td><td data-label=\"Size\">{} B</td><td><details class=\"archive-row-more\"><summary aria-label=\"Actions for message #{}\">⋮</summary><div><p>Received: <span data-label=\"Received\">{}</span></p>{}{delete}</div></details></td></tr>", escape_html(message.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&message.mailbox_name), escape_html(&archived), message.size_virtual, message.uid, escape_html(&date), render_message_state_controls(csrf, &message.mailbox_name, message.uid, &message.flags, message.metadata.as_ref(), return_to))
+    format!("<tr data-selected=\"{selected}\"><td>{selection}</td><td data-label=\"From\" class=\"archive-sender\">{}</td><td data-label=\"Subject\">{subject}{labels}</td><td data-label=\"Folder\">{}</td><td data-label=\"{date_label}\">{}</td><td data-label=\"Size\">{} B</td><td><details class=\"archive-row-more\"><summary aria-label=\"Actions for message #{}\">⋮</summary><div><p>Received: <span data-label=\"Received\">{}</span></p>{}{delete}</div></details></td></tr>", escape_html(message.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&message.mailbox_name), escape_html(if is_bin { &date } else { &archived }), message.size_virtual, message.uid, escape_html(&date), render_message_state_controls(csrf, &message.mailbox_name, message.uid, &message.flags, message.metadata.as_ref(), return_to))
 }
 
 pub(super) struct Page<'a> {
@@ -87,6 +88,7 @@ pub(super) fn page(p: Page<'_>) -> TrustedHtml {
                 ""
             }
         ),
+        None if is_bin => String::new(),
         None => {
             "<a class=\"button-link\" href=\"/settings?section=copies\">Choose Archive folder</a>"
                 .into()
@@ -100,7 +102,7 @@ pub(super) fn page(p: Page<'_>) -> TrustedHtml {
                 .any(|target| target == name)
     }) {
         format!(
-            "<a class=\"button-link\" href=\"{}\"{}>Bin</a>",
+            "<a class=\"button-link\" href=\"{}\"{}>Trash</a>",
             tab_href(bin_name.unwrap_or("")),
             if is_bin { " aria-current=\"page\"" } else { "" }
         )
@@ -117,11 +119,34 @@ pub(super) fn page(p: Page<'_>) -> TrustedHtml {
     let sort = sort
         .replace("Sorted by Received descending", "Newest first")
         .replace("Sorted by Received ascending", "Oldest first");
-    let search = format!("<form class=\"archive-search\" action=\"/search\" method=\"get\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label class=\"sr-only\" for=\"archive-search\">Search this folder</label><input id=\"archive-search\" name=\"q\" value=\"{}\" placeholder=\"Search {} messages…\"><button type=\"submit\">Search</button></form>", escape_html(p.mailbox), list_form_state(view), escape_html(p.links.search_query.unwrap_or("")), if is_bin { "Bin" } else { "archived" });
+    let search = format!("<form class=\"archive-search\" action=\"/search\" method=\"get\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label class=\"sr-only\" for=\"archive-search\">Search this folder</label><input id=\"archive-search\" name=\"q\" value=\"{}\" placeholder=\"Search {} messages…\"><button type=\"submit\">Search</button></form>", escape_html(p.mailbox), list_form_state(view), escape_html(p.links.search_query.unwrap_or("")), if is_bin { "Trash" } else { "archived" });
     let empty = format!("<tr><td colspan=\"7\">{}</td></tr>", mail_state_card("No messages", "No messages are shown in this folder view. Active filters and snoozed messages may limit the loaded results.", "/compose", "Compose", false));
     let rows = if p.rows.is_empty() { &empty } else { p.rows };
     let reader = render_coordinated_reader(p.base, view, p.csrf, p.links.reader, p.account);
-    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell coordinated-mail archive-page{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>Archive / Bin</h1><p>Manage archived and deleted messages.</p></div><section class=\"content-pane coordinated-list\" aria-label=\"Archive and Bin messages\"><nav class=\"archive-tabs\" aria-label=\"Archive and Bin\">{archive}{bin}</nav>{}<div class=\"mail-list-toolbar\">{}{search}{navigation}{sort}</div><div class=\"archive-actions\">{}</div><table class=\"archive-table\"><caption class=\"sr-only\">Messages in {}. Archived shows the known OSMAP action date. Received is available in message actions. Older mail without a recorded event shows Unknown.</caption><thead><tr><th scope=\"col\"><span class=\"sr-only\">Select</span></th><th scope=\"col\">From</th><th scope=\"col\">Subject</th><th scope=\"col\">Folder</th><th scope=\"col\">Archived</th><th scope=\"col\">Size</th><th scope=\"col\"><span class=\"sr-only\">Actions</span></th></tr></thead><tbody>{rows}</tbody></table><p id=\"archive-retention\" class=\"archive-retention\">Permanent deletion requires a separate confirmation and current retention permission. Bin moves messages to your saved folder; restore returns them to Inbox. To return archived messages, choose Inbox in Move selected to.</p></section>{reader}</main>", app_header(p.account, p.csrf, if is_bin { "bin" } else { "archive" }), if view.selection.is_some() { " has-selection" } else { "" }, p.banner, render_bulk_selection_menu(p.base, view, p.automatic_selection_count), p.bulk_form, escape_html(p.mailbox)))
+    let title = if is_bin { "Trash" } else { "Archive / Bin" };
+    let date_heading = if is_bin { "Received" } else { "Archived" };
+    let caption = if is_bin {
+        "Messages in your Trash. Date shows when the message was received."
+    } else {
+        "Archived messages. Archived shows the known OSMAP action date; older messages may have no recorded action date."
+    };
+    let empty_trash = if is_bin {
+        format!("<form class=\"empty-trash-control\" method=\"post\" action=\"/trash/empty/review\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\"><button class=\"danger\" type=\"submit\">Empty trash</button></form>", escape_html(p.csrf), escape_html(p.mailbox), escape_html(&format!("/mailbox?name={}", url_encode(p.mailbox))))
+    } else {
+        String::new()
+    };
+    let selection = render_bulk_selection_menu(p.base, view, p.automatic_selection_count);
+    let selection = if is_bin {
+        selection
+            .replace(
+                "<details class=\"bulk-selection-menu\"><summary>Select messages</summary>",
+                "<div class=\"bulk-selection-menu\">",
+            )
+            .replace("</details>", "</div>")
+    } else {
+        selection
+    };
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell coordinated-mail archive-page{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>{title}</h1><p>Manage messages in this folder.</p>{empty_trash}</div><section class=\"content-pane coordinated-list\" aria-label=\"Archive and Bin messages\"><nav class=\"archive-tabs\" aria-label=\"Archive and Bin\">{archive}{bin}</nav>{}<div class=\"mail-list-toolbar\">{}{search}{navigation}{sort}</div><div class=\"archive-actions\">{}</div><table class=\"archive-table\"><caption class=\"sr-only\">{caption}</caption><thead><tr><th scope=\"col\"><span class=\"sr-only\">Select</span></th><th scope=\"col\">From</th><th scope=\"col\">Subject</th><th scope=\"col\">Folder</th><th scope=\"col\">{date_heading}</th><th scope=\"col\">Size</th><th scope=\"col\"><span class=\"sr-only\">Actions</span></th></tr></thead><tbody>{rows}</tbody></table><p id=\"archive-retention\" class=\"archive-retention\">Restore returns selected messages to Inbox. Permanent deletion asks for confirmation and cannot be undone.</p></section>{reader}</main>", app_header(p.account, p.csrf, if is_bin { "bin" } else { "archive" }), if view.selection.is_some() { " has-selection" } else { "" }, p.banner, selection, p.bulk_form))
 }
 
 #[cfg(test)]
