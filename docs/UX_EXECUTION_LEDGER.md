@@ -1,3 +1,5 @@
+2026-11-05 — **Notification-controls follow-up ACCEPTED / T09 PASS.** Owner: “I accept and approve the work completed.” Applies to signed implementation5f2e549, including Delete all notifications beside Mark all as read. Whole S08 remains open. Documents development and UAT remain stopped. Earlier readiness and execution entries below are history.
+
 2026-11-05 — **Notifications bulk delete UAT_READY. Documents removed by owner; development and UAT stopped.** Historical execution is preserved without treating it as current approval. No mailbox/quota/configuration change or rollback is authorized by this notification task.
 
 2026-11-05 — **S08-01 UAT_READY: installed first-use and existing-folder lifecycle PASS.** Approved200MiB cutover and retained parity pass; generated-ID cleanup and account/configuration/service preservation pass. Source/native/scoped independent review pass; signed delivery receipts remain separate. Historical lookup refusals retain cause UNKNOWN. Owner T09 and whole S08 acceptance remain open. Toronto unchanged.
@@ -11,7 +13,7 @@
   "slice": "S08-04",
   "original_requirement": "Notification inbox/badge/read state and all page 17 preferences, including explicitly consented desktop delivery",
   "source_baseline": "fff478be01d9ddff87607248ea34069e369227bd",
-  "state": "UAT_READY",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -73,7 +75,7 @@
       ],
       "frontend_backend_outcome": "Keep existing factual notification features; the signed-in user clears the entire retained inbox in one revision-checked action without changing source operations or separate audit records.",
       "essential_qa": "Mixed/hidden/mandatory/read/dismissed notices, restart, dedupe/new event, foreign account, stale CAS, strict authenticated POST and unavailable/corrupt refusal; actual Runtime delegation and matching native/Web install.",
-      "next_action": "Notification-only owner check: refresh /notifications, use Delete all notifications when notices exist, then refresh to confirm empty. Human acceptance pending. Complete normal signed delivery with external hook/signature/origin receipts; Documents development and UAT stopped.",
+      "next_action": "Notification-controls follow-up accepted by owner. Preserve this documentation-only checkpoint through normal signed delivery. Whole S08 remains open; Documents development and UAT remain stopped. No deployment or additional owner action required for this acceptance.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -130,7 +132,7 @@
     "slice": "S08-04",
     "specification": {
       "path": "docs/UX_SLICE_S08_04.md",
-      "sha256": "7708fd784f67dbbefc8f4e293cb776adc4d409cd8e9a009a5e882235d7b38d66"
+      "sha256": "5652a8febc0f26dbc49aced9421daf2d151e79f9fc36b5bb40918d7e641f8e84"
     },
     "design": {
       "journey": "Open own Notifications; Delete all beside Mark all as read; reload empty; later new events appear.",
@@ -299,18 +301,22 @@
         "preserved": "Other accounts, source/audit records, keys, credentials, mailbox/quota and mail services.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Owner message2026-11-05 accepting and approving the completed notification-controls delivery. Individual browser actions were not separately reported."
+        ]
       }
     ],
     "engineering_exit": "All required nonhuman follow-up tests and scoped review pass against matching source/native/installed artifacts; previous unaffected S08-04 evidence remains scoped.",
     "human_exit": "Owner confirms bulk delete works as intended on own inbox."
   },
   "human_acceptance": {
-    "status": "PENDING"
+    "status": "PASS",
+    "reference": "Owner message,2026-11-05: “I accept and approve the work completed.” Scoped notification-controls delivery5f2e549; docs/UX_SLICE_S08_04.md#owner-acceptance--2026-11-05",
+    "scope": "Notification-controls follow-up including Delete all beside Mark all as read; not whole S08 or Documents."
   },
-  "next_action": "Notification-only owner check: refresh /notifications, use Delete all notifications when notices exist, then refresh to confirm empty. Human acceptance pending. Complete normal signed delivery with external hook/signature/origin receipts; Documents development and UAT stopped.",
-  "independent_next_action": "Scoped source/native/installed result review GO; reconcile normal delivery results without new product tests unless a concrete failure occurs."
+  "next_action": "Notification-controls follow-up accepted by owner. Preserve this documentation-only checkpoint through normal signed delivery. Whole S08 remains open; Documents development and UAT remain stopped. No deployment or additional owner action required for this acceptance.",
+  "independent_next_action": "Verify this acceptance record matches the explicit owner statement and last signed delivery without broadening scope; normal signed preservation follows."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
