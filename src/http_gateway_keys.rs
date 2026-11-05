@@ -339,6 +339,33 @@ impl RuntimeBrowserGateway {
             }
         }
         audit_events.push(event);
+        if result.is_ok() {
+            use crate::notifications::NotificationKind as K;
+            let kind = match &request.action {
+                key_management::Action::ImportPublic { .. } => K::PublicKeyImported,
+                key_management::Action::RemovePublic { .. } => K::PublicKeyRemoved,
+                key_management::Action::ImportPersonal { .. } => K::PersonalKeyImported,
+                key_management::Action::UnlockPersonal { .. } => K::PersonalKeyUnlocked,
+                key_management::Action::LockPersonal => K::PersonalKeyLocked,
+                _ => K::PolicyChanged,
+            };
+            // Each fresh authorization acknowledges one operation. Request IDs
+            // restart with Web and cannot serve as durable operation identities.
+            if crate::notifications::NotificationStore::new(&self.settings_dir)
+                .record(
+                    &session.record.canonical_username,
+                    kind,
+                    crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+                )
+                .is_err()
+            {
+                audit_events.push(build_http_warning_event(
+                    "notification_recording_unconfirmed",
+                    "the key operation result is unchanged; its notice could not be confirmed",
+                    context,
+                ));
+            }
+        }
         MutationOutcome {
             result,
             audit_events,

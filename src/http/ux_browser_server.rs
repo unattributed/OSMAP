@@ -83,6 +83,7 @@ fn ux_synthetic_browser_server() {
         notification_store: Some(crate::notifications::NotificationStore::new(
             root.join("settings"),
         )),
+        notification_preference_store: Some(crate::notification_preferences::Store::new(root.join("settings"))),
         identity_preferences_store: Some(
             crate::identity_preferences::IdentityPreferencesStore::new(root.join("settings")),
         ),

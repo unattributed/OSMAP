@@ -246,6 +246,8 @@ pub struct ProtectedMessageView<'a> {
     pub original_source: &'a [u8],
     pub protection: ProtectionState,
     pub rendered: RenderedMessageView,
+    /// Request-local generic observation; never carries readable message bytes.
+    pub(crate) mention_observed: bool,
     account: CanonicalUsername,
     transient_message: MessageView,
     mime_policy: crate::mime::MimeAnalysisPolicy,
@@ -450,6 +452,10 @@ impl<E: CryptoExecutor> Processor<E> {
             .render_for_validated_session(context, session, &transient_message)
             .map_err(|_| ProtectedError::RenderFailure)?
             .rendered;
+        let mention_observed = crate::notification_observations::mentions_account(
+            &rendered.body_text_for_compose,
+            account.as_str(),
+        );
         if content.is_some() {
             // Explicit authoring consent belongs to a separate reply/forward
             // workflow; this reader never supplies plaintext for an autosaved draft.
@@ -459,6 +465,7 @@ impl<E: CryptoExecutor> Processor<E> {
             original_source: source,
             protection,
             rendered,
+            mention_observed,
             account,
             transient_message,
             mime_policy: self.rendering_policy.mime_analysis_policy,

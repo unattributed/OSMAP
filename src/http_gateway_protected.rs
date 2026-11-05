@@ -59,6 +59,13 @@ impl RuntimeBrowserGateway {
         let bindings = self.protected_bindings(session, message)?;
         let processed = Processor::new(client, policy)
             .process(context, session, message, &source, &bindings)?;
+        if processed.mention_observed {
+            let mut events = Vec::new();
+            self.record_mention_version(session, processed.rendered.metadata.as_ref(), &mut events);
+            for event in events {
+                eprintln!("notification_recording action={}", event.action);
+            }
+        }
         let mut rendered = processed.rendered;
         rendered.openpgp = Some(crate::openpgp_reader_ui::ReaderState::Assessed(
             processed.protection,

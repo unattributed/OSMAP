@@ -173,7 +173,7 @@ impl RuntimeBrowserGateway {
             local_domain,
             external_delivery: self.recovery_contact_external_delivery,
         };
-        sessions
+        let result = sessions
             .with_guarded_session_lease(context, token, |current, _lease| {
                 if current.record.session_id != session.record.session_id
                     || current.record.canonical_username != session.record.canonical_username
@@ -227,7 +227,30 @@ impl RuntimeBrowserGateway {
             .map_err(|error| match error {
                 crate::session::GuardedSessionError::Inactive => Error::Authentication,
                 crate::session::GuardedSessionError::Unavailable => Error::Unavailable,
-            })?
+            })?;
+        if let Ok(confirmed) = &result {
+            let kind =
+                if confirmed.effect == crate::recovery_contact::RecoveryContactEffect::Pending {
+                    crate::notifications::NotificationKind::RecoveryContactRequested
+                } else {
+                    crate::notifications::NotificationKind::RecoveryContactChanged
+                };
+            let mut events = Vec::new();
+            self.record_notice(
+                &session.record.canonical_username,
+                kind,
+                &format!(
+                    "contact:{}:{:?}",
+                    confirmed.snapshot.revision, confirmed.effect
+                ),
+                SystemTimeProvider.unix_timestamp(),
+                &mut events,
+            );
+            for event in events {
+                eprintln!("notification_recording action={}", event.action);
+            }
+        }
+        result
     }
 }
 

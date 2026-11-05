@@ -34,6 +34,42 @@ impl DigestMode {
 pub struct Preference {
     pub revision: u64,
     pub digest: DigestMode,
+    #[serde(default)]
+    pub choices: Choice,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Choice {
+    pub new_mail: bool,
+    pub mentions: bool,
+    pub openpgp: bool,
+    pub submission: bool,
+    pub sound: bool,
+    pub desktop: bool,
+}
+impl Default for Choice {
+    fn default() -> Self {
+        Self {
+            new_mail: true,
+            mentions: true,
+            openpgp: true,
+            submission: true,
+            sound: false,
+            desktop: false,
+        }
+    }
+}
+impl Choice {
+    pub fn allows(self, kind: crate::notifications::NotificationKind) -> bool {
+        use crate::notifications::NotificationCategory;
+        match kind.optional_category() {
+            None => true,
+            Some(NotificationCategory::NewMail) => self.new_mail,
+            Some(NotificationCategory::Mentions) => self.mentions,
+            Some(NotificationCategory::OpenPgp) => self.openpgp,
+            Some(NotificationCategory::Submission) => self.submission,
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
@@ -56,7 +92,7 @@ pub struct Store {
 impl Store {
     pub fn new(root: impl Into<PathBuf>) -> Self {
         Self {
-            file: PrivateAccountFile::new(root.into(), "osmap-notification-preferences-v1", 512),
+            file: PrivateAccountFile::new(root.into(), "osmap-notification-preferences-v1", 1024),
         }
     }
     fn decode(account: &str, bytes: Option<Vec<u8>>) -> Result<Preference, Error> {
@@ -83,6 +119,24 @@ impl Store {
         expected: u64,
         digest: DigestMode,
     ) -> Result<Preference, Error> {
+        self.save_inner(account, expected, digest, None)
+    }
+    pub fn save_choices(
+        &self,
+        account: &str,
+        expected: u64,
+        digest: DigestMode,
+        choices: Choice,
+    ) -> Result<Preference, Error> {
+        self.save_inner(account, expected, digest, Some(choices))
+    }
+    fn save_inner(
+        &self,
+        account: &str,
+        expected: u64,
+        digest: DigestMode,
+        choices: Option<Choice>,
+    ) -> Result<Preference, Error> {
         crate::identity::CanonicalUsername::parse(account).map_err(|_| Error::Invalid)?;
         let deadline = Instant::now() + Duration::from_millis(500);
         let lock = loop {
@@ -103,6 +157,7 @@ impl Store {
         let preference = Preference {
             revision: expected.checked_add(1).ok_or(Error::Unavailable)?,
             digest,
+            choices: choices.unwrap_or(old.choices),
         };
         let bytes = serde_json::to_vec(&Stored {
             version: 1,
@@ -230,9 +285,9 @@ mod tests {
         );
         assert_eq!(std::fs::read(&target).unwrap(), original);
         std::fs::remove_file(&path).unwrap();
-        std::fs::write(&path, vec![b'x'; 513]).unwrap();
+        std::fs::write(&path, vec![b'x'; 1025]).unwrap();
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
         assert_eq!(store.load(A), Err(Error::Unavailable));
-        assert_eq!(std::fs::read(path).unwrap().len(), 513);
+        assert_eq!(std::fs::read(path).unwrap().len(), 1025);
     }
 }

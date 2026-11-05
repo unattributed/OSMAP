@@ -835,6 +835,7 @@ impl RuntimeBrowserGateway {
                             fallback.rendered
                         }
                     };
+                    self.observe_read_notice(validated_session, &rendered, &mut audit_events);
                     return BrowserMessageViewOutcome {
                         decision: BrowserMessageViewDecision::Rendered {
                             canonical_username,
@@ -851,6 +852,11 @@ impl RuntimeBrowserGateway {
                 {
                     Ok(rendered_outcome) => {
                         audit_events.push(rendered_outcome.audit_event.clone());
+                        self.observe_read_notice(
+                            validated_session,
+                            &rendered_outcome.rendered,
+                            &mut audit_events,
+                        );
                         BrowserMessageViewOutcome {
                             decision: BrowserMessageViewDecision::Rendered {
                                 canonical_username,
@@ -1227,6 +1233,15 @@ impl RuntimeBrowserGateway {
             },
         );
         preparation_events.extend(dispatch_events);
+        if let Ok(LocatedPreparedResult::Outcome(recorded)) = &result {
+            self.record_attempt_notice(
+                account,
+                send_request.send_intent,
+                recorded.result.outcome,
+                now,
+                &mut preparation_events,
+            );
+        }
         let decision = match result {
             Ok(LocatedPreparedResult::NotDispatched(decision)) => decision,
             Ok(LocatedPreparedResult::Outcome(recorded)) => located_send_decision(recorded),

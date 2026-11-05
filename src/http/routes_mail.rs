@@ -613,6 +613,11 @@ where
                     .map(|preferences| preferences.openpgp);
                 let visible_mailboxes = filter_user_visible_mailboxes(&mailboxes);
                 let documents = self.gateway.load_documents(&validated_session).ok();
+                let notices = self.gateway.notification_inbox(&validated_session).ok();
+                let notice_preferences = self
+                    .gateway
+                    .load_notification_preference(&validated_session)
+                    .ok();
                 let storage = crate::storage_ui::StorageView::from_reads(
                     &canonical_username,
                     self.gateway.documents_quota_status(&validated_session),
@@ -641,6 +646,9 @@ where
                                 openpgp: &keys.state,
                                 defaults: openpgp_defaults,
                                 storage: Some(&storage),
+                                notices: notices
+                                    .as_ref()
+                                    .map(|inbox| (inbox, notice_preferences.as_ref())),
                             },
                         ),
                     ),

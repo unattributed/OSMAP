@@ -208,3 +208,12 @@ The smallest correction adds the actual methods, query/form fields and existing
 authorization/input/CSRF/business-logic test mappings to that inventory. No runner,
 gate or product route changes. This inventory consistency result does not establish
 a complete live WSTG security assessment. Original failure output is retained.
+
+## Installed engineering result — 2026-11-05
+
+S08-03 T01–T08 pass within their stated engineering scope. Owner T09 is pending.
+Normal signed delivery completed through the enabled hooks at ba6c49b910d914befa834709d64ba5078cd50d22; fresh fetch proves exact local/origin equality and0/0. Full Rust2294PASS/0FAIL/89explicit native/external ignores and all remaining normal checks pass. The actual native main build matches all37 changed Rust files in source archive2.
+
+Web-only installation loads93a167020df7e36b67007fbf39b7909dbf751004898232c33868d21f21191e91 in ServePID41439. The existing helper/account processes, crypto agents and configuration are unchanged. HTTPS200, nine healthy roles and both anonymous scheduling-page303-to-login checks pass. The matching installed credential-free signed-admission/Runtime/helper/owned-renderer/foreign-refusal test passes1case in0.12seconds, reporting172605611messagebytes and209715200configuredbytes. No owner session, password/TOTP, private-key operation, external mail or quota enforcement is inferred. Installation logSHA896a5600ad51d33cc7b3a4bfbb42af1c564fe6bd2ff041690a9f3ba7ce7edd99; readiness logSHA6a226577998ea563018466685b75244b379ba7f8981977aa0d07411edb3eaeb8. Independent result review confirms engineering readiness.
+
+For owner UAT: compose a controlled test message, choose Schedule, review the saved text and choose a future Send at(UTC) time. Confirm the message appears in Scheduled messages and later shows its factual submission result. Schedule a second message farther ahead and cancel it while still Scheduled. Signing requires personal-key access to remain valid at send time; a blocked message waits for explicit review and reauthorization. This does not accept S08-03 or complete all S08. Independent S08-04 work may continue while owner acceptance is pending.

@@ -281,6 +281,17 @@ impl RuntimeBrowserGateway {
                         })
                     });
                 if known_at.is_some() && readback == known_at {
+                    let mut events = Vec::new();
+                    self.record_notice(
+                        &session.record.canonical_username,
+                        crate::notifications::NotificationKind::PasswordChanged,
+                        known_at.as_deref().unwrap_or(""),
+                        SystemTimeProvider.unix_timestamp(),
+                        &mut events,
+                    );
+                    for event in events {
+                        eprintln!("notification_recording action={}", event.action);
+                    }
                     (BrowserPasswordDecision::Changed, known_at)
                 } else {
                     if let Some(paired) = ready {

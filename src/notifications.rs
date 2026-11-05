@@ -16,6 +16,76 @@ const MAX_BYTES: usize = 40 * 1024;
 pub enum NotificationKind {
     SessionIssued,
     SessionRevoked,
+    PasswordChanged,
+    TotpChanged,
+    RecoveryRequested,
+    RecoveryCompleted,
+    RecoveryContactRequested,
+    RecoveryContactChanged,
+    PublicKeyImported,
+    PublicKeyRemoved,
+    PersonalKeyImported,
+    PersonalKeyUnlocked,
+    PersonalKeyLocked,
+    PolicyChanged,
+    NewMail,
+    Mention,
+    SubmissionAccepted,
+    SubmissionUnknown,
+    ScheduledBlocked,
+    ScheduledSaved,
+    ScheduledCancelled,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NotificationCategory {
+    NewMail,
+    Mentions,
+    OpenPgp,
+    Submission,
+}
+impl NotificationKind {
+    pub fn title(self) -> &'static str {
+        match self {
+            Self::SessionIssued => "Browser session started",
+            Self::SessionRevoked => "Browser session revoked",
+            Self::PasswordChanged => "Account password changed",
+            Self::TotpChanged => "Authenticator changed",
+            Self::RecoveryRequested => "Account recovery requested",
+            Self::RecoveryCompleted => "Account recovery reconciled",
+            Self::RecoveryContactRequested => "Recovery contact verification requested",
+            Self::RecoveryContactChanged => "Recovery contact changed",
+            Self::PublicKeyImported => "Public key imported",
+            Self::PublicKeyRemoved => "Public key removed",
+            Self::PersonalKeyImported => "Personal key imported",
+            Self::PersonalKeyUnlocked => "Personal key unlocked",
+            Self::PersonalKeyLocked => "Personal key locked",
+            Self::PolicyChanged => "OpenPGP policy or binding changed",
+            Self::NewMail => "New Inbox message observed",
+            Self::Mention => "Your address was mentioned in a message you read",
+            Self::SubmissionAccepted => "Message accepted for submission",
+            Self::SubmissionUnknown => "Message submission outcome is uncertain",
+            Self::ScheduledBlocked => "Scheduled message blocked",
+            Self::ScheduledSaved => "Scheduled message saved",
+            Self::ScheduledCancelled => "Scheduled message cancelled",
+        }
+    }
+    pub fn optional_category(self) -> Option<NotificationCategory> {
+        match self {
+            Self::NewMail => Some(NotificationCategory::NewMail),
+            Self::Mention => Some(NotificationCategory::Mentions),
+            Self::PublicKeyImported | Self::PublicKeyRemoved => Some(NotificationCategory::OpenPgp),
+            Self::SubmissionAccepted | Self::SubmissionUnknown | Self::ScheduledBlocked => {
+                Some(NotificationCategory::Submission)
+            }
+            Self::ScheduledSaved | Self::ScheduledCancelled => {
+                Some(NotificationCategory::Submission)
+            }
+            _ => None,
+        }
+    }
+    pub fn is_mandatory(self) -> bool {
+        self.optional_category().is_none()
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -47,6 +117,9 @@ struct Stored {
     version: u8,
     revision: u64,
     high_water: u64,
+    /// A capacity-evicted timestamp cannot be replayed into a fresh event.
+    #[serde(default)]
+    discarded_through: u64,
     events: Vec<NotificationEvent>,
 }
 #[derive(Debug, Clone)]
@@ -87,6 +160,7 @@ impl NotificationStore {
                 version: 1,
                 revision: 0,
                 high_water: now,
+                discarded_through: 0,
                 events: vec![],
             });
         };
@@ -96,6 +170,7 @@ impl NotificationStore {
             || record.version != 1
             || record.revision == 0
             || record.high_water == 0
+            || record.discarded_through > record.high_water
             || record.events.len() > MAX_EVENTS
         {
             return Err(NotificationError::Corrupt);
@@ -180,8 +255,82 @@ impl NotificationStore {
                 read: false,
             },
         );
-        record.events.truncate(MAX_EVENTS);
+        if record.events.len() > MAX_EVENTS {
+            record.discarded_through = record.discarded_through.max(
+                record.events[MAX_EVENTS..]
+                    .iter()
+                    .map(|event| event.occurred_at)
+                    .max()
+                    .unwrap_or(0),
+            );
+            record.events.truncate(MAX_EVENTS);
+        }
         Self::write(&lock, &mut record, now)
+    }
+    /// One confirmed source operation, with no source identifier persisted.
+    /// A full inbox conservatively rejects replay at an evicted timestamp;
+    /// same-second capacity overflow may therefore omit optional new notices.
+    pub fn record_once(
+        &self,
+        account: &str,
+        kind: NotificationKind,
+        source_ref: &str,
+        occurred_at: u64,
+        now: u64,
+    ) -> Result<bool, NotificationError> {
+        if source_ref.is_empty()
+            || source_ref.len() > 512
+            || !source_ref.bytes().all(|b| b.is_ascii_graphic())
+            || occurred_at == 0
+            || occurred_at > now
+        {
+            return Err(NotificationError::Invalid);
+        }
+        let lock = self.lock(account)?;
+        let mut record = Self::read(&lock, account, now)?;
+        let mut hash = Sha256::new();
+        hash.update(b"osmap-notification-source-v1\0");
+        hash.update(account.as_bytes());
+        hash.update(b"\0");
+        hash.update(serde_json::to_vec(&kind).map_err(|_| NotificationError::Invalid)?);
+        hash.update(b"\0");
+        hash.update(source_ref.as_bytes());
+        let event_id = hash.finalize()[..16]
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>();
+        if record.events.iter().any(|event| event.event_id == event_id)
+            || now - occurred_at >= RETENTION_SECONDS
+            || occurred_at <= record.discarded_through
+        {
+            return Ok(false);
+        }
+        Self::prune(&mut record, now);
+        if record.events.len() == MAX_EVENTS
+            && record
+                .events
+                .last()
+                .is_some_and(|event| occurred_at <= event.occurred_at)
+        {
+            return Ok(false);
+        }
+        record.events.push(NotificationEvent {
+            event_id,
+            kind,
+            occurred_at,
+            read: false,
+        });
+        record.events.sort_by(|a, b| {
+            b.occurred_at
+                .cmp(&a.occurred_at)
+                .then_with(|| a.event_id.cmp(&b.event_id))
+        });
+        if record.events.len() > MAX_EVENTS {
+            let removed = record.events.pop().ok_or(NotificationError::Corrupt)?;
+            record.discarded_through = record.discarded_through.max(removed.occurred_at);
+        }
+        Self::write(&lock, &mut record, now)?;
+        Ok(true)
     }
     pub fn set_read(
         &self,
@@ -214,6 +363,10 @@ impl NotificationStore {
         Ok(Self::inbox(record))
     }
 }
+
+#[cfg(test)]
+#[path = "notification_event_tests.rs"]
+mod event_tests;
 fn valid_id(id: &str) -> bool {
     id.len() == 32
         && id

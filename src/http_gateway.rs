@@ -22,6 +22,8 @@ mod http_gateway_flags;
 mod http_gateway_keys;
 #[path = "http_gateway_mail.rs"]
 mod http_gateway_mail;
+#[path = "http_gateway_notifications.rs"]
+mod http_gateway_notifications;
 #[cfg(unix)]
 #[path = "http_gateway_password.rs"]
 mod http_gateway_password;
@@ -435,7 +437,18 @@ impl BrowserGateway for RuntimeBrowserGateway {
             self.ready_account_runtime(&session.record.canonical_username)
                 .ok_or(AccessError::Unavailable)?;
         }
-        self.account_runtime
+        let fact = match (&authority, &action) {
+            (
+                AccessAuthority::Session(session),
+                crate::browser_access::AccessAction::ConfirmTotpReset { enrollment_id, .. },
+            ) => Some((
+                session.record.canonical_username.clone(),
+                (*enrollment_id).to_string(),
+            )),
+            _ => None,
+        };
+        let result = self
+            .account_runtime
             .ready()
             .ok_or_else(|| {
                 eprintln!("account_access_gateway stage=runtime_ready result=unavailable");
@@ -448,7 +461,23 @@ impl BrowserGateway for RuntimeBrowserGateway {
                 csrf,
                 &context.remote_addr,
                 deadline,
-            )
+            );
+        if let (Some((account, source)), Ok(outcome)) = (fact, &result) {
+            if matches!(outcome.view, crate::browser_access::AccessView::Complete) {
+                let mut events = Vec::new();
+                self.record_notice(
+                    &account,
+                    crate::notifications::NotificationKind::TotpChanged,
+                    &source,
+                    crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+                    &mut events,
+                );
+                for event in events {
+                    eprintln!("notification_recording action={}", event.action);
+                }
+            }
+        }
+        result
     }
     fn authenticator(
         &self,
@@ -470,11 +499,26 @@ impl BrowserGateway for RuntimeBrowserGateway {
     ) -> Result<crate::authenticator::RequestRecord, crate::authenticator::Error> {
         self.ready_account_runtime(&session.record.canonical_username)
             .ok_or(crate::authenticator::Error::Unavailable)?;
-        crate::authenticator::Store::new(self.settings_dir.join("account-recovery")).request(
-            &session.record.canonical_username,
-            revision,
-            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
-        )
+        let result = crate::authenticator::Store::new(self.settings_dir.join("account-recovery"))
+            .request(
+                &session.record.canonical_username,
+                revision,
+                crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+            );
+        if let Ok(record) = &result {
+            let mut events = Vec::new();
+            self.record_notice(
+                &record.account,
+                crate::notifications::NotificationKind::RecoveryRequested,
+                &record.case_id,
+                record.requested_at,
+                &mut events,
+            );
+            for event in events {
+                eprintln!("notification_recording action={}", event.action);
+            }
+        }
+        result
     }
     fn mail_storage_report(
         &self,
@@ -1229,6 +1273,28 @@ impl BrowserGateway for RuntimeBrowserGateway {
             revision,
             digest,
         )
+    }
+    fn save_notification_choices(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        digest: crate::notification_preferences::DigestMode,
+        choices: crate::notification_preferences::Choice,
+    ) -> Result<crate::notification_preferences::Preference, crate::notification_preferences::Error>
+    {
+        crate::notification_preferences::Store::new(&self.settings_dir).save_choices(
+            &session.record.canonical_username,
+            revision,
+            digest,
+            choices,
+        )
+    }
+    fn refresh_notification_sources(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> Result<(), crate::notifications::NotificationError> {
+        self.refresh_notices_impl(context, session)
     }
     fn record_session_notification(
         &self,

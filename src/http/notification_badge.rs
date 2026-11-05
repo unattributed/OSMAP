@@ -39,6 +39,22 @@ pub(super) fn unread(inbox: Option<&NotificationInbox>) -> Option<usize> {
     Some(inbox.events.iter().filter(|event| !event.read).count())
 }
 
+pub(super) fn visible_unread(
+    inbox: Option<&NotificationInbox>,
+    preference: Option<&crate::notification_preferences::Preference>,
+) -> Option<usize> {
+    let count = unread(inbox)?;
+    let Some(preference) = preference else {
+        return Some(count);
+    };
+    Some(
+        inbox?
+            .events
+            .iter()
+            .filter(|event| !event.read && preference.choices.allows(event.kind))
+            .count(),
+    )
+}
 impl<G: BrowserGateway> BrowserApp<G> {
     pub(super) fn apply_notification_badge(
         &self,
@@ -68,9 +84,15 @@ impl<G: BrowserGateway> BrowserApp<G> {
         if !html.starts_with("<!doctype html><html lang=\"en\"") || !html.contains(&slot) {
             return;
         }
-        let count = context
-            .count
-            .unwrap_or_else(|| unread(self.gateway.notification_inbox(session).as_ref().ok()));
+        let count = context.count.unwrap_or_else(|| {
+            visible_unread(
+                self.gateway.notification_inbox(session).as_ref().ok(),
+                self.gateway
+                    .load_notification_preference(session)
+                    .as_ref()
+                    .ok(),
+            )
+        });
         response.body = html
             .replacen(
                 &slot,

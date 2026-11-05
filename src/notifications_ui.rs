@@ -1,6 +1,6 @@
 //! Account-owned native event inbox; the gateway supplies verified bounded data.
 use super::*;
-use crate::notifications::{NotificationInbox, NotificationKind};
+use crate::notifications::NotificationInbox;
 
 pub(crate) fn render_notification_inbox(
     account: &str,
@@ -33,11 +33,13 @@ pub(crate) fn render_notification_inbox(
         }
         Some(inbox) => {
             let mut days = std::collections::BTreeMap::<u64, (usize, usize, String)>::new();
-            for event in &inbox.events {
-                let title = match &event.kind {
-                    NotificationKind::SessionIssued => "Browser session started",
-                    NotificationKind::SessionRevoked => "Browser session revoked",
-                };
+            let shown: Vec<_> = inbox
+                .events
+                .iter()
+                .filter(|event| preference.is_none_or(|saved| saved.choices.allows(event.kind)))
+                .collect();
+            for event in &shown {
+                let title = event.kind.title();
                 let time = crate::logging::format_unix_timestamp_utc(event.occurred_at);
                 let row = format!(concat!(
                     "<li class=\"notification-event\" data-read=\"{}\"><div><h2>{title}</h2><time datetime=\"{}\">{} UTC</time></div><span class=\"notification-read-state\">{}</span>",
@@ -57,26 +59,96 @@ pub(crate) fn render_notification_inbox(
                 let date = timestamp.split('T').next().unwrap_or("Unknown date");
                 rows.push_str(&format!("<li class=\"notification-day\" data-utc-day=\"{day}\"><section><h2>{} UTC · {count} notices · {unread} unread</h2><ul class=\"notification-events\" aria-label=\"{} UTC notices\">{group_rows}</ul></section></li>", escape_html(date), escape_html(date)));
             }
-            if inbox.events.is_empty() {
-                rows.push_str("<li class=\"notification-empty\">No retained session notices are available.</li>");
+            if shown.is_empty() {
+                rows.push_str("<li class=\"notification-empty\">No retained notices match your notification choices.</li>");
             }
             format!(
-                "{} retained notices · {} unread",
-                inbox.events.len(),
-                inbox.events.iter().filter(|e| !e.read).count()
+                "{} retained notices · {} unread{}",
+                shown.len(),
+                shown.iter().filter(|e| !e.read).count(),
+                if shown.len() < inbox.events.len() {
+                    format!(
+                        " · {} optional notices hidden by your choices",
+                        inbox.events.len() - shown.len()
+                    )
+                } else {
+                    String::new()
+                }
             )
         }
     };
     TrustedHtml::from_template(format!(concat!(
-        "{}<main id=\"main-content\" class=\"page-shell notifications-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Notifications</h1><p>Session events recorded for your account.</p></div>{notice}{preference_notice}",
+        "{}<main id=\"main-content\" class=\"page-shell notifications-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Notifications</h1><p>Recorded events for your account.</p></div>{notice}{preference_notice}",
         "<div class=\"notification-inbox-toolbar\"><p>{summary}</p><nav aria-label=\"Notification actions\"><a class=\"button-link secondary\" href=\"/notifications\">Refresh inbox</a><a class=\"button-link secondary\" href=\"/settings?section=notifications\">Notification settings</a></nav></div>",
-        "<ul class=\"notification-events\" data-digest=\"{mode}\" aria-label=\"Session notifications\">{rows}</ul><p class=\"notification-inbox-scope muted\">Only recorded session starts and revocations appear here. Up to 200 notices are retained for 90 days; older events and other security history are unavailable. Read state is saved for this account. Digest changes only in-app presentation; all original security notices remain available. No scheduled or external digest is sent.</p><a href=\"/sessions\">Manage sessions</a></main>"
-    ), app_header(account, csrf, "notifications"), notice=notice, preference_notice=preference_notice, mode=mode, summary=summary, rows=rows))
+        "<ul class=\"notification-events\" data-digest=\"{mode}\" aria-label=\"Account notifications\">{rows}</ul><p class=\"notification-inbox-scope muted\">Up to 200 recorded notices are retained for 90 days. This is not a complete audit history or a security score. Optional choices filter presentation without deleting events; mandatory recovery and security notices remain visible. Digest groups the in-app inbox only. Submission acceptance does not prove delivery. New mail is observed on Inbox refresh; mentions are checked when readable message text is opened.</p>{browser}<a href=\"/sessions\">Manage sessions</a></main>"
+    ), app_header(account, csrf, "notifications"), notice=notice, preference_notice=preference_notice, mode=mode, summary=summary, rows=rows,browser=crate::http::notification_delivery::controls()))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::notifications::NotificationKind;
+    #[test]
+    fn optional_choices_hide_only_optional_events_without_removing_mandatory_read_controls() {
+        use crate::notification_preferences::{Choice, Preference};
+        let inbox = NotificationInbox {
+            revision: 3,
+            events: vec![
+                crate::notifications::NotificationEvent {
+                    event_id: "a".repeat(32),
+                    kind: NotificationKind::NewMail,
+                    occurred_at: 100,
+                    read: false,
+                },
+                crate::notifications::NotificationEvent {
+                    event_id: "b".repeat(32),
+                    kind: NotificationKind::PersonalKeyLocked,
+                    occurred_at: 99,
+                    read: false,
+                },
+                crate::notifications::NotificationEvent {
+                    event_id: "c".repeat(32),
+                    kind: NotificationKind::RecoveryCompleted,
+                    occurred_at: 98,
+                    read: true,
+                },
+            ],
+        };
+        let saved = Preference {
+            choices: Choice {
+                new_mail: false,
+                mentions: false,
+                openpgp: false,
+                submission: false,
+                sound: false,
+                desktop: false,
+            },
+            ..Preference::default()
+        };
+        let html = render_notification_inbox(
+            "alice@example.test",
+            "<csrf&>",
+            Some(&inbox),
+            Some(&saved),
+            None,
+        );
+        assert!(html.contains("2 retained notices · 1 unread · 1 optional notices hidden"));
+        assert!(!html.contains("New Inbox message observed"));
+        assert!(html.contains(NotificationKind::PersonalKeyLocked.title()));
+        assert!(html.contains(NotificationKind::RecoveryCompleted.title()));
+        assert_eq!(html.matches("action=\"/notifications/read\"").count(), 2);
+        assert!(html.contains("value=\"&lt;csrf&amp;&gt;\""));
+        assert!(!html.contains(&format!("name=\"event_id\" value=\"{}\"", "a".repeat(32))));
+        assert_eq!(inbox.events.len(), 3);
+        let unavailable =
+            render_notification_inbox("alice@example.test", "csrf", Some(&inbox), None, None);
+        assert_eq!(
+            unavailable
+                .matches("action=\"/notifications/read\"")
+                .count(),
+            3
+        );
+    }
     #[test]
     fn notification_daily_utc_boundaries_preserve_every_original_event_read_control_and_unknown_history(
     ) {
@@ -111,6 +183,7 @@ mod tests {
             Some(&Preference {
                 revision: 1,
                 digest: DigestMode::Daily,
+                ..Preference::default()
             }),
             None,
         );
@@ -171,7 +244,7 @@ mod tests {
             Some(&crate::notification_preferences::Preference::default()),
             None,
         );
-        assert!(empty.as_str().contains("No retained session notices"));
+        assert!(empty.as_str().contains("No retained notices"));
         assert!(empty.as_str().contains("0 retained notices · 0 unread"));
     }
 }

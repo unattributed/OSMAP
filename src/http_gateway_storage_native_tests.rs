@@ -100,6 +100,7 @@ fn native_installed_mail_storage_report() -> Result<(), &'static str> {
                 openpgp: &keys,
                 defaults: None,
                 storage: Some(view),
+                notices: None,
             },
         );
         let general = crate::http_ui::render_general_page_with_mark_read(

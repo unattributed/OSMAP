@@ -632,7 +632,7 @@ where
         None
     }
 
-    fn require_same_origin_request(
+    pub(super) fn require_same_origin_request(
         &self,
         request: &HttpRequest,
         validated_session: &ValidatedSession,

@@ -23,6 +23,7 @@ mod http_gateway;
 mod http_runtime;
 mod label_filter;
 mod notification_badge;
+pub(crate) mod notification_delivery;
 #[path = "http/personal_key_ui.rs"]
 mod personal_key_ui;
 #[path = "http/remembered_key.rs"]
@@ -945,6 +946,9 @@ mod tests {
     mod notification_preference_tests {
         include!("http/notification_preference_tests.rs");
     }
+    mod notification_updates_tests {
+        include!("http/notification_updates_tests.rs");
+    }
     #[cfg(unix)]
     mod notification_digest_runtime_tests {
         include!("http/notification_digest_runtime_tests.rs");
@@ -1190,6 +1194,7 @@ mod tests {
         appearance_store: Option<AppearanceStore>,
         settings_store: Option<crate::settings::FileUserSettingsStore>,
         notification_store: Option<crate::notifications::NotificationStore>,
+        notification_source_unavailable: bool,
         notification_preference_store: Option<crate::notification_preferences::Store>,
         notification_loads: std::sync::Arc<std::sync::atomic::AtomicUsize>,
         snooze_store: Option<crate::snooze::SnoozeStore>,
@@ -1276,6 +1281,7 @@ mod tests {
                 identity_preferences_store: None,
                 sender_authority: crate::sender_authority::Provider::default(),
                 notification_store: None,
+                notification_source_unavailable: false,
                 notification_preference_store: None,
                 notification_loads: Default::default(),
                 snooze_store: None,
@@ -2648,6 +2654,37 @@ mod tests {
                 .as_ref()
                 .ok_or(crate::notification_preferences::Error::Unavailable)?
                 .save(&session.record.canonical_username, revision, digest)
+        }
+        fn save_notification_choices(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            digest: crate::notification_preferences::DigestMode,
+            choices: crate::notification_preferences::Choice,
+        ) -> Result<
+            crate::notification_preferences::Preference,
+            crate::notification_preferences::Error,
+        > {
+            self.notification_preference_store
+                .as_ref()
+                .ok_or(crate::notification_preferences::Error::Unavailable)?
+                .save_choices(
+                    &session.record.canonical_username,
+                    revision,
+                    digest,
+                    choices,
+                )
+        }
+        fn refresh_notification_sources(
+            &self,
+            _context: &AuthenticationContext,
+            _session: &ValidatedSession,
+        ) -> Result<(), crate::notifications::NotificationError> {
+            if self.notification_store.is_some() && !self.notification_source_unavailable {
+                Ok(())
+            } else {
+                Err(crate::notifications::NotificationError::Unavailable)
+            }
         }
         fn record_session_notification(
             &self,

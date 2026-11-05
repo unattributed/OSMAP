@@ -796,6 +796,10 @@ fn run_native_gateway(scheduled_only: bool) {
         "production gateway protected submission must confirm both stores"
     );
     assert!(smtp.lock().unwrap().len() == 1);
+    let notices = crate::notifications::NotificationStore::new(&gateway.settings_dir)
+        .load("alice@example.test", crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider)).unwrap();
+    assert_eq!(notices.events.iter().filter(|event| event.kind == crate::notifications::NotificationKind::SubmissionAccepted).count(), 1);
+    assert!(!notices.events.iter().any(|event| event.kind == crate::notifications::NotificationKind::SubmissionUnknown));
     let wire = smtp.lock().unwrap()[0].clone();
     assert!(
         fs::read(&sent_path).unwrap() == wire,

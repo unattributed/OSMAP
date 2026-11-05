@@ -165,7 +165,7 @@ where
                 .gateway
                 .load_notification_preference(&validated_session);
             return HandledHttpResponse {
-                response: html_response(
+                response: super::notification_delivery::response(
                     if preference.is_ok() { 200 } else { 503 },
                     if preference.is_ok() {
                         "OK"

@@ -653,6 +653,102 @@ impl ProtectedSentMailbox {
     let mut gateway = RuntimeBrowserGateway::from_config(&app_config);
     gateway.crypto_client = Some(crypto.clone());
     gateway.public_inventory_client = Some(inventory.clone());
+    // Actual authenticated helper listing -> native identity observer -> inbox.
+    // The existing outer actor retains fixed diagnostics before fixture cleanup.
+    {
+        use crate::http::{BrowserGateway, BrowserSessionDecision};
+        use crate::notifications::{NotificationKind, NotificationStore};
+        let validation = gateway.validate_session(&context, session.token.as_str());
+        let valid = matches!(&validation.decision, BrowserSessionDecision::Valid { .. });
+        println!("native_notice_inbox stage=session_readback valid={valid}");
+        let BrowserSessionDecision::Valid { validated_session } = validation.decision else {
+            panic!("native notification fixture session readback refused")
+        };
+        let notices = NotificationStore::new(&app_config.state_layout.settings_dir);
+        let before = notices.load(PROTECTED_ALICE, SystemTimeProvider.unix_timestamp()).unwrap();
+        println!("native_notice_inbox stage=initial_projection events={}", before.events.len());
+        assert!(before.events.is_empty());
+        let foreign_at = SystemTimeProvider.unix_timestamp();
+        notices.record_once(BOB, NotificationKind::SessionIssued, "native-foreign-notice", foreign_at, foreign_at).unwrap();
+        let foreign_before = notices.load(BOB, SystemTimeProvider.unix_timestamp()).unwrap();
+        let baseline = gateway.refresh_notification_sources(&context, &validated_session);
+        println!("native_notice_inbox stage=baseline result={baseline:?}");
+        assert_eq!(baseline, Ok(()));
+        let baseline_inbox = notices.load(PROTECTED_ALICE, SystemTimeProvider.unix_timestamp()).unwrap();
+        assert_eq!(baseline_inbox, before, "existing native Inbox message establishes baseline only");
+        let repeated_baseline = gateway.refresh_notification_sources(&context, &validated_session);
+        println!("native_notice_inbox stage=baseline_replay result={repeated_baseline:?}");
+        assert_eq!(repeated_baseline, Ok(()));
+        assert_eq!(notices.load(PROTECTED_ALICE, SystemTimeProvider.unix_timestamp()).unwrap(), before);
+
+        let notice_wire = b"From: sender@fixture.test\r\nTo: alice@example.test\r\nSubject: Native observed Inbox fixture\r\nMessage-ID: <native-notice-inbox@fixture.test>\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=us-ascii\r\n\r\nControlled native observation fixture.\r\n";
+        let save = SystemCommandExecutor.run_with_stdin_bytes_timeout_and_output_limit(
+            "/usr/local/bin/doveadm", &[
+                "-c".into(), self.config.to_string_lossy().into_owned(),
+                "-o".into(), "stats_writer_socket_path=".into(),
+                "-o".into(), format!("auth_socket_path={}", self.userdb.display()),
+                "save".into(), "-u".into(), PROTECTED_ALICE.into(), "-m".into(), "INBOX".into(),
+            ], notice_wire, Duration::from_secs(3), 4096);
+        // The outer actor retains this existing private command log on failure;
+        // the inner reader fixture can still perform its ordinary cleanup.
+        {
+            use std::io::Write as _;
+            use std::os::unix::fs::OpenOptionsExt as _;
+            let command_log = home.parent().expect("native synthetic home parent").join("commands.log");
+            let before = fs::symlink_metadata(&command_log).unwrap();
+            assert!(before.is_file() && !before.file_type().is_symlink()
+                && before.nlink() == 1 && before.uid() == uid && before.mode() & 0o777 == 0o600,
+                "native outer command log custody refused");
+            let mut log = fs::OpenOptions::new().append(true)
+                .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK).open(&command_log).unwrap();
+            let opened = log.metadata().unwrap();
+            assert!(opened.is_file() && opened.nlink() == 1 && opened.uid() == uid
+                && opened.mode() & 0o777 == 0o600
+                && (opened.dev(), opened.ino()) == (before.dev(), before.ino()),
+                "native outer command log changed before append");
+            match &save {
+                Ok(output) => {
+                    let stdout = &output.stdout.as_bytes()[..output.stdout.len().min(4096)];
+                    let stderr = &output.stderr.as_bytes()[..output.stderr.len().min(4096)];
+                    writeln!(log, "\nS08_NOTICE_SAVE status={} stdout_total={} stdout_retained={} stderr_total={} stderr_retained={}",
+                        output.status_code, output.stdout.len(), stdout.len(), output.stderr.len(), stderr.len()).unwrap();
+                    log.write_all(stdout).unwrap();
+                    log.write_all(b"\nS08_NOTICE_SAVE_STDERR\n").unwrap();
+                    log.write_all(stderr).unwrap();
+                }
+                Err(error) => {
+                    let reason = &error.reason.as_bytes()[..error.reason.len().min(4096)];
+                    writeln!(log, "\nS08_NOTICE_SAVE driver_error=true reason_total={} reason_retained={} native_streams=UNAVAILABLE_NO_COMMAND_OUTPUT_RETURNED",
+                        error.reason.len(), reason.len()).unwrap();
+                    log.write_all(reason).unwrap();
+                }
+            }
+            log.write_all(b"\nS08_NOTICE_SAVE_END\n").unwrap();
+            log.sync_all().unwrap();
+        }
+        match &save {
+            Ok(output) => println!("native_notice_inbox stage=controlled_save status={} stdout_bytes={} stderr_bytes={} private_diagnostics=OUTER_COMMAND_LOG_SYNCED", output.status_code, output.stdout.len(), output.stderr.len()),
+            Err(_) => println!("native_notice_inbox stage=controlled_save result=DRIVER_ERROR private_reason=OUTER_COMMAND_LOG_SYNCED native_streams=UNKNOWN_NO_COMMAND_OUTPUT_RETURNED"),
+        }
+        let Ok(save) = save else { panic!("bounded native notification Inbox save failed; private reason retained, native streams unavailable") };
+        assert_eq!(save.status_code, 0, "native notification Inbox save refused; native text not exported");
+        let refreshed = gateway.refresh_notification_sources(&context, &validated_session);
+        println!("native_notice_inbox stage=after_save result={refreshed:?}");
+        assert_eq!(refreshed, Ok(()));
+        let observed = notices.load(PROTECTED_ALICE, SystemTimeProvider.unix_timestamp()).unwrap();
+        println!("native_notice_inbox stage=notice_projection events={} new_mail={}", observed.events.len(), observed.events.iter().filter(|event| event.kind == NotificationKind::NewMail).count());
+        assert_eq!(observed.events.len(), 1);
+        assert_eq!(observed.events[0].kind, NotificationKind::NewMail);
+        let read = notices.set_read(PROTECTED_ALICE, &observed.events[0].event_id, observed.revision, true, SystemTimeProvider.unix_timestamp()).unwrap();
+        let repeated = gateway.refresh_notification_sources(&context, &validated_session);
+        println!("native_notice_inbox stage=after_save_replay result={repeated:?}");
+        assert_eq!(repeated, Ok(()));
+        assert_eq!(notices.load(PROTECTED_ALICE, SystemTimeProvider.unix_timestamp()).unwrap(), read);
+        assert_eq!(notices.load(BOB, SystemTimeProvider.unix_timestamp()).unwrap(), foreign_before);
+        assert_eq!(fs::read(&returned).unwrap(), return_wire);
+        assert_eq!(fs::read(&stored).unwrap(), normalized);
+        println!("native_notice_inbox result=PASS actual_helper_native_listing=true initial_baseline=true controlled_native_save=true new_mail=1 replay_read_preserved=true foreign_unchanged=true owner_or_external_mail=NOT_RUN");
+    }
     let app = BrowserApp::new(HttpPolicy::from_config(&app_config), gateway);
     let path = format!("/message?mailbox=Sent&uid={}", sent_row.uid);
     let positive = get(&app, &session, &path);

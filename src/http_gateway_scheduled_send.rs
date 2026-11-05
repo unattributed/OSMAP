@@ -261,6 +261,15 @@ impl RuntimeBrowserGateway {
             },
         );
         events.extend(dispatch_events);
+        if let Ok(LocatedPreparedResult::Outcome(recorded)) = &result {
+            self.record_attempt_notice(
+                claim.account(),
+                claim.intent(),
+                recorded.result.outcome,
+                now,
+                &mut events,
+            );
+        }
         let decision = match result {
             Ok(LocatedPreparedResult::NotDispatched(reason)) => ScheduledDispatch::Blocked(reason),
             Ok(LocatedPreparedResult::Outcome(recorded)) => match recorded.result.outcome {
@@ -369,6 +378,13 @@ impl RuntimeBrowserGateway {
         if !matches!(decision, SubmissionDecision::Submitted { .. }) {
             return AttemptOutcome::Unconfirmed;
         }
+        self.record_notice(
+            account,
+            crate::notifications::NotificationKind::SubmissionAccepted,
+            intent,
+            now,
+            events,
+        );
         let (stored, event) = if capture.requested
             && capture
                 .location

@@ -1,13 +1,356 @@
-2026-11-05 — **S08-03 IN_PROGRESS under continuing autonomous S08 authority.** The owner-selected200MiB obsd1 quota is applied and separately qualified. Continue the bounded scheduled-send and snooze work below. S08-01 Documents integration remains OPEN, with mailbox migration set aside; accepted S08-02 is unchanged. Advisory reporting never grants Documents write authority.
+2026-11-05 — **S08-04 IN_PROGRESS.** S08-03 engineering is installed and ready for separate owner T09. Continue factual notifications and explicit browser delivery. Accepted S08-02 and unfinished S08-01 Documents enforcement remain separate.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S08-04",
+  "original_requirement": "Notification inbox/badge/read state and all page 17 preferences, including explicitly consented desktop delivery",
+  "source_baseline": "ba6c49b910d914befa834709d64ba5078cd50d22",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/remembered_key_helper",
+      "/root/s05_protocol_review"
+    ],
+    "qa": [
+      "/root/remembered_key_review"
+    ],
+    "security_review": [
+      "/root/remembered_key_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/README.md",
+    "docs/UX_SLICE_S08_03.md",
+    "docs/UX_SLICE_S08_04.md",
+    "maint/ux/acceptance.json",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "src/notifications.rs",
+    "src/notification_preferences.rs",
+    "src/notification_observations.rs",
+    "src/notification_event_tests.rs",
+    "src/notification_observation_tests.rs",
+    "src/notifications_ui.rs",
+    "src/settings_notifications_ui.rs",
+    "src/http/notification_delivery.rs",
+    "src/http/notification_local.js",
+    "src/http/notification_delivery_tests.rs",
+    "src/http/routes_notifications.rs",
+    "src/http/notification_badge.rs",
+    "src/http/notification_tests.rs",
+    "src/http/notification_preference_tests.rs",
+    "src/http/notification_digest_runtime_tests.rs",
+    "src/http/notification_producer_tests.rs",
+    "src/http/ux_browser_server.rs",
+    "src/http/ux_fixtures.rs",
+    "src/http/routes_auth.rs",
+    "src/http/routes_keys.rs",
+    "src/http/routes_password.rs",
+    "src/http/routes_recovery.rs",
+    "src/http/routes_access_recovery.rs",
+    "src/http/routes_mailboxes.rs",
+    "src/http_browser.rs",
+    "src/http_gateway.rs",
+    "src/http_gateway_notifications.rs",
+    "src/http_gateway_mail.rs",
+    "src/http_gateway_scheduled_send.rs",
+    "src/http_gateway_scheduled.rs",
+    "src/http_gateway_password.rs",
+    "src/http_gateway_recovery.rs",
+    "src/http_gateway_keys.rs",
+    "src/http_gateway_access.rs",
+    "src/http_runtime.rs",
+    "src/http.rs",
+    "src/http_ui.rs",
+    "src/lib.rs",
+    "src/scheduled_worker.rs",
+    "src/scheduled_worker_tests.rs",
+    "src/dashboard_ui.rs",
+    "src/http/routes_mail.rs",
+    "src/http/routes_settings.rs",
+    "src/welcome_ui.rs",
+    "src/protected_message.rs",
+    "src/http_gateway_protected.rs",
+    "src/protected_message_tests.rs",
+    "src/http_gateway_storage_native_tests.rs",
+    "src/http/notification_updates_tests.rs",
+    "src/http/protected_send_gateway_native_tests.rs",
+    "src/mailbox_helper_native_reader_tests.rs"
+  ],
+  "outcomes": [
+    {
+      "id": "S08-04-factual-notifications",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX01-007",
+        "R2-01-021",
+        "R2-17-001",
+        "R2-17-002",
+        "R2-17-003",
+        "R2-17-004",
+        "R2-17-005",
+        "R2-17-006",
+        "R2-17-007",
+        "R2-17-008",
+        "R2-17-009",
+        "R2-17-010"
+      ],
+      "frontend_backend_outcome": "The signed-in user sees actual account/mail/key/submission events, saves preferences/read state and explicitly enables generic foreground browser alerts.",
+      "essential_qa": "Focused Rust store, actual producer, route and failure tests; real browser permission/lifecycle checks; matching native/install event and account preservation.",
+      "next_action": "Qualify final source, actual browser/native producers and installed artifact; preserve S08-01 OPEN and separate owner acceptance.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PENDING",
+        "native_tests": "PASS",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "docs/UX_SLICE_S08_04.md#matching-native-and-browser-result"
+        },
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S08_04.md#matching-native-and-browser-result"
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S08_04.md#matching-native-and-browser-result"
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "All12 mapped notification/activity obligations meet actual producer, persistence, browser consent and installed tests, with separate owner acceptance.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "S08-03 installed engineering and pendingT09 archived verbatim below; retain all earlier S08-01 OPEN work and accepted S08-02. No production-mail synchronization or mailbox migration is resumed.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 3600,
+      "started_at": "2026-11-04T23:43:11Z",
+      "elapsed_status": "UNMEASURED",
+      "elapsed_seconds": null
+    },
+    "attempts": []
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S08-04",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_04.md",
+      "sha256": "b00f8f05acb72db904d12d17f84c84b50d5dc91fd70d9338358a8e3c171484db"
+    },
+    "design": {
+      "journey": "Observe factual account activity, select optional notification preferences and explicitly enable foreground browser delivery.",
+      "frontend": "Existing native inbox, badge and settings plus generic hash-pinned enhancement and recent activity links.",
+      "backend": "Actual confirmed product hooks and bounded owned Inbox/read observations use existing private stores; no daemon or broker.",
+      "interfaces": "Typed generic events and CAS preferences through validated BrowserGateway/Runtime and same-origin finite update route.",
+      "persistence": "Existing200-event90-day owner-private store with deterministic source-derived IDs, preserved read state and bounded native-identity observation cursor.",
+      "security": "Mandatory security/recovery facts cannot be disabled; explicit browser opt-in, generic payload, no automatic private-key operation or false remote-delivery claim.",
+      "failure_recovery": "Notice-write uncertainty never undoes/retries confirmed action; corrupt or unavailable facts remain explicit; no hidden-background or ambiguous SMTP replay."
+    },
+    "tests": [
+      {
+        "id": "S08-04-T01",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current existing notification store, confirmed product interfaces and exact reviewed slice specification are available; dependent qualification uses matching artifacts.",
+        "action": "Review current code and frozen controls; define literal mentions, observed Inbox and submission-vs-delivery semantics",
+        "expected": "Matching positive and refusal observations meet the defined T01 boundary without invented success or lost owner isolation.",
+        "preserved": "Account credentials, private-key deadlines, message content, public mail availability and prior accepted work remain unchanged.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_04.md#matching-native-and-browser-result"
+        ]
+      },
+      {
+        "id": "S08-04-T02",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current existing notification store, confirmed product interfaces and exact reviewed slice specification are available; dependent qualification uses matching artifacts.",
+        "action": "Store/prefs restart, old-record defaults, owner isolation, CAS, retention, dedupe/read-state preservation and corrupt/unsafe refusal",
+        "expected": "Matching positive and refusal observations meet the defined T02 boundary without invented success or lost owner isolation.",
+        "preserved": "Account credentials, private-key deadlines, message content, public mail availability and prior accepted work remain unchanged.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_04.md#matching-native-and-browser-result"
+        ]
+      },
+      {
+        "id": "S08-04-T03",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current existing notification store, confirmed product interfaces and exact reviewed slice specification are available; dependent qualification uses matching artifacts.",
+        "action": "Actual confirmed security/recovery/key producers; refusal/uncertainty creates no false success; failed notice write preserves underlying result",
+        "expected": "Matching positive and refusal observations meet the defined T03 boundary without invented success or lost owner isolation.",
+        "preserved": "Account credentials, private-key deadlines, message content, public mail availability and prior accepted work remain unchanged.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_04.md#matching-native-and-browser-result"
+        ]
+      },
+      {
+        "id": "S08-04-T04",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current existing notification store, confirmed product interfaces and exact reviewed slice specification are available; dependent qualification uses matching artifacts.",
+        "action": "Owned Inbox initial baseline/new GUID/UID reuse/generation/old-page/missing identity; authorized readable-text mentions only",
+        "expected": "Matching positive and refusal observations meet the defined T04 boundary without invented success or lost owner isolation.",
+        "preserved": "Account credentials, private-key deadlines, message content, public mail availability and prior accepted work remain unchanged.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_04.md#matching-native-and-browser-result"
+        ]
+      },
+      {
+        "id": "S08-04-T05",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "recovery",
+        "level": "source",
+        "prerequisites": "Current existing notification store, confirmed product interfaces and exact reviewed slice specification are available; dependent qualification uses matching artifacts.",
+        "action": "Browser and scheduled actual submission receipts/outcomes; duplicate/recovery emits no misleading or duplicate success",
+        "expected": "Matching positive and refusal observations meet the defined T05 boundary without invented success or lost owner isolation.",
+        "preserved": "Account credentials, private-key deadlines, message content, public mail availability and prior accepted work remain unchanged.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_04.md#matching-native-and-browser-result"
+        ]
+      },
+      {
+        "id": "S08-04-T06",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current existing notification store, confirmed product interfaces and exact reviewed slice specification are available; dependent qualification uses matching artifacts.",
+        "action": "Native inbox/settings/badge/activity and strict authenticated update/preferences routes; CSRF/origin/stale/foreign tests and escaped generic payloads",
+        "expected": "Matching positive and refusal observations meet the defined T06 boundary without invented success or lost owner isolation.",
+        "preserved": "Account credentials, private-key deadlines, message content, public mail availability and prior accepted work remain unchanged.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_04.md#matching-native-and-browser-result"
+        ]
+      },
+      {
+        "id": "S08-04-T07",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current existing notification store, confirmed product interfaces and exact reviewed slice specification are available; dependent qualification uses matching artifacts.",
+        "action": "Hash-pinned enhancement actual browser checks: explicit permission, denied/unsupported, sound gesture, no initial flood/hidden polling/private leak",
+        "expected": "Matching positive and refusal observations meet the defined T07 boundary without invented success or lost owner isolation.",
+        "preserved": "Account credentials, private-key deadlines, message content, public mail availability and prior accepted work remain unchanged.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_04.md#matching-native-and-browser-result"
+        ]
+      },
+      {
+        "id": "S08-04-T08",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Current existing notification store, confirmed product interfaces and exact reviewed slice specification are available; dependent qualification uses matching artifacts.",
+        "action": "Independent review, normal signed gates and matching obsd1 install/controlled native event/read-state/admission/service preservation",
+        "expected": "Matching positive and refusal observations meet the defined T08 boundary without invented success or lost owner isolation.",
+        "preserved": "Account credentials, private-key deadlines, message content, public mail availability and prior accepted work remain unchanged.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S08-04-T09",
+        "outcome_ids": [
+          "S08-04-factual-notifications"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Current existing notification store, confirmed product interfaces and exact reviewed slice specification are available; dependent qualification uses matching artifacts.",
+        "action": "Owner sees a useful factual event, marks it read, changes a preference and explicitly tries optional desktop/sound on own browser",
+        "expected": "Owner confirms factual events, read state and explicit optional browser delivery are understandable.",
+        "preserved": "Account credentials, private-key deadlines, message content, public mail availability and prior accepted work remain unchanged.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "All required nonhuman boundaries pass on matching source/browser/native/installed bytes with independent review; no frozen obligation silently dropped.",
+    "human_exit": "Owner explicitly accepts the short notification/read-state/preferences/optional browser UAT separately."
+  },
+  "human_acceptance": {
+    "status": "PENDING"
+  },
+  "next_action": "Qualify final source, actual browser/native producers and installed artifact; preserve S08-01 OPEN and separate owner acceptance.",
+  "independent_next_action": "Review producer/observer/consumer semantics, consent and actual evidence independently; preserve S08-03 pending acceptance and S08-01 OPEN."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+## Historical S08-03 engineering-ready work order
+
 ```json
 {
   "version": 1,
   "slice": "S08-03",
   "original_requirement": "Scheduled send and snooze with bounded persisted jobs and restart/cancel/edit behavior",
   "source_baseline": "bd9b1baa7011e641e582a7bf2c83b0e2874daf49",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -112,15 +455,15 @@
       ],
       "frontend_backend_outcome": "Signed-in users schedule captured messages, inspect and explicitly edit/cancel unsubmitted jobs; one bounded native worker uses current send authority, and snooze restores visibility on expiry.",
       "essential_qa": "Reuse Rust store/journal/snooze/authority tests and actual route/shared-send integration, then the smallest matching disposable native submission and installed account-specific worker/UI check.",
-      "next_action": "Complete normal signed delivery, Web-only matching installation and installed account admission/storage readiness. Source/native scoped results pass; owner acceptance remains separate.",
+      "next_action": "Owner T09 scheduling/status/pending-cancellation acceptance remains separate. Independent S08-04 engineering continues.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
-        "source_tests": "PENDING",
+        "source_tests": "PASS",
         "native_tests": "PASS",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -130,6 +473,22 @@
         {
           "stage": "native_tests",
           "reference": "docs/UX_SLICE_S08_03.md#confined-serve-and-ordinary-send-regression--2026-11-05"
+        },
+        {
+          "stage": "source_tests",
+          "reference": "docs/UX_SLICE_S08_03.md#installed-engineering-result--2026-11-05"
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S08_03.md#installed-engineering-result--2026-11-05"
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S08_03.md#installed-engineering-result--2026-11-05"
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S08_03.md#installed-engineering-result--2026-11-05"
         }
       ]
     }
@@ -153,7 +512,7 @@
     "slice": "S08-03",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "c8517f31b0c8e5d1e95635f4273f4aceb7318b1a7e624c7edc373c1146bc506e"
+      "sha256": "c06b3c560c620f7b842c7e9ff8a1c8bd615e4456941c000a31e443da07bc1bee"
     },
     "design": {
       "journey": "Schedule captured mail, inspect/edit/cancel pending jobs, observe truthful submission state; snooze expires without moving messages.",
@@ -304,8 +663,10 @@
         "preserved": "Owner data, public mail availability, credentials, epoch, personal-key fixed deadlines and unrelated roles remain intact.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md#installed-engineering-result--2026-11-05"
+        ]
       },
       {
         "id": "S08-03-T09",
@@ -330,11 +691,11 @@
   "human_acceptance": {
     "status": "PENDING"
   },
-  "next_action": "Complete normal signed delivery, Web-only matching installation and installed account admission/storage readiness. Source/native scoped results pass; owner acceptance remains separate.",
+  "next_action": "Owner T09 scheduling/status/pending-cancellation acceptance remains separate. Independent S08-04 engineering continues.",
   "independent_next_action": "Review source, actual test/native outcomes and recovery independently; retain complete historical S08-01 OPEN work order and accepted prior slices."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
 
 2026-11-04 (Asia/Bangkok) — **Remembered personal-key access UAT PASS; ACCEPTED and APPROVED.** The owner explicitly reports: “UAT is PASS / UAT accepted, and approved”, following the fixed-deadline fresh-sign-in check and the requested ordinary Sign out check. The supplied fresh-sign-in screenshot shows both current-session and remembered access expiring at the unchanged 2026-11-04 18:29:58 UTC deadline. This closes the remembered-key follow-up to the accepted S07 result. It records owner functional acceptance of the installed result; broader epic and production-release security obligations remain separate. Implementation and installed qualification are retained below.
 

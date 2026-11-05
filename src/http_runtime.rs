@@ -361,6 +361,9 @@ where
             (HttpMethod::Get, "/snooze") => self.handle_snooze(request, &context),
             (HttpMethod::Post, "/snooze/change") => self.handle_snooze_change(request, &context),
             (HttpMethod::Get, "/notifications") => self.handle_notifications(request, &context),
+            (HttpMethod::Get, "/notifications/updates") => {
+                self.handle_notification_updates(request, &context)
+            }
             (HttpMethod::Post, "/notifications/read") => {
                 self.handle_notification_read(request, &context)
             }

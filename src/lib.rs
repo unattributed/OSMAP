@@ -113,6 +113,7 @@ mod send_recovery;
 
 mod reader_neighbours;
 
+pub(crate) mod notification_observations;
 pub mod notification_preferences;
 mod notifications;
 mod signature_ui;

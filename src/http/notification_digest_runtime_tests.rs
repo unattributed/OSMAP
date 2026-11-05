@@ -67,6 +67,7 @@ fn fields(form: &str) -> BTreeMap<String, String> {
     let mut result = BTreeMap::new();
     for part in form.split("<input ").skip(1) {
         let tag = part.split('>').next().unwrap();
+        if (tag.contains("type=\"checkbox\"") || tag.contains("type=checkbox ")) && !tag.contains(" checked") { continue; }
         assert!(result
             .insert(attr(tag, "name"), attr(tag, "value"))
             .is_none());
@@ -93,7 +94,10 @@ fn setting(
     assert!(form.contains("id=\"notice-digest\" name=\"digest\""));
     assert!(form.contains(&format!("value=\"{mode}\"")));
     let mut parsed = fields(form);
-    assert_eq!(parsed.len(), 2);
+    assert_eq!(parsed["choice_version"], "1");
+    for name in ["new_mail", "mentions", "openpgp", "submission"] { assert_eq!(parsed[name], "1"); }
+    assert!(!parsed.contains_key("sound"));
+    assert!(!parsed.contains_key("desktop"));
     assert_eq!(parsed["expected_revision"], revision.to_string());
     parsed.insert("digest".into(), mode.into());
     parsed

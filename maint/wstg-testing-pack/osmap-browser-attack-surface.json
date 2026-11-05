@@ -1046,7 +1046,14 @@
       "form_fields": [
         "csrf_token",
         "expected_revision",
-        "digest"
+        "digest",
+        "choice_version",
+        "new_mail",
+        "mentions",
+        "openpgp",
+        "submission",
+        "sound",
+        "desktop"
       ],
       "wstg_test_ids": [
         "OSMAP-WSTG-ATHZ-001",
@@ -1817,6 +1824,16 @@
         "OSMAP-WSTG-SESS-004",
         "OSMAP-WSTG-INPV-003",
         "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/notifications/updates",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004"
       ]
     }
   ]

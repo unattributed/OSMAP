@@ -16,7 +16,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
         let form = if allows_urlencoded_request_body(
             request.headers.get("content-type").map(String::as_str),
         ) {
-            parse_urlencoded_form(&request.body, 3, 1024).ok()
+            parse_urlencoded_form(&request.body, 10, 2048).ok()
         } else {
             None
         };
@@ -40,9 +40,22 @@ impl<G: BrowserGateway> BrowserApp<G> {
             return response;
         }
         let result = (|| {
-            if form.len() != 3
+            if form.len() < 3
+                || form.len() > 10
                 || form.keys().any(|key| {
-                    !matches!(key.as_str(), "csrf_token" | "expected_revision" | "digest")
+                    !matches!(
+                        key.as_str(),
+                        "csrf_token"
+                            | "expected_revision"
+                            | "digest"
+                            | "choice_version"
+                            | "new_mail"
+                            | "mentions"
+                            | "openpgp"
+                            | "submission"
+                            | "sound"
+                            | "desktop"
+                    )
                 })
             {
                 return Err(Error::Invalid);
@@ -60,8 +73,33 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 .get("digest")
                 .and_then(|value| DigestMode::parse(value))
                 .ok_or(Error::Invalid)?;
-            self.gateway
-                .save_notification_preference(&session, revision, digest)
+            let choice = |name: &str| match form.get(name).map(String::as_str) {
+                None => Ok(false),
+                Some("1") => Ok(true),
+                _ => Err(Error::Invalid),
+            };
+            // Old digest-only clients keep their existing channel choices.
+            if form.len() == 3 {
+                self.gateway
+                    .save_notification_preference(&session, revision, digest)
+            } else {
+                if form.get("choice_version").map(String::as_str) != Some("1") {
+                    return Err(Error::Invalid);
+                }
+                self.gateway.save_notification_choices(
+                    &session,
+                    revision,
+                    digest,
+                    crate::notification_preferences::Choice {
+                        new_mail: choice("new_mail")?,
+                        mentions: choice("mentions")?,
+                        openpgp: choice("openpgp")?,
+                        submission: choice("submission")?,
+                        sound: choice("sound")?,
+                        desktop: choice("desktop")?,
+                    },
+                )
+            }
         })();
         match result {
             Ok(_) => {
@@ -92,7 +130,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 ));
                 let current = self.gateway.load_notification_preference(&session).ok();
                 HandledHttpResponse {
-                    response: html_response(
+                    response: super::notification_delivery::response(
                         status,
                         reason,
                         "Notification Settings",
@@ -139,16 +177,24 @@ impl<G: BrowserGateway> BrowserApp<G> {
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
-        let (session, audit_events) = match self.require_validated_session(request, context) {
+        let (session, mut audit_events) = match self.require_validated_session(request, context) {
             Ok(value) => value,
             Err(response) => return response,
         };
+        let (guard, acquired) = match self.acquire_auth_budget(context) {
+            Ok(value) => value,
+            Err(response) => return response,
+        };
+        audit_events.push(acquired);
+        let refreshed = self.gateway.refresh_notification_sources(context, &session);
+        audit_events.push(self.release_auth_budget(guard, context));
         let inbox = self.gateway.notification_inbox(&session);
         let preference = self.gateway.load_notification_preference(&session).ok();
-        request.notification_context.borrow_mut().count =
-            Some(super::notification_badge::unread(inbox.as_ref().ok()));
+        request.notification_context.borrow_mut().count = Some(
+            super::notification_badge::visible_unread(inbox.as_ref().ok(), preference.as_ref()),
+        );
         HandledHttpResponse {
-            response: html_response(
+            response: super::notification_delivery::response(
                 if inbox.is_ok() { 200 } else { 503 },
                 if inbox.is_ok() {
                     "OK"
@@ -161,8 +207,85 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     &session.record.csrf_token,
                     inbox.as_ref().ok(),
                     preference.as_ref(),
-                    None,
+                    refreshed.is_err().then_some("New mail or scheduled updates could not be refreshed. Retained notifications remain shown; missing observations are not a zero count."),
                 ),
+            ),
+            audit_events,
+        }
+    }
+    pub(super) fn handle_notification_updates(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        let (session, mut audit_events) = match self.require_validated_session(request, context) {
+            Ok(value) => value,
+            Err(mut response) => {
+                response.response = notice_json(
+                    401,
+                    "Unauthorized",
+                    serde_json::json!({"status":"unauthorized"}),
+                );
+                return response;
+            }
+        };
+        if let Some(response) = self.require_same_origin_request(request, &session, context) {
+            return response;
+        }
+        if !request.query_params.is_empty() || !request.body.is_empty() {
+            return HandledHttpResponse {
+                response: notice_json(400, "Bad Request", serde_json::json!({"status":"invalid"})),
+                audit_events,
+            };
+        }
+        let (guard, acquired) = match self.acquire_auth_budget(context) {
+            Ok(v) => v,
+            Err(r) => return r,
+        };
+        audit_events.push(acquired);
+        let refreshed = self.gateway.refresh_notification_sources(context, &session);
+        audit_events.push(self.release_auth_budget(guard, context));
+        let sources_available = refreshed.is_ok();
+        let facts = self.gateway.notification_inbox(&session);
+        let preferences = self.gateway.load_notification_preference(&session);
+        let (Ok(inbox), Ok(preference)) = (facts, preferences) else {
+            return HandledHttpResponse {
+                response: notice_json(
+                    503,
+                    "Service Unavailable",
+                    serde_json::json!({"status":"unavailable"}),
+                ),
+                audit_events,
+            };
+        };
+        if inbox.events.len() > crate::notifications::MAX_EVENTS {
+            return HandledHttpResponse {
+                response: notice_json(
+                    503,
+                    "Service Unavailable",
+                    serde_json::json!({"status":"unavailable"}),
+                ),
+                audit_events,
+            };
+        }
+        use sha2::{Digest, Sha256};
+        let scope = format!(
+            "{:x}",
+            Sha256::digest(
+                format!(
+                    "osmap-notification-browser-v1\0{}",
+                    session.record.canonical_username
+                )
+                .as_bytes()
+            )
+        );
+        let events: Vec<_> = inbox.events.iter().filter(|event| preference.choices.allows(event.kind))
+            .map(|event| serde_json::json!({"event_id":event.event_id, "kind":event.kind, "occurred_at":event.occurred_at,"read":event.read})).collect();
+        HandledHttpResponse {
+            response: notice_json(
+                200,
+                "OK",
+                serde_json::json!({"version":1,"scope":scope,"preference_revision":preference.revision,"choices":preference.choices,"events":events,"sources_available":sources_available,"status":"ok"}),
             ),
             audit_events,
         }
@@ -262,4 +385,16 @@ impl<G: BrowserGateway> BrowserApp<G> {
             }
         }
     }
+}
+
+fn notice_json(status: u16, reason: &'static str, value: serde_json::Value) -> HttpResponse {
+    HttpResponse::text(status, reason, value.to_string())
+        .with_header("Content-Type", "application/json")
+        .with_header("Cache-Control", "no-store")
+        .with_header("X-Content-Type-Options", "nosniff")
+        .with_header("Cross-Origin-Resource-Policy", "same-origin")
+        .with_header(
+            "Content-Security-Policy",
+            "default-src 'none'; frame-ancestors 'none'",
+        )
 }

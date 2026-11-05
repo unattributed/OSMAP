@@ -226,6 +226,43 @@ fn decrypted_unsigned_body_is_sanitized_without_signature_claim() {
 }
 
 #[test]
+fn protected_mentions_project_boolean_without_exposing_plaintext_to_compose_or_source() {
+    for (text, expected) in [
+        ("Please ask bob@example.test.", true),
+        ("Ask other@example.test.", false),
+        ("notbob@example.test", false),
+    ] {
+        let wire = source(&encrypted());
+        let mut session = session();
+        session.record.canonical_username = "bob@example.test".into();
+        let mut binding = bindings();
+        binding.account = CanonicalUsername::parse("bob@example.test").unwrap();
+        // The executor checks the synthetic principal; the real Processor and
+        // renderer still enforce plaintext/source separation below.
+        struct Decrypt(Vec<u8>);
+        impl CryptoExecutor for Decrypt {
+            fn execute(
+                &self,
+                account: &CanonicalUsername,
+                _: &Operation,
+            ) -> Result<Outcome, CryptoFailure> {
+                assert_eq!(account.as_str(), "bob@example.test");
+                Ok(decrypted(self.0.clone()))
+            }
+        }
+        let engine =
+            Decrypt(format!("Content-Type: text/plain; charset=utf-8\r\n\r\n{text}").into_bytes());
+        let result = Processor::new(engine, RenderingPolicy::default())
+            .process(&context(), &session, &original(&wire), &wire, &binding)
+            .unwrap();
+        assert_eq!(result.mention_observed, expected);
+        assert!(result.rendered.body_text_for_compose.is_empty());
+        assert_eq!(result.original_source, wire);
+        assert!(!format!("{result:?}").contains(text));
+    }
+}
+
+#[test]
 fn malformed_or_partial_crypto_results_never_release_plaintext() {
     let wire = source(&encrypted());
     for failure in [

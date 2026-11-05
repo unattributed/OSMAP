@@ -5,6 +5,10 @@ pub(crate) struct WelcomeAccountState<'a> {
     pub openpgp: &'a crate::key_management::State,
     pub defaults: Option<crate::composition_preferences::OpenPgpDefaults>,
     pub storage: Option<&'a crate::storage_ui::StorageView>,
+    pub notices: Option<(
+        &'a crate::notifications::NotificationInbox,
+        Option<&'a crate::notification_preferences::Preference>,
+    )>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -15,10 +19,11 @@ pub(crate) fn render_mailboxes_page_with_storage(
     summaries: (Option<&[MessageSummary]>, Option<&str>),
     draft_count: Option<usize>,
     sent_count: Option<usize>,
-    activity: &crate::http::BrowserSessionListDecision,
+    _activity: &crate::http::BrowserSessionListDecision,
     open_on_select: bool,
     account_state: WelcomeAccountState<'_>,
 ) -> TrustedHtml {
+    let activity = notice_activity(account_state.notices);
     let openpgp = (account_state.openpgp, account_state.defaults);
     let header = app_header_with_storage(
         canonical_username,
@@ -191,7 +196,7 @@ pub(crate) fn render_mailboxes_page_with_storage(
         "<section class=\"welcome-panel welcome-storage\" aria-labelledby=\"welcome-storage-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-storage-title\">Storage Usage</h2></div><div class=\"welcome-storage-body\">{storage}</div></section></div>",
         "<section class=\"welcome-panel welcome-system\" aria-labelledby=\"welcome-system-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-system-title\">System Status</h2></div><ul>{system}</ul><details><summary>View status details</summary><p class=\"welcome-note\">Checks apply to <strong>{account}</strong> at page load. Mailbox listing does not verify SMTP or message delivery. Public key inventory does not verify private-key readiness. Session verification does not report every security service. OSMAP does not report host backup or system-update results.</p></details></section></div>",
         "<footer class=\"welcome-footer\"><span>OSMAP · Secure by Design. Private by Default.</span><span>Limited status checks</span><span aria-disabled=\"true\">Help unavailable</span><span aria-disabled=\"true\">Feedback unavailable</span></footer></main>"
-    ), header=header, account=escape_html(canonical_username), metrics=metrics, recent=recent, shortcuts=shortcuts, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), key_summary=key_summary, activity_rows=activity_rows(canonical_username, activity), search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system, storage=storage))
+    ), header=header, account=escape_html(canonical_username), metrics=metrics, recent=recent, shortcuts=shortcuts, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), key_summary=key_summary, activity_rows=activity, search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system, storage=storage))
 }
 
 fn openpgp_summary(
@@ -332,35 +337,69 @@ fn recent_rows(
     html
 }
 
-fn activity_rows(account: &str, decision: &crate::http::BrowserSessionListDecision) -> String {
-    let mut content = String::from("<p class=\"welcome-activity-scope\">Sign-ins from retained sessions only. Key and recovery events are unavailable.</p><ul class=\"welcome-activity-rows\">");
-    match decision.verified_sessions(account) {
-        None => content.push_str("<li>Retained sign-ins are unavailable.</li>"),
-        Some([]) => content.push_str("<li>No retained sign-ins are available.</li>"),
-        Some(sessions) => {
-            let mut ordered: Vec<_> = sessions.iter().collect();
-            ordered.sort_by_key(|s| (std::cmp::Reverse(s.issued_at), &s.session_id));
-            for session in ordered.into_iter().take(5) {
-                let date = crate::logging::format_unix_timestamp_utc(session.issued_at);
-                let device = if session.device_label.trim().is_empty() {
-                    "Unknown device"
-                } else {
-                    &session.device_label
-                };
-                content.push_str(&format!("<li><span class=\"welcome-activity-dot\" aria-hidden=\"true\">•</span><div><strong>Sign-in</strong><span class=\"welcome-activity-device\">{}</span></div><time datetime=\"{}\">{} UTC</time></li>", escape_html(device), escape_html(&date), escape_html(date.replace('T', " ").trim_end_matches('Z'))));
+fn notice_activity(
+    notices: Option<(
+        &crate::notifications::NotificationInbox,
+        Option<&crate::notification_preferences::Preference>,
+    )>,
+) -> String {
+    let mut html = String::from("<p class=\"welcome-activity-scope\">Recent recorded account events. Submission acceptance does not confirm delivery.</p><ul class=\"welcome-activity-rows\">");
+    match notices {
+        None => html.push_str("<li>Account activity could not be loaded.</li>"),
+        Some((inbox, preference)) => {
+            let mut rows: Vec<_> = inbox
+                .events
+                .iter()
+                .filter(|event| preference.is_none_or(|p| p.choices.allows(event.kind)))
+                .collect();
+            rows.sort_by_key(|event| std::cmp::Reverse(event.occurred_at));
+            if rows.is_empty() {
+                html.push_str("<li>No retained notices match your notification choices.</li>");
+            }
+            for event in rows.into_iter().take(5) {
+                let time = crate::logging::format_unix_timestamp_utc(event.occurred_at);
+                html.push_str(&format!("<li><span class=\"welcome-activity-dot\" aria-hidden=\"true\">•</span><strong>{}</strong><time datetime=\"{}\">{} UTC</time></li>", event.kind.title(), escape_html(&time), escape_html(time.replace('T', " ").trim_end_matches('Z'))));
             }
         }
     }
-    content.push_str(
-        "</ul><a class=\"welcome-activity-link\" href=\"/sessions\">Review retained sessions →</a>",
-    );
-    content
+    html.push_str("</ul><a class=\"welcome-activity-link\" href=\"/notifications\">View all notifications →</a>");
+    html
 }
 
 #[cfg(test)]
 mod activity_tests {
     use super::*;
-    use crate::http::{BrowserSessionListDecision as Decision, BrowserVisibleSession};
+    use crate::http::BrowserSessionListDecision as Decision;
+
+    #[test]
+    fn recorded_activity_uses_generic_facts_and_preserves_mandatory_preferences() {
+        use crate::notifications::{NotificationEvent, NotificationInbox, NotificationKind};
+        let inbox = NotificationInbox {
+            revision: 3,
+            events: vec![
+                NotificationEvent {
+                    event_id: "a".repeat(32),
+                    kind: NotificationKind::PasswordChanged,
+                    occurred_at: 100,
+                    read: true,
+                },
+                NotificationEvent {
+                    event_id: "b".repeat(32),
+                    kind: NotificationKind::NewMail,
+                    occurred_at: 200,
+                    read: false,
+                },
+            ],
+        };
+        let mut preference = crate::notification_preferences::Preference::default();
+        preference.choices.new_mail = false;
+        let html = notice_activity(Some((&inbox, Some(&preference))));
+        assert!(html.contains("Account password changed"));
+        assert!(!html.contains("New Inbox message"));
+        assert!(!html.contains(&"a".repeat(32)));
+        assert!(html.contains("href=\"/notifications\""));
+        assert!(notice_activity(None).contains("could not be loaded"));
+    }
 
     #[test]
     fn welcome_storage_projects_only_owned_values_and_offers_details() {
@@ -408,6 +447,7 @@ mod activity_tests {
                     openpgp: &keys,
                     defaults: None,
                     storage,
+                    notices: None,
                 },
             );
             assert_eq!(
@@ -486,68 +526,24 @@ mod activity_tests {
         assert!(!html.contains("<form"));
         assert!(!html.contains("<a "));
     }
-    fn decision(count: usize) -> Decision {
-        Decision::Listed {
-            canonical_username: "alice".into(),
-            session_lifetime_seconds: 100,
-            session_idle_timeout_seconds: 100,
-            sessions: (0..count)
-                .map(|i| BrowserVisibleSession {
-                    session_id: format!("id-{i}"),
-                    issued_at: 1_700_000_000 + i as u64,
-                    expires_at: 1_800_000_000,
-                    last_seen_at: 1_700_000_000,
-                    revoked_at: Some(1_700_000_010),
-                    device_label: format!("Device {i} <literal>"),
-                    remote_addr: "private address".into(),
-                    user_agent: "private user agent".into(),
-                    factor: crate::auth::RequiredSecondFactor::Totp,
+    #[test]
+    fn recorded_activity_limits_to_newest_five_without_raw_ids() {
+        use crate::notifications::{NotificationEvent, NotificationInbox, NotificationKind};
+        let inbox = NotificationInbox {
+            revision: 8,
+            events: (1..=7)
+                .map(|n| NotificationEvent {
+                    event_id: format!("{n:032x}"),
+                    kind: NotificationKind::SessionIssued,
+                    occurred_at: n * 86400,
+                    read: false,
                 })
                 .collect(),
-        }
-    }
-    #[test]
-    fn welcome_activity_uses_newest_five_owned_retained_signins_without_private_metadata() {
-        let html = activity_rows("alice", &decision(7));
+        };
+        let html = notice_activity(Some((&inbox, None)));
         assert_eq!(html.matches("<time ").count(), 5);
-        assert!(html.find("Device 6").unwrap() < html.find("Device 5").unwrap());
-        assert!(!html.contains("Device 1"));
-        assert!(html.contains("&lt;literal&gt;"));
-        assert!(html.contains("UTC</time>"));
-        assert!(html.contains("retained sessions only"));
-        for private in ["private address", "private user agent", "id-", "<literal>"] {
-            assert!(!html.contains(private));
-        }
-        assert!(activity_rows("alice", &decision(0)).contains("No retained sign-ins"));
-    }
-    #[test]
-    fn welcome_activity_refuses_foreign_duplicate_denied_and_excess_results() {
-        let mut duplicate = decision(2);
-        if let Decision::Listed { sessions, .. } = &mut duplicate {
-            sessions[1].session_id = sessions[0].session_id.clone();
-        }
-        for (account, result) in [
-            ("bob", decision(1)),
-            ("alice", duplicate),
-            ("alice", decision(257)),
-            (
-                "alice",
-                Decision::Denied {
-                    public_reason: "private diagnostic".into(),
-                },
-            ),
-        ] {
-            let html = activity_rows(account, &result);
-            assert!(html.contains("Retained sign-ins are unavailable"));
-            assert!(!html.contains("<time "));
-            assert!(!html.contains("Device "));
-            assert!(!html.contains("private diagnostic"));
-        }
-        assert_eq!(
-            activity_rows("alice", &decision(256))
-                .matches("<time ")
-                .count(),
-            5
-        );
+        assert!(html.find("1970-01-08").unwrap() < html.find("1970-01-07").unwrap());
+        assert!(!html.contains("1970-01-02"));
+        assert!(!html.contains(&format!("{:032x}", 7)));
     }
 }
