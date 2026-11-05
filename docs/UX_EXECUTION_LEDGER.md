@@ -624,6 +624,39 @@
             "v14-r4-stale-fixture"
           ]
         }
+      },
+      {
+        "id": "ordinary-prepush-selection-format",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "selection-controls-20261106/push.log;2340RustPASS0FAIL89ignores and hostilecontent/ClippyPASS; required fmt-check refused three changed http_ui.rs sections before transport.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "8d8231e9882ad6057a8174e372a1f782c1a37093",
+        "success_chain_review": {
+          "reviewer": "/root/s08_selection_review",
+          "reference": "Independent current source/recipe/results GO; formatting-only follow-up reviewed separately before retry.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Apply required rustfmt without semantic changes, refresh line inventories, retain failed hook and run normal full push again.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s08_selection_review"
+          ],
+          "reference": "Combined original source and gate diagnosis: earlier V14 cfgtest scan issue resolved by unchanged test relocation; normal push fmt failure requires formatting only. No assertion, gate, renderer behavior or native policy relaxation.",
+          "next_action": "Review formatting-only diff, then ordinary signed checkpoint and full mandatory push hook.",
+          "failed_attempt_ids": [
+            "v14-css-test-literals"
+          ]
+        }
       }
     ]
   },
@@ -632,7 +665,7 @@
     "slice": "S08-03",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "d6f0691c9214cae062d9fc09027ab4237b7758e753ebce28df74c17ca8711392"
+      "sha256": "50c201d012e21b17199221fb6cd3fd260489208efdaf5ca755b3adca35718ec4"
     },
     "design": {
       "journey": "Schedule and Snooze use the saved account offset, captured jobs remain independent, confirmed source copies can be safely discarded, and explicitly confirmed exact-account Trash deletion is available.",

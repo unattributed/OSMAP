@@ -3465,8 +3465,11 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
             let selectable = matches!(state, Some(crate::http::BrowserDraftEditState::Scheduled { job_id }) if crate::draft::validate_draft_id(job_id).is_ok());
             selectable_count += usize::from(selectable);
             rows.push_str(&render_locked_draft_row(
-                draft, state, model.csrf_token,
-                model.view.select_editable && selectable_count <= crate::draft_list::MAX_DRAFT_SELECTION,
+                draft,
+                state,
+                model.csrf_token,
+                model.view.select_editable
+                    && selectable_count <= crate::draft_list::MAX_DRAFT_SELECTION,
             ));
             continue;
         }
@@ -3607,10 +3610,14 @@ fn render_locked_draft_row(
     } else {
         "<button disabled>Delete unavailable</button>".into()
     };
-    let selection = if matches!(state, Some(State::Scheduled { job_id }) if crate::draft::validate_draft_id(job_id).is_ok()) {
+    let selection = if matches!(state, Some(State::Scheduled { job_id }) if crate::draft::validate_draft_id(job_id).is_ok())
+    {
         format!("<input type=\"checkbox\" form=\"draft-selection\" name=\"selected_{}\" value=\"{}\"{} aria-label=\"Select draft: {}\">", escape_html(&draft.draft_id), draft.revision, if checked { " checked" } else { "" }, escape_html(title))
     } else {
-        format!("<input type=\"checkbox\" disabled aria-label=\"Select draft: {}\">", escape_html(title))
+        format!(
+            "<input type=\"checkbox\" disabled aria-label=\"Select draft: {}\">",
+            escape_html(title)
+        )
     };
     format!(concat!("<tr data-draft-state=\"{kind}\"><td class=\"draft-select\">{selection}</td><td class=\"draft-star\"><button disabled aria-label=\"Star unavailable\">{star}</button></td>",
         "<td class=\"draft-recipient\"><div class=\"draft-recipient-person\"><span class=\"sender-avatar\" aria-hidden=\"true\">{initials}</span><span>{recipient}</span></div></td><td class=\"draft-subject\"><strong dir=\"auto\">{title}</strong>{primary_link}<span class=\"muted\">{explanation}</span></td><td>{files}</td><td><span class=\"badge\">{label}</span></td><td><time datetime=\"{utc}\">{time}</time></td><td><details class=\"draft-discard\"><summary aria-label=\"Draft actions\">⋮</summary><div class=\"draft-action-menu\">{links}{discard}</div></details></td></tr>"),kind=kind,selection=selection,primary_link=if matches!(state, Some(State::Scheduled { .. })) {links.as_str()} else {""},title=escape_html(title),star=if draft.starred {"★"} else {"☆"},initials=escape_html(&sender_initials(draft.recipient_preview.as_deref())),recipient=escape_html(draft.recipient_preview.as_deref().unwrap_or("No visible recipients")),explanation=explanation,files=if draft.attachment_count>0 {format!("{} files",draft.attachment_count)} else {"—".into()},label=label,utc=crate::logging::format_unix_timestamp_utc(draft.updated_at),time=crate::logging::format_unix_timestamp_utc(draft.updated_at).replace('T'," ").replace('Z'," UTC"),links=links,discard=discard)
@@ -3799,20 +3806,35 @@ fn draft_ui_unmatched_revision_and_duplicate_state_never_enable_editing() {
     });
     assert_eq!(html.as_str().matches(" checked").count(), 10);
     // The same ten-item selection bound includes confirmed source copies.
-    let mixed: Vec<_> = states.iter().enumerate().map(|(index, state)| {
-        let mut state = state.clone();
-        if index % 2 == 0 {
-            state.state = BrowserDraftEditState::Scheduled { job_id: "b".repeat(32) };
-        }
-        state
-    }).collect();
+    let mixed: Vec<_> = states
+        .iter()
+        .enumerate()
+        .map(|(index, state)| {
+            let mut state = state.clone();
+            if index % 2 == 0 {
+                state.state = BrowserDraftEditState::Scheduled {
+                    job_id: "b".repeat(32),
+                };
+            }
+            state
+        })
+        .collect();
     let html = render_draft_list_page(&DraftListPageModel {
-        canonical_username: "alice@example.test", csrf_token: "synthetic",
-        success_message: None, error_message: None, drafts: &drafts, view: &view,
-        total_count: 12, states: &mixed, usage: &BrowserDraftStorageUsage::Unknown,
+        canonical_username: "alice@example.test",
+        csrf_token: "synthetic",
+        success_message: None,
+        error_message: None,
+        drafts: &drafts,
+        view: &view,
+        total_count: 12,
+        states: &mixed,
+        usage: &BrowserDraftStorageUsage::Unknown,
     });
     assert_eq!(html.as_str().matches(" checked").count(), 10);
-    assert_eq!(html.as_str().matches("form=\"draft-selection\"").count(), 12);
+    assert_eq!(
+        html.as_str().matches("form=\"draft-selection\"").count(),
+        12
+    );
     assert!(!html.as_str().contains("value=\"review\" disabled"));
     assert!(!view.href().contains("select="));
     assert!(!render_draft_list_state(&view).contains("select="));

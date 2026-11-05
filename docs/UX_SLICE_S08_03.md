@@ -47,6 +47,14 @@ current installed signed account admission and exact-account Trash allowed,
 Inbox unavailable and foreign account unavailable in0.05s with no mutations.
 Normal signed delivery remains a separate final check.
 
+The first ordinary pre-push passed2340 Rust tests with0 failures and89 explicit
+native/external ignores, hostile-content checks and strict Clippy, then refused
+cargo fmt --check in three changed http_ui.rs sections. Required rustfmt changes
+preserve literals/control flow; scanner inventories were refreshed for shifted
+lines. This formatting-only follow-up and the test-only relocation do not alter
+the native27 production implementation. The failed hook is retained; a second
+ordinary push must complete its full security-check without bypass.
+
 Preserved failures: the initial concat-based format needed an explicit named
 argument and compiled after that correction. The default synthetic Bin fixture
 denies deletion without retention; an explicit test-only allowed policy exercises
