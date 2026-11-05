@@ -76,7 +76,16 @@ impl CommandExecutor for NativeExecutor {
             count.fetch_add(1, Ordering::SeqCst);
         }
         let mut isolated = vec!["-c".into(), self.config.to_string_lossy().into_owned()];
-        isolated.extend_from_slice(a);
+        if a.first().is_some_and(|arg| arg == "exec") {
+            assert_eq!(a.get(1).map(String::as_str), Some("imap"));
+            isolated.extend_from_slice(&a[..2]);
+            // exec does not pass doveadm's outer config option to imap.
+            // Keep the read-only metadata child inside this owned fixture.
+            isolated.extend(["-c".into(), self.config.to_string_lossy().into_owned()]);
+            isolated.extend_from_slice(&a[2..]);
+        } else {
+            isolated.extend_from_slice(a);
+        }
         self.calls.fetch_add(1, Ordering::SeqCst);
         SystemCommandExecutor
             .run_with_stdin_bytes_timeout_and_output_limit(p, &isolated, input, timeout, limit)

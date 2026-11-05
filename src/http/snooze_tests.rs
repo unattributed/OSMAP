@@ -41,7 +41,7 @@ fn snooze_native_set_cas_csrf_visibility_cancel_and_corrupt_refusal() {
     let csrf = StubGateway::validated_session().record.csrf_token;
     let until = crate::logging::format_unix_timestamp_utc(now() + 3600)[..16].to_string();
     let body = format!(
-        "csrf_token={csrf}&action=set&revision=0&{}&until={until}",
+        "csrf_token={csrf}&action=set&timezone_offset=UTC&revision=0&{}&until={until}",
         target()
     );
     let editor = get(&format!("/snooze?{}", target()));
@@ -196,4 +196,37 @@ fn snooze_expiry_on_native_load_restores_message_and_utc_is_not_local() {
         assert!(crate::snooze::parse_utc(value, 1790726400).is_err())
     }
     fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn snooze_uses_saved_timezone_and_refuses_missing_forged_or_changed_context() {
+    let root = temp_dir("snooze-timezone");
+    let zones = crate::timezone::Store::new(root.join("zones"));
+    let markers = crate::snooze::SnoozeStore::new(root.join("markers"));
+    let account = StubGateway::validated_session().record.canonical_username;
+    let east = crate::timezone::FixedOffset::parse("+07:00").unwrap();
+    let preference = zones.save(&account, 0, east).unwrap();
+    let app = BrowserApp::new(HttpPolicy::default(), StubGateway { timezone_store: Some(zones.clone()), snooze_store: Some(markers.clone()), ..StubGateway::default() });
+    let until = ((now() + 600) / 60) * 60;
+    let csrf = StubGateway::validated_session().record.csrf_token;
+    let body = format!("csrf_token={csrf}&action=set&revision=0&{}&until={}&timezone_offset=%2B07%3A00", target(), east.schedule_input(until).unwrap());
+    let post = |body: &str| app.handle_request(&request("POST", "/snooze/change", &authenticated_same_origin_headers(), body), "127.0.0.1");
+    let editor = app.handle_request(&request("GET", &format!("/snooze?{}",target()), &authenticated_headers(), ""), "127.0.0.1");
+    assert!(body_text(&editor).contains("Return at (UTC+07:00)"));
+    for bad in [body.replace("&timezone_offset=%2B07%3A00", ""), body.replace("%2B07%3A00", "UTC")] {
+        assert_eq!(post(&bad).response.status_code, 409);
+        assert!(markers.load(&account, now()).unwrap().markers().is_empty());
+    }
+    assert_eq!(post(&body).response.status_code, 303);
+    assert_eq!(markers.load(&account, now()).unwrap().markers()[0].until(), until);
+    let editor = app.handle_request(&request("GET", &format!("/snooze?{}", target()), &authenticated_headers(), ""), "127.0.0.1");
+    let expected_return = format!("{}:00 UTC+07:00", east.schedule_input(until).unwrap().replace('T', " "));
+    assert!(body_text(&editor).contains(&expected_return));
+    zones.save(&account, preference.revision, crate::timezone::FixedOffset::parse("-05:00").unwrap()).unwrap();
+    assert_eq!(post(&body.replace("revision=0", "revision=1")).response.status_code, 409);
+    assert_eq!(markers.load(&account, now()).unwrap().markers()[0].until(), until);
+    let cancel = format!("csrf_token={csrf}&action=cancel&revision=1&{}", target());
+    assert_eq!(post(&cancel).response.status_code, 303);
+    assert!(markers.load(&account, now()).unwrap().markers().is_empty());
+    std::fs::remove_dir_all(root).unwrap();
 }

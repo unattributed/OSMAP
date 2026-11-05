@@ -3,6 +3,46 @@
 use super::*;
 
 #[test]
+#[ignore = "operator-run installed exact-account Trash permission; read-only, no deletion"]
+fn native_installed_trash_retention_permission() -> Result<(), &'static str> {
+    use crate::mailbox::{MessageDeleteBackend, RetentionDecision};
+    if crate::openbsd::effective_uid() != 1001 {
+        return Err("installed Web identity required");
+    }
+    let account =
+        std::env::var("OSMAP_STORAGE_REPORT_ACCOUNT").map_err(|_| "explicit account required")?;
+    let config = AppConfig::from_process_env().map_err(|_| "installed config unavailable")?;
+    let gateway = RuntimeBrowserGateway::from_config(&config);
+    let epoch = std::env::var("OSMAP_READINESS_EPOCH")
+        .map_err(|_| "current account epoch required")?
+        .parse::<u64>()
+        .map_err(|_| "numeric epoch required")?;
+    gateway
+        .account_runtime
+        .ready()
+        .ok_or("account authority unavailable")?
+        .admission()
+        .admit_before(
+            &account,
+            epoch,
+            std::time::Instant::now() + std::time::Duration::from_secs(10),
+        )
+        .map_err(|_| "installed signed account admission unavailable")?;
+    let backend = gateway
+        .build_message_delete_backend()
+        .ok_or("helper unavailable")?;
+    if backend.retention_status(&account, "Trash") != (RetentionDecision::Allowed { revision: 1 })
+        || backend.retention_status(&account, "INBOX") != RetentionDecision::Unavailable
+        || backend.retention_status("foreign-retention-observer@example.invalid", "Trash")
+            != RetentionDecision::Unavailable
+    {
+        return Err("installed retention scope differs from exact-account Trash policy");
+    }
+    println!("INSTALLED_TRASH_RETENTION=PASS EXACT_ACCOUNT_TRASH=ALLOWED INBOX=UNAVAILABLE FOREIGN=UNAVAILABLE ACCOUNT_ADMISSION=PASS MUTATIONS=NONE");
+    Ok(())
+}
+
+#[test]
 #[ignore = "operator-run existing sealed helper exact Documents lookup; read-only"]
 fn native_installed_documents_readonly_lookup() -> Result<(), &'static str> {
     use crate::documents::Backend;

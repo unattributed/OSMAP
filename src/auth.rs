@@ -1337,6 +1337,9 @@ fn run_system_command(
         .env_clear()
         .env("PATH", SAFE_COMMAND_PATH)
         .env("LC_ALL", "C")
+        // doveadm emits timezone-less dates. Normalize at the native producer;
+        // the authenticated account offset is applied only by presentation.
+        .env("TZ", "UTC")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -2571,6 +2574,24 @@ mod tests {
             .expect("invalid credentials should not be treated as backend errors");
 
         assert_eq!(verdict, PrimaryAuthVerdict::Reject);
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn system_command_executor_normalizes_native_dates_to_utc() {
+        let output = SystemCommandExecutor
+            .run_with_stdin_bytes_timeout("/usr/bin/env", &[], b"", Duration::from_secs(2))
+            .expect("fixed native command environment");
+        assert_eq!(output.status_code, 0);
+        let mut lines: Vec<_> = output.stdout.lines().collect();
+        lines.sort_unstable();
+        let mut expected = vec![
+            "LC_ALL=C".to_string(),
+            format!("PATH={SAFE_COMMAND_PATH}"),
+            "TZ=UTC".to_string(),
+        ];
+        expected.sort_unstable();
+        assert_eq!(lines, expected);
     }
 
     #[test]

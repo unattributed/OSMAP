@@ -208,14 +208,12 @@ fn runtime_schedule_edit_cancel_uses_captured_payload_exact_revision_and_account
     assert_eq!(captured.recipients, ["next@example.com"]);
     assert_eq!(captured.cc_recipients, ["newcc@example.com"]);
     assert_eq!(captured.bcc_recipients, ["newprivate@example.com"]);
-    assert!(
-        f.gateway
-            .build_draft_store()
-            .load(ACCOUNT, &draft.draft_id, f.now)
-            .unwrap()
-            .unwrap()
-            == draft
-    );
+    assert!(f
+        .gateway
+        .build_draft_store()
+        .load(ACCOUNT, &draft.draft_id, f.now)
+        .unwrap()
+        .is_none());
     assert!(matches!(
         f.gateway
             .scheduled_change_impl(&f.session, &id, before.revision, "cancel", None),
@@ -300,14 +298,12 @@ fn runtime_scheduling_retires_original_draft_send_and_save_without_native_callba
         saved.decision,
         BrowserDraftSaveDecision::Denied { .. }
     ));
-    assert!(
-        f.gateway
-            .build_draft_store()
-            .load(ACCOUNT, &draft.draft_id, f.now)
-            .unwrap()
-            .unwrap()
-            == draft
-    );
+    assert!(f
+        .gateway
+        .build_draft_store()
+        .load(ACCOUNT, &draft.draft_id, f.now)
+        .unwrap()
+        .is_none());
     assert_eq!(
         f.gateway.scheduled_payload_impl(&f.session, &id).unwrap(),
         composed(&draft)
@@ -319,7 +315,7 @@ fn runtime_scheduling_retires_original_draft_send_and_save_without_native_callba
             draft.revision.unwrap(),
             f.now + 3600
         ),
-        Err(Error::Stale)
+        Err(Error::NotFound)
     ));
     assert_eq!(
         f.gateway
@@ -336,6 +332,10 @@ fn runtime_scheduled_draft_projection_stays_readonly_after_cancel_and_reopen() {
     let f = Fixture::new();
     let draft = f.draft();
     let id = f.schedule(&draft);
+    // Recreate a pre-correction source copy without changing the captured job.
+    let mut legacy = draft.clone();
+    legacy.revision = None;
+    f.gateway.build_draft_store().save(&legacy, f.now).unwrap();
     let projected = || match f.gateway.list_drafts_impl(&f.context, &f.session).decision {
         BrowserDraftListDecision::Listed { states, .. } => states[0].state.clone(),
         other => panic!("unexpected draft projection: {other:?}"),
@@ -356,6 +356,49 @@ fn runtime_scheduled_draft_projection_stays_readonly_after_cancel_and_reopen() {
     let guard = journal.account_guard(ACCOUNT, f.now).unwrap();
     assert!(guard.require_unconsumed(&f.source(&draft)).is_err());
     drop(guard);
+    assert!(matches!(
+        f.gateway
+            .delete_draft_impl(&f.context, &f.session, &draft.draft_id, 99)
+            .decision,
+        BrowserDraftDeleteDecision::Denied { .. }
+    ));
+    let mut foreign = f.session.clone();
+    foreign.record.canonical_username = "other@example.com".into();
+    assert!(matches!(
+        f.gateway
+            .delete_draft_impl(&f.context, &foreign, &draft.draft_id, 1)
+            .decision,
+        BrowserDraftDeleteDecision::NotFound
+    ));
+    assert!(matches!(
+        f.gateway
+            .delete_draft_impl(&f.context, &f.session, &draft.draft_id, 1)
+            .decision,
+        BrowserDraftDeleteDecision::Deleted
+    ));
+    let BrowserDraftListDecision::Listed { drafts, usage, .. } =
+        f.gateway.list_drafts_impl(&f.context, &f.session).decision
+    else {
+        panic!("listing refused")
+    };
+    assert!(drafts.is_empty());
+    assert!(matches!(
+        usage,
+        BrowserDraftStorageUsage::Verified {
+            ordinary_count: 0,
+            ordinary_bytes: 0,
+            ..
+        }
+    ));
+    let reopened = RuntimeBrowserGateway::for_test(&f.root);
+    let journal = reopened.send_journal();
+    let guard = journal.account_guard(ACCOUNT, f.now).unwrap();
+    assert!(guard.require_unconsumed(&f.source(&draft)).is_err());
+    drop(guard);
+    assert_eq!(
+        reopened.scheduled_list_impl(&f.session).unwrap().jobs[0].state,
+        State::Cancelled
+    );
     let reserved = f.draft();
     let journal = f.gateway.send_journal();
     let mut guard = journal.account_guard(ACCOUNT, f.now).unwrap();
@@ -363,7 +406,15 @@ fn runtime_scheduled_draft_projection_stays_readonly_after_cancel_and_reopen() {
     guard
         .begin_schedule(&f.source(&reserved), &reserved_id, &"d".repeat(64))
         .unwrap();
+    f.gateway
+        .cleanup_confirmed_scheduled_source(&guard, &reserved);
     drop(guard);
+    assert!(matches!(
+        f.gateway
+            .delete_draft_impl(&f.context, &f.session, &reserved.draft_id, 1)
+            .decision,
+        BrowserDraftDeleteDecision::Denied { .. }
+    ));
     let BrowserDraftListDecision::Listed { states, .. } =
         f.gateway.list_drafts_impl(&f.context, &f.session).decision
     else {
@@ -479,4 +530,87 @@ fn runtime_direct_source_reference_refuses_without_jobs_or_intent_retirement() {
             .unwrap()
             == current
     );
+}
+
+#[test]
+fn runtime_schedule_cleanup_failure_keeps_confirmed_job_and_changed_source() {
+    let f = Fixture::new();
+    let draft = f.draft();
+    let id = f.schedule(&draft);
+    let BrowserDraftListDecision::Listed { drafts, usage, .. } =
+        f.gateway.list_drafts_impl(&f.context, &f.session).decision
+    else {
+        panic!("listing refused")
+    };
+    assert!(drafts.is_empty());
+    assert!(matches!(
+        usage,
+        BrowserDraftStorageUsage::Verified {
+            ordinary_count: 0,
+            ordinary_bytes: 0,
+            ..
+        }
+    ));
+    // A stale exact-revision cleanup must leave a later physical record intact.
+    let store = f.gateway.build_draft_store();
+    let mut legacy = draft.clone();
+    legacy.revision = None;
+    store.save(&legacy, f.now).unwrap();
+    let mut changed = store
+        .load(ACCOUNT, &draft.draft_id, f.now)
+        .unwrap()
+        .unwrap();
+    changed.starred = true;
+    store.save(&changed, f.now).unwrap();
+    let before = store
+        .load(ACCOUNT, &draft.draft_id, f.now)
+        .unwrap()
+        .unwrap();
+    let journal = f.gateway.send_journal();
+    let guard = journal.account_guard(ACCOUNT, f.now).unwrap();
+    f.gateway.cleanup_confirmed_scheduled_source(&guard, &draft);
+    assert!(guard.require_unconsumed(&f.source(&draft)).is_err());
+    drop(guard);
+    assert_eq!(
+        store
+            .load(ACCOUNT, &draft.draft_id, f.now)
+            .unwrap()
+            .unwrap(),
+        before
+    );
+    let jobs = f.gateway.scheduled_list_impl(&f.session).unwrap();
+    assert_eq!(jobs.jobs.len(), 1);
+    assert_eq!(jobs.jobs[0].id, id);
+    assert_eq!(jobs.jobs[0].state, State::Pending);
+    assert_eq!(
+        f.gateway.scheduled_payload_impl(&f.session, &id).unwrap(),
+        composed(&draft)
+    );
+}
+
+#[test]
+fn runtime_legacy_scheduled_source_discard_preserves_pending_payload_and_retirement() {
+    let f = Fixture::new();
+    let draft = f.draft();
+    let id = f.schedule(&draft);
+    let mut legacy = draft.clone();
+    legacy.revision = None;
+    f.gateway.build_draft_store().save(&legacy, f.now).unwrap();
+    assert!(matches!(
+        f.gateway
+            .delete_draft_impl(&f.context, &f.session, &draft.draft_id, 1)
+            .decision,
+        BrowserDraftDeleteDecision::Deleted
+    ));
+    let reopened = RuntimeBrowserGateway::for_test(&f.root);
+    assert_eq!(
+        reopened.scheduled_payload_impl(&f.session, &id).unwrap(),
+        composed(&draft)
+    );
+    let jobs = reopened.scheduled_list_impl(&f.session).unwrap();
+    assert_eq!(jobs.jobs.len(), 1);
+    assert_eq!(jobs.jobs[0].state, State::Pending);
+    let journal = reopened.send_journal();
+    let guard = journal.account_guard(ACCOUNT, f.now).unwrap();
+    assert!(guard.require_unconsumed(&f.source(&draft)).is_err());
 }

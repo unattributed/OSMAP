@@ -3462,7 +3462,7 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
             .filter(|_| matching.next().is_none())
             .map(|value| &value.state);
         if !matches!(state, Some(crate::http::BrowserDraftEditState::Editable)) {
-            rows.push_str(&render_locked_draft_row(draft, state));
+            rows.push_str(&render_locked_draft_row(draft, state, model.csrf_token));
             continue;
         }
         editable_count += 1;
@@ -3545,6 +3545,7 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
 fn render_locked_draft_row(
     draft: &DraftSummary,
     state: Option<&crate::http::BrowserDraftEditState>,
+    csrf_token: &str,
 ) -> String {
     use crate::http::BrowserDraftEditState as State;
     let (kind, label, explanation, intent) = match state {
@@ -3563,7 +3564,7 @@ fn render_locked_draft_row(
         Some(State::Scheduled { .. }) => (
             "scheduled",
             "Scheduled copy",
-            "Managed in Scheduled messages. This saved version is read-only.",
+            "Managed in Scheduled messages. You can delete this source copy; the scheduled message is kept.",
             None,
         ),
         _ => (
@@ -3593,8 +3594,15 @@ fn render_locked_draft_row(
     } else {
         "<a href=\"/drafts\">Reload Drafts</a>".into()
     };
+    let discard = if matches!(state, Some(State::Scheduled { job_id }) if crate::draft::validate_draft_id(job_id).is_ok())
+    {
+        format!(concat!("<p>Delete this saved source copy? The scheduled message and its delivery status are kept.</p>",
+            "<form method=\"post\" action=\"/drafts/delete\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"draft_id\" value=\"{}\"><input type=\"hidden\" name=\"draft_revision\" value=\"{}\"><button type=\"submit\" name=\"confirm\" value=\"1\">Delete source copy</button></form>"), escape_html(csrf_token), escape_html(&draft.draft_id), draft.revision)
+    } else {
+        "<button disabled>Delete unavailable</button>".into()
+    };
     format!(concat!("<tr data-draft-state=\"{kind}\"><td class=\"draft-select\"><input type=\"checkbox\" disabled aria-label=\"Select draft: {title}\"></td><td class=\"draft-star\"><button disabled aria-label=\"Star unavailable\">{star}</button></td>",
-        "<td class=\"draft-recipient\"><div class=\"draft-recipient-person\"><span class=\"sender-avatar\" aria-hidden=\"true\">{initials}</span><span>{recipient}</span></div></td><td class=\"draft-subject\"><strong dir=\"auto\">{title}</strong><span class=\"muted\">{explanation}</span></td><td>{files}</td><td><span class=\"badge\">{label}</span></td><td><time datetime=\"{utc}\">{time}</time></td><td><details class=\"draft-discard\"><summary aria-label=\"Draft actions\">⋮</summary><div class=\"draft-action-menu\">{links}<button disabled>Delete unavailable</button></div></details></td></tr>"),kind=kind,title=escape_html(title),star=if draft.starred {"★"} else {"☆"},initials=escape_html(&sender_initials(draft.recipient_preview.as_deref())),recipient=escape_html(draft.recipient_preview.as_deref().unwrap_or("No visible recipients")),explanation=explanation,files=if draft.attachment_count>0 {format!("{} files",draft.attachment_count)} else {"—".into()},label=label,utc=crate::logging::format_unix_timestamp_utc(draft.updated_at),time=crate::logging::format_unix_timestamp_utc(draft.updated_at).replace('T'," ").replace('Z'," UTC"),links=links)
+        "<td class=\"draft-recipient\"><div class=\"draft-recipient-person\"><span class=\"sender-avatar\" aria-hidden=\"true\">{initials}</span><span>{recipient}</span></div></td><td class=\"draft-subject\"><strong dir=\"auto\">{title}</strong><span class=\"muted\">{explanation}</span></td><td>{files}</td><td><span class=\"badge\">{label}</span></td><td><time datetime=\"{utc}\">{time}</time></td><td><details class=\"draft-discard\"><summary aria-label=\"Draft actions\">⋮</summary><div class=\"draft-action-menu\">{links}{discard}</div></details></td></tr>"),kind=kind,title=escape_html(title),star=if draft.starred {"★"} else {"☆"},initials=escape_html(&sender_initials(draft.recipient_preview.as_deref())),recipient=escape_html(draft.recipient_preview.as_deref().unwrap_or("No visible recipients")),explanation=explanation,files=if draft.attachment_count>0 {format!("{} files",draft.attachment_count)} else {"—".into()},label=label,utc=crate::logging::format_unix_timestamp_utc(draft.updated_at),time=crate::logging::format_unix_timestamp_utc(draft.updated_at).replace('T'," ").replace('Z'," UTC"),links=links,discard=discard)
 }
 fn render_draft_storage(usage: &crate::http::BrowserDraftStorageUsage) -> String {
     let size = |bytes: u64| {
@@ -3821,7 +3829,7 @@ fn scheduled_draft_row_links_job_without_claiming_pending_or_allowing_edit() {
     let state = crate::http::BrowserDraftEditState::Scheduled {
         job_id: "b".repeat(32),
     };
-    let html = render_locked_draft_row(&draft, Some(&state));
+    let html = render_locked_draft_row(&draft, Some(&state), "synthetic-csrf");
     assert!(html.contains("Scheduled copy") && html.contains("Managed in Scheduled messages"));
     assert!(html.contains(&format!("/scheduled?id={}", "b".repeat(32))));
     assert!(html.contains("&lt;script&gt;synthetic&lt;/script&gt;"));
@@ -3829,15 +3837,19 @@ fn scheduled_draft_row_links_job_without_claiming_pending_or_allowing_edit() {
         "Submission state needs review",
         "View attempt",
         "action=\"/drafts/star\"",
-        "action=\"/drafts/delete\"",
     ] {
         assert!(!html.contains(wrong));
     }
-    assert!(html.contains("checkbox\" disabled") && html.contains("Delete unavailable"));
+    assert!(html.contains("checkbox\" disabled") && html.contains("Delete source copy"));
+    assert!(html.contains("action=\"/drafts/delete\"") && html.contains("synthetic-csrf"));
+    assert!(html.contains("name=\"draft_revision\" value=\"2\""));
     let invalid = crate::http::BrowserDraftEditState::Scheduled {
         job_id: "../foreign<script>".into(),
     };
-    let html = render_locked_draft_row(&draft, Some(&invalid));
+    let html = render_locked_draft_row(&draft, Some(&invalid), "synthetic-csrf");
     assert!(html.contains("href=\"/scheduled\""));
     assert!(!html.contains("../foreign"));
+    assert!(!html.contains("action=\"/drafts/delete\""));
+    let html = render_locked_draft_row(&draft, None, "synthetic-csrf");
+    assert!(html.contains("Delete unavailable") && !html.contains("action=\"/drafts/delete\""));
 }

@@ -11,13 +11,16 @@ fn matching(id: &MessageIdentity, f: &BTreeMap<String, String>) -> bool {
 }
 fn error_details(error: SnoozeError) -> (u16, &'static str, &'static str) {
     match error {
-        SnoozeError::Invalid|SnoozeError::Missing => (400,"Bad Request","Choose a current message and an explicit UTC date/time in the next 30 days. The submitted snooze request was refused."),
-        SnoozeError::Stale => (409,"Conflict","Snooze markers changed. Reload the current list before trying another change."),
+        SnoozeError::Invalid|SnoozeError::Missing => (400,"Bad Request","Choose a current message and a date/time in your saved OSMAP timezone in the next 30 days. The submitted snooze request was refused."),
+        SnoozeError::Stale => (409,"Conflict","Snooze markers or your OSMAP timezone changed. Reload the current list before trying another change."),
         SnoozeError::Capacity => (409,"Conflict","The account already has 100 snooze markers. Cancel a marker or wait for expiry."),
         _ => (503,"Service Unavailable","Snooze state or this change could not be confirmed. Messages remain accessible; reload to inspect the stored markers."),
     }
 }
 impl<G: BrowserGateway> BrowserApp<G> {
+    fn snooze_offset(&self, session: &ValidatedSession) -> Option<crate::timezone::FixedOffset> {
+        self.gateway.load_timezone(session).ok().map(|p| p.offset)
+    }
     fn current_snooze_identity(
         &self,
         context: &AuthenticationContext,
@@ -104,6 +107,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     &session.record.csrf_token,
                     result.as_ref().ok(),
                     error,
+                    self.snooze_offset(&session),
                 ),
             ),
             audit_events,
@@ -137,6 +141,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 "mailbox_guid",
                 "message_guid",
                 "until",
+                "timezone_offset",
                 "return_to",
             ][..]
         } else {
@@ -171,12 +176,14 @@ impl<G: BrowserGateway> BrowserApp<G> {
                             &session.record.csrf_token,
                             None,
                             Some(t),
+                            self.snooze_offset(&session),
                         ),
                     ),
                     audit_events,
                 };
             }
         };
+        let offset = self.snooze_offset(&session);
         let record = self.gateway.snooze_load(&session);
         let mut result = record.as_ref().map(|_| ()).map_err(|e| *e);
         if posted.is_some() && result.is_ok() {
@@ -188,10 +195,18 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     .get("revision")
                     .and_then(|v| v.parse::<u64>().ok().filter(|n| n.to_string() == *v))
                     .ok_or(SnoozeError::Invalid)?;
-                let until = crate::snooze::parse_utc(
-                    fields.get("until").ok_or(SnoozeError::Invalid)?,
-                    self.gateway.snooze_clock(),
-                )?;
+                let offset = offset.ok_or(SnoozeError::Unavailable)?;
+                if fields.get("timezone_offset").map(String::as_str)
+                    != Some(offset.as_str().as_str())
+                {
+                    return Err(SnoozeError::Stale);
+                }
+                let until = offset
+                    .parse_schedule(
+                        fields.get("until").ok_or(SnoozeError::Invalid)?,
+                        self.gateway.snooze_clock(),
+                    )
+                    .ok_or(SnoozeError::Invalid)?;
                 self.gateway
                     .snooze_change(&session, &identity, revision, Some(until))
                     .map(|_| ())
@@ -241,7 +256,15 @@ impl<G: BrowserGateway> BrowserApp<G> {
                         .get("revision")
                         .and_then(|v| v.parse().ok())
                         .unwrap_or_else(|| current.map_or(0, |r| r.revision())),
-                    until_utc: fields.get("until").map_or("", String::as_str),
+                    offset,
+                    until_local: if posted.is_some()
+                        && fields.get("timezone_offset").map(String::as_str)
+                            != offset.map(|o| o.as_str()).as_deref()
+                    {
+                        ""
+                    } else {
+                        fields.get("until").map_or("", String::as_str)
+                    },
                     return_to: fields.get("return_to").map_or("", String::as_str),
                     error,
                     available: current.is_some() && !paused,
@@ -269,7 +292,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
         let fields = if allows_urlencoded_request_body(
             request.headers.get("content-type").map(String::as_str),
         ) {
-            parse_urlencoded_form(&request.body, 9, 4096).ok()
+            parse_urlencoded_form(&request.body, 10, 4096).ok()
         } else {
             None
         };
@@ -352,6 +375,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                             &session.record.csrf_token,
                             record.as_ref(),
                             Some(t),
+                            self.snooze_offset(&session),
                         ),
                     ),
                     audit_events,

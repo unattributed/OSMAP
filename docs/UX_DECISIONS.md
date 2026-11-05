@@ -713,3 +713,10 @@ The owner states Documents was removed from the project and was not approved. St
 The owner requires scheduled-send entry in the timezone configured in OSMAP. Reuse the saved fixed UTC offset and strict existing civil-date parser; show the local time first, with UTC secondary, and persist the same absolute UTC instant. A canonical offset carried by a form must match the current authenticated account preference. Missing, tampered or changed context refuses before mutation instead of guessing. Existing jobs are not reinterpreted. This uses existing fixed-offset preferences; named-zone daylight-saving automation is separate scope.
 
 A confirmed journal transfer to scheduling projects the retired source draft as a read-only Scheduled copy linked to its job, without asserting that the job remains pending. Reserved or uncertain transfers remain Paused. Cancellation never rearms the consumed source draft. Existing immutable capture, duplicate-send, owner, CSRF and final-send policy controls remain in force.
+
+
+## 2026-11-06 — Retire scheduled sources without rearming delivery
+
+After durable capture and confirmed journal transfer, remove only the exact source revision. Legacy confirmed Scheduled copies may be explicitly discarded while keeping the captured job/payload and consumed intent. They stay noneditable: editing captured content belongs to Scheduled messages, and cancellation never rearms the source. Uncertain attempts remain protected.
+
+Reuse fixed-offset Schedule conversion for Snooze, with current owned-offset binding and independent cancellation. Normalize timezone-less native dates at the producer with TZ=UTC, then apply the account display offset once. Install only the existing helper retention input for Duncan Trash on obsd1; retain native policy/revision/identity/CSRF/review/confirmation checks. No owner data deletion, public mail configuration change or new Python tooling. The final S08 inspection excludes Documents and preserves accepted folder, notification and scoped scheduled-delivery evidence.

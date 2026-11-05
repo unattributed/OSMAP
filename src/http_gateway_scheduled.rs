@@ -1,5 +1,6 @@
 //! Account-owned scheduler mutations and one sequential, restart-safe worker pass.
 use super::*;
+use crate::config::LogFormat;
 use crate::logging::{EventCategory, Logger};
 use crate::scheduled_send::{
     Error, JobList, Reauthorization, ScheduleInput, ScheduledStore, State,
@@ -108,7 +109,45 @@ impl RuntimeBrowserGateway {
         guard
             .finish_schedule(&intent, &staged.id, &staged.digest)
             .map_err(|_| Error::Unconfirmed)?;
+        self.cleanup_confirmed_scheduled_source(&guard, &draft);
         Ok(staged.id)
+    }
+    /// Best-effort removal after durable capture. Failure must never turn a
+    /// confirmed schedule into a retryable scheduling error.
+    pub(super) fn cleanup_confirmed_scheduled_source(
+        &self,
+        guard: &crate::send_journal::AccountGuard,
+        draft: &crate::draft::DraftRecord,
+    ) {
+        let cleanup = (|| {
+            let (intent, attempt) = guard.draft_attempt(&draft.summary()).map_err(|_| ())?;
+            if !matches!(
+                attempt,
+                Some(crate::send_journal::AttemptOutcome::Scheduled {
+                    schedule_confirmed: true,
+                    ..
+                })
+            ) || guard.draft_intent(draft).map_err(|_| ())? != intent
+            {
+                return Err(());
+            }
+            self.build_draft_store()
+                .delete(
+                    &draft.canonical_username,
+                    &draft.draft_id,
+                    draft.revision.ok_or(())?,
+                )
+                .map_err(|_| ())?;
+            Ok(())
+        })();
+        if cleanup.is_err() {
+            Logger::new(LogFormat::Text, LogLevel::Warn).emit(&LogEvent::new(
+                LogLevel::Warn,
+                EventCategory::Submission,
+                "scheduled_source_cleanup_unconfirmed",
+                "schedule confirmed; source draft cleanup unconfirmed; retained copy requires explicit discard",
+            ));
+        }
     }
     #[allow(clippy::too_many_arguments)]
     pub(super) fn scheduled_edit_impl(

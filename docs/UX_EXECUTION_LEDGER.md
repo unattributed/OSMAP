@@ -1,3 +1,7 @@
+2026-11-06 (Asia/Bangkok) — **S08-03 Drafts UAT FAILED; correction IN_PROGRESS.** Confirmed schedule source copies cannot be edited or discarded. Preserve the separate scheduled-delivery PASS. Smallest correction: remove exact source only after durable scheduling, permit explicit legacy-copy discard without job mutation/rearming; qualify native date producer UTC and exact-account Trash retention. Owner mailbox messages remain untouched in agent QA. Independent reassessment with /root/remembered_key_review retains prior failures and passing unchanged evidence.
+
+2026-11-05 (Asia/Bangkok) — **S08-03 scheduled-delivery UAT PASS.** Owner explicitly states “Scheduled-delivery UAT: PASS” after showing the message “scheduled send for22h45” received in Proton Mail at23:45 local time, matching its original saved schedule. This accepts end-to-end scheduled delivery for that test. The corrected local-time input and separate cancellation checks remain pending; whole S08-03/S08 acceptance is not inferred. No code, deployed binary, schedule or mailbox data changes accompany this record.
+
 2026-11-05 — **S08-03 saved-timezone follow-up UAT_READY.** Use saved OSMAP timezone for scheduling; fix confirmed retired drafts incorrectly labelled Paused. Earlier owner schedules remain untouched; no pre-due dispatch failure established. Documents stays removed.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
@@ -45,7 +49,15 @@
     "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
     "maint/security/v10-rust-assumption-audit.json",
     "maint/security/v10-fail-closed-remediation.json",
-    "maint/security/v10-claims-boundary.json"
+    "maint/security/v10-claims-boundary.json",
+    "src/http_gateway_draft.rs",
+    "src/http_gateway_scheduled.rs",
+    "src/auth.rs",
+    "src/http_gateway_storage_native_tests.rs",
+    "src/snooze_ui.rs",
+    "src/http/routes_snooze.rs",
+    "src/http/snooze_tests.rs",
+    "src/mailbox_helper_native_reader_tests.rs"
   ],
   "outcomes": [
     {
@@ -59,9 +71,9 @@
         "UX08-008",
         "UX08-011"
       ],
-      "frontend_backend_outcome": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
-      "essential_qa": "Strict local conversion, bounds, offset substitution/change/missing refusal, current auth/CSRF and exact fields, local-first rendering, cancellation/reopen readonly source projection, matching native tests/install and ordinary signed delivery.",
-      "next_action": "Complete ordinary signed GitHub delivery; owner local-time schedule/cancel UAT remains pending.",
+      "frontend_backend_outcome": "Confirmed scheduling removes only its exact source draft after durable capture; legacy confirmed scheduled copies can be explicitly deleted without rearming or cancelling jobs; native message dates are UTC before account display conversion; obsd1 Trash supports retention-authorized confirmed deletion.",
+      "essential_qa": "Strict local conversion, bounds, offset substitution/change/missing refusal, current auth/CSRF and exact fields, local-first rendering, cancellation/reopen readonly source projection, matching native tests/install and ordinary signed delivery. Existing installed read-only helper retention query, controlled native single/bulk deletion and complete S08 functional inventory after fixes; Documents excluded by owner. Snooze saved-offset forms/parse, stale/missing/forged context refusal, cancellation remains independent; full S08 retained-function audit.",
+      "next_action": "Complete independent result review and ordinary signed synchronization, then owner corrected Drafts/Trash/local-time/cancellation/Snooze UAT; preserve accepted scheduled-delivery and S08-02/04 evidence. Documents excluded.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -74,34 +86,34 @@
       "evidence": [
         {
           "stage": "implementation",
-          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection"
         },
         {
           "stage": "source_tests",
-          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection"
         },
         {
           "stage": "native_tests",
-          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection"
         },
         {
           "stage": "deployed_qa",
-          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection"
         },
         {
           "stage": "independent_review",
-          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection"
         },
         {
           "stage": "recovery",
-          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection"
         }
       ]
     }
   ],
   "accountability": {
     "owner": "/root",
-    "functional_exit": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+    "functional_exit": "Confirmed scheduling removes only its exact source draft after durable capture; legacy confirmed scheduled copies can be explicitly deleted without rearming or cancelling jobs; native message dates are UTC before account display conversion; obsd1 Trash supports retention-authorized confirmed deletion.",
     "elapsed_scope": "wall_clock",
     "history_reference": "Original S08-03 qualification and latest owner screenshots; notification acceptance preserved below.",
     "investigation": {
@@ -199,6 +211,217 @@
           ]
         },
         "change_reference": "Ordinary full pre-push after successful independent developer gate."
+      },
+      {
+        "id": "native-tests21",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "Native schedul60/snooze12/UTCexecutor1 PASS; synthetic single-delete browser refused at Bin preference save (503 vs303), before deletion. Retained private native-tests.log and exact-owned stage log. Raw metadata child output was unavailable because the old fixture did not retain it; cause inferred from composed argv and independently reviewed existing rename fixture.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "d8a507566820d01947ad3650d7a3e8d27a7c867c61f5123332d8a9f505c6ef3d",
+        "change_reference": "Reuse the existing test-only exec-imap private configuration propagation. No production relaxation; rerun only changed synthetic single/bulk boundaries with the same assertions.",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent composed native fixture diagnosis; exec imap config propagation matches qualified rename fixture. Failure retained, no installed acceptance.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        }
+      },
+      {
+        "id": "native-tests22",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection; Second identical Bin-setting refusal before deletion; private child configuration fix insufficient.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "fc4b9d22932d7ae469e5d2b409cc359abb65efcf44100f6b4a949ca236622f52",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent reviewed source and exact bounded recipe; source/result distinction retained.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Second identical Bin-setting refusal before deletion; private child configuration fix insufficient.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/remembered_key_review"
+          ],
+          "reference": "Shared-outcome history includes earlier parallel pre-push failure, now passing under serial ordinary test execution; independent native21 review chose existing private child-config isolation correction. These distinct failure causes are retained, not waived.",
+          "next_action": "Run reviewed test-only fixture correction, preserve original303 assertion; no owner installation until native boundary passes.",
+          "failed_attempt_ids": [
+            "ordinary-prepush-parallel",
+            "native-tests21"
+          ]
+        }
+      },
+      {
+        "id": "native-diagnostic23",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection; Diagnostic-only observed IMAP exit89 getcwd permission denied from inherited inaccessible cwd. No owner effects; result retained.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "d8a507566820d01947ad3650d7a3e8d27a7c867c61f5123332d8a9f505c6ef3d",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent reviewed source and exact bounded recipe; source/result distinction retained.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Diagnostic-only observed IMAP exit89 getcwd permission denied from inherited inaccessible cwd. No owner effects; result retained.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/remembered_key_review"
+          ],
+          "reference": "Root and independent reviewer combined reassessment: stop functional retries; diagnostic-only fixed-transcript result before original assertion. Actual observation identified inherited inaccessible cwd.",
+          "next_action": "Execute only the reviewed changed action under existing operation bounds, preserve all failed observations and owner state.",
+          "failed_attempt_ids": [
+            "native-tests22"
+          ]
+        }
+      },
+      {
+        "id": "native-tests24",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection; Recipe cd /tmp fixes observed native prerequisite. Matching tests22 actual single2.50s/bulk1.87s pass; temporary neighbour/account isolation and cleanup assertions pass.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "fc4b9d22932d7ae469e5d2b409cc359abb65efcf44100f6b4a949ca236622f52",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent reviewed source and exact bounded recipe; source/result distinction retained.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Recipe cd /tmp fixes observed native prerequisite. Matching tests22 actual single2.50s/bulk1.87s pass; temporary neighbour/account isolation and cleanup assertions pass."
+      },
+      {
+        "id": "install21-preflight",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection; Before live mutation: daemon PID observation used service name mysqld; actual rcctl service healthy, process mariadbd. Exact backups retained.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "d8a507566820d01947ad3650d7a3e8d27a7c867c61f5123332d8a9f505c6ef3d",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent reviewed source and exact bounded recipe; source/result distinction retained.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Before live mutation: daemon PID observation used service name mysqld; actual rcctl service healthy, process mariadbd. Exact backups retained."
+      },
+      {
+        "id": "install25",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection; Web/helper main21 matching text inodes; exact-account retention input installed; HTTPS200,nine roles, public mail/account/GPG/config unchanged; no owner message mutations.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "d8a507566820d01947ad3650d7a3e8d27a7c867c61f5123332d8a9f505c6ef3d",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent reviewed source and exact bounded recipe; source/result distinction retained.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Web/helper main21 matching text inodes; exact-account retention input installed; HTTPS200,nine roles, public mail/account/GPG/config unchanged; no owner message mutations.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/remembered_key_review"
+          ],
+          "reference": "Root and independent reviewer combined result review: native24 passes after measured cwd correction; install21 remained pre-mutation. PID observation corrected to current mariadbd; production source, exact scope and rollback unchanged.",
+          "next_action": "Execute only the reviewed changed action under existing operation bounds, preserve all failed observations and owner state.",
+          "failed_attempt_ids": [
+            "native-diagnostic23",
+            "install21-preflight"
+          ]
+        }
+      },
+      {
+        "id": "readiness24",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection; Actual installed signed account admission and helper exact Duncan Trash Allowedrevision1; Inbox/foreign unavailable,0.04s,no mutations.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "fc4b9d22932d7ae469e5d2b409cc359abb65efcf44100f6b4a949ca236622f52",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent reviewed source and exact bounded recipe; source/result distinction retained.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Actual installed signed account admission and helper exact Duncan Trash Allowedrevision1; Inbox/foreign unavailable,0.04s,no mutations."
+      },
+      {
+        "id": "ordinary-prepush-publication-address",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "FAIL",
+        "reference": "Normal pre-push on unpublished490405de41a034efcd4841e067e932062898c632 passed Rust2339/0 and V8, then publication guard refused one real primary-mailbox address in the new slice note. No origin update occurred. Replaced with generic operator development account; no product change.",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "490405de41a034efcd4841e067e932062898c632",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Final source/result review GO retained; new public-note privacy correction and unpublished checkpoint recovery separately reviewed.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Sanitize public slice note and preserve original unpublished signed checkpoint privately; normal signed replacement checkpoint and full push gates remain required."
       }
     ]
   },
@@ -207,16 +430,16 @@
     "slice": "S08-03",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "d216edaf8cd1f657f32c883cba334ba48827dd935ac36c800d2f16401aefff59"
+      "sha256": "823f04ec048ef5cb8d9f5a125fe5c509e05d44f3f5f4e5d26898ff54bbb6b8a2"
     },
     "design": {
-      "journey": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
-      "frontend": "Existing native schedule forms, local time label/current time/min/max and hidden canonical saved offset; readonly Scheduled copy link in Drafts.",
-      "backend": "Existing strict parser and owner preference; scheduling store/journal/worker unchanged.",
+      "journey": "Schedule and Snooze use the saved account offset, captured jobs remain independent, confirmed source copies can be safely discarded, and explicitly confirmed exact-account Trash deletion is available.",
+      "frontend": "Existing local-time forms plus safe legacy Scheduled-copy discard and existing Trash review/confirmation controls.",
+      "backend": "Reuse journal/store cleanup and current retention-bound helper deletion; normalize native dates to UTC before display.",
       "interfaces": "Current authenticated session and CSRF/Origin; strict fields plus saved offset equality.",
-      "persistence": "Existing UTC due instants and journal retirement unchanged.",
+      "persistence": "Persist UTC instants and consumed send intent; exact-revision source cleanup cannot modify captured jobs or rearm a send.",
       "security": "No fabricated session, timezone guessing, replay or owner-job mutation; expired/changed state refuses.",
-      "failure_recovery": "Bounded native build600s per build; existing Web-only atomic rollback; no public mail-service restart. Two same-boundary failures require independent reassessment."
+      "failure_recovery": "Retain uncertain attempts; bounded atomic Web/helper install with exact backup rollback; public mail/account/GPG unchanged. Failed fixture and PID-preflight observations retained with causal corrections."
     },
     "tests": [
       {
@@ -227,14 +450,14 @@
         "kind": "positive",
         "level": "source",
         "prerequisites": "Current scoped source and existing matching scheduler contracts.",
-        "action": "Review screenshots and actual pending job without changing it",
-        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "action": "Inspect all retained S08 functionality and current installed configuration, preserving removed Documents scope",
+        "expected": "Schedule and Snooze use the saved account offset, captured jobs remain independent, confirmed source copies can be safely discarded, and explicitly confirmed exact-account Trash deletion is available.",
         "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
         "status": "PASS",
         "evidence": [
-          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+          "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection"
         ]
       },
       {
@@ -245,14 +468,14 @@
         "kind": "positive",
         "level": "source",
         "prerequisites": "Current scoped source and existing matching scheduler contracts.",
-        "action": "Strict fixed-offset conversion, future/horizon and calendar boundaries",
-        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "action": "Fixed-offset Schedule/Snooze parsing, future horizon/calendar and stale context refusal",
+        "expected": "Schedule and Snooze use the saved account offset, captured jobs remain independent, confirmed source copies can be safely discarded, and explicitly confirmed exact-account Trash deletion is available.",
         "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
         "status": "PASS",
         "evidence": [
-          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+          "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection"
         ]
       },
       {
@@ -263,14 +486,14 @@
         "kind": "positive",
         "level": "source",
         "prerequisites": "Current scoped source and existing matching scheduler contracts.",
-        "action": "Native HTML input/local-first display and unavailable refusal",
-        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "action": "Local-time rendering, exact Scheduled-copy discard form and unavailable refusal",
+        "expected": "Schedule and Snooze use the saved account offset, captured jobs remain independent, confirmed source copies can be safely discarded, and explicitly confirmed exact-account Trash deletion is available.",
         "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
         "status": "PASS",
         "evidence": [
-          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+          "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection"
         ]
       },
       {
@@ -281,14 +504,14 @@
         "kind": "negative",
         "level": "source",
         "prerequisites": "Current scoped source and existing matching scheduler contracts.",
-        "action": "Authenticated HTTP offset capture and stale/tampered/CSRF refusal",
-        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "action": "Authenticated HTTP/CAS/CSRF, stale/foreign/current-policy and uncertain-attempt refusal",
+        "expected": "Schedule and Snooze use the saved account offset, captured jobs remain independent, confirmed source copies can be safely discarded, and explicitly confirmed exact-account Trash deletion is available.",
         "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
         "status": "PASS",
         "evidence": [
-          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+          "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection"
         ]
       },
       {
@@ -299,14 +522,14 @@
         "kind": "positive",
         "level": "source",
         "prerequisites": "Current scoped source and existing matching scheduler contracts.",
-        "action": "Real Runtime source schedule/cancel/reopen projection with no source rearm",
-        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "action": "Runtime durable source cleanup, legacy explicit discard, payload/job preservation and no send rearm",
+        "expected": "Schedule and Snooze use the saved account offset, captured jobs remain independent, confirmed source copies can be safely discarded, and explicitly confirmed exact-account Trash deletion is available.",
         "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
         "status": "PASS",
         "evidence": [
-          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+          "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection"
         ]
       },
       {
@@ -317,14 +540,14 @@
         "kind": "positive",
         "level": "source",
         "prerequisites": "Current scoped source and existing matching scheduler contracts.",
-        "action": "Focused Rust and strict Clippy",
-        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "action": "Focused Rust, native scheduling60/Snooze12/UTC1, developer security-check and strict Clippy",
+        "expected": "Schedule and Snooze use the saved account offset, captured jobs remain independent, confirmed source copies can be safely discarded, and explicitly confirmed exact-account Trash deletion is available.",
         "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
         "status": "PASS",
         "evidence": [
-          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+          "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection"
         ]
       },
       {
@@ -335,14 +558,14 @@
         "kind": "positive",
         "level": "source",
         "prerequisites": "Current scoped source and existing matching scheduler contracts.",
-        "action": "Independent source/recipe review",
-        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "action": "Independent source/recipe and actual-result review",
+        "expected": "Schedule and Snooze use the saved account offset, captured jobs remain independent, confirmed source copies can be safely discarded, and explicitly confirmed exact-account Trash deletion is available.",
         "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
         "status": "PASS",
         "evidence": [
-          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+          "Independent /root/remembered_key_review final source/result/docs GO; generated remediation count aligned12966 and V10 governance gate PASS. Actual install25/readiness24/native24 receipts reviewed."
         ]
       },
       {
@@ -353,14 +576,14 @@
         "kind": "positive",
         "level": "deployed",
         "prerequisites": "Current scoped source and existing matching scheduler contracts.",
-        "action": "Matching OpenBSD tests and Web-only exact-binary install with rollback/service preservation",
-        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
-        "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
+        "action": "Matching OpenBSD main, synthetic single/bulk browser deletion, installed account admission and scoped retention, nine services/HTTPS and configuration preservation",
+        "expected": "Schedule and Snooze use the saved account offset, captured jobs remain independent, confirmed source copies can be safely discarded, and explicitly confirmed exact-account Trash deletion is available.",
+        "preserved": "Owner drafts/messages, public mail/account/GPG processes and unrelated configuration; only exact Duncan Trash helper retention input added.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
         "status": "PASS",
         "evidence": [
-          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+          "docs/UX_SLICE_S08_03.md: 2026-11-06 Drafts/Trash correction and retained S08 inspection"
         ]
       },
       {
@@ -371,24 +594,26 @@
         "kind": "positive",
         "level": "human",
         "prerequisites": "Current scoped source and existing matching scheduler contracts.",
-        "action": "Owner schedules and cancels test mail using saved local timezone",
-        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "action": "Owner corrected Drafts/Trash/local-time/cancellation/Snooze UAT",
+        "expected": "Legacy source copy deletes without changing delivered mail/job; selected Bin item deletes after confirmation; Schedule/Snooze show saved local time and cancellation persists.",
         "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PARTIAL",
+        "evidence": [
+          "Prior Drafts UAT FAILED retained; prior scheduled-delivery PASS retained; corrected journey awaits owner retest."
+        ]
       }
     ],
     "engineering_exit": "All required nonhuman follow-up tests and scoped review pass against matching source/native/installed artifacts; previous unaffected S08-03 evidence remains scoped.",
-    "human_exit": "Owner schedules a controlled message in saved OSMAP timezone, confirms submission, and cancels another pending job."
+    "human_exit": "Owner safely deletes a legacy Scheduled source copy and an expendable Bin item; verifies local scheduling/cancellation and Snooze cancellation. Existing delivery/folder/notification acceptance reused."
   },
   "human_acceptance": {
     "status": "PENDING",
-    "reference": "Owner follow-up UAT remains pending; original saved jobs have not reached their due times."
+    "reference": "Corrected owner UAT pending; historical Drafts FAIL and separate delivery PASS retained."
   },
-  "next_action": "Exact affected test passes isolated; independent review GO for ordinary full push hooks with RUST_TEST_THREADS=1, retaining all assertions and explicit concurrency tests. Owner T09 pending.",
-  "independent_next_action": "Review changed scheduling time interpretation and draft state; source/native results required before readiness. Documents remains stopped."
+  "next_action": "Complete independent result review and ordinary signed synchronization, then owner corrected Drafts/Trash/local-time/cancellation/Snooze UAT; preserve accepted scheduled-delivery and S08-02/04 evidence. Documents excluded.",
+  "independent_next_action": "Independent engineering source/result review PASS. Preserve owner T09 pending; normal signed delivery hooks and fresh remote equality required before handoff."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

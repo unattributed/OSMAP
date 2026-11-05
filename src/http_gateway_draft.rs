@@ -496,10 +496,22 @@ impl RuntimeBrowserGateway {
             else {
                 return Ok(false);
             };
-            let intent = guard.draft_intent(&draft).map_err(journal_draft_error)?;
-            guard
-                .require_unconsumed(&intent)
+            let (intent, attempt) = guard
+                .draft_attempt(&draft.summary())
                 .map_err(journal_draft_error)?;
+            // Discarding a durably captured source does not modify the job or
+            // remove its consumed send intent. Uncertain attempts stay protected.
+            if !matches!(
+                attempt,
+                Some(crate::send_journal::AttemptOutcome::Scheduled {
+                    schedule_confirmed: true,
+                    ..
+                })
+            ) {
+                guard
+                    .require_unconsumed(&intent)
+                    .map_err(journal_draft_error)?;
+            }
             store.delete(
                 &validated_session.record.canonical_username,
                 draft_id,

@@ -430,7 +430,8 @@
         "mailbox_guid",
         "message_guid",
         "until",
-        "return_to"
+        "return_to",
+        "timezone_offset"
       ],
       "wstg_test_ids": [
         "OSMAP-WSTG-ATHZ-001",

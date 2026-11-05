@@ -1,4 +1,101 @@
+## 2026-11-06 — Drafts/Trash correction and retained S08 inspection
+
+The owner reported Drafts UAT FAILED after separately accepting scheduled delivery.
+That failure is retained. The current correction removes the exact source draft
+only after durable schedule capture and journal confirmation. A legacy confirmed
+Scheduled copy has a **Delete source copy** action in its three-dot menu. Deletion
+keeps the scheduled job, captured payload and consumed send intent; it cannot
+cancel or resend the message. Reserved/uncertain attempts remain protected.
+Source-cleanup failure preserves the confirmed job and a safely discardable copy.
+
+The installed mailbox helper had no retention-policy input. Existing permanent-
+delete routes correctly refused without that authority. The obsd1-only policy now
+permits confirmed permanent deletion for the operator development account / Trash,
+revision1. Inbox and other accounts remain unavailable to this policy. The
+existing identity/revision, CSRF, review and explicit confirmation checks remain.
+No owner message or retained source copy was deleted during agent QA.
+
+A separate Sent-date defect was reproduced: native date.received was local time
+without an offset, then interpreted as UTC and converted again. The existing
+native executor now uses TZ=UTC; account display applies the saved offset once.
+Snooze reuses the same fixed-offset parser/display as Schedule. Missing, forged
+or changed form offsets refuse before mutation; Snooze cancellation still works
+without a timezone preference. Existing due instants are unchanged. Named-zone
+DST automation is outside the existing fixed-offset setting.
+
+### Matching verification and preserved failures
+
+- Local developer gate passed with2339 Rust tests,0 failures and89 explicit
+  native/external ignores. Changed-source strict Clippy and commit-check passed.
+  The final ordinary push gate separately rechecks the delivered source.
+- OpenBSD production source archive21 SHA256
+  d8a507566820d01947ad3650d7a3e8d27a7c867c61f5123332d8a9f505c6ef3d
+  built main a57111d62d5315e6f63d4227a3e93ef7a28bf0e4aa7f25d7a288efb5fe61e08b.
+  Native scheduling60, Snooze12 and executor-environment1 tests passed.
+- Synthetic single-delete attempts21/22 failed before deletion while saving the
+  test Bin preference. A diagnostic-only23 observation identified exit89:
+  IMAP could not resolve its inherited inaccessible working directory. The
+  existing test-only child-config isolation omission was also corrected, but
+  that omission alone did not fix the failure. The native carrier now changes
+  to /tmp before su. Original assertions were preserved; no product permission
+  or public mail-service setting was weakened. Temporary fixture cleanup uses
+  the existing owned namespace. Raw synthetic diagnostics remain private.
+- Matching tests22 SHA256 fc4b9d22932d7ae469e5d2b409cc359abb65efcf44100f6b4a949ca236622f52
+  passed actual single and bulk browser/helper/native deletion journeys in2.50s
+  and1.87s. Assertions include current retention changes, stale/foreign tuples,
+  explicit confirmation, exact expunge and unchanged neighbouring mail.
+- Install21 stopped before live changes because its PID observation used the
+  service name mysqld instead of the observed process name mariadbd. Reviewed
+  install25 uses the observed daemon name. Both live Web/helper text inodes now
+  match main21; HTTPS login200 and nine service checks pass. Public mail,
+  account-service and GPG-agent processes and unrelated configuration compare
+  unchanged. The installed read-only Runtime/helper test passes signed account
+  admission, exact-account Trash allowed, Inbox unavailable and foreign-account
+  unavailable in0.04s. It performs no owner-session or mailbox mutation.
+
+Private receipts are retained under
+osmap-ux-s08/completion-20261104/scheduled-drafts-trash-20261106. Production code
+is archive21; the later reader-fixture change is test-only. Independent review
+and ordinary signed synchronization are recorded separately from owner T09.
+
+### All retained S08 functionality inspected
+
+| Area | Result and remaining owner check |
+| --- | --- |
+| S08-01 Documents | Removed by owner; development and UAT excluded. Historical mailbox/quota cutover is not silently reversed. Accepted account storage reporting is retained. |
+| S08-02 labels, finite menus and folder hierarchy | Existing accepted source/native/human evidence reused; current regression suite includes label assignment, folder create/rename/delete, protected folders, stale identity and account isolation. No changed implementation. |
+| S08-03 scheduled send | Captured content, edit/cancel, due-worker/restart, account/key/policy fencing, uncertain-result nonretry and duplicate suppression retained. Prior composed native positive worker proof and owner scheduled-delivery PASS reused. New source cleanup, legacy discard and saved-time entry are checked; corrected owner UAT remains pending. |
+| S08-03 Snooze | Saved local input/display, identity/CAS/CSRF, expiry/reopen, Inbox/dashboard suppression, search/direct access and cancellation checked. It does not move mail. |
+| S08-04 notifications | Accepted inbox/badge/preferences, read/delete/delete-all and save feedback retained. Current regressions cover account isolation, replay suppression, mandatory security events, bounded retention and opt-in browser delivery. No claim of unreported audible/desktop presentation on every platform. |
+| Trash follow-up | Installed exact-account authority plus real synthetic single/bulk deletion pass. Owner chooses expendable messages for final confirmation. |
+
+### Short owner UAT
+
+Sign in again after the OSMAP restart. (1) In Drafts, open a legacy Scheduled copy's
+three-dot menu, choose **Delete source copy**, refresh and confirm it is absent;
+the existing Sent message/job status stays intact. (2) In Bin, select one expendable
+message, choose **Review permanent deletion of selected**, confirm, refresh and
+confirm only that item is gone. (3) Set/confirm your OSMAP timezone, schedule a
+new test for a future local time, confirm the displayed local time and that the
+source no longer appears in Drafts, then cancel the job and confirm it stays
+cancelled after refresh. (4) Snooze an Inbox test message to a future local time,
+then cancel its snooze and confirm it returns. Previous notification and folder
+acceptance need not be repeated unless a new problem is observed.
+
+Whole S08 remains open for this final owner UAT; scheduled-delivery PASS and
+previously accepted areas are preserved, not erased by the Drafts failure.
+
+2026-11-06 scope refinement — user requests all S08 functions inspected for UAT. Reuse the existing fixed-offset conversion for Snooze entry/display too, with current-owned-offset binding and cancellation independent of timezone availability. Verify no mail movement, source-list suppression/expiry, search/direct access and CAS/CSRF. No new scheduler or named-zone/DST machinery.
+
+2026-11-06 (Asia/Bangkok) — **Drafts UAT FAILED; engineering resumed.** Scheduled-delivery UAT remains PASS for the received test. Retained scheduled source copies must be safely removable without rearming delivery. Correct future exact-source cleanup and legacy explicit discard; investigate Trash retention and native date normalization. No owner message deletion during agent QA. Whole S08-03/S08 is not accepted.
+
 # S08-03 — Scheduled send and snooze
+
+
+## Owner acceptance update — 2026-11-05
+
+2026-11-05 (Asia/Bangkok) — **S08-03 scheduled-delivery UAT PASS.** Owner explicitly states “Scheduled-delivery UAT: PASS” after showing the message “scheduled send for22h45” received in Proton Mail at23:45 local time, matching its original saved schedule. This accepts end-to-end scheduled delivery for that test. The corrected local-time input and separate cancellation checks remain pending; whole S08-03/S08 acceptance is not inferred. No code, deployed binary, schedule or mailbox data changes accompany this record.
+
 
 ## Current scope — 2026-11-05
 
