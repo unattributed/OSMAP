@@ -54,9 +54,9 @@ if [ -n "$frontend_paths" ]; then
   exit 2
 fi
 
-js_paths="$(git ls-files --cached --others --exclude-standard | grep -E '\.(js|mjs|cjs|jsx|ts|tsx|wasm)$' | grep -Fvx -e 'src/http/compose_local.js' -e 'src/http/password_local.js' -e 'maint/ux/folder_rename_workflows.cjs' -e 'maint/ux/password_controls_workflows.cjs' -e 'maint/ux/recovery_contact_workflows.cjs' -e 'maint/ux/recovery_contact_native.cjs' || true)"
+js_paths="$(git ls-files --cached --others --exclude-standard | grep -E '\.(js|mjs|cjs|jsx|ts|tsx|wasm)$' | grep -Fvx -e 'src/http/compose_local.js' -e 'src/http/password_local.js' -e 'src/http/notification_local.js' -e 'maint/ux/folder_rename_workflows.cjs' -e 'maint/ux/password_controls_workflows.cjs' -e 'maint/ux/recovery_contact_workflows.cjs' -e 'maint/ux/recovery_contact_native.cjs' || true)"
 if [ -n "$js_paths" ]; then
-  echo "error: script artifacts outside the exact R2 composer allowance" >&2
+  echo "error: script artifacts outside the exact R2 first-party allowances" >&2
   printf '%s\n' "$js_paths" >&2
   exit 2
 fi
@@ -165,6 +165,10 @@ for path in Path("src").rglob("*.rs"):
         assert str(path) in allowed_callers, f"scripted response escaped composer: {path}"
     if 'include_str!("password_local.js")' in production or "PASSWORD_SCRIPT_HASH" in production:
         assert str(path) == "src/http/routes_password.rs", f"password script escaped exact route: {path}"
+    if 'include_str!("notification_local.js")' in production:
+        assert str(path) == "src/http/notification_delivery.rs", f"notification script escaped exact module: {path}"
+    if "notification_delivery::response(" in production:
+        assert str(path) in {"src/http/routes_notifications.rs", "src/http/routes_settings.rs"}, f"notification script escaped native surfaces: {path}"
 
 runtime_files = [Path("src/http_ui.rs"), Path("src/http_support.rs")]
 patterns = [

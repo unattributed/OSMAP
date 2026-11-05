@@ -1,4 +1,4 @@
-2026-11-05 — **S08-04 IN_PROGRESS.** S08-03 engineering is installed and ready for separate owner T09. Continue factual notifications and explicit browser delivery. Accepted S08-02 and unfinished S08-01 Documents enforcement remain separate.
+2026-11-05 — **S08-04 IN_PROGRESS.** S08-03 is installed but positive post-seal worker qualification remains pending before owner T09. Continue factual notifications and explicit browser delivery. Accepted S08-02 and unfinished S08-01 Documents enforcement remain separate.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
 ```json
@@ -39,6 +39,7 @@
     "docs/UX_SLICE_S08_04.md",
     "maint/ux/acceptance.json",
     "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "maint/security/osmap-v14-no-js-low-sbom-gate.sh",
     "maint/security/v10-claims-boundary.json",
     "maint/security/v10-fail-closed-remediation.json",
     "maint/security/v10-rust-assumption-audit.json",
@@ -144,7 +145,7 @@
     "owner": "/root",
     "functional_exit": "All12 mapped notification/activity obligations meet actual producer, persistence, browser consent and installed tests, with separate owner acceptance.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "S08-03 installed engineering and pendingT09 archived verbatim below; retain all earlier S08-01 OPEN work and accepted S08-02. No production-mail synchronization or mailbox migration is resumed.",
+    "history_reference": "Earlier S08-03 installed engineering record archived verbatim below; subsequent independent review identifies positive post-seal worker qualification pending before T09; retain all earlier S08-01 OPEN work and accepted S08-02. No production-mail synchronization or mailbox migration is resumed.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 3600,
@@ -159,7 +160,7 @@
     "slice": "S08-04",
     "specification": {
       "path": "docs/UX_SLICE_S08_04.md",
-      "sha256": "b00f8f05acb72db904d12d17f84c84b50d5dc91fd70d9338358a8e3c171484db"
+      "sha256": "f860356dd23382eb496da13ba3274466882288d5eaab5e8e21f851e4d16cac60"
     },
     "design": {
       "journey": "Observe factual account activity, select optional notification preferences and explicitly enable foreground browser delivery.",

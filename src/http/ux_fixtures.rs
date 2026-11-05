@@ -590,6 +590,7 @@ fn ux_synthetic_route_baselines() {
             assert!(html.contains("Recovery-contact management is unavailable."));
         }
         let compose_enhanced = html.contains("id=\"compose-form\"");
+        let notification_enhanced = name == "settings-notifications";
         if compose_enhanced {
             assert_eq!(csp, super::super::compose_enhancement::csp());
             assert!(html.contains(super::super::compose_enhancement::SCRIPT));
@@ -598,6 +599,10 @@ fn ux_synthetic_route_baselines() {
                 1,
                 "bounded script fixture {name}"
             );
+        } else if notification_enhanced {
+            assert_eq!(csp, super::super::notification_delivery::csp());
+            assert!(html.contains(super::super::notification_delivery::SCRIPT));
+            assert_eq!(html.matches("<script").count(), 1, "bounded notification script fixture {name}");
         } else {
             assert_eq!(csp, crate::http_support::browser_csp());
             assert!(!html.contains("<script"), "script-free fixture {name}");
@@ -611,7 +616,7 @@ fn ux_synthetic_route_baselines() {
             "html_sha256": format!("{:x}", Sha256::digest(html.as_bytes())),
             "csp": csp, "synthetic": true, "tokens_redacted": true,
             "appearance": appearance.as_str(),
-            "script_count": usize::from(compose_enhanced),
+            "script_count": usize::from(compose_enhanced || notification_enhanced),
             "approved_page_ids": approved_page_cases.iter()
                 .filter(|(_, names, _, _)| names.contains(&name))
                 .map(|(id, _, _, _)| *id).collect::<Vec<_>>(),

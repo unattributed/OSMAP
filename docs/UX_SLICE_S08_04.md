@@ -1,6 +1,6 @@
 # S08-04 — Factual notifications and explicit browser delivery
 
-The owner directs continuing unfinished S08 autonomously. S08-03 engineering is installed and ready for separate owner T09; S08-02 is accepted. S08-01 Documents shared enforcement remains open and mailbox migration remains set aside.
+The owner directs continuing unfinished S08 autonomously. S08-03 engineering is installed, with positive post-seal worker qualification pending before owner T09; S08-02 is accepted. S08-01 Documents shared enforcement remains open and mailbox migration remains set aside.
 
 ## Smallest complete route
 
@@ -51,3 +51,7 @@ The reused native protected-send actor now also exercises a controlled Inbox arr
 That added native observer and bounded private diagnostic are confined to the existing cfg(test) reader fixture, SHA25671e0f7e2624a215ae3bb03489ebd3427b70991f80181fa9a72e690090b503fbe. Immutable test archive6 was retained before its diagnostic review correction and never compiled/run. Final test archive7 is6fae81e96e73182b30a56e6f63f0da5662ca2f079b9f52a57531fee1b0ccb5bc; matching test binarya0e2ecfef617b55fb8cf49dc326f7164f0ec0b65c2aefa03004fa5d819dc9f5f. All519 other Rust/JS/Cargo files compare byte-for-byte with production archive5. The differing reader file is included only below cfg(test) in mailbox_helper.rs; generated audit records are not compiled runtime sources. Production candidate provenance therefore remains archive5.
 
 Main and test builds retain600-second operation/15-second termination bounds, one job and the existing cache. No live service/configuration/account/mail mutation or owner key operation occurs in these disposable checks. The browser API checks do not assert physical display/audio or cross-platform production assurance.
+
+## Normal delivery regression reconciliation
+
+The first enabled push gate stopped with2316RustPASS/1FAIL/89explicitignores. The sole failure was the synthetic page fixture retaining its historical script-free CSP expectation for Notifications settings. The correction requires the exact notification CSP, exact included script and one-script count only for that named page; all other non-compose pages retain their script-free check. The existing R2 first-party script inventory admits only notification_local.js and confines its Rust response callers to the native notification/settings routes. The exact synthetic route case passes1/0 and the existing no-JavaScript gate, including its12 composer and3 password negative controls, passes. This test/gate-only change does not alter the qualified production candidate. Original failed gate output is retained; no hook is bypassed.
