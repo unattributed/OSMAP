@@ -32,6 +32,10 @@ const HTTP_WORKER_THREAD_NAME: &str = "osmap-http-conn";
 #[path = "http_runtime_scheduled_native_tests.rs"]
 mod scheduled_native_tests;
 
+#[cfg(all(test, target_os = "openbsd"))]
+#[path = "http_runtime_scheduled_positive_native_tests.rs"]
+pub(crate) mod scheduled_positive_fixture;
+
 struct ScheduledWorkerThread {
     stop: Arc<AtomicBool>,
     handle: Option<thread::JoinHandle<()>>,
@@ -488,6 +492,8 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
     let listener = TcpListener::bind(&config.listen_addr)
         .map_err(|error| format!("failed to bind {}: {error}", config.listen_addr))?;
     let gateway = RuntimeBrowserGateway::from_config_with_account(config, account_runtime);
+    #[cfg(all(test, target_os = "openbsd"))]
+    let gateway = gateway.with_scheduled_serve_fixture_transports(config);
     for event in gateway.helper_client_status_events() {
         logger.emit(&event);
     }

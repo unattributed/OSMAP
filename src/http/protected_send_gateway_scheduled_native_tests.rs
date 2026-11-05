@@ -275,6 +275,186 @@ fn assert_sent(inputs: &Inputs<'_>, wire: &[u8]) {
     );
 }
 
+#[cfg(target_os = "openbsd")]
+pub(super) fn run_serve(inputs: Inputs<'_>) {
+    use crate::http::http_runtime::scheduled_positive_fixture as fixture;
+    use crate::send_journal::AttemptOutcome;
+    let began = Instant::now();
+    let admission = AdmissionFixture::new(inputs.scratch, inputs.gateway);
+    let reserved = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = reserved.local_addr().unwrap().port();
+    let config = fixture::configuration(&inputs.scratch.0, port);
+    for directory in [&config.state_root, &config.state_layout.runtime_dir,
+        &config.state_layout.settings_dir, &config.state_layout.session_dir,
+        &config.state_layout.draft_dir, &config.state_layout.audit_dir,
+        &config.state_layout.cache_dir, &config.state_layout.totp_secret_dir] {
+        fs::create_dir_all(directory).unwrap();
+        fs::set_permissions(directory, fs::Permissions::from_mode(0o700)).unwrap();
+    }
+    let store = ScheduledStore::new(config.state_layout.settings_dir.join("scheduled-send"));
+    let journal = crate::send_journal::SendJournal::new(config.state_layout.settings_dir.join("send-journal"));
+    let now = SystemTimeProvider.unix_timestamp();
+    let request = ComposeRequest::new(ComposePolicy::default(), "bob@example.test",
+        "Native confined scheduled message", "Controlled post-seal ordinary scheduled body\r\n").unwrap();
+    let make_pending = |account: &str, due_at: u64| {
+        let mut guard = journal.account_guard(account, now).unwrap();
+        let staged = store.create_staged(&guard, 0, ScheduleInput {
+            due_at, account_epoch: 2,
+            private_session: PrivateSession { session_id: "a".repeat(64), account_epoch: Some(2), expires_at: now + 3600 },
+            request: &request,
+        }, now).unwrap();
+        let source = crate::send_journal::mint_intent(now).unwrap();
+        guard.begin_schedule(&source, &staged.id, &staged.digest).unwrap();
+        store.publish_pending(&guard, staged.revision, &staged.id, &staged.digest, now).unwrap();
+        guard.finish_schedule(&source, &staged.id, &staged.digest).unwrap();
+        staged.id
+    };
+    let id = make_pending(ACCOUNT, now + 1);
+    let foreign_id = make_pending("bob@example.test", now + 3600);
+    let foreign_before = {
+        let guard = journal.account_guard("bob@example.test", now).unwrap();
+        store.list(&guard, now).unwrap()
+    };
+    assert!(foreign_before.jobs.iter().any(|job| job.id == foreign_id && job.state == State::Pending));
+    // Due before Serve starts: no manual claim/run_once can dispatch the job.
+    let due_deadline = Instant::now() + Duration::from_secs(3);
+    while SystemTimeProvider.unix_timestamp() <= now {
+        assert!(Instant::now() < due_deadline); std::thread::sleep(Duration::from_millis(5));
+    }
+    let stdout_path = inputs.scratch.write("serve-child.stdout", b"", 0o600);
+    let stderr_path = inputs.scratch.write("serve-child.stderr", b"", 0o600);
+    let stdout = fs::OpenOptions::new().append(true).open(stdout_path).unwrap();
+    let stderr = fs::OpenOptions::new().append(true).open(&stderr_path).unwrap();
+    let mut command = Command::new(std::env::current_exe().unwrap());
+    command.args(["--exact", TEST_NAME, "--ignored", "--nocapture", "--test-threads=1"])
+        .env_clear().env("PATH", "/usr/bin:/bin:/usr/local/bin").env("LC_ALL", "C").env("TZ", "UTC").env("TMPDIR", "/tmp")
+        .env("OSMAP_GATEWAY_NATIVE_SERVICE", "scheduled-serve")
+        .env(fixture::ROOT_ENV, &inputs.scratch.0).env(fixture::PORT_ENV, port.to_string())
+        .stdin(Stdio::null()).stdout(Stdio::from(stdout)).stderr(Stdio::from(stderr));
+    drop(reserved);
+    struct ServeChild { child: Child, reaped: bool }
+    impl ServeChild {
+        fn alive(&mut self) -> bool {
+            if !self.reaped { self.reaped = self.child.try_wait().unwrap().is_some(); }
+            !self.reaped
+        }
+        fn stop(&mut self) -> bool {
+            if !self.alive() { return true; }
+            let _ = self.child.kill();
+            let end = Instant::now() + Duration::from_secs(2);
+            while Instant::now() < end {
+                if !self.alive() { return true; }
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            false
+        }
+    }
+    impl Drop for ServeChild { fn drop(&mut self) { if !self.stop() { println!("native_scheduled_serve child_cleanup=UNCONFIRMED"); } } }
+    let mut child = ServeChild { child: command.spawn().unwrap(), reaped: false };
+    let health = || {
+        use std::io::Read as _;
+        let Ok(mut stream) = TcpStream::connect_timeout(&std::net::SocketAddr::from(([127,0,0,1],port)),Duration::from_millis(250)) else {return false};
+        stream.set_read_timeout(Some(Duration::from_millis(250))).unwrap();
+        stream.set_write_timeout(Some(Duration::from_millis(250))).unwrap();
+        if stream.write_all(b"GET /healthz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n").is_err() {return false;}
+        let mut response=Vec::new();
+        if stream.take(8193).read_to_end(&mut response).is_err() {return false;}
+        response.len() <= 8192 && response.starts_with(b"HTTP/1.1 200 ") && response.ends_with(b"ok\n")
+    };
+    let deadline=Instant::now()+Duration::from_secs(25);
+    let mut healthy=false; let mut settled=None;
+    while Instant::now()<deadline && child.alive() {
+        if !healthy { healthy=health(); }
+        let now=SystemTimeProvider.unix_timestamp();
+        if let Ok(guard)=journal.account_guard(ACCOUNT,now) {
+            if let Ok(list)=store.list(&guard,now) {
+                settled=list.jobs.into_iter().find(|job|job.id==id && !matches!(job.state,State::Pending|State::Claimed));
+            }
+        }
+        if healthy && settled.is_some() { break; }
+        std::thread::sleep(Duration::from_millis(25));
+    }
+    let mut observations=Vec::new();
+    witness(inputs.scratch,&mut observations,serde_json::json!({"stage":"postseal_dispatch",
+        "healthy":healthy,"state":settled.as_ref().map(|job|job.state),"reason":settled.as_ref().and_then(|job|job.reason),
+        "smtp":inputs.smtp.lock().unwrap().len(),"admission_exchanges":admission.requests.load(Ordering::SeqCst),
+        "positive_kind":"ordinary_actual_serve_controlled_peer_not_live_db"}));
+    assert!(healthy && child.alive());
+    let settled=settled.expect("post-seal worker did not settle captured Pending job");
+    assert_eq!(settled.state,State::Submitted);
+    let intent=settled.intent.as_deref().unwrap();
+    assert_eq!(journal.receipt(ACCOUNT,intent,SystemTimeProvider.unix_timestamp()).unwrap(),Some(AttemptOutcome::Accepted{sent_copy_stored:true}));
+    assert_eq!(inputs.smtp.lock().unwrap().len(),1);
+    assert_eq!(fs::read(inputs.sent_count).unwrap(),b"1");
+    let wire=inputs.smtp.lock().unwrap()[0].clone();
+    assert_eq!(fs::read(inputs.sent_path).unwrap(),wire);
+    assert!(std::str::from_utf8(&wire).unwrap().contains("Controlled post-seal ordinary scheduled body"));
+    assert_sent(&inputs,&wire);
+    // Observe the existing worker's durable clock cursor after its next real
+    // pass, instead of treating elapsed time as proof that the thread ran.
+    let cursor_file=crate::private_account_file::PrivateAccountFile::new(
+        config.state_layout.settings_dir.join("scheduled-worker"),"scheduled-worker-v1",4096);
+    let cursor_state=|| {
+        let bytes=cursor_file.read("worker@osmap.invalid").unwrap().unwrap();
+        let value=serde_json::from_slice::<serde_json::Value>(&bytes).unwrap();
+        (value["high_water"].as_u64().unwrap(),value["after"].as_str().unwrap().to_owned())
+    };
+    let initial_deadline=Instant::now()+Duration::from_secs(3);
+    let initial_cursor=loop {
+        let (clock,after)=cursor_state();
+        if after=="bob@example.test" {break clock;}
+        assert!(child.alive()&&Instant::now()<initial_deadline,"initial Alice processing did not complete");
+        std::thread::sleep(Duration::from_millis(10));
+    };
+    let next_pass=Instant::now()+Duration::from_secs(20);
+    let mut advanced=false;
+    while Instant::now()<next_pass {
+        assert!(child.alive(),"Serve exited before next scheduler pass");
+        let (clock,after)=cursor_state();
+        if clock>=initial_cursor.checked_add(15).unwrap() && after=="bob@example.test" {advanced=true;break;}
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    witness(inputs.scratch,&mut observations,serde_json::json!({"stage":"next_worker_cursor","advanced":advanced,"initial_bob_baseline":true,"subsequent_alice_completed_then_bob_admitted":advanced}));
+    assert!(advanced,"actual scheduled worker cursor did not advance through another pass");
+    assert!(health());
+    assert_eq!(inputs.smtp.lock().unwrap().len(),1);
+    assert_eq!(fs::read(inputs.sent_count).unwrap(),b"1");
+    assert_eq!(admission.requests.load(Ordering::SeqCst),2);
+    let foreign_after={let now=SystemTimeProvider.unix_timestamp();let guard=journal.account_guard("bob@example.test",now).unwrap();store.list(&guard,now).unwrap()};
+    assert_eq!(foreign_after,foreign_before);
+    assert!(child.stop(),"post-seal child reap unconfirmed");
+    let logs=crate::private_account_file::read_record(&stderr_path,128*1024).unwrap().unwrap();
+    let stdout=crate::private_account_file::read_record(&inputs.scratch.0.join("serve-child.stdout"),128*1024).unwrap().unwrap();
+    // Successful Scratch cleanup follows this bounded durable copy. On panic,
+    // Scratch already retains the original child files for private readback.
+    use sha2::{Digest, Sha256};
+    let outer_log=inputs.scratch.0.parent().unwrap().join("commands.log");
+    let before=fs::symlink_metadata(&outer_log).unwrap();
+    let uid=crate::openbsd::effective_uid();
+    assert!(before.is_file()&&!before.file_type().is_symlink()&&before.nlink()==1&&before.uid()==uid&&before.mode()&0o777==0o600);
+    let mut log=fs::OpenOptions::new().append(true).custom_flags(libc::O_NOFOLLOW|libc::O_NONBLOCK).open(&outer_log).unwrap();
+    let opened=log.metadata().unwrap();
+    assert!(opened.is_file()&&opened.nlink()==1&&opened.uid()==uid&&opened.mode()&0o777==0o600
+        &&(opened.dev(),opened.ino())==(before.dev(),before.ino()));
+    for (name,bytes) in [("stdout",stdout.as_slice()),("stderr",logs.as_slice())] {
+        let retained=&bytes[bytes.len().saturating_sub(16*1024)..];
+        writeln!(log,"\nS08_SCHEDULED_SERVE_CHILD stream={name} total={} retained_tail={} sha256={:x}",bytes.len(),retained.len(),Sha256::digest(bytes)).unwrap();
+        log.write_all(retained).unwrap();log.write_all(b"\nS08_SCHEDULED_SERVE_CHILD_END\n").unwrap();
+    }
+    log.sync_all().unwrap();
+    println!("native_scheduled_serve child_logs=OUTER_COMMAND_LOG_SYNCED stdout_bytes={} stderr_bytes={} stdout_sha256={:x} stderr_sha256={:x}",stdout.len(),logs.len(),Sha256::digest(&stdout),Sha256::digest(&logs));
+    let logs=std::str::from_utf8(&logs).unwrap();
+    assert!(logs.contains("action=openbsd_confinement_enabled") && logs.contains("openbsd_confinement_mode=\"enforce\""));
+    assert!(std::str::from_utf8(&stdout).unwrap().contains("fixture_exec_leaf_rules=4 private_ancestor_exec=false"));
+    witness(inputs.scratch,&mut observations,serde_json::json!({"stage":"postseal_complete","result":"PASS",
+        "actual_serve_enforce":true,"actual_background_dispatch":true,"smtp_accepted":1,"native_sent":1,
+        "typed_journal_accepted":true,"persisted_submitted":true,"next_worker_pass_no_duplicate":true,
+        "foreign_job_unchanged":true,"owned_child_reaped":true,"ordinary_only":true,"actual_db":"NOT_QUALIFIED",
+        "fixture_exec_rules":"four_exact_leaves_not_production_transport_custody"}));
+    admission.finish();
+    assert!(began.elapsed()<Duration::from_secs(50));
+}
+
 pub(super) fn run(inputs: Inputs<'_>) {
     let began = Instant::now();
     let admission = AdmissionFixture::new(inputs.scratch, inputs.gateway);

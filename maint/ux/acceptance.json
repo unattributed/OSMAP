@@ -2526,9 +2526,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S08_04.md",
+            "scope": "2026-11-05 S08-04 scoped engineering result:2317Rust/0FAIL/89explicitignores, exact hash-pinned Edge14 checks, native notification42 and controlled actual Inbox/SMTP producer1 pass; Webdb383665 installed with current signed-admission/storage/private persistence/foreign refusal/service preservation. Actual source limits, optional source refresh, literal readable-email mentions and local submission versus remote delivery are documented. Owner T09, broader final-reference/accessibility/cross-platform and full credential-backed WSTG remain pending. Existing required criteria unchanged."
+          }
+        ]
       }
     },
     {
@@ -16627,9 +16633,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S08_04.md",
+            "scope": "2026-11-05 S08-04 scoped engineering result:2317Rust/0FAIL/89explicitignores, exact hash-pinned Edge14 checks, native notification42 and controlled actual Inbox/SMTP producer1 pass; Webdb383665 installed with current signed-admission/storage/private persistence/foreign refusal/service preservation. Actual source limits, optional source refresh, literal readable-email mentions and local submission versus remote delivery are documented. Owner T09, broader final-reference/accessibility/cross-platform and full credential-backed WSTG remain pending. Existing required criteria unchanged."
+          }
+        ]
       }
     },
     {
@@ -16664,9 +16676,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S08_04.md",
+            "scope": "2026-11-05 S08-04 scoped engineering result:2317Rust/0FAIL/89explicitignores, exact hash-pinned Edge14 checks, native notification42 and controlled actual Inbox/SMTP producer1 pass; Webdb383665 installed with current signed-admission/storage/private persistence/foreign refusal/service preservation. Actual source limits, optional source refresh, literal readable-email mentions and local submission versus remote delivery are documented. Owner T09, broader final-reference/accessibility/cross-platform and full credential-backed WSTG remain pending. Existing required criteria unchanged."
+          }
+        ]
       }
     },
     {
@@ -16726,9 +16744,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S08_04.md",
+            "scope": "2026-11-05 S08-04 scoped engineering result:2317Rust/0FAIL/89explicitignores, exact hash-pinned Edge14 checks, native notification42 and controlled actual Inbox/SMTP producer1 pass; Webdb383665 installed with current signed-admission/storage/private persistence/foreign refusal/service preservation. Actual source limits, optional source refresh, literal readable-email mentions and local submission versus remote delivery are documented. Owner T09, broader final-reference/accessibility/cross-platform and full credential-backed WSTG remain pending. Existing required criteria unchanged."
+          }
+        ]
       }
     },
     {
@@ -16763,9 +16787,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S08_04.md",
+            "scope": "2026-11-05 S08-04 scoped engineering result:2317Rust/0FAIL/89explicitignores, exact hash-pinned Edge14 checks, native notification42 and controlled actual Inbox/SMTP producer1 pass; Webdb383665 installed with current signed-admission/storage/private persistence/foreign refusal/service preservation. Actual source limits, optional source refresh, literal readable-email mentions and local submission versus remote delivery are documented. Owner T09, broader final-reference/accessibility/cross-platform and full credential-backed WSTG remain pending. Existing required criteria unchanged."
+          }
+        ]
       }
     },
     {
@@ -16800,9 +16830,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S08_04.md",
+            "scope": "2026-11-05 S08-04 scoped engineering result:2317Rust/0FAIL/89explicitignores, exact hash-pinned Edge14 checks, native notification42 and controlled actual Inbox/SMTP producer1 pass; Webdb383665 installed with current signed-admission/storage/private persistence/foreign refusal/service preservation. Actual source limits, optional source refresh, literal readable-email mentions and local submission versus remote delivery are documented. Owner T09, broader final-reference/accessibility/cross-platform and full credential-backed WSTG remain pending. Existing required criteria unchanged."
+          }
+        ]
       }
     },
     {
@@ -16844,6 +16880,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/notifications-preferences/independent-delivery-review.json",
             "scope": "Retained6390a40 private Digest CAS/reload/read presentation and actual native8/113markers, final-library Serve34 and Edge/Firefox controls with matching helper-first deployment. Groups existing SessionIssued/SessionRevoked only; no scheduled/email/external digest. Human six-step UAT NOT RUN. Retained artifact sha256=29c85c7f885e8c8a4dd709785deaacb0b1e5e7a03c5ee54a046d5ad70d47abf1."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S08_04.md",
+            "scope": "2026-11-05 S08-04 scoped engineering result:2317Rust/0FAIL/89explicitignores, exact hash-pinned Edge14 checks, native notification42 and controlled actual Inbox/SMTP producer1 pass; Webdb383665 installed with current signed-admission/storage/private persistence/foreign refusal/service preservation. Actual source limits, optional source refresh, literal readable-email mentions and local submission versus remote delivery are documented. Owner T09, broader final-reference/accessibility/cross-platform and full credential-backed WSTG remain pending. Existing required criteria unchanged."
           }
         ]
       }
@@ -16880,9 +16921,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S08_04.md",
+            "scope": "2026-11-05 S08-04 scoped engineering result:2317Rust/0FAIL/89explicitignores, exact hash-pinned Edge14 checks, native notification42 and controlled actual Inbox/SMTP producer1 pass; Webdb383665 installed with current signed-admission/storage/private persistence/foreign refusal/service preservation. Actual source limits, optional source refresh, literal readable-email mentions and local submission versus remote delivery are documented. Owner T09, broader final-reference/accessibility/cross-platform and full credential-backed WSTG remain pending. Existing required criteria unchanged."
+          }
+        ]
       }
     },
     {
@@ -16917,9 +16964,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S08_04.md",
+            "scope": "2026-11-05 S08-04 scoped engineering result:2317Rust/0FAIL/89explicitignores, exact hash-pinned Edge14 checks, native notification42 and controlled actual Inbox/SMTP producer1 pass; Webdb383665 installed with current signed-admission/storage/private persistence/foreign refusal/service preservation. Actual source limits, optional source refresh, literal readable-email mentions and local submission versus remote delivery are documented. Owner T09, broader final-reference/accessibility/cross-platform and full credential-backed WSTG remain pending. Existing required criteria unchanged."
+          }
+        ]
       }
     },
     {
@@ -16979,9 +17032,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S08_04.md",
+            "scope": "2026-11-05 S08-04 scoped engineering result:2317Rust/0FAIL/89explicitignores, exact hash-pinned Edge14 checks, native notification42 and controlled actual Inbox/SMTP producer1 pass; Webdb383665 installed with current signed-admission/storage/private persistence/foreign refusal/service preservation. Actual source limits, optional source refresh, literal readable-email mentions and local submission versus remote delivery are documented. Owner T09, broader final-reference/accessibility/cross-platform and full credential-backed WSTG remain pending. Existing required criteria unchanged."
+          }
+        ]
       }
     },
     {
@@ -17031,9 +17090,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S08_04.md",
+            "scope": "2026-11-05 S08-04 scoped engineering result:2317Rust/0FAIL/89explicitignores, exact hash-pinned Edge14 checks, native notification42 and controlled actual Inbox/SMTP producer1 pass; Webdb383665 installed with current signed-admission/storage/private persistence/foreign refusal/service preservation. Actual source limits, optional source refresh, literal readable-email mentions and local submission versus remote delivery are documented. Owner T09, broader final-reference/accessibility/cross-platform and full credential-backed WSTG remain pending. Existing required criteria unchanged."
+          }
+        ]
       }
     },
     {

@@ -21,6 +21,8 @@ mod http_browser;
 mod http_gateway;
 #[path = "http_runtime.rs"]
 mod http_runtime;
+#[cfg(all(test, target_os = "openbsd"))]
+pub(crate) use http_runtime::scheduled_positive_fixture;
 mod label_filter;
 mod notification_badge;
 pub(crate) mod notification_delivery;

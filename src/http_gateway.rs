@@ -122,6 +122,17 @@ impl RuntimeBrowserGateway {
         self
     }
 
+    #[cfg(all(test, target_os = "openbsd"))]
+    pub(crate) fn with_scheduled_serve_fixture_transports(mut self, config: &AppConfig) -> Self {
+        if let Some((smtp, sent)) =
+            crate::http::http_runtime::scheduled_positive_fixture::transport_paths(config)
+        {
+            self.sendmail_path = smtp;
+            self.doveadm_path = sent;
+        }
+        self
+    }
+
     #[cfg(test)]
     pub(crate) fn with_fixture_sender_authority(
         mut self,

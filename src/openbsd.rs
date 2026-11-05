@@ -1331,6 +1331,12 @@ impl OpenbsdConfinementPlan {
                 let dependency_error = add_doveadm_dependency_rules(&mut rules)
                     .and_then(|()| add_sendmail_dependency_rules(&mut rules))
                     .err();
+                #[cfg(all(test, target_os = "openbsd"))]
+                for (path, permissions) in
+                    crate::http::scheduled_positive_fixture::transport_rules(config)
+                {
+                    add_rule(&mut rules, &path, permissions);
+                }
                 add_rule(&mut rules, Path::new("/dev/null"), "rw");
 
                 if let Some(auth_socket_path) = &config.doveadm_auth_socket_path {
@@ -1671,6 +1677,8 @@ pub(crate) fn apply_runtime_confinement_for_accounts_detailed(
         }
         OpenbsdConfinementMode::Enforce => {
             let plan = OpenbsdConfinementPlan::from_config(config);
+            #[cfg(all(test, target_os = "openbsd"))]
+            crate::http::scheduled_positive_fixture::assert_plan(config, &plan);
             if let Some(error) = &plan.dependency_error {
                 return Err(ConfinementFailure::boundary(
                     ConfinementStage::DependencyPlan,

@@ -172,6 +172,12 @@ impl RuntimeBrowserGateway {
     }
 
     pub(crate) fn prepare_account_runtime(config: &AppConfig) -> AccountRuntimeCapability {
+        #[cfg(all(test, target_os = "openbsd"))]
+        if let Some((admission, mutation)) =
+            crate::http::http_runtime::scheduled_positive_fixture::fixture_clients(config)
+        {
+            return AccountRuntimeCapability::fixture(admission, mutation);
+        }
         AccountRuntimeCapability::from_config(config.account_runtime.as_ref())
     }
     #[cfg(test)]

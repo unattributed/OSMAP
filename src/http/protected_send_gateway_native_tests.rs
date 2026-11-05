@@ -74,6 +74,11 @@ fn native_service_child() -> bool {
         native_sent_actor();
         return true;
     }
+    #[cfg(target_os = "openbsd")]
+    if kind == "scheduled-serve" {
+        crate::http::http_runtime::scheduled_positive_fixture::run_child();
+        return true;
+    }
     let config = PathBuf::from(std::env::var_os("OSMAP_GATEWAY_NATIVE_CONFIG").unwrap());
     let key = PathBuf::from(std::env::var_os("OSMAP_GATEWAY_NATIVE_KEY").unwrap());
     match kind.as_str() {
@@ -558,6 +563,13 @@ fn native_crypto_gateway_scheduled_send_roundtrip() {
     run_native_gateway(true);
 }
 
+#[cfg(target_os = "openbsd")]
+#[test]
+#[ignore = "actual enforced Serve scheduler with controlled MAC authority and loopback SMTP/native Sent"]
+fn native_crypto_gateway_scheduled_serve_roundtrip() {
+    run_native_gateway(true);
+}
+
 mod scheduled_native {
     use super::*;
     include!("protected_send_gateway_scheduled_native_tests.rs");
@@ -765,7 +777,7 @@ fn run_native_gateway(scheduled_only: bool) {
     .unwrap()];
 
     if scheduled_only {
-        scheduled_native::run(scheduled_native::Inputs {
+        let inputs = scheduled_native::Inputs {
             gateway: &mut gateway, scratch: &scratch, crypto: &crypto,
             submission: &submission, append: &append, smtp: &smtp,
             drop_ack: &drop_ack, sent_mailbox: &sent_mailbox,
@@ -773,7 +785,14 @@ fn run_native_gateway(scheduled_only: bool) {
             primary: &afp, recipient_primary: &bfp,
             binding_revision: record.revision, attachments: &attachments,
             public_certificate: &exported.certificate,
-        });
+        };
+        #[cfg(target_os = "openbsd")]
+        if std::env::args().any(|arg| arg == "http::http_gateway::http_gateway_mail::tests::protected_send_native::native_crypto_gateway_scheduled_serve_roundtrip") {
+            scheduled_native::run_serve(inputs);
+            sent_mailbox.finish();
+            return;
+        }
+        scheduled_native::run(inputs);
         sent_mailbox.finish();
         return;
     }

@@ -46,6 +46,12 @@ the owner explicitly directs continuing unfinished S08 work.
 
 ## Current continuation — 2026-11-05
 
+### Remaining activation decision
+
+The configured200MiB report and global Documents filename search are implemented and installed; earlier pending-choice/search notes below are historical. Full Documents writes remain safely unavailable on the original active mailbox because the database scalar is advisory. Current source requires a qualified shared mail/Documents authority; the count-driver path remains disabled after its demonstrated concurrent overshoot. The separate200MiB native filesystem is prepared but unmapped.
+
+The smallest existing activation route is an obsd1-only Duncan mailbox backup/two-pass cutover into that account-exclusive filesystem, exact home/mail/quota mapping with INDEX/CONTROL outside the volume, and effective native quota coverage. Toronto remains unchanged. This crosses the earlier set-aside migration/mail-configuration boundary, so root has asked for an explicit cutover decision while independently completing scheduling and notifications. No migration or quota-plugin activation is inferred from the numeric quota answer. After approval, reuse the existing native lifecycle/mixed-writer proofs and require actual installed upload/exact download/search/Bin/restore and preserved native identities before UAT.
+
 ### Owner-selected 200 MiB development quota
 
 The owner selects **200 MiB** for Duncan on obsd1. A single conditional native

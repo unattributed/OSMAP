@@ -1,13 +1,382 @@
-2026-11-05 — **S08-04 IN_PROGRESS.** S08-03 is installed but positive post-seal worker qualification remains pending before owner T09. Continue factual notifications and explicit browser delivery. Accepted S08-02 and unfinished S08-01 Documents enforcement remain separate.
+2026-11-05 — **S08-03 composed worker qualification IN_PROGRESS. S08-04 installed engineering UAT_READY; owner T09 pending.** S08-01 Documents activation awaits the explicit obsd1-only cutover decision;200MiB reporting remains installed.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S08-03",
+  "original_requirement": "Scheduled send and snooze with bounded persisted jobs and restart/cancel/edit behavior",
+  "source_baseline": "6fefa6f1be36c16b4527cbb38c1e13344f590df0",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/remembered_key_helper",
+      "/root/s05_protocol_review"
+    ],
+    "qa": [
+      "/root/remembered_key_review"
+    ],
+    "security_review": [
+      "/root/remembered_key_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/UX_DECISIONS.md",
+    "docs/UX_SLICE_S08_03.md",
+    "docs/README.md",
+    "maint/ux/acceptance.json",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "src/scheduled_send.rs",
+    "src/scheduled_send_tests.rs",
+    "src/scheduled_send_journal_tests.rs",
+    "src/scheduled_ui.rs",
+    "src/send_journal.rs",
+    "src/draft.rs",
+    "src/draft_codec.rs",
+    "src/draft_tests.rs",
+    "src/draft_storage_usage_tests.rs",
+    "src/send.rs",
+    "src/send_scheduled_tests.rs",
+    "src/throttle.rs",
+    "src/throttle_scheduled_tests.rs",
+    "src/http_gateway_scheduled.rs",
+    "src/http_gateway.rs",
+    "src/http_browser.rs",
+    "src/http.rs",
+    "src/http/routes_scheduled.rs",
+    "src/http/scheduled_tests.rs",
+    "src/http/routes_send.rs",
+    "src/http/routes_drafts.rs",
+    "src/http/send_tests.rs",
+    "src/http/draft_tests.rs",
+    "src/http_runtime.rs",
+    "src/http_runtime_scheduled_native_tests.rs",
+    "src/auth.rs",
+    "src/http_runtime_send.rs",
+    "src/http_support.rs",
+    "src/http_form.rs",
+    "src/http_ui.rs",
+    "src/compose_ui.rs",
+    "src/draft_ui.rs",
+    "src/runtime.rs",
+    "src/browser.rs",
+    "src/lib.rs",
+    "src/main.rs",
+    "src/config.rs",
+    "src/snooze.rs",
+    "src/snooze_tests.rs",
+    "src/mail_navigation.rs",
+    "src/scheduled_worker.rs",
+    "src/scheduled_worker_tests.rs",
+    "src/http_gateway_scheduled_send.rs",
+    "src/http_gateway_scheduled_tests.rs",
+    "src/draft_atomic.rs",
+    "src/http_parse.rs",
+    "src/http/routes_draft.rs",
+    "src/http/compose_delivery_ui.rs",
+    "src/http_gateway_mail.rs",
+    "src/http/routes_compose.rs",
+    "src/http/routes_send_receipt.rs",
+    "src/http_gateway_scheduled_send_tests.rs",
+    "src/http/protected_send_gateway_native_tests.rs",
+    "src/http/protected_send_gateway_scheduled_native_tests.rs",
+    "src/http/source_attachment_tests.rs",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "docs/UX_SLICE_S08_04.md",
+    "docs/UX_SLICE_S08_01.md",
+    "src/http_runtime_scheduled_positive_native_tests.rs",
+    "src/http_gateway_account.rs",
+    "src/openbsd.rs"
+  ],
+  "outcomes": [
+    {
+      "id": "S08-03-scheduled-send-snooze",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX08-008",
+        "UX08-011",
+        "UX04-006",
+        "R2-03-006",
+        "R2-04-031",
+        "R2-15-010"
+      ],
+      "frontend_backend_outcome": "Signed-in users schedule captured messages, inspect and explicitly edit/cancel unsubmitted jobs; one bounded native worker uses current send authority, and snooze restores visibility on expiry.",
+      "essential_qa": "Reuse Rust store/journal/snooze/authority tests and actual route/shared-send integration, then the smallest matching disposable native submission and installed account-specific worker/UI check.",
+      "next_action": "Complete normal signed source gates; owner T09 follows matching engineering readiness.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PENDING",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "docs/UX_SLICE_S08_03.md#progressive-source-qualification--2026-11-05"
+        },
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S08_03.md#confined-serve-and-ordinary-send-regression--2026-11-05"
+        },
+        {
+          "stage": "source_tests",
+          "reference": "docs/UX_SLICE_S08_03.md#installed-engineering-result--2026-11-05"
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S08_03.md#installed-engineering-result--2026-11-05"
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S08_03.md#installed-engineering-result--2026-11-05"
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S08_03.md#installed-engineering-result--2026-11-05"
+        },
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S08_03.md#actual-composed-result--2026-11-05"
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S08_03.md#actual-composed-result--2026-11-05"
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Installed scheduled send and snooze meet every frozen mapped control, native duplicate/authority/recovery proof and separate owner acceptance.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Earlier03 UAT_READY record is historical and superseded for missing composed-positive evidence. Prior source/native/installed scoped passes and failures remain intact;04 is installed engineering UAT_READY with ownerT09 pending.01 Documents authority/cutover remains excluded pending explicit decision.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 3600,
+      "started_at": "2026-11-04T22:30:16Z",
+      "elapsed_status": "UNMEASURED",
+      "elapsed_seconds": null
+    },
+    "attempts": []
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S08-03",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_03.md",
+      "sha256": "c3f3dc0c9ba0036ac5661014be8f25cc30796f7e54acb953904c7f1be37e5ec1"
+    },
+    "design": {
+      "journey": "Schedule captured mail, inspect/edit/cancel pending jobs, observe truthful submission state; snooze expires without moving messages.",
+      "frontend": "Existing compose/draft Schedule control, authenticated account-private job listing/detail/actions and strict UTC with saved fixed-offset display.",
+      "backend": "One bounded sequential Rust run-once worker reuses shared prepared send, current authority, SendJournal and SendRecovery; no alternate SMTP or retry broker.",
+      "interfaces": "BrowserGateway/Runtime methods bind authenticated create/mutations and typed durable job authority; private operations separately require a current original session and helper grant.",
+      "persistence": "PrivateAccountFile owner-bound CAS index, existing FileDraftStore captured payloads, staged publication, original-intent retirement and stable due-time attempt; bounded fair worker cursor.",
+      "security": "Current epoch/sender/recipient/key/policy fencing; CSRF/origin/foreign refusal; no stored login secrets; fixed private-key deadline remains unchanged.",
+      "failure_recovery": "Persist claim before submission, retain ambiguous facts and read-only reconciliation, never automatically retry Unknown; preserve exact owned failure diagnostics and cleanup state."
+    },
+    "tests": [
+      {
+        "id": "S08-03-T01",
+        "outcome_ids": [
+          "S08-03-scheduled-send-snooze"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Frozen S08-03/D05 requirements and current existing send, draft, journal, snooze and session code are available.",
+        "action": "Map reuse and actual command/worker interfaces; identify expiry, ownership, cleanup and authority boundaries.",
+        "expected": "The smallest shared-send design preserves all six mapped controls and exact current authority; candidate source is not treated as executed proof.",
+        "preserved": "Accepted S07/S08-02 and all unfinished Documents obligations remain intact.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md#progressive-source-qualification--2026-11-05"
+        ]
+      },
+      {
+        "id": "S08-03-T02",
+        "outcome_ids": [
+          "S08-03-scheduled-send-snooze"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Integrated bounded ScheduledStore and existing FileDraftStore codec with owned temporary state.",
+        "action": "Exercise create/reopen/list, independent captured payload, edit/cancel, revision CAS, 20 jobs, 50 MiB accounting, 30-day horizon and finite payload/terminal cleanup.",
+        "expected": "Jobs survive reopen and later draft changes; limits include staged/orphan storage; known terminal cleanup is bounded and no cancelled job dispatches.",
+        "preserved": "Other accounts, original drafts, unresolved submission facts and unrelated private files remain unchanged.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md#progressive-source-qualification--2026-11-05"
+        ]
+      },
+      {
+        "id": "S08-03-T03",
+        "outcome_ids": [
+          "S08-03-scheduled-send-snooze"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Existing strict UTC parser, fixed-offset display and actual snooze identity/high-water tests.",
+        "action": "Reject malformed/ambiguous zone and DST inputs, out-of-horizon dates, backward clocks and stale/reused UIDs; test forward due time and snooze restart/expiry.",
+        "expected": "Bad times refuse without mutation; display changes do not move stored UTC; clock changes cannot rearm submitted work or hide another message.",
+        "preserved": "Persisted timestamps, foreign state and native message identity fences remain unchanged.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md#progressive-source-qualification--2026-11-05"
+        ]
+      },
+      {
+        "id": "S08-03-T04",
+        "outcome_ids": [
+          "S08-03-scheduled-send-snooze"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Actual authenticated routes with owned sessions, CSRF/origin and originating compose/draft send intents.",
+        "action": "Exercise create/list/inspect/edit/cancel and stale immediate Send/Save races; deny anonymous, wrong-origin, bad-CSRF, foreign and stale-revision requests.",
+        "expected": "Exactly one durable intent retirement permits a Pending job; refused and incomplete phases make no SMTP callback and remain safely reconcilable.",
+        "preserved": "Message text, attachments, originating drafts and foreign sessions/jobs remain protected.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md#progressive-source-qualification--2026-11-05"
+        ]
+      },
+      {
+        "id": "S08-03-T05",
+        "outcome_ids": [
+          "S08-03-scheduled-send-snooze"
+        ],
+        "kind": "recovery",
+        "level": "source",
+        "prerequisites": "One sequential run-once worker with global owned lock, canonical bounded account discovery and persisted rotation.",
+        "action": "Run competing workers, restart at claim/publication/SMTP receipt boundaries, forward/backward clock and storage-write fault cases.",
+        "expected": "At most one dispatch per stable attempt; ambiguous acceptance stays Unknown with read-only reconciliation; fair bounded passes do not starve fresh pending jobs.",
+        "preserved": "No automatic uncertain-send retry, second SMTP implementation or renewed dispatch authority appears.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md#progressive-source-qualification--2026-11-05"
+        ]
+      },
+      {
+        "id": "S08-03-T06",
+        "outcome_ids": [
+          "S08-03-scheduled-send-snooze"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Shared prepared-send path accepts explicit validated job authority and actual current account/epoch facts.",
+        "action": "Change epoch, sender, recipient/key/policy revision and private session/grant validity between scheduling and due dispatch.",
+        "expected": "Current authority fences refuse changed facts; locked/expired private access produces Blocked with zero plaintext fallback or key-grant extension.",
+        "preserved": "Passwords, TOTP, cookies, CSRF and key passphrases are never captured in durable jobs.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md#progressive-source-qualification--2026-11-05"
+        ]
+      },
+      {
+        "id": "S08-03-T07",
+        "outcome_ids": [
+          "S08-03-scheduled-send-snooze"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Matching source/binary and existing disposable native SMTP/crypto/Sent actors with controlled recipients and exact cleanup bounds.",
+        "action": "Schedule one exact controlled message through the actual prepared-send pipeline; inspect native receipt/Sent behavior, replay and ambiguous/Sent-failure reconciliation.",
+        "expected": "Exact payload and captured protection reach one native submission; factual outcome and Sent status match authoritative receipt; replay never resubmits.",
+        "preserved": "No unsolicited external delivery, production mail-host change or owner mailbox mutation is inferred from disposable tests.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md#progressive-source-qualification--2026-11-05"
+        ]
+      },
+      {
+        "id": "S08-03-T08",
+        "outcome_ids": [
+          "S08-03-scheduled-send-snooze"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Matching independently reviewed artifacts and minimal existing installation/rollback recipe; required source/native tests pass.",
+        "action": "Qualify actual bounded worker on obsd1, account-private pages, signed current-epoch admission, service/config preservation and installed restart behavior. Require positive ordinary due dispatch by actual sealed Serve background thread, typed accepted/Sent receipt, actual second worker-cursor advance with no duplicate and foreign-job preservation.",
+        "expected": "Installed code matches the tested source; worker and user-specific UI show factual states and the existing login admission remains available.",
+        "preserved": "Owner data, public mail availability, credentials, epoch, personal-key fixed deadlines and unrelated roles remain intact.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md#actual-composed-result--2026-11-05"
+        ]
+      },
+      {
+        "id": "S08-03-T09",
+        "outcome_ids": [
+          "S08-03-scheduled-send-snooze"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Engineering T01-T08 pass and a short installed owner journey is ready.",
+        "action": "Owner schedules one controlled message, checks its eventual factual status and cancels a different still-pending job; check snooze expiry only if interaction changed.",
+        "expected": "Owner confirms scheduling/status/cancellation is clear and useful and reports S08-03 UAT PASS separately.",
+        "preserved": "Agent source/native checks never substitute for owner acceptance or whole-sprint completion.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "All required nonhuman tests and six delivery stages PASS on matching source/native/installed artifacts with independent result/recovery review; no hidden original requirement is dropped.",
+    "human_exit": "Owner explicitly accepts the installed scheduling/status/pending-cancellation UAT; whole S08 and unfinished S08-01/04 stay separate."
+  },
+  "human_acceptance": {
+    "status": "PENDING"
+  },
+  "next_action": "Native composed positive and final preservation pass; finish normal signed source delivery, then record engineering UAT_READY with separate owner T09.",
+  "independent_next_action": "Independent reviewer reconciles actual seal/positive receipt/Sent/SMTP/second-pass/foreign/reap evidence; no ordinary-only result is claimed as protected post-seal or owner acceptance."
+}
+```
+
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+## S08-04 installed engineering checkpoint — owner T09 pending
+
 ```json
 {
   "version": 1,
   "slice": "S08-04",
   "original_requirement": "Notification inbox/badge/read state and all page 17 preferences, including explicitly consented desktop delivery",
   "source_baseline": "ba6c49b910d914befa834709d64ba5078cd50d22",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -115,14 +484,14 @@
       ],
       "frontend_backend_outcome": "The signed-in user sees actual account/mail/key/submission events, saves preferences/read state and explicitly enables generic foreground browser alerts.",
       "essential_qa": "Focused Rust store, actual producer, route and failure tests; real browser permission/lifecycle checks; matching native/install event and account preservation.",
-      "next_action": "Qualify final source, actual browser/native producers and installed artifact; preserve S08-01 OPEN and separate owner acceptance.",
+      "next_action": "Owner performs separate practical T09; continue independent remaining S08-03 qualification and unresolved S08-01 authority work.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
-        "source_tests": "PENDING",
+        "source_tests": "PASS",
         "native_tests": "PASS",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
         "recovery": "PASS"
       },
       "evidence": [
@@ -137,6 +506,18 @@
         {
           "stage": "recovery",
           "reference": "docs/UX_SLICE_S08_04.md#matching-native-and-browser-result"
+        },
+        {
+          "stage": "source_tests",
+          "reference": "docs/UX_SLICE_S08_04.md#installed-engineering-result--2026-11-05"
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S08_04.md#installed-engineering-result--2026-11-05"
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S08_04.md#installed-engineering-result--2026-11-05"
         }
       ]
     }
@@ -160,7 +541,7 @@
     "slice": "S08-04",
     "specification": {
       "path": "docs/UX_SLICE_S08_04.md",
-      "sha256": "f860356dd23382eb496da13ba3274466882288d5eaab5e8e21f851e4d16cac60"
+      "sha256": "97211a0fae68100624f263eafb0d157e30424fed152899203db17ea5f47cb411"
     },
     "design": {
       "journey": "Observe factual account activity, select optional notification preferences and explicitly enable foreground browser delivery.",
@@ -311,8 +692,10 @@
         "preserved": "Account credentials, private-key deadlines, message content, public mail availability and prior accepted work remain unchanged.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_04.md#installed-engineering-result--2026-11-05"
+        ]
       },
       {
         "id": "S08-04-T09",
@@ -337,11 +720,11 @@
   "human_acceptance": {
     "status": "PENDING"
   },
-  "next_action": "Qualify final source, actual browser/native producers and installed artifact; preserve S08-01 OPEN and separate owner acceptance.",
+  "next_action": "Owner T09 pending; S08-03 positive post-seal worker qualification resumes independently.",
   "independent_next_action": "Review producer/observer/consumer semantics, consent and actual evidence independently; preserve S08-03 pending acceptance and S08-01 OPEN."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
 
 ## Historical S08-03 engineering-ready work order
 
