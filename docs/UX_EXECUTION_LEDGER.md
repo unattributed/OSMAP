@@ -1,3 +1,5 @@
+2026-11-06 — **Trash selective-deletion UAT ACCEPTED / PASS.** Owner reports selective testing and explicitly approves UAT. The supplied result records seven confirmed deletions, zero refusals, zero unconfirmed results and zero unattempted messages, with absence confirmed for every deleted item. This records the owner-tested Trash correction; it does not assert that every new Trash action was individually exercised or close remaining S08 scheduling, cancellation, Snooze or Drafts acceptance. No further mailbox action accompanied this record.
+
 2026-11-06 — **Practical Trash / Empty trash installed; owner UAT pending.** Native35 PASS and Web-only install33 PASS, main31 SHA5f6b7d18. Public mail/helper/account/GPG/config unchanged; owner messages untouched. Native32 fixture assertion failure retained, corrected by independent full-folder-order review. See slice qualification.
 
 2026-11-06 — **Bin UX rejected; Empty trash correction IN_PROGRESS.** Owner requests normal Trash controls and Empty trash. Reuse exact-tuple Rust deletion; full native folder snapshot (bounded at 2000), compact snapshot confirmation, current account/saved Bin/hierarchy/retention checks, 30-second sequential stop on refusal/unknown. No owner-mail deletion in agent QA, no mail configuration change, no Documents. Essential tests: full-folder versus visible-page, snapshot change, cancel, invalid authority, partial unknown, browser keyboard/pointer, native build and existing native deletion path. Root implementation; independent QA/security /root/s08_selection_review. Prior UAT failures and scoped passes remain recorded.
@@ -93,7 +95,7 @@
       ],
       "frontend_backend_outcome": "Practical Trash controls and whole saved-folder Empty trash through exact snapshot review/confirmation; bounded native exact-tuple deletion with current owned Bin/retention authority and truthful stop results. Existing scheduled source copies remain selectable/discardable; prior local-time scheduling work preserved.",
       "essential_qa": "Strict local conversion, bounds, offset substitution/change/missing refusal, current auth/CSRF and exact fields, local-first rendering, cancellation/reopen readonly source projection, matching native tests/install and ordinary signed delivery. Existing installed read-only helper retention query, controlled native single/bulk deletion and complete S08 functional inventory after fixes; Documents excluded by owner. Snooze saved-offset forms/parse, stale/missing/forged context refusal, cancellation remains independent; full S08 retained-function audit.",
-      "next_action": "Normal signed delivery hooks and non-forced branch synchronization; owner UAT of practical Trash controls/Empty trash remains pending. Preserve separate local-time/cancellation/Snooze acceptance obligations.",
+      "next_action": "Preserve owner Trash selective-deletion PASS; remaining Drafts/local-time scheduling/cancellation/Snooze acceptance stays scoped and pending.",
       "dependencies": [
 
       ],
@@ -679,7 +681,7 @@
     "slice": "S08-03",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "219a7747d2595e30b0619ebb3839c52545c00fd3b0e4c6d704d1f0a690e28278"
+      "sha256": "4213eca8274c1e6e12d3bd86032c23d610615795e41035e02f5a82c2c79ebdda"
     },
     "design": {
       "journey": "Schedule and Snooze use the saved account offset, captured jobs remain independent, confirmed source copies can be safely discarded, and explicitly confirmed exact-account Trash deletion is available.",
@@ -859,10 +861,10 @@
   },
   "human_acceptance": {
     "status": "PENDING",
-    "reference": "Corrected owner UAT pending; historical Drafts FAIL and separate delivery PASS retained."
+    "reference": "2026-11-06: owner selective Trash deletion UAT PASS and explicitly approved; seven confirmed absent, zero refused/unconfirmed/unattempted. Other S08-03 human checks remain pending; separate scheduled-delivery PASS retained."
   },
-  "next_action": "Ordinary signed publication with mandatory gates, then owner Drafts/Bin recheck and remaining local-time/cancel/Snooze acceptance; preserve prior accepted S08 scopes.",
-  "independent_next_action": "Final public-safe source/documentation and ordinary publication review; corrected owner UAT remains pending."
+  "next_action": "Preserve owner Trash selective-deletion PASS; remaining Drafts/local-time scheduling/cancellation/Snooze acceptance stays scoped and pending.",
+  "independent_next_action": "Review scoped owner acceptance record and ordinary signed documentation delivery; no further mailbox mutations."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
