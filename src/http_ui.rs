@@ -3560,6 +3560,12 @@ fn render_locked_draft_row(
             "Submission state needs review. This saved version is read-only.",
             Some(receipt_intent),
         ),
+        Some(State::Scheduled { .. }) => (
+            "scheduled",
+            "Scheduled copy",
+            "Managed in Scheduled messages. This saved version is read-only.",
+            None,
+        ),
         _ => (
             "unknown",
             "Unavailable",
@@ -3573,7 +3579,16 @@ fn render_locked_draft_row(
     } else {
         &draft.subject
     };
-    let links = if let Some(intent) = intent {
+    let links = if let Some(State::Scheduled { job_id }) = state {
+        if crate::draft::validate_draft_id(job_id).is_ok() {
+            format!(
+                "<a href=\"/scheduled?id={}\">View scheduled message</a>",
+                escape_html(job_id)
+            )
+        } else {
+            "<a href=\"/scheduled\">View scheduled messages</a>".into()
+        }
+    } else if let Some(intent) = intent {
         format!("<a href=\"/compose?receipt={}\">View attempt</a><a href=\"/draft?id={}\">Saved version</a>", escape_html(&url_encode(intent)), escape_html(&url_encode(&draft.draft_id)))
     } else {
         "<a href=\"/drafts\">Reload Drafts</a>".into()
@@ -3783,3 +3798,46 @@ mod folder_delete_ui;
 mod folder_disposition_ui;
 pub(crate) use folder_delete_ui::{render_folder_delete, DeletePageModel};
 pub(crate) use folder_disposition_ui::{render_deleted_folders, render_folder_disposition};
+
+#[cfg(test)]
+#[test]
+fn scheduled_draft_row_links_job_without_claiming_pending_or_allowing_edit() {
+    let draft = DraftSummary {
+        draft_id: "a".repeat(32),
+        created_at: 100,
+        updated_at: 100,
+        expires_at: 200,
+        revision: 2,
+        starred: false,
+        storage_bytes: 1,
+        recipient_count: 0,
+        recipient_preview: None,
+        subject: "<script>synthetic</script>".into(),
+        subject_len: 30,
+        body_len: 1,
+        attachment_count: 0,
+        total_attachment_bytes: 0,
+    };
+    let state = crate::http::BrowserDraftEditState::Scheduled {
+        job_id: "b".repeat(32),
+    };
+    let html = render_locked_draft_row(&draft, Some(&state));
+    assert!(html.contains("Scheduled copy") && html.contains("Managed in Scheduled messages"));
+    assert!(html.contains(&format!("/scheduled?id={}", "b".repeat(32))));
+    assert!(html.contains("&lt;script&gt;synthetic&lt;/script&gt;"));
+    for wrong in [
+        "Submission state needs review",
+        "View attempt",
+        "action=\"/drafts/star\"",
+        "action=\"/drafts/delete\"",
+    ] {
+        assert!(!html.contains(wrong));
+    }
+    assert!(html.contains("checkbox\" disabled") && html.contains("Delete unavailable"));
+    let invalid = crate::http::BrowserDraftEditState::Scheduled {
+        job_id: "../foreign<script>".into(),
+    };
+    let html = render_locked_draft_row(&draft, Some(&invalid));
+    assert!(html.contains("href=\"/scheduled\""));
+    assert!(!html.contains("../foreign"));
+}

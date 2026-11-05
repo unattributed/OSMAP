@@ -13,7 +13,7 @@ fn shown_date(time: u64, display: Display) -> String {
     let utc = date(time);
     match display.offset {
         Some(offset) => format!(
-            "{utc} · {}",
+            "{} · {utc}",
             // Existing mail-date formatting expects the native metadata shape,
             // not the ISO timestamp used by logs and the HTML datetime value.
             offset.display_received(
@@ -29,12 +29,6 @@ fn date(t: u64) -> String {
     crate::logging::format_unix_timestamp_utc(t)
         .replace('T', " ")
         .replace('Z', " UTC")
-}
-fn input_date(t: u64) -> String {
-    crate::logging::format_unix_timestamp_utc(t)
-        .chars()
-        .take(16)
-        .collect()
 }
 fn hidden(name: &str, value: &str) -> String {
     format!(
@@ -61,10 +55,23 @@ fn reason(reason: BlockReason) -> &'static str {
     match reason{BlockReason::KeyLocked=>"Unlock your personal key, then explicitly authorize another future send time.",BlockReason::SessionExpired=>"The original authorization expired. Sign in and explicitly authorize another future send time.",BlockReason::AccountChanged=>"Account protection changed. Review this message before authorizing it again.",BlockReason::ServiceUnavailable=>"A required service was unavailable. Review the saved message before authorizing it again.",BlockReason::PolicyChanged=>"Keys or protection policy changed. Review them before authorizing this message again.",BlockReason::InvalidContent=>"The captured message could not pass current send checks.",BlockReason::PayloadExpired=>"The 60-day saved-message lifetime expired; its message content is no longer retained."}
 }
 fn limits() -> &'static str {
-    "<p>Up to 20 active messages and 50 MiB per account. Choose a future UTC time within 30 days. Keys, account authorization and policies are checked again when sending. A blocked message needs your explicit action; an unknown result is never automatically sent again.</p>"
+    "<p>Up to 20 active messages and 50 MiB per account. Choose a future time in your saved OSMAP timezone within 30 days. Keys, account authorization and policies are checked again when sending. A blocked message needs your explicit action; an unknown result is never automatically sent again.</p>"
 }
-fn time_input(now: u64, value: u64, context: &str) -> String {
-    format!("<label for=scheduled-due-{context}>Send at (UTC)</label><input id=scheduled-due-{context} name=due_at type=datetime-local step=60 min=\"{}\" max=\"{}\" value=\"{}\" required><p>Current server time: {}</p>",input_date((now/60+1)*60),input_date(now.saturating_add(30*86400)),input_date(value.max((now/60+1)*60)),escape_html(&date(now)))
+fn time_input(display: Display, value: u64, context: &str) -> String {
+    let Some(offset) = display.offset else {
+        return "<p class=notice>Your saved OSMAP timezone could not be loaded. Reload before choosing a send time.</p>".into();
+    };
+    let now = display.now;
+    let first = (now / 60 + 1) * 60;
+    let (Some(min), Some(max), Some(value), Some(current)) = (
+        offset.schedule_input(first),
+        offset.schedule_input(now.saturating_add(30 * 86400)),
+        offset.schedule_input(value.max(first)),
+        offset.schedule_input(now),
+    ) else {
+        return "<p class=notice>The scheduling time could not be displayed. Reload before scheduling.</p>".into();
+    };
+    format!("<label for=scheduled-due-{context}>Send at ({})</label><input id=scheduled-due-{context} name=due_at type=datetime-local step=60 min=\"{min}\" max=\"{max}\" value=\"{value}\" required>{}<p>Current time in your saved OSMAP timezone: {} {}. Fixed offsets do not automatically adjust for daylight saving.</p>",offset.label(),hidden("timezone_offset",&offset.as_str()),current.replace('T'," "),offset.label())
 }
 fn shell(account: &str, csrf: &str, title: &str, body: String) -> TrustedHtml {
     TrustedHtml::from_template(format!("{}<main id=main-content class=\"page-shell scheduled-page\" tabindex=-1><div class=page-intro><h1>{title}</h1><p>Saved messages awaiting their scheduled send checks.</p></div>{body}<nav><a href=\"/scheduled\">Scheduled messages</a> · <a href=\"/drafts\">Drafts</a> · <a href=\"/compose\">Compose</a></nav></main>",crate::http_ui::app_header(account,csrf,"scheduled")))
@@ -85,8 +92,16 @@ pub(crate) fn render_new(
 ) -> TrustedHtml {
     let now = display.now;
     let d = &draft.request;
-    let body=format!("<section class=panel><h2>Review saved message</h2>{}<p>This schedules the exact saved revision shown here. Return to the draft to change the message or its attachments.</p><form method=post action=\"/scheduled/create\">{}{}{}{}{}<button>Schedule this saved message</button></form><p><a href=\"/draft?id={}\">Back to draft</a></p></section>",summary(&d.recipients_text,&d.cc_text,&d.bcc_text,&d.subject,&d.body,d.attachments.len()),hidden("csrf_token",csrf),hidden("draft",&draft.draft_id),hidden("revision",&revision.to_string()),time_input(now,now.saturating_add(3600),"new"),limits(),escape_html(&draft.draft_id));
-    shell(account, csrf, "Schedule message", format!("<p>Current time: {}. Inputs below are UTC. Saved offsets do not automatically adjust for daylight saving.</p>{body}",escape_html(&shown_date(now,display))))
+    let body=format!("<section class=panel><h2>Review saved message</h2>{}<p>This schedules the exact saved revision shown here. Return to the draft to change the message or its attachments.</p><form method=post action=\"/scheduled/create\">{}{}{}{}{}<button>Schedule this saved message</button></form><p><a href=\"/draft?id={}\">Back to draft</a></p></section>",summary(&d.recipients_text,&d.cc_text,&d.bcc_text,&d.subject,&d.body,d.attachments.len()),hidden("csrf_token",csrf),hidden("draft",&draft.draft_id),hidden("revision",&revision.to_string()),time_input(display,now.saturating_add(3600),"new"),limits(),escape_html(&draft.draft_id));
+    shell(
+        account,
+        csrf,
+        "Schedule message",
+        format!(
+            "<p>Current time: {}. Choose the send time in your saved OSMAP timezone.</p>{body}",
+            escape_html(&shown_date(now, display))
+        ),
+    )
 }
 pub(crate) fn render_list(
     account: &str,
@@ -145,13 +160,13 @@ pub(crate) fn render_list(
             ));
             body.push_str(&format!("<p>Saved protection choices: signing {}; encryption {}; include your key for encrypted access {}. Current account and recipient policies are checked again before sending.</p>",if p.protection.sign{"requested"}else{"not requested"},if p.protection.encrypt{"requested"}else{"not requested"},if p.protection.encrypt_to_self{"yes"}else{"no"}));
             if editable(job.state) {
-                body.push_str(&format!("<details><summary>Edit message or send time</summary><form method=post action=\"/scheduled/edit\">{}{}{}{}{}{}{}<label for=scheduled-body>Message text (saved format: {})</label><textarea id=scheduled-body name=body rows=12 required>{}</textarea>{}<p>Saved attachments, sender, message format, reply headers and protection choices are preserved. Change attachments or those choices by cancelling this job and composing a new message.</p><button>Save scheduled message</button></form></details>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string()),field("to","To",&p.recipients.join(", ")),field("cc","Cc",&p.cc_recipients.join(", ")),field("bcc","Bcc",&p.bcc_recipients.join(", ")),field("subject","Subject",&p.subject),escape_html(p.body_format.as_str()),escape_html(&p.body),time_input(now,job.due_at,"edit")));
+                body.push_str(&format!("<details><summary>Edit message or send time</summary><form method=post action=\"/scheduled/edit\">{}{}{}{}{}{}{}<label for=scheduled-body>Message text (saved format: {})</label><textarea id=scheduled-body name=body rows=12 required>{}</textarea>{}<p>Saved attachments, sender, message format, reply headers and protection choices are preserved. Change attachments or those choices by cancelling this job and composing a new message.</p><button>Save scheduled message</button></form></details>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string()),field("to","To",&p.recipients.join(", ")),field("cc","Cc",&p.cc_recipients.join(", ")),field("bcc","Bcc",&p.bcc_recipients.join(", ")),field("subject","Subject",&p.subject),escape_html(p.body_format.as_str()),escape_html(&p.body),time_input(display,job.due_at,"edit")));
             }
         } else {
             body.push_str(if now>=job.payload_expires_at {"<p>Saved message content is unavailable because its fixed 60-day lifetime expired. The confirmed submission status above remains available.</p>"} else if matches!(job.state,State::Submitted|State::Cancelled|State::Failed) {"<p>Message content is no longer retained for this terminal entry.</p>"} else {"<p>Saved message content could not be loaded. Its confirmed status is shown above; reload before another action.</p>"});
         }
         if job.state == State::Blocked {
-            body.push_str(&format!("<form method=post action=\"/scheduled/change\">{}{}{}{}<button name=action value=reauthorize>Authorize this message for the chosen time</button></form>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string()),time_input(now,now.saturating_add(3600),"reauthorize")));
+            body.push_str(&format!("<form method=post action=\"/scheduled/change\">{}{}{}{}<button name=action value=reauthorize>Authorize this message for the chosen time</button></form>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string()),time_input(display,now.saturating_add(3600),"reauthorize")));
         }
         if job.state == State::Staged {
             body.push_str("<p>This incomplete entry is not scheduled and will not dispatch. Cancel it from the list to release its saved-message space, then return to Compose.</p>");
@@ -184,6 +199,30 @@ mod tests {
             intent: None,
         }
     }
+    #[test]
+    fn scheduling_form_uses_account_time_and_refuses_missing_timezone() {
+        let display = Display {
+            now: 1_793_892_900,
+            offset: crate::timezone::FixedOffset::parse("+07:00"),
+        };
+        let html = time_input(display, display.now + 1200, "test");
+        assert!(html.contains("Send at (UTC+07:00)"));
+        assert!(html.contains("value=\"2026-11-05T22:55\""));
+        assert!(html.contains("name=timezone_offset value=\"+07:00\""));
+        let missing = time_input(
+            Display {
+                offset: None,
+                ..display
+            },
+            display.now + 1200,
+            "missing",
+        );
+        assert!(missing.contains("could not be loaded"));
+        assert!(!missing.contains("name=due_at"));
+        let date = shown_date(display.now + 1200, display);
+        assert!(date.starts_with("2026-11-05 22:55:00 UTC+07:00"));
+    }
+
     #[test]
     fn pending_ui_is_native_escaped_and_preserves_cas_and_private_routing() {
         let job = job(State::Pending);

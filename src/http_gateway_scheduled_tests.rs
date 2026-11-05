@@ -332,6 +332,50 @@ fn runtime_scheduling_retires_original_draft_send_and_save_without_native_callba
 }
 
 #[test]
+fn runtime_scheduled_draft_projection_stays_readonly_after_cancel_and_reopen() {
+    let f = Fixture::new();
+    let draft = f.draft();
+    let id = f.schedule(&draft);
+    let projected = || match f.gateway.list_drafts_impl(&f.context, &f.session).decision {
+        BrowserDraftListDecision::Listed { states, .. } => states[0].state.clone(),
+        other => panic!("unexpected draft projection: {other:?}"),
+    };
+    assert_eq!(
+        projected(),
+        BrowserDraftEditState::Scheduled { job_id: id.clone() }
+    );
+    let list = f.gateway.scheduled_list_impl(&f.session).unwrap();
+    f.gateway
+        .scheduled_change_impl(&f.session, &id, list.revision, "cancel", None)
+        .unwrap();
+    assert_eq!(
+        projected(),
+        BrowserDraftEditState::Scheduled { job_id: id.clone() }
+    );
+    let journal = f.gateway.send_journal();
+    let guard = journal.account_guard(ACCOUNT, f.now).unwrap();
+    assert!(guard.require_unconsumed(&f.source(&draft)).is_err());
+    drop(guard);
+    let reserved = f.draft();
+    let journal = f.gateway.send_journal();
+    let mut guard = journal.account_guard(ACCOUNT, f.now).unwrap();
+    let reserved_id = "c".repeat(32);
+    guard
+        .begin_schedule(&f.source(&reserved), &reserved_id, &"d".repeat(64))
+        .unwrap();
+    drop(guard);
+    let BrowserDraftListDecision::Listed { states, .. } =
+        f.gateway.list_drafts_impl(&f.context, &f.session).decision
+    else {
+        panic!("draft listing refused");
+    };
+    assert!(states
+        .iter()
+        .any(|state| state.draft_id == reserved.draft_id
+            && matches!(state.state, BrowserDraftEditState::Paused { .. })));
+}
+
+#[test]
 fn runtime_already_submitted_source_and_missing_epoch_never_create_jobs() {
     let f = Fixture::new();
     let draft = f.draft();

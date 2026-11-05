@@ -1655,6 +1655,7 @@ pub struct BrowserDraftState {
 pub enum BrowserDraftEditState {
     Editable,
     Attempted { receipt_intent: String },
+    Scheduled { job_id: String },
     Paused { receipt_intent: String },
     Unknown,
 }
@@ -1715,6 +1716,15 @@ pub(crate) fn project_drafts(
                     receipt_intent,
                     Some(crate::send_journal::AttemptOutcome::Accepted { .. }),
                 )) => BrowserDraftEditState::Attempted { receipt_intent },
+                Ok((
+                    _,
+                    Some(crate::send_journal::AttemptOutcome::Scheduled {
+                        job_id,
+                        schedule_confirmed: true,
+                    }),
+                )) => BrowserDraftEditState::Scheduled {
+                    job_id: job_id.iter().map(|byte| format!("{byte:02x}")).collect(),
+                },
                 Ok((receipt_intent, Some(_))) => BrowserDraftEditState::Paused { receipt_intent },
                 _ => BrowserDraftEditState::Unknown,
             };

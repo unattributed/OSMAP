@@ -1,4 +1,4 @@
-//! Account-owned fixed UTC offsets for mail display, never scheduling authority.
+//! Account-owned fixed UTC offsets for mail display and explicit scheduling input.
 use crate::private_account_file::PrivateAccountFile;
 use serde::{Deserialize, Serialize};
 use std::io;
@@ -58,6 +58,23 @@ impl FixedOffset {
         } else {
             format!("UTC{}", self.as_str())
         }
+    }
+
+    /// A native datetime-local field uses the saved account offset, not the
+    /// browser/host timezone. Stored jobs continue to contain UTC instants.
+    pub(crate) fn schedule_input(self, timestamp: u64) -> Option<String> {
+        crate::logging::format_unix_timestamp_offset(i64::try_from(timestamp).ok()?, self.0)
+            .map(|date| date[..16].replace(' ', "T"))
+    }
+
+    pub(crate) fn parse_schedule(self, value: &str, now: u64) -> Option<u64> {
+        let seconds = i64::from(self.0) * 60;
+        let local_now = now.checked_add_signed(seconds)?;
+        // The strict existing calendar parser checks the future/30-day range
+        // in the same fixed-offset coordinate system as the entered value.
+        crate::snooze::parse_utc(value, local_now)
+            .ok()?
+            .checked_add_signed(-seconds)
     }
 
     pub fn choices() -> impl Iterator<Item = Self> {
@@ -177,6 +194,43 @@ impl Store {
 mod tests {
     use super::*;
     use std::fs;
+    #[test]
+    fn scheduling_uses_saved_offset_roundtrips_and_refuses_invalid_or_out_of_range_times() {
+        let now = 1_793_892_900; // 2026-11-05 15:35 UTC
+        let due = now + 20 * 60;
+        for value in ["UTC", "+07:00", "-05:00", "+05:45", "+14:00", "-12:00"] {
+            let offset = FixedOffset::parse(value).unwrap();
+            let input = offset.schedule_input(due).unwrap();
+            assert_eq!(offset.parse_schedule(&input, now), Some(due));
+            assert_eq!(
+                offset.parse_schedule(&offset.schedule_input(now).unwrap(), now),
+                None
+            );
+            assert_eq!(
+                offset.parse_schedule(&offset.schedule_input(now + 31 * 86400).unwrap(), now),
+                None
+            );
+            for invalid in [
+                "2026-02-30T12:00",
+                "2026-11-05T22:55+07:00",
+                "2026-11-05T22:55Z",
+                "",
+            ] {
+                assert_eq!(offset.parse_schedule(invalid, now), None);
+            }
+        }
+        let east = FixedOffset::parse("+07:00").unwrap();
+        assert_eq!(
+            east.schedule_input(due).as_deref(),
+            Some("2026-11-05T22:55")
+        );
+        for timestamp in [1_767_225_600, 1_709_164_800] {
+            // year/leap-day crossings
+            let input = east.schedule_input(timestamp).unwrap();
+            assert_eq!(east.parse_schedule(&input, timestamp - 60), Some(timestamp));
+        }
+    }
+
     #[test]
     fn timezone_offsets_are_finite_canonical_and_convert_real_instants() {
         assert_eq!(FixedOffset::choices().count(), 105);

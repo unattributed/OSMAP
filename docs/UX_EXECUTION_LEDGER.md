@@ -1,3 +1,376 @@
+2026-11-05 — **S08-03 saved-timezone follow-up UAT_READY.** Use saved OSMAP timezone for scheduling; fix confirmed retired drafts incorrectly labelled Paused. Earlier owner schedules remain untouched; no pre-due dispatch failure established. Documents stays removed.
+
+<!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S08-03",
+  "original_requirement": "Scheduled send and snooze with bounded persisted jobs and restart/cancel/edit behavior",
+  "source_baseline": "5277fcf6259d84c5ddc8e43075e65910e7e18fb4",
+  "state": "UAT_READY",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root"
+    ],
+    "qa": [
+      "/root/remembered_key_review"
+    ],
+    "security_review": [
+      "/root/remembered_key_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/UX_SLICE_S08_03.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/UX_DECISIONS.md",
+    "src/timezone.rs",
+    "src/scheduled_ui.rs",
+    "src/http/routes_scheduled.rs",
+    "src/http/scheduled_tests.rs",
+    "src/http.rs",
+    "src/http_browser.rs",
+    "src/http_ui.rs",
+    "src/http_gateway_scheduled_tests.rs",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-claims-boundary.json"
+  ],
+  "outcomes": [
+    {
+      "id": "S08-03-saved-timezone-and-draft-state",
+      "owner": "/root",
+      "requirement_ids": [
+        "R2-03-006",
+        "R2-04-031",
+        "R2-15-010",
+        "UX04-006",
+        "UX08-008",
+        "UX08-011"
+      ],
+      "frontend_backend_outcome": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+      "essential_qa": "Strict local conversion, bounds, offset substitution/change/missing refusal, current auth/CSRF and exact fields, local-first rendering, cancellation/reopen readonly source projection, matching native tests/install and ordinary signed delivery.",
+      "next_action": "Complete ordinary signed GitHub delivery; owner local-time schedule/cancel UAT remains pending.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+        },
+        {
+          "stage": "source_tests",
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+        },
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Original S08-03 qualification and latest owner screenshots; notification acceptance preserved below.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 7200,
+      "started_at": "2026-11-05T15:54:04Z",
+      "elapsed_status": "UNMEASURED",
+      "elapsed_seconds": null
+    },
+    "attempts": [
+      {
+        "id": "native-build20",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "1670d1192c5742b2c0a1b7557046384b7c413d5fc294612349887076ab49110c",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent source/recipe/result GO 2026-11-05",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Saved account-offset schedule entry plus confirmed journal source projection; existing jobs untouched."
+      },
+      {
+        "id": "native-tests20",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 46.86,
+        "source_revision": "1670d1192c5742b2c0a1b7557046384b7c413d5fc294612349887076ab49110c",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent source/recipe/result GO 2026-11-05",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Saved account-offset schedule entry plus confirmed journal source projection; existing jobs untouched."
+      },
+      {
+        "id": "web-install20",
+        "boundary": "S08-03-saved-timezone-and-draft-state",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "result": "PASS",
+        "reference": "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "source_revision": "1670d1192c5742b2c0a1b7557046384b7c413d5fc294612349887076ab49110c",
+        "success_chain_review": {
+          "reviewer": "/root/remembered_key_review",
+          "reference": "Independent source/recipe/result GO 2026-11-05",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "change_reference": "Saved account-offset schedule entry plus confirmed journal source projection; existing jobs untouched."
+      }
+    ]
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S08-03",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_03.md",
+      "sha256": "99a6db889898a1e1808288e140a2adf59f2f3092f33f94465310251aa2025350"
+    },
+    "design": {
+      "journey": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+      "frontend": "Existing native schedule forms, local time label/current time/min/max and hidden canonical saved offset; readonly Scheduled copy link in Drafts.",
+      "backend": "Existing strict parser and owner preference; scheduling store/journal/worker unchanged.",
+      "interfaces": "Current authenticated session and CSRF/Origin; strict fields plus saved offset equality.",
+      "persistence": "Existing UTC due instants and journal retirement unchanged.",
+      "security": "No fabricated session, timezone guessing, replay or owner-job mutation; expired/changed state refuses.",
+      "failure_recovery": "Bounded native build600s per build; existing Web-only atomic rollback; no public mail-service restart. Two same-boundary failures require independent reassessment."
+    },
+    "tests": [
+      {
+        "id": "S08-03-T01",
+        "outcome_ids": [
+          "S08-03-saved-timezone-and-draft-state"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current scoped source and existing matching scheduler contracts.",
+        "action": "Review screenshots and actual pending job without changing it",
+        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+        ]
+      },
+      {
+        "id": "S08-03-T02",
+        "outcome_ids": [
+          "S08-03-saved-timezone-and-draft-state"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current scoped source and existing matching scheduler contracts.",
+        "action": "Strict fixed-offset conversion, future/horizon and calendar boundaries",
+        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+        ]
+      },
+      {
+        "id": "S08-03-T03",
+        "outcome_ids": [
+          "S08-03-saved-timezone-and-draft-state"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current scoped source and existing matching scheduler contracts.",
+        "action": "Native HTML input/local-first display and unavailable refusal",
+        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+        ]
+      },
+      {
+        "id": "S08-03-T04",
+        "outcome_ids": [
+          "S08-03-saved-timezone-and-draft-state"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current scoped source and existing matching scheduler contracts.",
+        "action": "Authenticated HTTP offset capture and stale/tampered/CSRF refusal",
+        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+        ]
+      },
+      {
+        "id": "S08-03-T05",
+        "outcome_ids": [
+          "S08-03-saved-timezone-and-draft-state"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current scoped source and existing matching scheduler contracts.",
+        "action": "Real Runtime source schedule/cancel/reopen projection with no source rearm",
+        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+        ]
+      },
+      {
+        "id": "S08-03-T06",
+        "outcome_ids": [
+          "S08-03-saved-timezone-and-draft-state"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current scoped source and existing matching scheduler contracts.",
+        "action": "Focused Rust and strict Clippy",
+        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+        ]
+      },
+      {
+        "id": "S08-03-T07",
+        "outcome_ids": [
+          "S08-03-saved-timezone-and-draft-state"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current scoped source and existing matching scheduler contracts.",
+        "action": "Independent source/recipe review",
+        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+        ]
+      },
+      {
+        "id": "S08-03-T08",
+        "outcome_ids": [
+          "S08-03-saved-timezone-and-draft-state"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Current scoped source and existing matching scheduler contracts.",
+        "action": "Matching OpenBSD tests and Web-only exact-binary install with rollback/service preservation",
+        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md: 2026-11-05 saved-timezone follow-up qualification and private scheduled-timezone-20261105 receipts"
+        ]
+      },
+      {
+        "id": "S08-03-T09",
+        "outcome_ids": [
+          "S08-03-saved-timezone-and-draft-state"
+        ],
+        "kind": "positive",
+        "level": "human",
+        "prerequisites": "Current scoped source and existing matching scheduler contracts.",
+        "action": "Owner schedules and cancels test mail using saved local timezone",
+        "expected": "The signed-in user chooses scheduled time in the saved account offset; persisted due instant is UTC; Drafts links confirmed retired sources to the scheduled job without claiming Paused.",
+        "preserved": "Owner jobs/message data, other accounts, keys, epochs, helpers and mail configuration.",
+        "owner": "/root",
+        "reviewer": "/root/remembered_key_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "All required nonhuman follow-up tests and scoped review pass against matching source/native/installed artifacts; previous unaffected S08-03 evidence remains scoped.",
+    "human_exit": "Owner schedules a controlled message in saved OSMAP timezone, confirms submission, and cancels another pending job."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner follow-up UAT remains pending; original saved jobs have not reached their due times."
+  },
+  "next_action": "Preserve this scoped UAT-ready result through normal signed commit/push; owner local-time schedule/cancel T09 remains pending.",
+  "independent_next_action": "Review changed scheduling time interpretation and draft state; source/native results required before readiness. Documents remains stopped."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
 2026-11-05 — **Notification-controls follow-up ACCEPTED / T09 PASS.** Owner: “I accept and approve the work completed.” Applies to signed implementation5f2e549, including Delete all notifications beside Mark all as read. Whole S08 remains open. Documents development and UAT remain stopped. Earlier readiness and execution entries below are history.
 
 2026-11-05 — **Notifications bulk delete UAT_READY. Documents removed by owner; development and UAT stopped.** Historical execution is preserved without treating it as current approval. No mailbox/quota/configuration change or rollback is authorized by this notification task.
@@ -6,7 +379,7 @@
 
 
 
-<!-- OSMAP_ACTIVE_WORK_ORDER -->
+<!-- OSMAP_PREVIOUS_ACCEPTED_NOTIFICATION_WORK_ORDER -->
 ```json
 {
   "version": 1,
@@ -319,7 +692,7 @@
   "independent_next_action": "Verify this acceptance record matches the explicit owner statement and last signed delivery without broadening scope; normal signed preservation follows."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_PREVIOUS_ACCEPTED_NOTIFICATION_WORK_ORDER -->
 
 ## Preserved Documents checkpoint — owner subsequently removed scope; development and UAT stopped
 

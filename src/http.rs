@@ -1176,6 +1176,7 @@ mod tests {
         delete_list_decision: Arc<Mutex<Option<BrowserMessageListDecision>>>,
         mark_read_store: Option<crate::mark_read::Store>,
         timezone_store: Option<crate::timezone::Store>,
+        scheduled_due_capture: Option<Arc<Mutex<Option<u64>>>>,
         draft_location_store: Option<crate::draft_location::Store>,
         sent_copy_store: Option<crate::sent_copy::Store>,
         sent_location_store: Option<crate::sent_location::Store>,
@@ -1256,6 +1257,7 @@ mod tests {
                 delete_list_decision: Arc::new(Mutex::new(None)),
                 mark_read_store: None,
                 timezone_store: None,
+                scheduled_due_capture: None,
                 draft_location_store: None,
                 sent_copy_store: None,
                 sent_location_store: None,
@@ -1688,6 +1690,20 @@ mod tests {
                 .as_ref()
                 .ok_or(crate::after_archive::Error::Unavailable)?
                 .save(&s.record.canonical_username, revision, choice)
+        }
+        fn scheduled_from_draft(
+            &self,
+            _session: &ValidatedSession,
+            _id: &str,
+            _revision: u64,
+            due: u64,
+        ) -> Result<String, crate::scheduled_send::Error> {
+            let capture = self
+                .scheduled_due_capture
+                .as_ref()
+                .ok_or(crate::scheduled_send::Error::Unavailable)?;
+            *capture.lock().unwrap() = Some(due);
+            Ok("c".repeat(32))
         }
         fn load_timezone(
             &self,

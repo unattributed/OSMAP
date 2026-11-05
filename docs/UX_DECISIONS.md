@@ -706,3 +706,10 @@ longer persistence and broader release assurance are separate decisions.
 ## 2026-11-05 — Owner scope correction and bulk notification dismissal
 
 The owner states Documents was removed from the project and was not approved. Stop Documents development and its UAT invitation; preserve earlier execution/evidence without treating it as authority to continue or silently reverse the mailbox/quota cutover. The current task is only **Delete all notifications** beside **Mark all as read**. Reuse NotificationStore locking/CAS and the existing dismissal set in one atomic publication. Include hidden optional notices, retain source facts for bounded replay suppression, preserve separate audit records, and allow newly recorded events to appear. No new storage service, dependency or Python tooling.
+
+
+## 2026-11-05 — Schedule in the saved account timezone
+
+The owner requires scheduled-send entry in the timezone configured in OSMAP. Reuse the saved fixed UTC offset and strict existing civil-date parser; show the local time first, with UTC secondary, and persist the same absolute UTC instant. A canonical offset carried by a form must match the current authenticated account preference. Missing, tampered or changed context refuses before mutation instead of guessing. Existing jobs are not reinterpreted. This uses existing fixed-offset preferences; named-zone daylight-saving automation is separate scope.
+
+A confirmed journal transfer to scheduling projects the retired source draft as a read-only Scheduled copy linked to its job, without asserting that the job remains pending. Reserved or uncertain transfers remain Paused. Cancellation never rearms the consumed source draft. Existing immutable capture, duplicate-send, owner, CSRF and final-send policy controls remain in force.

@@ -2,10 +2,12 @@
 
 ## Current scope — 2026-11-05
 
+Owner UAT follow-up: use the saved OSMAP fixed-offset timezone for scheduled-send input and primary display, converting to UTC only for persisted dispatch. Reject missing/changed timezone context rather than reinterpret stale forms. Existing job UTC instants remain unchanged. The first owner job was observed Pending before its16:33UTC due time; this does not establish dispatch failure. Correct the separately confirmed source-draft projection defect: confirmed schedule retirement becomes a read-only scheduled-copy link, while reserved/unconfirmed outcomes remain Paused. Preserve duplicate-send guards, cancellation and private-key requirements. Documents remains removed; owner T09 is pending.
+
 The owner directs completion of unfinished S08 after accepting the storage
 sidebar correction. S08-02 remains accepted. The selected 200 MiB obsd1 quota
-has been applied and separately qualified; full installed Documents integration
-remains open. S08-03 T01–T08 pass within the source, native and installed
+has been applied and separately qualified. Documents was subsequently removed
+by the owner and is not current scope. S08-03 T01–T08 pass within the source, native and installed
 scopes below, and normal signed delivery has completed. Engineering is
 UAT_READY; owner T09 remains pending.
 
@@ -31,9 +33,11 @@ available for reconciliation after payload expiry. Message bytes are not retaine
 forever: scheduled payloads expire after60 days and the existing independent
 send-recovery store has its own30-day lifetime.
 
-Use the existing strict UTC parser and saved fixed-offset account display.
-Show the exact UTC instant and local display offset; reject ambiguous local or
-named-zone/DST input rather than guessing. Changing display offset cannot move
+Reuse the strict calendar parser with the saved fixed-offset account timezone.
+Show local send times first and retain the exact UTC instant as secondary detail.
+A hidden canonical offset must match the current account preference at submission;
+missing, forged or changed context refuses instead of guessing. Named-zone/DST
+automation is not introduced. Changing display offset cannot move
 an existing job's UTC instant. A forward wall-clock jump can make a pending job
 due; a backward jump cannot rearm a submitted job.
 
@@ -254,3 +258,49 @@ Push4 of signed12160fa again passed2317Rust/0failures/89explicit ignores and the
 T01–T08 are PASS within the documented source/native/installed boundaries. Normal push5 completed the full existing delivery path, including2317RustPASS/0FAIL/89explicit native/external ignores, strict Clippy, formatting, source/claims/supply-chain checks and the corrected combined weak-pattern guards. Signed source681ab5e818ed7ab21a40df413e773fe8f6741b06 is published on feat/ux-completion-20260929; fresh fetch confirms exact local/remote equality,0ahead/0behind and clean status at that checkpoint. Private push5 receipt SHA256d369b8d40e2cd8eb414759dc2a8158cce0b22d08f7de98426b34e09d90cb8785 is retained with both earlier classification refusals. The final guard changes affect no Rust bytes, so source11 native qualification and installed Webdb383665/service-preservation results remain applicable. Independent result review is GO.
 
 Owner T09 remains NOT RUN. On obsd1, compose a controlled test message, choose Schedule and set a future Send at (UTC) time. Open Scheduled messages and confirm its eventual factual status. Schedule another message farther ahead and cancel it while still scheduled; confirm the cancellation is visible. Signing needs personal-key permission to remain valid at dispatch. Report the observed result; no log analysis or secret sharing is needed. This engineering closeout does not accept the slice on the owner's behalf. Whole S08 remains open while Documents activation and S08-04 owner acceptance are pending.
+
+
+## 2026-11-05 — Saved-timezone scheduling follow-up qualification
+
+The installed follow-up uses the authenticated account's saved fixed offset for
+schedule create, edit and explicit reauthorization. Forms show the timezone,
+current local time and local bounds. POST checks the current saved offset before
+any scheduled mutation. UTC remains the persisted dispatch instant; existing jobs
+were not changed. The read-only16:09:32UTC observation retained both owner jobs
+Pending, with original due instants1793896380 and1793897100 (23:33 and23:45 at
+UTC+07:00), unchanged created/updated timestamps and no refusal reason. Earlier
+22:57 local screenshots therefore preceded their stored due times; they do not
+establish a dispatch failure. The confusing UTC input is the corrected defect.
+
+Confirmed journal transfers show Scheduled copy in Drafts and link to the job;
+this source remains consumed/read-only after cancellation. Reserved or uncertain
+transfers remain Paused. Native execution used disposable test state, not owner
+authentication or owner message mutation. Source scheduler tests57PASS/0FAIL with
+one explicit ignore, the additional HTTP timezone integration1PASS, strict
+Clippy and format/diff checks pass. Native OpenBSD service-account tests58PASS,
+0FAIL,3explicit native-fixture ignores in46.86seconds; the named timezone,
+HTTP zero-dispatch and real Runtime/cancel/reopen checks are included.
+
+Private receipts: `/home/foo/Downloads/osmap-ux-s08/completion-20261104/scheduled-timezone-20261105/`.
+The reviewed source20 archive is1670d1192c5742b2c0a1b7557046384b7c413d5fc294612349887076ab49110c.
+Native test receipt26c961e5283675cb7e23130b6369e8b138e6cfa9e3a715c5f50bdeaa16136e7f.
+Installed Web binary20c2e1206ade2d149c08bd1c0df210e9f32d6ed9437be894497a322842978885
+matches the running Serve executable. Web-only atomic install retains original
+binary and rollback recipe. Configuration, account-helper, mailbox-helper and
+crypto-agent readbacks are unchanged; nine checked roles run and HTTPS login200
+passes. Independent source, recipe and result review GO. These are scoped
+engineering observations; owner T09 remains pending, and no production-release
+security acceptance is claimed. Existing unaffected snooze/worker/crypto/SMTP
+qualification above is reused. Documents remains removed.
+
+Owner UAT: sign in, retain UTC+07:00 in General settings, schedule a controlled
+message five minutes ahead by entering that local time directly, and check the
+scheduled list shows that same time first. Confirm submission after the due time.
+Cancel a separate pending test and confirm it does not send. Earlier owner jobs
+remain at their original saved times unless the owner explicitly changes them.
+
+Normal developer security-check passes, including2335 Rust library tests with
+zero failures and89 explicit native/external ignores, existing guard regressions
+and WSTG pack validation. This is the developer gate, not a new authenticated
+production WSTG assessment. Changed Rust source hashes match the native source20
+build. Shopkeeper-signed source synchronization proceeds through normal hooks.

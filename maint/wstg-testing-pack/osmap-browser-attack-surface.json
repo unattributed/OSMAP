@@ -1799,7 +1799,8 @@
         "csrf_token",
         "draft",
         "revision",
-        "due_at"
+        "due_at",
+        "timezone_offset"
       ],
       "wstg_test_ids": [
         "OSMAP-WSTG-ATHZ-001",
@@ -1821,7 +1822,8 @@
         "cc",
         "bcc",
         "subject",
-        "body"
+        "body",
+        "timezone_offset"
       ],
       "wstg_test_ids": [
         "OSMAP-WSTG-ATHZ-001",
@@ -1839,7 +1841,8 @@
         "id",
         "revision",
         "action",
-        "due_at"
+        "due_at",
+        "timezone_offset"
       ],
       "wstg_test_ids": [
         "OSMAP-WSTG-ATHZ-001",

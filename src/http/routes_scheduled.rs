@@ -20,15 +20,23 @@ fn exact(fields: &BTreeMap<String, String>, names: &[&str]) -> Result<(), Error>
         Ok(())
     }
 }
-fn due(fields: &BTreeMap<String, String>, now: u64) -> Result<u64, Error> {
-    crate::snooze::parse_utc(fields.get("due_at").ok_or(Error::Invalid)?, now)
-        .map_err(|_| Error::Invalid)
+fn due(
+    fields: &BTreeMap<String, String>,
+    now: u64,
+    offset: crate::timezone::FixedOffset,
+) -> Result<u64, Error> {
+    if fields.get("timezone_offset").map(String::as_str) != Some(offset.as_str().as_str()) {
+        return Err(Error::Stale);
+    }
+    offset
+        .parse_schedule(fields.get("due_at").ok_or(Error::Invalid)?, now)
+        .ok_or(Error::Invalid)
 }
 fn details(error: Error) -> (u16, &'static str, &'static str) {
     match error {
-        Error::Invalid => (400,"Bad Request","Check the message and choose an explicit future UTC time within 30 days."),
+        Error::Invalid => (400,"Bad Request","Check the message and choose a future time in your saved OSMAP timezone within 30 days."),
         Error::NotFound => (404,"Not Found","This account's scheduled message is no longer available. Reload Scheduled messages."),
-        Error::Stale => (409,"Conflict","The saved message changed or can no longer be edited. Reload before another change."),
+        Error::Stale => (409,"Conflict","The saved message or OSMAP timezone changed, or this message can no longer be edited. Reload before another change."),
         Error::Capacity => (409,"Conflict","Scheduled storage is full: up to 20 active messages and 50 MiB per account. Cancel an unsubmitted message before adding another."),
         _ => (503,"Service Unavailable","The scheduled result could not be confirmed. Reload the saved list before another action; do not repeat an uncertain submission."),
     }
@@ -235,7 +243,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
         let fields = if allows_urlencoded_request_body(
             request.headers.get("content-type").map(String::as_str),
         ) {
-            parse_urlencoded_form(&request.body, 10, 1024 * 1024).ok()
+            parse_urlencoded_form(&request.body, 11, 1024 * 1024).ok()
         } else {
             None
         };
@@ -254,12 +262,28 @@ impl<G: BrowserGateway> BrowserApp<G> {
             let now = self.gateway.scheduled_clock();
             match operation {
                 "create" => {
-                    exact(&fields, &["csrf_token", "draft", "revision", "due_at"])?;
+                    exact(
+                        &fields,
+                        &[
+                            "csrf_token",
+                            "draft",
+                            "revision",
+                            "due_at",
+                            "timezone_offset",
+                        ],
+                    )?;
                     let job = self.gateway.scheduled_from_draft(
                         &session,
                         id(fields.get("draft"))?,
                         revision(fields.get("revision"))?,
-                        due(&fields, now)?,
+                        due(
+                            &fields,
+                            now,
+                            self.gateway
+                                .load_timezone(&session)
+                                .map_err(|_| Error::Unavailable)?
+                                .offset,
+                        )?,
                     )?;
                     crate::draft::validate_draft_id(&job).map_err(|_| Error::Unavailable)?;
                     Ok(Some(job))
@@ -272,6 +296,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                             "id",
                             "revision",
                             "due_at",
+                            "timezone_offset",
                             "to",
                             "cc",
                             "bcc",
@@ -283,7 +308,14 @@ impl<G: BrowserGateway> BrowserApp<G> {
                         &session,
                         id(fields.get("id"))?,
                         revision(fields.get("revision"))?,
-                        due(&fields, now)?,
+                        due(
+                            &fields,
+                            now,
+                            self.gateway
+                                .load_timezone(&session)
+                                .map_err(|_| Error::Unavailable)?
+                                .offset,
+                        )?,
                         &fields["to"],
                         &fields["cc"],
                         &fields["bcc"],
@@ -305,9 +337,23 @@ impl<G: BrowserGateway> BrowserApp<G> {
                         "reauthorize" => {
                             exact(
                                 &fields,
-                                &["csrf_token", "id", "revision", "action", "due_at"],
+                                &[
+                                    "csrf_token",
+                                    "id",
+                                    "revision",
+                                    "action",
+                                    "due_at",
+                                    "timezone_offset",
+                                ],
                             )?;
-                            Some(due(&fields, now)?)
+                            Some(due(
+                                &fields,
+                                now,
+                                self.gateway
+                                    .load_timezone(&session)
+                                    .map_err(|_| Error::Unavailable)?
+                                    .offset,
+                            )?)
                         }
                         _ => return Err(Error::Invalid),
                     };
@@ -358,19 +404,45 @@ mod tests {
         assert!(id(Some(&"0123456789ABCDEF0123456789ABCDEF".into())).is_err());
     }
     #[test]
-    fn schedule_date_is_explicit_utc_future_and_bounded() {
+    fn schedule_date_rejects_changed_missing_and_forged_account_offset() {
+        let offset = crate::timezone::FixedOffset::parse("+07:00").unwrap();
+        let now = 1_793_892_900;
+        let mut fields = BTreeMap::from([
+            ("due_at".into(), "2026-11-05T22:55".into()),
+            ("timezone_offset".into(), "+07:00".into()),
+        ]);
+        assert_eq!(due(&fields, now, offset), Ok(now + 1200));
+        for wrong in ["UTC", "+08:00", "UTC+07:00", ""] {
+            fields.insert("timezone_offset".into(), wrong.into());
+            assert_eq!(due(&fields, now, offset), Err(Error::Stale));
+        }
+        fields.remove("timezone_offset");
+        assert_eq!(due(&fields, now, offset), Err(Error::Stale));
+    }
+
+    #[test]
+    fn schedule_date_uses_saved_offset_future_and_bounded() {
         let now = 1_000_000;
         let text = crate::logging::format_unix_timestamp_utc(now + 3600);
-        let mut fields = BTreeMap::from([("due_at".into(), text[..16].into())]);
-        assert!(due(&fields, now).is_ok());
+        let mut fields = BTreeMap::from([
+            ("due_at".into(), text[..16].into()),
+            ("timezone_offset".into(), "UTC".into()),
+        ]);
+        assert!(due(&fields, now, crate::timezone::FixedOffset::default()).is_ok());
         for bad in ["2026-02-30T12:00", "2026-11-05T12:00+07:00", ""] {
             fields.insert("due_at".into(), bad.into());
-            assert_eq!(due(&fields, now), Err(Error::Invalid));
+            assert_eq!(
+                due(&fields, now, crate::timezone::FixedOffset::default()),
+                Err(Error::Invalid)
+            );
         }
         fields.insert(
             "due_at".into(),
             crate::logging::format_unix_timestamp_utc(now + 31 * 86400)[..16].into(),
         );
-        assert_eq!(due(&fields, now), Err(Error::Invalid));
+        assert_eq!(
+            due(&fields, now, crate::timezone::FixedOffset::default()),
+            Err(Error::Invalid)
+        );
     }
 }
