@@ -3,7 +3,7 @@
 ## S08 Documents and storage
 
 - `UX_SLICE_S08_01.md` — [S08-01: Documents and shared storage](UX_SLICE_S08_01.md): account-specific shared storage, qualified native hard quota and authenticated Documents lifecycle; installed storage/cutover qualification and owner UAT remain open.
-- `UX_SLICE_S08_03.md` — [S08-03: Scheduled send and snooze](UX_SLICE_S08_03.md): positive post-seal qualification passes; signed continuation delivery and owner acceptance pending.
+- `UX_SLICE_S08_03.md` — [S08-03: Scheduled send and snooze](UX_SLICE_S08_03.md): installed engineering ready with positive post-seal qualification and signed delivery; owner T09 pending.
 - `UX_SLICE_S08_04.md` — [S08-04: Factual notifications](UX_SLICE_S08_04.md): confirmed account events and explicit browser delivery; installed engineering ready, owner T09 pending.
 
 ## S07 outbound protection qualification

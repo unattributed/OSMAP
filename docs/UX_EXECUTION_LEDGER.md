@@ -1,4 +1,4 @@
-2026-11-05 — **S08-03 composed worker qualification IN_PROGRESS. S08-04 installed engineering UAT_READY; owner T09 pending.** S08-01 Documents activation awaits the explicit obsd1-only cutover decision;200MiB reporting remains installed.
+2026-11-05 — **S08-03 and S08-04 installed engineering UAT_READY; owner T09 pending.** S08-02 remains accepted. S08-01 Documents activation awaits the explicit obsd1-only cutover decision;200MiB reporting remains installed.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
 ```json
@@ -7,7 +7,7 @@
   "slice": "S08-03",
   "original_requirement": "Scheduled send and snooze with bounded persisted jobs and restart/cancel/edit behavior",
   "source_baseline": "6fefa6f1be36c16b4527cbb38c1e13344f590df0",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -120,11 +120,11 @@
       ],
       "frontend_backend_outcome": "Signed-in users schedule captured messages, inspect and explicitly edit/cancel unsubmitted jobs; one bounded native worker uses current send authority, and snooze restores visibility on expiry.",
       "essential_qa": "Reuse Rust store/journal/snooze/authority tests and actual route/shared-send integration, then the smallest matching disposable native submission and installed account-specific worker/UI check.",
-      "next_action": "Complete normal signed source gates; owner T09 follows matching engineering readiness.",
+      "next_action": "Owner completes the short installed scheduling/status/pending-cancellation UAT; Documents activation remains a separate decision.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
-        "source_tests": "PENDING",
+        "source_tests": "PASS",
         "native_tests": "PASS",
         "deployed_qa": "PASS",
         "independent_review": "PASS",
@@ -162,6 +162,10 @@
         {
           "stage": "independent_review",
           "reference": "docs/UX_SLICE_S08_03.md#actual-composed-result--2026-11-05"
+        },
+        {
+          "stage": "source_tests",
+          "reference": "docs/UX_SLICE_S08_03.md#engineering-completion-and-owner-uat--2026-11-05"
         }
       ]
     }
@@ -185,7 +189,7 @@
     "slice": "S08-03",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "eb0f5008cbfda30e18c950571ab7d3a2f0965a927bf9ac461f66fa5ce87937f7"
+      "sha256": "1cec8ef1c6cb1e9b95733a95b0a582293d43f0104b301d94cd39c29ae6f9be15"
     },
     "design": {
       "journey": "Schedule captured mail, inspect/edit/cancel pending jobs, observe truthful submission state; snooze expires without moving messages.",
@@ -336,9 +340,10 @@
         "preserved": "Owner data, public mail availability, credentials, epoch, personal-key fixed deadlines and unrelated roles remain intact.",
         "owner": "/root",
         "reviewer": "/root/remembered_key_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
-          "docs/UX_SLICE_S08_03.md#actual-composed-result--2026-11-05"
+          "docs/UX_SLICE_S08_03.md#actual-composed-result--2026-11-05",
+          "docs/UX_SLICE_S08_03.md#engineering-completion-and-owner-uat--2026-11-05"
         ]
       },
       {
@@ -364,8 +369,8 @@
   "human_acceptance": {
     "status": "PENDING"
   },
-  "next_action": "Native composed positive and final preservation pass; finish normal signed source delivery, then record engineering UAT_READY with separate owner T09.",
-  "independent_next_action": "Independent reviewer reconciles actual seal/positive receipt/Sent/SMTP/second-pass/foreign/reap evidence; no ordinary-only result is claimed as protected post-seal or owner acceptance."
+  "next_action": "Owner T09 scheduling/status/cancellation review. S08-04 owner T09 is also ready; S08-01 Documents cutover decision remains pending.",
+  "independent_next_action": "Independent source/native/installed and normal delivery reconciliation is GO within the documented scopes; reassess actual owner failures if reported."
 }
 ```
 
@@ -544,7 +549,7 @@
     "slice": "S08-04",
     "specification": {
       "path": "docs/UX_SLICE_S08_04.md",
-      "sha256": "97211a0fae68100624f263eafb0d157e30424fed152899203db17ea5f47cb411"
+      "sha256": "abd0d0339ebec67d9c5f639f5afc26416f658e5c0c0fa541883853ec809f4b4d"
     },
     "design": {
       "journey": "Observe factual account activity, select optional notification preferences and explicitly enable foreground browser delivery.",

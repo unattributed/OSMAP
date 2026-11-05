@@ -4031,9 +4031,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "docs/UX_SLICE_S08_03.md",
+            "scope": "2026-11-05 S08-03: Executed Rust store and native HTML-route regressions establish owner-bound persisted snooze, cancellation, UTC expiry and restored visibility on next load, including restart, clock and native-identity fences. Snooze does not move mail or require SMTP/background delivery. Owner functional/reference acceptance remains pending."
+          }
+        ]
       }
     },
     {
@@ -6507,9 +6513,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S08_03.md",
+            "scope": "2026-11-05 S08-03: Executed source/route and matching OpenBSD tests establish bounded captured scheduling, edit/cancel, restart/time handling and actual ordinary dispatch by the enforced Serve worker, with one controlled SMTP acceptance, one native Sent copy, typed receipt and subsequent-pass duplicate suppression. Foreign state is preserved. Controlled peer authority and actual installed admission are separately scoped; owner T09 remains pending."
+          }
+        ]
       }
     },
     {
@@ -14880,9 +14892,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S08_03.md",
+            "scope": "2026-11-05 S08-03: Executed current-authority/source checks and separate protected native dispatch tests establish private-session/helper-grant fencing, refusal after actual helper Lock or controlled epoch change, and retained Unknown outcomes without automatic resend. This does not claim independently exercised native coverage of every key/identity/policy variant, protected cryptography after Serve sealing or owner acceptance."
+          }
+        ]
       }
     },
     {

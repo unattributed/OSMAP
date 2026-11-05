@@ -1,6 +1,6 @@
 # S08-04 — Factual notifications and explicit browser delivery
 
-The owner directs continuing unfinished S08 autonomously. S08-03 engineering is installed, with positive post-seal worker qualification pending before owner T09; S08-02 is accepted. S08-01 Documents shared enforcement remains open and mailbox migration remains set aside.
+The owner directs continuing unfinished S08 autonomously. S08-03 engineering is installed and the ordinary positive post-seal worker qualification passes; owner T09 remains pending; S08-02 is accepted. S08-01 Documents shared enforcement remains open and mailbox migration remains set aside.
 
 ## Smallest complete route
 

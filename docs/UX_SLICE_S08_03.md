@@ -5,8 +5,9 @@
 The owner directs completion of unfinished S08 after accepting the storage
 sidebar correction. S08-02 remains accepted. The selected 200 MiB obsd1 quota
 has been applied and separately qualified; full installed Documents integration
-remains open. S08-03 source and scoped native qualification pass. Normal signed
-delivery, matching installation and owner acceptance remain in progress.
+remains open. S08-03 T01–T08 pass within the source, native and installed
+scopes below, and normal signed delivery has completed. Engineering is
+UAT_READY; owner T09 remains pending.
 
 Preserve the frozen S08-03/D05 requirements and controls UX08-008, UX08-011,
 UX04-006, R2-03-006, R2-04-031 and R2-15-010. A disabled Schedule control does
@@ -95,16 +96,16 @@ restart/clock/stale-identity boundaries.
 
 ## T01–T09 and required observations
 
-| Task | Work and essential proof | Starting state |
+| Task | Work and essential proof | Current engineering result |
 | --- | --- | --- |
-| T01 | Inspect existing source, frozen budgets and actual deployment interfaces; identify submission reuse, worker coverage and payload/intent expiry seams | Read-only assessment complete; implementation pending |
-| T02 | Durable job schema, captured payload, owner/revision validation, limits, reopen/edit/cancel and terminal retention; malformed/foreign records refuse unchanged | NOT RUN |
-| T03 | Strict UTC/offset display, maximum horizon, forward/backward clock changes, snooze expiry/restart/UID reuse; no changed due instant or duplicate rearm | Existing snooze evidence reusable; scheduler NOT RUN |
-| T04 | Actual authenticated create/list/inspect/edit/cancel routes, originating-intent retirement and stale Send/Save race; CSRF/origin/anonymous/foreign refusal | NOT RUN |
-| T05 | Sequential native worker/global lock, durable claims, restart and competing workers; one submit callback, stable attempt identity and safe fault disposition | NOT RUN |
-| T06 | Shared real prepared-send pipeline; current epoch/sender/recipient/key/policy fencing and private-grant expiry; Locked means Blocked and zero plaintext dispatch | NOT RUN |
-| T07 | Existing SMTP/crypto/Sent native actor: exact controlled scheduled delivery and replay, ambiguous acceptance and Sent failure/reconciliation; factual job events only | NOT RUN |
-| T08 | Independent source/security review, matching OpenBSD installation, actual bounded worker and service/account preservation; existing login readiness check | NOT RUN |
+| T01 | Inspect existing source, frozen budgets and actual deployment interfaces; identify submission reuse, worker coverage and payload/intent expiry seams | PASS — existing paths and requirements reviewed |
+| T02 | Durable job schema, captured payload, owner/revision validation, limits, reopen/edit/cancel and terminal retention; malformed/foreign records refuse unchanged | PASS — Rust persistence/CAS/isolation/recovery tests |
+| T03 | Strict UTC/offset display, maximum horizon, forward/backward clock changes, snooze expiry/restart/UID reuse; no changed due instant or duplicate rearm | PASS — time/clock/snooze source and route tests |
+| T04 | Actual authenticated create/list/inspect/edit/cancel routes, originating-intent retirement and stale Send/Save race; CSRF/origin/anonymous/foreign refusal | PASS — authenticated route and refusal regressions |
+| T05 | Sequential native worker/global lock, durable claims, restart and competing workers; one submit callback, stable attempt identity and safe fault disposition | PASS — source ownership tests and actual confined background-worker case |
+| T06 | Shared real prepared-send pipeline; current epoch/sender/recipient/key/policy fencing and private-grant expiry; Locked means Blocked and zero plaintext dispatch | PASS — current-authority source tests and separate protected native grant/epoch refusals |
+| T07 | Existing SMTP/crypto/Sent native actor: exact controlled scheduled delivery and replay, ambiguous acceptance and Sent failure/reconciliation; factual job events only | PASS — controlled SMTP/native Sent, replay and Unknown/reconciliation evidence |
+| T08 | Independent source/security review, matching OpenBSD installation, actual bounded worker and service/account preservation; existing login readiness check | PASS — matching installation, composed qualification, independent review and normal delivery |
 | T09 | Owner schedules one controlled message, sees its status, and exercises pending cancellation; usable snooze expiry check only if changed | NOT RUN |
 
 Root owns the work order, host/native/Git queue and integration. Existing helper
@@ -247,3 +248,9 @@ Final read-only service preservation confirms ServePID29963 loaded main db383665
 Normal push3 of signed5b24dc3 stopped at the existing CWE guard after2317RustPASS/0FAIL/89explicit ignores and the earlier delivery checks. The three findings were test-only self-execution and fixed shell-leaf declarations in two new native fixture files. Combined author/root/independent reassessment confirms these files are excluded from production, and moving code solely to avoid a scan would be inappropriate. The existing guard now checks the exact test-only registration for these two paths, including every cfg/include link for the nested fixture. All production rules and production allowlists remain unchanged. Five independent missing-link negative cases require the affected fixture to be scanned again; unrelated production Command/shell negatives remain enforced. The complete guard regressions and actual-tree scan pass. Rust bytes and native source11 qualification are unchanged and reused. The private push3 log remains retained; normal full delivery is pending.
 
 Push4 of signed12160fa again passed2317Rust/0failures/89explicit ignores and the corrected CWE guard, then refused the same fixtures in the legacy shell scan. Combined reassessment identified its subsequent direct-process scan as the same missing counterpart. Only the two exact relevant file filters are aligned with the preceding mandatory full-chain CWE check; production patterns and unsafe scan remain unchanged. The existing regression now executes the actual downstream scan block with its guard, all five broken-chain cases, unrelated production shell/process negatives and the actual repository. Its first synthetic test incorrectly inserted both sink kinds into each file and was correctly refused; correction restricts each test input to its actual admitted sink, keeping the narrow filters. The corrected combined suite passes. Both push failures and the focused test failure remain private; Rust/native/installed bytes are unchanged. Full normal delivery remains pending.
+
+## Engineering completion and owner UAT — 2026-11-05
+
+T01–T08 are PASS within the documented source/native/installed boundaries. Normal push5 completed the full existing delivery path, including2317RustPASS/0FAIL/89explicit native/external ignores, strict Clippy, formatting, source/claims/supply-chain checks and the corrected combined weak-pattern guards. Signed source681ab5e818ed7ab21a40df413e773fe8f6741b06 is published on feat/ux-completion-20260929; fresh fetch confirms exact local/remote equality,0ahead/0behind and clean status at that checkpoint. Private push5 receipt SHA256d369b8d40e2cd8eb414759dc2a8158cce0b22d08f7de98426b34e09d90cb8785 is retained with both earlier classification refusals. The final guard changes affect no Rust bytes, so source11 native qualification and installed Webdb383665/service-preservation results remain applicable. Independent result review is GO.
+
+Owner T09 remains NOT RUN. On obsd1, compose a controlled test message, choose Schedule and set a future Send at (UTC) time. Open Scheduled messages and confirm its eventual factual status. Schedule another message farther ahead and cancel it while still scheduled; confirm the cancellation is visible. Signing needs personal-key permission to remain valid at dispatch. Report the observed result; no log analysis or secret sharing is needed. This engineering closeout does not accept the slice on the owner's behalf. Whole S08 remains open while Documents activation and S08-04 owner acceptance are pending.
