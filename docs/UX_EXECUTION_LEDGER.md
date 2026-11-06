@@ -55,7 +55,8 @@
     "src/http/ux_fixtures.rs",
     "docs/UX_EXECUTION_LEDGER.md",
     "docs/CURRENT_PROJECT_STATUS.md",
-    "docs/UX_SLICE_S08_03.md"
+    "docs/UX_SLICE_S08_03.md",
+    "tests/v4_hostile_assurance.rs"
   ],
   "outcomes": [
     {
@@ -124,7 +125,7 @@
     "owner": "/root",
     "functional_exit": "User can find Labels from every page and manage labels or apply/remove them on verified stored mailbox messages without hidden menus.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Previous accepted storage work order preserved below; owner reopened labels S08-02. Independent assessment confirms existing routes suffice and local Drafts lack native message identities. Preserve cumulative prior failures and other scoped PASS results.",
+    "history_reference": "Previous accepted storage work order preserved below; owner reopened labels S08-02. Independent assessment confirms existing routes suffice and local Drafts lack native message identities. Preserve cumulative prior failures and other scoped PASS results. Normal publication failure retained in labels-20261106/push.log and slice specification: finite shell icon budget mismatch corrected after independent review; focused hostile integration2PASS0FAIL. Installed signed epoch readiness38PASS without credential or TOTP submission.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 7200,
@@ -139,7 +140,7 @@
     "slice": "S08-02",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "c3f9c32df16eac2f7f070362ed4c540c295d2b8a9f52d877f04845372a145fa9"
+      "sha256": "ce30843a00d4ea37dffdaa58ad68a4bfa0a2d2f542b33ffb2dc3098585650d03"
     },
     "design": {
       "journey": "User can find Labels from every page and manage labels or apply/remove them on verified stored mailbox messages without hidden menus.",
