@@ -148,7 +148,7 @@
     "slice": "S08-02",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "63342bd38c57c669c927ad18613d5f6e395785fbaf75b06678e004b2b9707053"
+      "sha256": "2fdca9de3e3e4155c26466f0d6a4f813c18fec21578ee410e4ed6e260cffe352"
     },
     "design": {
       "journey": "User can find Labels from every page and manage labels or apply/remove them on verified stored mailbox messages without hidden menus.",
