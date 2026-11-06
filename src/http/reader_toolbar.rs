@@ -117,7 +117,7 @@ pub(super) fn render(
 }
 
 // Inert CSS geometry keeps message main free of SVG markup.
-fn reader_icon(name: &str) -> String {
+pub(super) fn reader_icon(name: &str) -> String {
     let name = match name {
         "archive" | "inbox" | "bin" | "read" | "reply" | "label" | "clock" | "back" | "more" => {
             name

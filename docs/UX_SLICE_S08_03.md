@@ -588,6 +588,16 @@ Original failure and isolated receipts remain in the private artifact directory.
 
 ## 2026-11-06 — S08-02 visible label controls correction
 
+Owner UAT confirms label creation and the assigned label on a stored message.
+The reader action wraps into three lines inside an icon-sized toolbar button in
+both split and standalone views. Reuse the existing inert reader tag geometry;
+show an icon with title and accessible name "Edit message labels", preserving
+the exact message-bound URL and existing authorization. Exit: focused Rust
+label regression, desktop/narrow browser layout and keyboard navigation in both
+reader views, independent review, matching Web-only install and normal signed
+publication. No owner-data writes. Two failures at the same boundary stop retries
+for independent reassessment. Other accepted S08 outcomes remain unchanged.
+
 Owner marks S08-02 FAILED because create/apply/delete controls are not discoverable. Existing Rust account-private label persistence, selection review/apply and exact native message identities are reused. Shared navigation now exposes Labels on every signed-in page. Inbox, Sent and stored-folder message lists show Label selected messages and Create or manage labels above their rows; the reader exposes Edit message labels directly. Drafts provides label management access and explicitly says that labelling unsent drafts is unavailable: local DraftRecord does not have the native message identity used by these label operations. This correction does not claim draft-label support or owner acceptance.
 
 Local Rust label tests pass25/0, including create/persistence/attach/detach/delete, CSRF/CAS, foreign/stale identity refusal, atomic selected changes, filters and move reconciliation. Real synthetic Edge desktop testing performs create, selection while the old menu stays closed, review/apply, reload persistence, reader detach and confirmed label deletion, preserving both messages. Edge and Firefox390px checks pass visible controls and keyboard selection/review; Edge has no horizontal page overflow. Drafts and Folders navigation and the explicit Drafts limitation are checked. No owner label or mail mutation occurred.
@@ -613,3 +623,9 @@ Settings master controls completed in Copies & Folders, reusing the same escaped
 Matching OpenBSD source39 archive70142ff7a07c087f0e13910fce6396aa3ba35fcbee0669d2dbfda628c5cf6023 builds successfully:26PASS0FAIL; native tests a7b7bac520f349f87dba5822cfb242b6ea34d024a332388820c019afa6f450d7; main c31cf3c1ccb83d29be57501a050e32173892f49ebb2223991313e5ecca18a7fa. Reviewed Web-only install39PASS loads that exact candidate at ServePID39798. Nine checked services are healthy, HTTPS login200, public-mail/helper/account/GPG process and configuration snapshots unchanged; rollback original retained. Matching installed signed epoch-admission readiness39PASS submits no password, consumes no TOTP and writes no credentials; epoch unchanged. No owner labels or messages were changed. Independent source/browser/build/install review GO.
 
 The optional pre-action validator invocation refused because its implementation accepts only active S04-02 work orders. It supplies no S08 admission proof; ordinary work-order-only scope validation passes for17 obligations. The exact reviewed source/build recipe bound the native dispatch. Existing V10 inventory generation refreshes three additional low-relevance test assumptions from the Settings regression; focused V11 gate passes without changing historical baseline or runtime protections. Final ordinary complete publication gates remain required. Owner S08-02 reacceptance remains pending.
+
+Compact reader-label action correction: existing inert tag geometry replaces the wrapped visible action text; title and accessible name remain Edit message labels. Exact account/message-bound URL and all label authorization remain unchanged. Local and matching OpenBSD label regressions each pass26/0. Actual synthetic browser split/standalone desktop and390px checks confirm a34.39px square, no wrapped action text, tooltip/accessibility name and keyboard Tab/Enter navigation to the correct message editor. Assigned badges stay visible. Source and bounded native build/install review GO; no owner labels or messages changed.
+
+Source40 archive ba3a579e0f3a6b33a1d44479a59e4acea1f79bf0f9bb3e69cfb1e804fc3e8f8d builds with normal exit0; native tests1624b319ac855582f7fce879d8328689eccbc1c4d716b007d0d613f3f052fee3 and Web mainafed32d4cbc9dcff0b993b7c8a5d91022322f7d5d7bd7cd03f4861c82a51ba51 retained. Reviewed Web-only install40 exits0 and loads exact candidate at ServePID90304. Nine checked services healthy, HTTPS login200; configuration and public-mail/helper/account/GPG process snapshots unchanged. Previous Web binary retained under /var/osmap-storage/labels-install40-20261106. Screenshots icon-split-desktop40.png and icon-split-narrow40.png retained in the existing private labels directory. Owner confirms creation/assignment; remaining S08-02 reacceptance stays pending.
+
+Matching installed read-only readiness40 passes1/0: no password submitted, no TOTP consumed, no credential writes and account epoch unchanged. Independent final source, browser, native build, install and readiness receipt review GO. Ordinary signed commit/push gates remain required; no whole-S08 acceptance is claimed.

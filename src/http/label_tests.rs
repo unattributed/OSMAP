@@ -313,7 +313,7 @@ fn labels_are_discoverable_from_mailbox_reader_drafts_and_folders_without_writes
     let response = badge_get(&app, "/message?mailbox=INBOX&uid=9", "", false);
     assert_eq!(response.response.status_code, 200);
     let html = body_text(&response);
-    assert!(html.contains("Edit message labels</a>"));
+    assert!(html.contains("aria-label=\"Edit message labels\" title=\"Edit message labels\""));
     assert!(html.contains("href=\"/labels?mailbox=INBOX&amp;uid=9&amp;mailbox_guid="));
     assert!(html.contains("&amp;message_guid="));
     assert!(!html.contains("<details class=\"reader-labels\""));
@@ -346,6 +346,11 @@ fn assigned_label_badges_owned_list_reader_and_reload_escape_names_without_write
             assert!(html.contains("Review &lt;img src=x&gt; &amp; &quot;quoted&quot;"));
             assert!(!html.contains(name));
             assert!(!html.contains("<img src=x>"));
+            if path != "/mailbox?name=INBOX" {
+                assert!(html.contains("aria-label=\"Edit message labels\" title=\"Edit message labels\""));
+                assert!(html.contains("<span class=\"reader-line-icon reader-line-label\" aria-hidden=\"true\"><i></i></span></a>"));
+                assert!(!html.contains(">Edit message labels</a>"));
+            }
         }
         assert!(current.gateway.submitted.lock().unwrap().is_empty());
         assert_eq!(current.gateway.fixture_current_metadata(account, "INBOX", 9).unwrap().version, version);

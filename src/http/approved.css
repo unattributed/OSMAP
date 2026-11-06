@@ -762,9 +762,10 @@ body:has(.app-rail) {
 .reader-icon-toolbar form{margin:0}
 .reader-icon-toolbar .reader-icon-moves{display:flex;gap:.65rem}
 .reader-icon-toolbar>a,.reader-icon-toolbar>button,.reader-icon-toolbar>form button,.reader-icon-toolbar .reader-icon-moves button,.reader-icon-toolbar>details>summary,.reader-icon-toolbar .reader-neighbours>a,.reader-icon-toolbar .reader-neighbours>button{display:inline-flex;align-items:center;justify-content:center;width:2.15rem;min-width:2.15rem;height:2.15rem;min-height:2.15rem;padding:0;margin:0;border:1px solid var(--line);border-radius:.45rem;background:var(--panel);color:var(--link);text-decoration:none;list-style:none}
+.reader-quick-actions>a.reader-labels{display:inline-flex;align-items:center;justify-content:center;width:2.15rem;min-width:2.15rem;height:2.15rem;min-height:2.15rem;padding:0}
 /* Inert line geometry; no SVG or external resources inside Reader main. */
-.reader-icon-toolbar .reader-line-icon{position:relative;display:block;width:16px;height:16px;color:inherit;flex:none}
-.reader-icon-toolbar .reader-line-icon::before,.reader-icon-toolbar .reader-line-icon::after,.reader-icon-toolbar .reader-line-icon i{position:absolute;display:block;box-sizing:border-box;content:"";border-color:currentColor}
+.reader-toolbar .reader-line-icon{position:relative;display:block;width:16px;height:16px;color:inherit;flex:none}
+.reader-toolbar .reader-line-icon::before,.reader-toolbar .reader-line-icon::after,.reader-toolbar .reader-line-icon i{position:absolute;display:block;box-sizing:border-box;content:"";border-color:currentColor}
 .reader-icon-toolbar .reader-line-back::before{width:12px;border-top:1px solid;left:2px;top:8px}
 .reader-icon-toolbar .reader-line-back::after{width:6px;height:6px;border-left:1px solid;border-bottom:1px solid;transform:rotate(45deg);left:2px;top:5px}
 .reader-icon-toolbar .reader-line-reply::before{width:11px;height:9px;border:1px solid;border-left:0;border-bottom:0;border-radius:0 6px 0 0;left:3px;top:5px}
@@ -778,7 +779,7 @@ body:has(.app-rail) {
 .reader-icon-toolbar .reader-line-bin i{width:5px;height:3px;border:1px solid;border-bottom:0;top:0;left:6px}
 .reader-icon-toolbar .reader-line-read::before{width:14px;height:10px;border:1px solid;border-radius:1px;left:1px;top:3px}
 .reader-icon-toolbar .reader-line-read::after{width:8px;height:8px;border-right:1px solid;border-bottom:1px solid;transform:rotate(45deg);left:4px;top:0}
-.reader-icon-toolbar .reader-line-label::before{width:10px;height:10px;border:1px solid;transform:rotate(45deg);left:3px;top:3px}
+.reader-toolbar .reader-line-label::before{width:10px;height:10px;border:1px solid;transform:rotate(45deg);left:3px;top:3px}
 .reader-icon-toolbar .reader-line-clock::before{width:14px;height:14px;border:1px solid;border-radius:50%;left:1px;top:1px}
 .reader-icon-toolbar .reader-line-clock::after{width:5px;height:5px;border-left:1px solid;border-bottom:1px solid;left:7px;top:4px}
 .reader-icon-toolbar .reader-line-more::before,.reader-icon-toolbar .reader-line-more::after,.reader-icon-toolbar .reader-line-more i{width:2px;height:2px;border:1px solid;border-radius:50%;left:7px}

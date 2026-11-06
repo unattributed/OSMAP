@@ -2578,7 +2578,8 @@ fn render_reader_fragment(
         rendered.metadata.as_ref(),
         true,
     );
-    let label_control = rendered.metadata.as_ref().map(|metadata| format!("{badges}<a class=\"button-link secondary reader-labels\" href=\"/labels?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}\">Edit message labels</a>", escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid, escape_html(&url_encode(&metadata.version.mailbox_guid)), escape_html(&url_encode(&metadata.version.message_guid)))).unwrap_or(badges);
+    let label_icon = reader_toolbar::reader_icon("label");
+    let label_control = rendered.metadata.as_ref().map(|metadata| format!("{badges}<a class=\"button-link secondary reader-labels\" aria-label=\"Edit message labels\" title=\"Edit message labels\" href=\"/labels?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}\">{label_icon}</a>", escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid, escape_html(&url_encode(&metadata.version.mailbox_guid)), escape_html(&url_encode(&metadata.version.message_guid)))).unwrap_or(badges);
     let displayed_attachments = rendered
         .attachments
         .iter()

@@ -1,3 +1,5 @@
+2026-11-06 — **S08-02 compact label toolbar correction installed; owner reacceptance pending.** Owner confirms label creation and assignment. The wrapped reader action is replaced by the existing tag icon, with hover title and accessible name. Split/standalone desktop and390px browser keyboard/navigation checks PASS; local/native label tests26/0; exact matching Web-only install40 and read-only account readiness40 PASS; independent review GO. Ordinary signed publication remains required. Other scoped PASS results and original failed UAT remain preserved.
+
 2026-11-06 — **S08-02 labels UAT FAILED; discoverability correction IN_PROGRESS.** Owner cannot find create/apply/delete controls. Existing Rust label persistence, native identities and review/apply routes are reused. Root owns visible shared navigation, native selected-message and reader actions; independent review /root/s08_selection_review. Local Drafts provide management access only, with an explicit limitation. No owner data writes, mail configuration, new service, Python or Documents. Minimum exit: existing positive/security regressions, direct-control browser keyboard/pointer/forms, matching Web installation and ordinary signed publication. Two failures at the same boundary stop retries for independent reassessment. Other owner PASS results remain accepted.
 
 2026-11-06 — **Account-generic storage UAT ACCEPTED / PASS.** Owner explicitly states “UAT = PASS” and “UAT approved” after reviewing the signed-in storage screenshots and the presentation explanation. Dashboard and General Settings show matching 165.1 MiB message usage and 200.0 MiB configured quota; other pages intentionally offer View storage without an extra query. This accepts the current storage correction. Fresh credential entry is not separately asserted. Documents remains removed; remaining S08-03 checks and whole-sprint acceptance are unchanged. Documentation-only record; no host, mailbox, quota or runtime changes.
@@ -60,7 +62,9 @@
     "maint/security/v10-fail-closed-remediation.json",
     "src/labels_ui.rs",
     "src/settings_copies_ui.rs",
-    "src/http/routes_settings.rs"
+    "src/http/routes_settings.rs",
+    "src/http/reader_toolbar.rs",
+    "src/http/approved.css"
   ],
   "outcomes": [
     {
@@ -87,7 +91,7 @@
       ],
       "frontend_backend_outcome": "Discoverable account-private label create, rename, delete and current-message apply/remove using existing Rust routes. Local Drafts expose management only; native labels do not apply to local drafts.",
       "essential_qa": "Existing Rust create/persist/attach/detach/delete, CSRF/CAS/foreign/stale tests; visible direct controls and real browser desktop/narrow keyboard/forms; matching Web build/install; normal delivery gate.",
-      "next_action": "Owner reaccepts the installed Settings master labels and visible stored-message label controls after normal signed publication; retain explicit unsent Drafts limitation.",
+      "next_action": "Complete ordinary signed publication, then owner refreshes the existing message and checks the compact label icon; remaining S08-02 reacceptance stays pending.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -144,7 +148,7 @@
     "slice": "S08-02",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "87f323606352217d2a1a4b0e8df2edae1214cdf1d7752bc92f4c12b37d9b5622"
+      "sha256": "63342bd38c57c669c927ad18613d5f6e395785fbaf75b06678e004b2b9707053"
     },
     "design": {
       "journey": "User can find Labels from every page and manage labels or apply/remove them on verified stored mailbox messages without hidden menus.",
@@ -269,9 +273,9 @@
   },
   "human_acceptance": {
     "status": "PENDING",
-    "reference": "Owner reports S08-02 FAILED. Other scoped S08 PASS results preserved above."
+    "reference": "Original S08-02 FAILED retained. Owner now confirms label creation and assignment; requested compact icon correction is installed and independently verified. Remaining owner reacceptance pending; other scoped S08 PASS results preserved above."
   },
-  "next_action": "Owner reaccepts the installed Settings master labels and visible stored-message label controls after normal signed publication; retain explicit unsent Drafts limitation.",
+  "next_action": "Complete ordinary signed publication, then owner refreshes the existing message and checks the compact label icon; remaining S08-02 reacceptance stays pending.",
   "independent_next_action": "Retain completed independent engineering review; assess any new owner-reported failure within its actual scope."
 }
 ```
