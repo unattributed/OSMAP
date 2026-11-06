@@ -1,4 +1,14 @@
-Normal delivery first refused publication: the full Rust run passed2334cases but one legacy UX baseline still expected Documents503. The source-owned retirement contract requires404; the test-only baseline and PAGE07 removed-scope classification were corrected with independent review. This does not change the installed runtime binary. The original full-hook failure is retained in private push-source.log; no hook was bypassed and no remote history was rewritten.
+Account-generic storage engineering is complete and ready for owner UAT. Signed
+implementation4b794e2 and test-only baseline correction5e6889d passed the normal
+developer security-check and were published to feat/ux-completion-20260929.
+Fresh fetch confirmed source equality at5e6889d (zero ahead/behind). The full Rust
+library run passed2335tests, zero failures,90explicit ignores; integration tests,
+strict all-target Clippy, formatting, dependency/advisory and repository delivery
+checks passed. Local nginx and credential-dependent checks retain their reported
+skips; this is not complete production WSTG or owner login acceptance. Native
+account/storage qualification below is independent of those local skips.
+
+Normal delivery first refused publication: the full Rust run passed2334cases but one legacy UX baseline still expected Documents503. The source-owned retirement contract requires404; the test-only baseline and PAGE07 removed-scope classification were corrected with independent review. This does not change the installed runtime binary. The original full-hook failure is retained in private push-source.log; the corrected full gate passes in push-corrected.log. No hook was bypassed and no remote history was rewritten.
 
 ## Account-generic mail storage qualification — 2026-11-06
 
