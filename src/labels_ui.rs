@@ -54,7 +54,15 @@ pub(crate) fn render_labels_page(m: &LabelPageModel<'_>) -> TrustedHtml {
         };
         html.push_str(&format!("<section class=\"labels-message-context\"><div><h2>Labels for this message</h2><p>{} · Message #{} · {}</p></div><a class=\"button-link secondary\" href=\"/message?{}\">Back to message</a></section>",escape_html(&c.mailbox),c.uid,assignment_status,escape_html(&context_query(c))));
     }
-    if let Some(r) = m.record {
+    html.push_str(&render_label_controls(m));
+    html.push_str("<p class=\"labels-policy muted\">Labels are private app metadata, separate from mailbox names. Up to eight labels can be assigned to each verified message.</p></main>");
+    TrustedHtml::from_template(html)
+}
+
+/// Shared controls for Labels and the existing Copies & Folders settings page.
+pub(crate) fn render_label_controls(m: &LabelPageModel<'_>) -> String {
+    let mut html = String::new();
+    if let Some(r) = m.record.filter(|r| r.owned_labels(m.account).is_ok()) {
         html.push_str(&format!(
             "<p class=\"labels-usage muted\">{} of 32 labels · {} of 2,000 message assignments</p>",
             r.labels().len(),
@@ -94,6 +102,5 @@ pub(crate) fn render_labels_page(m: &LabelPageModel<'_>) -> TrustedHtml {
     } else {
         html.push_str("<section class=\"labels-panel\"><h2>Labels unavailable</h2><p>The saved label record could not be confirmed. No changes can be made here.</p></section>");
     }
-    html.push_str("<p class=\"labels-policy muted\">Labels are private app metadata, separate from mailbox names. Up to eight labels can be assigned to each verified message.</p></main>");
-    TrustedHtml::from_template(html)
+    html
 }

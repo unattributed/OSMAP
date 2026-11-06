@@ -262,6 +262,37 @@ fn badge_get(app: &BrowserApp<StubGateway>, path: &str, agent: &str, bob: bool) 
 }
 
 #[test]
+fn settings_embeds_owned_master_labels_and_reuses_existing_mutations() {
+    let (app, root, store) = fixture();
+    assert_eq!(call(&app, "revision=0&action=create&name=PrivateReview").response.status_code, 200);
+    let saved = store.load("alice@example.com").expect("saved fixture label");
+    let page = body_text(&badge_get(&app, "/settings?section=copies", "", false));
+    assert!(page.contains("id=\"labels\""));
+    assert!(page.contains("PrivateReview"));
+    assert!(page.contains("action=\"/labels/change\""));
+    for action in ["create", "rename", "delete"] {
+        assert!(page.contains(&format!("name=\"action\" value=\"{action}\"")));
+    }
+    assert!(page.contains("name=\"revision\" value=\"1\""));
+    assert!(page.contains("Confirm delete label and its assignments"));
+    let foreign = crate::labels_ui::render_label_controls(&crate::labels_ui::LabelPageModel {
+        account: "bob@example.com", csrf: "fixture", record: Some(&saved), message: None,
+        entered_name: "", submitted_label_id: "", submitted_action: "", notice: None, editable: true,
+    });
+    assert!(foreign.contains("Labels unavailable"));
+    assert!(!foreign.contains("PrivateReview"));
+    assert!(!foreign.contains("<form"));
+    assert_eq!(store.load("alice@example.com").expect("unchanged label record"), saved);
+    let id = saved.labels()[0].id();
+    assert_eq!(call(&app, &format!("revision=1&action=rename&label_id={id}&name=RenamedReview")).response.status_code, 200);
+    assert!(body_text(&badge_get(&app, "/settings?section=copies", "", false)).contains("RenamedReview"));
+    assert_eq!(call(&app, &format!("revision=2&action=delete&label_id={id}&confirm=delete")).response.status_code, 200);
+    assert!(!body_text(&badge_get(&app, "/settings?section=copies", "", false)).contains("RenamedReview"));
+    assert!(app.gateway.fixture_current_metadata("alice@example.com", "INBOX", 9).is_some());
+    fs::remove_dir_all(root).expect("remove synthetic fixture");
+}
+
+#[test]
 fn labels_are_discoverable_from_mailbox_reader_drafts_and_folders_without_writes() {
     let (app, root, store) = fixture();
     let before = store.load("alice@example.com").unwrap();

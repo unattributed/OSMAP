@@ -6,10 +6,10 @@
 .labels-message-context { display:flex;align-items:center;justify-content:space-between;gap:1rem; }
 .labels-message-context p,.labels-usage { font-size:.85rem;margin:.4rem 0;color:var(--muted); }
 .labels-usage { margin-bottom:1rem; }
-.labels-page form,.labels-page fieldset { margin:0;border:0;padding:0;min-width:0; }
+.labels-page form,.labels-page fieldset,.settings-labels form,.settings-labels fieldset { margin:0;border:0;padding:0;min-width:0; }
 .labels-create fieldset { display:flex;align-items:end;gap:1rem; }
 .labels-create label { width:min(30rem,100%);margin:0; }
-.labels-page input[name=name] { margin:.3rem 0 0; }
+.labels-page input[name=name],.settings-labels input[name=name] { margin:.3rem 0 0; }
 .labels-create p,.labels-policy { font-size:.8rem;margin:.7rem 0 0; }
 .label-item { border-top:1px solid var(--line);padding:.85rem 0;display:flex;align-items:center;justify-content:space-between;gap:1rem; }
 .label-item h3 { margin:0;font-size:1rem;overflow-wrap:anywhere; }
@@ -43,3 +43,5 @@
 .label-selection-reload { display:flex;align-items:center;flex-wrap:wrap;gap:1rem; }
 .label-selection-reload p { font-size:.85rem;margin:0; }
 @media(max-width:700px) { .label-selected-messages li { align-items:start;flex-direction:column;gap:.25rem; } }
+
+.settings-labels { margin-top:1.5rem;min-width:0; }

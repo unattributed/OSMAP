@@ -57,7 +57,10 @@
     "docs/CURRENT_PROJECT_STATUS.md",
     "docs/UX_SLICE_S08_03.md",
     "tests/v4_hostile_assurance.rs",
-    "maint/security/v10-fail-closed-remediation.json"
+    "maint/security/v10-fail-closed-remediation.json",
+    "src/labels_ui.rs",
+    "src/settings_copies_ui.rs",
+    "src/http/routes_settings.rs"
   ],
   "outcomes": [
     {
@@ -84,7 +87,7 @@
       ],
       "frontend_backend_outcome": "Discoverable account-private label create, rename, delete and current-message apply/remove using existing Rust routes. Local Drafts expose management only; native labels do not apply to local drafts.",
       "essential_qa": "Existing Rust create/persist/attach/detach/delete, CSRF/CAS/foreign/stale tests; visible direct controls and real browser desktop/narrow keyboard/forms; matching Web build/install; normal delivery gate.",
-      "next_action": "Reuse label routes and storage; expose rail, selected-message toolbar and reader actions. Preserve accepted storage, scheduling, Trash and notifications, owner data and public mail. No new Python or service.",
+      "next_action": "Owner reaccepts the installed Settings master labels and visible stored-message label controls after normal signed publication; retain explicit unsent Drafts limitation.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -141,11 +144,11 @@
     "slice": "S08-02",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "cd850e97e676367487a85c3f41588e8a0314c5209fd3b7c6a8144f9ead1e29bf"
+      "sha256": "87f323606352217d2a1a4b0e8df2edae1214cdf1d7752bc92f4c12b37d9b5622"
     },
     "design": {
       "journey": "User can find Labels from every page and manage labels or apply/remove them on verified stored mailbox messages without hidden menus.",
-      "frontend": "Shared Labels rail; direct reader and selected-message action. Drafts management access with truthful scope.",
+      "frontend": "Shared Labels rail, direct reader/selection actions and embedded Copies & Folders master create/rename/delete controls; Drafts management access with truthful scope.",
       "backend": "Unchanged Rust labels routes, private store and current native ownership checks.",
       "interfaces": "Existing GET /labels, POST /labels/change and /messages/labels/review/apply.",
       "persistence": "Unchanged account-private revision-bound LabelStore.",
@@ -205,7 +208,7 @@
         "kind": "positive",
         "level": "native",
         "action": "Run matching OpenBSD libtest label filter.",
-        "expected": "25 tests pass with zero failures."
+        "expected": "26 tests pass with zero failures."
       },
       {
         "outcome_ids": [
@@ -222,7 +225,7 @@
         "id": "labels-browser",
         "kind": "usability",
         "level": "source",
-        "action": "Exercise actual synthetic browser desktop CRUD and narrow keyboard selection/review with old menu closed.",
+        "action": "Exercise actual synthetic Settings-origin create/rename/confirmed delete at desktop and390px keyboard, plus prior unchanged stored-message selection/apply/detach checks.",
         "expected": "Visible direct controls submit current selections, labels persist, reader detach and confirmed delete work."
       },
       {
@@ -235,7 +238,8 @@
         "reviewer": "/root/s08_selection_review",
         "status": "PASS",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/labels-20261106/install38.log"
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/labels-20261106/install39.log",
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/labels-20261106/readiness39.log"
         ],
         "id": "labels-installed",
         "kind": "recovery",
@@ -256,7 +260,7 @@
         "id": "labels-owner",
         "kind": "usability",
         "level": "human",
-        "action": "Owner discovers Labels, creates a test label, applies and removes it on a stored message, and deletes the test label.",
+        "action": "Owner creates, renames and deletes a test label in Settings Copies & Folders, and applies/removes it on a stored message.",
         "expected": "Visible controls work on obsd1; unsent Drafts limitation is explicit."
       }
     ],
@@ -267,7 +271,7 @@
     "status": "PENDING",
     "reference": "Owner reports S08-02 FAILED. Other scoped S08 PASS results preserved above."
   },
-  "next_action": "Complete normal signed publication, then owner reacceptance of visible label controls; retain unsent Drafts limitation.",
+  "next_action": "Owner reaccepts the installed Settings master labels and visible stored-message label controls after normal signed publication; retain explicit unsent Drafts limitation.",
   "independent_next_action": "Retain completed independent engineering review; assess any new owner-reported failure within its actual scope."
 }
 ```

@@ -484,6 +484,11 @@ pub(crate) fn render_settings_search_page(account: &str, csrf: &str, query: &str
     let mut results = String::new();
     for (label, terms, href) in [
         (
+            "Labels",
+            "create rename delete message labels",
+            "/settings?section=copies#labels",
+        ),
+        (
             "Theme",
             "appearance light dark system colours",
             "/settings?section=appearance#settings-appearance-title",
