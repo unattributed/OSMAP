@@ -1,3 +1,5 @@
+2026-11-06 — **Account-generic storage UAT ACCEPTED / PASS.** Owner explicitly states “UAT = PASS” and “UAT approved” after reviewing the signed-in storage screenshots and the presentation explanation. Dashboard and General Settings show matching 165.1 MiB message usage and 200.0 MiB configured quota; other pages intentionally offer View storage without an extra query. This accepts the current storage correction. Fresh credential entry is not separately asserted. Documents remains removed; remaining S08-03 checks and whole-sprint acceptance are unchanged. Documentation-only record; no host, mailbox, quota or runtime changes.
+
 Account-generic storage engineering is complete and ready for owner UAT. Signed
 implementation4b794e2 and test-only baseline correction5e6889d passed the normal
 developer security-check and were published to feat/ux-completion-20260929.
