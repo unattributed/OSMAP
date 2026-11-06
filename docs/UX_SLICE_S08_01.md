@@ -1,3 +1,5 @@
+Normal delivery first refused publication: the full Rust run passed2334cases but one legacy UX baseline still expected Documents503. The source-owned retirement contract requires404; the test-only baseline and PAGE07 removed-scope classification were corrected with independent review. This does not change the installed runtime binary. The original full-hook failure is retained in private push-source.log; no hook was bypassed and no remote history was rewritten.
+
 ## Account-generic mail storage qualification — 2026-11-06
 
 The owner explicitly superseded the former Documents scope: Documents remains

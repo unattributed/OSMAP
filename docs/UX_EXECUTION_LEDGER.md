@@ -73,7 +73,8 @@
     "src/mailbox_helper_documents.rs",
     "src/settings_general_ui.rs",
     "src/storage_ui.rs",
-    "src/welcome_ui.rs"
+    "src/welcome_ui.rs",
+    "src/http/ux_fixtures.rs"
   ],
   "outcomes": [
     {
@@ -146,7 +147,7 @@
     "owner": "/root",
     "functional_exit": "Ordinary authenticated-account mailbox/storage works for different native accounts with no named OSMAP storage service; retained operator mail is preserved and removed Documents cannot dispatch.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06; prior S08-03 work order archived immediately below without changing its UAT status. All failed attempts are retained in private account-generic-storage-20261106 and summarized in the slice.",
+    "history_reference": "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06; prior S08-03 work order archived immediately below without changing its UAT status. All failed attempts are retained in private account-generic-storage-20261106 and summarized in the slice. First normalprepush refused one stale retired-Documents UX baseline; corrected test-only404 expectation with independent review. No native runtime change or publication occurred.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 7200,
@@ -161,7 +162,7 @@
     "slice": "S08-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_01.md",
-      "sha256": "d5a85f58b14cdef3ab75280745237dd972d302b08d0a067fd1e7fa4809d77857"
+      "sha256": "25eb9ea39194109980f48276ec7deeac6f7f397a3d76ec0282fa9f41397c6897"
     },
     "design": {
       "journey": "Authenticated user sees their own preserved mailbox and configured storage after retirement of the named volume.",
