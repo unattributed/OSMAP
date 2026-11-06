@@ -1,3 +1,5 @@
+2026-11-07 (Asia/Bangkok) — **S08-02 visible-label correction UAT ACCEPTED / PASS.** Owner explicitly states “UAT = PASS” after the “better” screenshot showing the compact reader label icon and cpc-contracts in the message list and reader. Earlier creation and assignment observations and completed local/native26, browser, installed40 and independent review evidence are reused. Product7d8dac3 and source-inventoryac0c0db were published through normal gates. Separate manual rename/delete/remove substeps are not individually asserted. Prior failed UAT and other scoped PASS results remain recorded; remaining S08-03 checks and whole-sprint acceptance are unchanged. Documents remains removed. Acceptance-only documentation; no runtime or mailbox changes.
+
 2026-11-06 — **S08-02 compact label toolbar correction installed; owner reacceptance pending.** Owner confirms label creation and assignment. The wrapped reader action is replaced by the existing tag icon, with hover title and accessible name. Split/standalone desktop and390px browser keyboard/navigation checks PASS; local/native label tests26/0; exact matching Web-only install40 and read-only account readiness40 PASS; independent review GO. Ordinary signed publication remains required. Other scoped PASS results and original failed UAT remain preserved.
 
 2026-11-06 — **S08-02 labels UAT FAILED; discoverability correction IN_PROGRESS.** Owner cannot find create/apply/delete controls. Existing Rust label persistence, native identities and review/apply routes are reused. Root owns visible shared navigation, native selected-message and reader actions; independent review /root/s08_selection_review. Local Drafts provide management access only, with an explicit limitation. No owner data writes, mail configuration, new service, Python or Documents. Minimum exit: existing positive/security regressions, direct-control browser keyboard/pointer/forms, matching Web installation and ordinary signed publication. Two failures at the same boundary stop retries for independent reassessment. Other owner PASS results remain accepted.
@@ -27,7 +29,7 @@
   "slice": "S08-02",
   "original_requirement": "Labels/tags/finite menus plus page 16 mailbox subfolder create/rename/move/delete and hierarchy",
   "source_baseline": "260db20cbb7a18fe2006f90f136bec538e22426d",
-  "state": "IN_PROGRESS",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -91,7 +93,7 @@
       ],
       "frontend_backend_outcome": "Discoverable account-private label create, rename, delete and current-message apply/remove using existing Rust routes. Local Drafts expose management only; native labels do not apply to local drafts.",
       "essential_qa": "Existing Rust create/persist/attach/detach/delete, CSRF/CAS/foreign/stale tests; visible direct controls and real browser desktop/narrow keyboard/forms; matching Web build/install; normal delivery gate.",
-      "next_action": "Complete ordinary signed publication, then owner refreshes the existing message and checks the compact label icon; remaining S08-02 reacceptance stays pending.",
+      "next_action": "Record scoped owner acceptance and preserve it through ordinary reviewed signed publication. Remaining S08-03 local-time, cancellation, Snooze and Drafts checks stay separate; whole S08 acceptance is not inferred. Documents remains removed.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -259,23 +261,25 @@
         "preserved": "Account isolation, CSRF, exact native identities, revision checks and original messages.",
         "owner": "/root",
         "reviewer": "/root/s08_selection_review",
-        "status": "NOT_RUN",
-        "evidence": [],
+        "status": "PASS",
+        "evidence": [
+          "Owner message 2026-11-07 (Asia/Bangkok): UAT = PASS, following the better screenshot of the compact label icon and cpc-contracts displayed in the message list and reader. This accepts the corrected visible-label workflow. Creation and assignment were previously observed; separate manual rename/delete/remove substeps are not individually asserted. Original failed UAT and other scoped S08 results remain preserved."
+        ],
         "id": "labels-owner",
         "kind": "usability",
         "level": "human",
-        "action": "Owner creates, renames and deletes a test label in Settings Copies & Folders, and applies/removes it on a stored message.",
+        "action": "Owner assesses the corrected visible-label workflow after observed label creation and assignment, including the compact reader icon and displayed message labels.",
         "expected": "Visible controls work on obsd1; unsent Drafts limitation is explicit."
       }
     ],
     "engineering_exit": "All nonhuman changed-boundary tests, installed validation, independent review and ordinary signed delivery pass.",
-    "human_exit": "Owner can discover and exercise label management and apply/remove on stored mailbox messages; local Drafts limitation stays explicit. S08-02 remains pending owner reacceptance."
+    "human_exit": "Owner explicitly accepts the corrected visible-label workflow. Earlier planned manual rename/delete/remove substeps are retained in history and are not individually claimed as observed; other S08 acceptance remains separate."
   },
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "Original S08-02 FAILED retained. Owner now confirms label creation and assignment; requested compact icon correction is installed and independently verified. Remaining owner reacceptance pending; other scoped S08 PASS results preserved above."
+    "status": "PASS",
+    "reference": "Owner message 2026-11-07 (Asia/Bangkok): UAT = PASS, following the better screenshot of the compact label icon and cpc-contracts displayed in the message list and reader. This accepts the corrected visible-label workflow. Creation and assignment were previously observed; separate manual rename/delete/remove substeps are not individually asserted. Original failed UAT and other scoped S08 results remain preserved."
   },
-  "next_action": "Complete ordinary signed publication, then owner refreshes the existing message and checks the compact label icon; remaining S08-02 reacceptance stays pending.",
+  "next_action": "Record scoped owner acceptance and preserve it through ordinary reviewed signed publication. Remaining S08-03 local-time, cancellation, Snooze and Drafts checks stay separate; whole S08 acceptance is not inferred. Documents remains removed.",
   "independent_next_action": "Retain completed independent engineering review; assess any new owner-reported failure within its actual scope."
 }
 ```
