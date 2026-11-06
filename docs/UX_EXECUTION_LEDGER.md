@@ -1,3 +1,5 @@
+2026-11-06 — **Account-generic mail storage simplification IN_PROGRESS; explicitly authorized.** Reconcile the unattached Duncan development volume and retain image, old home, external metadata, configuration and account state before cutover. Use ordinary per-account Dovecot userdb/SQL mailbox paths and native quota enforcement; OSMAP reads the authenticated account through the existing Rust/helper report. Remove active Documents UI/dependencies (owner removed scope), retire the Duncan-specific startup dependency only after raw-message/identity/flags/subscription parity. Root owns host/Git; runtime engineer owns narrow Rust cleanup; selection reviewer independently checks. Minimum tests: retained-data inventory; migration parity; two isolated development accounts with distinct paths/limits and actual quota refusal; current helper report and cross-account refusal; removed Documents routes perform no writes; signed admission plus ordinary login preservation. No Toronto change, no new Python tooling, no arbitrary service per account. Stop ambiguous mutations; preserve earliest failures and exact recovery resources. Previous accepted S08 work and remaining S08-03 UAT are retained.
+
 2026-11-06 — **Trash selective-deletion UAT ACCEPTED / PASS.** Owner reports selective testing and explicitly approves UAT. The supplied result records seven confirmed deletions, zero refusals, zero unconfirmed results and zero unattempted messages, with absence confirmed for every deleted item. This records the owner-tested Trash correction; it does not assert that every new Trash action was individually exercised or close remaining S08 scheduling, cancellation, Snooze or Drafts acceptance. No further mailbox action accompanied this record.
 
 2026-11-06 — **Practical Trash / Empty trash installed; owner UAT pending.** Native35 PASS and Web-only install33 PASS, main31 SHA5f6b7d18. Public mail/helper/account/GPG/config unchanged; owner messages untouched. Native32 fixture assertion failure retained, corrected by independent full-folder-order review. See slice qualification.
@@ -13,6 +15,339 @@
 2026-11-05 — **S08-03 saved-timezone follow-up UAT_READY.** Use saved OSMAP timezone for scheduling; fix confirmed retired drafts incorrectly labelled Paused. Earlier owner schedules remain untouched; no pre-due dispatch failure established. Documents stays removed.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S08-01",
+  "original_requirement": "Approved Documents upload/list/folders/search/sort/views/download/bin/restore; shared authoritative mailbox/storage quota and retention",
+  "source_baseline": "e3d7416dad4355263b77b51072fc0e0be7e4f586",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_runtime_engineer"
+    ],
+    "qa": [
+      "/root/s08_selection_review"
+    ],
+    "security_review": [
+      "/root/s08_selection_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/UX_SLICE_S08_01.md",
+    "maint/openbsd/DUNCAN_STORAGE.md",
+    "maint/openbsd/MAIL_STORAGE.md",
+    "maint/openbsd/README.md",
+    "maint/openbsd/rc.d/osmap_duncan_storage",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "src/documents.rs",
+    "src/http.rs",
+    "src/http/all_search_tests.rs",
+    "src/http/document_search_tests.rs",
+    "src/http/document_tests.rs",
+    "src/http/routes_all_search.rs",
+    "src/http/routes_mail.rs",
+    "src/http/routes_people.rs",
+    "src/http/routes_settings.rs",
+    "src/http_gateway.rs",
+    "src/http_gateway_storage_native_tests.rs",
+    "src/http_runtime.rs",
+    "src/http_ui.rs",
+    "src/mailbox_helper.rs",
+    "src/mailbox_helper_documents.rs",
+    "src/settings_general_ui.rs",
+    "src/storage_ui.rs",
+    "src/welcome_ui.rs"
+  ],
+  "outcomes": [
+    {
+      "id": "S08-01-account-generic-mail-storage",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX14-001",
+        "R2-07-001",
+        "R2-07-002",
+        "R2-07-003",
+        "R2-07-004",
+        "R2-07-005",
+        "R2-07-006",
+        "R2-07-007",
+        "R2-07-008",
+        "R2-07-009",
+        "R2-07-010",
+        "R2-07-011",
+        "R2-07-012",
+        "R2-07-013",
+        "R2-07-014",
+        "R2-07-015",
+        "R2-07-016",
+        "R2-07-017",
+        "R2-07-018",
+        "R2-07-019",
+        "R2-09-011",
+        "R2-09-013",
+        "R2-11-027",
+        "R2-11-028",
+        "R2-11-029"
+      ],
+      "frontend_backend_outcome": "Owner removed Documents scope supersedes its frozen functional plan. Mail-stack per-account paths/quotas and existing authenticated Rust reporting replace the retired named volume; retained Documents data remains untouched.",
+      "essential_qa": "Retained raw/native identity parity; two distinct accounts and quota refusal; account-bound helper/page projection; removed Documents zero-dispatch; signed admission; matching installation and ordinary gates.",
+      "next_action": "Complete signed delivery and owner mailbox/storage recheck.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PENDING",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06"
+        },
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06"
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06"
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06"
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06"
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Ordinary authenticated-account mailbox/storage works for different native accounts with no named OSMAP storage service; retained operator mail is preserved and removed Documents cannot dispatch.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06; prior S08-03 work order archived immediately below without changing its UAT status. All failed attempts are retained in private account-generic-storage-20261106 and summarized in the slice.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 7200,
+      "started_at": "2026-11-06T08:19:59Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
+    },
+    "attempts": []
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S08-01",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_01.md",
+      "sha256": "d5a85f58b14cdef3ab75280745237dd972d302b08d0a067fd1e7fa4809d77857"
+    },
+    "design": {
+      "journey": "Authenticated user sees their own preserved mailbox and configured storage after retirement of the named volume.",
+      "frontend": "Reuse dashboard,General and sidebar report rendering; removed Documents routes fail before dispatch.",
+      "backend": "Existing signed mailbox-helper report and native SQL userdb/count quota; no new service or protocol.",
+      "interfaces": "Canonical account and signed grant; current Dovecot field/value JSON contract and native quota command.",
+      "persistence": "Mail-stack maildir path and quota per account; retained source image/home/metadata and exact raw/native parity.",
+      "security": "Account response equality, grant tampering/nonce refusal, zero removed Documents operations; no credential or production mail change.",
+      "failure_recovery": "Retain all sources and failed diagnostics; correct native configuration semantics; rollback after writes requires delta reconciliation."
+    },
+    "tests": [
+      {
+        "id": "S08-01-T01",
+        "outcome_ids": [
+          "S08-01-account-generic-mail-storage"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Explicit owner storage simplification authority; matching source/native artifacts and retained mailbox snapshots.",
+        "action": "Locate retained image, old home and external metadata; compare newest state",
+        "expected": "469 retained raw messages selected without resurrecting deleted historical mail",
+        "preserved": "Original image, historical home/control/index, message identities, credentials,TOTP,epoch,GPG and Toronto production.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06"
+        ]
+      },
+      {
+        "id": "S08-01-T02",
+        "outcome_ids": [
+          "S08-01-account-generic-mail-storage"
+        ],
+        "kind": "recovery",
+        "level": "native",
+        "prerequisites": "Explicit owner storage simplification authority; matching source/native artifacts and retained mailbox snapshots.",
+        "action": "Translate external Inbox metadata in a candidate and compare the live ordinary mapping",
+        "expected": "All raw bytes,28mailbox identities,469message facts and26subscriptions match",
+        "preserved": "Original image, historical home/control/index, message identities, credentials,TOTP,epoch,GPG and Toronto production.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06"
+        ]
+      },
+      {
+        "id": "S08-01-T03",
+        "outcome_ids": [
+          "S08-01-account-generic-mail-storage"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Explicit owner storage simplification authority; matching source/native artifacts and retained mailbox snapshots.",
+        "action": "Create two disposable native accounts with different SQL maildirs and limits; locally save one message each",
+        "expected": "Distinct paths and1MiB/2MiB limits resolve without service/source edits",
+        "preserved": "Original image, historical home/control/index, message identities, credentials,TOTP,epoch,GPG and Toronto production.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06"
+        ]
+      },
+      {
+        "id": "S08-01-T04",
+        "outcome_ids": [
+          "S08-01-account-generic-mail-storage"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Explicit owner storage simplification authority; matching source/native artifacts and retained mailbox snapshots.",
+        "action": "Attempt an oversized3MiB local save separately in each diagnostic mailbox",
+        "expected": "Both reject at native quota and retain only their own original message",
+        "preserved": "Original image, historical home/control/index, message identities, credentials,TOTP,epoch,GPG and Toronto production.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06"
+        ]
+      },
+      {
+        "id": "S08-01-T05",
+        "outcome_ids": [
+          "S08-01-account-generic-mail-storage"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Explicit owner storage simplification authority; matching source/native artifacts and retained mailbox snapshots.",
+        "action": "Exercise signed grant account/nonce/operation checks, foreign helper reply and foreign page projection",
+        "expected": "Altered/foreign authority refuses; measurements remain bound to the authenticated account",
+        "preserved": "Original image, historical home/control/index, message identities, credentials,TOTP,epoch,GPG and Toronto production.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06"
+        ]
+      },
+      {
+        "id": "S08-01-T06",
+        "outcome_ids": [
+          "S08-01-account-generic-mail-storage"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Explicit owner storage simplification authority; matching source/native artifacts and retained mailbox snapshots.",
+        "action": "Exercise anonymous/authenticated GET/POST retired Documents paths and unusable retained index",
+        "expected": "404 before Documents reads/mutations; dashboard and search do not depend on removed scope",
+        "preserved": "Original image, historical home/control/index, message identities, credentials,TOTP,epoch,GPG and Toronto production.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06"
+        ]
+      },
+      {
+        "id": "S08-01-T07",
+        "outcome_ids": [
+          "S08-01-account-generic-mail-storage"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Explicit owner storage simplification authority; matching source/native artifacts and retained mailbox snapshots.",
+        "action": "Run focused Rust tests and ordinary repository delivery gates, then independent review",
+        "expected": "Changed paths, source and normal checks pass with failures retained",
+        "preserved": "Original image, historical home/control/index, message identities, credentials,TOTP,epoch,GPG and Toronto production.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06"
+        ]
+      },
+      {
+        "id": "S08-01-T08",
+        "outcome_ids": [
+          "S08-01-account-generic-mail-storage"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Explicit owner storage simplification authority; matching source/native artifacts and retained mailbox snapshots.",
+        "action": "Install matching Web, refresh account authority after authorized Dovecot reload and run signed readiness",
+        "expected": "Matching inode/digest, three helper reports, signed admission and nine service checks pass",
+        "preserved": "Original image, historical home/control/index, message identities, credentials,TOTP,epoch,GPG and Toronto production.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_01.md: Account-generic mail storage qualification 2026-11-06"
+        ]
+      },
+      {
+        "id": "S08-01-T09",
+        "outcome_ids": [
+          "S08-01-account-generic-mail-storage"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Explicit owner storage simplification authority; matching source/native artifacts and retained mailbox snapshots.",
+        "action": "Owner signs in with saved email,password,fresh TOTP and reviews mailbox/storage",
+        "expected": "Existing mail and account-specific200MiB quota display correctly without a dedicated storage service",
+        "preserved": "Original image, historical home/control/index, message identities, credentials,TOTP,epoch,GPG and Toronto production.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "All nonhuman changed-boundary tests, installed validation, independent review and ordinary signed delivery pass.",
+    "human_exit": "Owner confirms fresh password-plus-TOTP login and preserved mailbox/storage result; previous S08-03 pending UAT remains separate."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "New account-generic storage correction awaits owner browser recheck; previous accepted S08 work is preserved."
+  },
+  "next_action": "Complete ordinary gates, signed delivery and final owner UAT instructions.",
+  "independent_next_action": "Review matching native/install/retirement receipts and final source diff."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+<!-- OSMAP_PREVIOUS_S08_03_WORK_ORDER_20261106 -->
 ```json
 {
   "version": 1,
@@ -867,7 +1202,7 @@
   "independent_next_action": "Review scoped owner acceptance record and ordinary signed documentation delivery; no further mailbox mutations."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_PREVIOUS_S08_03_WORK_ORDER_20261106 -->
 
 2026-11-05 — **Notification-controls follow-up ACCEPTED / T09 PASS.** Owner: “I accept and approve the work completed.” Applies to signed implementation5f2e549, including Delete all notifications beside Mark all as read. Whole S08 remains open. Documents development and UAT remain stopped. Earlier readiness and execution entries below are history.
 

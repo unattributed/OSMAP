@@ -720,7 +720,7 @@ impl Backend for MailboxHelperDocumentsBackend {
     }
 }
 
-#[cfg(all(test, target_os = "openbsd"))]
+#[cfg(all(test, unix))]
 pub(crate) fn native_test_stream(
     backend: &dyn Backend,
     stream: &mut UnixStream,

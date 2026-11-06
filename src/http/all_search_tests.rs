@@ -138,7 +138,7 @@ fn all_search_unread_filter_applies_to_messages_and_keeps_owned_people_keyword_c
     assert!(body.contains("Messages (1)"));
     assert!(body.contains("People (1)"));
     assert!(body.contains("2 loaded available results"));
-    assert!(body.contains("Documents unavailable"));
+    assert!(!body.contains("Documents"));
     budgets(&result);
 }
 
@@ -200,7 +200,7 @@ fn all_search_dispatches_supported_category_and_projects_owned_people() {
             && body.contains("People (1)")
             && body.contains("All available (1)")
     );
-    assert!(body.contains("Documents unavailable") && !body.contains("Documents (0)"));
+    assert!(!body.contains("Documents"));
     budgets(&result);
 }
 
@@ -273,37 +273,12 @@ fn all_search_combined_paging_is_bounded_and_query_retained() {
         .rev()
         .map(|uid| all_row("INBOX", uid, "Public message"))
         .collect();
-    let store = crate::documents::Store::new(
-        fixture.root.join("documents"),
-        crate::documents::test_support::FixtureBackend::new(true),
-    );
-    let mut revision = 0;
-    for index in (0..100).rev() {
-        revision = store
-            .upload(
-                "alice@example.com",
-                revision,
-                &format!("Public document {index:03}"),
-                "text/plain",
-                b"x",
-                100,
-            )
-            .unwrap()
-            .revision;
-    }
     let app = fixture.app(Some(all_decision("Public", rows)));
-    let app = BrowserApp::new(
-        HttpPolicy::default(),
-        StubGateway {
-            document_store: Some(store),
-            ..app.gateway
-        },
-    );
     let first = all_get(&app, "/search?category=all&q=Public");
     let boundary = all_get(&app, "/search?category=all&q=Public&page=13");
-    let last = all_get(&app, "/search?category=all&q=Public&page=28");
-    assert!(body_text(&first).contains("550 loaded available results"));
-    assert!(body_text(&first).contains("Documents (100)"));
+    let last = all_get(&app, "/search?category=all&q=Public&page=23");
+    assert!(body_text(&first).contains("450 loaded available results"));
+    assert!(!body_text(&first).contains("Documents"));
     assert_eq!(
         body_text(&boundary)
             .matches("class=\"search-result-row\"")
@@ -325,15 +300,9 @@ fn all_search_combined_paging_is_bounded_and_query_retained() {
             .count(),
         10
     );
-    assert!(body_text(&last).contains("Page 28 of 28"));
-    assert_eq!(
-        body_text(&last).matches("<span>Document</span>").count(),
-        10
-    );
-    assert!(
-        body_text(&last).contains("Public document 090")
-            && body_text(&last).contains("Public document 099")
-    );
+    assert!(body_text(&last).contains("Page 23 of 23"));
+    assert_eq!(body_text(&last).matches("<span>Person</span>").count(), 10);
+    assert!(body_text(&last).contains("Public 190") && body_text(&last).contains("Public 199"));
     assert!(!body_text(&last).contains("Next page"));
     for result in [&first, &boundary, &last] {
         budgets(result);

@@ -359,13 +359,10 @@ where
                         let password_changed_at = self.gateway.password_changed_at(&validated_session);
                         let recovery = self.gateway.recovery_contact(&validated_session).ok();
                         let authenticator = self.gateway.authenticator(&validated_session).ok();
-                        let documents = self.gateway.load_documents(&validated_session).ok();
-                        let storage = crate::storage_ui::StorageView::from_reads(
+                        let storage = crate::storage_ui::StorageView::from_report(
                             &validated_session.record.canonical_username,
-                            self.gateway.documents_quota_status(&validated_session),
-                            documents.as_ref(),
-                        )
-                        .with_report(self.gateway.mail_storage_report(&validated_session));
+                            self.gateway.mail_storage_report(&validated_session),
+                        );
                         crate::http_ui::render_general_page_with_mark_read(
                             &model,
                             &presentation,

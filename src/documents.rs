@@ -279,12 +279,6 @@ pub(crate) mod test_support {
                 records: Arc::new(Mutex::new(BTreeMap::new())),
             }
         }
-        pub fn with_ready(&self, ready: bool) -> Self {
-            Self {
-                ready,
-                records: self.records.clone(),
-            }
-        }
     }
     impl Backend for FixtureBackend {
         fn quota_status(&self, _: &str) -> Result<Option<QuotaStatus>, Error> {

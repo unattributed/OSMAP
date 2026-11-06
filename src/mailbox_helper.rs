@@ -831,7 +831,7 @@ pub(crate) use tests::native_reader_tests::ProtectedSentMailbox as NativeProtect
 
 // Test-only bridge exercises the production Documents peer/grant/framing path
 // against a caller-owned real native backend and private socket.
-#[cfg(all(test, target_os = "openbsd"))]
+#[cfg(all(test, unix))]
 pub(crate) use mailbox_helper_documents::native_test_stream as native_documents_test_stream;
 
 #[cfg(test)]

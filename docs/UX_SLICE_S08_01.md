@@ -1,3 +1,72 @@
+## Account-generic mail storage qualification — 2026-11-06
+
+The owner explicitly superseded the former Documents scope: Documents remains
+removed, and ordinary mail-stack storage replaces the named account volume.
+The mail stack now resolves the operator development account through its existing
+PostfixAdmin maildir and 209715200-byte quota. A generic SQL userdb query and
+Dovecot count quota apply per account; no account-specific OSMAP daemon remains.
+The obsolete host rc script and two fstab entries were removed after parity.
+The source rc example is removed and its guide is marked historical.
+
+Retained-image reconciliation established 469 message files (the old home had
+earlier state and was not merged), 28 mailbox records and 26 subscriptions.
+Native before/candidate/live comparisons preserve exact raw SHA256 manifests,
+mailbox GUID/UIDVALIDITY/UIDNEXT, message UID/GUID/flags/received date and
+subscriptions. External Inbox metadata required translating its .INBOX control
+and index files into the ordinary Maildir root. The original image, old home,
+external metadata and private recovery copies remain retained. The read-only
+examination copy was unmounted and its exact vnode detached.
+
+Two disposable native accounts used distinct maildirs and 1 MiB/2 MiB limits.
+Each accepted one local message, refused a 3 MiB save with native Quota exceeded,
+and retained exactly one message. Runtime/helper report checks as the Web UID
+returned 130/157 bytes and the correct independent limits. The migrated account
+reported 173140207 message bytes and 209715200 configured quota bytes. Each test
+also exercised dashboard/General/sidebar projections and foreign-report refusal.
+Signed helper grant owner/operation/nonce and foreign-response regressions pass.
+These native accounts do not require widening the password-mutation rollout.
+They are diagnostic accounts, not an owner password-plus-TOTP login assertion.
+Their exact temporary SQL rows were removed after verification; their local
+test mail is retained privately, and no owner data was changed by cleanup.
+
+Matching native source37 passes 12 focused cases plus five storage protocol/
+parser cases (three reused) and the three installed reports. Its test SHA256 is
+f8e72a4b6a02efd2925d8ff7f8595cc93e5bfbb02339a504b9cc512a8d940345;
+installed Web SHA256 is
+f0a0564be1c9ce56b1e8d073e263025bb9a782749dd84cf104b611fbae1063e8.
+Loaded executable inode matches. The existing helper remains protocol-compatible.
+After the authorized Dovecot reload, account authority and Web dependencies were
+refreshed; native signed epoch admission passes without submitting a password,
+consuming TOTP or changing a credential. Account credential/TOTP/quota SQL-row
+and epoch digests match; the userdb location/configuration intentionally changed. Dovecot/Postfix/MariaDB master PIDs and GPG-agent PIDs
+are unchanged. HTTPS login is 200 and all nine relevant services pass checks.
+Toronto production was not changed. Fresh owner browser login is still UAT.
+
+The Rust correction calls the existing signed report directly, without loading
+a Documents index or filesystem quota. Removed Documents HTTP/search routes
+return 404 before retained-store reads or mutation; retained data is untouched.
+No new protocol, service, account-specific code or Python tooling was introduced.
+The existing repository metadata generators and delivery hooks remain in use.
+
+Failures were retained rather than erased: initial native enumeration omitted
+the helper's maildir_stat_dirs flag; actual native count quota then demonstrated
+the same Sieve-symlink issue. Combined review supported generic
+maildir_stat_dirs=yes, preserving Sieve and allowing real quota calculation.
+A first included-test comment convention compile failure, a GET-with-body fixture
+parse refusal, an initial quota expectation using the wrong native JSON shape,
+and a missing explicit readiness-account variable were corrected at their own
+boundaries. None justified credential resets, deletion or relaxed account checks.
+The matching changed tests and native queries pass. Raw native failures and
+recovery material remain private; durations not measured across the original
+continuation are UNKNOWN. Normal signed delivery gates and owner UAT are separate.
+
+Independent source/configuration/parity review: /root/s08_selection_review.
+Prior accepted S08 results and pending S08-03 owner checks remain unchanged.
+
+## 2026-11-06 — Authorized account-generic mail storage correction
+
+Owner approves native mail-stack storage/quota, authenticated-account Rust reporting, safe retirement of Duncan-specific storage, and two-account verification. Documents remains removed. Current prerequisite: retained image clone hashes match original, read-only examination contains469 message files, and candidate raw hashes match. External control/index layout requires Inbox metadata translation; full native reference equality is required before cutover. Root owns host/Git and data preservation; runtime engineer removes active Documents/report dependencies; selection reviewer independently checks source/config/results. Required tests are retained raw/identity/flags/subscription parity, two dedicated accounts with distinct paths/limits and native quota refusal, authenticated helper report/account isolation, retired Documents zero-write routes, current signed admission and preserved login. Native operational failures remain private and summarized; no new Python tooling or Toronto changes. Existing S08 acceptance is preserved. Engineering IN_PROGRESS, tests not claimed complete. See maint/openbsd/MAIL_STORAGE.md.
+
 # S08-01 — Documents and authoritative account storage
 
 ## Storage sidebar UAT correction — 2026-11-05

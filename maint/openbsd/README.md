@@ -1,5 +1,10 @@
 # OpenBSD Service Guidance
 
+For mailbox locations and quota, use [account-based mail storage](MAIL_STORAGE.md).
+The mail stack owns per-account paths and limits; OSMAP reuses its authenticated
+Rust/helper report. The historical named storage volume service is retired.
+Documents remains removed from product scope; retained data is preserved.
+
 ## Purpose
 
 This directory carries the first repo-owned OpenBSD operator scaffolding for

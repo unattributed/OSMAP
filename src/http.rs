@@ -1504,6 +1504,7 @@ mod tests {
             &self,
             session: &ValidatedSession,
         ) -> Option<crate::documents::QuotaStatus> {
+            self.document_reads.fetch_add(1, Ordering::SeqCst);
             self.document_store
                 .as_ref()?
                 .quota_status(&session.record.canonical_username)

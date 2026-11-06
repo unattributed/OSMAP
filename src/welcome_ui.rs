@@ -411,21 +411,21 @@ mod activity_tests {
             public_key_changes_available: false,
             public_inventory_revision: None,
         };
-        let storage = crate::storage_ui::StorageView::from_reads(
+        let storage = crate::storage_ui::StorageView::from_report(
             "alice",
-            Some(crate::documents::QuotaStatus {
-                used_bytes: 12,
-                limit_bytes: 20,
+            Some(crate::documents::MailStorageReport {
+                account: "alice".into(),
+                message_bytes: 12,
+                configured_limit_bytes: Some(20),
             }),
-            None,
         );
-        let foreign = crate::storage_ui::StorageView::from_reads(
+        let foreign = crate::storage_ui::StorageView::from_report(
             "bob",
-            Some(crate::documents::QuotaStatus {
-                used_bytes: 987654,
-                limit_bytes: 1000000,
+            Some(crate::documents::MailStorageReport {
+                account: "bob".into(),
+                message_bytes: 987654,
+                configured_limit_bytes: Some(1000000),
             }),
-            None,
         );
         for (storage, measured) in [
             (Some(&storage), true),
@@ -450,10 +450,7 @@ mod activity_tests {
                     notices: None,
                 },
             );
-            assert_eq!(
-                html.as_str().contains("12 bytes used of 20 bytes"),
-                measured
-            );
+            assert_eq!(html.as_str().contains("<p>12 bytes</p>"), measured);
             let rail = html
                 .as_str()
                 .split_once("class=\"rail-storage\"")
@@ -462,15 +459,17 @@ mod activity_tests {
                 .split_once("</section>")
                 .unwrap()
                 .0;
-            assert_eq!(rail.contains("12 bytes of 20 bytes"), measured);
+            assert_eq!(rail.contains("Messages: 12 bytes"), measured);
+            assert_eq!(rail.contains("Configured quota: 20 bytes"), measured);
             assert!(rail.contains(">View storage</a>"));
             assert!(!rail.contains("Usage unavailable"));
             assert!(html.as_str().contains(if measured {
-                "Shared mailbox and Documents"
+                "Mailbox messages"
             } else {
                 "Mailbox storage"
             }));
-            assert!(html.as_str().contains("Documents retention unavailable"));
+            assert!(html.as_str().contains("Mail retention unavailable"));
+            assert!(!html.as_str().contains("Documents"));
             assert!(html
                 .as_str()
                 .contains("href=\"/settings?section=general\">View storage details"));

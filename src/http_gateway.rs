@@ -535,9 +535,7 @@ impl BrowserGateway for RuntimeBrowserGateway {
         &self,
         session: &ValidatedSession,
     ) -> Option<crate::documents::MailStorageReport> {
-        self.document_store()
-            .ok()?
-            .storage_report(&session.record.canonical_username)
+        self.read_mail_storage_report(&session.record.canonical_username)
             .ok()
     }
     fn documents_quota_status(
@@ -2449,6 +2447,38 @@ impl BrowserGateway for RuntimeBrowserGateway {
     }
 }
 
+impl RuntimeBrowserGateway {
+    fn read_mail_storage_report(
+        &self,
+        account: &str,
+    ) -> Result<crate::documents::MailStorageReport, crate::documents::Error> {
+        use crate::documents::Backend as _;
+        let canonical = crate::identity::CanonicalUsername::parse(account)
+            .map_err(|_| crate::documents::Error::Invalid)?;
+        if canonical.as_str() != account {
+            return Err(crate::documents::Error::Invalid);
+        }
+        let backend = crate::mailbox_helper::MailboxHelperDocumentsBackend::new(
+            self.mailbox_helper_socket_path
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?,
+            self.mailbox_helper_grant_key_path
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?,
+            crate::mailbox_helper::MailboxHelperPolicy::default(),
+        )
+        .with_helper_uid(
+            self.mailbox_helper_peer_uid
+                .ok_or(crate::documents::Error::Unavailable)?,
+        );
+        let report = backend.storage_report(account)?;
+        if report.account != account {
+            return Err(crate::documents::Error::Unavailable);
+        }
+        Ok(report)
+    }
+}
+
 #[cfg(test)]
 mod public_inventory_gateway_tests {
     use super::*;
@@ -2581,5 +2611,141 @@ mod public_inventory_gateway_tests {
         assert!(gateway.admin_client().is_some());
         assert!(gateway.crypto_client().is_some());
         std::fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[cfg(all(test, unix))]
+mod mail_storage_gateway_tests {
+    use super::*;
+    use crate::documents::{Backend, Error, Location, MailStorageReport, QuotaStatus};
+    use std::os::unix::fs::PermissionsExt;
+    use std::os::unix::net::UnixListener;
+    use std::sync::{Arc, Mutex};
+    struct Reports(Arc<Mutex<Vec<String>>>);
+    impl Backend for Reports {
+        fn storage_report(&self, account: &str) -> Result<MailStorageReport, Error> {
+            let mut calls = self.0.lock().unwrap();
+            calls.push(account.into());
+            Ok(MailStorageReport {
+                account: if calls.len() == 3 {
+                    "bob@example.test".into()
+                } else {
+                    account.into()
+                },
+                message_bytes: if account == "alice@example.test" {
+                    1111
+                } else {
+                    2222
+                },
+                configured_limit_bytes: if account == "alice@example.test" {
+                    Some(10000)
+                } else {
+                    Some(0)
+                },
+            })
+        }
+        fn quota_status(&self, _: &str) -> Result<Option<QuotaStatus>, Error> {
+            panic!("mail reporting must not query Documents quota")
+        }
+        fn append(&self, _: &str, _: &str, _: &str, _: &str, _: &[u8]) -> Result<Location, Error> {
+            panic!("mail reporting must not append Documents")
+        }
+        fn read(&self, _: &str, _: &str, _: &Location) -> Result<Vec<u8>, Error> {
+            panic!("mail reporting must not read Documents")
+        }
+        fn move_to_bin(&self, _: &str, _: &str, _: &Location) -> Result<Location, Error> {
+            panic!("mail reporting must not move Documents")
+        }
+        fn restore(&self, _: &str, _: &str, _: &Location) -> Result<Location, Error> {
+            panic!("mail reporting must not restore Documents")
+        }
+        fn expunge(&self, _: &str, _: &str, _: &Location) -> Result<(), Error> {
+            panic!("mail reporting must not expunge Documents")
+        }
+        fn inspect(&self, _: &str, _: &str) -> Result<Vec<Location>, Error> {
+            panic!("mail reporting must not inspect Documents")
+        }
+    }
+    #[test]
+    fn direct_mail_report_uses_signed_account_bound_helper_without_documents_state() {
+        let root = std::fs::canonicalize("/tmp").unwrap().join(format!(
+            "osmap-mail-report-{}",
+            crate::draft::generate_draft_id().unwrap()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let owner = crate::openbsd::effective_uid();
+        let socket = root.join("helper.sock");
+        let key = root.join("grant.key");
+        std::fs::write(&key, [37; 32]).unwrap();
+        std::fs::set_permissions(&key, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let listener = UnixListener::bind(&socket).unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let backend = Reports(Arc::clone(&calls));
+        let server = std::thread::spawn(move || {
+            let replay = Mutex::new(std::collections::BTreeMap::new());
+            let until = std::time::Instant::now() + std::time::Duration::from_secs(10);
+            for _ in 0..3 {
+                let mut stream = loop {
+                    match listener.accept() {
+                        Ok((stream, _)) => break stream,
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                            assert!(
+                                std::time::Instant::now() < until,
+                                "bounded mail report fixture accept"
+                            );
+                            std::thread::sleep(std::time::Duration::from_millis(2));
+                        }
+                        Err(_) => panic!("mail report fixture socket unavailable"),
+                    }
+                };
+                crate::mailbox_helper::native_documents_test_stream(
+                    &backend,
+                    &mut stream,
+                    &[37; 32],
+                    owner,
+                    &replay,
+                )
+                .unwrap();
+            }
+        });
+        let config = AppConfig::from_env_map(&std::collections::BTreeMap::new()).unwrap();
+        let mut gateway = RuntimeBrowserGateway::from_config(&config);
+        gateway.mailbox_helper_socket_path = Some(socket);
+        gateway.mailbox_helper_grant_key_path = Some(key);
+        gateway.mailbox_helper_peer_uid = Some(owner);
+        gateway.settings_dir = root.join("unavailable-settings-file");
+        std::fs::write(&gateway.settings_dir, b"not a Documents index directory").unwrap();
+        for (account, bytes, limit) in [
+            ("alice@example.test", 1111, 10000),
+            ("bob@example.test", 2222, 0),
+        ] {
+            let report = gateway.read_mail_storage_report(account).unwrap();
+            assert_eq!(report.account, account);
+            assert_eq!(report.message_bytes, bytes);
+            assert_eq!(report.configured_limit_bytes, Some(limit));
+        }
+        assert_eq!(
+            gateway.read_mail_storage_report("alice@example.test"),
+            Err(Error::Unavailable)
+        );
+        server.join().unwrap();
+        assert_eq!(
+            *calls.lock().unwrap(),
+            [
+                "alice@example.test",
+                "bob@example.test",
+                "alice@example.test"
+            ]
+        );
+        assert!(
+            std::fs::read(&gateway.settings_dir).unwrap() == b"not a Documents index directory"
+        );
+        assert_eq!(
+            gateway.read_mail_storage_report("invalid account"),
+            Err(Error::Invalid)
+        );
+        std::fs::remove_dir_all(&root).unwrap();
     }
 }

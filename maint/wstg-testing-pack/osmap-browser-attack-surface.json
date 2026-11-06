@@ -460,22 +460,44 @@
       "method": "POST",
       "path": "/notifications/read-all",
       "query_fields": [],
-      "form_fields": ["csrf_token", "revision"],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]
+      "form_fields": [
+        "csrf_token",
+        "revision"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "POST",
       "path": "/notifications/delete-all",
       "query_fields": [],
-      "form_fields": ["csrf_token", "revision"],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]
+      "form_fields": [
+        "csrf_token",
+        "revision"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "POST",
       "path": "/notifications/delete",
       "query_fields": [],
-      "form_fields": ["csrf_token", "revision", "event_id"],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "event_id"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "GET",
@@ -1555,7 +1577,8 @@
         "OSMAP-WSTG-ATHZ-001",
         "OSMAP-WSTG-SESS-004",
         "OSMAP-WSTG-INPV-003"
-      ]
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
     },
     {
       "method": "GET",
@@ -1568,7 +1591,8 @@
         "OSMAP-WSTG-ATHZ-001",
         "OSMAP-WSTG-SESS-004",
         "OSMAP-WSTG-INPV-003"
-      ]
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
     },
     {
       "method": "GET",
@@ -1581,7 +1605,8 @@
         "OSMAP-WSTG-ATHZ-001",
         "OSMAP-WSTG-SESS-004",
         "OSMAP-WSTG-INPV-003"
-      ]
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
     },
     {
       "method": "POST",
@@ -1597,7 +1622,8 @@
         "OSMAP-WSTG-SESS-004",
         "OSMAP-WSTG-INPV-003",
         "OSMAP-WSTG-BUSL-005"
-      ]
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
     },
     {
       "method": "POST",
@@ -1613,7 +1639,8 @@
         "OSMAP-WSTG-SESS-004",
         "OSMAP-WSTG-INPV-003",
         "OSMAP-WSTG-BUSL-005"
-      ]
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
     },
     {
       "method": "POST",
@@ -1630,7 +1657,8 @@
         "OSMAP-WSTG-SESS-004",
         "OSMAP-WSTG-INPV-003",
         "OSMAP-WSTG-BUSL-005"
-      ]
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
     },
     {
       "method": "POST",
@@ -1646,7 +1674,8 @@
         "OSMAP-WSTG-SESS-004",
         "OSMAP-WSTG-INPV-003",
         "OSMAP-WSTG-BUSL-005"
-      ]
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
     },
     {
       "method": "POST",
@@ -1662,7 +1691,8 @@
         "OSMAP-WSTG-SESS-004",
         "OSMAP-WSTG-INPV-003",
         "OSMAP-WSTG-BUSL-005"
-      ]
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
     },
     {
       "method": "POST",
@@ -1678,7 +1708,8 @@
         "OSMAP-WSTG-SESS-004",
         "OSMAP-WSTG-INPV-003",
         "OSMAP-WSTG-BUSL-005"
-      ]
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
     },
     {
       "method": "POST",
@@ -1695,7 +1726,8 @@
         "OSMAP-WSTG-SESS-004",
         "OSMAP-WSTG-INPV-003",
         "OSMAP-WSTG-BUSL-005"
-      ]
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
     },
     {
       "method": "GET",

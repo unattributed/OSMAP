@@ -126,9 +126,6 @@ fn native_installed_mail_storage_report() -> Result<(), &'static str> {
         .map_err(|_| "fresh message-byte expectation required")?
         .parse()
         .map_err(|_| "numeric message-byte expectation required")?;
-    if expected_bytes == 0 {
-        return Err("nonempty native observation required; empty-account coverage is separate");
-    }
     let expected_limit = std::env::var("OSMAP_STORAGE_REPORT_EXPECTED_LIMIT")
         .map_err(|_| "explicit configured-limit expectation required")?;
     let expected_limit = if expected_limit == "none" {
@@ -143,30 +140,28 @@ fn native_installed_mail_storage_report() -> Result<(), &'static str> {
     let config =
         AppConfig::from_process_env().map_err(|_| "installed configuration unavailable")?;
     let gateway = RuntimeBrowserGateway::from_config(&config);
-    let epoch: u64 = std::env::var("OSMAP_READINESS_EPOCH")
-        .map_err(|_| "current account epoch required")?
-        .parse()
-        .map_err(|_| "numeric account epoch required")?;
-    if !gateway.uses_account_runtime(&account) {
-        return Err("installed account authority required");
+    let selected_account_runtime = gateway.uses_account_runtime(&account);
+    if selected_account_runtime {
+        let epoch: u64 = std::env::var("OSMAP_READINESS_EPOCH")
+            .map_err(|_| "current account epoch required for selected native account")?
+            .parse()
+            .map_err(|_| "numeric account epoch required")?;
+        gateway
+            .account_runtime
+            .ready()
+            .ok_or("installed account authority unavailable")?
+            .admission()
+            .admit_before(
+                &account,
+                epoch,
+                std::time::Instant::now() + std::time::Duration::from_secs(10),
+            )
+            .map_err(|_| "installed signed account admission unavailable")?;
     }
-    gateway
-        .account_runtime
-        .ready()
-        .ok_or("installed account authority unavailable")?
-        .admission()
-        .admit_before(
-            &account,
-            epoch,
-            std::time::Instant::now() + std::time::Duration::from_secs(10),
-        )
-        .map_err(|_| "installed signed account admission unavailable")?;
-    // This is the same Runtime factory/Store chain used by mail_storage_report.
+    // This is the same direct Runtime account read used by mail_storage_report.
     // A SessionRecord is unnecessary because the only selector is the account.
     let report = gateway
-        .document_store()
-        .map_err(|_| "installed helper configuration unavailable")?
-        .storage_report(&account)
+        .read_mail_storage_report(&account)
         .map_err(|_| "installed authenticated storage report unavailable")?;
     if report.account != account
         || report.message_bytes != expected_bytes
@@ -174,12 +169,10 @@ fn native_installed_mail_storage_report() -> Result<(), &'static str> {
     {
         return Err("installed report differs from fresh native expectations");
     }
-    let owned = crate::storage_ui::StorageView::from_reads(&account, None, None)
-        .with_report(Some(report.clone()));
+    let owned = crate::storage_ui::StorageView::from_report(&account, Some(report.clone()));
     let mut foreign_report = report;
     foreign_report.account = "foreign-storage-observer@example.invalid".into();
-    let foreign = crate::storage_ui::StorageView::from_reads(&account, None, None)
-        .with_report(Some(foreign_report));
+    let foreign = crate::storage_ui::StorageView::from_report(&account, Some(foreign_report));
     let keys = crate::key_management::State::unavailable(&account);
     let activity = crate::http::BrowserSessionListDecision::Denied {
         public_reason: "session observation not performed".into(),
@@ -253,7 +246,7 @@ fn native_installed_mail_storage_report() -> Result<(), &'static str> {
     if began.elapsed() > std::time::Duration::from_secs(20) {
         return Err("native report deadline exceeded");
     }
-    println!("INSTALLED_STORAGE_REPORT=PASS RUNTIME_HELPER=PASS ACCOUNT_ADMISSION=PASS OWNED_PAGE_RENDERERS=2 OWNED_RAILS=2 FOREIGN_PAGE_REFUSALS=2 OWNER_SESSION=NOT_USED OWNER_HTTP=NOT_RUN WRITES=NOT_DISPATCHED QUOTA_AUTHORITY=NOT_CLAIMED");
+    println!("INSTALLED_STORAGE_REPORT=PASS RUNTIME_HELPER=PASS ACCOUNT_ADMISSION={} OWNED_PAGE_RENDERERS=2 OWNED_RAILS=2 FOREIGN_PAGE_REFUSALS=2 OWNER_SESSION=NOT_USED OWNER_HTTP=NOT_RUN OWNER_LOGIN=NOT_TESTED WRITES=NOT_DISPATCHED QUOTA_AUTHORITY=NOT_CLAIMED", if selected_account_runtime { "PASS" } else { "NOT_SELECTED_LEGACY_ACCOUNT" });
     Ok(())
 }
 

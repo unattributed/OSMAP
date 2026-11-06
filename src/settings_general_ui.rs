@@ -297,19 +297,14 @@ mod tests {
     }
 
     #[test]
-    fn general_storage_shows_owned_reads_without_adding_document_bytes_to_quota() {
-        let index: crate::documents::Index = serde_json::from_value(serde_json::json!({
-            "version":1,"account":"synthetic@example.test","revision":0,
-            "documents":[],"folders":[]
-        }))
-        .unwrap();
-        let storage = crate::storage_ui::StorageView::from_reads(
+    fn general_storage_shows_only_the_owned_mail_report() {
+        let storage = crate::storage_ui::StorageView::from_report(
             "synthetic@example.test",
-            Some(crate::documents::QuotaStatus {
-                used_bytes: 4096,
-                limit_bytes: 102400000,
+            Some(crate::documents::MailStorageReport {
+                account: "synthetic@example.test".into(),
+                message_bytes: 4096,
+                configured_limit_bytes: Some(102400000),
             }),
-            Some(&index),
         );
         let html = render_general_page_with_mark_read(
             &model(),
@@ -323,7 +318,8 @@ mod tests {
                 ..Default::default()
             },
         );
-        assert!(html.as_str().contains("4096 bytes used of 102400000 bytes"));
+        assert!(html.as_str().contains("4.0 KiB (4096 bytes)"));
+        assert!(html.as_str().contains("97.7 MiB (102400000 bytes)"));
         let rail = html
             .as_str()
             .split_once("class=\"rail-storage\"")
@@ -332,25 +328,24 @@ mod tests {
             .split_once("</section>")
             .unwrap()
             .0;
-        assert!(rail.contains("4.0 KiB of 97.7 MiB"));
+        assert!(rail.contains("Messages: 4.0 KiB"));
+        assert!(rail.contains("Configured quota: 97.7 MiB"));
         assert!(rail.contains(">View storage</a>"));
         assert!(!rail.contains("Unavailable"));
-        assert!(html
-            .as_str()
-            .contains("0 bytes of file contents, including 0 bytes in Bin"));
-        assert!(html.as_str().contains("restore within 30 days"));
-        assert!(html.as_str().contains("href=\"/documents\""));
+        assert!(html.as_str().contains("Enforcement has not been verified"));
+        assert!(!html.as_str().contains("Documents"));
+        assert!(!html.as_str().contains("href=\"/documents\""));
         assert!(!html
             .as_str()
             .contains("No retention policy is available to this page"));
 
-        let foreign = crate::storage_ui::StorageView::from_reads(
+        let foreign = crate::storage_ui::StorageView::from_report(
             "foreign@example.test",
-            Some(crate::documents::QuotaStatus {
-                used_bytes: 987654,
-                limit_bytes: 1000000,
+            Some(crate::documents::MailStorageReport {
+                account: "foreign@example.test".into(),
+                message_bytes: 987654,
+                configured_limit_bytes: Some(1000000),
             }),
-            None,
         );
         for storage in [None, Some(&foreign)] {
             let html = render_general_page_with_mark_read(
@@ -365,7 +360,7 @@ mod tests {
                     ..Default::default()
                 },
             );
-            assert!(html.as_str().contains("Documents retention unavailable"));
+            assert!(html.as_str().contains("Mail retention unavailable"));
             assert!(!html.as_str().contains("987654"));
             assert!(!html.as_str().contains("restore within 30 days"));
         }

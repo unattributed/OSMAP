@@ -169,6 +169,28 @@ where
             return response;
         }
 
+        // Documents was retired. Refuse before any authenticated read or write;
+        // retained indexes and stored messages are deliberately left untouched.
+        if request.path == "/documents"
+            || request.path.starts_with("/documents/")
+            || request.path == "/search"
+                && request.query_params.get("category").map(String::as_str) == Some("documents")
+        {
+            return HandledHttpResponse {
+                response: html_response(
+                    404,
+                    "Not Found",
+                    "Not Found",
+                    "<p>This page could not be found.</p>",
+                ),
+                audit_events: vec![build_http_info_event(
+                    "http_retired_route",
+                    "retired route refused",
+                    &context,
+                )],
+            };
+        }
+
         match (request.method, request.path.as_str()) {
             (HttpMethod::Get, "/healthz") => HandledHttpResponse {
                 response: plain_text_response(200, "OK", "ok\n"),
