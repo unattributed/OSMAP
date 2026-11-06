@@ -56,7 +56,8 @@
     "docs/UX_EXECUTION_LEDGER.md",
     "docs/CURRENT_PROJECT_STATUS.md",
     "docs/UX_SLICE_S08_03.md",
-    "tests/v4_hostile_assurance.rs"
+    "tests/v4_hostile_assurance.rs",
+    "maint/security/v10-fail-closed-remediation.json"
   ],
   "outcomes": [
     {
@@ -125,7 +126,7 @@
     "owner": "/root",
     "functional_exit": "User can find Labels from every page and manage labels or apply/remove them on verified stored mailbox messages without hidden menus.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Previous accepted storage work order preserved below; owner reopened labels S08-02. Independent assessment confirms existing routes suffice and local Drafts lack native message identities. Preserve cumulative prior failures and other scoped PASS results. Normal publication failure retained in labels-20261106/push.log and slice specification: finite shell icon budget mismatch corrected after independent review; focused hostile integration2PASS0FAIL. Installed signed epoch readiness38PASS without credential or TOTP submission.",
+    "history_reference": "Previous accepted storage work order preserved below; owner reopened labels S08-02. Independent assessment confirms existing routes suffice and local Drafts lack native message identities. Preserve cumulative prior failures and other scoped PASS results. Normal publication failure retained in labels-20261106/push.log and slice specification: finite shell icon budget mismatch corrected after independent review; focused hostile integration2PASS0FAIL. Installed signed epoch readiness38PASS without credential or TOTP submission. Second ordinary publication failure retained in push-retest.log: four added low-relevance test assumptions require existing generated current inventory refresh; historical baseline/high0/medium3 unchanged. Existing V10/V11 focused gate PASS; combined independent reassessment requested before next full ordinary gate. Combined independent reassessment GO for both narrow gate corrections; ordinary full hooks remain mandatory and owner label reacceptance pending.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 7200,
@@ -140,7 +141,7 @@
     "slice": "S08-02",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "ce30843a00d4ea37dffdaa58ad68a4bfa0a2d2f542b33ffb2dc3098585650d03"
+      "sha256": "cd850e97e676367487a85c3f41588e8a0314c5209fd3b7c6a8144f9ead1e29bf"
     },
     "design": {
       "journey": "User can find Labels from every page and manage labels or apply/remove them on verified stored mailbox messages without hidden menus.",
