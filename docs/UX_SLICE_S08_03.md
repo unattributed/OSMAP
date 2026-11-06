@@ -584,3 +584,16 @@ genuine-session refusal test then passes isolated (1PASS/0FAIL). The bounded
 changed execution is ordinary complete push hooks with RUST_TEST_THREADS=1; no
 test/assertion/hook is disabled and no test retry/sleep is added to product code.
 Original failure and isolated receipts remain in the private artifact directory.
+
+
+## 2026-11-06 — S08-02 visible label controls correction
+
+Owner marks S08-02 FAILED because create/apply/delete controls are not discoverable. Existing Rust account-private label persistence, selection review/apply and exact native message identities are reused. Shared navigation now exposes Labels on every signed-in page. Inbox, Sent and stored-folder message lists show Label selected messages and Create or manage labels above their rows; the reader exposes Edit message labels directly. Drafts provides label management access and explicitly says that labelling unsent drafts is unavailable: local DraftRecord does not have the native message identity used by these label operations. This correction does not claim draft-label support or owner acceptance.
+
+Local Rust label tests pass25/0, including create/persistence/attach/detach/delete, CSRF/CAS, foreign/stale identity refusal, atomic selected changes, filters and move reconciliation. Real synthetic Edge desktop testing performs create, selection while the old menu stays closed, review/apply, reload persistence, reader detach and confirmed label deletion, preserving both messages. Edge and Firefox390px checks pass visible controls and keyboard selection/review; Edge has no horizontal page overflow. Drafts and Folders navigation and the explicit Drafts limitation are checked. No owner label or mail mutation occurred.
+
+Native source38 archive SHA256fbe1829d8e5d6ef914ee1f856665e42d891b28762a96f377664c576e5643d8d6 builds on obsd1. Its25 label tests pass0fail; libtest31bd06007a7fe04b17138861f9c5f752e9ec13eaf61fb5a204a62f28ad6888d2 and mainb0e80e24662221357fd553caa8c426c9b79d3ce5ef97d6784144e86c6322bb72 are retained. The outer build transport later returns143 despite the completed build PASS marker and artifact hashes; the installation independently verifies its exact candidate hash. No functional test is inferred from the transport result.
+
+Private receipts and screenshots: /home/foo/Downloads/osmap-ux-s08/completion-20261104/labels-20261106/. Independent source/browser-scope review and existing bounded Web-only installation recipe review GO. Other owner PASS results for storage, actual scheduled delivery, selective Trash deletion and notification controls remain accepted. Documents remains removed. S08-02 reacceptance is pending.
+
+Web-only install38 PASS: running ServePID15387 loads the exact b0e80e24 candidate; HTTPS login200 and nine checked roles healthy. Configuration, account/helper/GPG and public-mail process readbacks match before/after; no owner messages or labels changed. Previous binary and rollback record retained under /var/osmap-storage/labels-install38-20261106. Normal signed delivery checks remain pending.

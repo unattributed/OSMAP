@@ -1,3 +1,5 @@
+2026-11-06 — **S08-02 labels UAT FAILED; discoverability correction IN_PROGRESS.** Owner cannot find create/apply/delete controls. Existing Rust label persistence, native identities and review/apply routes are reused. Root owns visible shared navigation, native selected-message and reader actions; independent review /root/s08_selection_review. Local Drafts provide management access only, with an explicit limitation. No owner data writes, mail configuration, new service, Python or Documents. Minimum exit: existing positive/security regressions, direct-control browser keyboard/pointer/forms, matching Web installation and ordinary signed publication. Two failures at the same boundary stop retries for independent reassessment. Other owner PASS results remain accepted.
+
 2026-11-06 — **Account-generic storage UAT ACCEPTED / PASS.** Owner explicitly states “UAT = PASS” and “UAT approved” after reviewing the signed-in storage screenshots and the presentation explanation. Dashboard and General Settings show matching 165.1 MiB message usage and 200.0 MiB configured quota; other pages intentionally offer View storage without an extra query. This accepts the current storage correction. Fresh credential entry is not separately asserted. Documents remains removed; remaining S08-03 checks and whole-sprint acceptance are unchanged. Documentation-only record; no host, mailbox, quota or runtime changes.
 
 2026-11-06 — **Account-generic mail storage correction UAT_READY; engineering complete.** Ordinary mail-stack account paths/count quotas replace the retired named volume. Native parity preserves469messages,28mailbox identities and26subscriptions; original image,old home and external metadata retained. Two development accounts with distinct paths/limits pass native save/quota refusal and authenticated Rust/helper reports; foreign responses refuse. Documents remains removed with retained data untouched. Native37/Webinstall37/current signed admission and nine service checks PASS. Independent review GO. Signed4b794e2/5e6889d published through the corrected full normal gate:2335Rust library PASS,zeroFAIL,90explicit ignores, integration/Clippy/format/repository checks PASS; local reported skips remain unclaimed. Fresh fetched origin equality0/0. Owner fresh login/storage T09 remains NOT_RUN; previous accepted S08 results and pending S08-03 UAT are preserved. No Toronto change or new Python tooling.
@@ -17,6 +19,259 @@
 2026-11-05 — **S08-03 saved-timezone follow-up UAT_READY.** Use saved OSMAP timezone for scheduling; fix confirmed retired drafts incorrectly labelled Paused. Earlier owner schedules remain untouched; no pre-due dispatch failure established. Documents stays removed.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S08-02",
+  "original_requirement": "Labels/tags/finite menus plus page 16 mailbox subfolder create/rename/move/delete and hierarchy",
+  "source_baseline": "260db20cbb7a18fe2006f90f136bec538e22426d",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_runtime_engineer"
+    ],
+    "qa": [
+      "/root/s08_selection_review"
+    ],
+    "security_review": [
+      "/root/s08_selection_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/http_ui.rs",
+    "src/http/labels.css",
+    "src/http/label_tests.rs",
+    "src/http/ux_fixtures.rs",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/UX_SLICE_S08_03.md"
+  ],
+  "outcomes": [
+    {
+      "id": "S08-02-visible-label-workflow",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX08-009",
+        "UX04-007",
+        "UX04-008",
+        "R2-03-007",
+        "R2-16-009",
+        "R2-16-010",
+        "R2-16-011",
+        "R2-16-012",
+        "R2-16-013",
+        "R2-16-014",
+        "R2-16-015",
+        "R2-16-016",
+        "R2-16-017",
+        "R2-16-018",
+        "R2-16-019",
+        "R2-16-020",
+        "R2-16-021"
+      ],
+      "frontend_backend_outcome": "Discoverable account-private label create, rename, delete and current-message apply/remove using existing Rust routes. Local Drafts expose management only; native labels do not apply to local drafts.",
+      "essential_qa": "Existing Rust create/persist/attach/detach/delete, CSRF/CAS/foreign/stale tests; visible direct controls and real browser desktop/narrow keyboard/forms; matching Web build/install; normal delivery gate.",
+      "next_action": "Reuse label routes and storage; expose rail, selected-message toolbar and reader actions. Preserve accepted storage, scheduling, Trash and notifications, owner data and public mail. No new Python or service.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "docs/UX_SLICE_S08_03.md#2026-11-06--s08-02-visible-label-controls-correction"
+        },
+        {
+          "stage": "source_tests",
+          "reference": "docs/UX_SLICE_S08_03.md#2026-11-06--s08-02-visible-label-controls-correction"
+        },
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S08_03.md#2026-11-06--s08-02-visible-label-controls-correction"
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S08_03.md#2026-11-06--s08-02-visible-label-controls-correction"
+        },
+        {
+          "stage": "independent_review",
+          "reference": "docs/UX_SLICE_S08_03.md#2026-11-06--s08-02-visible-label-controls-correction"
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S08_03.md#2026-11-06--s08-02-visible-label-controls-correction"
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "User can find Labels from every page and manage labels or apply/remove them on verified stored mailbox messages without hidden menus.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Previous accepted storage work order preserved below; owner reopened labels S08-02. Independent assessment confirms existing routes suffice and local Drafts lack native message identities. Preserve cumulative prior failures and other scoped PASS results.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 7200,
+      "started_at": "2026-11-06T13:08:03Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
+    },
+    "attempts": []
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S08-02",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_03.md",
+      "sha256": "c3f9c32df16eac2f7f070362ed4c540c295d2b8a9f52d877f04845372a145fa9"
+    },
+    "design": {
+      "journey": "User can find Labels from every page and manage labels or apply/remove them on verified stored mailbox messages without hidden menus.",
+      "frontend": "Shared Labels rail; direct reader and selected-message action. Drafts management access with truthful scope.",
+      "backend": "Unchanged Rust labels routes, private store and current native ownership checks.",
+      "interfaces": "Existing GET /labels, POST /labels/change and /messages/labels/review/apply.",
+      "persistence": "Unchanged account-private revision-bound LabelStore.",
+      "security": "Keep CSRF, account isolation, exact identities, CAS and deletion confirmation.",
+      "failure_recovery": "No owner data mutations during QA; Web-only install with existing binary rollback."
+    },
+    "tests": [
+      {
+        "outcome_ids": [
+          "S08-02-visible-label-workflow"
+        ],
+        "prerequisites": "Current source and existing synthetic Runtime or matching OpenBSD binary; no owner credential or message writes.",
+        "preserved": "Account isolation, CSRF, exact native identities, revision checks and original messages.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md#2026-11-06--s08-02-visible-label-controls-correction"
+        ],
+        "id": "labels-positive",
+        "kind": "positive",
+        "level": "source",
+        "action": "Run existing label create, persistence, attach, detach and confirmed delete Rust tests.",
+        "expected": "Current-account changes persist with the expected labels and revision."
+      },
+      {
+        "outcome_ids": [
+          "S08-02-visible-label-workflow"
+        ],
+        "prerequisites": "Current source and existing synthetic Runtime or matching OpenBSD binary; no owner credential or message writes.",
+        "preserved": "Account isolation, CSRF, exact native identities, revision checks and original messages.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md#2026-11-06--s08-02-visible-label-controls-correction"
+        ],
+        "id": "labels-negative",
+        "kind": "negative",
+        "level": "source",
+        "action": "Run existing CSRF, stale, foreign, conflicting revision and atomic selected-change refusal tests.",
+        "expected": "Invalid authority and identities refuse without partial label or message changes."
+      },
+      {
+        "outcome_ids": [
+          "S08-02-visible-label-workflow"
+        ],
+        "prerequisites": "Current source and existing synthetic Runtime or matching OpenBSD binary; no owner credential or message writes.",
+        "preserved": "Account isolation, CSRF, exact native identities, revision checks and original messages.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md#2026-11-06--s08-02-visible-label-controls-correction"
+        ],
+        "id": "labels-native",
+        "kind": "positive",
+        "level": "native",
+        "action": "Run matching OpenBSD libtest label filter.",
+        "expected": "25 tests pass with zero failures."
+      },
+      {
+        "outcome_ids": [
+          "S08-02-visible-label-workflow"
+        ],
+        "prerequisites": "Current source and existing synthetic Runtime or matching OpenBSD binary; no owner credential or message writes.",
+        "preserved": "Account isolation, CSRF, exact native identities, revision checks and original messages.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md#2026-11-06--s08-02-visible-label-controls-correction"
+        ],
+        "id": "labels-browser",
+        "kind": "usability",
+        "level": "source",
+        "action": "Exercise actual synthetic browser desktop CRUD and narrow keyboard selection/review with old menu closed.",
+        "expected": "Visible direct controls submit current selections, labels persist, reader detach and confirmed delete work."
+      },
+      {
+        "outcome_ids": [
+          "S08-02-visible-label-workflow"
+        ],
+        "prerequisites": "Current source and existing synthetic Runtime or matching OpenBSD binary; no owner credential or message writes.",
+        "preserved": "Account isolation, CSRF, exact native identities, revision checks and original messages.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/completion-20261104/labels-20261106/install38.log"
+        ],
+        "id": "labels-installed",
+        "kind": "recovery",
+        "level": "deployed",
+        "action": "Install matching Web binary using existing bounded rollback recipe; inspect loaded executable and protected service state.",
+        "expected": "Matching Web and HTTPS login200; public mail, helper, account, GPG and configuration unchanged."
+      },
+      {
+        "outcome_ids": [
+          "S08-02-visible-label-workflow"
+        ],
+        "prerequisites": "Current source and existing synthetic Runtime or matching OpenBSD binary; no owner credential or message writes.",
+        "preserved": "Account isolation, CSRF, exact native identities, revision checks and original messages.",
+        "owner": "/root",
+        "reviewer": "/root/s08_selection_review",
+        "status": "NOT_RUN",
+        "evidence": [],
+        "id": "labels-owner",
+        "kind": "usability",
+        "level": "human",
+        "action": "Owner discovers Labels, creates a test label, applies and removes it on a stored message, and deletes the test label.",
+        "expected": "Visible controls work on obsd1; unsent Drafts limitation is explicit."
+      }
+    ],
+    "engineering_exit": "All nonhuman changed-boundary tests, installed validation, independent review and ordinary signed delivery pass.",
+    "human_exit": "Owner can discover and exercise label management and apply/remove on stored mailbox messages; local Drafts limitation stays explicit. S08-02 remains pending owner reacceptance."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner reports S08-02 FAILED. Other scoped S08 PASS results preserved above."
+  },
+  "next_action": "Complete normal signed publication, then owner reacceptance of visible label controls; retain unsent Drafts limitation.",
+  "independent_next_action": "Retain completed independent engineering review; assess any new owner-reported failure within its actual scope."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+2026-11-06 — Archived accepted storage work order before owner-reopened label correction:
 ```json
 {
   "version": 1,
@@ -354,7 +609,7 @@
   "independent_next_action": "Retain completed independent engineering review; assess any new owner-reported failure within its actual scope."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
 
 <!-- OSMAP_PREVIOUS_S08_03_WORK_ORDER_20261106 -->
 ```json

@@ -262,6 +262,36 @@ fn badge_get(app: &BrowserApp<StubGateway>, path: &str, agent: &str, bob: bool) 
 }
 
 #[test]
+fn labels_are_discoverable_from_mailbox_reader_drafts_and_folders_without_writes() {
+    let (app, root, store) = fixture();
+    let before = store.load("alice@example.com").unwrap();
+    for path in ["/mailbox?name=INBOX", "/mailbox?name=Sent", "/drafts", "/folders"] {
+        let response = badge_get(&app, path, "", false);
+        assert_eq!(response.response.status_code, 200, "{path}");
+        let html = body_text(&response);
+        assert!(html.contains("href=\"/labels\""), "{path}");
+        assert!(html.contains(">Labels</span>"), "shared Labels navigation missing: {path}");
+        if path.starts_with("/mailbox?") {
+            assert!(html.contains("form=\"bulk-move-form\" formaction=\"/messages/labels/review\""));
+            assert!(html.contains("Label selected messages"));
+        }
+        if path == "/drafts" {
+            assert!(html.contains("labelling unsent drafts is not available"));
+        }
+    }
+    let response = badge_get(&app, "/message?mailbox=INBOX&uid=9", "", false);
+    assert_eq!(response.response.status_code, 200);
+    let html = body_text(&response);
+    assert!(html.contains("Edit message labels</a>"));
+    assert!(html.contains("href=\"/labels?mailbox=INBOX&amp;uid=9&amp;mailbox_guid="));
+    assert!(html.contains("&amp;message_guid="));
+    assert!(!html.contains("<details class=\"reader-labels\""));
+    assert_eq!(store.load("alice@example.com").unwrap(), before);
+    assert!(app.gateway.submitted.lock().unwrap().is_empty());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn assigned_label_badges_owned_list_reader_and_reload_escape_names_without_writes() {
     let (app, root, store) = fixture();
     let account = "alice@example.com";

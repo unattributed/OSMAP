@@ -399,6 +399,7 @@ pub(crate) fn app_header_with_storage(
         ("sent", "Sent", "/mailbox/shortcut?kind=sent", "sent"),
         ("contacts", "Contacts", "/contacts", "people"),
         ("folders", "Folders", "/folders", "folders"),
+        ("labels", "Labels", "/labels", "label"),
         (
             "archive",
             "Archive / Bin",
@@ -2255,6 +2256,13 @@ pub(crate) fn render_message_list_page(
     );
     let search_controls = compact_tool(search_controls, "Search this mailbox", "search");
     let action_controls = compact_tool(action_controls, "Bulk actions", "more");
+    // The selection form remains shared with the existing mailbox actions.
+    // Keep this entry outside its disclosure so labelling is discoverable.
+    let label_actions = if messages.iter().any(|message| message.metadata.is_some()) {
+        "<div class=\"mail-label-actions\" role=\"group\" aria-label=\"Message labels\"><button type=\"submit\" form=\"bulk-move-form\" formaction=\"/messages/labels/review\" name=\"action\" value=\"review\">Label selected messages</button><a href=\"/labels\">Create or manage labels</a><span class=\"muted\">Select messages using their checkboxes.</span></div>"
+    } else {
+        "<div class=\"mail-label-actions\"><a href=\"/labels\">Create or manage labels</a></div>"
+    };
     let mut navigation = render_list_navigation(&navigation_base, sort_links.view, is_sent);
     let mut sort_headers = sort_headers;
     if table_mailbox {
@@ -2281,7 +2289,7 @@ pub(crate) fn render_message_list_page(
             "<div class=\"section-header sr-only\"><h2 id=\"mailbox-title\" class=\"section-title message-list-summary\">Mailbox: {}</h2></div>",
             "{}",
             "<div class=\"mail-list-toolbar\">{}{}{}{}{}</div>",
-            "{}<ul role=\"list\" class=\"message-cards\" aria-label=\"Mailbox message list\">{}</ul>",
+            "{label_actions}{}<ul role=\"list\" class=\"message-cards\" aria-label=\"Mailbox message list\">{}</ul>",
             "</section>{}",
             "</main>"
         ),
@@ -2300,6 +2308,7 @@ pub(crate) fn render_message_list_page(
         render_coordinated_reader_with_focus(&navigation_base, sort_links.view, csrf_token, sort_links.reader, canonical_username, &focus_targets),
         table_class = if is_sent { " approved-mail-table sent-table" } else if mailbox_name == "INBOX" { " approved-mail-table inbox-table" } else { "" },
         list_intro = if is_sent { "Stored Sent copies. Their presence does not confirm delivery." } else { "Search, filter, sort and work with messages without losing context." },
+        label_actions = label_actions,
     ))
 }
 
@@ -2564,7 +2573,7 @@ fn render_reader_fragment(
         rendered.metadata.as_ref(),
         true,
     );
-    let label_control = rendered.metadata.as_ref().map(|metadata| format!("{badges}<details class=\"reader-labels\"><summary>Labels</summary><div><p>Manage private labels for this message. Its current identity is checked before changes.</p><a class=\"button-link secondary\" href=\"/labels?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}\">Edit message labels</a></div></details>", escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid, escape_html(&url_encode(&metadata.version.mailbox_guid)), escape_html(&url_encode(&metadata.version.message_guid)))).unwrap_or(badges);
+    let label_control = rendered.metadata.as_ref().map(|metadata| format!("{badges}<a class=\"button-link secondary reader-labels\" href=\"/labels?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}\">Edit message labels</a>", escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid, escape_html(&url_encode(&metadata.version.mailbox_guid)), escape_html(&url_encode(&metadata.version.message_guid)))).unwrap_or(badges);
     let displayed_attachments = rendered
         .attachments
         .iter()
@@ -3538,6 +3547,7 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
             "{}",
             "<main id=\"main-content\" class=\"page-shell drafts-page\" tabindex=\"-1\">",
             "<div class=\"page-intro\"><h1>Drafts</h1><p>Resume, organize and safely discard saved messages. Includes Drafts and Working drafts under one account limit.</p></div>{}{}",
+            "<p class=\"muted\"><a href=\"/labels\">Create or manage labels</a>. Labels apply to stored mailbox messages; labelling unsent drafts is not available.</p>",
             "<div class=\"draft-list-toolbar\"><details class=\"draft-selection-menu\"><summary>Select drafts</summary><nav aria-label=\"Draft selection\"><a href=\"{select_href}\">Select up to 10 drafts shown</a><a href=\"{clear_href}\">Clear selection</a><p>Select editable drafts and confirmed scheduled source copies. Review discard before confirming deletion.</p></nav></details><form method=\"get\" action=\"/drafts\"><label class=\"sr-only\" for=\"draft-filter\">Draft filter</label><select id=\"draft-filter\" name=\"filter\">{}</select><label class=\"sr-only\" for=\"draft-sort\">Draft order</label><select id=\"draft-sort\" name=\"sort\">{}</select><label class=\"sr-only\" for=\"draft-query\">Search drafts</label><input id=\"draft-query\" name=\"q\" value=\"{}\" maxlength=\"200\" placeholder=\"Search subjects or recipients\"><button type=\"submit\">Apply</button></form><a class=\"button-link primary-button\" href=\"/compose\">+ New Message</a></div>",
             "<div class=\"table-wrap draft-list\" role=\"region\" aria-label=\"Saved drafts\" tabindex=\"0\"><table>",
             "<thead><tr><th><span class=\"sr-only\">Select</span></th><th><span class=\"sr-only\">Star</span></th><th>Recipient</th><th>Subject</th><th>Attachment</th><th>Status</th><th>Saved</th><th><span class=\"sr-only\">Actions</span></th></tr></thead>",
