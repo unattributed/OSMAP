@@ -631,3 +631,66 @@ Source40 archive ba3a579e0f3a6b33a1d44479a59e4acea1f79bf0f9bb3e69cfb1e804fc3e8f8
 Matching installed read-only readiness40 passes1/0: no password submitted, no TOTP consumed, no credential writes and account epoch unchanged. Independent final source, browser, native build, install and readiness receipt review GO. Ordinary signed commit/push gates remain required; no whole-S08 acceptance is claimed.
 
 Normal signed icon commit7d8dac3 passes commit checks; ordinary push40 stops at V11 refined_current.inventory_sha256 drift after Rust library2337PASS0FAIL90ignored and integration checks. Independent reconstruction proves only existing scanner positions shifted: label_tests.rs entries+5 lines and http_ui.rs+1, without added assumptions. Existing generator refreshes only generation time and current digest to7ee13738778b99791b617951db8318f43c2ea3e6e0217b55100253b1e49879be; total13059, low13056, medium3, high0 and baseline remain unchanged. Combined independent reassessment GO; focused V10/V11 PASS. Gate logic and installed product are unchanged; full ordinary publication gates remain mandatory.
+
+
+## 2026-11-07 — Unsaved Compose navigation correction
+
+This S08 UAT blocker belongs to the original S03-02 interrupted-navigation and
+safe-failure-preservation obligations (UX06-001, R2-04-030). It does not reopen
+or requalify all historical S03 controls or accept the remaining S08 checks.
+
+A dirty Compose page now offers Save draft, Discard changes and Keep editing
+when leaving through a same-window link or another page form, including header
+search and logout. Save uses the existing multipart Rust draft route and opens
+the saved draft; the user can then continue to the intended destination.
+Keep editing and Escape preserve text, selected files and focus. Discard leaves
+without saving current edits and preserves any earlier saved draft version.
+The existing native browser warning remains for reload, Back, tab close and
+browsers without dialog support. Autosave pauses while the choice is open;
+existing in-flight, uncertain-save, ownership, CSRF and revision checks remain.
+No new endpoint, service, dependency or Python tooling was introduced.
+
+Failure analysis: the baseline browser observed only beforeunload, without the
+requested three choices. Search replay exposed a queued dialog-close/reopen
+race; the close handler now ignores an obsolete close event while reopened.
+Independent combined reassessment reviewed that correction. Retained later
+failures were an expired synthetic fixture, an oversized ordinary-file test
+whose file was rejected before submission, and a harness awaiting a deliberately
+cancelled reload. Those harness conditions were corrected, without weakening
+product validation. Earliest failures and subsequent passes remain separate.
+
+Actual Rust synthetic-server/Edge browser retest5 passes all 14 journeys:
+clean navigation; dirty Keep editing with file; Escape; Save draft including
+file persistence; discard edited saved draft preserving its prior version;
+clean saved-draft navigation; header search by Enter; queued-close/reopen race;
+external form without submitter; invalid oversized-image save retaining work;
+390px layout; native reload-warning cancellation; logout choice/replay; and
+absence of script errors or unexpected browser warnings. This is synthetic
+account QA, not an owner credential-backed browser session.
+
+Local focused Rust enhancement tests: 2 PASS, 0 FAIL. Native obsd1 source41:
+2 PASS, 0 FAIL; build exits successfully. The four product files match the
+reviewed native archive. Main SHA256:
+aefd27a5f2ce0a46b3e6e1a43b704ced7854b5b7e154377254a5691da8707176.
+Tests SHA256:
+b7a59908afdcf5e05c11828b0faf0a6094f8663af5d2f26ca8bba7da2480596c.
+JavaScript SHA256:
+5be2a69112921b300bfe28a36fa19f481dbe5caf50360db9a26f3465f0e37426.
+The exact script CSP hash is updated; author content remains inert.
+
+Web-only install41 PASS: running Serve PID58258 loads the exact candidate;
+HTTPS login200 and nine service checks PASS. Helper, public-mail, account and
+GPG processes and configuration are unchanged. No owner-message mutation.
+Previous binary and bounded rollback retained; rollback was not executed.
+Installed read-only admission readiness41: 1 PASS, 0 FAIL, no submitted password,
+no consumed TOTP, no credential write and unchanged account epoch. Browser,
+native, installation and readiness records are retained privately under
+/home/foo/Downloads/osmap-ux-s08/completion-20261104/compose-navigation-20261107/.
+
+Independent final product, browser, native build, installation, readiness and
+document review GO from /root/s08_compose_review; no actionable findings.
+Ordinary signed Git delivery is required before handoff. Owner UAT
+of this correction is pending. Existing accepted labels, storage, scheduled
+delivery, selective Trash deletion and notifications remain accepted. Documents
+remains removed. The remaining Drafts discard, local-time schedule/cancel and
+Snooze/cancel checks remain separate; whole S08 acceptance is not asserted.

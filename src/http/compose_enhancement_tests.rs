@@ -13,6 +13,7 @@ fn composer_hash_allowance_never_reaches_reader_auth_or_other_pages() {
     ] {
         let result = authenticated_get(route);
         assert!(!body_text(&result).contains("<script"), "{route}");
+        assert!(!body_text(&result).contains("id=\"compose-leave-dialog\""), "{route}");
         assert!(
             result
                 .response
@@ -26,6 +27,10 @@ fn composer_hash_allowance_never_reaches_reader_auth_or_other_pages() {
     let result = authenticated_get("/compose");
     let body = body_text(&result);
     assert_eq!(body.matches("<script").count(), 1);
+    assert!(body.contains("<dialog id=\"compose-leave-dialog\" aria-labelledby=\"compose-leave-title\""));
+    for choice in ["save", "discard", "keep"] {
+        assert!(body.contains(&format!("<button type=\"button\" id=\"compose-leave-{choice}\"")));
+    }
     assert!(body.contains(SCRIPT));
     assert!(result
         .response
@@ -61,4 +66,5 @@ fn retained_author_text_cannot_escape_into_the_allowed_script() {
     assert!(body.contains(&escape_html(text).to_string()));
     assert!(!body.contains("<script id=unapproved>"));
     assert!(body.contains("data-save-state=\"unsaved\""));
+    assert!(body.contains("id=\"compose-leave-dialog\""));
 }

@@ -54,6 +54,18 @@
   color: var(--on-accent);
 }
 .compose-send-options > summary:hover { background: var(--accent-strong); }
+#compose-leave-dialog {
+  width: min(32rem, calc(100vw - 3rem));
+  max-height: calc(100vh - 3rem);
+  overflow: auto;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: .6rem;
+  background: var(--panel);
+  color: var(--ink);
+}
+#compose-leave-dialog::backdrop { background: rgb(0 0 0 / 65%); }
+.compose-leave-actions { display: flex; flex-wrap: wrap; gap: .65rem; }
 .compose-delivery-menu {
   position: absolute;
   bottom: calc(100% + .4rem);

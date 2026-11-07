@@ -131,6 +131,56 @@
       announceAuto("Auto-save in progress. Wait before leaving this page.");
     }
   }, true);
+  // Page navigation uses the same native save form, including pending uploads.
+  // The browser's beforeunload warning still covers reload, Back and tab close.
+  const leaveDialog = document.getElementById("compose-leave-dialog");
+  if (leaveDialog && typeof leaveDialog.showModal === "function") {
+    const saveChoice = document.getElementById("compose-leave-save");
+    const keepChoice = document.getElementById("compose-leave-keep");
+    let leaveAction = null, previousFocus = null;
+    const offerChoices = (event, action) => {
+      if (event.defaultPrevented || submitting || !dirty()) return;
+      event.preventDefault();
+      previousFocus = document.activeElement;
+      leaveAction = action;
+      saveChoice.disabled = save.disabled || blocked;
+      if (!leaveDialog.open) leaveDialog.showModal();
+      keepChoice.focus();
+    };
+    leaveDialog.addEventListener("close", () => {
+      if (leaveDialog.open) return;
+      leaveAction = null;
+      previousFocus?.focus();
+    });
+    keepChoice.addEventListener("click", () => leaveDialog.close());
+    saveChoice.addEventListener("click", () => {
+      if (save.disabled || blocked || autoFlight) return;
+      leaveDialog.close();
+      save.click();
+    });
+    document.getElementById("compose-leave-discard").addEventListener("click", () => {
+      if (autoFlight) return;
+      const action = leaveAction;
+      leaveDialog.close();
+      if (action) { submitting = true; clearTimeout(autoTimer); action(); }
+    });
+    document.addEventListener("click", (event) => {
+      const link = event.target.closest("a[href]");
+      if (!link || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey ||
+          event.altKey || link.hasAttribute("download") ||
+          (link.target && link.target !== "_self") ||
+          link.matches('a[data-confirm-discard="true"][href="/drafts"]')) return;
+      const destination = new URL(link.href, location.href);
+      if (destination.origin === location.origin && destination.pathname === location.pathname &&
+          destination.search === location.search && destination.hash) return;
+      offerChoices(event, () => link.click());
+    }, true);
+    document.addEventListener("submit", (event) => {
+      const target = event.target, submitter = event.submitter;
+      if (target === form || target.id === "compose-discard-form") return;
+      offerChoices(event, () => submitter ? target.requestSubmit(submitter) : target.requestSubmit());
+    }, true);
+  }
   const hidden = (name, value) => {
     let field = form.elements.namedItem(name);
     if (!field) { field = document.createElement("input"); field.type = "hidden"; field.name = name; form.append(field); }
@@ -144,7 +194,7 @@
     text += decoder.decode(); return JSON.parse(text);
   };
   const saveAutomatically = async () => {
-    if (!autoEnabled || autoPaused || autoFlight || submitting || document.visibilityState !== "visible" || !dirty()) return;
+    if (!autoEnabled || autoPaused || autoFlight || submitting || leaveDialog?.open || document.visibilityState !== "visible" || !dirty()) return;
     if (upload.files.length || pendingImages().length ||
         form.querySelector('input[name^="remove_saved_attachment_"]:checked, input[name^="include_original_attachment_"]:checked, input[name="source_mailbox"]') ||
         form.querySelector('select[name="contact_id"]')?.value) {

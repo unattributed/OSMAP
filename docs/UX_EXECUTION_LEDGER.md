@@ -1,3 +1,5 @@
+2026-11-07 — **Unsaved Compose navigation correction installed; final independent review GO, publication and owner UAT pending.** Compose now offers Save draft, Discard changes and Keep editing before same-window navigation. Existing Rust multipart save and native reload/close warning retained. Actual synthetic browser14 PASS; local/native focused2 PASS; exact Web-only install41 and read-only account readiness41 PASS, with public mail/helper/account/GPG/config preserved and no owner-message mutation. Source41 mainaefd27a5. Correct ownership is original S03-02, tracked as an S08 UAT blocker; unchanged historical obligations are not freshly requalified. Prior scoped acceptance and the three remaining S08 checks are unchanged. See UX_SLICE_S08_03.md. Full repository security-check PASS (security41.log, exit0); the owner reports Signing ready, so ordinary signed delivery can resume.
+
 2026-11-07 (Asia/Bangkok) — **S08-02 visible-label correction UAT ACCEPTED / PASS.** Owner explicitly states “UAT = PASS” after the “better” screenshot showing the compact reader label icon and cpc-contracts in the message list and reader. Earlier creation and assignment observations and completed local/native26, browser, installed40 and independent review evidence are reused. Product7d8dac3 and source-inventoryac0c0db were published through normal gates. Separate manual rename/delete/remove substeps are not individually asserted. Prior failed UAT and other scoped PASS results remain recorded; remaining S08-03 checks and whole-sprint acceptance are unchanged. Documents remains removed. Acceptance-only documentation; no runtime or mailbox changes.
 
 2026-11-06 — **S08-02 compact label toolbar correction installed; owner reacceptance pending.** Owner confirms label creation and assignment. The wrapped reader action is replaced by the existing tag icon, with hover title and accessible name. Split/standalone desktop and390px browser keyboard/navigation checks PASS; local/native label tests26/0; exact matching Web-only install40 and read-only account readiness40 PASS; independent review GO. Ordinary signed publication remains required. Other scoped PASS results and original failed UAT remain preserved.
@@ -23,6 +25,302 @@
 2026-11-05 — **S08-03 saved-timezone follow-up UAT_READY.** Use saved OSMAP timezone for scheduling; fix confirmed retired drafts incorrectly labelled Paused. Earlier owner schedules remain untouched; no pre-due dispatch failure established. Documents stays removed.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S03-02",
+  "original_requirement": "Save/resume/discard, close/minimize/expand, draft list filters/sort, approved auto-save preferences, safe failure preservation and concurrency",
+  "source_baseline": "111da089d2e1c2665f3b13ba2dd40e8786acebe1",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root"
+    ],
+    "qa": [
+      "/root/s08_compose_review"
+    ],
+    "security_review": [
+      "/root/s08_compose_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/http/compose_delivery.css",
+    "src/http/compose_enhancement.rs",
+    "src/http/compose_enhancement_tests.rs",
+    "src/http/compose_local.js",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/UX_SLICE_S08_03.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "maint/security/v10-fail-closed-remediation.json"
+  ],
+  "outcomes": [
+    {
+      "id": "compose-navigation",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX06-001",
+        "R2-04-030"
+      ],
+      "frontend_backend_outcome": "Dirty Compose navigation offers native Save draft, Discard changes or Keep editing; reuse existing multipart Rust save route and preserve browser unload fallback.",
+      "essential_qa": "Actual Rust synthetic browser journey for save including attachment, discard, cancel, clean navigation and failed-save retention; existing CSP and hostile author-text regressions; native build and Web-only qualification.",
+      "next_action": "Complete ordinary signed publication, then owner Compose navigation UAT.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "docs/UX_SLICE_S08_03.md — 2026-11-07 Compose correction; retained retest5/native41/install41/readiness41 records and rollback limits."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "docs/UX_SLICE_S08_03.md — 2026-11-07 Compose correction; retained retest5/native41/install41/readiness41 records and rollback limits."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "docs/UX_SLICE_S08_03.md — 2026-11-07 Compose correction; retained retest5/native41/install41/readiness41 records and rollback limits."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "docs/UX_SLICE_S08_03.md — 2026-11-07 Compose correction; retained retest5/native41/install41/readiness41 records and rollback limits."
+        },
+        {
+          "stage": "recovery",
+          "reference": "docs/UX_SLICE_S08_03.md — 2026-11-07 Compose correction; retained retest5/native41/install41/readiness41 records and rollback limits."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Final /root/s08_compose_review GO: product, CSP, browser retest5, native41, install41, readiness41 and final documents reviewed; no actionable findings."
+        }
+      ]
+    },
+    {
+      "id": "retained-compose-obligations",
+      "owner": "/root",
+      "requirement_ids": [
+        "R2-04-001",
+        "R2-04-002",
+        "R2-04-003",
+        "R2-04-032",
+        "R2-06-001",
+        "R2-06-002",
+        "R2-06-003",
+        "R2-06-004",
+        "R2-06-005",
+        "R2-06-006",
+        "R2-06-007",
+        "R2-06-008",
+        "R2-06-009",
+        "R2-06-010",
+        "R2-06-011",
+        "R2-06-012",
+        "R2-06-013",
+        "R2-06-014",
+        "R2-15-004",
+        "R2-15-005",
+        "R2-16-003",
+        "UX06-002",
+        "UX06-003",
+        "UX06-004",
+        "UX08-006"
+      ],
+      "frontend_backend_outcome": "Retain the original S03-02 controls and historical results without asserting fresh qualification of unchanged controls in this navigation correction.",
+      "essential_qa": "Existing S03-02 evidence and tests remain authoritative for unchanged controls; this correction only freshly exercises interrupted navigation.",
+      "next_action": "Reconcile retained S03-02 qualification only if a changed boundary or owner failure requires it; do not infer whole-slice acceptance.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": []
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Dirty Compose navigation offers native Save draft, Discard changes or Keep editing; reuse existing multipart Rust save route and preserve browser unload fallback.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Previous accepted storage work order preserved below; owner reopened labels S08-02. Independent assessment confirms existing routes suffice and local Drafts lack native message identities. Preserve cumulative prior failures and other scoped PASS results. Normal publication failure retained in labels-20261106/push.log and slice specification: finite shell icon budget mismatch corrected after independent review; focused hostile integration2PASS0FAIL. Installed signed epoch readiness38PASS without credential or TOTP submission. Second ordinary publication failure retained in push-retest.log: four added low-relevance test assumptions require existing generated current inventory refresh; historical baseline/high0/medium3 unchanged. Existing V10/V11 focused gate PASS; combined independent reassessment requested before next full ordinary gate. Combined independent reassessment GO for both narrow gate corrections; ordinary full hooks remain mandatory and owner label reacceptance pending. Prior accepted labels work order archived verbatim below. New failure: owner navigation lacks save/discard choice; baseline actual browser observes only beforeunload. Evidence compose-navigation-20261107/baseline/result.json. No prior success authorizes whole S08 acceptance. Scope declaration repaired to original S03-02; prior accepted labels object remains verbatim below. Navigation failure/retests and combined independent reassessment retained in docs/UX_SLICE_S08_03.md 2026-11-07 section. Historical attempt durations are not reconstructed.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 7200,
+      "started_at": "2026-11-07T06:20:00Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
+    },
+    "attempts": []
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S03-02",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_03.md",
+      "sha256": "fb728e3417c02e17b5d0521a3565af28093bf1bc1ffa0a5c1a7454cd3f4c3f7b"
+    },
+    "design": {
+      "journey": "Dirty Compose navigation offers native Save draft, Discard changes or Keep editing; reuse existing multipart Rust save route and preserve browser unload fallback.",
+      "frontend": "Compose-only accessible modal; browser warning remains for reload/close.",
+      "backend": "Existing native multipart draft save unchanged.",
+      "interfaces": "Existing POST /drafts/save; no new save endpoint.",
+      "persistence": "Existing private revision-bound draft store including uploaded attachments.",
+      "security": "Keep exact script CSP hash, CSRF, ownership, uncertain-save and in-flight protections.",
+      "failure_recovery": "Keep text and files on cancellation/refusal; no ambiguous auto retry; existing Web rollback."
+    },
+    "tests": [
+      {
+        "id": "compose-navigation-browser",
+        "outcome_ids": [
+          "compose-navigation"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Reviewed current Rust Compose implementation and existing bounded synthetic browser/native fixtures.",
+        "action": "Exercise Save draft including uploaded file, Discard changes, Keep editing, clean navigation, search and logout.",
+        "expected": "All intended choices preserve or discard exactly the current unsaved work.",
+        "preserved": "Account isolation, CSRF, draft revisions, author-content escaping, selected files, owner messages and historical acceptance.",
+        "owner": "/root",
+        "reviewer": "/root/s08_compose_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md retest5:14 PASS"
+        ]
+      },
+      {
+        "id": "compose-navigation-refusals",
+        "outcome_ids": [
+          "compose-navigation"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Reviewed current Rust Compose implementation and existing bounded synthetic browser/native fixtures.",
+        "action": "Cancel navigation and reload, reopen the dialog before queued close, and attempt invalid oversized-image draft save.",
+        "expected": "No unintended navigation, data loss or uncertain-save bypass.",
+        "preserved": "Account isolation, CSRF, draft revisions, author-content escaping, selected files, owner messages and historical acceptance.",
+        "owner": "/root",
+        "reviewer": "/root/s08_compose_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md retest5; focused Rust enhancement2 PASS"
+        ]
+      },
+      {
+        "id": "compose-navigation-native",
+        "outcome_ids": [
+          "compose-navigation"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Reviewed current Rust Compose implementation and existing bounded synthetic browser/native fixtures.",
+        "action": "Build reviewed source and run existing focused Rust Compose enhancement tests on obsd1.",
+        "expected": "Exact reviewed binary builds and both tests pass.",
+        "preserved": "Account isolation, CSRF, draft revisions, author-content escaping, selected files, owner messages and historical acceptance.",
+        "owner": "/root",
+        "reviewer": "/root/s08_compose_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md native41:2 PASS"
+        ]
+      },
+      {
+        "id": "compose-navigation-installed",
+        "outcome_ids": [
+          "compose-navigation"
+        ],
+        "kind": "recovery",
+        "level": "deployed",
+        "prerequisites": "Reviewed current Rust Compose implementation and existing bounded synthetic browser/native fixtures.",
+        "action": "Install only matching Web binary with retained rollback; run read-only signed admission and compare protected services/configuration.",
+        "expected": "Matching loaded binary, available login/admission and unchanged account/public-mail/helper/GPG state.",
+        "preserved": "Account isolation, CSRF, draft revisions, author-content escaping, selected files, owner messages and historical acceptance.",
+        "owner": "/root",
+        "reviewer": "/root/s08_compose_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_03.md install41/readiness41 PASS; rollback prepared, not executed"
+        ]
+      },
+      {
+        "id": "retained-positive",
+        "outcome_ids": [
+          "retained-compose-obligations"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Reviewed current Rust Compose implementation and existing bounded synthetic browser/native fixtures.",
+        "action": "Consult existing S03-02 save/resume/discard and draft control tests if a changed product boundary requires requalification.",
+        "expected": "Existing controls retain their original recorded qualification without fresh claims.",
+        "preserved": "Account isolation, CSRF, draft revisions, author-content escaping, selected files, owner messages and historical acceptance.",
+        "owner": "/root",
+        "reviewer": "/root/s08_compose_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "retained-negative",
+        "outcome_ids": [
+          "retained-compose-obligations"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Reviewed current Rust Compose implementation and existing bounded synthetic browser/native fixtures.",
+        "action": "Consult existing owner-isolation, stale-write and uncertain-save regressions if a relevant changed boundary requires requalification.",
+        "expected": "Existing security refusals remain required; no fresh whole-slice claim.",
+        "preserved": "Account isolation, CSRF, draft revisions, author-content escaping, selected files, owner messages and historical acceptance.",
+        "owner": "/root",
+        "reviewer": "/root/s08_compose_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "owner-navigation",
+        "outcome_ids": [
+          "compose-navigation"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Reviewed current Rust Compose implementation and existing bounded synthetic browser/native fixtures.",
+        "action": "Edit Compose, navigate to Drafts and exercise Keep editing, Save draft and Discard changes.",
+        "expected": "Owner sees understandable choices and confirms current work is preserved or discarded as chosen.",
+        "preserved": "Account isolation, CSRF, draft revisions, author-content escaping, selected files, owner messages and historical acceptance.",
+        "owner": "/root",
+        "reviewer": "/root/s08_compose_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "All nonhuman changed-boundary tests, installed validation, independent review and ordinary signed delivery pass.",
+    "human_exit": "Owner tests leaving dirty Compose and explicitly accepts this correction; remaining S08 UAT stays separate."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner reported missing unsaved-work navigation prompt."
+  },
+  "next_action": "Complete ordinary signed publication, then owner Compose navigation UAT.",
+  "independent_next_action": "Final independent review GO; unchanged ordinary hooks and signed remote-equality verification remain mandatory."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+2026-11-07 — Archived accepted label correction work order before Compose navigation follow-up:
 ```json
 {
   "version": 1,
@@ -283,7 +581,6 @@
   "independent_next_action": "Retain completed independent engineering review; assess any new owner-reported failure within its actual scope."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
 
 2026-11-06 — Archived accepted storage work order before owner-reopened label correction:
 ```json
