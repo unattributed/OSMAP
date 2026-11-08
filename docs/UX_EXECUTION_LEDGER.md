@@ -1,3 +1,5 @@
+2026-11-08 (Asia/Bangkok) — **Outbox recovery owner UAT PASS.** Owner explicitly accepts the cause-specific locked-key refusal and explicit 18:30 local rescheduling recovery. Outbox shows Submitted and zero active messages; Sent shows 18:30:07 UTC+07:00 and Proton receipt shows the edited text and public-key attachment at 18:30. Historical failed UAT is preserved. Remaining focused checks: Scheduled-copy discard preserving Sent, saved-timezone future-schedule cancellation, and Inbox snooze cancellation/return. Whole S08 acceptance is separate. Documentation-only acceptance record; no runtime or mailbox mutation.
+
 2026-11-08 — **Outbox failure explanation UAT FAILED; correction engineering PASS, reacceptance pending.** Owner rejects “Needs your attention” as insufficient. Read-only native evidence for the reported schedule confirms blocked/key_locked at its due-time check. Root owns a Rust presentation-only correction: fixed reason-specific list and detail text, actionable personal-key link, explicit reauthorization and no automatic resend. Existing blocked-before-submission and claimed/unknown protections are reused. Minimum checks: all recorded reasons in both views, absent/stale reason handling, synthetic browser usability, matching native build/Web-only installation/read-only readiness, independent review and ordinary signed publication. No owner schedule, mailbox, credential, key permission or mail-stack mutation. Prior passes remain scoped; cumulative investigation allowance is not reset.
 
 2026-11-08 — **Outbox installed; engineering PASS, owner UAT pending.** Shared navigation places Outbox between Drafts and Sent. Existing Rust scheduler, journal and Drafts support state-specific edit, send now, return to Drafts and delete/cancel, while claimed or uncertain submissions remain protected against duplicate sends. Native43 tests10 PASS, real synthetic desktop/mobile browser8 PASS, exact Web-only install43 and read-only readiness43 PASS. Isolated security-check and bounded remaining V10-V13 gates PASS; prior failures retained. Public mail/helper/account/GPG/configuration and owner messages/jobs are preserved. Independent source/installation/combined gate review GO. Ordinary signed delivery remains mandatory before handoff; final Git history and fresh-fetch receipt establish publication. Owner Outbox UAT is NOT_RUN. See UX_SLICE_S08_03.md. Previous scoped S08 acceptance is preserved; Documents remains removed.
@@ -92,7 +94,7 @@
       ],
       "frontend_backend_outcome": "Expose scheduled and retained unsent submissions in a discoverable Outbox between Drafts and Sent, with safe state-specific controls.",
       "essential_qa": "Rust state/Runtime/browser tests; no actual test mail; preserve owner jobs; no mail-stack configuration change.",
-      "next_action": "Owner reviews the recorded cause and explicit recovery in Outbox after ordinary signed publication.",
+      "next_action": "Complete the remaining focused S08 UAT checks: Scheduled-copy discard, future-schedule cancellation in the saved timezone, and snooze cancellation/return.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -104,7 +106,7 @@
       "evidence": [
         {
           "reference": "docs/UX_SLICE_S08_03.md",
-          "result": "Local11/native45 twelve/browser45 nine/install45/readiness45 PASS; independent reason and mobile review GO. Owner prior UAT FAILED; correction reacceptance pending."
+          "result": "Local11/native45 twelve/browser45 nine/install45/readiness45 PASS; independent reason and mobile review GO. Owner prior UAT FAILED is retained; correction reacceptance PASS on 2026-11-08. Owner 2026-11-08 UAT PASS accepts the recorded locked-key reason and explicit rescheduling recovery, Submitted state, Sent copy and Proton receipt with edited text/public-key attachment."
         }
       ]
     }
@@ -128,7 +130,7 @@
     "slice": "S08-03",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "c76fcff01fc4ee18fe045fff8ab3f58fb2c0e2068447aee2a1c7774c65962ceb"
+      "sha256": "f63705aa9285cd7642c4eb0720cfe7c6365b69d4e135b242e36952faa470b2fb"
     },
     "design": {
       "journey": "Expose scheduled and retained unsent submissions in a discoverable Outbox between Drafts and Sent, with safe state-specific controls.",
@@ -265,17 +267,38 @@
             "result": "Needs your attention does not identify why the due scheduled message was blocked; native safe metadata confirms blocked/key_locked."
           }
         ]
+      },
+      {
+        "id": "outbox-owner-recovery-20261108",
+        "outcome_ids": [
+          "S08-outbox"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Deployed reason-specific Outbox correction and owner-authenticated account.",
+        "action": "Owner reviews the locked-key cause, explicitly reschedules for 18:30 local time, and observes Outbox, Sent and recipient receipt.",
+        "expected": "Specific blocked reason and successful explicit recovery are accepted.",
+        "preserved": "Earlier failed UAT, account isolation, no automatic ambiguous retry and separate whole-sprint acceptance.",
+        "owner": "/root",
+        "reviewer": "/root/outbox_review",
+        "status": "PASS",
+        "evidence": [
+          {
+            "reference": "Owner 2026-11-08 Outbox, Sent and Proton screenshots and explicit UAT = PASS",
+            "result": "Submitted; zero active messages; Sent 18:30:07 UTC+07:00; Proton receipt at 18:30 with edited text and openpgp-public-key.asc. Screenshots are not independent cryptographic verification."
+          }
+        ]
       }
     ],
     "engineering_exit": "All nonhuman changed-boundary tests, installed validation, independent review and ordinary signed delivery pass.",
     "human_exit": "Owner focused Outbox UAT; whole S08 acceptance remains separate."
   },
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "Owner rejected vague blocked status on 2026-11-08; corrected reason-specific Outbox reacceptance pending."
+    "status": "PASS",
+    "reference": "Owner 2026-11-08 UAT = PASS for cause-specific Outbox refusal and explicit rescheduling recovery; whole S08 acceptance remains separate."
   },
-  "next_action": "Complete ordinary signed publication, then owner rechecks the reason-specific Outbox status; preserve failed UAT.",
-  "independent_next_action": "Independent reason and mobile review GO; preserve prior failures and pending owner correction acceptance."
+  "next_action": "Publish the scoped acceptance through normal signed delivery, then complete Scheduled-copy discard, saved-timezone schedule cancellation, and snooze cancellation/return UAT.",
+  "independent_next_action": "Review the scoped acceptance record and preserved historical failures; whole S08 acceptance requires the remaining focused checks."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

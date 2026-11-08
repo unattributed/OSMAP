@@ -825,3 +825,23 @@ and classifications are unchanged; gate logic and generators are unchanged.
 The original failure remains in `remaining-gates45.log`. Signed commit/push
 hooks remain required; Git history and the fresh-fetch receipt establish final
 publication. Owner reacceptance and whole-sprint acceptance remain separate.
+
+### 2026-11-08 — owner Outbox recovery UAT PASS
+
+The owner explicitly reports “UAT = PASS” after observing the recorded blocked
+reason, “Not sent — personal key access was locked”, and explicitly rescheduling
+the same message for 18:30 in the saved UTC+07:00 timezone. The Outbox then
+showed Submitted, zero active messages and no retained attempts needing attention.
+The Sent copy of “UAT - View message and controls (including edit original msg)”
+shows 2026-11-08 18:30:07 UTC+07:00 to lvnv1966@protonmail.ch. The owner’s Proton
+Mail screenshot shows receipt at 18:30, the edited readable text and the attached
+openpgp-public-key.asc. These observations accept the cause-specific refusal and
+explicit recovery/rescheduling path, submission, Sent copy and recipient receipt.
+The screenshots do not independently establish cryptographic validity.
+
+This acceptance supersedes the pending reacceptance above for this correction;
+the earlier failed UAT remains retained. It does not accept all S08 functionality.
+Remaining focused checks are leftover Scheduled-copy discard without removing
+Sent mail, cancellation of a future schedule entered in the saved timezone, and
+Inbox snooze followed by cancellation and return. No code, deployed service,
+schedule or mailbox data is changed by this acceptance record.
