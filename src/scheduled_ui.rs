@@ -39,21 +39,39 @@ fn hidden(name: &str, value: &str) -> String {
 fn editable(state: State) -> bool {
     matches!(state, State::Pending | State::Blocked)
 }
-fn label(state: State) -> &'static str {
-    match state {
+fn label(job: &JobView) -> &'static str {
+    match job.state {
         State::Staged => "Save not yet confirmed",
         State::Pending => "Scheduled",
-        State::Blocked => "Needs your attention",
+        State::Blocked => match job.reason {
+            Some(BlockReason::KeyLocked) => "Not sent — personal key access was locked",
+            Some(BlockReason::SessionExpired) => "Not sent — send authorization expired",
+            Some(BlockReason::AccountChanged) => "Not sent — account protection changed",
+            Some(BlockReason::ServiceUnavailable) => "Not sent — required service was unavailable",
+            Some(BlockReason::PolicyChanged) => "Not sent — key or protection-policy check failed",
+            Some(BlockReason::InvalidContent) => "Not sent — message failed send checks",
+            Some(BlockReason::PayloadExpired) => "Not sent — saved message expired",
+            None => "Not sent — reason unavailable",
+        },
         State::ReturningToDraft => "Returning to Drafts — sending stopped",
         State::Claimed => "Submission in progress",
         State::Unknown => "Submission result unknown",
         State::Submitted => "Submitted",
         State::Cancelled => "Cancelled",
+        State::Failed if job.reason == Some(BlockReason::PayloadExpired) => "Saved message expired",
         State::Failed => "Expired or refused",
     }
 }
 fn reason(reason: BlockReason) -> &'static str {
-    match reason{BlockReason::KeyLocked=>"Unlock your personal key, then explicitly authorize another future send time.",BlockReason::SessionExpired=>"The original authorization expired. Sign in and explicitly authorize another future send time.",BlockReason::AccountChanged=>"Account protection changed. Review this message before authorizing it again.",BlockReason::ServiceUnavailable=>"A required service was unavailable. Review the saved message before authorizing it again.",BlockReason::PolicyChanged=>"Keys or protection policy changed. Review them before authorizing this message again.",BlockReason::InvalidContent=>"The captured message could not pass current send checks.",BlockReason::PayloadExpired=>"The 60-day saved-message lifetime expired; its message content is no longer retained."}
+    match reason {
+        BlockReason::KeyLocked => "Personal key access was locked when this scheduled send was checked. <a href=\"/settings/keys\">Open Your personal key in Settings</a> and unlock it, then choose Send now or authorize a new send time below. Unlocking alone does not restart this message.",
+        BlockReason::SessionExpired => "The original send authorization expired. Sign in again, review this message, then choose Send now or authorize a new send time below.",
+        BlockReason::AccountChanged => "Account protection changed after this message was authorized. Review your account security and this message before choosing Send now or authorizing a new send time.",
+        BlockReason::ServiceUnavailable => "A required service was unavailable when this scheduled send was checked. Review this message and try Send now or a new send time once the service is available. If it fails again, contact the mail operator.",
+        BlockReason::PolicyChanged => "The current key or protection-policy check did not pass. Review the recipients, keys and protection choices before choosing Send now or authorizing a new send time.",
+        BlockReason::InvalidContent => "The saved message failed current send checks. Return it to Drafts to review and correct its recipients, text or attachments before sending again.",
+        BlockReason::PayloadExpired => "The fixed 60-day saved-message lifetime expired; its message content is no longer retained.",
+    }
 }
 fn limits() -> &'static str {
     "<p>Up to 20 active messages and 50 MiB per account. Choose a future time in your saved OSMAP timezone within 30 days. Keys, account authorization and policies are checked again when sending. A blocked message needs your explicit action; an unknown result is never automatically sent again.</p>"
@@ -148,13 +166,13 @@ pub(crate) fn render_outbox(
             if history {
                 body.push_str("<details><summary>Completed and cancelled messages</summary>");
             }
-            body.push_str("<table><thead><tr><th scope=col>Message</th><th scope=col>Send time</th><th scope=col>Status</th><th scope=col>Actions</th></tr></thead><tbody>");
+            body.push_str("<div class=table-wrap tabindex=0 role=region aria-label=\"Scheduled messages\"><table><thead><tr><th scope=col>Message</th><th scope=col>Send time</th><th scope=col>Status</th><th scope=col>Actions</th></tr></thead><tbody>");
             let mut rows = 0;
             for job in list.jobs.iter().filter(|j| {
                 matches!(j.state, State::Submitted | State::Cancelled | State::Failed) == history
             }) {
                 rows += 1;
-                body.push_str(&format!("<tr><td>{}</td><td><time datetime=\"{}\">{}</time></td><td>{}</td><td><a href=\"/outbox?id={}\">View message and controls</a>",escape_html(if job.subject.is_empty(){"(No subject)"}else{&job.subject}),crate::logging::format_unix_timestamp_utc(job.due_at),escape_html(&shown_date(job.due_at,display)),label(job.state),escape_html(&job.id)));
+                body.push_str(&format!("<tr><td>{}</td><td><time datetime=\"{}\">{}</time></td><td>{}</td><td><a href=\"/outbox?id={}\">View message and controls</a>",escape_html(if job.subject.is_empty(){"(No subject)"}else{&job.subject}),crate::logging::format_unix_timestamp_utc(job.due_at),escape_html(&shown_date(job.due_at,display)),label(job),escape_html(&job.id)));
                 if editable(job.state) || job.state == State::Staged {
                     body.push_str(&format!("<form method=post action=\"/scheduled/change\">{}{}{}<button class=secondary name=action value=cancel>Cancel</button></form>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string())));
                 }
@@ -163,7 +181,7 @@ pub(crate) fn render_outbox(
             if rows == 0 {
                 body.push_str(if history {"<tr><td colspan=4>No retained history.</td></tr>"} else {"<tr><td colspan=4>No scheduled messages. Use Schedule in Compose to save a message and choose its send time.</td></tr>"});
             }
-            body.push_str("</tbody></table>");
+            body.push_str("</tbody></table></div>");
             if history {
                 body.push_str("</details>");
             }
@@ -177,19 +195,28 @@ pub(crate) fn render_outbox(
     match attempts {
         Some([]) => body.push_str("<p>No retained send attempts need attention.</p>"),
         Some(attempts) => {
-            body.push_str("<table><thead><tr><th scope=col>Message</th><th scope=col>Attempted</th><th scope=col>Status</th><th scope=col>Actions</th></tr></thead><tbody>");
+            body.push_str("<div class=table-wrap tabindex=0 role=region aria-label=\"Send attempts\"><table><thead><tr><th scope=col>Message</th><th scope=col>Attempted</th><th scope=col>Status</th><th scope=col>Actions</th></tr></thead><tbody>");
             for attempt in attempts {
                 body.push_str(&format!("<tr><td>{}</td><td>{}</td><td>{}</td><td><a href=\"/compose?receipt={}\">Review send result</a></td></tr>", escape_html(if attempt.subject.is_empty() {"(No subject)"} else {&attempt.subject}), escape_html(&shown_date(attempt.created_at, display)), escape_html(attempt.status), escape_html(&attempt.intent)));
             }
-            body.push_str("</tbody></table>");
+            body.push_str("</tbody></table></div>");
         }
         None => body.push_str("<p>Retained send attempts could not be loaded. Their current state has not been confirmed.</p>"),
     }
     body.push_str("<p>Review an uncertain result before creating another send. Submission acceptance is separate from recipient delivery; this page does not inspect the mail server's delivery queue.</p></section>");
     if let (Some(list), Some(job)) = (list, selected) {
-        body.push_str(&format!("<section class=panel><h2>Saved message</h2><p>Status: <strong>{}</strong>. Send time: {}.</p>",label(job.state),escape_html(&shown_date(job.due_at,display))));
-        if let Some(r) = job.reason {
-            body.push_str(&format!("<p class=notice>{}</p>", reason(r)));
+        body.push_str(&format!("<section class=panel><h2>Saved message</h2><p>Status: <strong>{}</strong>. Send time: {}.</p>",label(job),escape_html(&shown_date(job.due_at,display))));
+        if job.state == State::Blocked {
+            body.push_str("<p class=notice>Nothing was submitted by this scheduled attempt. It will not retry automatically.</p>");
+        }
+        if job.state == State::Blocked
+            || (job.state == State::Failed && job.reason == Some(BlockReason::PayloadExpired))
+        {
+            if let Some(r) = job.reason {
+                body.push_str(&format!("<p class=notice>{}</p>", reason(r)));
+            } else if job.state == State::Blocked {
+                body.push_str("<p class=notice>The reason for this stopped attempt could not be loaded. Reload before choosing another action; contact the mail operator if it remains unavailable.</p>");
+            }
         }
         if let Some(p) = payload {
             body.push_str(&summary(
@@ -254,6 +281,138 @@ fn confirm_action(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn outbox_reports_recorded_block_cause_in_list_and_detail() {
+        for (cause, status, explanation) in [
+            (
+                BlockReason::KeyLocked,
+                "personal key access was locked",
+                "Unlocking alone does not restart this message.",
+            ),
+            (
+                BlockReason::SessionExpired,
+                "send authorization expired",
+                "Sign in again",
+            ),
+            (
+                BlockReason::AccountChanged,
+                "account protection changed",
+                "Review your account security",
+            ),
+            (
+                BlockReason::ServiceUnavailable,
+                "required service was unavailable",
+                "contact the mail operator",
+            ),
+            (
+                BlockReason::PolicyChanged,
+                "key or protection-policy check failed",
+                "Review the recipients",
+            ),
+            (
+                BlockReason::InvalidContent,
+                "message failed send checks",
+                "Return it to Drafts",
+            ),
+            (
+                BlockReason::PayloadExpired,
+                "saved message expired",
+                "60-day saved-message lifetime expired",
+            ),
+        ] {
+            let mut job = job(State::Blocked);
+            job.reason = Some(cause);
+            let list = JobList {
+                revision: 3,
+                jobs: vec![job.clone()],
+            };
+            let html = render_outbox(
+                "alice@example.test",
+                "csrf",
+                Some(&list),
+                Some(&job),
+                None,
+                None,
+                Display {
+                    now: 100,
+                    offset: None,
+                },
+                Some(&[]),
+            )
+            .to_string();
+            assert_eq!(
+                html.matches(&format!("Not sent — {status}")).count(),
+                2,
+                "{cause:?}"
+            );
+            assert!(html.contains(explanation), "{cause:?}");
+            assert!(html.contains(
+                "Nothing was submitted by this scheduled attempt. It will not retry automatically."
+            ));
+            assert!(!html.contains("Needs your attention"));
+            if cause == BlockReason::KeyLocked {
+                assert!(html.contains("href=\"/settings/keys\""));
+                assert!(html.contains("when this scheduled send was checked"));
+            }
+        }
+    }
+
+    #[test]
+    fn outbox_missing_reason_is_explicit_and_stale_reason_never_suggests_resend() {
+        for state in [
+            State::Blocked,
+            State::Claimed,
+            State::Unknown,
+            State::Submitted,
+            State::Cancelled,
+            State::Failed,
+        ] {
+            let mut job = job(state);
+            job.reason = if state == State::Blocked {
+                None
+            } else {
+                Some(BlockReason::KeyLocked)
+            };
+            let list = JobList {
+                revision: 3,
+                jobs: vec![job.clone()],
+            };
+            let html = render_outbox(
+                "alice@example.test",
+                "csrf",
+                Some(&list),
+                Some(&job),
+                None,
+                None,
+                Display {
+                    now: 100,
+                    offset: None,
+                },
+                Some(&[]),
+            )
+            .to_string();
+            assert!(!html.contains("Unlocking alone"), "{state:?}");
+            assert!(!html.contains("Open Your personal key"), "{state:?}");
+            assert_eq!(
+                html.contains("Nothing was submitted by this scheduled attempt"),
+                state == State::Blocked
+            );
+            assert_eq!(
+                html.contains("Not sent — reason unavailable"),
+                state == State::Blocked
+            );
+            assert_eq!(
+                html.contains("The reason for this stopped attempt could not be loaded"),
+                state == State::Blocked
+            );
+            if matches!(state, State::Claimed | State::Unknown) {
+                assert!(html.contains("cannot be edited, cancelled or restarted"));
+                assert!(!html.contains("value=reauthorize"));
+                assert!(!html.contains("value=send_now"));
+            }
+        }
+    }
+
     #[test]
     fn outbox_controls_are_state_bound_and_navigation_is_discoverable() {
         let payload = crate::send::ComposeRequest::new(

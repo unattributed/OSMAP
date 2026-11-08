@@ -1,3 +1,5 @@
+2026-11-08 — **Outbox failure explanation UAT FAILED; correction engineering PASS, reacceptance pending.** Owner rejects “Needs your attention” as insufficient. Read-only native evidence for the reported schedule confirms blocked/key_locked at its due-time check. Root owns a Rust presentation-only correction: fixed reason-specific list and detail text, actionable personal-key link, explicit reauthorization and no automatic resend. Existing blocked-before-submission and claimed/unknown protections are reused. Minimum checks: all recorded reasons in both views, absent/stale reason handling, synthetic browser usability, matching native build/Web-only installation/read-only readiness, independent review and ordinary signed publication. No owner schedule, mailbox, credential, key permission or mail-stack mutation. Prior passes remain scoped; cumulative investigation allowance is not reset.
+
 2026-11-08 — **Outbox installed; engineering PASS, owner UAT pending.** Shared navigation places Outbox between Drafts and Sent. Existing Rust scheduler, journal and Drafts support state-specific edit, send now, return to Drafts and delete/cancel, while claimed or uncertain submissions remain protected against duplicate sends. Native43 tests10 PASS, real synthetic desktop/mobile browser8 PASS, exact Web-only install43 and read-only readiness43 PASS. Isolated security-check and bounded remaining V10-V13 gates PASS; prior failures retained. Public mail/helper/account/GPG/configuration and owner messages/jobs are preserved. Independent source/installation/combined gate review GO. Ordinary signed delivery remains mandatory before handoff; final Git history and fresh-fetch receipt establish publication. Owner Outbox UAT is NOT_RUN. See UX_SLICE_S08_03.md. Previous scoped S08 acceptance is preserved; Documents remains removed.
 
 2026-11-07 — **Unsaved Compose navigation correction installed and published.** Signed commit `991494f43a035902bc027993b83e837cc67bd997` is the Outbox source baseline. Existing synthetic browser14, local/native focused2, Web-only install41, read-only readiness41 and independent review GO remain scoped evidence. Owner Compose navigation acceptance remains separate; whole S08 is not accepted.
@@ -90,7 +92,7 @@
       ],
       "frontend_backend_outcome": "Expose scheduled and retained unsent submissions in a discoverable Outbox between Drafts and Sent, with safe state-specific controls.",
       "essential_qa": "Rust state/Runtime/browser tests; no actual test mail; preserve owner jobs; no mail-stack configuration change.",
-      "next_action": "Ordinary signed Git delivery, then owner focused Outbox UAT.",
+      "next_action": "Owner reviews the recorded cause and explicit recovery in Outbox after ordinary signed publication.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -102,7 +104,7 @@
       "evidence": [
         {
           "reference": "docs/UX_SLICE_S08_03.md",
-          "result": "Native43, browser2, install43, readiness43, isolated security-check and remaining-gates2 PASS; independent review GO. Owner UAT NOT_RUN."
+          "result": "Local11/native45 twelve/browser45 nine/install45/readiness45 PASS; independent reason and mobile review GO. Owner prior UAT FAILED; correction reacceptance pending."
         }
       ]
     }
@@ -126,11 +128,11 @@
     "slice": "S08-03",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "b82600aa7bbde82985fe229a37b4bf1b1cbabdbe0ca94f2a4b076a97d461c4ac"
+      "sha256": "c76fcff01fc4ee18fe045fff8ab3f58fb2c0e2068447aee2a1c7774c65962ceb"
     },
     "design": {
       "journey": "Expose scheduled and retained unsent submissions in a discoverable Outbox between Drafts and Sent, with safe state-specific controls.",
-      "frontend": "Shared Outbox navigation and state-specific controls, separate submission history.",
+      "frontend": "Outbox list and detail show fixed recorded failure reasons, actionable recovery and no automatic retry; existing focusable table wrapper confines mobile scrolling.",
       "backend": "Reuse scheduler, send journal, recovery and draft stores.",
       "interfaces": "GET /outbox; existing strict POST /scheduled/change with CSRF and revisions.",
       "persistence": "Durable ReturningToDraft transition and exact deterministic draft destination before source retirement.",
@@ -154,8 +156,8 @@
         "status": "PASS",
         "evidence": [
           {
-            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108",
-            "result": "Existing Rust tests and isolated security-check PASS; native43.log ten changed-boundary tests PASS."
+            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108/reason-20261108",
+            "result": "Local focused Rust11 and native45 twelve PASS, including all recorded list/detail reasons."
           }
         ]
       },
@@ -175,8 +177,8 @@
         "status": "PASS",
         "evidence": [
           {
-            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108",
-            "result": "native43.log: account/revision/CSRF, interrupted return, quota/collision and no claimed/unknown resend regressions PASS."
+            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108/reason-20261108",
+            "result": "Existing account/revision/CSRF and claimed/unknown protections reused; missing/stale reasons and unsafe controls regressions PASS."
           }
         ]
       },
@@ -196,8 +198,8 @@
         "status": "PASS",
         "evidence": [
           {
-            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108",
-            "result": "browser2/result.json: eight actual synthetic Edge desktop/mobile checks PASS; no external SMTP."
+            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108/reason-20261108",
+            "result": "browser45/result.json: nine actual synthetic Edge desktop/mobile checks PASS; no external SMTP."
           }
         ]
       },
@@ -217,8 +219,8 @@
         "status": "PASS",
         "evidence": [
           {
-            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108",
-            "result": "native43.log: ten PASS, zero failed/ignored; exact source43 archive and main/test hashes in specification."
+            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108/reason-20261108",
+            "result": "native45.log: twelve PASS, zero failed/ignored; source45 and main45 hashes recorded in specification."
           }
         ]
       },
@@ -238,8 +240,8 @@
         "status": "PASS",
         "evidence": [
           {
-            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108",
-            "result": "install43.log and readiness43.log: loaded Web hash matches, nine roles/login/read-only admission PASS; owner jobs/config/services preserved."
+            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108/reason-20261108",
+            "result": "install45.log/readiness45.log: exact loaded Web binary, login200, nine roles and read-only admission PASS; owner jobs/config/services preserved."
           }
         ]
       },
@@ -256,8 +258,13 @@
         "preserved": "Account isolation, revisions, no ambiguous retry, owner jobs and prior acceptance.",
         "owner": "/root",
         "reviewer": "/root/outbox_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "FAILED",
+        "evidence": [
+          {
+            "reference": "Owner Outbox screenshots and 2026-11-08 request",
+            "result": "Needs your attention does not identify why the due scheduled message was blocked; native safe metadata confirms blocked/key_locked."
+          }
+        ]
       }
     ],
     "engineering_exit": "All nonhuman changed-boundary tests, installed validation, independent review and ordinary signed delivery pass.",
@@ -265,10 +272,10 @@
   },
   "human_acceptance": {
     "status": "PENDING",
-    "reference": "Owner requested visible Outbox and unsent controls on 2026-11-08."
+    "reference": "Owner rejected vague blocked status on 2026-11-08; corrected reason-specific Outbox reacceptance pending."
   },
-  "next_action": "Ordinary signed Git delivery, then owner focused Outbox UAT.",
-  "independent_next_action": "Final public-safe source/delivery review by /root/outbox_review; preserve earlier failed results and owner UAT NOT_RUN."
+  "next_action": "Complete ordinary signed publication, then owner rechecks the reason-specific Outbox status; preserve failed UAT.",
+  "independent_next_action": "Independent reason and mobile review GO; preserve prior failures and pending owner correction acceptance."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

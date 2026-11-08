@@ -778,3 +778,50 @@ installation review is GO. Owner Outbox acceptance remains NOT_RUN and does
 not follow from previous scoped S08 passes.
 
 Final bounded V10-V13 validation: `remaining-gates2.log` exits0 after independent combined reassessment GO. All four remaining gates pass, including the current original/refined assumption records and WSTG pack validation. The earlier failed and interrupted runs remain retained. Together with the completed isolated security-check, native43, browser2, install43 and readiness43 results, engineering validation is PASS. Ordinary signed commit/push hooks remain mandatory before publication; Git history and the final fresh-fetch receipt identify that outcome. Owner Outbox UAT remains NOT_RUN.
+
+
+### 2026-11-08 — specific Outbox failure explanations
+
+Owner UAT FAILED because “Needs your attention” did not explain the blocked
+scheduled send. Read-only native metadata confirms personal-key access was
+locked at the due-time check, before SMTP preparation or submission. This is
+historical evidence, not a claim about the key's present state.
+
+The smallest Rust presentation correction uses each recorded reason in both
+the list and detail: locked personal-key access, expired send authorization,
+changed account protection, unavailable service, failed key/policy checks,
+invalid content or expired payload. Missing reasons remain explicitly unavailable;
+stale reasons do not replace unrelated states. Fixed source-owned text provides
+the relevant recovery action without exposing native output. Locked-key details
+link to Settings and explain that unlocking alone does not restart the message;
+Send now or a new authorized send time remains explicit. No scheduler, protocol,
+authorization or submission-state behavior changed.
+
+Local focused Rust tests:11 PASS,0 failed,0 ignored. Native45:12 PASS,0 failed,
+0 ignored. Actual synthetic Edge browser45:9 PASS, covering Outbox actions, the
+recorded locked-key cause/link/no-automatic-retry text, desktop and390px layout.
+The first browser diagnostic used an incorrect harness filter; the corrected run
+exposed mobile table overflow. Reusing the existing focusable table-wrap fixes
+that defect. Both failures remain retained; independent reason and mobile review
+GO. No owner messages or schedules were changed or resent during verification.
+
+Matching source45 archive SHA256:
+`f7084dc57ed3c36b118a0c44430627b91ebbf3f3c99172a5442e902cb6f169ff`.
+Installed main45 SHA256:
+`5659e3969d8f556991db1de14045184af04c0cf87147b03fc528a664ac2db87c`.
+Web-only install45 verifies the loaded binary and HTTPS login200; nine service
+checks and installed read-only epoch readiness45 PASS. Helper/public-mail PIDs,
+account/GPG/configuration remain unchanged; rollback is retained. No password
+submission, TOTP consumption or credential write occurred. Private evidence:
+`/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108/reason-20261108`.
+Normal publication gates remain mandatory. Owner reacceptance of this correction
+is pending; the earlier failed UAT and other scoped passes remain recorded.
+Whole S08 acceptance is not implied.
+
+Final reason-correction V10-V13 checks PASS in `remaining-gates45b.log` (exit0).
+The first run stopped at the generated inventory checksum register; the two
+claims checksums now match the regenerated original/refined inventories. Counts
+and classifications are unchanged; gate logic and generators are unchanged.
+The original failure remains in `remaining-gates45.log`. Signed commit/push
+hooks remain required; Git history and the fresh-fetch receipt establish final
+publication. Owner reacceptance and whole-sprint acceptance remain separate.
