@@ -694,3 +694,87 @@ of this correction is pending. Existing accepted labels, storage, scheduled
 delivery, selective Trash deletion and notifications remain accepted. Documents
 remains removed. The remaining Drafts discard, local-time schedule/cancel and
 Snooze/cancel checks remain separate; whole S08 acceptance is not asserted.
+
+## 2026-11-08 Outbox follow-up
+
+User requirement: expose Outbox between Drafts and Sent, including scheduled
+and retained submission attempts. Reuse the Rust scheduler, journal, recovery
+and draft stores. Scheduled/blocked messages may be edited, sent now through
+the existing worker checks, returned to Drafts, or cancelled/deleted. Returning
+to Drafts durably stops dispatch before writing an exact editable copy; an
+interrupted transfer can resume without overwriting an edited destination.
+Claimed and unknown submissions remain read-only until their outcome is known;
+no automatic resend. Submission acceptance does not prove delivery.
+
+Essential verification: account/revision/CSRF refusals, exact transfer and
+interruption recovery, capacity refusal without payload loss, worker-only
+dispatch, retained-attempt distinctions, escaping and browser navigation/forms.
+Use synthetic accounts without SMTP dispatch. Native matching build, Web-only
+installation, read-only signed admission, independent review and ordinary
+signed publication are required before readiness. Owner Outbox UAT remains
+separate from whole S08 acceptance. No mail-stack configuration, owner job
+mutation, new service, Python tooling or Documents functionality.
+
+Failure record: initial focused compile failures (qualification/import and test
+constructor mismatch) corrected; one UI assertion used the wrong existing Sent
+shortcut URL and was corrected. Prior focused Outbox retest: 6 PASS, 0 FAIL;
+additional recovery checks and full gates remain pending.
+
+Final changed-boundary qualification (2026-11-08): the matching native43
+OpenBSD build passes all ten Outbox tests (0 failures, 0 ignored). The real
+synthetic Edge desktop/mobile journey passes eight checks: navigation order,
+scheduling with a binary attachment, edit, exact return to Drafts, send-now
+worker authorization, delete/cancel, narrow-screen layout and JavaScript errors.
+These tests do not submit owner or external mail. The browser fixture initially
+used a fixed clock against Runtime's real expiry clock; its existing opt-in
+scheduled fixture now uses a matching clock, with the default fixture unchanged.
+
+Installation43 is Web-only. The loaded Web executable SHA256 is
+`0a6ad35afaab5c11a37118e5a426a07c4cc75eb73deb78dd8201452b50518ee7`;
+the previous executable is retained for rollback. Nine role checks and HTTPS
+login pass. Protected configuration and helper/public-mail/account/GPG process
+identities remain unchanged. Installed read-only signed account admission passes
+without a password, TOTP consumption, credential write or account-epoch change.
+Owner messages and schedules were not mutated by this qualification.
+
+Full-gate failures remain evidence: the new sidebar icon exceeded the existing
+hostile-test finite icon allowance, corrected from 18 to 19 with the rejecting
+20-icon boundary retained; two focused hostile tests pass. The existing V10
+current inventory was regenerated (13112 entries: low13109, medium3, high0),
+initially retaining its prior coarse scanner snapshot. Its current digest is
+`b466a715809d3ccedc4e82f05d878d71d9b79d891b9b67f886975c4d67186d2e`.
+The WSTG route inventory now includes Outbox and preserves an exact standalone
+`/scheduled` router alternative so the existing extractor can see both aliases;
+the focused route comparison passes. No Python program or dependency was added
+or modified. Two later acceptance runs ended with signal143, sender UNKNOWN;
+they are interrupted results, not passing gates or diagnosed product failures.
+Independent combined review found no supported source correction for that
+interruption. The isolated existing mail-backend suite passes47 tests, skips2,
+exit0 in2.123s; the first diagnostic wrapper's missing `/usr/bin/time` failed127
+and was corrected to the shell builtin. The isolated acceptance run completed its entire security-check successfully,
+then stopped at V10 because the original assumption register (separate from the
+refined register) was stale. The existing original-register generator refreshes
+its current count to13112 and digest to
+`25e4099a8a9a636c12042c780ab5b04d3138d1c2efef8f106ed2f1a7496065af`;
+its carried-forward baseline712 remains unchanged. This original classifier
+retains its production-adjacent high-relevance entries; only the separate refined
+classification reports high0. Neither count proves runtime safety. Gate logic
+and Python programs are unchanged. The next bounded V10-V13 run exposed the dependent refined-register baseline
+summary as stale. Regenerating the refined register after the original register
+updates the source snapshot to13112/coarse-high3154 without changing its current
+refined digest or classifications. Both failed runs are retained; independent
+combined reassessment precedes another gate run. Original historical snapshots
+remain in Git. Remaining V10-V13 checks and ordinary signed delivery remain
+required before the owner handoff.
+
+Private evidence root:
+`/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108`.
+Matching source archive43 digest:
+`2d8dc74e1092bbf6b50d280a4b22edf452e9e021023d1e8e3063c7f98475b851`.
+Use `native43.log`, `browser2/result.json`, `install43.log`, `readiness43.log`,
+the preserved `acceptance*.log` files and `mail-backend-isolated*.log` for the
+separate results. Independent source, recovery, confinement-preservation and
+installation review is GO. Owner Outbox acceptance remains NOT_RUN and does
+not follow from previous scoped S08 passes.
+
+Final bounded V10-V13 validation: `remaining-gates2.log` exits0 after independent combined reassessment GO. All four remaining gates pass, including the current original/refined assumption records and WSTG pack validation. The earlier failed and interrupted runs remain retained. Together with the completed isolated security-check, native43, browser2, install43 and readiness43 results, engineering validation is PASS. Ordinary signed commit/push hooks remain mandatory before publication; Git history and the final fresh-fetch receipt identify that outcome. Owner Outbox UAT remains NOT_RUN.

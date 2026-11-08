@@ -123,3 +123,19 @@ fn scheduled_http_uses_current_owned_timezone_and_rejects_stale_form_without_dis
     assert_eq!(*capture.lock().unwrap(), None);
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn outbox_alias_and_mutations_preserve_http_security_boundaries() {
+    let result = perform("GET", "/outbox", "");
+    assert_eq!(result.response.status_code, 503);
+    assert!(body_text(&result).contains("could not be loaded"));
+    for action in ["send_now", "move_to_drafts", "delete"] {
+        let body = format!("csrf_token={}&id={}&revision=1&action={action}", StubGateway::validated_session().record.csrf_token, "a".repeat(32));
+        assert_eq!(perform("POST", "/scheduled/change", &body).response.status_code, 503);
+        assert_eq!(perform("POST", "/scheduled/change", &body.replace("revision=1", "revision=01")).response.status_code, 400);
+        assert_eq!(perform("POST", "/scheduled/change", &body.replace(&StubGateway::validated_session().record.csrf_token, "wrong")).response.status_code, 403);
+        let mut req = request("POST", "/scheduled/change", &authenticated_same_origin_headers(), &body);
+        req.headers.insert("origin".into(), "https://other.invalid".into());
+        assert_eq!(BrowserApp::new(HttpPolicy::default(), StubGateway::default()).handle_request(&req, "127.0.0.1").response.status_code, 403);
+    }
+}

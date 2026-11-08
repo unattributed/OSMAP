@@ -430,6 +430,12 @@ pub trait BrowserGateway {
     ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
         Err(crate::scheduled_send::Error::Unavailable)
     }
+    fn outbox_attempts(
+        &self,
+        _: &ValidatedSession,
+    ) -> Result<Vec<crate::send_recovery::OutboxAttempt>, crate::scheduled_send::Error> {
+        Err(crate::scheduled_send::Error::Unavailable)
+    }
     fn scheduled_payload(
         &self,
         _: &ValidatedSession,

@@ -1801,6 +1801,18 @@
     },
     {
       "method": "GET",
+      "path": "/outbox",
+      "query_fields": [
+        "id"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-INPV-001"
+      ]
+    },
+    {
+      "method": "GET",
       "path": "/scheduled",
       "query_fields": [
         "id"

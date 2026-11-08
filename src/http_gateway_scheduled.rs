@@ -240,7 +240,96 @@ impl RuntimeBrowserGateway {
             .map_err(|_| Error::Unavailable)?;
         let store = self.scheduled_store();
         match (action, due) {
-            ("cancel", None) => store.cancel(&guard, revision, id, now),
+            ("cancel" | "delete", None) => store.cancel(&guard, revision, id, now),
+            ("send_now", None) => store.reauthorize(
+                &guard,
+                revision,
+                id,
+                Reauthorization {
+                    due_at: now.checked_add(1).ok_or(Error::Invalid)?,
+                    account_epoch: Self::schedule_epoch(session)?,
+                    private_session: Self::private_key_session(session),
+                },
+                now,
+            ),
+            ("move_to_drafts", None) => {
+                let (list, request) = store.prepare_return_to_draft(&guard, revision, id, now)?;
+                let account = &session.record.canonical_username;
+                let policy = crate::send_recovery::SendRecovery::new(
+                    self.settings_dir.join("send-recovery"),
+                )
+                .draft_policy(account, now)
+                .map_err(|_| Error::Capacity)?;
+                let location = crate::draft_location::Store::new(&self.settings_dir)
+                    .load(account)
+                    .map_err(|_| Error::Unavailable)?
+                    .location;
+                let drafts =
+                    FileDraftStore::new(self.draft_dir.clone(), policy).with_new_location(location);
+                // A deterministic destination makes interrupted transfers resumable.
+                // Never overwrite an existing (possibly subsequently edited) draft.
+                let existing = drafts
+                    .load(account, id, now)
+                    .map_err(|_| Error::Unavailable)?;
+                if existing.is_none() {
+                    let mut draft = crate::draft::DraftRecord::new(
+                        DraftPolicy::default(),
+                        crate::draft::DraftRecordInput {
+                            draft_id: id.into(),
+                            canonical_username: account.clone(),
+                            now,
+                            recipients_text: request.recipients.join(", "),
+                            cc_text: request.cc_recipients.join(", "),
+                            bcc_text: request.bcc_recipients.join(", "),
+                            subject: request.subject.clone(),
+                            body: request.body.clone(),
+                            attachments: request.attachments.clone(),
+                            source_attachments: None,
+                        },
+                    )
+                    .map_err(|_| Error::Invalid)?;
+                    draft.request.sender_identity = request.sender_identity.clone();
+                    draft.request.body_format = request.body_format;
+                    draft.request.reply_thread = request.reply_thread.clone();
+                    draft.request.protection = request.protection;
+                    drafts.save(&draft, now).map_err(|e| {
+                        if e.save_unconfirmed() {
+                            Error::Unconfirmed
+                        } else {
+                            Error::Capacity
+                        }
+                    })?;
+                }
+                let saved = drafts
+                    .load(account, id, now)
+                    .map_err(|_| Error::Unavailable)?
+                    .ok_or(Error::Unconfirmed)?;
+                // A colliding or changed destination is preserved, never overwritten
+                // and never mistaken for successful transfer of this snapshot.
+                let d = &saved.request;
+                let mut restored = ComposeRequest::new_with_routing(
+                    ComposePolicy::default(),
+                    &d.recipients_text,
+                    &d.cc_text,
+                    &d.bcc_text,
+                    &d.subject,
+                    &d.body,
+                    d.attachments.clone(),
+                )
+                .and_then(|r| r.with_body_format(d.body_format))
+                .map_err(|_| Error::Invalid)?;
+                restored.sender_identity = d.sender_identity.clone();
+                restored.reply_thread = d.reply_thread.clone();
+                restored.protection = d.protection;
+                if saved.source_attachments.is_some() || restored != request {
+                    return Err(Error::Stale);
+                }
+                let intent = guard.draft_intent(&saved).map_err(|_| Error::Stale)?;
+                guard
+                    .require_unconsumed(&intent)
+                    .map_err(|_| Error::Stale)?;
+                store.finish_return_to_draft(&guard, list.revision, id, now)
+            }
             ("reauthorize", Some(due_at)) => store.reauthorize(
                 &guard,
                 revision,

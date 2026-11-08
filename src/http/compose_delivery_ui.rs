@@ -18,7 +18,7 @@ pub(crate) fn footer_more(model: &ComposePageModel<'_>) -> String {
         "<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"minimize\">Save and close</button>",
         "<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"preview\">Preview</button>",
         "<a href=\"/contacts\" target=\"_blank\" rel=\"noopener\">Contacts<span class=\"sr-only\"> (opens in a new tab)</span></a>",
-        "<a href=\"/scheduled\" target=\"_blank\" rel=\"noopener\">Scheduled messages<span class=\"sr-only\"> (opens in a new tab)</span></a>",
+        "<a href=\"/outbox\" target=\"_blank\" rel=\"noopener\">Outbox<span class=\"sr-only\"> (opens in a new tab)</span></a>",
         "</div></details>"
     ), disabled = disabled)
 }

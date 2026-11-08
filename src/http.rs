@@ -1177,6 +1177,7 @@ mod tests {
         mark_read_store: Option<crate::mark_read::Store>,
         timezone_store: Option<crate::timezone::Store>,
         scheduled_due_capture: Option<Arc<Mutex<Option<u64>>>>,
+        scheduled_fixture_root: Option<PathBuf>,
         draft_location_store: Option<crate::draft_location::Store>,
         sent_copy_store: Option<crate::sent_copy::Store>,
         sent_location_store: Option<crate::sent_location::Store>,
@@ -1258,6 +1259,7 @@ mod tests {
                 mark_read_store: None,
                 timezone_store: None,
                 scheduled_due_capture: None,
+                scheduled_fixture_root: None,
                 draft_location_store: None,
                 sent_copy_store: None,
                 sent_location_store: None,
@@ -1692,13 +1694,111 @@ mod tests {
                 .ok_or(crate::after_archive::Error::Unavailable)?
                 .save(&s.record.canonical_username, revision, choice)
         }
+        fn scheduled_list(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+            let root = self
+                .scheduled_fixture_root
+                .as_ref()
+                .ok_or(crate::scheduled_send::Error::Unavailable)?;
+            BrowserGateway::scheduled_list(&RuntimeBrowserGateway::for_test(root), session)
+        }
+        fn outbox_attempts(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<Vec<crate::send_recovery::OutboxAttempt>, crate::scheduled_send::Error>
+        {
+            let root = self
+                .scheduled_fixture_root
+                .as_ref()
+                .ok_or(crate::scheduled_send::Error::Unavailable)?;
+            BrowserGateway::outbox_attempts(&RuntimeBrowserGateway::for_test(root), session)
+        }
+        fn scheduled_payload(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+        ) -> Result<ComposeRequest, crate::scheduled_send::Error> {
+            let root = self
+                .scheduled_fixture_root
+                .as_ref()
+                .ok_or(crate::scheduled_send::Error::Unavailable)?;
+            BrowserGateway::scheduled_payload(&RuntimeBrowserGateway::for_test(root), session, id)
+        }
+        fn scheduled_change(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+            revision: u64,
+            action: &str,
+            due: Option<u64>,
+        ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+            let root = self
+                .scheduled_fixture_root
+                .as_ref()
+                .ok_or(crate::scheduled_send::Error::Unavailable)?;
+            let mut session = session.clone();
+            session.record.account_epoch = Some(2);
+            BrowserGateway::scheduled_change(
+                &RuntimeBrowserGateway::for_test(root),
+                &session,
+                id,
+                revision,
+                action,
+                due,
+            )
+        }
+        #[allow(clippy::too_many_arguments)]
+        fn scheduled_edit(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+            revision: u64,
+            due: u64,
+            to: &str,
+            cc: &str,
+            bcc: &str,
+            subject: &str,
+            body: &str,
+        ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+            let root = self
+                .scheduled_fixture_root
+                .as_ref()
+                .ok_or(crate::scheduled_send::Error::Unavailable)?;
+            let mut session = session.clone();
+            session.record.account_epoch = Some(2);
+            BrowserGateway::scheduled_edit(
+                &RuntimeBrowserGateway::for_test(root),
+                &session,
+                id,
+                revision,
+                due,
+                to,
+                cc,
+                bcc,
+                subject,
+                body,
+            )
+        }
         fn scheduled_from_draft(
             &self,
-            _session: &ValidatedSession,
-            _id: &str,
-            _revision: u64,
+            session: &ValidatedSession,
+            id: &str,
+            revision: u64,
             due: u64,
         ) -> Result<String, crate::scheduled_send::Error> {
+            if let Some(root) = &self.scheduled_fixture_root {
+                let mut session = session.clone();
+                session.record.account_epoch = Some(2);
+                return BrowserGateway::scheduled_from_draft(
+                    &RuntimeBrowserGateway::for_test(root),
+                    &session,
+                    id,
+                    revision,
+                    due,
+                );
+            }
             let capture = self
                 .scheduled_due_capture
                 .as_ref()
@@ -1989,7 +2089,16 @@ mod tests {
             }
         }
         fn send_clock(&self) -> u64 {
-            100
+            if self.scheduled_fixture_root.is_some() {
+                // The opt-in browser journey delegates to the real scheduler,
+                // whose draft expiry checks use the system clock.
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .expect("fixture clock must follow the Unix epoch")
+                    .as_secs()
+            } else {
+                100
+            }
         }
         fn send_receipt(
             &self,
@@ -5084,7 +5193,10 @@ mod tests {
                 }
             };
             let drafts = if let Some(store) = &self.draft_store {
-                match store.list(&validated_session.record.canonical_username, 100) {
+                match store.list(
+                    &validated_session.record.canonical_username,
+                    self.send_clock(),
+                ) {
                     Ok(drafts) => drafts,
                     Err(error) => {
                         return BrowserDraftListOutcome {
@@ -5134,10 +5246,10 @@ mod tests {
             validated_session: &ValidatedSession,
             draft_id: &str,
         ) -> BrowserDraftLoadOutcome {
-            let _guard = match self
-                .send_journal
-                .account_guard(&validated_session.record.canonical_username, 100)
-            {
+            let _guard = match self.send_journal.account_guard(
+                &validated_session.record.canonical_username,
+                self.send_clock(),
+            ) {
                 Ok(guard) => guard,
                 Err(_) => {
                     return BrowserDraftLoadOutcome {
@@ -5149,7 +5261,11 @@ mod tests {
                 }
             };
             let draft = if let Some(store) = &self.draft_store {
-                match store.load(&validated_session.record.canonical_username, draft_id, 100) {
+                match store.load(
+                    &validated_session.record.canonical_username,
+                    draft_id,
+                    self.send_clock(),
+                ) {
                     Ok(draft) => draft,
                     Err(error) => {
                         return BrowserDraftLoadOutcome {
@@ -5201,10 +5317,10 @@ mod tests {
             validated_session: &ValidatedSession,
             request: BrowserDraftSaveRequest<'_>,
         ) -> BrowserDraftSaveOutcome {
-            let mut guard = match self
-                .send_journal
-                .account_guard(&validated_session.record.canonical_username, 100)
-            {
+            let mut guard = match self.send_journal.account_guard(
+                &validated_session.record.canonical_username,
+                self.send_clock(),
+            ) {
                 Ok(value) => value,
                 Err(_) => return fixture_paused_save(),
             };
@@ -5218,7 +5334,11 @@ mod tests {
                 .unwrap_or_else(|| self.next_draft_id());
             let mut drafts = self.drafts.lock().expect("stub drafts should lock");
             let existing = if let Some(store) = &self.draft_store {
-                match store.load(&validated_session.record.canonical_username, &draft_id, 100) {
+                match store.load(
+                    &validated_session.record.canonical_username,
+                    &draft_id,
+                    self.send_clock(),
+                ) {
                     Ok(draft) => draft,
                     Err(error) => {
                         return BrowserDraftSaveOutcome {
@@ -5287,7 +5407,7 @@ mod tests {
                 DraftRecordInput {
                     draft_id: draft_id.clone(),
                     canonical_username: validated_session.record.canonical_username.clone(),
-                    now: 100,
+                    now: self.send_clock(),
                     recipients_text: request.recipients.to_string(),
                     cc_text: request.cc_recipients.to_string(),
                     bcc_text: request.bcc_recipients.to_string(),
@@ -5364,7 +5484,7 @@ mod tests {
                 record.request.reply_thread = existing.request.reply_thread;
             }
             if let Some(store) = &self.draft_store {
-                if let Err(error) = store.save(&record, 100) {
+                if let Err(error) = store.save(&record, self.send_clock()) {
                     return BrowserDraftSaveOutcome {
                         decision: if error.save_unconfirmed() {
                             BrowserDraftSaveDecision::Unconfirmed { draft_id }
@@ -5473,7 +5593,11 @@ mod tests {
             let mut drafts = self.drafts.lock().unwrap();
             let result = (|| {
                 let draft = if let Some(store) = &self.draft_store {
-                    store.load(&session.record.canonical_username, draft_id, 100)?
+                    store.load(
+                        &session.record.canonical_username,
+                        draft_id,
+                        self.send_clock(),
+                    )?
                 } else {
                     drafts
                         .get(draft_id)
@@ -5492,7 +5616,7 @@ mod tests {
                 }
                 draft.starred = starred;
                 if let Some(store) = &self.draft_store {
-                    store.save(&draft, 100)?;
+                    store.save(&draft, self.send_clock())?;
                 } else {
                     draft.revision = Some(expected_revision + 1);
                     drafts.insert(draft_id.into(), draft);

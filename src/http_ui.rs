@@ -299,6 +299,7 @@ fn shell_icon(name: &str) -> String {
         "dark" => "<path d=\"M16 3a9 9 0 1 0 0 18 10 10 0 0 1 0-18z\"/>",
         "shield" => "<path d=\"M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z\"/><path d=\"m8 12 3 3 5-6\"/>",
         "inbox" => "<path d=\"M4 4h16l2 10v6H2v-6zM2 14h6l2 3h4l2-3h6\"/>",
+        "outbox" => "<path d=\"M3 13v8h18v-8M8 13l4-4 4 4M12 9v9M7 5h10\"/>",
         "sent" => "<path d=\"m3 3 18 9-18 9 4-9zM7 12h14\"/>",
         "archive" => "<rect x=\"3\" y=\"3\" width=\"18\" height=\"5\" rx=\"1\"/><path d=\"M5 8v13h14V8M9 12h6\"/>",
         "bin" => "<path d=\"M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7\"/>",
@@ -396,6 +397,7 @@ pub(crate) fn app_header_with_storage(
         ("compose", "Compose", "/compose", "compose"),
         ("inbox", "Inbox", "/mailbox?name=INBOX", "inbox"),
         ("drafts", "Drafts", "/drafts", "drafts"),
+        ("outbox", "Outbox", "/outbox", "outbox"),
         ("sent", "Sent", "/mailbox/shortcut?kind=sent", "sent"),
         ("contacts", "Contacts", "/contacts", "people"),
         ("folders", "Folders", "/folders", "folders"),
@@ -432,7 +434,7 @@ pub(crate) fn app_header_with_storage(
         "<div class=\"header-search\"><form role=\"search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"scope\" value=\"all\"><label class=\"sr-only\" for=\"global-mail-query\">Search all mail</label><input id=\"global-mail-query\" name=\"q\" type=\"search\" placeholder=\"Search mail…\" maxlength=\"256\" autocomplete=\"off\" accesskey=\"s\" required><button type=\"submit\" aria-label=\"Search mail\">Search</button></form>",
         "<details class=\"global-search-menu\" name=\"toolbar-menu\"><summary title=\"Mail shortcuts\">Shortcuts</summary>",
         "<div class=\"account-menu-panel global-search-panel\">",
-        "<nav aria-label=\"Mail shortcuts\"><h2>Shortcuts</h2><a href=\"/compose\">Compose a message</a><a href=\"/mailbox?name=INBOX\">Open Inbox</a><a href=\"/mailbox/shortcut?kind=sent\">Open Sent</a><a href=\"/mailbox/shortcut?kind=archive\">Open Archive</a><a href=\"/mailbox/shortcut?kind=bin\">Open Bin</a><a href=\"/drafts\">Open Drafts</a><a href=\"/mailboxes\">Browse mailboxes</a><a href=\"/settings\">Open account settings</a></nav></div></details></div>"
+        "<nav aria-label=\"Mail shortcuts\"><h2>Shortcuts</h2><a href=\"/compose\">Compose a message</a><a href=\"/mailbox?name=INBOX\">Open Inbox</a><a href=\"/mailbox/shortcut?kind=sent\">Open Sent</a><a href=\"/mailbox/shortcut?kind=archive\">Open Archive</a><a href=\"/mailbox/shortcut?kind=bin\">Open Bin</a><a href=\"/drafts\">Open Drafts</a> <a href=\"/outbox\">Open Outbox</a><a href=\"/mailboxes\">Browse mailboxes</a><a href=\"/settings\">Open account settings</a></nav></div></details></div>"
     )
     };
     format!(concat!(
@@ -3603,7 +3605,7 @@ fn render_locked_draft_row(
         Some(State::Scheduled { .. }) => (
             "scheduled",
             "Scheduled copy",
-            "Managed in Scheduled messages. You can delete this source copy; the scheduled message is kept.",
+            "Managed in Outbox. You can delete this source copy; the scheduled message is kept.",
             None,
         ),
         _ => (
@@ -3622,11 +3624,11 @@ fn render_locked_draft_row(
     let links = if let Some(State::Scheduled { job_id }) = state {
         if crate::draft::validate_draft_id(job_id).is_ok() {
             format!(
-                "<a href=\"/scheduled?id={}\">View scheduled message</a>",
+                "<a href=\"/outbox?id={}\">View scheduled message</a>",
                 escape_html(job_id)
             )
         } else {
-            "<a href=\"/scheduled\">View scheduled messages</a>".into()
+            "<a href=\"/outbox\">Open Outbox</a>".into()
         }
     } else if let Some(intent) = intent {
         format!("<a href=\"/compose?receipt={}\">View attempt</a><a href=\"/draft?id={}\">Saved version</a>", escape_html(&url_encode(intent)), escape_html(&url_encode(&draft.draft_id)))

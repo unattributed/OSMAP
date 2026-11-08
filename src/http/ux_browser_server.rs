@@ -1,5 +1,6 @@
-// Opt-in test-only browser server. No runtime gateway, mail host, subprocess
-// helper, real credential, message source or operator profile is reachable.
+// Opt-in test-only browser server. Only local scheduler store methods may
+// delegate to the test Runtime gateway; no worker, submission, native helper,
+// real credential or operator profile is reachable.
 use super::*;
 use std::time::Instant;
 
@@ -55,7 +56,10 @@ fn ux_synthetic_browser_server() {
             resend_at: (mode == "pending").then_some(now + 60),
         })
     });
+    let outbox_fixture = std::env::var("OSMAP_UX_FIXTURE_OUTBOX").ok().as_deref() == Some("1");
     let gateway = StubGateway {
+        scheduled_fixture_root: outbox_fixture.then(|| root.clone()),
+        send_journal: if outbox_fixture { crate::send_journal::SendJournal::new(root.join("settings/send-journal")) } else { fixture_send_journal() },
         recovery_snapshot,
         password_result: password_controls.then_some(BrowserPasswordDecision::KnownRefused),
         sent_location_store: (std::env::var("OSMAP_UX_FIXTURE_FOLDER_RENAME").ok().as_deref() == Some("1")).then(|| crate::sent_location::Store::new(root.join("settings"))),
@@ -67,7 +71,7 @@ fn ux_synthetic_browser_server() {
         labels_store: Some(crate::labels::LabelStore::new(
             root.join("settings/labels-v1"),
         )),
-        recovery_root: root.join("send-recovery"),
+        recovery_root: if outbox_fixture { root.join("settings/send-recovery") } else { root.join("send-recovery") },
         contacts_store: Some(crate::contacts::ContactStore::new(
             root.join("settings/contacts-v1"),
         )),

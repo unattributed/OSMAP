@@ -3,6 +3,200 @@ use crate::draft::{DraftPolicy, DraftRecord, DraftRecordInput, DraftStore};
 use crate::mailbox::{MailboxBackendError, MessageAppendBackend, MessageAppendRequest};
 use crate::send::{SubmissionBackend, SubmissionBackendError};
 const ACCOUNT: &str = "alice@example.com";
+#[test]
+fn outbox_trait_dispatch_returns_complete_editable_draft_without_rearming_source() {
+    let f = Fixture::new();
+    let original = f.draft();
+    let source = f.source(&original);
+    let id = f.schedule(&original);
+    let gateway: &dyn BrowserGateway = &f.gateway;
+    assert!(gateway.outbox_attempts(&f.session).unwrap().is_empty());
+    let list = gateway.scheduled_list(&f.session).unwrap();
+    let mut foreign = f.session.clone();
+    foreign.record.canonical_username = "foreign@example.com".into();
+    assert!(gateway
+        .scheduled_change(&foreign, &id, 0, "move_to_drafts", None)
+        .is_err());
+    assert!(matches!(
+        gateway.scheduled_change(&f.session, &id, list.revision + 1, "move_to_drafts", None),
+        Err(Error::Stale)
+    ));
+    let result = gateway
+        .scheduled_change(&f.session, &id, list.revision, "move_to_drafts", None)
+        .unwrap();
+    assert_eq!(result.jobs[0].state, State::Cancelled);
+    let restored = f
+        .gateway
+        .build_draft_store()
+        .load(ACCOUNT, &id, f.now)
+        .unwrap()
+        .unwrap();
+    assert_eq!(composed(&restored), composed(&original));
+    let journal = f.gateway.send_journal();
+    let guard = journal.account_guard(ACCOUNT, f.now).unwrap();
+    assert!(guard.require_unconsumed(&source).is_err());
+    let fresh = guard.draft_intent(&restored).unwrap();
+    guard.require_unconsumed(&fresh).unwrap();
+    assert!(f
+        .gateway
+        .scheduled_store()
+        .claim_next(&guard, f.now + 3601)
+        .unwrap()
+        .is_none());
+}
+
+#[test]
+fn outbox_transfer_collision_stops_schedule_and_never_overwrites_existing_draft() {
+    let f = Fixture::new();
+    let original = f.draft();
+    let id = f.schedule(&original);
+    let mut collision = f.draft();
+    collision.draft_id = id.clone();
+    collision.revision = None;
+    collision.request.body = "Preserve independently edited draft".into();
+    f.gateway
+        .build_draft_store()
+        .save(&collision, f.now)
+        .unwrap();
+    let list = f.gateway.scheduled_list_impl(&f.session).unwrap();
+    assert!(matches!(
+        f.gateway
+            .scheduled_change_impl(&f.session, &id, list.revision, "move_to_drafts", None),
+        Err(Error::Stale)
+    ));
+    let list = f.gateway.scheduled_list_impl(&f.session).unwrap();
+    assert_eq!(list.jobs[0].state, State::ReturningToDraft);
+    let saved = f
+        .gateway
+        .build_draft_store()
+        .load(ACCOUNT, &id, f.now)
+        .unwrap()
+        .unwrap();
+    assert_eq!(saved.request.body, collision.request.body);
+    assert_eq!(
+        f.gateway.scheduled_payload_impl(&f.session, &id).unwrap(),
+        composed(&original)
+    );
+}
+
+#[test]
+fn outbox_send_now_updates_due_time_but_preserves_snapshot_and_worker_authority() {
+    let f = Fixture::new();
+    let draft = f.draft();
+    let id = f.schedule(&draft);
+    let list = f.gateway.scheduled_list_impl(&f.session).unwrap();
+    let changed = BrowserGateway::scheduled_change(
+        &f.gateway,
+        &f.session,
+        &id,
+        list.revision,
+        "send_now",
+        None,
+    )
+    .unwrap();
+    assert_eq!(changed.jobs[0].state, State::Pending);
+    assert!(changed.jobs[0].due_at <= SystemTimeProvider.unix_timestamp() + 1);
+    assert_eq!(
+        f.gateway.scheduled_payload_impl(&f.session, &id).unwrap(),
+        composed(&draft)
+    );
+    assert!(matches!(
+        BrowserGateway::scheduled_change(
+            &f.gateway,
+            &f.session,
+            &id,
+            list.revision,
+            "delete",
+            None
+        ),
+        Err(Error::Stale)
+    ));
+}
+#[test]
+fn outbox_interrupted_transfer_resumes_exact_destination_without_overwriting() {
+    let f = Fixture::new();
+    let original = f.draft();
+    let id = f.schedule(&original);
+    let journal = f.gateway.send_journal();
+    {
+        let guard = journal.account_guard(ACCOUNT, f.now).unwrap();
+        let store = f.gateway.scheduled_store();
+        let list = store.list(&guard, f.now).unwrap();
+        store
+            .prepare_return_to_draft(&guard, list.revision, &id, f.now)
+            .unwrap();
+    }
+    let mut destination = original.clone();
+    destination.draft_id = id.clone();
+    destination.revision = None;
+    let drafts = f.gateway.build_draft_store();
+    drafts.save(&destination, f.now).unwrap();
+    let before = drafts.load(ACCOUNT, &id, f.now).unwrap().unwrap();
+    let reopened = RuntimeBrowserGateway::for_test(&f.root);
+    let list = BrowserGateway::scheduled_list(&reopened, &f.session).unwrap();
+    let result = BrowserGateway::scheduled_change(
+        &reopened,
+        &f.session,
+        &id,
+        list.revision,
+        "move_to_drafts",
+        None,
+    )
+    .unwrap();
+    assert_eq!(result.jobs[0].state, State::Cancelled);
+    assert!(BrowserGateway::scheduled_payload(&reopened, &f.session, &id).is_err());
+    let after = drafts.load(ACCOUNT, &id, f.now).unwrap().unwrap();
+    assert_eq!(before.revision, after.revision);
+    assert_eq!(composed(&after), composed(&original));
+}
+
+#[test]
+fn outbox_full_drafts_retains_transfer_payload_and_never_dispatches() {
+    let f = Fixture::new();
+    let original = f.draft();
+    let id = f.schedule(&original);
+    for _ in 0..DraftPolicy::default().max_drafts_per_user {
+        f.draft();
+    }
+    let list = BrowserGateway::scheduled_list(&f.gateway, &f.session).unwrap();
+    assert!(matches!(
+        BrowserGateway::scheduled_change(
+            &f.gateway,
+            &f.session,
+            &id,
+            list.revision,
+            "move_to_drafts",
+            None
+        ),
+        Err(Error::Capacity)
+    ));
+    assert_eq!(
+        BrowserGateway::scheduled_list(&f.gateway, &f.session)
+            .unwrap()
+            .jobs[0]
+            .state,
+        State::ReturningToDraft
+    );
+    assert_eq!(
+        BrowserGateway::scheduled_payload(&f.gateway, &f.session, &id).unwrap(),
+        composed(&original)
+    );
+    assert!(f
+        .gateway
+        .build_draft_store()
+        .load(ACCOUNT, &id, f.now)
+        .unwrap()
+        .is_none());
+    let journal = f.gateway.send_journal();
+    let guard = journal.account_guard(ACCOUNT, f.now).unwrap();
+    assert!(f
+        .gateway
+        .scheduled_store()
+        .claim_next(&guard, f.now + 3601)
+        .unwrap()
+        .is_none());
+}
+
 struct Fixture {
     root: std::path::PathBuf,
     gateway: RuntimeBrowserGateway,
@@ -53,7 +247,7 @@ impl Fixture {
         }
     }
     fn draft(&self) -> DraftRecord {
-        let draft = DraftRecord::new(
+        let mut draft = DraftRecord::new(
             DraftPolicy::default(),
             DraftRecordInput {
                 draft_id: crate::draft::generate_draft_id().unwrap(),
@@ -64,11 +258,24 @@ impl Fixture {
                 bcc_text: "private@example.com".into(),
                 subject: "Original scheduled subject".into(),
                 body: "Exact captured source".into(),
-                attachments: vec![],
+                attachments: vec![crate::send::UploadedAttachment::new(
+                    ComposePolicy::default(),
+                    "snapshot.bin",
+                    "application/octet-stream",
+                    vec![0, 255, 10, 99],
+                )
+                .unwrap()],
                 source_attachments: None,
             },
         )
         .unwrap();
+        draft.request.body_format = crate::compose_format::BodyFormat::Formatted;
+        draft.request.reply_thread = Some(
+            crate::reply_thread::ReplyThread::from_original(
+                "Message-ID: <parent@example.test>\nReferences: <root@example.test>\n",
+            )
+            .unwrap(),
+        );
         let store = self.gateway.build_draft_store();
         store.save(&draft, self.now).unwrap();
         store

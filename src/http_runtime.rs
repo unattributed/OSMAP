@@ -379,7 +379,9 @@ where
                 self.handle_appearance_update(request, &context)
             }
             (HttpMethod::Get, "/snoozed") => self.handle_snoozed(request, &context),
-            (HttpMethod::Get, "/scheduled") => self.handle_scheduled(request, &context),
+            (HttpMethod::Get, "/outbox") | (HttpMethod::Get, "/scheduled") => {
+                self.handle_scheduled(request, &context)
+            }
             (HttpMethod::Get, "/scheduled/new") => self.handle_scheduled_new(request, &context),
             (HttpMethod::Post, "/scheduled/create") => {
                 self.handle_scheduled_create(request, &context)

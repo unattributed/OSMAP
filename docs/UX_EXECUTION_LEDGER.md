@@ -1,4 +1,6 @@
-2026-11-07 — **Unsaved Compose navigation correction installed; final independent review GO, publication and owner UAT pending.** Compose now offers Save draft, Discard changes and Keep editing before same-window navigation. Existing Rust multipart save and native reload/close warning retained. Actual synthetic browser14 PASS; local/native focused2 PASS; exact Web-only install41 and read-only account readiness41 PASS, with public mail/helper/account/GPG/config preserved and no owner-message mutation. Source41 mainaefd27a5. Correct ownership is original S03-02, tracked as an S08 UAT blocker; unchanged historical obligations are not freshly requalified. Prior scoped acceptance and the three remaining S08 checks are unchanged. See UX_SLICE_S08_03.md. Full repository security-check PASS (security41.log, exit0); the owner reports Signing ready, so ordinary signed delivery can resume.
+2026-11-08 — **Outbox installed; engineering PASS, owner UAT pending.** Shared navigation places Outbox between Drafts and Sent. Existing Rust scheduler, journal and Drafts support state-specific edit, send now, return to Drafts and delete/cancel, while claimed or uncertain submissions remain protected against duplicate sends. Native43 tests10 PASS, real synthetic desktop/mobile browser8 PASS, exact Web-only install43 and read-only readiness43 PASS. Isolated security-check and bounded remaining V10-V13 gates PASS; prior failures retained. Public mail/helper/account/GPG/configuration and owner messages/jobs are preserved. Independent source/installation/combined gate review GO. Ordinary signed delivery remains mandatory before handoff; final Git history and fresh-fetch receipt establish publication. Owner Outbox UAT is NOT_RUN. See UX_SLICE_S08_03.md. Previous scoped S08 acceptance is preserved; Documents remains removed.
+
+2026-11-07 — **Unsaved Compose navigation correction installed and published.** Signed commit `991494f43a035902bc027993b83e837cc67bd997` is the Outbox source baseline. Existing synthetic browser14, local/native focused2, Web-only install41, read-only readiness41 and independent review GO remain scoped evidence. Owner Compose navigation acceptance remains separate; whole S08 is not accepted.
 
 2026-11-07 (Asia/Bangkok) — **S08-02 visible-label correction UAT ACCEPTED / PASS.** Owner explicitly states “UAT = PASS” after the “better” screenshot showing the compact reader label icon and cpc-contracts in the message list and reader. Earlier creation and assignment observations and completed local/native26, browser, installed40 and independent review evidence are reused. Product7d8dac3 and source-inventoryac0c0db were published through normal gates. Separate manual rename/delete/remove substeps are not individually asserted. Prior failed UAT and other scoped PASS results remain recorded; remaining S08-03 checks and whole-sprint acceptance are unchanged. Documents remains removed. Acceptance-only documentation; no runtime or mailbox changes.
 
@@ -25,6 +27,253 @@
 2026-11-05 — **S08-03 saved-timezone follow-up UAT_READY.** Use saved OSMAP timezone for scheduling; fix confirmed retired drafts incorrectly labelled Paused. Earlier owner schedules remain untouched; no pre-due dispatch failure established. Documents stays removed.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S08-03",
+  "original_requirement": "Expose scheduled and retained unsent submissions in a discoverable Outbox between Drafts and Sent, with safe state-specific controls.",
+  "source_baseline": "991494f43a035902bc027993b83e837cc67bd997",
+  "state": "UAT_READY",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root"
+    ],
+    "qa": [
+      "/root/outbox_review"
+    ],
+    "security_review": [
+      "/root/outbox_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/UX_SLICE_S08_03.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-claims-boundary.json",
+    "src/scheduled_send.rs",
+    "src/scheduled_ui.rs",
+    "src/http/routes_scheduled.rs",
+    "src/http_browser.rs",
+    "src/http_gateway.rs",
+    "src/http_gateway_scheduled.rs",
+    "src/send_recovery.rs",
+    "src/http_runtime.rs",
+    "src/http_ui.rs",
+    "src/http/compose_delivery_ui.rs",
+    "src/http_gateway_scheduled_tests.rs",
+    "src/scheduled_send_tests.rs",
+    "src/http_ui_state_tests.rs",
+    "src/http/scheduled_tests.rs",
+    "src/http.rs",
+    "src/http/ux_browser_server.rs",
+    "tests/v4_hostile_assurance.rs",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "maint/security/v10-rust-assumption-audit.json"
+  ],
+  "outcomes": [
+    {
+      "id": "S08-outbox",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX07-001"
+      ],
+      "frontend_backend_outcome": "Expose scheduled and retained unsent submissions in a discoverable Outbox between Drafts and Sent, with safe state-specific controls.",
+      "essential_qa": "Rust state/Runtime/browser tests; no actual test mail; preserve owner jobs; no mail-stack configuration change.",
+      "next_action": "Ordinary signed Git delivery, then owner focused Outbox UAT.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS"
+      },
+      "evidence": [
+        {
+          "reference": "docs/UX_SLICE_S08_03.md",
+          "result": "Native43, browser2, install43, readiness43, isolated security-check and remaining-gates2 PASS; independent review GO. Owner UAT NOT_RUN."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Expose scheduled and retained unsent submissions in a discoverable Outbox between Drafts and Sent, with safe state-specific controls.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Previous accepted storage work order preserved below; owner reopened labels S08-02. Independent assessment confirms existing routes suffice and local Drafts lack native message identities. Preserve cumulative prior failures and other scoped PASS results. Normal publication failure retained in labels-20261106/push.log and slice specification: finite shell icon budget mismatch corrected after independent review; focused hostile integration2PASS0FAIL. Installed signed epoch readiness38PASS without credential or TOTP submission. Second ordinary publication failure retained in push-retest.log: four added low-relevance test assumptions require existing generated current inventory refresh; historical baseline/high0/medium3 unchanged. Existing V10/V11 focused gate PASS; combined independent reassessment requested before next full ordinary gate. Combined independent reassessment GO for both narrow gate corrections; ordinary full hooks remain mandatory and owner label reacceptance pending. Prior accepted labels work order archived verbatim below. New failure: owner navigation lacks save/discard choice; baseline actual browser observes only beforeunload. Evidence compose-navigation-20261107/baseline/result.json. No prior success authorizes whole S08 acceptance. Scope declaration repaired to original S03-02; prior accepted labels object remains verbatim below. Navigation failure/retests and combined independent reassessment retained in docs/UX_SLICE_S08_03.md 2026-11-07 section. Historical attempt durations are not reconstructed. Outbox is a new authorized S08-03 follow-up; prior Compose contract archived below. Historical cumulative durations remain unknown; no investigation allowance reset.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 7200,
+      "started_at": "2026-11-07T06:20:00Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
+    },
+    "attempts": []
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S08-03",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_03.md",
+      "sha256": "b82600aa7bbde82985fe229a37b4bf1b1cbabdbe0ca94f2a4b076a97d461c4ac"
+    },
+    "design": {
+      "journey": "Expose scheduled and retained unsent submissions in a discoverable Outbox between Drafts and Sent, with safe state-specific controls.",
+      "frontend": "Shared Outbox navigation and state-specific controls, separate submission history.",
+      "backend": "Reuse scheduler, send journal, recovery and draft stores.",
+      "interfaces": "GET /outbox; existing strict POST /scheduled/change with CSRF and revisions.",
+      "persistence": "Durable ReturningToDraft transition and exact deterministic draft destination before source retirement.",
+      "security": "Account isolation, CAS, current worker authorization and no resend of claimed or unknown attempts.",
+      "failure_recovery": "Retain source payload on transfer refusal; resume interrupted transfer without overwriting changed drafts; retained Web rollback."
+    },
+    "tests": [
+      {
+        "id": "outbox-source",
+        "outcome_ids": [
+          "S08-outbox"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Reviewed Rust scheduler and existing synthetic fixtures.",
+        "action": "Exercise Runtime forwarding, exact payload transfer, send-now reauthorization and retained attempts.",
+        "expected": "Exact account-specific state and content, no SMTP call.",
+        "preserved": "Account isolation, revisions, no ambiguous retry, owner jobs and prior acceptance.",
+        "owner": "/root",
+        "reviewer": "/root/outbox_review",
+        "status": "PASS",
+        "evidence": [
+          {
+            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108",
+            "result": "Existing Rust tests and isolated security-check PASS; native43.log ten changed-boundary tests PASS."
+          }
+        ]
+      },
+      {
+        "id": "outbox-refusals",
+        "outcome_ids": [
+          "S08-outbox"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Reviewed Rust scheduler and existing synthetic fixtures.",
+        "action": "Exercise foreign/stale/CSRF, capacity, interrupted transfer and claimed or unknown mutations.",
+        "expected": "Refuse invalid actions; retain recoverable payload; no rearmed source or duplicate send.",
+        "preserved": "Account isolation, revisions, no ambiguous retry, owner jobs and prior acceptance.",
+        "owner": "/root",
+        "reviewer": "/root/outbox_review",
+        "status": "PASS",
+        "evidence": [
+          {
+            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108",
+            "result": "native43.log: account/revision/CSRF, interrupted return, quota/collision and no claimed/unknown resend regressions PASS."
+          }
+        ]
+      },
+      {
+        "id": "outbox-browser",
+        "outcome_ids": [
+          "S08-outbox"
+        ],
+        "kind": "usability",
+        "level": "source",
+        "prerequisites": "Reviewed Rust scheduler and existing synthetic fixtures.",
+        "action": "Exercise shared navigation and real synthetic Outbox forms with keyboard and pointer.",
+        "expected": "Discoverable, operable controls and understandable statuses.",
+        "preserved": "Account isolation, revisions, no ambiguous retry, owner jobs and prior acceptance.",
+        "owner": "/root",
+        "reviewer": "/root/outbox_review",
+        "status": "PASS",
+        "evidence": [
+          {
+            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108",
+            "result": "browser2/result.json: eight actual synthetic Edge desktop/mobile checks PASS; no external SMTP."
+          }
+        ]
+      },
+      {
+        "id": "outbox-native",
+        "outcome_ids": [
+          "S08-outbox"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Reviewed Rust scheduler and existing synthetic fixtures.",
+        "action": "Build exact reviewed source and run changed-boundary Rust tests on obsd1.",
+        "expected": "Matching build and focused tests pass.",
+        "preserved": "Account isolation, revisions, no ambiguous retry, owner jobs and prior acceptance.",
+        "owner": "/root",
+        "reviewer": "/root/outbox_review",
+        "status": "PASS",
+        "evidence": [
+          {
+            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108",
+            "result": "native43.log: ten PASS, zero failed/ignored; exact source43 archive and main/test hashes in specification."
+          }
+        ]
+      },
+      {
+        "id": "outbox-installed",
+        "outcome_ids": [
+          "S08-outbox"
+        ],
+        "kind": "recovery",
+        "level": "deployed",
+        "prerequisites": "Reviewed Rust scheduler and existing synthetic fixtures.",
+        "action": "Install matching Web binary with rollback; verify read-only admission and preserved services/configuration.",
+        "expected": "Exact loaded binary and available login; no owner mailbox or mail-stack change.",
+        "preserved": "Account isolation, revisions, no ambiguous retry, owner jobs and prior acceptance.",
+        "owner": "/root",
+        "reviewer": "/root/outbox_review",
+        "status": "PASS",
+        "evidence": [
+          {
+            "reference": "/home/foo/Downloads/osmap-ux-s08/completion-20261104/outbox-20261108",
+            "result": "install43.log and readiness43.log: loaded Web hash matches, nine roles/login/read-only admission PASS; owner jobs/config/services preserved."
+          }
+        ]
+      },
+      {
+        "id": "outbox-owner",
+        "outcome_ids": [
+          "S08-outbox"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Reviewed Rust scheduler and existing synthetic fixtures.",
+        "action": "Review Outbox, schedule a test, edit or return it to Drafts and cancel before sending.",
+        "expected": "Owner explicitly accepts the Outbox controls.",
+        "preserved": "Account isolation, revisions, no ambiguous retry, owner jobs and prior acceptance.",
+        "owner": "/root",
+        "reviewer": "/root/outbox_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "All nonhuman changed-boundary tests, installed validation, independent review and ordinary signed delivery pass.",
+    "human_exit": "Owner focused Outbox UAT; whole S08 acceptance remains separate."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner requested visible Outbox and unsent controls on 2026-11-08."
+  },
+  "next_action": "Ordinary signed Git delivery, then owner focused Outbox UAT.",
+  "independent_next_action": "Final public-safe source/delivery review by /root/outbox_review; preserve earlier failed results and owner UAT NOT_RUN."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+2026-11-08 — Previous Compose navigation work order preserved before Outbox follow-up:
 ```json
 {
   "version": 1,
@@ -318,7 +567,6 @@
   "independent_next_action": "Final independent review GO; unchanged ordinary hooks and signed remote-equality verification remain mandatory."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
 
 2026-11-07 — Archived accepted label correction work order before Compose navigation follow-up:
 ```json

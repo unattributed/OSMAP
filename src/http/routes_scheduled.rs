@@ -35,9 +35,9 @@ fn due(
 fn details(error: Error) -> (u16, &'static str, &'static str) {
     match error {
         Error::Invalid => (400,"Bad Request","Check the message and choose a future time in your saved OSMAP timezone within 30 days."),
-        Error::NotFound => (404,"Not Found","This account's scheduled message is no longer available. Reload Scheduled messages."),
+        Error::NotFound => (404,"Not Found","This account's scheduled message is no longer available. Reload Outbox."),
         Error::Stale => (409,"Conflict","The saved message or OSMAP timezone changed, or this message can no longer be edited. Reload before another change."),
-        Error::Capacity => (409,"Conflict","Scheduled storage is full: up to 20 active messages and 50 MiB per account. Cancel an unsubmitted message before adding another."),
+        Error::Capacity => (409,"Conflict","The saved-message or Drafts storage limit was reached. Free space before another change. If a return to Drafts was started, sending remains stopped; resume it from Outbox."),
         _ => (503,"Service Unavailable","The scheduled result could not be confirmed. Reload the saved list before another action; do not repeat an uncertain submission."),
     }
 }
@@ -63,7 +63,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             response: html_response(
                 status,
                 reason,
-                "Scheduled messages",
+                "Outbox",
                 crate::scheduled_ui::render_list(
                     &session.record.canonical_username,
                     &session.record.csrf_token,
@@ -105,6 +105,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             return self.scheduled_error(&session, audit_events, Error::NotFound);
         }
         let display = self.scheduled_display(&session);
+        let attempts = self.gateway.outbox_attempts(&session).ok();
         let mut payload_error = None;
         let payload = match job {
             Some(j)
@@ -135,8 +136,8 @@ impl<G: BrowserGateway> BrowserApp<G> {
             response: html_response(
                 status,
                 reason,
-                "Scheduled messages",
-                crate::scheduled_ui::render_list(
+                "Outbox",
+                crate::scheduled_ui::render_outbox(
                     &session.record.canonical_username,
                     &session.record.csrf_token,
                     Some(&list),
@@ -144,6 +145,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     payload.as_ref(),
                     copy,
                     display,
+                    attempts.as_deref(),
                 ),
             ),
             audit_events,
@@ -330,7 +332,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                         .map(String::as_str)
                         .ok_or(Error::Invalid)?;
                     let due_at = match action {
-                        "cancel" => {
+                        "cancel" | "delete" | "send_now" | "move_to_drafts" => {
                             exact(&fields, &["csrf_token", "id", "revision", "action"])?;
                             None
                         }
@@ -375,8 +377,14 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     303,
                     "See Other",
                     &selected
-                        .map(|id| format!("/scheduled?id={id}"))
-                        .unwrap_or_else(|| "/scheduled".into()),
+                        .map(|id| {
+                            if fields.get("action").map(String::as_str) == Some("move_to_drafts") {
+                                format!("/draft?id={id}")
+                            } else {
+                                format!("/outbox?id={id}")
+                            }
+                        })
+                        .unwrap_or_else(|| "/outbox".into()),
                 ),
                 audit_events,
             },

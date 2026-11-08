@@ -44,6 +44,7 @@ fn label(state: State) -> &'static str {
         State::Staged => "Save not yet confirmed",
         State::Pending => "Scheduled",
         State::Blocked => "Needs your attention",
+        State::ReturningToDraft => "Returning to Drafts — sending stopped",
         State::Claimed => "Submission in progress",
         State::Unknown => "Submission result unknown",
         State::Submitted => "Submitted",
@@ -74,7 +75,7 @@ fn time_input(display: Display, value: u64, context: &str) -> String {
     format!("<label for=scheduled-due-{context}>Send at ({})</label><input id=scheduled-due-{context} name=due_at type=datetime-local step=60 min=\"{min}\" max=\"{max}\" value=\"{value}\" required>{}<p>Current time in your saved OSMAP timezone: {} {}. Fixed offsets do not automatically adjust for daylight saving.</p>",offset.label(),hidden("timezone_offset",&offset.as_str()),current.replace('T'," "),offset.label())
 }
 fn shell(account: &str, csrf: &str, title: &str, body: String) -> TrustedHtml {
-    TrustedHtml::from_template(format!("{}<main id=main-content class=\"page-shell scheduled-page\" tabindex=-1><div class=page-intro><h1>{title}</h1><p>Saved messages awaiting their scheduled send checks.</p></div>{body}<nav><a href=\"/scheduled\">Scheduled messages</a> · <a href=\"/drafts\">Drafts</a> · <a href=\"/compose\">Compose</a></nav></main>",crate::http_ui::app_header(account,csrf,"scheduled")))
+    TrustedHtml::from_template(format!("{}<main id=main-content class=\"page-shell scheduled-page\" tabindex=-1><div class=page-intro><h1>{title}</h1><p>Manage scheduled messages and send attempts that need attention.</p></div>{body}<nav><a href=\"/outbox\">Outbox</a> · <a href=\"/drafts\">Drafts</a> · <a href=\"/compose\">Compose</a></nav></main>",crate::http_ui::app_header(account,csrf,"outbox")))
 }
 fn field(name: &str, title: &str, value: &str) -> String {
     format!("<label for=scheduled-{name}>{title}</label><input id=scheduled-{name} name={name} value=\"{}\">",escape_html(value))
@@ -112,6 +113,19 @@ pub(crate) fn render_list(
     error: Option<&str>,
     display: Display,
 ) -> TrustedHtml {
+    render_outbox(account, csrf, list, selected, payload, error, display, None)
+}
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn render_outbox(
+    account: &str,
+    csrf: &str,
+    list: Option<&JobList>,
+    selected: Option<&JobView>,
+    payload: Option<&ComposeRequest>,
+    error: Option<&str>,
+    display: Display,
+    attempts: Option<&[crate::send_recovery::OutboxAttempt]>,
+) -> TrustedHtml {
     let now = display.now;
     let mut body = String::new();
     if let Some(error) = error {
@@ -127,23 +141,51 @@ pub(crate) fn render_list(
             .iter()
             .filter(|j| !matches!(j.state, State::Submitted | State::Cancelled | State::Failed))
             .count();
-        body.push_str(&format!("<p>{active} active messages. Status reflects this page load; refresh for changes.</p><table><thead><tr><th scope=col>Message</th><th scope=col>Send time</th><th scope=col>Status</th><th scope=col>Actions</th></tr></thead><tbody>"));
-        for job in &list.jobs {
-            body.push_str(&format!("<tr><td>{}</td><td><time datetime=\"{}\">{}</time></td><td>{}</td><td><a href=\"/scheduled?id={}\">View message</a>",escape_html(if job.subject.is_empty(){"(No subject)"}else{&job.subject}),crate::logging::format_unix_timestamp_utc(job.due_at),escape_html(&shown_date(job.due_at,display)),label(job.state),escape_html(&job.id)));
-            if editable(job.state) || job.state == State::Staged {
-                body.push_str(&format!("<form method=post action=\"/scheduled/change\">{}{}{}<button class=secondary name=action value=cancel>Cancel</button></form>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string())));
+        body.push_str(&format!(
+            "<p>{active} active messages. Status reflects this page load; refresh for changes.</p>"
+        ));
+        for history in [false, true] {
+            if history {
+                body.push_str("<details><summary>Completed and cancelled messages</summary>");
             }
-            body.push_str("</td></tr>");
+            body.push_str("<table><thead><tr><th scope=col>Message</th><th scope=col>Send time</th><th scope=col>Status</th><th scope=col>Actions</th></tr></thead><tbody>");
+            let mut rows = 0;
+            for job in list.jobs.iter().filter(|j| {
+                matches!(j.state, State::Submitted | State::Cancelled | State::Failed) == history
+            }) {
+                rows += 1;
+                body.push_str(&format!("<tr><td>{}</td><td><time datetime=\"{}\">{}</time></td><td>{}</td><td><a href=\"/outbox?id={}\">View message and controls</a>",escape_html(if job.subject.is_empty(){"(No subject)"}else{&job.subject}),crate::logging::format_unix_timestamp_utc(job.due_at),escape_html(&shown_date(job.due_at,display)),label(job.state),escape_html(&job.id)));
+                if editable(job.state) || job.state == State::Staged {
+                    body.push_str(&format!("<form method=post action=\"/scheduled/change\">{}{}{}<button class=secondary name=action value=cancel>Cancel</button></form>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string())));
+                }
+                body.push_str("</td></tr>");
+            }
+            if rows == 0 {
+                body.push_str(if history {"<tr><td colspan=4>No retained history.</td></tr>"} else {"<tr><td colspan=4>No scheduled messages. Use Schedule in Compose to save a message and choose its send time.</td></tr>"});
+            }
+            body.push_str("</tbody></table>");
+            if history {
+                body.push_str("</details>");
+            }
         }
-        if list.jobs.is_empty() {
-            body.push_str("<tr><td colspan=4>No scheduled messages. Use Schedule in Compose to save a message and choose its send time.</td></tr>");
-        }
-        body.push_str("</tbody></table>");
     } else {
         body.push_str("<p>Scheduled messages could not be loaded. Their current state has not been confirmed.</p>");
     }
     body.push_str(limits());
     body.push_str("</section>");
+    body.push_str("<section class=panel><h2>Send attempts needing attention</h2>");
+    match attempts {
+        Some([]) => body.push_str("<p>No retained send attempts need attention.</p>"),
+        Some(attempts) => {
+            body.push_str("<table><thead><tr><th scope=col>Message</th><th scope=col>Attempted</th><th scope=col>Status</th><th scope=col>Actions</th></tr></thead><tbody>");
+            for attempt in attempts {
+                body.push_str(&format!("<tr><td>{}</td><td>{}</td><td>{}</td><td><a href=\"/compose?receipt={}\">Review send result</a></td></tr>", escape_html(if attempt.subject.is_empty() {"(No subject)"} else {&attempt.subject}), escape_html(&shown_date(attempt.created_at, display)), escape_html(attempt.status), escape_html(&attempt.intent)));
+            }
+            body.push_str("</tbody></table>");
+        }
+        None => body.push_str("<p>Retained send attempts could not be loaded. Their current state has not been confirmed.</p>"),
+    }
+    body.push_str("<p>Review an uncertain result before creating another send. Submission acceptance is separate from recipient delivery; this page does not inspect the mail server's delivery queue.</p></section>");
     if let (Some(list), Some(job)) = (list, selected) {
         body.push_str(&format!("<section class=panel><h2>Saved message</h2><p>Status: <strong>{}</strong>. Send time: {}.</p>",label(job.state),escape_html(&shown_date(job.due_at,display))));
         if let Some(r) = job.reason {
@@ -160,7 +202,12 @@ pub(crate) fn render_list(
             ));
             body.push_str(&format!("<p>Saved protection choices: signing {}; encryption {}; include your key for encrypted access {}. Current account and recipient policies are checked again before sending.</p>",if p.protection.sign{"requested"}else{"not requested"},if p.protection.encrypt{"requested"}else{"not requested"},if p.protection.encrypt_to_self{"yes"}else{"no"}));
             if editable(job.state) {
-                body.push_str(&format!("<details><summary>Edit message or send time</summary><form method=post action=\"/scheduled/edit\">{}{}{}{}{}{}{}<label for=scheduled-body>Message text (saved format: {})</label><textarea id=scheduled-body name=body rows=12 required>{}</textarea>{}<p>Saved attachments, sender, message format, reply headers and protection choices are preserved. Change attachments or those choices by cancelling this job and composing a new message.</p><button>Save scheduled message</button></form></details>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string()),field("to","To",&p.recipients.join(", ")),field("cc","Cc",&p.cc_recipients.join(", ")),field("bcc","Bcc",&p.bcc_recipients.join(", ")),field("subject","Subject",&p.subject),escape_html(p.body_format.as_str()),escape_html(&p.body),time_input(display,job.due_at,"edit")));
+                body.push_str(&format!("<details><summary>Edit message or send time</summary><form method=post action=\"/scheduled/edit\">{}{}{}{}{}{}{}<label for=scheduled-body>Message text (saved format: {})</label><textarea id=scheduled-body name=body rows=12 required>{}</textarea>{}<p>Saved attachments, sender, message format, reply headers and protection choices are preserved. Return to Drafts to change attachments or protection choices.</p><button>Save scheduled message</button></form></details>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string()),field("to","To",&p.recipients.join(", ")),field("cc","Cc",&p.cc_recipients.join(", ")),field("bcc","Bcc",&p.bcc_recipients.join(", ")),field("subject","Subject",&p.subject),escape_html(p.body_format.as_str()),escape_html(&p.body),time_input(display,job.due_at,"edit")));
+                for (action, title, explanation) in [
+                    ("send_now", "Send now", "Submit this saved message as soon as the worker checks it. Current keys, authorization and protection policy must still pass."),
+                    ("move_to_drafts", "Return to Drafts", "Stop this schedule and move its complete saved message into an editable draft. Nothing is sent."),
+                    ("delete", "Delete unsent message", "Cancel this schedule and delete its saved message content. A status record is retained; this cannot recall a message already submitted."),
+                ] { body.push_str(&confirm_action(csrf, list.revision, &job.id, action, title, explanation)); }
             }
         } else {
             body.push_str(if now>=job.payload_expires_at {"<p>Saved message content is unavailable because its fixed 60-day lifetime expired. The confirmed submission status above remains available.</p>"} else if matches!(job.state,State::Submitted|State::Cancelled|State::Failed) {"<p>Message content is no longer retained for this terminal entry.</p>"} else {"<p>Saved message content could not be loaded. Its confirmed status is shown above; reload before another action.</p>"});
@@ -171,20 +218,125 @@ pub(crate) fn render_list(
         if job.state == State::Staged {
             body.push_str("<p>This incomplete entry is not scheduled and will not dispatch. Cancel it from the list to release its saved-message space, then return to Compose.</p>");
         }
+        if job.state == State::ReturningToDraft {
+            body.push_str("<p>Sending is stopped. Complete the interrupted return to Drafts; the saved Outbox content is retained until the draft is confirmed.</p>");
+            body.push_str(&format!("<p>If the draft was already saved, <a href=\"/draft?id={}\">open the returned draft</a>. A changed draft is kept and will not be overwritten.</p>", escape_html(&job.id)));
+            body.push_str(&confirm_action(csrf, list.revision, &job.id, "move_to_drafts", "Resume return to Drafts", "Confirm the saved draft, then finish retiring this schedule. An existing changed draft is never overwritten."));
+        }
         if matches!(job.state, State::Claimed | State::Unknown) {
             body.push_str("<p>This submission cannot be edited, cancelled or restarted. Its existing journal receipt must be reconciled; no automatic resend is performed.</p>");
+            if let Some(intent) = &job.intent {
+                body.push_str(&format!(
+                    "<a href=\"/compose?receipt={}\">Review send result</a>",
+                    escape_html(intent)
+                ));
+            }
         }
         if job.state == State::Submitted {
             body.push_str("<p>The mail submission was accepted. This does not confirm delivery to the recipient.</p>");
         }
         body.push_str("</section>");
     }
-    shell(account, csrf, "Scheduled messages", body)
+    shell(account, csrf, "Outbox", body)
+}
+
+fn confirm_action(
+    csrf: &str,
+    revision: u64,
+    id: &str,
+    action: &str,
+    title: &str,
+    explanation: &str,
+) -> String {
+    format!("<details><summary>{title}</summary><p>{explanation}</p><form method=post action=\"/scheduled/change\">{}{}{}<button name=action value={action}>Confirm: {title}</button></form></details>",hidden("csrf_token",csrf),hidden("id",id),hidden("revision",&revision.to_string()))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn outbox_controls_are_state_bound_and_navigation_is_discoverable() {
+        let payload = crate::send::ComposeRequest::new(
+            crate::send::ComposePolicy::default(),
+            "bob@example.test",
+            "subject",
+            "body",
+        )
+        .unwrap();
+        for state in [
+            State::Pending,
+            State::Blocked,
+            State::ReturningToDraft,
+            State::Claimed,
+            State::Unknown,
+            State::Submitted,
+            State::Cancelled,
+        ] {
+            let job = job(state);
+            let list = JobList {
+                revision: 3,
+                jobs: vec![job.clone()],
+            };
+            let html = render_outbox(
+                "alice@example.test",
+                "csrf",
+                Some(&list),
+                Some(&job),
+                Some(&payload),
+                None,
+                Display {
+                    now: 100,
+                    offset: None,
+                },
+                Some(&[]),
+            );
+            for action in ["send_now", "delete"] {
+                assert_eq!(
+                    html.contains(&format!("value={action}>")),
+                    matches!(state, State::Pending | State::Blocked)
+                );
+            }
+            assert_eq!(
+                html.contains("value=move_to_drafts>"),
+                matches!(
+                    state,
+                    State::Pending | State::Blocked | State::ReturningToDraft
+                )
+            );
+            let draft = html.find("href=\"/drafts\"").unwrap();
+            let outbox = html.find("href=\"/outbox\"").unwrap();
+            let sent = html.find("href=\"/mailbox/shortcut?kind=sent\"").unwrap();
+            assert!(draft < outbox && outbox < sent);
+        }
+    }
+    #[test]
+    fn outbox_attempts_escape_subject_and_separate_uncertainty_from_delivery() {
+        let attempt = crate::send_recovery::OutboxAttempt {
+            intent: "a".repeat(64),
+            subject: "<script>bad</script>".into(),
+            created_at: 100,
+            status: "Submission result unknown",
+        };
+        let html = render_outbox(
+            "alice@example.test",
+            "csrf",
+            None,
+            None,
+            None,
+            None,
+            Display {
+                now: 100,
+                offset: None,
+            },
+            Some(&[attempt]),
+        );
+        assert!(html.contains("&lt;script&gt;bad&lt;/script&gt;") && !html.contains("<script>bad"));
+        assert!(
+            html.contains("Review send result")
+                && html.contains("does not inspect the mail server")
+        );
+        assert!(!html.contains("Confirm: Send now"));
+    }
     fn job(state: State) -> JobView {
         JobView {
             id: "0123456789abcdef0123456789abcdef".into(),

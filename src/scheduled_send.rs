@@ -37,6 +37,7 @@ pub enum State {
     Staged,
     Pending,
     Blocked,
+    ReturningToDraft,
     Claimed,
     Unknown,
     Submitted,
@@ -267,7 +268,7 @@ impl ScheduledStore {
                 || entry
                     .terminal_at
                     .is_some_and(|time| time < entry.created_at || time > entry.updated_at)
-                || (entry.state == State::Pending
+                || (matches!(entry.state, State::Pending | State::ReturningToDraft)
                     && (!entry.ready || entry.payload.is_none() || entry.reason.is_some()))
                 || (entry.state == State::Blocked && entry.reason.is_none())
             {
@@ -685,6 +686,69 @@ impl ScheduledStore {
             .find(|entry| entry.id == id)
             .ok_or(Error::NotFound)?;
         if !(entry.state.editable() || entry.state == State::Staged) {
+            return Err(Error::Invalid);
+        }
+        entry.state = State::Cancelled;
+        entry.terminal_at = Some(now);
+        entry.updated_at = now;
+        entry.ready = false;
+        Self::write(&lock, &mut index, now)?;
+        self.expire(guard, &lock, &mut index, now)?;
+        Ok(JobList {
+            revision: index.revision,
+            jobs: index.entries.iter().map(view).collect(),
+        })
+    }
+    /// Stop dispatch durably before an editable destination can be published.
+    pub(crate) fn prepare_return_to_draft(
+        &self,
+        guard: &AccountGuard,
+        revision: u64,
+        id: &str,
+        now: u64,
+    ) -> Result<(JobList, ComposeRequest), Error> {
+        let (lock, mut index) = self.lock(guard, now)?;
+        Self::cas(&index, revision)?;
+        let entry = index
+            .entries
+            .iter_mut()
+            .find(|e| e.id == id)
+            .ok_or(Error::NotFound)?;
+        if !(entry.state.editable() || entry.state == State::ReturningToDraft) {
+            return Err(Error::Invalid);
+        }
+        let request = self.read_payload(guard.account(), entry, now)?;
+        if entry.state != State::ReturningToDraft {
+            entry.state = State::ReturningToDraft;
+            entry.reason = None;
+            entry.updated_at = now;
+            Self::write(&lock, &mut index, now)?;
+        }
+        Ok((
+            JobList {
+                revision: index.revision,
+                jobs: index.entries.iter().map(view).collect(),
+            },
+            request,
+        ))
+    }
+    /// Caller has confirmed the owned destination by readback. Retire only the
+    /// scheduler payload; its original consumed source intent remains consumed.
+    pub(crate) fn finish_return_to_draft(
+        &self,
+        guard: &AccountGuard,
+        revision: u64,
+        id: &str,
+        now: u64,
+    ) -> Result<JobList, Error> {
+        let (lock, mut index) = self.lock(guard, now)?;
+        Self::cas(&index, revision)?;
+        let entry = index
+            .entries
+            .iter_mut()
+            .find(|e| e.id == id)
+            .ok_or(Error::NotFound)?;
+        if entry.state != State::ReturningToDraft {
             return Err(Error::Invalid);
         }
         entry.state = State::Cancelled;

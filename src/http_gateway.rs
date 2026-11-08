@@ -998,6 +998,19 @@ impl BrowserGateway for RuntimeBrowserGateway {
     ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
         self.scheduled_list_impl(s)
     }
+    fn outbox_attempts(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<Vec<crate::send_recovery::OutboxAttempt>, crate::scheduled_send::Error> {
+        let now = crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider);
+        let journal = self.send_journal();
+        let _guard = journal
+            .account_guard(&session.record.canonical_username, now)
+            .map_err(|_| crate::scheduled_send::Error::Unavailable)?;
+        crate::send_recovery::SendRecovery::new(self.settings_dir.join("send-recovery"))
+            .outbox_attempts(&journal, &session.record.canonical_username, now)
+            .map_err(|_| crate::scheduled_send::Error::Unavailable)
+    }
     fn scheduled_payload(
         &self,
         s: &ValidatedSession,

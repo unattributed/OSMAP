@@ -1,5 +1,28 @@
 use super::*;
 const ACCOUNT: &str = "alice@example.test";
+#[test]
+fn return_to_draft_is_durable_non_dispatchable_and_exact_revision_owned() {
+    let f = Fixture::new();
+    let mut guard = f.guard(ACCOUNT, 100);
+    let original = request();
+    let staged = f.pending(&mut guard, 0, &original, 200, 100);
+    let list = f.store.list(&guard, 101).unwrap();
+    let (prepared, captured) = f.store.prepare_return_to_draft(&guard, list.revision, &staged.id, 101).unwrap();
+    assert_eq!(captured, original);
+    assert_eq!(prepared.jobs[0].state, State::ReturningToDraft);
+    let reopened = ScheduledStore::new(f.root.join("jobs"));
+    assert!(reopened.claim_next(&guard, 201).unwrap().is_none());
+    assert!(matches!(reopened.cancel(&guard, prepared.revision, &staged.id, 201), Err(Error::Invalid)));
+    let (resumed, captured) = reopened.prepare_return_to_draft(&guard, prepared.revision, &staged.id, 201).unwrap();
+    assert_eq!(captured, original);
+    let foreign = f.guard("bob@example.test", 201);
+    assert!(matches!(reopened.finish_return_to_draft(&foreign, 0, &staged.id, 201), Err(Error::NotFound)));
+    assert!(matches!(reopened.finish_return_to_draft(&guard, 0, &staged.id, 201), Err(Error::Stale)));
+    let finished = reopened.finish_return_to_draft(&guard, resumed.revision, &staged.id, 201).unwrap();
+    assert_eq!(finished.jobs[0].state, State::Cancelled);
+    assert!(reopened.claim_next(&guard, 202).unwrap().is_none());
+    assert!(reopened.read(&guard, &staged.id, 202).is_err());
+}
 struct Fixture {
     root: PathBuf,
     store: ScheduledStore,

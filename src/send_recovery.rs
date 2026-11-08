@@ -31,6 +31,13 @@ pub(crate) struct RecoverySnapshot {
     pub created_at: u64,
     pub expires_at: u64,
 }
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OutboxAttempt {
+    pub intent: String,
+    pub subject: String,
+    pub created_at: u64,
+    pub status: &'static str,
+}
 #[derive(Clone)]
 pub(crate) struct SendRecovery {
     root: PathBuf,
@@ -72,6 +79,69 @@ struct CaptureInput<'a> {
     now: u64,
 }
 impl SendRecovery {
+    /// Discovery only. Existing receipt/recovery routes retain all mutation
+    /// authority; listing an uncertain attempt never grants permission to resend.
+    pub(crate) fn outbox_attempts(
+        &self,
+        journal: &SendJournal,
+        account: &str,
+        now: u64,
+    ) -> Result<Vec<OutboxAttempt>, RecoveryError> {
+        self.storage_usage(account, now)?;
+        let lock = self
+            .index
+            .lock(account)
+            .map_err(|_| RecoveryError::Unavailable)?;
+        let index = Self::decode(lock.read().map_err(|_| RecoveryError::Unavailable)?)?;
+        if now < index.high_water {
+            return Err(RecoveryError::ClockRollback);
+        }
+        let rows = self
+            .store(DraftPolicy::default())
+            .list(account, now)
+            .map_err(|_| RecoveryError::Unavailable)?;
+        let mut attempts = Vec::new();
+        for row in rows {
+            let entry = index
+                .entries
+                .iter()
+                .find(|entry| entry.id == row.draft_id)
+                .ok_or(RecoveryError::Invalid)?;
+            if entry.expires <= now {
+                continue;
+            }
+            let status = match journal
+                .receipt(account, &entry.intent, now)
+                .map_err(|_| RecoveryError::Unavailable)?
+            {
+                Some(crate::send_journal::AttemptOutcome::RecoveryRefused { .. }) => {
+                    "Not submitted"
+                }
+                Some(crate::send_journal::AttemptOutcome::Unconfirmed) | None => {
+                    "Submission result unknown"
+                }
+                Some(crate::send_journal::AttemptOutcome::AcceptedWithoutSentCopy) => {
+                    "Submitted; Sent copy not requested"
+                }
+                Some(crate::send_journal::AttemptOutcome::Accepted {
+                    sent_copy_stored: false,
+                }) => "Submitted; Sent copy unavailable",
+                _ => continue,
+            };
+            attempts.push(OutboxAttempt {
+                intent: entry.intent.clone(),
+                subject: row.subject,
+                created_at: entry.created,
+                status,
+            });
+        }
+        attempts.sort_by(|a, b| {
+            b.created_at
+                .cmp(&a.created_at)
+                .then_with(|| a.intent.cmp(&b.intent))
+        });
+        Ok(attempts)
+    }
     pub(crate) fn new(root: PathBuf) -> Self {
         Self {
             index: PrivateAccountFile::new(root.join("index"), "send-recovery-v1", MAX_INDEX),
@@ -488,6 +558,66 @@ mod tests {
     use crate::send_journal::AttemptOutcome;
     use std::sync::atomic::{AtomicU64, Ordering};
     const ACCOUNT: &str = "alice@example.test";
+    #[test]
+    fn outbox_discovery_keeps_uncertain_and_missing_sent_attempts_account_owned() {
+        let f = Fixture::new();
+        let accepted = crate::send_journal::mint_intent(100).unwrap();
+        let uncertain = crate::send_journal::mint_intent(100).unwrap();
+        let calls = std::cell::Cell::new(0);
+        dispatch(&f, &accepted, &request(), None, &calls);
+        dispatch(
+            &f,
+            &uncertain,
+            &request(),
+            Some(CapturePoint::AfterSnapshot),
+            &calls,
+        );
+        let rows = f
+            .recovery
+            .outbox_attempts(&f.journal, ACCOUNT, 101)
+            .unwrap();
+        assert_eq!(rows.len(), 2);
+        assert!(rows
+            .iter()
+            .any(|r| r.intent == accepted && r.status == "Submitted; Sent copy unavailable"));
+        assert!(rows
+            .iter()
+            .any(|r| r.intent == uncertain && r.status == "Submission result unknown"));
+        assert!(f
+            .recovery
+            .outbox_attempts(&f.journal, "foreign@example.test", 101)
+            .unwrap()
+            .is_empty());
+        assert!(f.recovery.outbox_attempts(&f.journal, ACCOUNT, 99).is_err());
+        assert_eq!(calls.get(), 1);
+    }
+    #[test]
+    fn outbox_discovery_distinguishes_deliberately_disabled_sent_copy() {
+        let f = Fixture::new();
+        let intent = crate::send_journal::mint_intent(100).unwrap();
+        let r = request();
+        f.journal
+            .execute_prepared_with_sent_copy(
+                ACCOUNT,
+                &intent,
+                100,
+                |_| Ok::<_, ()>((r.clone(), false)),
+                |prepared, save_sent| {
+                    assert!(!save_sent);
+                    f.recovery
+                        .capture(&f.journal, &f.normal, ACCOUNT, &intent, prepared, 100)
+                        .unwrap();
+                    AttemptOutcome::AcceptedWithoutSentCopy
+                },
+            )
+            .unwrap();
+        let rows = f
+            .recovery
+            .outbox_attempts(&f.journal, ACCOUNT, 101)
+            .unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].status, "Submitted; Sent copy not requested");
+    }
     struct Fixture {
         root: PathBuf,
         journal: SendJournal,
