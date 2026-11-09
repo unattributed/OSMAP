@@ -103,3 +103,28 @@ Normal commit/push hooks, Shopkeeper signing, signature verification and a fresh
 origin fetch are required before reporting this source delivery synchronized.
 The final commit and fresh local/remote equality receipt establish publication;
 they do not close or reconcile S08 or imply production release acceptance.
+
+## Preserved publication-gate failure and changed environment
+
+The first ordinary push of signed source commit
+`1e8bbef355f30987eb640fd4eac6f683a0005b3c` stopped in the Rust suite:
+**2,203 passed, 147 failed, 90 ignored**. No publication is claimed for that
+attempt. Its task-specific temporary directory was under the chat workspace,
+with group-writable ancestors and a 69-character base pathname.
+
+Independent reassessment confirmed actual ancestor-custody refusals and Unix
+socket path-length failures in the retained log. The crypto lifecycle fixture
+also explicitly requires a scratch root under `/tmp`. These observations support
+correcting the test environment; they do not individually prove the cause of
+every failed test.
+
+Use a short task-owned mode0700 directory under `/tmp` for the unchanged normal
+hook. Before another full push attempt, both distinguishing original failures
+passed under that directory:
+
+- `account_access_config::tests::private_regular_config_and_genuine_leaf_absence_use_actual_reader`
+- `account_admission_runtime::tests::listener_rejects_wrong_peer_before_read_and_refuses_foreign_socket_cleanup`
+
+The implementation, security profile, assertions and hooks remain unchanged.
+The next full hook result and fresh remote equality must establish delivery;
+the passing discriminators alone do not turn the first failed gate into PASS.
