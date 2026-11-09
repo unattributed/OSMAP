@@ -1,6 +1,6 @@
 # Documentation
 
-- [2026-11-09 checkout reconciliation](OSMAP_CHECKOUT_RECONCILIATION_20261109.md): preserved superseded S05 deltas and account-service startup recovery; ongoing S08 work excluded.
+- `OSMAP_CHECKOUT_RECONCILIATION_20261109.md` — [2026-11-09 checkout reconciliation](OSMAP_CHECKOUT_RECONCILIATION_20261109.md): preserved superseded S05 deltas and account-service startup recovery; ongoing S08 work excluded.
 
 ## S08 Documents and storage
 

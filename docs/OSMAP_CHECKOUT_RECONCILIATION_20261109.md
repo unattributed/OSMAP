@@ -146,3 +146,12 @@ observation, using a PTY and the same short private temporary directory,
 implementation, profile and hooks. It is not described as a proven causal fix.
 Stop on another failure/interruption, retain that result and reassess; no repeated
 unchanged retries or full-suite tracing is authorized by this record.
+
+The reviewed terminal launch completed the Rust suite with **2,350 passed,
+zero failed and 90 ignored**. Clippy, supply-chain, rendering, V8 aggregate and
+publication checks passed before the documentation governance guard refused the
+new index entry: it required the literal backticked report filename, whereas
+the new entry supplied a Markdown link only. Preserve this as a documentation
+delivery failure. Correct that index format without changing the guard or any
+product source; run the actual documentation guard before the next ordinary
+publication attempt. The earlier signal sender remains UNKNOWN.
