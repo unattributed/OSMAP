@@ -128,3 +128,21 @@ passed under that directory:
 The implementation, security profile, assertions and hooks remain unchanged.
 The next full hook result and fresh remote equality must establish delivery;
 the passing discriminators alone do not turn the first failed gate into PASS.
+
+The next pipe-launched ordinary push at signed documentation descendant
+`623e503b080e6ead223f131b3ec4994abb3e1b43` was **INTERRUPTED, exit143** before
+the Rust suite produced a terminal result. The log contained no reported
+assertion failure before termination. The signal sender and full-suite outcome
+remain UNKNOWN; the adjacent successful helper test is not causal proof.
+
+Combined independent reassessment then inspected owned-child signal handling.
+One exact crypto helper-SIGTERM lifecycle test passed under the same pipe launch
+with restricted signal tracing: the intended helper group received TERM, the
+worker was absent afterward, and traced processes exited successfully. This
+does not retrospectively establish the source of the interrupted gate's signal.
+
+One further ordinary full push is reviewed as a terminal-runner isolation
+observation, using a PTY and the same short private temporary directory,
+implementation, profile and hooks. It is not described as a proven causal fix.
+Stop on another failure/interruption, retain that result and reassess; no repeated
+unchanged retries or full-suite tracing is authorized by this record.
