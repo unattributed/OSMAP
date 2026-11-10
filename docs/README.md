@@ -2,11 +2,12 @@
 
 - `OSMAP_CHECKOUT_RECONCILIATION_20261109.md` — [2026-11-09 checkout reconciliation](OSMAP_CHECKOUT_RECONCILIATION_20261109.md): preserved superseded S05 deltas and account-service startup recovery; ongoing S08 work excluded.
 
-## S08 Documents and storage
+## S08 acceptance and extensions
 
-- `UX_SLICE_S08_01.md` — [S08-01: Documents and shared storage](UX_SLICE_S08_01.md): account-specific shared storage, qualified native hard quota and authenticated Documents lifecycle; installed storage/cutover qualification and owner UAT remain open.
-- `UX_SLICE_S08_03.md` — [S08-03: Scheduled send and snooze](UX_SLICE_S08_03.md): installed engineering ready with positive post-seal qualification and signed delivery; owner T09 pending.
-- `UX_SLICE_S08_04.md` — [S08-04: Factual notifications](UX_SLICE_S08_04.md): confirmed account events and explicit browser delivery; installed engineering ready, owner T09 pending.
+- `UX_SLICE_S08_05.md` — [S08-05: logo continuity](UX_SLICE_S08_05.md): reuse the existing login logo across branded pages; engineering and owner results remain distinct.
+- `UX_SLICE_S08_01.md` — [S08-01: Documents and shared storage](UX_SLICE_S08_01.md): accepted account-generic mail storage reporting; Documents was removed from scope.
+- `UX_SLICE_S08_03.md` — [S08-03: Scheduled send and snooze](UX_SLICE_S08_03.md): scheduled delivery, Snooze and Outbox; owner accepted whole S08 on November 8.
+- `UX_SLICE_S08_04.md` — [S08-04: Factual notifications](UX_SLICE_S08_04.md): notification inbox/preferences and controls accepted by the owner; original S08 closed.
 
 ## S07 outbound protection qualification
 

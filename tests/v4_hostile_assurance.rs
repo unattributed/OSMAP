@@ -693,13 +693,17 @@ fn observe_browser_boundary(route_html: &str) -> BrowserBoundaryObservations {
 /// the whole-page SVG counter. Message SVG remains forbidden, including an
 /// element that copies the shell class/attributes. No href, style, events,
 /// external resources, animation, nested elements or foreign content qualify.
+const TRUSTED_HEADER_LOGO: &str = "<svg class=\"login-shield\" aria-hidden=\"true\" viewBox=\"0 0 64 72\" role=\"img\"><path d=\"M32 4 56 13v18c0 17-9 29-24 37C17 60 8 48 8 31V13L32 4Z\" fill=\"#eaf2ff\" stroke=\"#9db9ee\" stroke-width=\"2\"/><path d=\"M32 10 49 17v14c0 12-6 22-17 29C21 53 15 43 15 31V17l17-7Z\" fill=\"#2f66d8\"/><circle cx=\"32\" cy=\"31\" r=\"7\" fill=\"#fff\"/><path d=\"M29 37h6l2 14H27l2-14Z\" fill=\"#fff\"/></svg>";
+
 fn remove_inert_shell_vectors(html: &str) -> String {
     const OPEN: &str = "<svg class=\"shell-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\">";
     let Some((shell, main)) = html.split_once("<main id=\"main-content\"") else {
         return html.to_string();
     };
+    // Only one exact retained logo before message content is application-owned.
+    let shell = shell.replacen(TRUSTED_HEADER_LOGO, "", 1);
     let mut output = String::new();
-    let mut remainder = shell;
+    let mut remainder = shell.as_str();
     let mut count = 0;
     while let Some((before, tail)) = remainder.split_once(OPEN) {
         let Some((geometry, after)) = tail.split_once("</svg>") else {
@@ -781,6 +785,27 @@ fn shell_vector_exception_is_geometry_only_and_never_applies_to_message_content(
     ] {
         assert!(!inert_vector_geometry(content), "{content}");
     }
+    let branded_page = |header: &str, body: &str| {
+        format!("<header>{header}</header><main id=\"main-content\">{body}</main>")
+    };
+    assert_eq!(
+        observe_browser_boundary(&branded_page(TRUSTED_HEADER_LOGO, "")).auto_fetch_surfaces,
+        0
+    );
+    assert_eq!(
+        observe_browser_boundary(&branded_page(&TRUSTED_HEADER_LOGO.repeat(2), ""))
+            .auto_fetch_surfaces,
+        1
+    );
+    assert_eq!(
+        observe_browser_boundary(&branded_page("", TRUSTED_HEADER_LOGO)).auto_fetch_surfaces,
+        1
+    );
+    let altered_logo = TRUSTED_HEADER_LOGO.replace("#2f66d8", "#000000");
+    assert_eq!(
+        observe_browser_boundary(&branded_page(&altered_logo, "")).auto_fetch_surfaces,
+        1
+    );
     let icon = "<svg class=\"shell-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 3h18\"/></svg>";
     // The application shell includes Contacts, Labels and Outbox in its navigation.
     // Keep a finite geometry-only budget; an additional SVG remains observable.

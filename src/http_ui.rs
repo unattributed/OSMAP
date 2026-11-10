@@ -284,10 +284,11 @@ mod back_focus;
 #[path = "http/reader_toolbar.rs"]
 mod reader_toolbar;
 
+// Reuse the retained login logo in every branded application header.
+const OSMAP_BRAND_SHIELD: &str = "<svg class=\"login-shield\" aria-hidden=\"true\" viewBox=\"0 0 64 72\" role=\"img\"><path d=\"M32 4 56 13v18c0 17-9 29-24 37C17 60 8 48 8 31V13L32 4Z\" fill=\"#eaf2ff\" stroke=\"#9db9ee\" stroke-width=\"2\"/><path d=\"M32 10 49 17v14c0 12-6 22-17 29C21 53 15 43 15 31V17l17-7Z\" fill=\"#2f66d8\"/><circle cx=\"32\" cy=\"31\" r=\"7\" fill=\"#fff\"/><path d=\"M29 37h6l2 14H27l2-14Z\" fill=\"#fff\"/></svg>";
+
 fn shell_icon(name: &str) -> String {
     let path = match name {
-        "approved-brand" => "<path d=\"M12 2 21 6v6c0 5-4 8.2-9 10-5-1.8-9-5-9-10V6z\"/><path d=\"m12 5 6 2.6V12c0 3.3-2.5 5.7-6 7.2C8.5 17.7 6 15.3 6 12V7.6z\"/><path d=\"m12 8 1.1 2.9L16 12l-2.9 1.1L12 16l-1.1-2.9L8 12l2.9-1.1z\"/>",
-        "brand" => "<path d=\"m12 3 8 9-8 9-8-9z\"/><path d=\"m12 6 5.4 6-5.4 6-5.4-6z\"/>",
         "back" => "<path d=\"M20 12H4m6-6-6 6 6 6\"/>",
         "reply" => "<path d=\"m9 4-6 6 6 6M3 10h11c5 0 7 4 7 10\"/>",
         "read" => "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"m3 6 9 7 9-7\"/>",
@@ -384,7 +385,7 @@ pub(crate) fn app_header_with_storage(
         &crate::totp::SystemTimeProvider,
     ));
     let welcome = current == "mailboxes";
-    let brand_mark = shell_icon(if welcome { "approved-brand" } else { "brand" });
+    let brand_mark = OSMAP_BRAND_SHIELD;
     let brand_copy = if welcome {
         "<span class=\"brand-copy\"><strong>OSMAP</strong><small>Secure Email. Your Data. Your Control.</small></span>"
     } else {
@@ -443,7 +444,7 @@ pub(crate) fn app_header_with_storage(
         "<details class=\"rail-disclosure\"><summary title=\"Navigation labels\">{}<span class=\"sr-only rail-expand-label\">Expand navigation</span><span class=\"sr-only rail-collapse-label\">Collapse navigation</span></summary><p class=\"sr-only\">Navigation labels are expanded.</p></details>",
         "<nav class=\"rail-links\" aria-label=\"Primary navigation\">{}</nav>{rail_storage}</aside>",
         "<header class=\"topbar{brand_variant}\" role=\"banner\" aria-label=\"Authenticated OSMAP shell\">",
-        "<a class=\"brand\" href=\"/mailboxes\" aria-label=\"OSMAP mailboxes\"><span class=\"brand-mark\" aria-hidden=\"true\"><span class=\"ui-icon brand-icon\">{}</span></span>{brand_copy}</a>",
+        "<a class=\"brand\" href=\"/mailboxes\" aria-label=\"OSMAP mailboxes\"><span class=\"brand-mark\" aria-hidden=\"true\">{}</span>{brand_copy}</a>",
         "{}",
         "<div class=\"status-row auth-status\" aria-label=\"Session status and identity\">",
         "<details class=\"protection-menu\" name=\"toolbar-menu\"><summary>Protected by Default</summary><div class=\"account-menu-panel\"><p>Remote images and active content are blocked. These protections do not encrypt a message or verify its sender.</p><p class=\"shell-session-chip\">Your browser session was authenticated with two factors.</p></div></details>",
@@ -731,7 +732,7 @@ pub(crate) fn render_login_page(error_message: Option<&str>) -> TrustedHtml {
             "<div class=\"login-decor login-decor-right\" aria-hidden=\"true\"><svg viewBox=\"0 0 320 320\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M83 28 124 52v48l-41 24-41-24V52l41-24Z\" opacity=\".28\"/><path d=\"M165 78 206 102v48l-41 24-41-24v-48l41-24Z\" opacity=\".24\"/><path d=\"M247 78 288 102v48l-41 24-41-24v-48l41-24Z\" opacity=\".2\"/><path d=\"M83 170 124 194v48l-41 24-41-24v-48l41-24Z\" opacity=\".22\"/><path d=\"M165 220 206 244v48l-41 24-41-24v-48l41-24Z\" opacity=\".18\"/><path d=\"M247 220 288 244v48l-41 24-41-24v-48l41-24Z\" opacity=\".14\"/><path d=\"M124 76h41M206 126h41M124 218h41\" opacity=\".14\"/><path d=\"M288 22v80M42 52V5\" opacity=\".08\"/></g><g fill=\"currentColor\"><circle cx=\"83\" cy=\"28\" r=\"4\" opacity=\".32\"/><circle cx=\"124\" cy=\"52\" r=\"4\" opacity=\".28\"/><circle cx=\"165\" cy=\"78\" r=\"4\" opacity=\".26\"/><circle cx=\"206\" cy=\"102\" r=\"4\" opacity=\".22\"/><circle cx=\"247\" cy=\"78\" r=\"4\" opacity=\".2\"/><circle cx=\"288\" cy=\"102\" r=\"4\" opacity=\".18\"/><circle cx=\"83\" cy=\"266\" r=\"4\" opacity=\".2\"/><circle cx=\"165\" cy=\"316\" r=\"4\" opacity=\".14\"/></g></svg></div>",
             "<section class=\"login-card\">",
             "<div class=\"login-brand\">",
-            "<svg class=\"login-shield\" aria-hidden=\"true\" viewBox=\"0 0 64 72\" role=\"img\"><path d=\"M32 4 56 13v18c0 17-9 29-24 37C17 60 8 48 8 31V13L32 4Z\" fill=\"#eaf2ff\" stroke=\"#9db9ee\" stroke-width=\"2\"/><path d=\"M32 10 49 17v14c0 12-6 22-17 29C21 53 15 43 15 31V17l17-7Z\" fill=\"#2f66d8\"/><circle cx=\"32\" cy=\"31\" r=\"7\" fill=\"#fff\"/><path d=\"M29 37h6l2 14H27l2-14Z\" fill=\"#fff\"/></svg>",
+            "{brand_shield}",
             "<div class=\"login-brand-text\"><h1 id=\"login-title\" class=\"login-title\">OSMAP</h1><p class=\"login-subtitle\">Secure Webmail</p></div>",
             "</div>",
             "<div class=\"login-rule\" aria-hidden=\"true\"><svg viewBox=\"0 0 24 24\"><path d=\"M12 3 19 6v5c0 5-2.6 8.5-7 10-4.4-1.5-7-5-7-10V6l7-3Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"/></svg></div>",
@@ -756,6 +757,7 @@ pub(crate) fn render_login_page(error_message: Option<&str>) -> TrustedHtml {
             "</main>"
         ),
         banner,
+        brand_shield = OSMAP_BRAND_SHIELD,
     ))
 }
 

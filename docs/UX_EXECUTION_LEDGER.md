@@ -1,3 +1,345 @@
+2026-11-10 — **S08-05 resumed: logo continuity only.** Latest operator clarification narrows the November 9 branding plan to reusing the existing login logo across branded pages. Existing copy/navigation remain unchanged. Root integrates the preserved whole-S08 acceptance and extension records from the separate worktree without modifying that worktree. Original S08 stays accepted.
+
+<!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S01-02",
+  "original_requirement": "Approved labelled sidebar, top bar/search, account and theme controls, welcome dashboard, responsive shell and collapse under D01",
+  "source_baseline": "4389ae033ce94d2a68eb1b150e352687255d3a08",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root/s08_delivery_review"
+    ],
+    "scrum_lead": [
+      "/root/s08_scrum"
+    ],
+    "developers": [
+      "/root"
+    ],
+    "qa": [
+      "/root/s08_delivery_review"
+    ],
+    "security_review": [
+      "/root/s08_delivery_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/http_ui.rs",
+    "src/http_ui_state_tests.rs",
+    "tests/v4_hostile_assurance.rs",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-claims-boundary.json",
+    "src/http/approved.css",
+    "docs/UX_SLICE_S08_05.md",
+    "docs/UX_SLICE_S08_03.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/README.md",
+    "docs/UX_DECISIONS.md",
+    "docs/reconciliation/20261110/s08-branding-plan.md.gz",
+    "docs/reconciliation/20261110/s08-partial-header.patch.gz",
+    "docs/reconciliation/20261110/preservation.json",
+    "maint/security/osmap-v14-css-icon-foundation-gate.sh"
+  ],
+  "outcome": "The login shield/keyhole is the same trusted SVG in welcome and ordinary shared headers; existing wording and actions are preserved.",
+  "prerequisites": "Verified signed R2 anchor 6b3ce8fff27ca3dabf87039d54098bd9967a2e42 and unchanged frozen manifest. Existing shared header; no schema/backend dependency. Fresh obsd1 hostname/UID/source/binary custody before native use.",
+  "minimum_checks": [
+    "Actual rendered login/welcome/ordinary logo parity and unchanged link/copy.",
+    "Existing synthetic-page renderer and desktop/narrow light/dark browser logo fit.",
+    "Matching OpenBSD renderer check; Web-only install with rollback and existing read-only readiness.",
+    "Independent delta/result review; normal signed commit/push hooks and fresh origin equality."
+  ],
+  "expected": "Same legible proportioned logo on branded pages; no mail/account/key/configuration mutation.",
+  "accounting": {
+    "historical_elapsed": "UNKNOWN",
+    "started_at": "2026-11-10T08:25:42.945Z",
+    "allowance": "One focused correction and existing required delivery path; native build 600 seconds per compiler action, browser fixture 180 seconds, install 180 seconds and readiness 60 seconds. No automatic allowance increase.",
+    "failure_stop": "After two failures at the same functional boundary stop retries for combined independent reassessment."
+  },
+  "results": [
+    {
+      "scope": "S08-05",
+      "engineering": "PASS_LOGO_ONLY",
+      "installed_binary": "f6768bb2caa050eb46e05536b47e67008bc62d2de0a265bc5c88cac96516c7a3",
+      "owner_acceptance": "PENDING",
+      "aggregate_v14": "FAIL_PREEXISTING_SCAFFOLD_CONSUMERS",
+      "normal_publication": "Git history and final fresh-fetch receipt establish outcome; mandatory unchanged hooks pending at source freeze.",
+      "evidence": "/home/foo/Downloads/osmap-ux-s08/s08-05"
+    }
+  ],
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Short visual logo check after engineering verification."
+  },
+  "next_action": "Complete unchanged normal signed commit/push hooks and fresh origin equality, then short owner visual logo check. Original parent state remains separate.",
+  "validator_scope": "S08-05 is an operator-added extension of the existing S01-02 shared-header boundary. Parent mapping preserves its exact original catalogue requirement and all27 mapped IDs as separately pending obligations; extension evidence does not qualify or close that parent. Earlier literal S08-05 catalogue refusal is retained; no validator or frozen plan change.",
+  "extension_id": "S08-05",
+  "delivery_scope": "Logo continuity only; original S01-02 shell/topbar obligations remain independently accounted, not reopened or newly qualified by this extension.",
+  "extension_state": "UAT_READY",
+  "outcomes": [
+    {
+      "id": "original-shell-obligations",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX01-001",
+        "UX01-002",
+        "UX01-003",
+        "UX04-001",
+        "UX01-004",
+        "UX01-005",
+        "UX01-006",
+        "UX01-008",
+        "R2-01-001",
+        "R2-01-002",
+        "R2-01-003",
+        "R2-01-004",
+        "R2-01-005",
+        "R2-01-006",
+        "R2-01-007",
+        "R2-01-008",
+        "R2-01-009",
+        "R2-01-010",
+        "R2-01-011",
+        "R2-01-012",
+        "R2-01-013",
+        "R2-01-022",
+        "R2-01-023",
+        "R2-01-024",
+        "R2-01-025",
+        "R2-01-031",
+        "R2-01-032"
+      ],
+      "frontend_backend_outcome": "Retain original shell/topbar controls and their historical evidence; logo-only delivery does not assert full original parent acceptance.",
+      "essential_qa": "Reuse prior matched shell evidence; reconcile remaining original obligations at their existing integration stage, without a new logo-driven test campaign.",
+      "next_action": "Preserve original scope and historical results; no fresh whole-parent completion claim in S08-05.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": []
+    },
+    {
+      "id": "logo-continuity",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX01-006"
+      ],
+      "frontend_backend_outcome": "The login shield/keyhole is the same trusted SVG in welcome and ordinary shared headers; existing wording and actions are preserved.",
+      "essential_qa": "Actual rendered login/welcome/ordinary logo parity and unchanged link/copy. Existing synthetic-page renderer and desktop/narrow light/dark browser logo fit. Matching OpenBSD renderer check; Web-only install with rollback and existing read-only readiness. Independent delta/result review; normal signed commit/push hooks and fresh origin equality.",
+      "next_action": "Complete focused renderer/browser checks, independent review, matching native Web-only delivery and normal signed preservation.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "src/http_ui.rs and src/http/approved.css: one retained login SVG shared by header."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-05/focused.log, routes.log, hostile-logo-qualified.log and browser-result.json: renderer1, route1, hostile1 and actual browser12routes/8fits PASS."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/root/s08_delivery_review source/delta/hostile-consumer and native-recipe GO; original selectors and gate refusals retained."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-05/native2.log matching native renderer1PASS and Web buildf676; all528 compiler inputs unchanged."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-05/install1.log/readiness1.log/live-login-logo.json: matching loaded binary, public HTTPS exact logo and read-only1PASS, protected state preserved."
+        },
+        {
+          "stage": "recovery",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-05/install1.ksh exact old-binary rollback retained; no recovery was needed. Existing account service preflight stop cause UNKNOWN; one bounded startPASS."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "The login shield/keyhole is the same trusted SVG in welcome and ordinary shared headers; existing wording and actions are preserved.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "November9 wider plan/partial preserved; November10 native1 refused600 custody before extraction, zero-test hostile selectors twice NOT_QUALIFIED then independent reassessment and exact1PASS. UIgate1 inventory drift, UIgate2 parent catalogue refusal retained. Original S08 acceptance unchanged; past cumulative duration UNKNOWN.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-10T08:25:42Z",
+      "elapsed_status": "UNMEASURED",
+      "elapsed_seconds": null
+    },
+    "attempts": [],
+    "next_attempt": null
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S01-02",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_05.md",
+      "sha256": "454d9644bff3d3ec1cc65659dca893531ea8a5f14bc0d27c895b7e2fb57c2eda"
+    },
+    "design": {
+      "journey": "The login shield/keyhole is the same trusted SVG in welcome and ordinary shared headers; existing wording and actions are preserved.",
+      "frontend": "Existing login and app_header/app_header_with_storage rendering, trusted static SVG and scoped sizing.",
+      "backend": "No backend operation changes; original backend acceptance and dependencies remain separate.",
+      "interfaces": "Existing shared HTML headers and local styles; no new routes or form fields.",
+      "persistence": "No persisted state change; existing preferences are preserved.",
+      "security": "Exact source-owned SVG, unchanged CSP/escaping/authentication; hostile checker exempts one exact header logo only.",
+      "failure_recovery": "Existing bounded native builds and Web-only atomic installation retain original executable and restore on failure; no mail-service mutation."
+    },
+    "tests": [
+      {
+        "id": "retained-shell-positive",
+        "outcome_ids": [
+          "original-shell-obligations"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Existing shared header, retained login SVG and unchanged protected account/mail boundaries.",
+        "action": "Reconcile existing original-shell positive evidence at its current integration stage, without repeating it for the logo.",
+        "expected": "Original obligations retain actual evidence/status; no logo test becomes full-parent qualification.",
+        "preserved": "Existing copy/navigation/authentication/account isolation and original evidence; no whole-parent acceptance inferred.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "retained-shell-negative",
+        "outcome_ids": [
+          "original-shell-obligations"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Existing shared header, retained login SVG and unchanged protected account/mail boundaries.",
+        "action": "Retain original negative/control evidence and unresolved findings for later existing parent reconciliation.",
+        "expected": "No original unqualified obligation is silently marked PASS.",
+        "preserved": "Existing copy/navigation/authentication/account isolation and original evidence; no whole-parent acceptance inferred.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "logo-renderer",
+        "outcome_ids": [
+          "logo-continuity"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Existing shared header, retained login SVG and unchanged protected account/mail boundaries.",
+        "action": "Compare actual login/welcome/ordinary logo and check actual synthetic routes/browser layouts.",
+        "expected": "One identical legible logo with preserved wording and links.",
+        "preserved": "Existing copy/navigation/authentication/account isolation and original evidence; no whole-parent acceptance inferred.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/s08-05/focused.log; routes.log; browser-result.json"
+        ]
+      },
+      {
+        "id": "logo-hostile",
+        "outcome_ids": [
+          "logo-continuity"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Existing shared header, retained login SVG and unchanged protected account/mail boundaries.",
+        "action": "Run exact existing hostile consumer with extra/altered/message-contained logo controls.",
+        "expected": "Only one exact source-owned pre-main logo is exempt; unsafe surfaces stay observable.",
+        "preserved": "Existing copy/navigation/authentication/account isolation and original evidence; no whole-parent acceptance inferred.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/s08-05/hostile-logo-qualified.log"
+        ]
+      },
+      {
+        "id": "logo-native",
+        "outcome_ids": [
+          "logo-continuity"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Existing shared header, retained login SVG and unchanged protected account/mail boundaries.",
+        "action": "Build matching candidate and run exact renderer test through positive-count consumer.",
+        "expected": "Matching OpenBSD renderer1PASS0FAIL and Web candidate build.",
+        "preserved": "Existing copy/navigation/authentication/account isolation and original evidence; no whole-parent acceptance inferred.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/s08-05/native2.log"
+        ]
+      },
+      {
+        "id": "logo-installed",
+        "outcome_ids": [
+          "logo-continuity"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Existing shared header, retained login SVG and unchanged protected account/mail boundaries.",
+        "action": "Use Web-only atomic replacement, loaded inode/hash, preservation and existing readiness checks.",
+        "expected": "Reviewed binary loaded, HTTPS login works and protected services/configuration/account state preserved.",
+        "preserved": "Existing copy/navigation/authentication/account isolation and original evidence; no whole-parent acceptance inferred.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/s08-05/install1.log; readiness1.log; live-login-logo.json"
+        ]
+      },
+      {
+        "id": "logo-owner",
+        "outcome_ids": [
+          "logo-continuity"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Existing shared header, retained login SVG and unchanged protected account/mail boundaries.",
+        "action": "Inspect the logo on login, welcome, one internal page and a narrow layout.",
+        "expected": "Owner accepts consistent logo and usable existing layout.",
+        "preserved": "Existing copy/navigation/authentication/account isolation and original evidence; no whole-parent acceptance inferred.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "S08-05 logo outcome independently verified, installed and normally signed/preserved; original S01-02 parent state remains separate.",
+    "human_exit": "Short owner visual acceptance of S08-05 only; original S08 acceptance is preserved."
+  }
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+2026-11-09 (Asia/Bangkok) — **S08 extension contract definition.** Approved order: S08-05 shared branding, S08-06 account-specific icon display mode on all pages, S08-07 Junk folder. [S08-05](UX_SLICE_S08_05.md) now specifies T01–T09 and the S05 failure → analyse → smallest supported correction → retest methodology required for all three extensions, including cumulative failures, independent reassessment after two failures at the same boundary, bounded gates and separate owner acceptance. Planning baseline: `501f6430a5ec2eda95e8d6a942fee2268ab4e6a6` plus preserved existing changes. Status: CONTRACT_DEFINED; implementation/native/browser/installed checks and owner UAT NOT_RUN for these extensions. No subagent review, build, installation or publication is claimed by this planning entry. Original S08 acceptance below remains valid; Documents remains removed from scope.
+
+2026-11-08 (Asia/Bangkok) — **S08 UAT ACCEPTED / PASS — CLOSED.** The owner confirms: “these have already been done, S08 is a UAT = Pass”. The previously outstanding Scheduled-copy discard preserving Sent, saved-timezone future-schedule cancellation, and snooze cancellation/return checks are owner-confirmed complete. No S08 UAT remains pending. Prior scoped passes, engineering and independent-review evidence, and historical failures remain preserved. Documents remains removed from scope. This is a documentation-only closure; S09 and production security review/WSTG remain separate.
+
 2026-11-08 (Asia/Bangkok) — **Outbox recovery owner UAT PASS.** Owner explicitly accepts the cause-specific locked-key refusal and explicit 18:30 local rescheduling recovery. Outbox shows Submitted and zero active messages; Sent shows 18:30:07 UTC+07:00 and Proton receipt shows the edited text and public-key attachment at 18:30. Historical failed UAT is preserved. Remaining focused checks: Scheduled-copy discard preserving Sent, saved-timezone future-schedule cancellation, and Inbox snooze cancellation/return. Whole S08 acceptance is separate. Documentation-only acceptance record; no runtime or mailbox mutation.
 
 2026-11-08 — **Outbox failure explanation UAT FAILED; correction engineering PASS, reacceptance pending.** Owner rejects “Needs your attention” as insufficient. Read-only native evidence for the reported schedule confirms blocked/key_locked at its due-time check. Root owns a Rust presentation-only correction: fixed reason-specific list and detail text, actionable personal-key link, explicit reauthorization and no automatic resend. Existing blocked-before-submission and claimed/unknown protections are reused. Minimum checks: all recorded reasons in both views, absent/stale reason handling, synthetic browser usability, matching native build/Web-only installation/read-only readiness, independent review and ordinary signed publication. No owner schedule, mailbox, credential, key permission or mail-stack mutation. Prior passes remain scoped; cumulative investigation allowance is not reset.
@@ -30,14 +372,14 @@
 
 2026-11-05 — **S08-03 saved-timezone follow-up UAT_READY.** Use saved OSMAP timezone for scheduling; fix confirmed retired drafts incorrectly labelled Paused. Earlier owner schedules remain untouched; no pre-due dispatch failure established. Documents stays removed.
 
-<!-- OSMAP_ACTIVE_WORK_ORDER -->
+<!-- Historical accepted S08 work order, superseded by logo continuation -->
 ```json
 {
   "version": 1,
   "slice": "S08-03",
   "original_requirement": "Expose scheduled and retained unsent submissions in a discoverable Outbox between Drafts and Sent, with safe state-specific controls.",
   "source_baseline": "991494f43a035902bc027993b83e837cc67bd997",
-  "state": "UAT_READY",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -94,7 +436,7 @@
       ],
       "frontend_backend_outcome": "Expose scheduled and retained unsent submissions in a discoverable Outbox between Drafts and Sent, with safe state-specific controls.",
       "essential_qa": "Rust state/Runtime/browser tests; no actual test mail; preserve owner jobs; no mail-stack configuration change.",
-      "next_action": "Complete the remaining focused S08 UAT checks: Scheduled-copy discard, future-schedule cancellation in the saved timezone, and snooze cancellation/return.",
+      "next_action": "Publish the documentation-only whole-S08 owner acceptance through normal signed delivery. No S08 UAT remains pending; S09 is separate.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -106,7 +448,7 @@
       "evidence": [
         {
           "reference": "docs/UX_SLICE_S08_03.md",
-          "result": "Local11/native45 twelve/browser45 nine/install45/readiness45 PASS; independent reason and mobile review GO. Owner prior UAT FAILED is retained; correction reacceptance PASS on 2026-11-08. Owner 2026-11-08 UAT PASS accepts the recorded locked-key reason and explicit rescheduling recovery, Submitted state, Sent copy and Proton receipt with edited text/public-key attachment."
+          "result": "Local11/native45 twelve/browser45 nine/install45/readiness45 PASS; independent reason and mobile review GO. Owner prior UAT FAILED is retained; correction reacceptance PASS on 2026-11-08. Owner 2026-11-08 UAT PASS accepts the recorded locked-key reason and explicit rescheduling recovery, Submitted state, Sent copy and Proton receipt with edited text/public-key attachment. Latest owner confirmation accepts whole S08 and confirms the remaining Scheduled-copy discard, saved-timezone future-schedule cancellation, and snooze cancellation/return checks were already completed."
         }
       ]
     }
@@ -130,7 +472,7 @@
     "slice": "S08-03",
     "specification": {
       "path": "docs/UX_SLICE_S08_03.md",
-      "sha256": "f63705aa9285cd7642c4eb0720cfe7c6365b69d4e135b242e36952faa470b2fb"
+      "sha256": "6358187a5aa7dd321890a837590d3ccc9ae567d9e7d90e14f063f3ff488d6764"
     },
     "design": {
       "journey": "Expose scheduled and retained unsent submissions in a discoverable Outbox between Drafts and Sent, with safe state-specific controls.",
@@ -291,17 +633,17 @@
       }
     ],
     "engineering_exit": "All nonhuman changed-boundary tests, installed validation, independent review and ordinary signed delivery pass.",
-    "human_exit": "Owner focused Outbox UAT; whole S08 acceptance remains separate."
+    "human_exit": "PASS: owner accepts whole S08 and confirms completion of Scheduled-copy discard, saved-timezone future-schedule cancellation, and snooze cancellation/return."
   },
   "human_acceptance": {
     "status": "PASS",
-    "reference": "Owner 2026-11-08 UAT = PASS for cause-specific Outbox refusal and explicit rescheduling recovery; whole S08 acceptance remains separate."
+    "reference": "Owner 2026-11-08: “these have already been done, S08 is a UAT = Pass”. Whole S08 accepted, including the previously outstanding Scheduled-copy discard, saved-timezone future-schedule cancellation, and snooze cancellation/return checks."
   },
-  "next_action": "Publish the scoped acceptance through normal signed delivery, then complete Scheduled-copy discard, saved-timezone schedule cancellation, and snooze cancellation/return UAT.",
-  "independent_next_action": "Review the scoped acceptance record and preserved historical failures; whole S08 acceptance requires the remaining focused checks."
+  "next_action": "Publish the documentation-only whole-S08 owner acceptance through normal signed delivery. No S08 UAT remains pending; S09 is separate.",
+  "independent_next_action": "Preserve the existing independent engineering review and historical failure evidence. Whole S08 is owner-accepted; S09 remains separate."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- End historical accepted S08 work order -->
 
 2026-11-08 — Previous Compose navigation work order preserved before Outbox follow-up:
 ```json

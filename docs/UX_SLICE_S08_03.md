@@ -845,3 +845,17 @@ Remaining focused checks are leftover Scheduled-copy discard without removing
 Sent mail, cancellation of a future schedule entered in the saved timezone, and
 Inbox snooze followed by cancellation and return. No code, deployed service,
 schedule or mailbox data is changed by this acceptance record.
+
+
+### 2026-11-08 — owner whole-S08 acceptance / PASS
+
+The owner confirms: “these have already been done, S08 is a UAT = Pass”.
+This explicitly accepts the whole sprint and confirms completion of the previously outstanding checks:
+
+- Scheduled-copy discard removes the source while preserving the Sent message.
+- Future scheduling uses the saved OSMAP timezone, removes the source from Drafts, and cancellation remains effective after refresh.
+- Snooze removes the test message from the normal Inbox view; cancellation returns it.
+
+These are owner-confirmed UAT results, not newly executed agent tests. This closes S08 and supersedes earlier whole-sprint acceptance-pending statements. Existing engineering, installed QA and independent-review evidence is reused; historical failures remain preserved. Documents remains removed from scope.
+
+This is a documentation-only acceptance record; no code, service, mailbox, schedule, quota, key or configuration changes accompany it. S09 integration, visual and accessibility work and production security review/WSTG remain separate.

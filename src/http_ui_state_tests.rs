@@ -2,6 +2,23 @@
 use super::*;
 
 #[test]
+fn shared_headers_reuse_login_logo_without_changing_navigation_or_copy() {
+    let login = render_login_page(None).as_str().to_owned();
+    let start = login.find("<svg class=\"login-shield\"").unwrap();
+    let end = start + login[start..].find("</svg>").unwrap() + "</svg>".len();
+    let logo = &login[start..end];
+    for page in ["mailboxes", "inbox", "compose", "settings", "outbox"] {
+        let header = app_header("alice@example.test", "synthetic-csrf", page);
+        assert_eq!(header.matches(logo).count(), 1, "{page}");
+        assert!(header.contains("href=\"/mailboxes\" aria-label=\"OSMAP mailboxes\""));
+        assert!(header.contains("action=\"/logout\""));
+        if page == "mailboxes" {
+            assert!(header.contains("Secure Email. Your Data. Your Control."));
+        }
+    }
+}
+
+#[test]
 fn state_card_escapes_inert_content_and_keeps_only_native_link() {
     let html = mail_state_card(
         "<title>",

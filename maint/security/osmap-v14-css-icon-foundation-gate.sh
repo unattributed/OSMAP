@@ -44,7 +44,7 @@ require_pattern "ui-icon" "src/http_support.rs"
 require_pattern "brand-icon" "src/http_support.rs"
 require_pattern "currentColor" "src/http_support.rs"
 require_pattern "prefers-reduced-motion" "src/http_support.rs"
-require_pattern "ui-icon brand-icon" "src/http_ui.rs"
+require_pattern "OSMAP_BRAND_SHIELD" "src/http_ui.rs"
 
 require_pattern "CSS-only" "docs/V14_SLICE_2_CSS_ICON_FOUNDATION.md"
 require_pattern "local inline SVG" "docs/V14_SLICE_2_CSS_ICON_FOUNDATION.md"

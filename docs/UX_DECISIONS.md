@@ -733,3 +733,10 @@ Use isolated fixtures in the existing Rust browser test, no new Python tooling.
 After durable capture and confirmed journal transfer, remove only the exact source revision. Legacy confirmed Scheduled copies may be explicitly discarded while keeping the captured job/payload and consumed intent. They stay noneditable: editing captured content belongs to Scheduled messages, and cancellation never rearms the source. Uncertain attempts remain protected.
 
 Reuse fixed-offset Schedule conversion for Snooze, with current owned-offset binding and independent cancellation. Normalize timezone-less native dates at the producer with TZ=UTC, then apply the account display offset once. Install only the existing helper retention input for Duncan Trash on obsd1; retain native policy/revision/identity/CSRF/review/confirmation checks. No owner data deletion, public mail configuration change or new Python tooling. The final S08 inspection excludes Documents and preserves accepted folder, notification and scoped scheduled-delivery evidence.
+
+## S08-05 logo continuity — 2026-11-10
+
+The owner narrows S08-05 to the existing login logo across all branded pages.
+Reuse that exact trusted SVG in the shared header and preserve current copy,
+links and behaviour. Original S08 acceptance remains closed; icon display mode
+and Junk are separate extensions. No new UI module or backend work.
