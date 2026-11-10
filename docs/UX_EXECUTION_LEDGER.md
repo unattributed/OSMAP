@@ -70,7 +70,7 @@
       "installed_binary": "f6768bb2caa050eb46e05536b47e67008bc62d2de0a265bc5c88cac96516c7a3",
       "owner_acceptance": "PENDING",
       "aggregate_v14": "FAIL_PREEXISTING_SCAFFOLD_CONSUMERS",
-      "normal_publication": "Git history and final fresh-fetch receipt establish outcome; mandatory unchanged hooks pending at source freeze.",
+      "normal_publication": "Implementationca64 signaturePASS and normalpushhookPASS2351/0/90, transportexit141/remoteclose, freshorigin4389/ahead1. Specific remote causeUNKNOWN, elapsedUNMEASURED. IndependentreassessmentGO for one unchanged-hook retry with SSH keepalives15/6; finalpublication requires fresh exactSHA/0/0.",
       "evidence": "/home/foo/Downloads/osmap-ux-s08/s08-05"
     }
   ],
@@ -196,7 +196,7 @@
     "slice": "S01-02",
     "specification": {
       "path": "docs/UX_SLICE_S08_05.md",
-      "sha256": "454d9644bff3d3ec1cc65659dca893531ea8a5f14bc0d27c895b7e2fb57c2eda"
+      "sha256": "a5bf810483d0e64ef31f3e29f13180a4ab4526639a3347c4c091ff9bd56a5f3f"
     },
     "design": {
       "journey": "The login shield/keyhole is the same trusted SVG in welcome and ordinary shared headers; existing wording and actions are preserved.",

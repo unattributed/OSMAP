@@ -110,3 +110,23 @@ signing-cache refusal:2351 Rust library PASS/0FAIL/90explicit ignores, strict
 Clippy, formatting and all remaining normal checks. Reported local nginx and
 credential/native coverage skips remain unclaimed. The mandatory commit/push
 hooks remain enabled; this result does not bypass them or pass aggregate V14.
+
+## Preserved publication transport failure
+
+Signed implementation `ca64ec1b16b2b7a19d66a0b71ea523b7918a6872` verifies
+with the required Shopkeeper key. Its unchanged normal pre-push security hook
+completed:2351 Rust PASS/0FAIL/90explicit ignores and all normal checks.
+The push itself failed with exit141. During that long hook the SSH client
+reported the remote host closed the GitHub connection. Fresh fetch still showed
+origin at4389ae0 and local ahead1; no publication is claimed for that attempt.
+The specific remote-close cause is UNKNOWN because server diagnostics are not
+available. SSH application keepalives were disabled; idle expiry is a hypothesis,
+not an established cause. Elapsed duration of this attempt is UNMEASURED.
+
+Independent reassessment approves one changed ordinary retry with BatchMode,
+ServerAliveInterval15 and ServerAliveCountMax6, preserving the exact normal
+hook, source and signature requirements. This is a bounded transport mitigation,
+not a proven causal repair. Stop/reassess on another failure. Retain the failed
+push and establish final publication only by fresh exact SHA equality and0/0.
+No new host installation or product test is needed for this evidence-only
+checkpoint; all528 compiled inputs remain unchanged.
