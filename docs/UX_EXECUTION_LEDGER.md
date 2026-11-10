@@ -1,3 +1,5 @@
+2026-11-10 (Asia/Bangkok) — **S08-05 PASS / ACCEPTED / CLOSED.** Owner states: “I have reviewed all OSMAP pages and APPROVE PASS this slice as complete”. This accepts the installed logo-continuity correction; matching engineering and independent-review evidence is reused. No S08-05 UAT remains pending. Original S08 stays accepted, S08-06/07 remain queued, and mechanical S01-02 parent obligations remain separately IN_PROGRESS. Historical failures and aggregate V14 limitations are preserved. Documentation-only closeout; no runtime action.
+
 2026-11-10 — **S08-05 resumed: logo continuity only.** Latest operator clarification narrows the November 9 branding plan to reusing the existing login logo across branded pages. Existing copy/navigation remain unchanged. Root integrates the preserved whole-S08 acceptance and extension records from the separate worktree without modifying that worktree. Original S08 stays accepted.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
@@ -68,21 +70,21 @@
       "scope": "S08-05",
       "engineering": "PASS_LOGO_ONLY",
       "installed_binary": "f6768bb2caa050eb46e05536b47e67008bc62d2de0a265bc5c88cac96516c7a3",
-      "owner_acceptance": "PENDING",
+      "owner_acceptance": "PASS_ACCEPTED",
       "aggregate_v14": "FAIL_PREEXISTING_SCAFFOLD_CONSUMERS",
-      "normal_publication": "Implementationca64 signaturePASS and normalpushhookPASS2351/0/90, transportexit141/remoteclose, freshorigin4389/ahead1. Specific remote causeUNKNOWN, elapsedUNMEASURED. IndependentreassessmentGO for one unchanged-hook retry with SSH keepalives15/6; finalpublication requires fresh exactSHA/0/0.",
+      "normal_publication": "Implementationca64 and deliverye67 were signed, published and verified exact local/origin0/0. First transport failure remains historical. Acceptance-only checkpoint now follows normal signed delivery.",
       "evidence": "/home/foo/Downloads/osmap-ux-s08/s08-05"
     }
   ],
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "Short visual logo check after engineering verification."
+    "status": "PASS",
+    "reference": "Owner 2026-11-10 (Asia/Bangkok): I have reviewed all OSMAP pages and APPROVE PASS this slice as complete. Scope: S08-05 logo continuity only."
   },
-  "next_action": "Complete unchanged normal signed commit/push hooks and fresh origin equality, then short owner visual logo check. Original parent state remains separate.",
+  "next_action": "S08-05 accepted and closed. Preserve this documentation-only closeout through normal signed delivery. S08-06 and S08-07 remain queued; no further S08-05 UAT or runtime action.",
   "validator_scope": "S08-05 is an operator-added extension of the existing S01-02 shared-header boundary. Parent mapping preserves its exact original catalogue requirement and all27 mapped IDs as separately pending obligations; extension evidence does not qualify or close that parent. Earlier literal S08-05 catalogue refusal is retained; no validator or frozen plan change.",
   "extension_id": "S08-05",
   "delivery_scope": "Logo continuity only; original S01-02 shell/topbar obligations remain independently accounted, not reopened or newly qualified by this extension.",
-  "extension_state": "UAT_READY",
+  "extension_state": "ACCEPTED",
   "outcomes": [
     {
       "id": "original-shell-obligations",
@@ -138,7 +140,7 @@
       ],
       "frontend_backend_outcome": "The login shield/keyhole is the same trusted SVG in welcome and ordinary shared headers; existing wording and actions are preserved.",
       "essential_qa": "Actual rendered login/welcome/ordinary logo parity and unchanged link/copy. Existing synthetic-page renderer and desktop/narrow light/dark browser logo fit. Matching OpenBSD renderer check; Web-only install with rollback and existing read-only readiness. Independent delta/result review; normal signed commit/push hooks and fresh origin equality.",
-      "next_action": "Complete focused renderer/browser checks, independent review, matching native Web-only delivery and normal signed preservation.",
+      "next_action": "Owner accepted the completed logo correction after all-pages review; finish signed documentation preservation only.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -196,7 +198,7 @@
     "slice": "S01-02",
     "specification": {
       "path": "docs/UX_SLICE_S08_05.md",
-      "sha256": "a5bf810483d0e64ef31f3e29f13180a4ab4526639a3347c4c091ff9bd56a5f3f"
+      "sha256": "1df24ada31f0d85028512a024d52dda4409405e6bf0773ddd654716dd1fd868d"
     },
     "design": {
       "journey": "The login shield/keyhole is the same trusted SVG in welcome and ordinary shared headers; existing wording and actions are preserved.",
@@ -325,12 +327,14 @@
         "preserved": "Existing copy/navigation/authentication/account isolation and original evidence; no whole-parent acceptance inferred.",
         "owner": "/root",
         "reviewer": "/root/s08_delivery_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Owner 2026-11-10 (Asia/Bangkok): I have reviewed all OSMAP pages and APPROVE PASS this slice as complete. Scope: S08-05 logo continuity only."
+        ]
       }
     ],
     "engineering_exit": "S08-05 logo outcome independently verified, installed and normally signed/preserved; original S01-02 parent state remains separate.",
-    "human_exit": "Short owner visual acceptance of S08-05 only; original S08 acceptance is preserved."
+    "human_exit": "PASS: owner reviewed all OSMAP pages and explicitly accepts S08-05 as complete; no further logo UAT pending."
   }
 }
 ```

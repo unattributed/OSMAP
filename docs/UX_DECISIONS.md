@@ -740,3 +740,7 @@ The owner narrows S08-05 to the existing login logo across all branded pages.
 Reuse that exact trusted SVG in the shared header and preserve current copy,
 links and behaviour. Original S08 acceptance remains closed; icon display mode
 and Junk are separate extensions. No new UI module or backend work.
+
+## S08-05 owner acceptance — 2026-11-10
+
+The owner states: “I have reviewed all OSMAP pages and APPROVE PASS this slice as complete”. Record S08-05 PASS / ACCEPTED / CLOSED. Reuse matching engineering and independent-review evidence; no further logo UAT or runtime action. Original S08 remains accepted, S08-06/07 remain queued, and unrelated parent/V14/release obligations retain their existing status.

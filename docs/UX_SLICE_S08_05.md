@@ -1,5 +1,26 @@
 # S08-05 — Logo continuity
 
+## Owner acceptance — 2026-11-10
+
+**S08-05 = PASS / ACCEPTED / CLOSED.** The owner states:
+
+> I have reviewed all OSMAP pages and APPROVE PASS this slice as complete
+
+This accepts logo continuity across the owner-reviewed OSMAP pages, installed
+as Web SHA256 `f6768bb2caa050eb46e05536b47e67008bc62d2de0a265bc5c88cac96516c7a3`,
+with signed implementation `ca64ec1b16b2b7a19d66a0b71ea523b7918a6872` and
+verified signed delivery `e67a298d48d17e74b245b6dad64149b354efbf0f`.
+Prior engineering, native, browser, installed and independent-review evidence is
+reused. The owner reports all-pages review; no particular browser, viewport or
+sequence of individual actions is inferred. No further S08-05 UAT is pending.
+
+This closeout changes documentation only. No deployment or repeated product
+test is needed. Prior failed/unqualified observations and the two preexisting
+V14 scaffold-consumer failures remain recorded; no full-V14 or release PASS is
+claimed. Original S08 remains accepted. S08-06 and S08-07 stay queued, and the
+separately retained S01-02 parent obligations are not reaccepted by this closeout.
+Normal signed preservation of this acceptance record is a separate delivery.
+
 ## Current outcome — 2026-11-10
 
 Use the existing login shield/keyhole logo on every page with the shared OSMAP
@@ -35,9 +56,9 @@ QA/security/delivery review. Preserve failures and unknown historical cost.
 Two failures at the same boundary stop retries for combined reassessment.
 Reuse existing tooling and evidence; no new test framework or Python tooling.
 
-Engineering status: UAT_READY for the logo-only extension, as recorded below.
-Owner acceptance remains PENDING. Normal signed publication is pending at this
-source freeze; its final outcome requires the actual Git and fresh-fetch receipt.
+Current status: ACCEPTED / CLOSED after the owner's all-pages review above.
+Engineering and publication history below preserves the earlier source-freeze
+state; later verified delivery and owner acceptance supersede its pending flags.
 
 ## Engineering result — 2026-11-10
 
@@ -96,9 +117,9 @@ partial header diff are also losslessly preserved with readback hashes under
 Native candidate/source and exact old-binary rollback remain privately retained;
 no uncertain resources were removed. Historical cumulative effort is UNKNOWN.
 
-Owner check after publication: refresh login and an internal page, including a
-narrow window. The shield/keyhole should match throughout and navigation should
-remain usable. This invitation is not recorded owner acceptance.
+Historical owner-check invitation: inspect the matching logo across pages and
+layouts. The owner's subsequent all-pages review and explicit PASS above now
+close S08-05; no further owner check is pending.
 
 Signing history: the first normal commit hook passed, then cache-only Shopkeeper
 signing refused with fixed `No pinentry`; no commit was created. The owner
