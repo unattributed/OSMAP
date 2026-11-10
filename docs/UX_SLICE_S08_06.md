@@ -172,3 +172,92 @@ Raw failures and their scoped resolutions remain in the sprint root.
 
 Normal delivery gates, final independent review, matching native/installed
 observations and separate product owner acceptance remain pending at this entry.
+
+## Source publication and prepared owner check
+
+Signed source `01a0db41aa2e9349ac2798ce889b3c15559a4e9a` was independently
+reviewed and published through the normal commit and full developer pre-push
+hooks. Shopkeeper signature verification passed. The push hook passed all
+2,356 library cases with 90 explicit ignores and completed its remaining checks.
+Normal V10–V13 components also passed. Fresh fetch proved local/origin equality
+and zero ahead/behind. This does not convert the four earlier aggregate attempts
+into passes; their failures and resolutions remain above and in the ledger.
+Full V14 still retains its two preexisting reader/OpenPGP scaffold refusals;
+the inspected changed UI, script/CSP, accessibility and final-closeout consumers
+pass within their scope. No full V14 or production-release claim is made.
+
+The native source archive is pinned to that signed source. Native, installed
+and final delivery results are recorded below when executed. Until those pass,
+the following owner check is prepared, not an invitation to troubleshoot:
+
+1. In Settings → Appearance, choose Icons, save, refresh and reopen Appearance.
+   Confirm the saved choice and compact desktop action/sidebar presentation.
+2. Use pointer hover and keyboard focus on navigation and primary actions to
+   inspect their names; message content, field labels and security facts remain
+   readable. No send, deletion or credential operation is required.
+3. On an available touch-capable device, confirm visible action/navigation labels
+   with the same saved Icons choice. Switch to Text labels and save to confirm
+   the labelled desktop presentation. Report the device scope actually checked.
+
+The mixed-input guarantee is supported by independent source inspection of the
+any-coarse exclusion and the tested fine/coarse browser branches. Simultaneous
+mixed input and physical hardware are not represented as observed agent passes.
+The layout-scaling check is not a native browser-UI zoom observation. Owner
+product acceptance remains separate from the earlier mockup approval.
+
+## Native and installed result — 2026-11-10
+
+Engineering, native, installed and recovery review is **GO for T09** within the
+approved extension scope. Product owner acceptance is **NOT_RUN / PENDING**.
+Original S08 and S08-05 acceptance is preserved; S08-07 Junk remains queued.
+
+The assessed archive SHA256 is
+`7815786684215f35b3a66a458559d4b9ddbc7d5d50ea3a38f08e1df7e4be3bdc`.
+Its 592 source/fixture input hashes exactly match native extraction. Bounded
+OpenBSD compilation passed and all ten selected store/Runtime/HTTP cases passed
+with zero failures or ignores. Private native logs were read back and their
+hashes independently reconciled. The resulting Web binary SHA256 is
+`8d1325dd031ad6dd869e52f88a33e15a0cb68459f513b44543e9468b612a9759`;
+the test binary is
+`0faf9c80fa93bced863a920ce31f9ca810005dd757fb365dd3f82954c4472f8a`.
+
+Three disposable Runtime/HTTP cases then passed under the actual Web identity,
+covering style persistence/reopen, theme-only preservation, account isolation,
+strict forms and rendered choices. The overall readiness attempt retained exit
+94 at cleanup confirmation: two StubGateway constructors left two empty journal
+and two empty recovery fixture directories outside the cases' explicit roots.
+This was a fixture-cleanup failure, separate from the three functional passes.
+The original diagnostic streams were durably read back and hash-bound before
+recovery. Independent review approved one finite action that validated the exact
+private namespace, Web ownership, modes, absence of symlinks and emptiness before
+using `rmdir` on those four directories. Recovery passed; its metadata hash and
+empty final inventory were read back. No functional test was replayed, and the
+original exit 94 remains a failure. Cleanup PASS is not a new functional PASS.
+
+The reviewed Web-only installation passed in 3.1 seconds. The running Serve
+executable inode matches the assessed candidate. Configuration and the public
+mail, mailbox helper, account service and GPG-agent process snapshots are
+byte-equal before/after installation. The predecessor executable and compatible
+candidate remain retained. No owner preference, credential, key, message or
+backend configuration was changed by agent QA. Only OSMAP Web was restarted.
+
+Installation receipt SHA256:
+`d873656e8b42ed20abc3f514dbe4ff8c191d74920bf74fa968fb6673f0bc2bcb`.
+The read-back preservation archive is 25,600 bytes, SHA256
+`0b65a62346022ece59bf6e9ba58c1e09248165aa633a2d51a68021464ebc9443`.
+An anonymous HTTPS request explicitly resolved to `192.168.1.44` and returned
+200. The response contains the exact assessed approved CSS. An earlier ad hoc
+Send-class probe was unqualified because it guessed a class outside the source
+vocabulary; that false selector observation is retained separately. No owner
+HTTPS preference-save journey is asserted by these anonymous observations.
+
+Readiness combines the matched native artifact, actual Web-identity disposable
+persistence/HTTP fixtures and installed binary/service evidence. Independent
+combined review reconciled their scope and retained failures and approved the
+prepared three-step owner check above. The final normal signed record checkpoint
+and fresh Git equality receipt establish publication of these delivery records.
+All private raw streams, source stages and original/compatible executables remain
+under their existing exact-owned retention rules; public-safe source/design and
+sanitized results are preserved in Git. No full V14 or production-release PASS
+is claimed. The documented version-3 rollback/editing and physical-device/zoom
+limits remain unchanged.

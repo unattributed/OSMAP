@@ -4,7 +4,7 @@
 
 ## S08 acceptance and extensions
 
-- `UX_SLICE_S08_06.md` — [S08-06: Presentation style](UX_SLICE_S08_06.md): approved Appearance choices **Icons** and **Text labels**, saved per account; desktop icon actions/sidebar and labelled touch fallback. Implementation and local verification are in progress; installed qualification and owner product acceptance remain pending.
+- `UX_SLICE_S08_06.md` — [S08-06: Presentation style](UX_SLICE_S08_06.md): **engineering/native/installed review GO; owner acceptance pending**. Appearance choices **Icons** and **Text labels** persist per account; desktop icons include the sidebar and primary actions, while touch-capable devices retain labels. Prior failures and recovery limits remain recorded.
 - `design/s08-06-approved-20261110/README.md` — [approved S08-06 desktop and touch references](design/s08-06-approved-20261110/README.md): synthetic mockups, provenance and checksums; design approval only.
 - `UX_SLICE_S08_05.md` — [S08-05: logo continuity](UX_SLICE_S08_05.md): **PASS / ACCEPTED / CLOSED** on November 10 after the owner reviewed all OSMAP pages; existing engineering evidence reused.
 - `UX_SLICE_S08_01.md` — [S08-01: Documents and shared storage](UX_SLICE_S08_01.md): accepted account-generic mail storage reporting; Documents was removed from scope.

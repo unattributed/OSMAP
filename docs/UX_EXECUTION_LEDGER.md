@@ -1,3 +1,5 @@
+2026-11-10 — **S08-06 installed; engineering/native/installed/recovery GO, owner acceptance PENDING.** Appearance saves Icons or Text labels per account; desktop primary/sidebar icons and labelled touch fallback verified within stated scope. Source01a0db4 published, native10 and WebUID3 functional passes; original cleanup94 preserved and separate exact-owned recovery PASS. Web8d1325 installed with HTTPS200 and protected-state/public-mail preservation. Final normal signed record preservation precedes the minimal T09 owner check. Mechanical S01-01 parent remains IN_PROGRESS; original S08 and S08-05 acceptance is preserved.
+
 2026-11-10 — **S08-06 design approved; Presentation style contract IN_PROGRESS.** Owner approved final nine-page desktop/touch mockups and specified Appearance choices Icons or Text labels. Design acceptance only; all product tests/installed/UAT pending. S08-05 remains accepted. See [S08-06](UX_SLICE_S08_06.md).
 
 2026-11-10 (Asia/Bangkok) — **S08-05 PASS / ACCEPTED / CLOSED.** Owner states: “I have reviewed all OSMAP pages and APPROVE PASS this slice as complete”. This accepts the installed logo-continuity correction; matching engineering and independent-review evidence is reused. No S08-05 UAT remains pending. Original S08 stays accepted, S08-06/07 remain queued, and mechanical S01-02 parent obligations remain separately IN_PROGRESS. Historical failures and aggregate V14 limitations are preserved. Documentation-only closeout; no runtime action.
@@ -161,17 +163,37 @@
       "scope": "source review",
       "status": "GO",
       "reference": "Independent /root/s08_delivery_review inspected55fileproduction/testfreeze and3derivedregisters; no added production assumption or security-gate changes. Native/installed/human pending."
+    },
+    {
+      "scope": "native",
+      "status": "PASS",
+      "reference": "Native10exactcases0FAIL0ignored,592sourcefixturehashesequal, logbyte/hashreadbacks independentlyreconciled; Web8d1325/test0faf9c80."
+    },
+    {
+      "scope": "Web-UID fixture",
+      "status": "FUNCTIONAL_PASS_WITH_ORIGINAL_CLEANUP_FAIL_RETAINED",
+      "reference": "ThreecasesPASS0FAIL0ignored, originaloverall94 retained; four source-owned empty directories separately validated/rmdir-recoveredfe9f278c, metadatareadback7b2ee3f5 and emptyinventory."
+    },
+    {
+      "scope": "installed",
+      "status": "PASS_SCOPED",
+      "reference": "Web-onlyinstall3.1s d873656e, loaded8d1325matchinginode, HTTPS200peer192.168.1.44, fivepreservationcomparisonsbyteequal and twelvehashedstreams0b65a623 archive. NoownerHTTPSsaveorcredential/mail/key/backendmutation."
+    },
+    {
+      "scope": "final independent review",
+      "status": "GO_OWNER_CHECK",
+      "reference": "Engineering/native/installed/recoverycombinedGO; productacceptancePENDING, physicalmixedinput/nativeUIzoomunobserved, v3oldbinaryeditinglimitationretained, fullV14twohistoricalFAIL/nonrelease."
     }
   ],
   "human_acceptance": {
     "status": "PENDING",
     "reference": "Owner approved final mockups, then specified Appearance Presentation style Icons or Text labels. Design approval only; product UAT pending."
   },
-  "next_action": "Complete normal V10-V13 components, reviewed signed checkpoint and normal full pre-push security gate with two test threads; after publication bind exact signed archive and reviewed native/Web-only recipes to obsd1.",
+  "next_action": "Finish normal signed delivery-record checkpoint, verify signatures, push normally and fetch exact equality; then invite only prepared T09 owner check. No further live action; do not start S08-07 or close original parent.",
   "validator_scope": "S08-06 mapped mechanically to existing S01-01 Appearance boundary; preserve all original six obligations separately. No frozen plan or validator change.",
   "extension_id": "S08-06",
   "delivery_scope": "Operator-added Presentation style extension only; no whole-parent completion or mail/key/configuration change.",
-  "extension_state": "IN_PROGRESS",
+  "extension_state": "UAT_READY",
   "outcomes": [
     {
       "id": "original-appearance-obligations",
@@ -206,15 +228,15 @@
       ],
       "frontend_backend_outcome": "Saved account Presentation style changes known actions/sidebar consistently, with labelled touch fallback and unchanged authority/content.",
       "essential_qa": "Approved T01-T09; existing small changed-boundary tests, source/native/installed results kept separate.",
-      "next_action": "Implement/verify extension; retain historical original obligations without reacceptance.",
+      "next_action": "Prepared minimal T09 owner check after normal signed public-safe record preservation. Product owner acceptance PENDING; no further live agent operation.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -224,6 +246,22 @@
         {
           "stage": "source_tests",
           "reference": "Focused32/62/Compose9+2/affected27+Identity1 and full Rust2356PASS0FAIL90ignored; actual browser scoped observations. Gate failures and physical-device limits retained separately."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Native1 assessed signed01a0db4, ten exact testsPASS0FAIL0ignored;592 source-input hashes equal; retained native-01-result.json/three log hashes independently reviewed."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Actual Web-UID Runtime/HTTP fixture3PASS, original cleanup94 separately recovered; matching loaded8d1325 candidate, inode/HTTPS200 peer192.168.1.44 and preservation readbackPASS d873656e/0b65a623."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/root/s08_delivery_review independently reconciled source/normal hooks/native10/592inputs/WebUID3/original94/recovery/install/readback/HTTPS scope; final GO for minimalT09. No ownerHTTPSsave or fullreleaseclaim."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Native interrupted-save/legacy/corruption casesPASS; private originals/candidate retained with v3rollbacklimit. Exact-owned fixture recoveryfe9f278cPASS, metadata7b2ee3f5readback and finalinventoryempty. No forced live executable rollback performed; reviewed existing method reused."
         }
       ]
     }
@@ -232,7 +270,7 @@
     "owner": "/root",
     "functional_exit": "Each account selects Presentation style: Icons or Text labels in Appearance; actual authenticated pages preserve actions and readable facts, with labelled touch/hybrid fallback.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Prior design effort UNKNOWN. Static18page review only; two scope contradictions corrected before owner mockup approval. S08-05 accepted work order retained verbatim below. Mechanical validator initially refused directory allowlist, then fractional/offset UTC stamp; combined independent schema review also corrected local integration evidence level to source. These are declaration failures, not product results. First focused appearance compile refused E0425 before tests due misplaced settings-nav match in native select helper; root restored option escaping and applied match in actual nav loop. Retained log appearance-focused-20261110-01.log SHA256bd4cc7f7957af6508a805e3e008df34a826d7363be40aec0e929b4c56483e4f1. Independent review also identified sidebar clipping/narrow reachability/visible-caption gaps, corrected before next candidate. Renderer focused01 compiled then54PASS/8FAIL due inner-label adjacency; readback source review found original form contracts retained and strengthened vacuous no-action negatives. Log SHA256000e156f8cfaba25fd9842843d3c66050b7d7500e9a202d90420b7a3d56714f3. Independent finite inventory identified additional primary key/folder/session/authenticator controls before coverage closure. Browser01 stopped after4desktop checks on existing fixture Sent shortcut unavailable (actualstatus unretained, priorstage metrics explicitlyidentified). Browser02 passed13desktop/focus/narrow checks but touchcaptureNOT_QUALIFIED: isolated CSS/mediaevents proved fullPage/directCDP capture flips coarse to fine input. Independent combinedreassessment approved one viewport-only touchcapture with before/during/after media invariants; sources/tempfixtures retained. No productfallbackFAIL inferred. Browser03 strict caption-count equality36to40 refused despite allcaptionsvisible and invariantinput; independent combinedreassessment removed invented countprerequisite and preserved27scopedobservations. Browser04 remaining5checks passed, but visualwide-clockoverlap remains separatelyunqualified untiltargetedfix. Passwordpageshow/click captionwipes corrected with exactCSPscriptpin; same12+3negativeconsumersPASS. Read-onlyfmtcheckrefused5ownedfiles; boundedformattercorrectedonlythese. Recordv3 rollbacklimitation independently reviewed/documented beforehost; no ownerprefs mutated. First normal acceptance gate endedFAIL atRusttests2333PASS23FAIL90explicitignores, no compilererror; log5f4f7d477c8008e3f43f8412043e43c29329260f2c0accd352caf2c31432a402 started11:32:39Z ended11:33:48Z. Combinedindependent review requested before next workflow retry, including earlier8renderer assertions. Diagnose real links/permissions/CSP outcomes before adapting old label-adjacency/extraction consumers; no guard weakening. Browser05 scoped9PASS supersedes wideclockoverlap: normalflowclock/tools nonoverlap, themes/density/focus/200percent-equivalentlayout/passwordlabels pass; physicalhybrid unobserved. Combinedreview approved oldmarkupconsumer corrections and stronger negatives. Focusedexact28 ran27PASS1FAIL at laterIdentitycaption assertion105 (earlier refusal/corruption checkspassed), log50bb1ccd39f00ce3f3abbe7f2f70427359b5961fc4f4ed2f4800a0b80dae6875,16seconds. Preserve27PASS; combinedreview and onlyremainingcase retest required. Identityoriginalcase1PASS14cc9cd1064a48b2b54c8a77cc01ba29685f14ca8032cc7f3da3e0b9e516857e. Acceptance02Rust2356PASS0FAIL90ignores thenmissingdesignREADMEindexFAIL e8797e9c08c9485170b61a921b63565b91ad49a1a9c532fb2289649de7b7959a; actualdocguardafterindexfixPASS. Acceptance03Rust2355PASS1FAIL90ignores unchangedimmediateadmissioncase637ErrorUnavailable a29e835f96d879f037e877bf5871c35f19b01aaba1642a33e2eddf467c4e4d65; causeUNKNOWN, retainedresultcannotdisambiguateadmission/cleanupfailures. IsolatedoriginalcasePASS e4c3a371c3261bd9f43598393f41db9ed0b7dd6c8ce16b3e3077d5749232dcff. Combinedindependentreassessment approvednoothergateworkflow/RUST_TEST_THREADS2 withoutguardchanges. Acceptance04Rust2356PASS0FAIL90ignores thenV10derivedtestcount/hashdriftFAIL5127868cdf2c6a4a3e6941e921999202a352b5bc6aa058b05eb12bc3c3e4b058; normalhooksunchanged, generatedregisterrefreshonly pending. CurrentV14aggregateb3587050b64274b859ee5a5841ebc1bc50d4656381c65c6ada0ce687cf46b1c7 stillFAILsameoldreaderfuturetext; remainingOpenPGPoldscaffoldalsoFAIL, compose/account/exactCSP/accessibility/finalcloseoutscopedPASS. NativeidentityreadonlyPASScurrentoldf676; nohostmutation. Privatebuild/install/readinessrecipesreviewed aftercheckedfindandfixedfailureaccountingcorrections. Actualnative10localproducer/consumerPASS andzero/wrongcount/failsummaryrefused07d359fdfef967f9ee15438634558620b2ae32eef7e480606e56b8429415a66e. Existingunchangedscannersrefreshed3derivedregisters: refined13225=13222testfixture+3unchangedmediumruntime, high_after0. Directscanner/V11/V10governancePASS0ea08c6291a17546ed2c0ca886c57a09205b2d54fcfa4a3c4d3ddbae6eb12532. Independentactualsource/derivedreviewGO; source+derivedfreeze58files e37d40ec9656b0c8f9511f1ea8d8dc7250473778c2d001da40dfe05139cc00df. NormalremainingV10-V13components thennormalcommit/pushhooksplanned; earlieraggregatefailuresretained. Normalmakev10-check/v11-check/v12-check/v13-checkPASS a7fa540acde67987d6af7bf3bc7aab6046dea5be7675c85c1194748719d3f3d2,8seconds. IndependentfinalsourceGO; ordinarysignedcommit/fullnormalpushhooknext, nohookbypass.",
+    "history_reference": "Prior design effort UNKNOWN. Static18page review only; two scope contradictions corrected before owner mockup approval. S08-05 accepted work order retained verbatim below. Mechanical validator initially refused directory allowlist, then fractional/offset UTC stamp; combined independent schema review also corrected local integration evidence level to source. These are declaration failures, not product results. First focused appearance compile refused E0425 before tests due misplaced settings-nav match in native select helper; root restored option escaping and applied match in actual nav loop. Retained log appearance-focused-20261110-01.log SHA256bd4cc7f7957af6508a805e3e008df34a826d7363be40aec0e929b4c56483e4f1. Independent review also identified sidebar clipping/narrow reachability/visible-caption gaps, corrected before next candidate. Renderer focused01 compiled then54PASS/8FAIL due inner-label adjacency; readback source review found original form contracts retained and strengthened vacuous no-action negatives. Log SHA256000e156f8cfaba25fd9842843d3c66050b7d7500e9a202d90420b7a3d56714f3. Independent finite inventory identified additional primary key/folder/session/authenticator controls before coverage closure. Browser01 stopped after4desktop checks on existing fixture Sent shortcut unavailable (actualstatus unretained, priorstage metrics explicitlyidentified). Browser02 passed13desktop/focus/narrow checks but touchcaptureNOT_QUALIFIED: isolated CSS/mediaevents proved fullPage/directCDP capture flips coarse to fine input. Independent combinedreassessment approved one viewport-only touchcapture with before/during/after media invariants; sources/tempfixtures retained. No productfallbackFAIL inferred. Browser03 strict caption-count equality36to40 refused despite allcaptionsvisible and invariantinput; independent combinedreassessment removed invented countprerequisite and preserved27scopedobservations. Browser04 remaining5checks passed, but visualwide-clockoverlap remains separatelyunqualified untiltargetedfix. Passwordpageshow/click captionwipes corrected with exactCSPscriptpin; same12+3negativeconsumersPASS. Read-onlyfmtcheckrefused5ownedfiles; boundedformattercorrectedonlythese. Recordv3 rollbacklimitation independently reviewed/documented beforehost; no ownerprefs mutated. First normal acceptance gate endedFAIL atRusttests2333PASS23FAIL90explicitignores, no compilererror; log5f4f7d477c8008e3f43f8412043e43c29329260f2c0accd352caf2c31432a402 started11:32:39Z ended11:33:48Z. Combinedindependent review requested before next workflow retry, including earlier8renderer assertions. Diagnose real links/permissions/CSP outcomes before adapting old label-adjacency/extraction consumers; no guard weakening. Browser05 scoped9PASS supersedes wideclockoverlap: normalflowclock/tools nonoverlap, themes/density/focus/200percent-equivalentlayout/passwordlabels pass; physicalhybrid unobserved. Combinedreview approved oldmarkupconsumer corrections and stronger negatives. Focusedexact28 ran27PASS1FAIL at laterIdentitycaption assertion105 (earlier refusal/corruption checkspassed), log50bb1ccd39f00ce3f3abbe7f2f70427359b5961fc4f4ed2f4800a0b80dae6875,16seconds. Preserve27PASS; combinedreview and onlyremainingcase retest required. Identityoriginalcase1PASS14cc9cd1064a48b2b54c8a77cc01ba29685f14ca8032cc7f3da3e0b9e516857e. Acceptance02Rust2356PASS0FAIL90ignores thenmissingdesignREADMEindexFAIL e8797e9c08c9485170b61a921b63565b91ad49a1a9c532fb2289649de7b7959a; actualdocguardafterindexfixPASS. Acceptance03Rust2355PASS1FAIL90ignores unchangedimmediateadmissioncase637ErrorUnavailable a29e835f96d879f037e877bf5871c35f19b01aaba1642a33e2eddf467c4e4d65; causeUNKNOWN, retainedresultcannotdisambiguateadmission/cleanupfailures. IsolatedoriginalcasePASS e4c3a371c3261bd9f43598393f41db9ed0b7dd6c8ce16b3e3077d5749232dcff. Combinedindependentreassessment approvednoothergateworkflow/RUST_TEST_THREADS2 withoutguardchanges. Acceptance04Rust2356PASS0FAIL90ignores thenV10derivedtestcount/hashdriftFAIL5127868cdf2c6a4a3e6941e921999202a352b5bc6aa058b05eb12bc3c3e4b058; normalhooksunchanged, generatedregisterrefreshonly pending. CurrentV14aggregateb3587050b64274b859ee5a5841ebc1bc50d4656381c65c6ada0ce687cf46b1c7 stillFAILsameoldreaderfuturetext; remainingOpenPGPoldscaffoldalsoFAIL, compose/account/exactCSP/accessibility/finalcloseoutscopedPASS. NativeidentityreadonlyPASScurrentoldf676; nohostmutation. Privatebuild/install/readinessrecipesreviewed aftercheckedfindandfixedfailureaccountingcorrections. Actualnative10localproducer/consumerPASS andzero/wrongcount/failsummaryrefused07d359fdfef967f9ee15438634558620b2ae32eef7e480606e56b8429415a66e. Existingunchangedscannersrefreshed3derivedregisters: refined13225=13222testfixture+3unchangedmediumruntime, high_after0. Directscanner/V11/V10governancePASS0ea08c6291a17546ed2c0ca886c57a09205b2d54fcfa4a3c4d3ddbae6eb12532. Independentactualsource/derivedreviewGO; source+derivedfreeze58files e37d40ec9656b0c8f9511f1ea8d8dc7250473778c2d001da40dfe05139cc00df. NormalremainingV10-V13components thennormalcommit/pushhooksplanned; earlieraggregatefailuresretained. Normalmakev10-check/v11-check/v12-check/v13-checkPASS a7fa540acde67987d6af7bf3bc7aab6046dea5be7675c85c1194748719d3f3d2,8seconds. IndependentfinalsourceGO; ordinarysignedcommit/fullnormalpushhooknext, nohookbypass. Signed01a0db41aa2e9349ac2798ce889b3c15559a4e9a ShopkeeperG/verifyPASS; fullnormalprepushsecurityPASSb359d295380eccc55542dd654bb6705daa852be00e90da5e789bc8e2e20dc7df (Rust2356PASS0FAIL90ignored;436seconds), pushPASS/freshfetchHEAD=origin01a0db40/0. Currentuncommittedledgeronlyplannednativedispatch, preservedinfinaldeliverycheckpoint. FirstrootcapabilityprobeprintedunconditionallyandisUNQUALIFIED; correctedset-eidentitycheckROOT_IDENTITYPASSread-only02, nohostmutationbyprobe. Standardobsd1checkoutfastforwardonlyto01a0db4clean0/0; priorcheckoutworkpreserved. Native1freshprivatestagecreated, fourmode600uid1000nlink1leavesuploadedandhash/sizechecked; nativebuildrunning, noinstalledservicechange. WebUID1originalthreefunctionalPASS0FAIL0ignore0.03s, butoverallcleanup94retained4559aae1e8ee7f8b91eac4c8756d4b0acbaf31b1f0b48b604eb0c089213ef365. Diagnosticruntime419bytes42194be5b71b81619c9fce80da65ad6c6715da412ca7e8c4c9cddb4b03c5a840; inventory394bytes42da6186b48720759bbc98c884e08d5740a9c37bf537aeb54a20eb2f978c12f1; stderr0/emptyhash. Fourtop-levelentriesmatchStubGateway2journal/2recoveryallocationssource1276/5653. Allsourcesretainedbeforecleanup; actualgrepconsumerfouraccepted/threeunownedrefused. Finitermdir-onlyreviewpending, no3casereplayorinstall. Finiteindependentlyreviewedrmdir-onlyrecoveryPASSfe9f278c29424e92564051c10f4e88759a2f26624beff111dded466841c247ae; originalexit94retained, originalthreefunctionalPASSreusednoreplay. Metadatareadbackhashandcheckedemptyconfirmed, ownerdatauntouched. ReviewedWeb-onlyinstallnext. Web-onlyinstall1PASS3.1seconds d873656e8b42ed20abc3f514dbe4ff8c191d74920bf74fa968fb6673f0bc2bcb loaded8d1325; actualpreservationreadback5byte-equalpairs/12streams0b65a62346022ece59bf6e9ba58c1e09248165aa633a2d51a68021464ebc9443. DirectHTTPSpeer192.168.1.44/status200/noauth; retainedbodyexactapprovedCSSsource64053289present. ExtraunqualifiedguessedSendclassprobeFalse retainedseparately, notproductfailure; actualsourceCSSreadbackPASSwithoutnewrequest. FinalindependentcombinedreviewGO forminimalT09 afterpublicsafeGitrecordpreservation. OwneracceptanceNOT_RUN; productHTTPSsaveunasserted. Originalparentstages/obligationspending, S08/S08-05acceptedpreserved; noJunkworkstarted.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
@@ -248,7 +286,7 @@
     "slice": "S01-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_06.md",
-      "sha256": "973d9f7c48cccf45b6aa1df54209e2c1a471a9031280ef8b2bc8e979c6cd0033"
+      "sha256": "42b04bfa2419e29a3d870289fee622b342a5684aa0edc7d6c0ff1e10c4b29742"
     },
     "design": {
       "journey": "Each account selects Presentation style: Icons or Text labels in Appearance; actual authenticated pages preserve actions and readable facts, with labelled touch/hybrid fallback.",
@@ -395,9 +433,9 @@
         "preserved": "Existing owner mail, keys, credentials, backend configuration, action semantics and historical failures.",
         "owner": "/root",
         "reviewer": "/root/s08_delivery_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
-          "Browser02 desktop, Browser03 phone13pages, Browser04 dynamic handlers/nav/autosave, Browser05 nine layout/theme/density/password observations PASS. Touch coarse emulation and any-coarse CSS rule inspected; physical mixed-input device and native UI zoom unobserved. Independent final scope reconciliation pending."
+          "PASS_SCOPED: actual fine-pointer desktop and phone/wide coarse browser observations; Browser05 scaling-equivalent layout; independent CSS branch inspection excludes any coarse from icon hiding even with primary fine. Simultaneous mixed input is source-backed, not an observed device/emulation. Physical mixed-input hardware and native browser-UI zoom remain unobserved."
         ]
       },
       {
@@ -431,9 +469,9 @@
         "preserved": "Existing owner mail, keys, credentials, backend configuration, action semantics and historical failures.",
         "owner": "/root",
         "reviewer": "/root/s08_delivery_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
-          "Independent source review GO and normal V10-V13 components PASS a7fa540acde67987d6af7bf3bc7aab6046dea5be7675c85c1194748719d3f3d2. Full normal push hook, native and installed proof pending."
+          "PASS_SCOPED: signed01a0db4 publication/fullnormalpushhook b359d295 and fresh0/0; normalV10-V13 components a7fa540a; independent native10PASS/592hashparity, WebUID3functionalPASS, originalcleanup94+separatefe9f278crecoveryPASS, matchingWeb8d1325 installationd873656e and preservationarchive0b65a623; directpeer192.168.1.44HTTPS200. Finalrecordcheckpoint/freshparity tobeestablishedbyactualGitdeliveryreceipt beforehandoff. No ownerHTTPSsave/fullV14/release claim."
         ]
       },
       {
@@ -455,6 +493,63 @@
     ],
     "engineering_exit": "All required extension source/browser/native/installed/security/recovery evidence PASS and normal signed publication; parent and release state separate.",
     "human_exit": "Owner explicitly accepts installed saved style and labelled touch behavior after engineering readiness."
+  },
+  "native_delivery": {
+    "attempt_id": "s08-06-native1",
+    "source_revision": "01a0db41aa2e9349ac2798ce889b3c15559a4e9a",
+    "source_archive_sha256": "7815786684215f35b3a66a458559d4b9ddbc7d5d50ea3a38f08e1df7e4be3bdc",
+    "target": {
+      "hostname": "obsd1.blackbagsecurity.com",
+      "address": "192.168.1.44",
+      "build_uid": 1000
+    },
+    "prerequisites": {
+      "independent_source_recipe_review": "PASS",
+      "local_native_producer_consumer_and_negative_controls": "PASS",
+      "read_only_target_identity_and_capabilities": "PASS",
+      "signed_source": "PASS",
+      "normal_push_hook_and_fresh_remote_equality": "PASS",
+      "noninteractive_root_identity": "PASS"
+    },
+    "recipes": {
+      "build1.ksh": "a0a96f31c46dfc660f2bd5078ad27dd2b8bf2aac5aece21f470961cea9c2042b",
+      "install1.ksh": "5baabd63f940a5da498c6f9e3ac03b60a9d549cbbb1658a1041c074832b5a9b1",
+      "readiness1.ksh": "1ca3731dec35fd56880f811e8fd847bb3d07dcae1df58cbe12e1f506d84bef8e"
+    },
+    "operation_bounds_seconds": {
+      "native_build": 1300,
+      "per_compiler": 600,
+      "native_selected_cases": 60,
+      "web_install": 180,
+      "web_uid_readiness": 60
+    },
+    "preservation": "Only exact fresh private source/fixture stages and Web executable/service; no owner preferences/mail/keys/credentials or public-mail/configuration mutation. Current v3 preference bytes retained on executable rollback.",
+    "status": "INSTALLED_PASS_OWNER_PENDING",
+    "artifacts": {
+      "test_sha256": "0faf9c80fa93bced863a920ce31f9ca810005dd757fb365dd3f82954c4472f8a",
+      "web_sha256": "8d1325dd031ad6dd869e52f88a33e15a0cb68459f513b44543e9468b612a9759",
+      "expected_installed_predecessor": "f6768bb2caa050eb46e05536b47e67008bc62d2de0a265bc5c88cac96516c7a3"
+    },
+    "native_result": "PASS: 10 exactcases0FAIL0ignored, 592nativeinputhashesequal, logreadback3hashesequal; independentreviewGO.",
+    "next_operation": null,
+    "web_uid_result": {
+      "functional": "3_PASS_0_FAIL_0_IGNORE",
+      "overall_attempt": "FAIL_EXIT94_FIXTURE_CLEANUP_CONFIRMATION",
+      "reference": "web-uid-01-result.json and durable three stream hashes under web-uid-01",
+      "cause": "Two StubGateway defaults allocate two journal and two recovery fixture directories outside the cases explicit roots; original tests passed; no owner or service mutation.",
+      "disposition": "Original four fixture entries resolved by independently reviewed exact-owned recovery; original overallFAIL94 and three functionalPASS retained separately. No functional replay."
+    },
+    "recovery_result": "PASS separate from original94: exactowned four empty directories validated, metadata retained/readbackhashed, rmdir4 and checked empty. fe9f278c29424e92564051c10f4e88759a2f26624beff111dded466841c247ae",
+    "install_result": {
+      "status": "PASS",
+      "assessed_web_sha256": "8d1325dd031ad6dd869e52f88a33e15a0cb68459f513b44543e9468b612a9759",
+      "elapsed_seconds": 3.1,
+      "receipt_sha256": "d873656e8b42ed20abc3f514dbe4ff8c191d74920bf74fa968fb6673f0bc2bcb",
+      "loaded_serve_inode_matches": true,
+      "preservation_readback": "Five before/after byte-equal configuration/GPG/account/helper/public-mail comparisons, twelve retained streams. Archive0b65a62346022ece59bf6e9ba58c1e09248165aa633a2d51a68021464ebc9443/25600bytes.",
+      "https": "Anonymous request explicitly resolved192.168.1.44/status200/no credentials; exact source CSS in response. Owner HTTPS preference save NOT_RUN.",
+      "recovery": "Original f676 executable and compatible8d candidate retained. Executable rollback preserves preference records; full editing needs v3-compatible code."
+    }
   }
 }
 ```
