@@ -1,7 +1,7 @@
 //! Native confirmation controls for discarding a composed message.
 use crate::compose_format::BodyFormat;
 use crate::http_support::escape_html;
-use crate::http_ui::ComposePageModel;
+use crate::http_ui::{presentation_label, ComposePageModel};
 use std::collections::BTreeMap;
 
 pub(super) fn body_format(form: &BTreeMap<String, String>) -> Option<BodyFormat> {
@@ -157,31 +157,36 @@ pub(crate) fn formatting_controls(model: &ComposePageModel<'_>) -> String {
         ""
     };
     let mut buttons = String::new();
-    for (action, label, caption) in [
-        ("bold", "Bold", "<b>B</b>"),
-        ("italic", "Italic", "<i>I</i>"),
-        ("underline", "Underline", "<u>U</u>"),
-        ("bullets", "Bulleted list", "• list"),
-        ("numbers", "Numbered list", "1. list"),
-        ("link", "Insert link", "↗ link"),
+    for (action, label, icon) in [
+        ("bold", "Bold", "bold"),
+        ("italic", "Italic", "italic"),
+        ("underline", "Underline", "underline"),
+        ("bullets", "Bulleted list", "list"),
+        ("numbers", "Numbered list", "numbers"),
+        ("link", "Insert link", "link"),
     ] {
+        let caption = presentation_label(label, icon);
         buttons.push_str(&format!("<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"format-{action}\" aria-label=\"{label}\" title=\"{label}: format selected text, or the whole message, and save draft\">{caption}</button>"));
     }
     let attach = if disabled.is_empty() {
-        "<a class=\"compose-toolbar-attach\" href=\"#compose-attachment\" aria-label=\"Attach local files\" title=\"Select local files to attach\">📎 attach</a>"
+        format!("<a class=\"compose-toolbar-attach\" href=\"#compose-attachment\" aria-label=\"Attach local files\" title=\"Select local files to attach\">{}</a>", presentation_label("Attach local files", "attachment"))
     } else {
-        "<span class=\"compose-toolbar-attach\" aria-disabled=\"true\" title=\"Compare the stored version before adding attachments\">📎 attach</span>"
+        format!("<span class=\"compose-toolbar-attach\" aria-disabled=\"true\" title=\"Compare the stored version before adding attachments\">{}</span>", presentation_label("Attach local files", "attachment"))
     };
-    let options = "<details class=\"compose-format-options\" name=\"compose-authoring\"><summary>Formatting options</summary><div><p>Formatting buttons save this draft. Select message text to format it; without a selection, the whole message is used. Lists apply to complete selected lines. Emoji appends 🙂. Source notation stays editable.</p><label for=\"format-url\">Link address</label><input id=\"format-url\" name=\"format_url\" type=\"text\" placeholder=\"https://example.com\"><label for=\"format-label\">Link label (optional)</label><input id=\"format-label\" name=\"format_label\" type=\"text\"><p>Enter the link address, select text or supply a label, then choose Insert link. Preview shows the outgoing alternatives.</p></div></details>";
+    let options = format!("<details class=\"compose-format-options\" name=\"compose-authoring\"><summary>{}</summary><div><p>Formatting buttons save this draft. Select message text to format it; without a selection, the whole message is used. Lists apply to complete selected lines. Emoji appends 🙂. Source notation stays editable.</p><label for=\"format-url\">Link address</label><input id=\"format-url\" name=\"format_url\" type=\"text\" placeholder=\"https://example.com\"><label for=\"format-label\">Link label (optional)</label><input id=\"format-label\" name=\"format_label\" type=\"text\"><p>Enter the link address, select text or supply a label, then choose Insert link. Preview shows the outgoing alternatives.</p></div></details>", presentation_label("Formatting options", "more"));
     format!(concat!(
         "<div class=\"compose-editor-toolbar\"><div class=\"compose-format-tools\" role=\"group\" aria-label=\"Text formatting\">{buttons}",
-        "<details class=\"compose-image-action\" name=\"compose-authoring\"><summary aria-label=\"Attach local image\">▧ image</summary><div><label for=\"compose-image\">Local image</label><input id=\"compose-image\" type=\"file\" name=\"image_attachment\" accept=\"image/png,image/jpeg,image/gif\"><p class=\"muted\">PNG, JPEG or GIF, up to 5 MiB. Sent as an attachment.</p><button type=\"submit\"{disabled} formaction=\"/drafts/save\">Save image attachment</button></div></details>",
-        "{attach}<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"format-emoji\" aria-label=\"Insert emoji\" title=\"Append an emoji and save draft\">☺</button>",
+        "<details class=\"compose-image-action\" name=\"compose-authoring\"><summary aria-label=\"Attach local image\">{image_label}</summary><div><label for=\"compose-image\">Local image</label><input id=\"compose-image\" type=\"file\" name=\"image_attachment\" accept=\"image/png,image/jpeg,image/gif\"><p class=\"muted\">PNG, JPEG or GIF, up to 5 MiB. Sent as an attachment.</p><button type=\"submit\"{disabled} formaction=\"/drafts/save\">{save_image_label}</button></div></details>",
+        "{attach}<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"format-emoji\" aria-label=\"Insert emoji\" title=\"Append an emoji and save draft\">{emoji_label}</button>",
         "<label class=\"sr-only\" for=\"compose-body-format\">Message format</label><select id=\"compose-body-format\" name=\"body_format\"><option value=\"plain\"{plain}>Plain text</option><option value=\"formatted\"{formatted}>Formatted source</option></select>",
-        "<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"preview\">Preview</button>{options}</div><span class=\"compose-inline-policy\">Send checks your OpenPGP selections.</span></div>",
+        "<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"preview\">{preview_label}</button>{options}</div><span class=\"compose-inline-policy\">Send checks your OpenPGP selections.</span></div>",
         "<input type=\"hidden\" name=\"format_start\" value=\"\"><input type=\"hidden\" name=\"format_end\" value=\"\">",
     ), buttons = buttons, disabled = disabled, options = options, attach = attach,
     plain = if model.body_format == BodyFormat::Plain { " selected" } else { "" },
+    image_label = presentation_label("Attach local image", "image"),
+    save_image_label = presentation_label("Save image attachment", "save"),
+    emoji_label = presentation_label("Insert emoji", "emoji"),
+    preview_label = presentation_label("Preview", "eye"),
     formatted = if model.body_format == BodyFormat::Formatted { " selected" } else { "" })
 }
 
@@ -203,11 +208,11 @@ pub(crate) fn preview(model: &ComposePageModel<'_>) -> String {
 pub(crate) fn discard_controls(model: &ComposePageModel<'_>) -> (String, String) {
     match (model.draft_id, model.draft_revision) {
         (Some(id), Some(revision)) => (
-            concat!(
-                "<details class=\"compose-discard\"><summary>Discard</summary>",
+            format!(concat!(
+                "<details class=\"compose-discard\"><summary>{}</summary>",
                 "<div><p>Review this saved draft before discarding it. Unsaved changes in this tab will not be saved.</p>",
-                "<button type=\"submit\" form=\"compose-discard-form\" name=\"stage\" value=\"review\">Review discard</button></div></details>"
-            ).into(),
+                "<button type=\"submit\" form=\"compose-discard-form\" name=\"stage\" value=\"review\">{}</button></div></details>"
+            ), presentation_label("Discard", "bin"), presentation_label("Review discard", "bin")),
             format!(concat!(
                 "<form id=\"compose-discard-form\" method=\"post\" action=\"/drafts/discard\" hidden>",
                 "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
@@ -218,14 +223,14 @@ pub(crate) fn discard_controls(model: &ComposePageModel<'_>) -> (String, String)
             ), escape_html(model.csrf_token), escape_html(id), revision = revision),
         ),
         (Some(_), None) => (
-            "<button type=\"button\" disabled title=\"Compare with the stored version before discarding\">Discard</button>".into(), String::new()
+            format!("<button type=\"button\" disabled title=\"Compare with the stored version before discarding\">{}</button>", presentation_label("Discard", "bin")), String::new()
         ),
         (None, _) => (
-            concat!(
-                "<details class=\"compose-discard\"><summary>Discard</summary>",
+            format!(concat!(
+                "<details class=\"compose-discard\"><summary>{}</summary>",
                 "<div><p>Discard this unsaved message and its selected files?</p>",
-                "<a class=\"button-link\" href=\"/drafts\" data-confirm-discard=\"true\">Discard unsaved message</a></div></details>"
-            ).into(), String::new()
+                "<a class=\"button-link\" href=\"/drafts\" data-confirm-discard=\"true\">{}</a></div></details>"
+            ), presentation_label("Discard", "bin"), presentation_label("Discard unsaved message", "bin")), String::new()
         ),
     }
 }

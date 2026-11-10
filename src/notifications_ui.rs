@@ -28,14 +28,14 @@ pub(crate) fn render_notification_inbox(
     let mut rows = String::new();
     let mark_all = match inbox {
         Some(inbox) => format!(
-            concat!("<div class=\"notification-bulk-actions\" role=\"group\" aria-label=\"All notifications\"><form method=\"post\" action=\"/notifications/read-all\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"revision\" value=\"{}\"><button class=\"secondary\" type=\"submit\"{}>Mark all as read</button></form>",
-            "<form method=\"post\" action=\"/notifications/delete-all\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"revision\" value=\"{}\"><button class=\"secondary\" type=\"submit\"{}>Delete all notifications</button></form></div>",
+            concat!("<div class=\"notification-bulk-actions\" role=\"group\" aria-label=\"All notifications\"><form method=\"post\" action=\"/notifications/read-all\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"revision\" value=\"{}\"><button class=\"secondary\" type=\"submit\"{}><span class=\"presentation-icon presentation-icon-read\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Mark all as read</span></button></form>",
+            "<form method=\"post\" action=\"/notifications/delete-all\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"revision\" value=\"{}\"><button class=\"secondary\" type=\"submit\"{}><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Delete all notifications</span></button></form></div>",
             "<p class=\"muted\">Both controls include optional notices hidden by your choices. Delete all clears this account’s notification inbox; separate audit records are kept.</p>"),
             escape_html(csrf), inbox.revision,
             if inbox.events.iter().any(|event|!event.read){""}else{" disabled"},
             escape_html(csrf), inbox.revision, if inbox.events.is_empty(){" disabled"}else{""}
         ),
-        None=>"<div class=\"notification-bulk-actions\" role=\"group\" aria-label=\"All notifications\"><button class=\"secondary\" type=\"button\" disabled>Mark all as read</button><button class=\"secondary\" type=\"button\" disabled>Delete all notifications</button></div>".into(),
+        None=>"<div class=\"notification-bulk-actions\" role=\"group\" aria-label=\"All notifications\"><button class=\"secondary\" type=\"button\" disabled><span class=\"presentation-icon presentation-icon-read\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Mark all as read</span></button><button class=\"secondary\" type=\"button\" disabled><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Delete all notifications</span></button></div>".into(),
     };
     let summary = match inbox {
         None => {
@@ -55,8 +55,8 @@ pub(crate) fn render_notification_inbox(
                 let row = format!(concat!(
                     "<li class=\"notification-event\" data-read=\"{read}\"><div><h2>{title}</h2><time datetime=\"{iso}\">{time} UTC</time></div><span class=\"notification-read-state\">{read_state}</span><div class=\"notification-event-actions\">",
                     "<form method=\"post\" action=\"/notifications/read\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"revision\" value=\"{revision}\"><input type=\"hidden\" name=\"event_id\" value=\"{id}\"><input type=\"hidden\" name=\"read\" value=\"{next_read}\"><button class=\"secondary\" type=\"submit\">{read_action}</button></form>",
-                    "<form method=\"post\" action=\"/notifications/delete\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"revision\" value=\"{revision}\"><input type=\"hidden\" name=\"event_id\" value=\"{id}\"><button class=\"secondary\" type=\"submit\">Delete notification</button></form></div></li>"
-                ), read=event.read, iso=escape_html(&time), time=escape_html(time.replace('T', " ").trim_end_matches('Z')),read_state=if event.read { "Read" } else { "Unread" },csrf=escape_html(csrf),revision=inbox.revision,id=escape_html(&event.event_id),next_read=if event.read { "0" } else { "1" },read_action=if event.read { "Mark unread" } else { "Mark read" }, title=title);
+                    "<form method=\"post\" action=\"/notifications/delete\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"revision\" value=\"{revision}\"><input type=\"hidden\" name=\"event_id\" value=\"{id}\"><button class=\"secondary\" type=\"submit\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Delete notification</span></button></form></div></li>"
+                ), read=event.read, iso=escape_html(&time), time=escape_html(time.replace('T', " ").trim_end_matches('Z')),read_state=if event.read { "Read" } else { "Unread" },csrf=escape_html(csrf),revision=inbox.revision,id=escape_html(&event.event_id),next_read=if event.read { "0" } else { "1" },read_action=crate::http_ui::presentation_label(if event.read { "Mark unread" } else { "Mark read" }, if event.read { "unread" } else { "read" }), title=title);
                 if daily {
                     let group = days.entry(event.occurred_at / 86400).or_default();
                     group.0 += 1;
@@ -92,7 +92,7 @@ pub(crate) fn render_notification_inbox(
     TrustedHtml::from_template(format!(concat!(
         "{}<main id=\"main-content\" class=\"page-shell notifications-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Notifications</h1><p>Recorded events for your account.</p></div>{notice}{preference_notice}",
         "<div class=\"notification-inbox-toolbar\"><p>{summary}</p><nav aria-label=\"Notification actions\"><a class=\"button-link secondary\" href=\"/notifications\">Refresh inbox</a><a class=\"button-link secondary\" href=\"/settings?section=notifications\">Notification settings</a></nav></div>",
-        "{mark_all}<ul class=\"notification-events\" data-digest=\"{mode}\" aria-label=\"Account notifications\">{rows}</ul><p class=\"notification-inbox-scope muted\">Up to 200 recorded notices are retained for 90 days. This is not a complete audit history or a security score. Optional preferences cannot hide mandatory recovery and security notices. Deleting a notification dismisses it from this inbox; it does not undo the underlying action or alter separate audit records. Digest groups the in-app inbox only. Submission acceptance does not prove delivery. New mail is observed on Inbox refresh; mentions are checked when readable message text is opened.</p>{browser}<a href=\"/sessions\">Manage sessions</a></main>"
+        "{mark_all}<ul class=\"notification-events\" data-digest=\"{mode}\" aria-label=\"Account notifications\">{rows}</ul><p class=\"notification-inbox-scope muted\">Up to 200 recorded notices are retained for 90 days. This is not a complete audit history or a security score. Optional preferences cannot hide mandatory recovery and security notices. Deleting a notification dismisses it from this inbox; it does not undo the underlying action or alter separate audit records. Digest groups the in-app inbox only. Submission acceptance does not prove delivery. New mail is observed on Inbox refresh; mentions are checked when readable message text is opened.</p>{browser}<a href=\"/sessions\"><span class=\"presentation-icon presentation-icon-sessions\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage sessions</span></a></main>"
     ), app_header(account, csrf, "notifications"), notice=notice, preference_notice=preference_notice, mode=mode, summary=summary, rows=rows,mark_all=mark_all,browser=crate::http::notification_delivery::controls()))
 }
 
@@ -132,8 +132,25 @@ mod tests {
             .split("</div>")
             .next()
             .unwrap();
-        assert!(controls.contains("disabled>Mark all as read</button>"));
-        assert!(controls.contains("type=\"submit\">Delete all notifications</button>"));
+        let read_form = controls
+            .split_once("<form method=\"post\" action=\"/notifications/read-all\">")
+            .expect("native bulk read form")
+            .1
+            .split("</form>")
+            .next()
+            .unwrap();
+        assert!(read_form.contains("<button class=\"secondary\" type=\"submit\" disabled>"));
+        assert!(read_form.contains("Mark all as read"));
+        let delete_form = controls
+            .split_once("<form method=\"post\" action=\"/notifications/delete-all\">")
+            .expect("native bulk delete form")
+            .1
+            .split("</form>")
+            .next()
+            .unwrap();
+        assert!(delete_form.contains("<button class=\"secondary\" type=\"submit\">"));
+        assert!(!delete_form.contains(" disabled"));
+        assert!(delete_form.contains("Delete all notifications"));
         assert_eq!(
             controls
                 .matches("name=\"csrf_token\" value=\"&lt;csrf&amp;&gt;\"")
@@ -152,8 +169,24 @@ mod tests {
                 Some(&saved),
                 None,
             );
-            assert!(html.contains("disabled>Mark all as read</button>"));
-            assert!(html.contains("disabled>Delete all notifications</button>"));
+            for label in ["Mark all as read", "Delete all notifications"] {
+                let button = html
+                    .split("<button ")
+                    .skip(1)
+                    .map(|button| button.split("</button>").next().unwrap())
+                    .find(|button| button.contains(label))
+                    .expect("readable bulk action");
+                assert!(button
+                    .split_once('>')
+                    .unwrap()
+                    .0
+                    .split_whitespace()
+                    .any(|attribute| attribute == "disabled"));
+            }
+            if current.is_none() {
+                assert!(!html.contains("action=\"/notifications/read-all\""));
+                assert!(!html.contains("action=\"/notifications/delete-all\""));
+            }
         }
     }
     #[test]

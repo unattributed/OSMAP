@@ -2,6 +2,18 @@
 
 # UX engineering decisions
 
+2026-11-10 — S08-06 adds Appearance → Presentation style, with Icons and Text
+labels saved in the existing account Appearance record. Text labels is the
+default. Compact actions and sidebar require fine, hover-capable input and no
+coarse pointer; touch-capable and unknown-input devices retain visible labels.
+Source-owned templates and fixed local widget mappings preserve accessible names
+and existing operations. Forms, security facts, content and confirmation wording
+remain readable. The cookie has no style authority. Records read versions 1–3
+and write version 3; executable rollback retains current preference bytes and
+requires compatible code for further Appearance editing. Approved mockups are
+design evidence; installed qualification and product acceptance remain separate.
+See [S08-06](UX_SLICE_S08_06.md).
+
 Original decisions: 2026-09-29. Source: S00 intake against
 `2a6993fe7df42a57f0cbb5fe3e33e331b400fef9`. Revision 1 is preserved in signed
 history. The following original decisions implement the

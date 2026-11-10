@@ -2,6 +2,16 @@
 (() => {
   const form = document.getElementById("password-change-form");
   if (!form) return;
+  const caption = (button, show) => {
+    const icon = document.createElement("span");
+    icon.className = "presentation-icon presentation-icon-eye";
+    icon.setAttribute("aria-hidden", "true");
+    icon.append(document.createElement("i"));
+    const label = document.createElement("span");
+    label.className = "presentation-label";
+    label.textContent = show ? "Hide" : "Show";
+    button.replaceChildren(icon, label);
+  };
   for (const name of ["current_password", "new_password", "confirmation"]) {
     const input = form.elements.namedItem(name);
     const button = document.getElementById("show-" + name);
@@ -10,7 +20,7 @@
     button.addEventListener("click", () => {
       const show = input.type === "password";
       input.type = show ? "text" : "password";
-      button.textContent = show ? "Hide" : "Show";
+      caption(button, show);
       button.setAttribute("aria-pressed", show ? "true" : "false");
     });
   }
@@ -23,7 +33,7 @@
       }
       const button = document.getElementById("show-" + name);
       if (button) {
-        button.textContent = "Show";
+        caption(button, false);
         button.setAttribute("aria-pressed", "false");
       }
     }

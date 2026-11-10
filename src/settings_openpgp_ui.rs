@@ -67,11 +67,11 @@ pub(crate) fn render_openpgp_settings(
         "<div class=\"page-intro\"><h1>Settings</h1><p>Configure key bindings and protected-delivery defaults for this account.</p></div>",
         "<div class=\"settings-layout\">{nav}<div class=\"openpgp-settings-grid\">",
         "<section class=\"openpgp-settings-card\"><h2>Account Capability</h2><div class=\"openpgp-account-status\">{status}</div>",
-        "<div class=\"openpgp-setting-row\"><label for=\"account-key\">Key fingerprint</label><div><input id=\"account-key\" readonly value=\"{fingerprint}\"><a href=\"/settings/keys?panel=account\">Choose account key</a></div></div>",
-        "<div class=\"openpgp-setting-row\"><label for=\"signing-setting\">Signing policy</label><div><input id=\"signing-setting\" readonly value=\"{signing}\"><a href=\"/settings/keys?panel=policy\" aria-label=\"Edit signing policy\">Edit policy</a></div></div>",
-        "<div class=\"openpgp-setting-row\"><label for=\"encryption-setting\">Encryption policy</label><div><input id=\"encryption-setting\" readonly value=\"{encryption}\"><a href=\"/settings/keys?panel=policy\" aria-label=\"Edit encryption policy\">Edit policy</a></div></div>",
-        "<div class=\"openpgp-setting-row\"><label for=\"self-setting\">Encrypt to self</label><div><input id=\"self-setting\" readonly value=\"Selected per message\"><a href=\"/compose\">Choose for a message</a></div></div>",
-        "<p>{recipient_count} known recipient email addresses. Manage Keys shows current key matches and policies.</p><a class=\"button-link openpgp-manage\" href=\"/settings/keys\">Manage Keys</a></section>",
+        "<div class=\"openpgp-setting-row\"><label for=\"account-key\">Key fingerprint</label><div><input id=\"account-key\" readonly value=\"{fingerprint}\"><a href=\"/settings/keys?panel=account\"><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Choose account key</span></a></div></div>",
+        "<div class=\"openpgp-setting-row\"><label for=\"signing-setting\">Signing policy</label><div><input id=\"signing-setting\" readonly value=\"{signing}\"><a href=\"/settings/keys?panel=policy\" aria-label=\"Edit signing policy\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Edit policy</span></a></div></div>",
+        "<div class=\"openpgp-setting-row\"><label for=\"encryption-setting\">Encryption policy</label><div><input id=\"encryption-setting\" readonly value=\"{encryption}\"><a href=\"/settings/keys?panel=policy\" aria-label=\"Edit encryption policy\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Edit policy</span></a></div></div>",
+        "<div class=\"openpgp-setting-row\"><label for=\"self-setting\">Encrypt to self</label><div><input id=\"self-setting\" readonly value=\"Selected per message\"><a href=\"/compose\"><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Choose for a message</span></a></div></div>",
+        "<p>{recipient_count} known recipient email addresses. Manage Keys shows current key matches and policies.</p><a class=\"button-link openpgp-manage\" href=\"/settings/keys\"><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage Keys</span></a></section>",
         "<section class=\"openpgp-settings-card\"><h2>Policy Behavior</h2><ul class=\"openpgp-policy-list\">{policies}</ul></section></div></div></main>"
     ), header=app_header(account,csrf,"settings-openpgp"),nav=settings_navigation("openpgp"),status=status,fingerprint=fingerprint,signing=signing,encryption=encryption,recipient_count=recipient_count,policies=policies))
 }
@@ -193,13 +193,24 @@ mod tests {
         )));
         assert!(html.contains("id=\"signing-setting\" readonly value=\"Choose per message\""));
         assert!(html.contains("id=\"encryption-setting\" readonly value=\"Require encryption\""));
-        assert!(html.contains("href=\"/settings/keys?panel=account\">Choose account key"));
+        let account_link = html
+            .split_once("href=\"/settings/keys?panel=account\">")
+            .expect("real account key workflow")
+            .1
+            .split("</a>")
+            .next()
+            .unwrap();
+        assert!(account_link.contains("Choose account key"));
         assert!(html
             .contains("href=\"/settings/keys?panel=policy\" aria-label=\"Edit signing policy\""));
         assert!(html.contains(
             "href=\"/settings/keys?panel=policy\" aria-label=\"Edit encryption policy\""
         ));
-        assert!(html.contains("href=\"/compose\">Choose for a message"));
+        assert!(html
+            .split("href=\"/compose\">")
+            .skip(1)
+            .map(|link| link.split("</a>").next().unwrap())
+            .any(|link| link.contains("Choose for a message")));
         assert!(!html.contains("action=\"/settings/keys/change\""));
         assert!(!html.contains("<button disabled"));
     }

@@ -25,7 +25,7 @@ pub(crate) fn render_folder_disposition(
         ));
         if matches!(stage, "entry" | "review") {
             if let Ok(json) = serde_json::to_string(request) {
-                html.push_str(&format!("<form method=\"post\" action=\"/settings/folders/{}\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_request\" value=\"{}\"><button name=\"confirm\" value=\"{}\">{}</button></form>", if restoring { "restore" } else { "bin" }, escape_html(csrf), escape_html(&json), if stage == "review" { "apply" } else { "review" }, if stage == "review" { if restoring { "Confirm restore original folder" } else { "Confirm move complete folder to Bin" } } else if restoring { "Review restore" } else { "Review move to Bin" }));
+                html.push_str(&format!("<form method=\"post\" action=\"/settings/folders/{}\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_request\" value=\"{}\"><button name=\"confirm\" value=\"{}\">{}</button></form>", if restoring { "restore" } else { "bin" }, escape_html(csrf), escape_html(&json), if stage == "review" { "apply" } else { "review" }, presentation_label(if stage == "review" { if restoring { "Confirm restore original folder" } else { "Confirm move complete folder to Bin" } } else if restoring { "Review restore" } else { "Review move to Bin" },if restoring { "refresh" } else { "bin" })));
             }
         }
     }
@@ -41,7 +41,36 @@ pub(crate) fn render_deleted_folders(
     let mut rows = String::new();
     if let Some(receipts) = receipts {
         for receipt in receipts {
-            rows.push_str(&format!("<li><h2>{}</h2><p>Stored folder: {}</p><p>State: {}</p>{}</li>", escape_html(&receipt.source), escape_html(&receipt.stored_name()), match receipt.state { crate::folder_disposition::State::BinReserved => "Move to Bin reserved; not dispatched", crate::folder_disposition::State::BinPending => "Move to Bin pending", crate::folder_disposition::State::Binned => "Moved to Bin", crate::folder_disposition::State::RestoreReserved => "Restore reserved; not dispatched", crate::folder_disposition::State::RestorePending => "Restore pending", crate::folder_disposition::State::Restored => "Restored; receipt cleanup pending", crate::folder_disposition::State::Cancelled => "No mutation; receipt cleanup pending" }, if receipt.state == crate::folder_disposition::State::Binned { format!("<a class=\"button-link\" href=\"/settings/folders/restore?id={}\">Review restore</a>", url_encode(&receipt.id)) } else { "<a href=\"/settings/folders/disposition/check\">Check original result</a>".into() }));
+            rows.push_str(&format!(
+                "<li><h2>{}</h2><p>Stored folder: {}</p><p>State: {}</p>{}</li>",
+                escape_html(&receipt.source),
+                escape_html(&receipt.stored_name()),
+                match receipt.state {
+                    crate::folder_disposition::State::BinReserved =>
+                        "Move to Bin reserved; not dispatched",
+                    crate::folder_disposition::State::BinPending => "Move to Bin pending",
+                    crate::folder_disposition::State::Binned => "Moved to Bin",
+                    crate::folder_disposition::State::RestoreReserved =>
+                        "Restore reserved; not dispatched",
+                    crate::folder_disposition::State::RestorePending => "Restore pending",
+                    crate::folder_disposition::State::Restored =>
+                        "Restored; receipt cleanup pending",
+                    crate::folder_disposition::State::Cancelled =>
+                        "No mutation; receipt cleanup pending",
+                },
+                if receipt.state == crate::folder_disposition::State::Binned {
+                    format!(
+                        "<a class=\"button-link\" href=\"/settings/folders/restore?id={}\">{}</a>",
+                        url_encode(&receipt.id),
+                        presentation_label("Review restore", "refresh")
+                    )
+                } else {
+                    format!(
+                        "<a href=\"/settings/folders/disposition/check\">{}</a>",
+                        presentation_label("Check original result", "search")
+                    )
+                }
+            ));
         }
         if rows.is_empty() {
             rows.push_str("<li>No retained deleted-folder receipts.</li>");

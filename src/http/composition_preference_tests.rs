@@ -348,8 +348,9 @@ fn composition_page_and_general_native_form_project_saved_defaults() {
         assert!(body.contains("href=\"/settings?section=composition\""));
         if section == "general" {
             assert!(body.contains("name=\"reply_placement\" form=\"general-composition-form\""));
-            assert!(body
-                .contains("form=\"general-composition-form\" aria-label=\"Save composition defaults\">Save composition</button>"));
+            let button = body.split_once("<button type=\"submit\" form=\"general-composition-form\" aria-label=\"Save composition defaults\">").expect("native composition submit target").1.split("</button>").next().unwrap();
+            assert!(button.contains("Save composition"));
+            assert!(body.contains("<form id=\"general-composition-form\" method=\"post\" action=\"/settings/composition\">"));
         } else {
             assert!(body.contains("name=\"return_section\" value=\"composition\""));
             assert!(body.contains("id=\"composition-signing\" name=\"pgp_sign\""));

@@ -109,13 +109,16 @@ fn reader_retry_attribute(tag: &str, name: &str) -> String {
         .replace("&amp;", "&")
 }
 
+fn reader_retry_anchor_if_present(body: &str, label: &str) -> Option<String> {
+    body.split("<a ").find_map(|anchor| {
+        let (tag, contents) = anchor.split_once('>')?;
+        (rendered_action_caption(contents.split_once("</a>")?.0) == label)
+            .then(|| reader_retry_attribute(tag, "href"))
+    })
+}
+
 fn reader_retry_anchor(body: &str, label: &str) -> String {
-    body.split("<a ")
-        .find_map(|anchor| {
-            let (tag, contents) = anchor.split_once('>')?;
-            (contents.split_once("</a>")?.0 == label).then(|| reader_retry_attribute(tag, "href"))
-        })
-        .expect("actual rendered recovery anchor")
+    reader_retry_anchor_if_present(body, label).expect("actual rendered recovery anchor")
 }
 
 fn reader_retry_fields(url: &str) -> BTreeMap<String, String> {
@@ -337,7 +340,7 @@ fn reader_retry_invalid_supplied_identity_or_origin_never_becomes_unbound_retry(
         reader_retry_released(&app, &failed);
         let body = body_text(&failed);
         assert!(
-            !body.contains(">Retry loading</a>"),
+            reader_retry_anchor_if_present(&body, "Retry loading").is_none(),
             "invalid request context must not be dropped into legacy Retry"
         );
         let back = reader_retry_anchor(&body, "Back to message");
@@ -390,7 +393,8 @@ fn reader_retry_is_session_owned_and_foreign_or_stale_replies_have_no_retry() {
         let denied = get(&app, &retry, ua);
         assert_eq!(denied.response.status_code, 503);
         let body = body_text(&denied);
-        assert!(!body.contains("<pre>Hello world</pre>") && !body.contains(">Retry loading</a>"));
+        assert!(!body.contains("<pre>Hello world</pre>"));
+        assert!(reader_retry_anchor_if_present(&body, "Retry loading").is_none());
         let back = reader_retry_anchor(&body, "Back to message");
         assert_eq!(
             reader_retry_fields(&back),

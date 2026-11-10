@@ -953,7 +953,14 @@ fn compose_required_recipient_policy_is_visible_without_changing_intent() {
         .find("<details class=\"compose-send-options\"")
         .unwrap();
     assert!(check < menu);
-    assert_eq!(body.matches(">Pre-send check</button>").count(), 1);
+    let checks: Vec<_> = body
+        .split("<button ")
+        .skip(1)
+        .filter_map(|part| part.split_once("</button>").map(|(button, _)| button))
+        .filter(|button| button.contains("Pre-send check"))
+        .collect();
+    assert_eq!(checks.len(), 1);
+    assert!(checks[0].starts_with("type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"preflight\" aria-describedby=\"compose-pre-send-description\">"));
 }
 
 #[test]
@@ -1238,8 +1245,18 @@ fn welcome_system_status_reports_only_verified_account_scoped_observations() {
             assert!(!system.contains("1 imported public key"), "{mode}");
             assert!(!system.contains("No public keys imported"), "{mode}");
         }
+        assert!(
+            system
+                .split("<details><summary>")
+                .skip(1)
+                .any(|details| details
+                    .split("</summary>")
+                    .next()
+                    .unwrap()
+                    .contains("View status details")),
+            "{mode}: missing status details disclosure"
+        );
         for detail in [
-            "<summary>View status details</summary>",
             "alice@example.com",
             "at page load",
             "Mailbox listing does not verify SMTP or message delivery.",

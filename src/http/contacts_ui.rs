@@ -136,18 +136,18 @@ pub(crate) fn render_page(session: &ValidatedSession, model: ContactsPageModel<'
                 .as_ref()
                 .map(|id| format!("/compose?contact_id={}", url_encode(id)))
         };
-        let mut actions = write.map(|href| format!("<a class=\"button-link contact-write\" href=\"{href}\" aria-label=\"Write to {}\">Write</a>", escape_html(&entry.address)))
-            .unwrap_or_else(|| "<button type=\"button\" disabled title=\"Choose an available recipient in Manage keys\">Write</button>".into());
+        let mut actions = write.map(|href| format!("<a class=\"button-link contact-write\" href=\"{href}\" aria-label=\"Write to {}\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Write</span></a>", escape_html(&entry.address)))
+            .unwrap_or_else(|| "<button type=\"button\" disabled title=\"Choose an available recipient in Manage keys\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Write</span></button>".into());
         if let Some(saved_id) = saved {
             let saved_revision = book.map(|book| book.revision).unwrap_or(0);
-            actions.push_str(&format!("<a href=\"/contacts?edit={}&amp;revision={}#contact-editor\" aria-label=\"Edit {}\">Edit</a><a href=\"/contacts?delete={}&amp;revision={}#contact-editor\" aria-label=\"Remove {}\">Remove</a>", url_encode(saved_id), saved_revision, escape_html(&entry.address), url_encode(saved_id), saved_revision, escape_html(&entry.address)));
+            actions.push_str(&format!("<a href=\"/contacts?edit={}&amp;revision={}#contact-editor\" aria-label=\"Edit {}\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Edit</span></a><a href=\"/contacts?delete={}&amp;revision={}#contact-editor\" aria-label=\"Remove {}\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Remove</span></a>", url_encode(saved_id), saved_revision, escape_html(&entry.address), url_encode(saved_id), saved_revision, escape_html(&entry.address)));
         } else if saved_available {
             if let Some(imported_id) = &entry.imported_id {
-                actions.push_str(&format!("<a href=\"/contacts?new=1&amp;from_key={}#contact-editor\" aria-label=\"Add a name for {}\">Add name</a>", url_encode(imported_id), escape_html(&entry.address)));
+                actions.push_str(&format!("<a href=\"/contacts?new=1&amp;from_key={}#contact-editor\" aria-label=\"Add a name for {}\"><span class=\"presentation-icon presentation-icon-add\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Add name</span></a>", url_encode(imported_id), escape_html(&entry.address)));
             }
         }
         let key_management = if entry.imported || entry.key_status.is_some() {
-            "<a class=\"contact-key-link\" href=\"/settings/keys\">Manage keys and policy</a>"
+            "<a class=\"contact-key-link\" href=\"/settings/keys\"><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage keys and policy</span></a>"
         } else {
             ""
         };
@@ -187,12 +187,12 @@ pub(crate) fn render_page(session: &ValidatedSession, model: ContactsPageModel<'
         })
         .unwrap_or_default();
     let new_contact = if saved_available {
-        "<a class=\"button-link\" href=\"/contacts?new=1#contact-editor\">New contact</a>"
+        "<a class=\"button-link\" href=\"/contacts?new=1#contact-editor\"><span class=\"presentation-icon presentation-icon-add\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">New contact</span></a>"
     } else {
-        "<button type=\"button\" disabled>New contact</button>"
+        "<button type=\"button\" disabled><span class=\"presentation-icon presentation-icon-add\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">New contact</span></button>"
     };
     let clear = if !model.q.trim().is_empty() || filter != "all" {
-        "<a href=\"/contacts\">Clear search and filters</a>"
+        "<a href=\"/contacts\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear search and filters</span></a>"
     } else {
         ""
     };
@@ -218,16 +218,16 @@ pub(crate) fn render_page(session: &ValidatedSession, model: ContactsPageModel<'
         "Edit contact"
     };
     let fields = if model.deleting {
-        format!("<h2 id=\"contact-delete-title\">Remove saved contact?</h2><p dir=\"auto\"><strong>{}</strong> &lt;{}&gt;</p><p>The imported public key, if any, will remain.</p><input type=\"hidden\" name=\"confirm\" value=\"1\"><div class=\"contact-form-actions\"><button type=\"submit\">Remove contact</button><a href=\"/contacts\">Keep contact</a></div>", escape_html(value("name")), escape_html(value("address")))
+        format!("<h2 id=\"contact-delete-title\">Remove saved contact?</h2><p dir=\"auto\"><strong>{}</strong> &lt;{}&gt;</p><p>The imported public key, if any, will remain.</p><input type=\"hidden\" name=\"confirm\" value=\"1\"><div class=\"contact-form-actions\"><button type=\"submit\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Remove contact</span></button><a href=\"/contacts\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Keep contact</span></a></div>", escape_html(value("name")), escape_html(value("address")))
     } else {
-        format!("<label for=\"contact-name\">Display name (optional)</label><input id=\"contact-name\" name=\"name\" maxlength=\"100\" autocomplete=\"name\" value=\"{}\"><label for=\"contact-address\">Email address</label><input id=\"contact-address\" name=\"address\" type=\"email\" maxlength=\"320\" autocomplete=\"off\" required value=\"{}\"><p>Imported keys appear automatically and do not need to be saved again.</p><div class=\"contact-form-actions\"><button type=\"submit\">Save contact</button><a href=\"/contacts\">Cancel</a></div>", escape_html(value("name")), escape_html(value("address")))
+        format!("<label for=\"contact-name\">Display name (optional)</label><input id=\"contact-name\" name=\"name\" maxlength=\"100\" autocomplete=\"name\" value=\"{}\"><label for=\"contact-address\">Email address</label><input id=\"contact-address\" name=\"address\" type=\"email\" maxlength=\"320\" autocomplete=\"off\" required value=\"{}\"><p>Imported keys appear automatically and do not need to be saved again.</p><div class=\"contact-form-actions\"><button type=\"submit\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save contact</span></button><a href=\"/contacts\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Cancel</span></a></div>", escape_html(value("name")), escape_html(value("address")))
     };
     let editor = format!("<details id=\"contact-editor\" class=\"contacts-editor\"{}><summary>{form_title}</summary><form method=\"post\" action=\"/contacts/{}\"{}><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"revision\" value=\"{}\"><input type=\"hidden\" name=\"id\" value=\"{}\"><fieldset{}><legend class=\"sr-only\">{form_title}</legend>{fields}</fieldset></form></details>", if open { " open" } else { "" }, if model.deleting { "delete" } else { "save" }, if model.deleting { " aria-labelledby=\"contact-delete-title\"" } else { "" }, escape_html(&session.record.csrf_token), revision, escape_html(id), if saved_available { "" } else { " disabled" });
     TrustedHtml::from_template(format!(concat!(
         "{}<main id=\"main-content\" class=\"page-shell contacts-page\" tabindex=\"-1\">",
         "<div class=\"contacts-heading\"><div><h1><svg class=\"contacts-people-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M18 15a5 5 0 0 1 3 5v1\"/></svg>Contacts</h1><p>People you have saved and email addresses from imported public keys.</p></div>{}</div>{}",
         "<section class=\"contacts-directory\" aria-labelledby=\"contacts-list-title\"><h2 id=\"contacts-list-title\" class=\"sr-only\">Your contacts</h2>",
-        "<form class=\"contacts-search\" method=\"get\" action=\"/contacts\" role=\"search\"><div><label for=\"contacts-query\">Search contacts</label><input id=\"contacts-query\" name=\"q\" type=\"search\" value=\"{}\" maxlength=\"200\" placeholder=\"Name or email address\"></div><div><label for=\"contacts-filter\">Show</label><select id=\"contacts-filter\" name=\"filter\">{}</select></div><button type=\"submit\">Search</button>{}</form>",
+        "<form class=\"contacts-search\" method=\"get\" action=\"/contacts\" role=\"search\"><div><label for=\"contacts-query\">Search contacts</label><input id=\"contacts-query\" name=\"q\" type=\"search\" value=\"{}\" maxlength=\"200\" placeholder=\"Name or email address\"></div><div><label for=\"contacts-filter\">Show</label><select id=\"contacts-filter\" name=\"filter\">{}</select></div><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search</span></button>{}</form>",
         "<p class=\"contacts-count\" role=\"status\">Showing {} of {} contacts</p>{}",
         "<table class=\"contacts-table\"><caption class=\"sr-only\">Contacts, their email addresses, encryption policies and available actions</caption><thead><tr><th scope=\"col\">Name</th><th scope=\"col\">Email address</th><th scope=\"col\">Encryption policy</th><th scope=\"col\">Actions</th></tr></thead><tbody>{}</tbody></table>{}</section>{}</main>"
     ), crate::http_ui::app_header(account, &session.record.csrf_token, "contacts"), new_contact, error, escape_html(model.q), options, clear, shown, all.len(), source_notices, rows, empty, editor))
@@ -336,10 +336,17 @@ mod tests {
             .split("<tr>")
             .find(|row| row.contains("key&amp;tag@example.test"))
             .unwrap();
-        assert!(!imported.contains(">Edit</a>"));
-        assert!(!imported.contains(">Remove</a>"));
+        assert!(!imported.contains("href=\"/contacts?edit="));
+        assert!(!imported.contains("href=\"/contacts?delete="));
         assert!(imported.contains("/contacts?new=1&amp;from_key=key%3A"));
-        assert!(imported.contains(">Add name</a>"));
+        let add_name = imported
+            .split_once("href=\"/contacts?new=1&amp;from_key=key%3A")
+            .expect("imported-only row keeps its named-contact workflow")
+            .1
+            .split("</a>")
+            .next()
+            .unwrap();
+        assert!(add_name.contains("Add name"));
         assert!(imported.contains("Not provided"));
     }
 
@@ -457,7 +464,10 @@ mod tests {
             .contains("action=\"/contacts/delete\" aria-labelledby=\"contact-delete-title\""));
         assert!(confirmation.contains("name=\"confirm\" value=\"1\""));
         assert!(confirmation.contains("name=\"csrf_token\""));
-        assert!(confirmation.contains(">Keep contact</a>"));
+        assert!(confirmation
+            .split("href=\"/contacts\">")
+            .skip(1)
+            .any(|link| link.split("</a>").next().unwrap().contains("Keep contact")));
         assert!(confirmation.contains("The imported public key, if any, will remain."));
     }
 }

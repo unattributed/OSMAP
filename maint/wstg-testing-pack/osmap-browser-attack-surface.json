@@ -903,7 +903,8 @@
         "font_size",
         "reader_layout",
         "show_avatars",
-        "message_preview"
+        "message_preview",
+        "presentation_style"
       ],
       "wstg_test_ids": [
         "OSMAP-WSTG-SESS-004",

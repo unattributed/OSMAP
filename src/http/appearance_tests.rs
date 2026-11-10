@@ -4,21 +4,25 @@ const CSRF: &str = "fedcba9876543210fedcba9876543210fedcba9876543210fedcba987654
 
 #[test]
 fn display_route_persists_one_snapshot_and_rejects_invalid_changes() {
-    use crate::appearance::{AppearanceSettings, Density, FontSize, ReaderLayout};
+    use crate::appearance::{AppearanceSettings, Density, FontSize, PresentationStyle, ReaderLayout};
     let root = temp_dir("display-preferences-route");
     let store = AppearanceStore::new(root.join("appearance"));
     let browser = BrowserApp::new(HttpPolicy::default(), StubGateway { appearance_store: Some(store.clone()), ..StubGateway::default() });
-    let fields = format!("csrf_token={CSRF}&appearance=dark&density=compact&font_size=large&reader_layout=stacked");
+    let fields = format!("csrf_token={CSRF}&appearance=dark&density=compact&font_size=large&reader_layout=stacked&presentation_style=icons");
     let post = |body: &str| request("POST", "/settings/display", &authenticated_same_origin_headers(), body);
     let result = browser.handle_request(&post(&fields), "127.0.0.1");
     assert_eq!(result.response.status_code, 303);
-    let expected = AppearanceSettings { theme: AppearancePreference::Dark, density: Density::Compact, font_size: FontSize::Large, reader_layout: ReaderLayout::Stacked, show_avatars: false, message_preview: false };
+    let expected = AppearanceSettings { theme: AppearancePreference::Dark, density: Density::Compact, font_size: FontSize::Large, reader_layout: ReaderLayout::Stacked, show_avatars: false, message_preview: false, presentation_style: PresentationStyle::Icons };
     assert_eq!(store.load_settings("alice@example.com").expect("saved presentation"), expected);
     assert!(body_text(&result).contains("data-density=\"compact\""));
     assert!(body_text(&result).contains("data-show-avatars=\"false\""));
     for malformed in [
         fields.replace("compact", "enormous"),
         fields.replace("font_size=large&", ""),
+        fields.replace("&presentation_style=icons", ""),
+        fields.replace("presentation_style=icons", "presentation_style=unknown"),
+        format!("{fields}&presentation_style=text_labels"),
+        format!("{fields}&canonical_username=bob%40example.com"),
         format!("{fields}&font_size=small"),
         format!("{fields}&unexpected=1"),
         format!("{fields}&show_avatars=true"),
@@ -29,6 +33,18 @@ fn display_route_persists_one_snapshot_and_rejects_invalid_changes() {
         assert_eq!(store.load_settings("alice@example.com").expect("unchanged"), expected);
         assert!(!result.response.headers.iter().any(|(name, _)| name == "Set-Cookie"));
     }
+    for origin in [None, Some("https://other.example.test")] {
+        let mut req = post(&fields);
+        req.headers.remove("origin");
+        if let Some(origin) = origin { req.headers.insert("origin".into(), origin.into()); }
+        let result = browser.handle_request(&req, "127.0.0.1");
+        assert_eq!(result.response.status_code, 403);
+        assert_eq!(store.load_settings("alice@example.com").expect("origin refusal preserves snapshot"), expected);
+    }
+    let all_fields = format!("{fields}&show_avatars=1&message_preview=1");
+    assert_eq!(browser.handle_request(&post(&all_fields), "127.0.0.1").response.status_code, 303);
+    assert_eq!(store.load_settings("alice@example.com").unwrap(), AppearanceSettings { show_avatars: true, message_preview: true, ..expected });
+    assert_eq!(browser.handle_request(&post(&fields), "127.0.0.1").response.status_code, 303);
     let themed = browser.handle_request(&theme_request("light"), "127.0.0.1");
     assert_eq!(themed.response.status_code, 303);
     assert_eq!(store.load_settings("alice@example.com").expect("merged theme"), AppearanceSettings { theme: AppearancePreference::Light, ..expected });
@@ -42,14 +58,108 @@ fn display_route_persists_one_snapshot_and_rejects_invalid_changes() {
 
 #[test]
 fn display_runtime_preferences_survive_reopen() {
-    use crate::appearance::{AppearanceSettings, Density};
+    use crate::appearance::{AppearanceSettings, Density, PresentationStyle};
     let root = temp_dir("display-runtime");
     let context = AuthenticationContext::new(AuthenticationPolicy::default(), "display-test", "127.0.0.1", "Synthetic/Test").expect("context");
     let session = StubGateway::validated_session();
-    let preferences = AppearanceSettings { density: Density::Compact, show_avatars: false, ..AppearanceSettings::default() };
+    let preferences = AppearanceSettings { density: Density::Compact, show_avatars: false, presentation_style: PresentationStyle::Icons, ..AppearanceSettings::default() };
     RuntimeBrowserGateway::for_test(&root).update_display(&context, &session, preferences).expect("persist preferences");
     assert_eq!(RuntimeBrowserGateway::for_test(&root).load_display(&context, &session).expect("reopen preferences"), preferences);
+    let mut other = session.clone();
+    other.record.canonical_username = "bob@example.test".into();
+    let reopened = RuntimeBrowserGateway::for_test(&root);
+    assert_eq!(reopened.load_display(&context, &other).expect("other account"), AppearanceSettings::default());
+    reopened.update_appearance(&context, &session, AppearancePreference::Light).expect("theme-only merge");
+    assert_eq!(reopened.load_display(&context, &session).expect("preserved style"), AppearanceSettings { theme: AppearancePreference::Light, ..preferences });
+    reopened.update_display(&context, &other, AppearanceSettings { theme: AppearancePreference::Dark, ..AppearanceSettings::default() }).expect("second account save");
+    assert_eq!(reopened.load_display(&context, &session).unwrap().presentation_style, PresentationStyle::Icons);
     fs::remove_dir_all(root).expect("owned fixture cleanup");
+}
+
+#[test]
+fn display_presentation_form_uses_account_choice_and_labelled_default() {
+    use crate::appearance::{AppearanceSettings, PresentationStyle};
+    let root = temp_dir("presentation-form");
+    let store = AppearanceStore::new(root.join("appearance"));
+    let browser = BrowserApp::new(HttpPolicy::default(), StubGateway { appearance_store: Some(store.clone()), ..StubGateway::default() });
+    let get = || browser.handle_request(&request("GET", "/settings?section=appearance", &authenticated_headers(), ""), "127.0.0.1");
+    let initial = get();
+    assert_eq!(initial.response.status_code, 200);
+    assert!(body_text(&initial).contains("<label for=\"settings-presentation-style\">Presentation style</label>"));
+    assert!(body_text(&initial).contains("<option value=\"text_labels\" selected>Text labels</option>"));
+    store.save_settings("alice@example.com", AppearanceSettings { presentation_style: PresentationStyle::Icons, ..AppearanceSettings::default() }).unwrap();
+    let saved = get();
+    assert!(body_text(&saved).contains("<option value=\"icons\" selected>Icons</option>"));
+    assert!(!body_text(&saved).contains("<option value=\"text_labels\" selected>Text labels</option>"));
+    assert!(body_text(&saved).contains("<span class=\"presentation-label\">Save changes</span>"));
+    let general = browser.handle_request(&request("GET", "/settings?section=general", &authenticated_headers(), ""), "127.0.0.1");
+    assert_eq!(general.response.status_code, 200);
+    let general_html = body_text(&general);
+    let display_form = general_html.split_once("action=\"/settings/display\"").expect("General appearance form").1.split("</form>").next().unwrap();
+    assert!(display_form.contains("<input type=\"hidden\" name=\"presentation_style\" value=\"icons\">"));
+    fs::remove_dir_all(root).expect("owned fixture cleanup");
+}
+
+#[test]
+fn presentation_style_projection_uses_current_account_not_cookie_hints() {
+    use crate::appearance::{AppearanceSettings, PresentationStyle};
+    use crate::reading_preferences::{ReadingPreferences, ReadingPreferencesStore};
+    let root = temp_dir("presentation-projection");
+    let store = AppearanceStore::new(root.join("appearance"));
+    let reading = ReadingPreferencesStore::new(root.join("reading"));
+    store.save_settings("alice@example.com", AppearanceSettings { presentation_style: PresentationStyle::Icons, ..AppearanceSettings::default() }).unwrap();
+    reading.save("alice@example.com", ReadingPreferences { show_source_shortcut: false, attachment_details: true, ..ReadingPreferences::default() }).unwrap();
+    reading.save("bob@example.com", ReadingPreferences { show_source_shortcut: true, attachment_details: false, ..ReadingPreferences::default() }).unwrap();
+    let browser = BrowserApp::new(HttpPolicy::default(), StubGateway { appearance_store: Some(store.clone()), reading_preferences_store: Some(reading), browser_fixture_accounts: true, ..StubGateway::default() });
+    for (token, expected_style, source, details) in [
+        ("a".repeat(64), "icons", false, true),
+        ("b".repeat(64), "text_labels", true, false),
+        ("a".repeat(64), "icons", false, true),
+    ] {
+        for hint in ["", "; osmap_presentation=v1.compact.large.stacked.0.0", "; osmap_presentation=v2.icons; presentation_style=icons; osmap_presentation_style=icons"] {
+            for path in ["/compose", "/settings?section=appearance"] {
+                let mut req = request("GET", path, &authenticated_headers(), "");
+                req.headers.insert("cookie".into(), format!("osmap_session={token}{hint}"));
+                let response = browser.handle_request(&req, "127.0.0.1");
+                assert_eq!(response.response.status_code, 200, "{path}");
+                let html = body_text(&response);
+                let root_tag = html.split_once("<head>").expect("application root").0;
+                assert!(root_tag.contains(&format!(" data-presentation-style=\"{expected_style}\"")), "{path}: {root_tag}");
+                assert_eq!(root_tag.matches("data-presentation-style=").count(), 1);
+                assert!(html.contains(&format!("<body data-reading-source=\"{source}\" data-reading-attachment-details=\"{details}\">")));
+            }
+        }
+    }
+    assert_eq!(store.load_settings("alice@example.com").unwrap().presentation_style, PresentationStyle::Icons);
+    assert_eq!(store.load_settings("bob@example.com").unwrap(), AppearanceSettings::default());
+    fs::remove_dir_all(root).expect("owned fixture cleanup");
+}
+
+#[test]
+fn presentation_style_unavailable_defaults_and_prelogin_downloads_are_unchanged() {
+    let browser = app();
+    let mut authenticated = request("GET", "/compose", &authenticated_headers(), "");
+    authenticated.headers.insert("user-agent".into(), "OSMAP/AppearanceUnavailable".into());
+    authenticated.headers.get_mut("cookie").unwrap().push_str("; osmap_presentation=v2.icons; presentation_style=icons");
+    let response = browser.handle_request(&authenticated, "127.0.0.1");
+    assert_eq!(response.response.status_code, 200);
+    assert!(body_text(&response).split_once("<head>").unwrap().0.contains(" data-presentation-style=\"text_labels\""));
+
+    for path in ["/login", "/compose"] {
+        let req = request("GET", path, &[("Cookie", "osmap_presentation=v2.icons; presentation_style=icons")], "");
+        let response = browser.handle_request(&req, "127.0.0.1");
+        assert_eq!(response.response.status_code, if path == "/login" { 200 } else { 303 });
+        assert!(!body_text(&response).split_once("<head>").unwrap().0.contains("data-presentation-style="));
+    }
+    let html = "<!doctype html><html lang=\"en\" data-appearance=\"system\"><head></head><body>synthetic download bytes</body></html>";
+    for mut response in [
+        crate::http_support::plain_text_response(200, "OK", html),
+        HttpResponse::text(200, "OK", html).with_header("Content-Type", "text/html; charset=utf-8").with_header("Content-Disposition", "attachment; filename=fixture.html"),
+    ] {
+        let before = response.body.clone();
+        browser.apply_reading_presentation(&mut response, &authenticated);
+        assert_eq!(response.body, before);
+    }
 }
 
 fn theme_request(value: &str) -> HttpRequest {
@@ -121,7 +231,7 @@ fn settings_protection_search_requires_session_and_never_uses_mail_search() {
 
 #[test]
 fn display_storage_failure_reports_unconfirmed_save_without_setting_cookies() {
-    let mut req = request("POST", "/settings/display", &authenticated_same_origin_headers(), &format!("csrf_token={CSRF}&appearance=dark&density=compact&font_size=large&reader_layout=stacked"));
+    let mut req = request("POST", "/settings/display", &authenticated_same_origin_headers(), &format!("csrf_token={CSRF}&appearance=dark&density=compact&font_size=large&reader_layout=stacked&presentation_style=icons"));
     req.headers.insert("user-agent".into(), "OSMAP/AppearanceUnavailable".into());
     let result = app().handle_request(&req, "127.0.0.1");
     assert_eq!(result.response.status_code, 503);

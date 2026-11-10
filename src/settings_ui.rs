@@ -76,6 +76,10 @@ pub(crate) fn render_appearance_page(
             ("stacked", "Stacked list + reader"),
         ],
     );
+    let presentation_style = select_options(
+        preferences.presentation_style.as_str(),
+        &[("text_labels", "Text labels"), ("icons", "Icons")],
+    );
     let success = model
         .success_message
         .map(|value| {
@@ -102,14 +106,15 @@ pub(crate) fn render_appearance_page(
         "<div class=\"settings-field\"><label for=\"settings-density\">Density</label><select id=\"settings-density\" name=\"density\">{density}</select></div>",
         "<div class=\"settings-field\"><label for=\"settings-font-size\">Font size</label><select id=\"settings-font-size\" name=\"font_size\">{font}</select></div>",
         "<div class=\"settings-field\"><label for=\"settings-reader-layout\">Reader layout</label><select id=\"settings-reader-layout\" name=\"reader_layout\">{layout}</select></div>",
+        "<div class=\"settings-field\"><label for=\"settings-presentation-style\">Presentation style</label><select id=\"settings-presentation-style\" name=\"presentation_style\">{presentation_style}</select><p class=\"settings-field-help\">Use Icons for compact desktop actions, with names on hover or keyboard focus. Touch devices keep visible labels.</p></div>",
         "<div class=\"settings-field settings-toggle-field\"><label for=\"settings-show-avatars\">Show avatars</label><input class=\"settings-switch\" id=\"settings-show-avatars\" type=\"checkbox\" role=\"switch\" name=\"show_avatars\" value=\"1\"{avatars_checked}></div>",
         "<div class=\"settings-field settings-toggle-field\"><label for=\"settings-message-preview\">Message preview</label><input class=\"settings-switch\" id=\"settings-message-preview\" type=\"checkbox\" role=\"switch\" name=\"message_preview\" value=\"1\"{preview_checked}></div></div>",
         "<section class=\"settings-preview\" aria-labelledby=\"settings-preview-title\" data-preview-theme=\"{theme}\" data-preview-density=\"{saved_density}\" data-preview-font=\"{saved_font}\" data-preview-avatars=\"{avatars}\" data-preview-snippet=\"{snippet}\" data-preview-layout=\"{saved_layout}\"><h3 id=\"settings-preview-title\">Selected preview</h3><p class=\"settings-preview-help\">Preview follows your selections. Mailbox settings change only after Save changes.</p><div class=\"settings-preview-layout\">",
         "<div class=\"settings-preview-message\"><span class=\"settings-preview-avatar\" aria-hidden=\"true\">S</span><div><strong>Sample message</strong><span class=\"settings-preview-snippet\">A short example of a message preview.</span></div></div>",
         "<div class=\"settings-preview-reader\"><p>Sample reader content.</p><p class=\"settings-preview-layout-note\"><span class=\"settings-preview-split\">Split list + reader</span><span class=\"settings-preview-stacked\">Stacked list + reader</span></p></div></div><p class=\"settings-preview-saved\">Saved: {theme}, {saved_density}, {saved_font}, {layout_label}; avatars {avatars}, message preview {snippet}.</p></section></div>",
-        "<div class=\"settings-save-row\"><button class=\"primary-button\" type=\"submit\">Save changes</button></div></form></section></div></main>"
+        "<div class=\"settings-save-row\"><button class=\"primary-button\" type=\"submit\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save changes</span></button></div></form></section></div></main>"
     ), header=app_header(model.canonical_username, model.csrf_token, "settings-appearance"),
-        success=success, error=error, themes=themes, density=density, font=font, layout=layout,
+        success=success, error=error, themes=themes, density=density, font=font, layout=layout, presentation_style=presentation_style,
         navigation=settings_navigation("appearance"), csrf=escape_html(model.csrf_token),
         avatars_checked=if preferences.show_avatars { " checked" } else { "" }, preview_checked=if preferences.message_preview { " checked" } else { "" },
         theme=preferences.theme.as_str(), saved_density=preferences.density.as_str(), saved_font=preferences.font_size.as_str(),
@@ -158,7 +163,22 @@ fn settings_navigation(current_section: &str) -> String {
                 } else {
                     ""
                 },
-                escape_html(label)
+                presentation_label(
+                    label,
+                    match section {
+                        "general" => "settings",
+                        "appearance" => "eye",
+                        "identity" => "people",
+                        "reading" => "inbox",
+                        "composition" => "compose",
+                        "copies" => "folders",
+                        "notifications" => "notifications",
+                        "privacy" => "shield",
+                        "openpgp" => "key",
+                        "authentication" => "shield",
+                        _ => "",
+                    }
+                )
             ));
         } else {
             unavailable = true;

@@ -60,24 +60,24 @@ pub(crate) fn render_general_page_with_mark_read(
     };
     let timezone_control = timezone.map(|saved| {
         let options = crate::timezone::FixedOffset::choices().map(|offset| format!("<option value=\"{}\"{}>{}</option>", offset.as_str(), if offset == saved.offset { " selected" } else { "" }, offset.label())).collect::<String>();
-        format!("<form id=\"general-timezone-form\" method=\"post\" action=\"/settings/timezone\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><div class=\"general-field\"><label for=\"general-timezone\">Timezone</label><select id=\"general-timezone\" name=\"timezone\" aria-describedby=\"general-timezone-help\">{options}</select></div><p id=\"general-timezone-help\" class=\"general-help\">Fixed UTC offset for mail dates. Daylight-saving changes are not automatic. Date filters and audit times remain UTC.</p><button type=\"submit\">Save timezone</button></form>", escape_html(model.csrf_token), saved.revision)
+        format!("<form id=\"general-timezone-form\" method=\"post\" action=\"/settings/timezone\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><div class=\"general-field\"><label for=\"general-timezone\">Timezone</label><select id=\"general-timezone\" name=\"timezone\" aria-describedby=\"general-timezone-help\">{options}</select></div><p id=\"general-timezone-help\" class=\"general-help\">Fixed UTC offset for mail dates. Daylight-saving changes are not automatic. Date filters and audit times remain UTC.</p><button type=\"submit\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save timezone</span></button></form>", escape_html(model.csrf_token), saved.revision)
     }).unwrap_or_else(|| format!("{}<p>Saved timezone unavailable. Reload General settings.</p>", unavailable_select("general-timezone", "Timezone", "Unavailable")));
     let profile = format!(concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-profile-title\"><h2 id=\"general-profile-title\">Account Profile</h2>",
         "{}<div class=\"general-field\"><label for=\"general-email\">Email address</label><input id=\"general-email\" value=\"{}\" readonly></div>{}{}{}",
-        "<p class=\"general-help\">{}<a href=\"/settings?section=identity\">Edit in Identity</a>. English is fixed.</p></section>"
+        "<p class=\"general-help\">{}<a href=\"/settings?section=identity\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Edit in Identity</span></a>. English is fixed.</p></section>"
     ), profile_input("general-display-name", "Display name", identity.as_ref().map(|record| record.preferences.display_name())), escape_html(model.canonical_username),
         profile_input("general-reply-to", "Reply-to address", identity.as_ref().map(|record| record.preferences.reply_to().unwrap_or(model.canonical_username))),
         timezone_control, unavailable_select("general-language", "Language", "English"), if identity.is_none() { "Saved profile unavailable. " } else { "" });
 
     let appearance = format!(concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-appearance-title\"><h2 id=\"general-appearance-title\">Appearance</h2>",
-        "<form method=\"post\" action=\"/settings/display\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"font_size\" value=\"{}\">{}{}",
+        "<form method=\"post\" action=\"/settings/display\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"font_size\" value=\"{}\"><input type=\"hidden\" name=\"presentation_style\" value=\"{}\">{}{}",
         "<div class=\"general-field\"><label for=\"general-theme\">Theme</label><select id=\"general-theme\" name=\"appearance\">{}</select></div>",
         "<div class=\"general-field\"><label for=\"general-density\">Density</label><select id=\"general-density\" name=\"density\">{}</select></div>",
         "<div class=\"general-field\"><label for=\"general-reader-layout\">Reader layout</label><select id=\"general-reader-layout\" name=\"reader_layout\">{}</select></div>",
-        "<div class=\"general-card-actions\"><a class=\"button-link\" href=\"/settings?section=appearance\">Configure appearance</a><button type=\"submit\">Save appearance</button></div></form></section>"
-    ), escape_html(model.csrf_token), preferences.font_size.as_str(),
+        "<div class=\"general-card-actions\"><a class=\"button-link\" href=\"/settings?section=appearance\"><span class=\"presentation-icon presentation-icon-settings\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Configure appearance</span></a><button type=\"submit\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save appearance</span></button></div></form></section>"
+    ), escape_html(model.csrf_token), preferences.font_size.as_str(), preferences.presentation_style.as_str(),
         preserved_flag("show_avatars", preferences.show_avatars), preserved_flag("message_preview", preferences.message_preview),
         select_options(preferences.theme.as_str(), &[("light", "Light"), ("dark", "Dark"), ("system", "System (match device)")]),
         select_options(preferences.density.as_str(), &[("comfortable", "Comfortable"), ("compact", "Compact")]),
@@ -93,7 +93,7 @@ pub(crate) fn render_general_page_with_mark_read(
         Some(saved) => (
             format!("<div class=\"general-field\"><label for=\"general-mark-read\">Mark read</label><select id=\"general-mark-read\" name=\"policy\" form=\"general-mark-read-form\" aria-describedby=\"general-mark-read-help\">{}</select></div>", select_options(saved.policy.as_str(), &[("manual", "Manual"), ("on_open", "On Open")])),
             format!("<form id=\"general-mark-read-form\" method=\"post\" action=\"/settings/mark-read\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><input type=\"hidden\" name=\"section\" value=\"general\"></form>", escape_html(model.csrf_token), saved.revision),
-            "<button type=\"submit\" form=\"general-mark-read-form\">Save mark-read choice</button>",
+            "<button type=\"submit\" form=\"general-mark-read-form\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save mark-read choice</span></button>",
         ),
         None => (unavailable_select("general-mark-read", "Mark read", "Unavailable"), String::new(), "<span>Saved mark-read preference unavailable. Reload settings.</span>"),
     };
@@ -101,11 +101,11 @@ pub(crate) fn render_general_page_with_mark_read(
         "<section class=\"general-card\" aria-labelledby=\"general-mailbox-title\"><h2 id=\"general-mailbox-title\">Mailbox Defaults</h2>{start_form}{mark_form}",
         "<form method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"settings_action\" value=\"archive\">{}",
         "<div class=\"general-field\"><label for=\"general-archive\">Archive folder</label><input id=\"general-archive\" name=\"archive_mailbox_name\" value=\"{}\" autocomplete=\"off\"></div>{}{}",
-        "<p class=\"general-help\">Save each choice separately. Blank Archive uses manual moves.</p><p class=\"general-help\" id=\"general-mark-read-help\">Manual keeps the current read state when opening. On Open marks an unread message read through its opening action. Reload and Back do not mark messages read.</p><div class=\"general-card-actions\"><button type=\"submit\">Save archive folder</button>{start_button}{mark_button}</div></form></section>"
+        "<p class=\"general-help\">Save each choice separately. Blank Archive uses manual moves.</p><p class=\"general-help\" id=\"general-mark-read-help\">Manual keeps the current read state when opening. On Open marks an unread message read through its opening action. Reload and Back do not mark messages read.</p><div class=\"general-card-actions\"><button type=\"submit\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save archive folder</span></button>{start_button}{mark_button}</div></form></section>"
     ), escape_html(model.csrf_token),
         start_control, escape_html(model.archive_mailbox_name.unwrap_or("")),
         unavailable_select("general-delete-behaviour", "Delete behaviour", "Unavailable"),
-        mark_control, start_form=start_form, mark_form=mark_form, mark_button=mark_button, start_button=if reading.is_some(){"<button type=\"submit\" form=\"general-start-form\">Save start page</button>"}else{"<span>Saved Reading preferences unavailable.</span>"});
+        mark_control, start_form=start_form, mark_form=mark_form, mark_button=mark_button, start_button=if reading.is_some(){"<button type=\"submit\" form=\"general-start-form\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save start page</span></button>"}else{"<span>Saved Reading preferences unavailable.</span>"});
 
     let format_control = match composition {
         Some(value) => format!("<form id=\"general-composition-form\" method=\"post\" action=\"/settings/composition\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><div class=\"general-field\"><label for=\"general-default-format\">Default format</label><select id=\"general-default-format\" name=\"default_body_format\">{}</select></div></form>", escape_html(model.csrf_token), select_options(value.default_body_format.as_str(), &[("plain", "Plain text"), ("formatted", "Formatted text")])),
@@ -126,11 +126,11 @@ pub(crate) fn render_general_page_with_mark_read(
     let signature_control = signature.map(|r| format!("<form id=\"general-signature-form\" method=\"post\" action=\"/settings/signature\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"signature_revision\" value=\"{}\"><input type=\"hidden\" name=\"operation\" value=\"selection\"><input type=\"hidden\" name=\"return_section\" value=\"general\"><div class=\"general-field\"><label for=\"general-signature\">Signature</label><select id=\"general-signature\" name=\"selection\">{}</select></div></form>",escape_html(model.csrf_token),r.revision,select_options(r.selection.as_str(), &[("none","None"),("default","Default signature")]))).unwrap_or_else(|| unavailable_select("general-signature","Signature","Unavailable"));
     let composition = format!(concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-composition-title\"><h2 id=\"general-composition-title\">Composition Defaults</h2>{}{}{}{}",
-        "<div class=\"general-card-actions general-composition-actions\">{}{signature_save}<details><summary>About composition defaults</summary><p class=\"general-help\">Format applies to new blank messages. Replies and forwards use Plain text to preserve quoted message text. Reply placement applies to new replies and reply-all; move the cursor to the blank reply space before typing. Saved drafts remain unchanged. Signature is ordinary footer text for newly opened composers; existing drafts stay unchanged. <a href=\"/settings?section=identity\">Edit the footer in Identity</a>. OpenPGP choices apply to newly opened messages and remain subject to account and recipient policy and a fresh key check before sending.</p></details></div></section>"
+        "<div class=\"general-card-actions general-composition-actions\">{}{signature_save}<details><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">About composition defaults</span></summary><p class=\"general-help\">Format applies to new blank messages. Replies and forwards use Plain text to preserve quoted message text. Reply placement applies to new replies and reply-all; move the cursor to the blank reply space before typing. Saved drafts remain unchanged. Signature is ordinary footer text for newly opened composers; existing drafts stay unchanged. <a href=\"/settings?section=identity\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Edit the footer in Identity</span></a>. OpenPGP choices apply to newly opened messages and remain subject to account and recipient policy and a fresh key check before sending.</p></details></div></section>"
     ), format_control,
         signature_control, placement_control,
         protection_controls,
-        if composition.is_some() { "<button type=\"submit\" form=\"general-composition-form\" aria-label=\"Save composition defaults\">Save composition</button>" } else { "" }, signature_save=if signature.is_some(){"<button type=\"submit\" form=\"general-signature-form\" aria-label=\"Save signature choice\">Save signature</button>"}else{"<span>Saved signature unavailable.</span>"});
+        if composition.is_some() { "<button type=\"submit\" form=\"general-composition-form\" aria-label=\"Save composition defaults\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save composition</span></button>" } else { "" }, signature_save=if signature.is_some(){"<button type=\"submit\" form=\"general-signature-form\" aria-label=\"Save signature choice\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save signature</span></button>"}else{"<span>Saved signature unavailable.</span>"});
 
     let privacy = concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-privacy-title\"><h2 id=\"general-privacy-title\">Privacy &amp; Security</h2><ul class=\"general-status-list\">",
@@ -210,7 +210,7 @@ pub(crate) fn render_general_page_with_mark_read(
     }
     TrustedHtml::from_template(format!(concat!(
         "{}<main id=\"main-content\" class=\"page-shell settings-page settings-general-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Settings</h1><p>Manage account, mailbox, appearance, composition, privacy and security preferences.</p></div>{}",
-        "<div class=\"settings-layout settings-general-layout\">{}<div class=\"settings-general-grid\">{}{}{}{}{}{}{}<div class=\"general-overview-actions\"><a class=\"button-link\" href=\"/sessions\">Manage active sessions</a><span>Reset discards unsaved edits and reloads this section’s saved values. It does not restore defaults.</span><a class=\"button-link\" href=\"/settings?section=general\">Reset this section</a></div></div></div></main>"
+        "<div class=\"settings-layout settings-general-layout\">{}<div class=\"settings-general-grid\">{}{}{}{}{}{}{}<div class=\"general-overview-actions\"><a class=\"button-link\" href=\"/sessions\"><span class=\"presentation-icon presentation-icon-sessions\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage active sessions</span></a><span>Reset discards unsaved edits and reloads this section’s saved values. It does not restore defaults.</span><a class=\"button-link\" href=\"/settings?section=general\"><span class=\"presentation-icon presentation-icon-refresh\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Reset this section</span></a></div></div></div></main>"
     ), header, notices, settings_navigation("general"), profile, appearance, mailbox, composition, privacy, security, storage))
 }
 
@@ -502,9 +502,17 @@ mod tests {
         assert!(html.contains("value=\"synthetic&amp;&lt;csrf&gt;\""));
         assert!(html
             .contains("id=\"general-mark-read\" name=\"policy\" form=\"general-mark-read-form\""));
-        assert!(
-            html.contains("type=\"submit\" form=\"general-mark-read-form\">Save mark-read choice")
-        );
+        let button = html
+            .split_once("<button type=\"submit\" form=\"general-mark-read-form\">")
+            .expect("native mark-read submit target")
+            .1
+            .split("</button>")
+            .next()
+            .unwrap();
+        assert!(button.contains("Save mark-read choice"));
+        assert!(html.contains(
+            "<form id=\"general-mark-read-form\" method=\"post\" action=\"/settings/mark-read\">"
+        ));
         let mark_start = html.find("<form id=\"general-mark-read-form\"").unwrap();
         let mark_end = mark_start + html[mark_start..].find("</form>").unwrap();
         assert!(!html[mark_start + 5..mark_end].contains("<form"));
@@ -525,6 +533,7 @@ mod tests {
         assert!(html.contains("id=\"general-mark-read\" disabled"));
         assert!(html.contains("Saved mark-read preference unavailable. Reload settings."));
         assert!(!html.contains("action=\"/settings/mark-read\""));
-        assert!(!html.contains("Save mark-read choice</button>"));
+        assert!(!html.contains("Save mark-read choice"));
+        assert!(!html.contains("form=\"general-mark-read-form\""));
     }
 }

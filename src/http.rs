@@ -5849,6 +5849,26 @@ mod tests {
         String::from_utf8_lossy(&response.response.body).into_owned()
     }
 
+    // Test consumer for source-owned action fragments, not an HTML sanitizer.
+    // Caption semantics do not depend on decorative nested template tags.
+    fn rendered_action_caption(contents: &str) -> String {
+        let mut in_tag = false;
+        contents
+            .chars()
+            .filter(|character| match *character {
+                '<' => {
+                    in_tag = true;
+                    false
+                }
+                '>' => {
+                    in_tag = false;
+                    false
+                }
+                _ => !in_tag,
+            })
+            .collect()
+    }
+
     fn authenticated_get(path: &str) -> HandledHttpResponse {
         app().handle_request(
             &request("GET", path, &authenticated_headers(), ""),
@@ -6610,7 +6630,16 @@ mod tests {
         assert!(body.contains("name=\"scope\" value=\"all\""));
         assert!(body.contains("Archive shortcut sends messages"));
         assert!(body.contains("name=\"action\" value=\"archive\""));
-        assert!(body.contains(">Archive</button>"));
+        assert!(body.split("<button ").any(|button| {
+            let Some((tag, contents)) = button.split_once('>') else {
+                return false;
+            };
+            tag.contains("name=\"action\"")
+                && tag.contains("value=\"archive\"")
+                && contents
+                    .split_once("</button>")
+                    .is_some_and(|(caption, _)| rendered_action_caption(caption) == "Archive")
+        }));
         assert!(body.contains("aria-label=\"Sort by Subject ascending\""));
         assert!(body.contains("aria-label=\"Sort by From ascending\""));
         assert!(body.contains("Quarterly report"));
@@ -7841,8 +7870,18 @@ mod tests {
                 .count(),
             1
         );
-        assert!(body.contains(">Move Selected</button>"));
-        assert!(body.contains(">Archive Selected</button>"));
+        for (action, label) in [("move", "Move Selected"), ("archive", "Archive Selected")] {
+            assert!(body.split("<button ").any(|button| {
+                let Some((tag, contents)) = button.split_once('>') else {
+                    return false;
+                };
+                tag.contains("name=\"action\"")
+                    && tag.contains(&format!("value=\"{action}\""))
+                    && contents
+                        .split_once("</button>")
+                        .is_some_and(|(caption, _)| rendered_action_caption(caption) == label)
+            }));
+        }
     }
 
     #[test]

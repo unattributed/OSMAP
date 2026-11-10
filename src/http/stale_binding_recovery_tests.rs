@@ -137,10 +137,21 @@ fn explicit_pre_send_check_rebinds_only_reviewed_draft_and_keeps_content_files_a
     let reopened_html = body_text(&reopened);
     assert!(reopened_html.contains("name=\"pgp_binding_revision\" value=\"2\""));
     assert!(reopened_html.contains("older or inconsistent OpenPGP binding snapshot"));
-    assert!(reopened_html.contains(">Review current keys</button>"));
+    let review = reopened_html
+        .split("<button ")
+        .skip(1)
+        .filter_map(|part| part.split_once("</button>").map(|(button, _)| button))
+        .find(|button| button.contains("Review current keys"))
+        .expect("explicit key review control");
+    assert!(review.starts_with(
+        "type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"preflight\">"
+    ));
     assert!(reopened_html.contains("Keys changed — review required"));
     assert!(!reopened_html.contains("Public keys eligible in the saved-draft snapshot"));
-    assert_eq!(fixture.saved(&id).request.protection.binding_revision, Some(2));
+    assert_eq!(
+        fixture.saved(&id).request.protection.binding_revision,
+        Some(2)
+    );
 
     let ordinary = fixture.post(
         "/drafts/save",
@@ -158,8 +169,16 @@ fn explicit_pre_send_check_rebinds_only_reviewed_draft_and_keeps_content_files_a
         ],
         false,
     );
-    assert_eq!(ordinary.response.status_code, 303, "{}", body_text(&ordinary));
-    assert_eq!(fixture.saved(&id).request.protection.binding_revision, Some(2));
+    assert_eq!(
+        ordinary.response.status_code,
+        303,
+        "{}",
+        body_text(&ordinary)
+    );
+    assert_eq!(
+        fixture.saved(&id).request.protection.binding_revision,
+        Some(2)
+    );
 
     let csrf = StubGateway::validated_session().record.csrf_token;
     let enable = fixture.app.handle_request(
@@ -188,8 +207,16 @@ fn explicit_pre_send_check_rebinds_only_reviewed_draft_and_keeps_content_files_a
         ],
         false,
     );
-    assert_eq!(autosave.response.status_code, 200, "{}", body_text(&autosave));
-    assert_eq!(fixture.saved(&id).request.protection.binding_revision, Some(2));
+    assert_eq!(
+        autosave.response.status_code,
+        200,
+        "{}",
+        body_text(&autosave)
+    );
+    assert_eq!(
+        fixture.saved(&id).request.protection.binding_revision,
+        Some(2)
+    );
 
     let review = fixture.post(
         "/drafts/save",
@@ -220,10 +247,17 @@ fn explicit_pre_send_check_rebinds_only_reviewed_draft_and_keeps_content_files_a
     assert_eq!(reviewed.request.subject, "Synthetic protected draft");
     assert_eq!(reviewed.request.body, "Reviewed text with all choices");
     assert_eq!(reviewed.request.attachments.len(), 1);
-    assert_eq!(reviewed.request.attachments[0].body, b"Synthetic retained attachment");
+    assert_eq!(
+        reviewed.request.attachments[0].body,
+        b"Synthetic retained attachment"
+    );
     let review_html = body_text(&fixture.get(&location_header(&review)));
     assert!(review_html.contains("name=\"pgp_binding_revision\" value=\"4\""));
-    assert!(!review_html.contains(">Review current keys</button>"));
+    assert!(!review_html.split("<button ").skip(1).any(|part| part
+        .split("</button>")
+        .next()
+        .unwrap()
+        .contains("Review current keys")));
     assert!(review_html.contains("Selected signing fingerprint"));
     assert!(review_html.contains(&"A".repeat(40)));
     assert!(review_html.contains(&"B".repeat(40)));
@@ -279,7 +313,12 @@ fn unavailable_or_inconsistent_public_snapshot_never_rebases_saved_draft() {
             ],
             false,
         );
-        assert_eq!(refused.response.status_code, status, "{}", body_text(&refused));
+        assert_eq!(
+            refused.response.status_code,
+            status,
+            "{}",
+            body_text(&refused)
+        );
         let html = body_text(&refused);
         assert!(html.contains("Retained review text"));
         assert!(html.contains("name=\"pgp_binding_revision\" value=\"2\""));
@@ -314,7 +353,15 @@ fn explicit_review_updates_pinned_revision_without_choosing_protection_for_user(
         .to_string();
     fixture.set_snapshot(4, Some(4), true);
     let stale = body_text(&fixture.get(&format!("/draft?id={id}")));
-    assert!(stale.contains(">Review current keys</button>"));
+    let review = stale
+        .split("<button ")
+        .skip(1)
+        .filter_map(|part| part.split_once("</button>").map(|(button, _)| button))
+        .find(|button| button.contains("Review current keys"))
+        .expect("explicit key review control");
+    assert!(review.starts_with(
+        "type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"preflight\">"
+    ));
     assert!(stale.contains("name=\"pgp_binding_revision\" value=\"2\""));
 
     let reviewed = fixture.post(

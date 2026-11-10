@@ -40,7 +40,7 @@ fn result_response(result: BrowserPasswordResult) -> HttpResponse {
 }
 
 const PASSWORD_SCRIPT: &str = include_str!("password_local.js");
-const PASSWORD_SCRIPT_HASH: &str = "sha256-yy1xyn6PfDKkPhGgl2wE49oKPcIjrGhGJYi3trYVTPI=";
+const PASSWORD_SCRIPT_HASH: &str = "sha256-HSMpKa5BSjYXZQP6B/eLMO0iYeeXjPS61/8V2KNpaB0=";
 
 fn password_response(
     status: u16,

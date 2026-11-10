@@ -2,6 +2,19 @@
 use super::*;
 
 #[test]
+fn presentation_action_labels_escape_context_and_unknown_icons_stay_readable() {
+    let unknown = presentation_label("Review <context> & confirm", "unmapped\" onclick=\"bad");
+    assert_eq!(unknown, "Review &lt;context&gt; &amp; confirm");
+    // Unknown controls have no visually hidden caption or misleading icon.
+    assert!(!unknown.contains("presentation-label"));
+    let mapped = presentation_label("Save <draft>", "save");
+    assert!(mapped.contains("Save &lt;draft&gt;"));
+    assert!(!mapped.contains("Save <draft>"));
+    // The helper is safe on the existing reader's inert template boundary.
+    assert!(!mapped.contains("<svg"));
+}
+
+#[test]
 fn shared_headers_reuse_login_logo_without_changing_navigation_or_copy() {
     let login = render_login_page(None).as_str().to_owned();
     let start = login.find("<svg class=\"login-shield\"").unwrap();

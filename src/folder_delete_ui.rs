@@ -20,10 +20,10 @@ pub(crate) fn render_folder_delete(m: DeletePageModel<'_>) -> TrustedHtml {
             "<p><a href=\"/settings/folders/delete/check\">Check original deletion result</a></p>",
         );
     } else if m.review {
-        s.push_str(&format!("<form method=\"post\" action=\"/settings/folders/delete\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"source\" value=\"{}\"><input type=\"hidden\" name=\"source_guid\" value=\"{}\"><input type=\"hidden\" name=\"parent_guid\" value=\"{}\"><button name=\"confirm\" value=\"delete-empty\">Confirm delete empty folder</button></form>",escape_html(m.csrf),escape_html(m.source),escape_html(m.source_guid),escape_html(m.parent_guid)));
+        s.push_str(&format!("<form method=\"post\" action=\"/settings/folders/delete\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"source\" value=\"{}\"><input type=\"hidden\" name=\"source_guid\" value=\"{}\"><input type=\"hidden\" name=\"parent_guid\" value=\"{}\"><button name=\"confirm\" value=\"delete-empty\">{}</button></form>",escape_html(m.csrf),escape_html(m.source),escape_html(m.source_guid),escape_html(m.parent_guid),presentation_label("Confirm delete empty folder", "bin")));
     }
     if !m.pending && !crate::folder_rename::protected_name(m.source) {
-        s.push_str(&format!("<p><a href=\"/settings/folders/bin?source={}\">Review moving the complete folder to Bin</a> to preserve its messages and attachments for receipt-bound Restore. Bin retention remains separate.</p>", url_encode(m.source)));
+        s.push_str(&format!("<p><a href=\"/settings/folders/bin?source={}\">{}</a> to preserve its messages and attachments for receipt-bound Restore. Bin retention remains separate.</p>", url_encode(m.source),presentation_label("Review moving the complete folder to Bin", "bin")));
     }
     s.push_str("<p><a href=\"/folders/deleted\">Deleted folders / Restore</a> · <a href=\"/settings?section=copies\">Inspect Copies &amp; Folders</a></p></section></main>");
     TrustedHtml::from_template(s)

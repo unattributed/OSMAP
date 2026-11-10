@@ -91,7 +91,7 @@ pub(crate) fn render_security_page_with_recovery(
     let authenticator = authenticator.filter(|v| v.account == account);
     let (factor_status, factor_last) = authenticator_summary(authenticator);
     let (recovery_status, recovery_detail) = recovery_contact_summary(recovery);
-    let recovery_control = format!("<div class=\"security-control\"><div><strong>Recovery contact</strong><p>{recovery_detail}</p></div><a class=\"button-link secondary\" href=\"/settings/recovery\" aria-label=\"Manage recovery contact\">Manage contact</a></div>");
+    let recovery_control = format!("<div class=\"security-control\"><div><strong>Recovery contact</strong><p>{recovery_detail}</p></div><a class=\"button-link secondary\" href=\"/settings/recovery\" aria-label=\"Manage recovery contact\"><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage contact</span></a></div>");
     let changed_at = password_changed_at.filter(|v| crate::account_mutation::changed_at_valid(v));
     let password_history = changed_at.map_or_else(
         || "Last change unknown".to_owned(),
@@ -135,14 +135,14 @@ pub(crate) fn render_security_page_with_recovery(
             false,
         )
     };
-    let totp = format!("<div class=\"security-control\"><div><strong>TOTP two-factor</strong><p>{}: {}</p></div><a class=\"button-link secondary\" href=\"/settings/authenticator\" aria-label=\"Manage TOTP\">Manage</a></div>", escape_html(&factor_status), escape_html(&factor_last));
+    let totp = format!("<div class=\"security-control\"><div><strong>TOTP two-factor</strong><p>{}: {}</p></div><a class=\"button-link secondary\" href=\"/settings/authenticator\" aria-label=\"Manage TOTP\"><span class=\"presentation-icon presentation-icon-settings\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage</span></a></div>", escape_html(&factor_status), escape_html(&factor_last));
     let active = row("Active sessions", &count, "Manage", true);
     let content = if authentication {
         format!(concat!("<div class=\"security-two-cards authentication-cards\"><section class=\"security-card\"><h2>Authentication</h2>{password}{totp}{active}</section>",
-            "<section class=\"security-card\"><h2>Recovery</h2><div class=\"security-recovery-contact\"><strong>Recovery contact</strong><span class=\"security-unknown\">Unknown</span><p>Contact and verification status unavailable</p></div><button type=\"button\" class=\"secondary\" disabled>Manage contact</button><p class=\"security-policy-note\">Recovery-contact management is unavailable. This session does not establish a recovery contact or permission to bypass authentication.</p></section></div>"), password=password, totp=totp, active=active)
+            "<section class=\"security-card\"><h2>Recovery</h2><div class=\"security-recovery-contact\"><strong>Recovery contact</strong><span class=\"security-unknown\">Unknown</span><p>Contact and verification status unavailable</p></div><button type=\"button\" class=\"secondary\" disabled><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage contact</span></button><p class=\"security-policy-note\">Recovery-contact management is unavailable. This session does not establish a recovery contact or permission to bypass authentication.</p></section></div>"), password=password, totp=totp, active=active)
     } else {
         let (key_status, key_detail) = public_account_key_summary(account, keys);
-        let key_control = format!("<div class=\"security-control\"><div><strong>OpenPGP keys</strong><p>{key_detail}</p></div><a class=\"button-link secondary\" href=\"/settings/keys\" aria-label=\"Manage OpenPGP keys\">Manage</a></div>");
+        let key_control = format!("<div class=\"security-control\"><div><strong>OpenPGP keys</strong><p>{key_detail}</p></div><a class=\"button-link secondary\" href=\"/settings/keys\" aria-label=\"Manage OpenPGP keys\"><span class=\"presentation-icon presentation-icon-settings\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage</span></a></div>");
         let mut events = String::new();
         if let Some(sessions) = sessions {
             let mut ordered = Vec::new();
@@ -182,7 +182,7 @@ pub(crate) fn render_security_page_with_recovery(
         },
     );
     let content = if recovery.is_some() {
-        content.replace("<div class=\"security-recovery-contact\"><strong>Recovery contact</strong><span class=\"security-unknown\">Unknown</span><p>Contact and verification status unavailable</p></div><button type=\"button\" class=\"secondary\" disabled>Manage contact</button>", &recovery_control)
+        content.replace("<div class=\"security-recovery-contact\"><strong>Recovery contact</strong><span class=\"security-unknown\">Unknown</span><p>Contact and verification status unavailable</p></div><button type=\"button\" class=\"secondary\" disabled><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage contact</span></button>", &recovery_control)
             .replace("Recovery-contact management is unavailable. This session does not establish a recovery contact or permission to bypass authentication.", "Recovery contact management requires fresh confirmation. Contact possession does not bypass authentication.")
             .replace(&row("Recovery contact", "Contact and verification status unknown", "Manage", false), &recovery_control)
             .replace("<h3>Recovery Contact</h3><strong>Unknown</strong><p>Contact and verification unavailable</p>", &format!("<h3>Recovery Contact</h3><strong>{recovery_status}</strong><p>{recovery_detail}</p>"))

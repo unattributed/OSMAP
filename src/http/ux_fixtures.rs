@@ -232,7 +232,12 @@ fn ux_synthetic_route_baselines() {
         ("bin", "/mailbox?name=Trash", true, 200),
         ("documents-missing", "/documents", true, 404),
         ("settings-security", "/settings?section=security", true, 200),
-        ("settings-recovery-unavailable", "/settings/recovery", true, 503),
+        (
+            "settings-recovery-unavailable",
+            "/settings/recovery",
+            true,
+            503,
+        ),
         ("settings-identity", "/settings?section=identity", true, 503),
         (
             "settings-composition",
@@ -586,7 +591,18 @@ fn ux_synthetic_route_baselines() {
         if name == "settings-authentication" {
             assert!(html.contains("disabled>Unavailable</button>"));
             assert!(html.contains("Password changes are currently unavailable."));
-            assert!(html.contains("disabled>Manage contact</button>"));
+            assert!(html.split("<button ").any(|button| {
+                let Some((tag, contents)) = button.split_once('>') else {
+                    return false;
+                };
+                tag.split_whitespace()
+                    .any(|attribute| attribute == "disabled")
+                    && contents
+                        .split_once("</button>")
+                        .is_some_and(|(caption, _)| {
+                            rendered_action_caption(caption) == "Manage contact"
+                        })
+            }));
             assert!(html.contains("Recovery-contact management is unavailable."));
         }
         let compose_enhanced = html.contains("id=\"compose-form\"");
@@ -602,7 +618,11 @@ fn ux_synthetic_route_baselines() {
         } else if notification_enhanced {
             assert_eq!(csp, super::super::notification_delivery::csp());
             assert!(html.contains(super::super::notification_delivery::SCRIPT));
-            assert_eq!(html.matches("<script").count(), 1, "bounded notification script fixture {name}");
+            assert_eq!(
+                html.matches("<script").count(),
+                1,
+                "bounded notification script fixture {name}"
+            );
         } else {
             assert_eq!(csp, crate::http_support::browser_csp());
             assert!(!html.contains("<script"), "script-free fixture {name}");

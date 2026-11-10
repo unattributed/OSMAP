@@ -268,12 +268,12 @@ fn render_bin_folder_form(
             escape_html(&entry.name)
         ));
     }
-    format!("<form id=\"{id}-form\" method=\"post\" action=\"/settings/bin-folder\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><input type=\"hidden\" name=\"section\" value=\"{section}\"><div class=\"general-field\"><label for=\"{id}\">Bin folder</label><select id=\"{id}\" name=\"mailbox_name\">{options}</select></div><button type=\"submit\">Save Bin folder</button></form>", escape_html(model.csrf_token), saved.revision)
+    format!("<form id=\"{id}-form\" method=\"post\" action=\"/settings/bin-folder\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><input type=\"hidden\" name=\"section\" value=\"{section}\"><div class=\"general-field\"><label for=\"{id}\">Bin folder</label><select id=\"{id}\" name=\"mailbox_name\">{options}</select></div><button type=\"submit\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save Bin folder</span></button></form>", escape_html(model.csrf_token), saved.revision)
 }
 
 fn logout_form(csrf_token: &str) -> String {
     format!(
-        "<form class=\"logout-form\" method=\"post\" action=\"/logout\" aria-label=\"Sign out of current session\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button class=\"logout-button\" type=\"submit\">Log Out</button></form>",
+        "<form class=\"logout-form\" method=\"post\" action=\"/logout\" aria-label=\"Sign out of current session\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button class=\"logout-button\" type=\"submit\"><span class=\"presentation-icon presentation-icon-logout\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Log Out</span></button></form>",
         escape_html(csrf_token)
     )
 }
@@ -286,6 +286,61 @@ mod reader_toolbar;
 
 // Reuse the retained login logo in every branded application header.
 const OSMAP_BRAND_SHIELD: &str = "<svg class=\"login-shield\" aria-hidden=\"true\" viewBox=\"0 0 64 72\" role=\"img\"><path d=\"M32 4 56 13v18c0 17-9 29-24 37C17 60 8 48 8 31V13L32 4Z\" fill=\"#eaf2ff\" stroke=\"#9db9ee\" stroke-width=\"2\"/><path d=\"M32 10 49 17v14c0 12-6 22-17 29C21 53 15 43 15 31V17l17-7Z\" fill=\"#2f66d8\"/><circle cx=\"32\" cy=\"31\" r=\"7\" fill=\"#fff\"/><path d=\"M29 37h6l2 14H27l2-14Z\" fill=\"#fff\"/></svg>";
+
+/// Source-owned action content only. Unmapped actions retain their readable
+/// label instead of receiving a misleading fallback symbol. Message content
+/// never passes through this helper; all labels remain escaped text.
+pub(crate) fn presentation_label(label: &str, icon: &str) -> String {
+    if !matches!(
+        icon,
+        "save"
+            | "sent"
+            | "clock"
+            | "compose"
+            | "add"
+            | "bin"
+            | "archive"
+            | "inbox"
+            | "drafts"
+            | "outbox"
+            | "folders"
+            | "search"
+            | "close"
+            | "refresh"
+            | "back"
+            | "next"
+            | "previous"
+            | "people"
+            | "settings"
+            | "key"
+            | "shield"
+            | "label"
+            | "more"
+            | "eye"
+            | "download"
+            | "info"
+            | "select"
+            | "logout"
+            | "sessions"
+            | "notifications"
+            | "minimize"
+            | "star"
+            | "read"
+            | "unread"
+            | "bold"
+            | "italic"
+            | "underline"
+            | "list"
+            | "numbers"
+            | "link"
+            | "image"
+            | "attachment"
+            | "emoji"
+    ) {
+        return escape_html(label).to_string();
+    }
+    format!("<span class=\"presentation-icon presentation-icon-{icon}\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">{}</span>", escape_html(label))
+}
 
 fn shell_icon(name: &str) -> String {
     let path = match name {
@@ -322,7 +377,7 @@ pub(crate) fn notification_header_link(account: &str, unread: Option<usize>) -> 
         Some(count) => (format!("Notifications: {count} unread"), format!("<span class=\"notification-badge\" aria-hidden=\"true\">{count}</span>"), count.to_string()),
         None => ("Notifications: unread count unavailable".into(), "<span class=\"notification-badge notification-badge-unknown\" aria-hidden=\"true\">?</span>".into(), "unknown".into()),
     };
-    format!("<a class=\"header-notifications\" href=\"/notifications\" aria-label=\"{label}\" title=\"{label}\" data-notification-account=\"{}\" data-unread=\"{state}\">{}{badge}</a>", escape_html(account), shell_icon("bell"))
+    format!("<a class=\"header-notifications\" href=\"/notifications\" aria-label=\"{label}\" title=\"{label}\" data-notification-account=\"{}\" data-unread=\"{state}\">{}<span class=\"presentation-label\">Notifications</span>{badge}</a>", escape_html(account), shell_icon("bell"))
 }
 
 fn header_theme_controls(csrf: &str, current: &str) -> String {
@@ -356,7 +411,7 @@ fn header_theme_controls(csrf: &str, current: &str) -> String {
         } else {
             format!(" name=\"appearance\" value=\"{theme}\"")
         };
-        controls.push_str(&format!("<button type=\"submit\"{action} data-header-theme=\"{theme}\" aria-pressed=\"false\" aria-label=\"Use {label} theme\" title=\"{}\">{}</button>", escape_html(explanation), shell_icon(theme)));
+        controls.push_str(&format!("<button type=\"submit\"{action} data-header-theme=\"{theme}\" aria-pressed=\"false\" aria-label=\"Use {label} theme\" title=\"{}\">{}<span class=\"presentation-label\">{label}</span></button>", escape_html(explanation), shell_icon(theme)));
     }
     controls.push_str(&format!(
         "<span id=\"header-theme-help\" class=\"sr-only\">{}</span>{}",
@@ -428,14 +483,14 @@ pub(crate) fn app_header_with_storage(
     let search_menu = if current == "settings" || current.starts_with("settings-") {
         concat!(
             "<div class=\"header-search\"><form role=\"search\" method=\"get\" action=\"/settings\"><label class=\"sr-only\" for=\"settings-query\">Search settings</label>",
-            "<input id=\"settings-query\" name=\"q\" type=\"search\" placeholder=\"Search settings…\" maxlength=\"128\" autocomplete=\"off\" accesskey=\"s\"><button type=\"submit\" aria-label=\"Search settings\">Search</button></form></div>"
+            "<input id=\"settings-query\" name=\"q\" type=\"search\" placeholder=\"Search settings…\" maxlength=\"128\" autocomplete=\"off\" accesskey=\"s\"><button type=\"submit\" aria-label=\"Search settings\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search</span></button></form></div>"
         )
     } else {
         concat!(
-        "<div class=\"header-search\"><form role=\"search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"scope\" value=\"all\"><label class=\"sr-only\" for=\"global-mail-query\">Search all mail</label><input id=\"global-mail-query\" name=\"q\" type=\"search\" placeholder=\"Search mail…\" maxlength=\"256\" autocomplete=\"off\" accesskey=\"s\" required><button type=\"submit\" aria-label=\"Search mail\">Search</button></form>",
-        "<details class=\"global-search-menu\" name=\"toolbar-menu\"><summary title=\"Mail shortcuts\">Shortcuts</summary>",
+        "<div class=\"header-search\"><form role=\"search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"scope\" value=\"all\"><label class=\"sr-only\" for=\"global-mail-query\">Search all mail</label><input id=\"global-mail-query\" name=\"q\" type=\"search\" placeholder=\"Search mail…\" maxlength=\"256\" autocomplete=\"off\" accesskey=\"s\" required><button type=\"submit\" aria-label=\"Search mail\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search</span></button></form>",
+        "<details class=\"global-search-menu\" name=\"toolbar-menu\"><summary title=\"Mail shortcuts\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Shortcuts</span></summary>",
         "<div class=\"account-menu-panel global-search-panel\">",
-        "<nav aria-label=\"Mail shortcuts\"><h2>Shortcuts</h2><a href=\"/compose\">Compose a message</a><a href=\"/mailbox?name=INBOX\">Open Inbox</a><a href=\"/mailbox/shortcut?kind=sent\">Open Sent</a><a href=\"/mailbox/shortcut?kind=archive\">Open Archive</a><a href=\"/mailbox/shortcut?kind=bin\">Open Bin</a><a href=\"/drafts\">Open Drafts</a> <a href=\"/outbox\">Open Outbox</a><a href=\"/mailboxes\">Browse mailboxes</a><a href=\"/settings\">Open account settings</a></nav></div></details></div>"
+        "<nav aria-label=\"Mail shortcuts\"><h2>Shortcuts</h2><a href=\"/compose\">Compose a message</a><a href=\"/mailbox?name=INBOX\"><span class=\"presentation-icon presentation-icon-inbox\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Inbox</span></a><a href=\"/mailbox/shortcut?kind=sent\"><span class=\"presentation-icon presentation-icon-next\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Sent</span></a><a href=\"/mailbox/shortcut?kind=archive\">Open Archive</a><a href=\"/mailbox/shortcut?kind=bin\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Bin</span></a><a href=\"/drafts\"><span class=\"presentation-icon presentation-icon-drafts\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Drafts</span></a> <a href=\"/outbox\">Open Outbox</a><a href=\"/mailboxes\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Browse mailboxes</span></a><a href=\"/settings\">Open account settings</a></nav></div></details></div>"
     )
     };
     format!(concat!(
@@ -450,7 +505,7 @@ pub(crate) fn app_header_with_storage(
         "<details class=\"protection-menu\" name=\"toolbar-menu\"><summary>Protected by Default</summary><div class=\"account-menu-panel\"><p>Remote images and active content are blocked. These protections do not encrypt a message or verify its sender.</p><p class=\"shell-session-chip\">Your browser session was authenticated with two factors.</p></div></details>",
         "{notification_link}",
         "<details class=\"account-menu\" name=\"toolbar-menu\"><summary class=\"identity-chip\"><span class=\"account-avatar\" aria-hidden=\"true\">{}</span><span class=\"account-name\" title=\"{}\">{}</span>{}</summary>",
-        "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings?section=appearance\">Appearance</a><a href=\"/contacts\">Contacts</a><a href=\"/sessions\">Manage sessions</a>{}</div>",
+        "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings?section=appearance\">Appearance</a><a href=\"/contacts\"><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Contacts</span></a><a href=\"/sessions\"><span class=\"presentation-icon presentation-icon-sessions\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage sessions</span></a>{}</div>",
         "</details>{theme_controls}</div></header>{clock}"
     ), shell_icon("menu"), links, brand_mark, search_menu, escape_html(&sender_initials(Some(canonical_username))), escape_html(canonical_username),
         escape_html(canonical_username), shell_icon("chevron"), escape_html(canonical_username), logout_form(csrf_token), theme_controls = theme_controls, clock = clock, brand_copy = brand_copy, notification_link = notification_header_link(canonical_username, None), brand_variant = if welcome { " topbar-welcome" } else { "" }, rail_storage = rail_storage)
@@ -655,7 +710,7 @@ pub(crate) fn render_navigation_notice(
     message: &str,
 ) -> TrustedHtml {
     TrustedHtml::from_template(format!(
-        "{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><section class=\"content-pane\"><h1>{}</h1><p>{}</p><div class=\"toolbar\"><a class=\"button-link\" href=\"/mailboxes\">All mailboxes</a><a class=\"button-link\" href=\"/settings\">Settings</a></div></section></main>",
+        "{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><section class=\"content-pane\"><h1>{}</h1><p>{}</p><div class=\"toolbar\"><a class=\"button-link\" href=\"/mailboxes\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">All mailboxes</span></a><a class=\"button-link\" href=\"/settings\">Settings</a></div></section></main>",
         app_header(canonical_username, csrf_token, "archive"), escape_html(title), escape_html(message)))
 }
 
@@ -691,12 +746,12 @@ pub(crate) fn render_content_notice(
     let retry = retry
         .map(|url| {
             format!(
-                "<a class=\"button-link\" href=\"{}\">Retry loading</a>",
+                "<a class=\"button-link\" href=\"{}\"><span class=\"presentation-icon presentation-icon-refresh\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Retry loading</span></a>",
                 escape_html(url)
             )
         })
         .unwrap_or_default();
-    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><section class=\"content-pane\"><h1>{}</h1><p>{}</p><nav class=\"toolbar\" aria-label=\"Content recovery\"><a class=\"button-link\" href=\"{}\">Back to message</a>{}<a href=\"/mailboxes\">All mailboxes</a></nav></section></main>",
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><section class=\"content-pane\"><h1>{}</h1><p>{}</p><nav class=\"toolbar\" aria-label=\"Content recovery\"><a class=\"button-link\" href=\"{}\"><span class=\"presentation-icon presentation-icon-back\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Back to message</span></a>{}<a href=\"/mailboxes\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">All mailboxes</span></a></nav></section></main>",
         app_header(username, csrf, "mailboxes"), escape_html(title), escape_html(message), escape_html(return_to), retry))
 }
 
@@ -708,7 +763,7 @@ pub(crate) fn render_message_source_page(
 ) -> TrustedHtml {
     TrustedHtml::from_template(format!(concat!(
         "{}<main id=\"main-content\" class=\"page-shell source-page\" tabindex=\"-1\"><section class=\"content-pane\">",
-        "<nav class=\"toolbar\" aria-label=\"Source navigation\"><a class=\"button-link\" href=\"{}\">Back to message</a></nav>",
+        "<nav class=\"toolbar\" aria-label=\"Source navigation\"><a class=\"button-link\" href=\"{}\"><span class=\"presentation-icon presentation-icon-back\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Back to message</span></a></nav>",
         "<h1>Message source</h1><p class=\"muted\">Stored headers and MIME body text are shown as escaped text. Content is not rendered or fetched. Line endings and text decoding may differ from the original wire message.</p>",
         "<p class=\"muted\">{} · Message {}</p><pre class=\"message-source\" aria-label=\"Stored message source\" tabindex=\"0\">{}\n\n{}</pre></section></main>"),
         app_header(username, csrf, mailbox_nav_section(&message.mailbox_name, None)), escape_html(return_to), escape_html(&message.mailbox_name), message.uid,
@@ -1252,7 +1307,7 @@ fn render_coordinated_reader_with_back(
 ) -> String {
     match &reader.pane {
         SelectedMessagePane::Unselected => "<article class=\"reading-pane reader-empty\" aria-label=\"Reading pane\"><h2>Choose a message</h2><p class=\"muted\">Open a subject to read it alongside this list.</p></article>".into(),
-        SelectedMessagePane::Unavailable(message) => format!("<article id=\"reading-pane\" class=\"reading-pane\" tabindex=\"-1\" aria-labelledby=\"reading-unavailable\"><a href=\"{}\">Back to list</a><h2 id=\"reading-unavailable\">Message unavailable</h2><p role=\"status\">{}</p></article>", escape_html(back), escape_html(message)),
+        SelectedMessagePane::Unavailable(message) => format!("<article id=\"reading-pane\" class=\"reading-pane\" tabindex=\"-1\" aria-labelledby=\"reading-unavailable\"><a href=\"{}\"><span class=\"presentation-icon presentation-icon-back\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Back to list</span></a><h2 id=\"reading-unavailable\">Message unavailable</h2><p role=\"status\">{}</p></article>", escape_html(back), escape_html(message)),
         SelectedMessagePane::Ready(rendered) => {
             let locate = match view.selection_page {
                 Some(page) if page != view.page => format!("<p class=\"reader-locate\"><a href=\"{}\">Locate selected message on page {page}</a></p>", escape_html(&list_navigation_href(base, view, page))),
@@ -1297,7 +1352,7 @@ fn render_date_filter(base: &str, view: &ListViewState) -> String {
     } else {
         "Received dates: all"
     };
-    format!("<details class=\"date-filter\"><summary>{label}</summary><form method=\"get\" action=\"{path}\">{base_fields}{state}<label>From date (UTC)<input type=\"date\" name=\"after\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"{}\"></label><label>Through date (UTC)<input type=\"date\" name=\"before\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"{}\"></label><button type=\"submit\">Apply dates</button><a href=\"{}\">Clear dates</a><p class=\"muted\">Inclusive UTC received dates, applied to loaded results. Messages with missing or invalid dates are excluded while a range is active. These are not archive or delivery dates.</p></form></details>", escape_html(view.dates.after.as_deref().unwrap_or("")), escape_html(view.dates.before.as_deref().unwrap_or("")), escape_html(&list_navigation_href(base, &cleared, 1)))
+    format!("<details class=\"date-filter\"><summary>{label}</summary><form method=\"get\" action=\"{path}\">{base_fields}{state}<label>From date (UTC)<input type=\"date\" name=\"after\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"{}\"></label><label>Through date (UTC)<input type=\"date\" name=\"before\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"{}\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Apply dates</span></button><a href=\"{}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear dates</span></a><p class=\"muted\">Inclusive UTC received dates, applied to loaded results. Messages with missing or invalid dates are excluded while a range is active. These are not archive or delivery dates.</p></form></details>", escape_html(view.dates.after.as_deref().unwrap_or("")), escape_html(view.dates.before.as_deref().unwrap_or("")), escape_html(&list_navigation_href(base, &cleared, 1)))
 }
 
 fn render_list_navigation(base: &str, view: &ListViewState, compact: bool) -> String {
@@ -1335,7 +1390,7 @@ fn render_sender_filter(base: &str, view: &ListViewState) -> String {
     cleared.sender = crate::mail_list::SenderFilter::default();
     cleared.selection = None;
     let state = list_form_state(&cleared);
-    format!("<details class=\"sender-filter\"><summary>From: {}</summary><form method=\"get\" action=\"{path}\" aria-label=\"Sender filter\">{base_fields}{state}<label>Sender address<input type=\"email\" name=\"from\" maxlength=\"320\" placeholder=\"sender@example.com\" value=\"{}\"></label><button type=\"submit\">Apply sender</button><a href=\"{}\">Clear sender</a><p class=\"muted\">Exact mailbox address in the public From header, applied to loaded results. This does not verify the sender's identity.</p></form></details>", escape_html(if view.sender.active() { view.sender.value() } else { "all" }), escape_html(view.sender.value()), escape_html(&list_navigation_href(base, &cleared, 1)))
+    format!("<details class=\"sender-filter\"><summary>From: {}</summary><form method=\"get\" action=\"{path}\" aria-label=\"Sender filter\">{base_fields}{state}<label>Sender address<input type=\"email\" name=\"from\" maxlength=\"320\" placeholder=\"sender@example.com\" value=\"{}\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Apply sender</span></button><a href=\"{}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear sender</span></a><p class=\"muted\">Exact mailbox address in the public From header, applied to loaded results. This does not verify the sender's identity.</p></form></details>", escape_html(if view.sender.active() { view.sender.value() } else { "all" }), escape_html(view.sender.value()), escape_html(&list_navigation_href(base, &cleared, 1)))
 }
 
 fn render_read_filter_choices(
@@ -1448,7 +1503,7 @@ fn render_label_filter_choices(
         .and_then(|id| view.label_choices.iter().find(|(value, _)| value == id))
         .map(|(_, name)| name.as_str())
         .unwrap_or("All messages");
-    let mut html = format!("<details class=\"label-filter\"><summary>Labels: {}</summary><nav aria-label=\"Label filter\"><a href=\"{}\">Clear label filter</a>",escape_html(name),escape_html(&href(&view.clear_label())));
+    let mut html = format!("<details class=\"label-filter\"><summary>Labels: {}</summary><nav aria-label=\"Label filter\"><a href=\"{}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear label filter</span></a>",escape_html(name),escape_html(&href(&view.clear_label())));
     for (id, name) in &view.label_choices {
         let mut target = view.clear_label();
         target.label = Some(id.clone());
@@ -1500,16 +1555,16 @@ pub(crate) fn render_search_category_filters(
     };
     let mut sender = context.clone();
     sender.view.sender = crate::mail_list::SenderFilter::default();
-    filters.push_str(&format!("<details class=\"sender-filter\"><summary>From: {}</summary><form method=\"get\" action=\"/search\" aria-label=\"Sender filter\">{}<label>Sender address<input type=\"email\" name=\"from\" maxlength=\"320\" value=\"{}\"></label><button type=\"submit\">Apply sender</button><a href=\"{}\">Clear sender</a><p class=\"muted\">Exact public From mailbox in loaded Messages; this does not verify identity.</p></form></details>",escape_html(if view.sender.active(){view.sender.value()}else{"all"}),state(&sender),escape_html(view.sender.value()),escape_html(&sender.href(SearchTab::All,query,None))));
+    filters.push_str(&format!("<details class=\"sender-filter\"><summary>From: {}</summary><form method=\"get\" action=\"/search\" aria-label=\"Sender filter\">{}<label>Sender address<input type=\"email\" name=\"from\" maxlength=\"320\" value=\"{}\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Apply sender</span></button><a href=\"{}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear sender</span></a><p class=\"muted\">Exact public From mailbox in loaded Messages; this does not verify identity.</p></form></details>",escape_html(if view.sender.active(){view.sender.value()}else{"all"}),state(&sender),escape_html(view.sender.value()),escape_html(&sender.href(SearchTab::All,query,None))));
     let mut dates = context.clone();
     dates.view.dates = crate::mail_list::ReceivedDateRange::default();
-    filters.push_str(&format!("<details class=\"date-filter\"><summary>Received dates: {}</summary><form method=\"get\" action=\"/search\">{}<label>From date (UTC)<input type=\"date\" name=\"after\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"{}\"></label><label>Through date (UTC)<input type=\"date\" name=\"before\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"{}\"></label><button type=\"submit\">Apply dates</button><a href=\"{}\">Clear dates</a><p class=\"muted\">Inclusive UTC received dates in loaded Messages; missing or invalid dates do not match an active range.</p></form></details>",if view.dates.active(){"filtered"}else{"all"},state(&dates),escape_html(view.dates.after.as_deref().unwrap_or("")),escape_html(view.dates.before.as_deref().unwrap_or("")),escape_html(&dates.href(SearchTab::All,query,None))));
+    filters.push_str(&format!("<details class=\"date-filter\"><summary>Received dates: {}</summary><form method=\"get\" action=\"/search\">{}<label>From date (UTC)<input type=\"date\" name=\"after\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"{}\"></label><label>Through date (UTC)<input type=\"date\" name=\"before\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"{}\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Apply dates</span></button><a href=\"{}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear dates</span></a><p class=\"muted\">Inclusive UTC received dates in loaded Messages; missing or invalid dates do not match an active range.</p></form></details>",if view.dates.active(){"filtered"}else{"all"},state(&dates),escape_html(view.dates.after.as_deref().unwrap_or("")),escape_html(view.dates.before.as_deref().unwrap_or("")),escape_html(&dates.href(SearchTab::All,query,None))));
     filters.push_str(&render_attachment_filter_choices(view, &href));
     filters.push_str(&render_protection_filter_choices(view, &href));
     filters.push_str(&format!("<details class=\"read-filter\"><summary>Read state: {}</summary><div role=\"group\" aria-label=\"Read state filter\">{}</div></details>", view.filter.label(), render_read_filter_choices(view, &href)));
     let mut folder = context.clone();
     folder.mailbox = None;
-    filters.push_str(&format!("<details class=\"folder-filter\"><summary>Folder: {}</summary><form method=\"get\" action=\"/search\" aria-label=\"Folder filter\">{}<label>Folder<input name=\"mailbox\" maxlength=\"255\" value=\"{}\" placeholder=\"Mailbox name\"></label><button type=\"submit\">Apply folder</button><a href=\"{}\">All mailboxes</a><p class=\"muted\">Selected folder is checked under your account before Messages are searched.</p></form></details>",escape_html(context.mailbox.as_deref().unwrap_or("All mailboxes")),state(&folder),escape_html(context.mailbox.as_deref().unwrap_or("")),escape_html(&folder.href(SearchTab::All,query,None))));
+    filters.push_str(&format!("<details class=\"folder-filter\"><summary>Folder: {}</summary><form method=\"get\" action=\"/search\" aria-label=\"Folder filter\">{}<label>Folder<input name=\"mailbox\" maxlength=\"255\" value=\"{}\" placeholder=\"Mailbox name\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Apply folder</span></button><a href=\"{}\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">All mailboxes</span></a><p class=\"muted\">Selected folder is checked under your account before Messages are searched.</p></form></details>",escape_html(context.mailbox.as_deref().unwrap_or("All mailboxes")),state(&folder),escape_html(context.mailbox.as_deref().unwrap_or("")),escape_html(&folder.href(SearchTab::All,query,None))));
     format!("<div class=\"list-navigation search-category-filters\">{filters}</div><p class=\"search-filter-applicability muted\">Mail filters apply only to Messages. People is matched by saved name or email address.</p>")
 }
 
@@ -1526,7 +1581,7 @@ fn render_list_navigation_parts(
     }
     let previous = if view.page > 1 {
         format!(
-            "<a class=\"button-link\" rel=\"prev\" href=\"{}\">Previous page</a>",
+            "<a class=\"button-link\" rel=\"prev\" href=\"{}\"><span class=\"presentation-icon presentation-icon-previous\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Previous page</span></a>",
             escape_html(&list_navigation_href(base, view, view.page - 1))
         )
     } else {
@@ -1534,7 +1589,7 @@ fn render_list_navigation_parts(
     };
     let next = if view.page < view.pages() {
         format!(
-            "<a class=\"button-link\" rel=\"next\" href=\"{}\">Next page</a>",
+            "<a class=\"button-link\" rel=\"next\" href=\"{}\"><span class=\"presentation-icon presentation-icon-next\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Next page</span></a>",
             escape_html(&list_navigation_href(base, view, view.page + 1))
         )
     } else {
@@ -1614,6 +1669,24 @@ fn render_message_flag_form(
         (MessageFlag::Flagged, false) => ("Star", "☆"),
         (MessageFlag::Flagged, true) => ("Remove star from", "★"),
     };
+    let text = presentation_label(
+        if flag == MessageFlag::Seen {
+            text
+        } else if current {
+            "Unstar message"
+        } else {
+            "Star message"
+        },
+        if flag == MessageFlag::Seen {
+            if current {
+                "unread"
+            } else {
+                "read"
+            }
+        } else {
+            "star"
+        },
+    );
     format!(
             "<form class=\"message-state-form\" method=\"post\" action=\"/message/flag\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{uid}\"><input type=\"hidden\" name=\"mailbox_guid\" value=\"{}\"><input type=\"hidden\" name=\"message_guid\" value=\"{}\"><input type=\"hidden\" name=\"flag\" value=\"{}\"><input type=\"hidden\" name=\"enabled\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\"><button class=\"flag-control\" type=\"submit\" aria-label=\"{state_label} message #{uid} in {}\" aria-pressed=\"{current}\" title=\"{label}\">{text}</button></form>",
             escape_html(csrf), escape_html(mailbox), escape_html(&metadata.version.mailbox_guid), escape_html(&metadata.version.message_guid), flag.value(),
@@ -1811,7 +1884,7 @@ fn render_message_card(
             "<span class=\"message-date\" title=\"{}\">{}</span>",
             "{subject_control}<span class=\"message-body-preview\" dir=\"auto\">{}</span></div>",
             "<div class=\"message-card-footer message-preview-meta\"><span class=\"message-mailbox\">{}</span><div class=\"message-star-cell\">{star}</div>{}{labels}{protection}",
-            "<details class=\"message-more\"><summary aria-label=\"More for message #{} in {}\"><span aria-hidden=\"true\">⋮</span><span class=\"sr-only\">More</span></summary>",
+            "<details class=\"message-more\"><summary aria-label=\"More for message #{} in {}\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More message actions</span></summary>",
             "<div class=\"message-more-content\"><p class=\"muted\">Message #{} · {} bytes</p><p><strong>{party_label}:</strong> {}</p><p><strong>Subject:</strong> {}</p>{attachment_details}{read_action}{}</div></details></div></li>"
         ),
         if has_flag(message.flags, "\\Seen") { "" } else { " message-unread" },
@@ -1914,7 +1987,7 @@ fn render_reader_move_controls(
     let mut buttons = String::new();
     if archive.is_some_and(|name| name != rendered.mailbox_name) {
         buttons.push_str(
-            "<button type=\"submit\" name=\"action\" value=\"archive\">Archive Message</button>",
+            "<button type=\"submit\" name=\"action\" value=\"archive\"><span class=\"presentation-icon presentation-icon-archive\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Archive Message</span></button>",
         );
     }
     if archive.is_none() {
@@ -1924,17 +1997,17 @@ fn render_reader_move_controls(
         rendered.mailbox_name != name && mailboxes.iter().any(|m| m.name == name)
     }) {
         buttons
-            .push_str("<button type=\"submit\" name=\"action\" value=\"bin\">Move to Bin</button>");
+            .push_str("<button type=\"submit\" name=\"action\" value=\"bin\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move to Bin</span></button>");
     }
     if bin == Some(rendered.mailbox_name.as_str()) && mailboxes.iter().any(|m| m.name == "INBOX") {
         buttons.push_str(
-            "<button type=\"submit\" name=\"action\" value=\"restore\">Restore to Inbox</button>",
+            "<button type=\"submit\" name=\"action\" value=\"restore\"><span class=\"presentation-icon presentation-icon-inbox\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Restore to Inbox</span></button>",
         );
     }
     let chooser = if options.is_empty() {
         String::new()
     } else {
-        format!("<label>Destination Mailbox<select name=\"destination_mailbox\">{options}</select></label><button type=\"submit\" name=\"action\" value=\"move\">Move Message</button>")
+        format!("<label>Destination Mailbox<select name=\"destination_mailbox\">{options}</select></label><button type=\"submit\" name=\"action\" value=\"move\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move Message</span></button>")
     };
     format!("<form class=\"message-move-controls\" method=\"post\" action=\"/message/move\">{fields}<div class=\"toolbar\">{buttons}</div>{chooser}<p class=\"muted\">Bin moves mail to your saved folder. Restore returns it to Inbox. These controls never permanently delete mail.</p></form>")
 }
@@ -1967,7 +2040,7 @@ fn render_bulk_selection_menu(base: &str, view: &ListViewState, eligible_count: 
         )
     };
     links.push_str(&format!(
-        "<a href=\"{}\">Clear selection</a>",
+        "<a href=\"{}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear selection</span></a>",
         escape_html(&base)
     ));
     let selected = match view.bulk_selection {
@@ -1976,7 +2049,7 @@ fn render_bulk_selection_menu(base: &str, view: &ListViewState, eligible_count: 
         }
         _ => "No automatic selection.".into(),
     };
-    format!("<details class=\"bulk-selection-menu\"><summary>Select messages</summary><nav aria-label=\"Select messages on this page\">{links}</nav><p class=\"muted\">Actions accept at most {MAX_BULK_SELECTION} messages. A selection applies only to the current page. {selected}</p></details>")
+    format!("<details class=\"bulk-selection-menu\"><summary><span class=\"presentation-icon presentation-icon-select\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Select messages</span></summary><nav aria-label=\"Select messages on this page\">{links}</nav><p class=\"muted\">Actions accept at most {MAX_BULK_SELECTION} messages. A selection applies only to the current page. {selected}</p></details>")
 }
 
 fn sort_direction_label(direction: MessageSortDirection) -> &'static str {
@@ -2063,7 +2136,7 @@ pub(crate) fn render_message_list_page(
             list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page);
         let archive_action = if archive_actions_available {
             move_identity_fields(csrf_token, mailbox_name, message.uid, message.metadata.as_ref(), &return_to)
-                .map(|fields| format!("<form method=\"post\" action=\"/message/move\">{fields}<button type=\"submit\" name=\"action\" value=\"archive\">Archive</button></form>"))
+                .map(|fields| format!("<form method=\"post\" action=\"/message/move\">{fields}<button type=\"submit\" name=\"action\" value=\"archive\"><span class=\"presentation-icon presentation-icon-archive\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Archive</span></button></form>"))
                 .unwrap_or_default()
         } else {
             String::new()
@@ -2147,16 +2220,16 @@ pub(crate) fn render_message_list_page(
         let chooser = if options.is_empty() {
             String::new()
         } else {
-            format!("<label for=\"bulk-destination-mailbox\">Move selected to<select id=\"bulk-destination-mailbox\" name=\"destination_mailbox\">{options}</select></label><button type=\"submit\" name=\"action\" value=\"move\">Move Selected</button>")
+            format!("<label for=\"bulk-destination-mailbox\">Move selected to<select id=\"bulk-destination-mailbox\" name=\"destination_mailbox\">{options}</select></label><button type=\"submit\" name=\"action\" value=\"move\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move Selected</span></button>")
         };
         let is_trash = sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name);
         let mut buttons = if is_trash {
             String::new()
         } else {
-            String::from("<button type=\"submit\" formaction=\"/messages/labels/review\" name=\"action\" value=\"review\">Review labels for selected</button>")
+            String::from("<button type=\"submit\" formaction=\"/messages/labels/review\" name=\"action\" value=\"review\"><span class=\"presentation-icon presentation-icon-label\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Review labels for selected</span></button>")
         };
         if archive_actions_available && !is_trash {
-            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"archive\">Archive Selected</button>");
+            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"archive\"><span class=\"presentation-icon presentation-icon-archive\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Archive Selected</span></button>");
         }
         if sort_links
             .reader
@@ -2170,7 +2243,7 @@ pub(crate) fn render_message_list_page(
                         .any(|name| name == bin)
             })
         {
-            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"bin\">Move Selected to Bin</button>");
+            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"bin\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move Selected to Bin</span></button>");
         }
         if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name)
             && bulk_actions
@@ -2178,13 +2251,13 @@ pub(crate) fn render_message_list_page(
                 .iter()
                 .any(|name| name == "INBOX")
         {
-            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"restore\">Restore to Inbox</button>");
+            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"restore\"><span class=\"presentation-icon presentation-icon-inbox\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Restore to Inbox</span></button>");
         }
         if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name) {
-            buttons.push_str("<button class=\"danger\" type=\"submit\" formaction=\"/messages/delete/review\" name=\"action\" value=\"review-delete\">Delete permanently</button>");
+            buttons.push_str("<button class=\"danger\" type=\"submit\" formaction=\"/messages/delete/review\" name=\"action\" value=\"review-delete\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Delete permanently</span></button>");
         }
         let chooser = if is_trash {
-            format!("<details class=\"trash-more\"><summary>Move to folder</summary>{chooser}</details>")
+            format!("<details class=\"trash-more\"><summary><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move to folder</span></summary>{chooser}</details>")
         } else {
             chooser
         };
@@ -2237,11 +2310,11 @@ pub(crate) fn render_message_list_page(
         ""
     };
     let search_controls = format!(concat!(
-        "<details class=\"mail-search-disclosure\" name=\"list-tools\"><summary>Search this mailbox</summary><div class=\"mail-tools-panel\">",
-        "<form class=\"search-row compact-search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></div></details></form></div></details>"
+        "<details class=\"mail-search-disclosure\" name=\"list-tools\"><summary><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search this mailbox</span></summary><div class=\"mail-tools-panel\">",
+        "<form class=\"search-row compact-search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search</span></button><details class=\"search-options\"><summary><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search options</span></summary><div>{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></div></details></form></div></details>"
     ), escape_html(mailbox_name), list_form_state(&search_view), escape_html(sort_links.search_query.unwrap_or("")), render_search_field_select(MessageSearchField::All)) + label_search_notice;
     let action_controls = format!(concat!(
-        "<details class=\"bulk-actions\" name=\"list-tools\"><summary>Bulk actions</summary><div class=\"mail-tools-panel\">{}<p class=\"muted\">Use the row checkboxes to select messages for an action.</p><div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div></div></details>"
+        "<details class=\"bulk-actions\" name=\"list-tools\"><summary><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Bulk actions</span></summary><div class=\"mail-tools-panel\">{}<p class=\"muted\">Use the row checkboxes to select messages for an action.</p><div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div></div></details>"
     ), archive_notice, bulk_move_form, bulk_archive_form);
 
     let table_mailbox = mailbox_name == "INBOX" || is_sent;
@@ -2268,9 +2341,9 @@ pub(crate) fn render_message_list_page(
     // The selection form remains shared with the existing mailbox actions.
     // Keep this entry outside its disclosure so labelling is discoverable.
     let label_actions = if messages.iter().any(|message| message.metadata.is_some()) {
-        "<div class=\"mail-label-actions\" role=\"group\" aria-label=\"Message labels\"><button type=\"submit\" form=\"bulk-move-form\" formaction=\"/messages/labels/review\" name=\"action\" value=\"review\">Label selected messages</button><a href=\"/labels\">Create or manage labels</a><span class=\"muted\">Select messages using their checkboxes.</span></div>"
+        "<div class=\"mail-label-actions\" role=\"group\" aria-label=\"Message labels\"><button type=\"submit\" form=\"bulk-move-form\" formaction=\"/messages/labels/review\" name=\"action\" value=\"review\"><span class=\"presentation-icon presentation-icon-label\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Label selected messages</span></button><a href=\"/labels\"><span class=\"presentation-icon presentation-icon-label\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Create or manage labels</span></a><span class=\"muted\">Select messages using their checkboxes.</span></div>"
     } else {
-        "<div class=\"mail-label-actions\"><a href=\"/labels\">Create or manage labels</a></div>"
+        "<div class=\"mail-label-actions\"><a href=\"/labels\"><span class=\"presentation-icon presentation-icon-label\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Create or manage labels</span></a></div>"
     };
     let mut navigation = render_list_navigation(&navigation_base, sort_links.view, is_sent);
     let mut sort_headers = sort_headers;
@@ -2334,7 +2407,7 @@ pub(crate) fn render_message_search_page(
     let search_field = context.field;
     let back_link = match mailbox_name {
         Some(mailbox_name) => format!(
-            "<a href=\"/mailbox?name={}\">Back to mailbox</a>",
+            "<a href=\"/mailbox?name={}\"><span class=\"presentation-icon presentation-icon-back\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Back to mailbox</span></a>",
             escape_html(&url_encode(mailbox_name))
         ),
         None => String::new(),
@@ -2400,7 +2473,7 @@ pub(crate) fn render_message_search_page(
                 )
             };
             rows.push_str(&format!(
-                "<li class=\"message-row search-result-row\" data-selected=\"{}\"{focus_attributes}><span class=\"search-result-type\">{}</span><div class=\"search-result-title\">{subject_control}<span class=\"message-sender\" dir=\"auto\"><span class=\"sr-only\">From</span> {}{preview}</span>{labels}</div><span class=\"search-result-location message-mailbox\" dir=\"auto\">{}</span><time class=\"search-result-date\">{}</time><details class=\"search-result-more\"><summary aria-label=\"More for message #{} in {}\">More</summary><div>{}</div></details></li>",
+                "<li class=\"message-row search-result-row\" data-selected=\"{}\"{focus_attributes}><span class=\"search-result-type\">{}</span><div class=\"search-result-title\">{subject_control}<span class=\"message-sender\" dir=\"auto\"><span class=\"sr-only\">From</span> {}{preview}</span>{labels}</div><span class=\"search-result-location message-mailbox\" dir=\"auto\">{}</span><time class=\"search-result-date\">{}</time><details class=\"search-result-more\"><summary aria-label=\"More for message #{} in {}\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More</span></summary><div>{}</div></details></li>",
                 view.is_selected(&result.mailbox_name, result.uid), shell_icon("inbox"),
                 escape_html(result.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&result.mailbox_name), escape_html(&context.reader.timezone.display_received(&result.date_received)),
                 result.uid, escape_html(&result.mailbox_name),
@@ -2422,8 +2495,8 @@ pub(crate) fn render_message_search_page(
         concat!(
             "{}<main id=\"main-content\" class=\"page-shell coordinated-mail search-results{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>Search</h1><p>Find messages across your mailboxes.</p></div>",
             "<section class=\"content-pane coordinated-list\"><h2 class=\"section-title sr-only\">Search Results</h2>",
-            "<div class=\"search-query-panel\"><form class=\"search-row compact-search\" method=\"get\" action=\"/search\">{}<label class=\"search-query-label\" for=\"search-query\"><span class=\"sr-only\">Search query</span><input id=\"search-query\" type=\"search\" name=\"q\" value=\"{}\" placeholder=\"Search mail…\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></div></details></form>{}</div>",
-            "<div class=\"search-result-tabs\" aria-label=\"Search types\"><a href=\"{all_href}\">All</a><span aria-current=\"true\">Messages{}</span><a href=\"{people_href}\">People</a><span class=\"search-scope\">{}</span>{}</div>",
+            "<div class=\"search-query-panel\"><form class=\"search-row compact-search\" method=\"get\" action=\"/search\">{}<label class=\"search-query-label\" for=\"search-query\"><span class=\"sr-only\">Search query</span><input id=\"search-query\" type=\"search\" name=\"q\" value=\"{}\" placeholder=\"Search mail…\" autocomplete=\"off\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search</span></button><details class=\"search-options\"><summary><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search options</span></summary><div>{}{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></div></details></form>{}</div>",
+            "<div class=\"search-result-tabs\" aria-label=\"Search types\"><a href=\"{all_href}\"><span class=\"presentation-icon presentation-icon-select\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">All</span></a><span aria-current=\"true\">Messages{}</span><a href=\"{people_href}\"><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">People</span></a><span class=\"search-scope\">{}</span>{}</div>",
             "<div class=\"search-result-headings\" aria-hidden=\"true\"><span>Type</span><span>Result</span><span>Location</span><span>Received</span><span></span></div><ul role=\"list\" class=\"message-cards search-result-list\" aria-label=\"Search results\">{}</ul>",
             "<div class=\"search-result-footer\">{}{}</div>{}<p class=\"search-capability-note muted\">Search covers accessible messages. OpenPGP filters use public MIME structure, not signature verification or decryption. People search covers your saved contacts.</p></section>{}</main>"
         ),
@@ -2640,7 +2713,7 @@ fn render_reader_fragment(
                 })
                 .unwrap_or_default();
             attachments.push_str(&format!(
-                "<li class=\"attachment-item\"><div class=\"attachment-description\"><strong>{}</strong><p class=\"muted\">Isolated download</p><details class=\"reader-file-details\"><summary>File details</summary><p>Encoded size hint: {} bytes. Part {}. {}, {}{}</p></details></div><a class=\"button-link\" href=\"{}\">Download</a></li>",
+                "<li class=\"attachment-item\"><div class=\"attachment-description\"><strong>{}</strong><p class=\"muted\">Isolated download</p><details class=\"reader-file-details\"><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">File details</span></summary><p>Encoded size hint: {} bytes. Part {}. {}, {}{}</p></details></div><a class=\"button-link\" href=\"{}\"><span class=\"presentation-icon presentation-icon-download\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Download</span></a></li>",
                 escape_html(attachment.filename.as_deref().unwrap_or("<unnamed>")),
                 attachment.size_hint_bytes,
                 escape_html(&attachment.part_path),
@@ -2694,7 +2767,7 @@ fn render_reader_fragment(
         "not requested by selected body"
     };
     let source_link = rendered.metadata.as_ref().map(|metadata| format!(
-        "<a class=\"reader-source-shortcut\" href=\"{}\">View source</a>", escape_html(&format!("/message?mailbox={}&uid={}&view=source&mailbox_guid={}&message_guid={}&return_to={}",
+        "<a class=\"reader-source-shortcut\" href=\"{}\"><span class=\"presentation-icon presentation-icon-eye\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">View source</span></a>", escape_html(&format!("/message?mailbox={}&uid={}&view=source&mailbox_guid={}&message_guid={}&return_to={}",
             url_encode(&rendered.mailbox_name), rendered.uid, url_encode(&metadata.version.mailbox_guid), url_encode(&metadata.version.message_guid), url_encode(return_to)))))
         .unwrap_or_else(|| "<span class=\"muted reader-source-shortcut\">Source view unavailable</span>".into());
     let compose_link = |mode: &str, label: &str| {
@@ -2749,8 +2822,8 @@ fn render_reader_fragment(
         )
     } else {
         format!(concat!(
-            "<div class=\"reader-toolbar\"><nav class=\"reader-navigation toolbar\" aria-label=\"Reader navigation\"><a href=\"{}\">Back to list</a>{}</nav><div class=\"reader-quick-actions\">{}{label_control}{snooze_control}</div>",
-            "{navigation}<details class=\"reader-more-actions\"><summary>Move, archive, bin or restore</summary><div class=\"action-stack\">{}</div></details></div>",
+            "<div class=\"reader-toolbar\"><nav class=\"reader-navigation toolbar\" aria-label=\"Reader navigation\"><a href=\"{}\"><span class=\"presentation-icon presentation-icon-back\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Back to list</span></a>{}</nav><div class=\"reader-quick-actions\">{}{label_control}{snooze_control}</div>",
+            "{navigation}<details class=\"reader-more-actions\"><summary><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move, archive, bin or restore</span></summary><div class=\"action-stack\">{}</div></details></div>",
 
         ), escape_html(back_href), &source_link, render_message_state_controls(csrf_token, &rendered.mailbox_name, rendered.uid, &rendered.flags, rendered.metadata.as_ref(), return_to), &move_form, navigation = navigation, label_control = label_control, snooze_control = snooze_control)
     };
@@ -2764,7 +2837,7 @@ fn render_reader_fragment(
             "<div class=\"reader-section-heading sr-only\" data-protected-body-panel=\"true\"><span class=\"badge badge-ok\">Protected rendering</span></div><p class=\"notice reader-boundary-note\">Message content is displayed with active content and remote images removed.</p><section class=\"body-panel\"><h2 class=\"sr-only\">Body</h2>{}</section>",
             "<section class=\"panel reader-attachments\"><h2>{}</h2><ul class=\"attachment-list\">{}</ul></section>",
             "<div class=\"toolbar reader-primary-actions\" aria-label=\"Message actions\">{}{}{}</div>",
-            "<details class=\"reader-details\"><summary>Message details</summary>{}{}{}<dl class=\"message-meta reader-meta\"><dt>Subject</dt><dd dir=\"auto\">{}</dd><dt>From</dt><dd dir=\"auto\">{}</dd><dt>To</dt><dd dir=\"auto\">{}</dd><dt>Cc</dt><dd dir=\"auto\">{}</dd><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd><dt>Protection</dt><dd>Protected by Default</dd><dt>Remote Content</dt><dd>{}</dd></dl></details>",
+            "<details class=\"reader-details\"><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Message details</span></summary>{}{}{}<dl class=\"message-meta reader-meta\"><dt>Subject</dt><dd dir=\"auto\">{}</dd><dt>From</dt><dd dir=\"auto\">{}</dd><dt>To</dt><dd dir=\"auto\">{}</dd><dt>Cc</dt><dd dir=\"auto\">{}</dd><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd><dt>Protection</dt><dd>Protected by Default</dd><dt>Remote Content</dt><dd>{}</dd></dl></details>",
             "</article>"
         ),
         escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")),
@@ -2799,7 +2872,7 @@ fn render_live_openpgp_compose_controls(model: &ComposePageModel<'_>) -> String 
         } else {
             ""
         };
-        format!("<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"preflight\">Review current keys</button>")
+        format!("<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"preflight\"><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Review current keys</span></button>")
     } else {
         String::new()
     };
@@ -2888,10 +2961,10 @@ fn render_live_openpgp_compose_controls(model: &ComposePageModel<'_>) -> String 
         ),
     };
     let requirements = format!(
-        "{requirements}<p>Signing requires your private key to be unlocked on the mail host. Public-key checks do not test whether it is unlocked. <a href=\"/settings/keys#personal-key\">Your personal key: unlock or lock signing access</a>.</p>"
+        "{requirements}<p>Signing requires your private key to be unlocked on the mail host. Public-key checks do not test whether it is unlocked. <a href=\"/settings/keys#personal-key\"><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Your personal key: unlock or lock signing access</span></a>.</p>"
     );
     format!(
-        "<section class=\"openpgp-compose-controls compose-policy-row\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"server-enforced\">{revision_field}<label class=\"compose-protection-choice\"><span>Sign</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_sign\"{}/> Sign on send<strong class=\"compose-choice-state compose-choice-off\">Unsigned</strong><strong class=\"compose-choice-state compose-choice-on\">Signing requested</strong></span></label><label class=\"compose-protection-choice\"><span>Encrypt</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_encrypt\"{}/> Encrypt on send<strong class=\"compose-choice-state compose-choice-off\">Not encrypted</strong><strong class=\"compose-choice-state compose-choice-on\">Encryption requested</strong></span></label><label class=\"compose-protection-choice\"><span>Encrypt to self</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_self\"{}/> Include my approved key<strong class=\"compose-choice-state compose-choice-off\">Off</strong><strong class=\"compose-choice-state compose-choice-on\">Requested</strong></span></label><details class=\"compose-key-status\"><summary><span>Recipient key status</span><strong>{summary}</strong></summary><div class=\"compose-policy-detail\">{status}</div></details><div class=\"compose-key-management\"><span>Approved keys</span>{review_action}<a href=\"/settings/keys\" target=\"_blank\" rel=\"noopener noreferrer\">Manage keys</a></div></section><div class=\"notice compose-protection-requirements\" role=\"status\" data-protection-snapshot=\"page-load\">{requirements}</div>",
+        "<section class=\"openpgp-compose-controls compose-policy-row\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"server-enforced\">{revision_field}<label class=\"compose-protection-choice\"><span>Sign</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_sign\"{}/> Sign on send<strong class=\"compose-choice-state compose-choice-off\">Unsigned</strong><strong class=\"compose-choice-state compose-choice-on\">Signing requested</strong></span></label><label class=\"compose-protection-choice\"><span>Encrypt</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_encrypt\"{}/> Encrypt on send<strong class=\"compose-choice-state compose-choice-off\">Not encrypted</strong><strong class=\"compose-choice-state compose-choice-on\">Encryption requested</strong></span></label><label class=\"compose-protection-choice\"><span>Encrypt to self</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_self\"{}/> Include my approved key<strong class=\"compose-choice-state compose-choice-off\">Off</strong><strong class=\"compose-choice-state compose-choice-on\">Requested</strong></span></label><details class=\"compose-key-status\"><summary><span>Recipient key status</span><strong>{summary}</strong></summary><div class=\"compose-policy-detail\">{status}</div></details><div class=\"compose-key-management\"><span>Approved keys</span>{review_action}<a href=\"/settings/keys\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage keys</span></a></div></section><div class=\"notice compose-protection-requirements\" role=\"status\" data-protection-snapshot=\"page-load\">{requirements}</div>",
         checked(model.protection.sign),
         checked(model.protection.encrypt),
         checked(model.protection.encrypt_to_self),
@@ -3011,7 +3084,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
     }
     if model.error_message.is_some() {
         if let Some(draft_id) = model.draft_id {
-            draft_id_field.push_str(&format!("<p class=\"notice\"><a href=\"/draft?id={}\" target=\"_blank\" rel=\"noopener\">Open saved version in a new tab</a>. Keep this tab open to preserve your unsaved text.</p>", url_encode(draft_id)));
+            draft_id_field.push_str(&format!("<p class=\"notice\"><a href=\"/draft?id={}\" target=\"_blank\" rel=\"noopener\"><span class=\"presentation-icon presentation-icon-eye\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open saved version in a new tab</span></a>. Keep this tab open to preserve your unsaved text.</p>", url_encode(draft_id)));
         }
     }
     let draft_attachment_notice = render_saved_attachment_controls(model);
@@ -3048,21 +3121,21 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             "{}{}{}",
             "<section class=\"content-pane compose-card\">",
             "<form id=\"compose-form\" data-enhancement=\"local-v1\" data-save-state=\"{save_state}\" method=\"post\" action=\"/send\" enctype=\"multipart/form-data\">",
-            "<div class=\"compose-card-header\"><h2>{}</h2><div class=\"compose-window-actions\"><button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"minimize\" title=\"Save this draft and return to Drafts\">− Minimize</button><input class=\"sr-only compose-expand-state\" id=\"compose-expanded\" type=\"checkbox\"><label class=\"button-link\" for=\"compose-expanded\"><span class=\"expand-text\">↗ Expand</span><span class=\"collapse-text\">↙ Restore</span></label><details class=\"compose-more\"><summary>⋮ More</summary><div><a href=\"/drafts\">Open Drafts</a><a href=\"/contacts\" target=\"_blank\" rel=\"noopener\">Manage contacts</a></div></details></div></div>",
+            "<div class=\"compose-card-header\"><h2>{}</h2><div class=\"compose-window-actions\"><button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"minimize\" title=\"Save this draft and return to Drafts\"><span class=\"presentation-icon presentation-icon-minimize\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">− Minimize</span></button><input class=\"sr-only compose-expand-state\" id=\"compose-expanded\" type=\"checkbox\"><label class=\"button-link\" for=\"compose-expanded\"><span class=\"expand-text\">↗ Expand</span><span class=\"collapse-text\">↙ Restore</span></label><details class=\"compose-more\"><summary><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More actions</span></summary><div><a href=\"/drafts\"><span class=\"presentation-icon presentation-icon-drafts\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Drafts</span></a><a href=\"/contacts\" target=\"_blank\" rel=\"noopener\">Manage contacts</a></div></details></div></div>",
             "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
             "{}",
             "{}",
             "{}",
-            "<div class=\"compose-field\"><label for=\"compose-from\">From</label><div class=\"compose-sender\">{sender_choice}<span class=\"compose-sender-chip\" >{sender_label}</span>{sender_input}<details class=\"compose-sender-details\"><summary>Sender details</summary><p id=\"sender-policy\">{sender_detail}</p></details></div></div>",
+            "<div class=\"compose-field\"><label for=\"compose-from\">From</label><div class=\"compose-sender\">{sender_choice}<span class=\"compose-sender-chip\" >{sender_label}</span>{sender_input}<details class=\"compose-sender-details\"><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Sender details</span></summary><p id=\"sender-policy\">{sender_detail}</p></details></div></div>",
             "<div class=\"compose-field\"><label for=\"compose-to\">To</label><input id=\"compose-to\" type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></div>",
-            "<div class=\"compose-recipient-tools\"><details class=\"compose-cc\"{}><summary>+ Cc</summary><label for=\"compose-cc\">Cc</label><input id=\"compose-cc\" type=\"text\" name=\"cc\" value=\"{}\" autocomplete=\"off\"></details>",
-            "<details class=\"compose-bcc\"{}><summary>+ Bcc</summary><label for=\"compose-bcc\">Bcc</label><input id=\"compose-bcc\" type=\"text\" name=\"bcc\" value=\"{}\" autocomplete=\"off\"></details>{}</div>",
+            "<div class=\"compose-recipient-tools\"><details class=\"compose-cc\"{}><summary><span class=\"presentation-icon presentation-icon-add\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">+ Cc</span></summary><label for=\"compose-cc\">Cc</label><input id=\"compose-cc\" type=\"text\" name=\"cc\" value=\"{}\" autocomplete=\"off\"></details>",
+            "<details class=\"compose-bcc\"{}><summary><span class=\"presentation-icon presentation-icon-add\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">+ Bcc</span></summary><label for=\"compose-bcc\">Bcc</label><input id=\"compose-bcc\" type=\"text\" name=\"bcc\" value=\"{}\" autocomplete=\"off\"></details>{}</div>",
             "<div class=\"compose-field compose-subject-field\"><label for=\"compose-subject\">Subject</label><input id=\"compose-subject\" type=\"text\" name=\"subject\" value=\"{}\"></div>",
             "{}",
             "{formatting_controls}<label class=\"sr-only\" for=\"compose-body\">Body</label><textarea id=\"compose-body\" name=\"body\" placeholder=\"Write your message…\">\n{}</textarea>{preview}{preflight}",
-            "<section class=\"compose-attachments\" aria-labelledby=\"compose-attachments-heading\"><h2 id=\"compose-attachments-heading\">Attachments</h2>{}{}<label for=\"compose-attachment\">Add attachments</label><input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple><details class=\"compose-attachment-help\"><summary>Attachment help</summary><p>Up to 3 attachments, 10 MiB each and 30 MiB total, including saved and selected source files. Local images have a 5 MiB limit. Select Remove, then Save Draft or Send Message to apply removal. Other saved files stay attached.</p></details></section>",
+            "<section class=\"compose-attachments\" aria-labelledby=\"compose-attachments-heading\"><h2 id=\"compose-attachments-heading\">Attachments</h2>{}{}<label for=\"compose-attachment\">Add attachments</label><input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple><details class=\"compose-attachment-help\"><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Attachment help</span></summary><p>Up to 3 attachments, 10 MiB each and 30 MiB total, including saved and selected source files. Local images have a 5 MiB limit. Select Remove, then Save Draft or Send Message to apply removal. Other saved files stay attached.</p></details></section>",
             "<div class=\"compose-save-bar\"><p id=\"compose-save-status\" role=\"status\" aria-live=\"polite\" data-state=\"{save_state}\">{save_status}</p><span id=\"compose-auto-status\" class=\"muted\" role=\"status\">Auto-save requires scripting. Save Draft remains available.</span></div>",
-            "<div class=\"compose-footer\"><div class=\"compose-footer-actions\">{discard_control}<button id=\"compose-save\" type=\"submit\"{disabled} formaction=\"/drafts/save\" aria-keyshortcuts=\"Control+S Meta+S\">Save Draft</button><button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"schedule\" aria-describedby=\"compose-schedule-status\">Schedule</button><span id=\"compose-schedule-status\" class=\"muted\">Save and choose a send time</span>{footer_more}</div>",
+            "<div class=\"compose-footer\"><div class=\"compose-footer-actions\">{discard_control}<button id=\"compose-save\" type=\"submit\"{disabled} formaction=\"/drafts/save\" aria-keyshortcuts=\"Control+S Meta+S\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save Draft</span></button><button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"schedule\" aria-describedby=\"compose-schedule-status\"><span class=\"presentation-icon presentation-icon-clock\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Schedule</span></button><span id=\"compose-schedule-status\" class=\"muted\">Save and choose a send time</span>{footer_more}</div>",
             "{send_controls}",
             "</div>",
             "</form>{discard_form}",
@@ -3221,7 +3294,7 @@ fn render_contact_selection(
         .map(|notice| format!("<p class=\"muted\">{notice}</p>"))
         .collect::<String>();
     if saved_options.is_empty() && imported_options.is_empty() {
-        return format!("<details class=\"compose-contacts\"><summary>Contacts and imported keys</summary><div>{notices}<p>{manage}</p></div></details>");
+        return format!("<details class=\"compose-contacts\"><summary><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Contacts and imported keys</span></summary><div>{notices}<p>{manage}</p></div></details>");
     }
     let mut options = String::new();
     if !saved_options.is_empty() {
@@ -3235,12 +3308,12 @@ fn render_contact_selection(
         ));
     }
     format!(concat!(
-        "<details class=\"compose-contacts panel\"><summary>Choose a recipient</summary>",
+        "<details class=\"compose-contacts panel\"><summary><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Choose a recipient</span></summary>",
         "<p>Adding a recipient saves this message as a draft, including selected uploads. This does not change encryption settings.</p>{notices}",
         "<input type=\"hidden\" name=\"contact_revision\" value=\"{}\">",
         "<label for=\"compose-contact\">Contact or imported key recipient</label><select id=\"compose-contact\" name=\"contact_id\"><option value=\"\">Choose a recipient</option>{}</select>",
         "<label for=\"compose-contact-target\">Add recipient to</label><select id=\"compose-contact-target\" name=\"contact_target\"><option value=\"to\">To</option><option value=\"cc\">Cc</option><option value=\"bcc\">Bcc</option></select>",
-        "<button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"add-contact\"{}>Add recipient and save draft</button><p>{}</p></details>"
+        "<button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"add-contact\"{}><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Add recipient and save draft</span></button><p>{}</p></details>"
     ), book.map(|book| book.revision).unwrap_or(0), options, if confirmation_required { " disabled" } else { "" }, manage, notices=notices)
 }
 
@@ -3294,14 +3367,15 @@ mod contact_selection_tests {
             for target in ["to", "cc", "bcc"] {
                 assert!(html.contains(&format!("<option value=\"{target}\">")));
             }
-            assert!(html.contains("value=\"add-contact\">Add recipient and save draft</button>"));
+            let button = html.split_once("<button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"add-contact\">").expect("enabled recipient draft action").1.split("</button>").next().unwrap();
+            assert!(button.contains("Add recipient and save draft"));
             assert!(html.contains("This does not change encryption settings."));
             assert!(!html.contains("Imported public-key recipients are unavailable."));
             assert!(!html.contains("name=\"pgp_encrypt\""));
         }
         let guarded = render_contact_selection(account, None, Some(&snapshot), true);
-        assert!(guarded
-            .contains("value=\"add-contact\" disabled>Add recipient and save draft</button>"));
+        let button = guarded.split_once("<button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"add-contact\" disabled>").expect("guarded recipient draft action remains disabled").1.split("</button>").next().unwrap();
+        assert!(button.contains("Add recipient and save draft"));
     }
 
     #[test]
@@ -3367,7 +3441,8 @@ mod contact_selection_tests {
         let saved = book(account);
         let saved_only = render_contact_selection(account, Some(&saved), None, false);
         assert!(saved_only.contains(&format!("value=\"{}\"", saved.contacts[0].id)));
-        assert!(saved_only.contains("value=\"add-contact\">Add recipient and save draft</button>"));
+        let button = saved_only.split_once("<button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"add-contact\">").expect("enabled saved recipient action").1.split("</button>").next().unwrap();
+        assert!(button.contains("Add recipient and save draft"));
     }
 }
 
@@ -3519,20 +3594,20 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
                 "<td><span class=\"badge\">Draft</span></td>",
                 "<td><time datetime=\"{}\">{}</time></td>",
                 "<td>",
-                "<details class=\"draft-discard\" name=\"draft-actions\"><summary aria-label=\"Draft actions\" title=\"Draft actions\">⋮</summary><div class=\"draft-action-menu\"><a class=\"draft-resume\" href=\"{}\">Resume</a><p>Discard this saved draft?</p>",
+                "<details class=\"draft-discard\" name=\"draft-actions\"><summary aria-label=\"Draft actions\" title=\"Draft actions\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More actions</span></summary><div class=\"draft-action-menu\"><a class=\"draft-resume\" href=\"{}\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Resume</span></a><p>Discard this saved draft?</p>",
                 "<form method=\"post\" action=\"/drafts/delete\">",
                 "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
                 "<input type=\"hidden\" name=\"draft_id\" value=\"{}\">",
                 "<input type=\"hidden\" name=\"draft_revision\" value=\"{}\">",
                 "{}",
-                "<button type=\"submit\" name=\"confirm\" value=\"1\">Delete</button>",
+                "<button type=\"submit\" name=\"confirm\" value=\"1\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Delete</span></button>",
                 "</form></div></details>",
                 "</td>",
                 "</tr>"
             ),
             escape_html(&draft.draft_id), draft.revision, escape_html(if draft.subject.is_empty() { "(No subject)" } else { &draft.subject }),
             escape_html(model.csrf_token), escape_html(&draft.draft_id), draft.revision, u8::from(!draft.starred), render_draft_list_state(model.view),
-            if draft.starred { "Unstar draft" } else { "Star draft" }, draft.starred, if draft.starred { "Unstar draft" } else { "Star draft" }, if draft.starred { "★" } else { "☆" },
+            if draft.starred { "Unstar draft" } else { "Star draft" }, draft.starred, if draft.starred { "Unstar draft" } else { "Star draft" }, presentation_label(if draft.starred { "Unstar draft" } else { "Star draft" }, "star"),
             escape_html(&sender_initials(draft.recipient_preview.as_deref())),
             escape_html(draft.recipient_preview.as_deref().unwrap_or(if draft.recipient_count == 0 { "No recipients yet" } else { "Undisclosed recipients" })),
             escape_html(&resume_href),
@@ -3549,7 +3624,7 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
         ));
     }
     if rows.is_empty() {
-        rows.push_str(if model.total_count == 0 { "<tr><td colspan=\"8\" class=\"muted\">No saved drafts.</td></tr>" } else { "<tr><td colspan=\"8\" class=\"muted\">No drafts match these filters. <a href=\"/drafts\">Show all drafts</a>.</td></tr>" });
+        rows.push_str(if model.total_count == 0 { "<tr><td colspan=\"8\" class=\"muted\">No saved drafts.</td></tr>" } else { "<tr><td colspan=\"8\" class=\"muted\">No drafts match these filters. <a href=\"/drafts\"><span class=\"presentation-icon presentation-icon-select\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Show all drafts</span></a>.</td></tr>" });
     }
 
     TrustedHtml::from_template(format!(
@@ -3557,14 +3632,14 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
             "{}",
             "<main id=\"main-content\" class=\"page-shell drafts-page\" tabindex=\"-1\">",
             "<div class=\"page-intro\"><h1>Drafts</h1><p>Resume, organize and safely discard saved messages. Includes Drafts and Working drafts under one account limit.</p></div>{}{}",
-            "<p class=\"muted\"><a href=\"/labels\">Create or manage labels</a>. Labels apply to stored mailbox messages; labelling unsent drafts is not available.</p>",
-            "<div class=\"draft-list-toolbar\"><details class=\"draft-selection-menu\"><summary>Select drafts</summary><nav aria-label=\"Draft selection\"><a href=\"{select_href}\">Select up to 10 drafts shown</a><a href=\"{clear_href}\">Clear selection</a><p>Select editable drafts and confirmed scheduled source copies. Review discard before confirming deletion.</p></nav></details><form method=\"get\" action=\"/drafts\"><label class=\"sr-only\" for=\"draft-filter\">Draft filter</label><select id=\"draft-filter\" name=\"filter\">{}</select><label class=\"sr-only\" for=\"draft-sort\">Draft order</label><select id=\"draft-sort\" name=\"sort\">{}</select><label class=\"sr-only\" for=\"draft-query\">Search drafts</label><input id=\"draft-query\" name=\"q\" value=\"{}\" maxlength=\"200\" placeholder=\"Search subjects or recipients\"><button type=\"submit\">Apply</button></form><a class=\"button-link primary-button\" href=\"/compose\">+ New Message</a></div>",
+            "<p class=\"muted\"><a href=\"/labels\"><span class=\"presentation-icon presentation-icon-label\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Create or manage labels</span></a>. Labels apply to stored mailbox messages; labelling unsent drafts is not available.</p>",
+            "<div class=\"draft-list-toolbar\"><details class=\"draft-selection-menu\"><summary><span class=\"presentation-icon presentation-icon-select\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Select drafts</span></summary><nav aria-label=\"Draft selection\"><a href=\"{select_href}\"><span class=\"presentation-icon presentation-icon-select\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Select up to 10 drafts shown</span></a><a href=\"{clear_href}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear selection</span></a><p>Select editable drafts and confirmed scheduled source copies. Review discard before confirming deletion.</p></nav></details><form method=\"get\" action=\"/drafts\"><label class=\"sr-only\" for=\"draft-filter\">Draft filter</label><select id=\"draft-filter\" name=\"filter\">{}</select><label class=\"sr-only\" for=\"draft-sort\">Draft order</label><select id=\"draft-sort\" name=\"sort\">{}</select><label class=\"sr-only\" for=\"draft-query\">Search drafts</label><input id=\"draft-query\" name=\"q\" value=\"{}\" maxlength=\"200\" placeholder=\"Search subjects or recipients\"><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Apply</span></button></form><a class=\"button-link primary-button\" href=\"/compose\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">+ New Message</span></a></div>",
             "<div class=\"table-wrap draft-list\" role=\"region\" aria-label=\"Saved drafts\" tabindex=\"0\"><table>",
             "<thead><tr><th><span class=\"sr-only\">Select</span></th><th><span class=\"sr-only\">Star</span></th><th>Recipient</th><th>Subject</th><th>Attachment</th><th>Status</th><th>Saved</th><th><span class=\"sr-only\">Actions</span></th></tr></thead>",
             "<tbody>{}</tbody>",
             "</table></div>",
             "<p class=\"draft-list-status muted\" role=\"status\">Showing {} of {} saved drafts</p><p class=\"draft-storage-status muted\">{}</p>",
-            "<form id=\"draft-selection\" class=\"draft-selection-actions\" method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<p class=\"muted\">Select up to 10 drafts or scheduled source copies. Scheduled messages and delivery status are kept.</p><button type=\"submit\" name=\"stage\" value=\"review\"{review_disabled}>Review discard</button></form>",
+            "<form id=\"draft-selection\" class=\"draft-selection-actions\" method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<p class=\"muted\">Select up to 10 drafts or scheduled source copies. Scheduled messages and delivery status are kept.</p><button type=\"submit\" name=\"stage\" value=\"review\"{review_disabled}><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Review discard</span></button></form>",
             "</main>"
         ),
         app_header(model.canonical_username, model.csrf_token, "drafts"),
@@ -3626,23 +3701,23 @@ fn render_locked_draft_row(
     let links = if let Some(State::Scheduled { job_id }) = state {
         if crate::draft::validate_draft_id(job_id).is_ok() {
             format!(
-                "<a href=\"/outbox?id={}\">View scheduled message</a>",
+                "<a href=\"/outbox?id={}\"><span class=\"presentation-icon presentation-icon-outbox\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">View scheduled message</span></a>",
                 escape_html(job_id)
             )
         } else {
             "<a href=\"/outbox\">Open Outbox</a>".into()
         }
     } else if let Some(intent) = intent {
-        format!("<a href=\"/compose?receipt={}\">View attempt</a><a href=\"/draft?id={}\">Saved version</a>", escape_html(&url_encode(intent)), escape_html(&url_encode(&draft.draft_id)))
+        format!("<a href=\"/compose?receipt={}\"><span class=\"presentation-icon presentation-icon-eye\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">View attempt</span></a><a href=\"/draft?id={}\"><span class=\"presentation-icon presentation-icon-eye\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Saved version</span></a>", escape_html(&url_encode(intent)), escape_html(&url_encode(&draft.draft_id)))
     } else {
-        "<a href=\"/drafts\">Reload Drafts</a>".into()
+        "<a href=\"/drafts\"><span class=\"presentation-icon presentation-icon-refresh\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Reload Drafts</span></a>".into()
     };
     let discard = if matches!(state, Some(State::Scheduled { job_id }) if crate::draft::validate_draft_id(job_id).is_ok())
     {
         format!(concat!("<p>Delete this saved source copy? The scheduled message and its delivery status are kept.</p>",
-            "<form method=\"post\" action=\"/drafts/delete\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"draft_id\" value=\"{}\"><input type=\"hidden\" name=\"draft_revision\" value=\"{}\"><button type=\"submit\" name=\"confirm\" value=\"1\">Delete source copy</button></form>"), escape_html(csrf_token), escape_html(&draft.draft_id), draft.revision)
+            "<form method=\"post\" action=\"/drafts/delete\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"draft_id\" value=\"{}\"><input type=\"hidden\" name=\"draft_revision\" value=\"{}\"><button type=\"submit\" name=\"confirm\" value=\"1\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Delete source copy</span></button></form>"), escape_html(csrf_token), escape_html(&draft.draft_id), draft.revision)
     } else {
-        "<button disabled>Delete unavailable</button>".into()
+        "<button disabled><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Delete unavailable</span></button>".into()
     };
     let selection = if matches!(state, Some(State::Scheduled { job_id }) if crate::draft::validate_draft_id(job_id).is_ok())
     {
@@ -3653,8 +3728,8 @@ fn render_locked_draft_row(
             escape_html(title)
         )
     };
-    format!(concat!("<tr data-draft-state=\"{kind}\"><td class=\"draft-select\">{selection}</td><td class=\"draft-star\"><button disabled aria-label=\"Star unavailable\">{star}</button></td>",
-        "<td class=\"draft-recipient\"><div class=\"draft-recipient-person\"><span class=\"sender-avatar\" aria-hidden=\"true\">{initials}</span><span>{recipient}</span></div></td><td class=\"draft-subject\"><strong dir=\"auto\">{title}</strong>{primary_link}<span class=\"muted\">{explanation}</span></td><td>{files}</td><td><span class=\"badge\">{label}</span></td><td><time datetime=\"{utc}\">{time}</time></td><td><details class=\"draft-discard\"><summary aria-label=\"Draft actions\">⋮</summary><div class=\"draft-action-menu\">{links}{discard}</div></details></td></tr>"),kind=kind,selection=selection,primary_link=if matches!(state, Some(State::Scheduled { .. })) {links.as_str()} else {""},title=escape_html(title),star=if draft.starred {"★"} else {"☆"},initials=escape_html(&sender_initials(draft.recipient_preview.as_deref())),recipient=escape_html(draft.recipient_preview.as_deref().unwrap_or("No visible recipients")),explanation=explanation,files=if draft.attachment_count>0 {format!("{} files",draft.attachment_count)} else {"—".into()},label=label,utc=crate::logging::format_unix_timestamp_utc(draft.updated_at),time=crate::logging::format_unix_timestamp_utc(draft.updated_at).replace('T'," ").replace('Z'," UTC"),links=links,discard=discard)
+    format!(concat!("<tr data-draft-state=\"{kind}\"><td class=\"draft-select\">{selection}</td><td class=\"draft-star\"><button disabled aria-label=\"Star unavailable\">{star}<span class=\"presentation-label\">Star unavailable</span></button></td>",
+        "<td class=\"draft-recipient\"><div class=\"draft-recipient-person\"><span class=\"sender-avatar\" aria-hidden=\"true\">{initials}</span><span>{recipient}</span></div></td><td class=\"draft-subject\"><strong dir=\"auto\">{title}</strong>{primary_link}<span class=\"muted\">{explanation}</span></td><td>{files}</td><td><span class=\"badge\">{label}</span></td><td><time datetime=\"{utc}\">{time}</time></td><td><details class=\"draft-discard\"><summary aria-label=\"Draft actions\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More actions</span></summary><div class=\"draft-action-menu\">{links}{discard}</div></details></td></tr>"),kind=kind,selection=selection,primary_link=if matches!(state, Some(State::Scheduled { .. })) {links.as_str()} else {""},title=escape_html(title),star=if draft.starred {"★"} else {"☆"},initials=escape_html(&sender_initials(draft.recipient_preview.as_deref())),recipient=escape_html(draft.recipient_preview.as_deref().unwrap_or("No visible recipients")),explanation=explanation,files=if draft.attachment_count>0 {format!("{} files",draft.attachment_count)} else {"—".into()},label=label,utc=crate::logging::format_unix_timestamp_utc(draft.updated_at),time=crate::logging::format_unix_timestamp_utc(draft.updated_at).replace('T'," ").replace('Z'," UTC"),links=links,discard=discard)
 }
 fn render_draft_storage(usage: &crate::http::BrowserDraftStorageUsage) -> String {
     let size = |bytes: u64| {
@@ -3683,7 +3758,7 @@ pub(crate) fn render_draft_selection_review(
     view: &DraftListView,
 ) -> TrustedHtml {
     let rows: String = drafts.iter().map(|draft| format!("<li><strong dir=\"auto\">{}</strong><span class=\"muted\"> · {} attachment(s)</span><input type=\"hidden\" name=\"selected_{}\" value=\"{}\"></li>", escape_html(if draft.subject.is_empty() { "(No subject)" } else { &draft.subject }), draft.attachment_count, escape_html(&draft.draft_id), draft.revision)).collect();
-    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Discard selected drafts?</h1><p>Review these {} saved drafts before discarding their text and saved attachments.</p></div><section class=\"content-pane\"><form method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<ul class=\"draft-discard-review\">{}</ul><p>Discard cannot be undone. For scheduled source copies, only the copy in Drafts is removed; the scheduled message and delivery status are kept. If a draft changes, discard stops; any earlier completed deletions remain.</p><div class=\"inline-actions\"><a class=\"button-link\" href=\"{}\">Keep drafts</a><button type=\"submit\" name=\"stage\" value=\"confirm\">Discard {} drafts</button></div></form></section></main>", app_header(account, csrf, "drafts"), drafts.len(), escape_html(csrf), render_draft_list_state(view), rows, escape_html(&view.href()), drafts.len()))
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Discard selected drafts?</h1><p>Review these {} saved drafts before discarding their text and saved attachments.</p></div><section class=\"content-pane\"><form method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<ul class=\"draft-discard-review\">{}</ul><p>Discard cannot be undone. For scheduled source copies, only the copy in Drafts is removed; the scheduled message and delivery status are kept. If a draft changes, discard stops; any earlier completed deletions remain.</p><div class=\"inline-actions\"><a class=\"button-link\" href=\"{}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Keep drafts</span></a><button type=\"submit\" name=\"stage\" value=\"confirm\">Discard {} drafts</button></div></form></section></main>", app_header(account, csrf, "drafts"), drafts.len(), escape_html(csrf), render_draft_list_state(view), rows, escape_html(&view.href()), drafts.len()))
 }
 
 #[cfg(test)]

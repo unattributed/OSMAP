@@ -6,16 +6,26 @@ fn bin_bulk_actions_precede_rows_with_one_form_owner() {
     assert_eq!(page.response.status_code, 200);
     let body = body_text(&page);
     assert_eq!(body.matches("id=\"bulk-move-form\"").count(), 1);
-    assert!(body.find("id=\"bulk-move-form\"").unwrap() < body.find("<table class=\"archive-table\"").unwrap());
+    assert!(
+        body.find("id=\"bulk-move-form\"").unwrap()
+            < body.find("<table class=\"archive-table\"").unwrap()
+    );
     assert!(body.contains("formaction=\"/messages/delete/review\""));
     assert!(body.contains("form=\"bulk-move-form\" type=\"checkbox\""));
 }
 
 #[test]
 fn public_attachment_names_and_encoded_sizes_are_real_escaped_row_details() {
-    for path in ["/mailbox?name=INBOX", "/mailbox?name=Sent", "/search?q=reader-fixture&field=subject&scope=all"] {
+    for path in [
+        "/mailbox?name=INBOX",
+        "/mailbox?name=Sent",
+        "/search?q=reader-fixture&field=subject&scope=all",
+    ] {
         let mut req = request("GET", path, &authenticated_headers(), "");
-        req.headers.insert("user-agent".into(), "OSMAP/ManyMessages;AttachmentNames".into());
+        req.headers.insert(
+            "user-agent".into(),
+            "OSMAP/ManyMessages;AttachmentNames".into(),
+        );
         let response = app().handle_request(&req, "127.0.0.1");
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
@@ -23,7 +33,10 @@ fn public_attachment_names_and_encoded_sizes_are_real_escaped_row_details() {
         assert!(!body.contains("public-<b>.txt"));
         assert!(body.contains("129 encoded MIME bytes"), "{path}");
         assert!(body.contains("decoded download size"));
-        assert!(!response.audit_events.iter().any(|event| event.action == "stub_message_view"));
+        assert!(!response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_message_view"));
     }
 }
 
@@ -40,7 +53,12 @@ fn independent_sender_filter_has_an_actual_combined_search_and_navigation_contro
     assert!(body.contains("field=subject"));
     assert!(body.contains("pgp=unknown"));
     assert!(body.contains("Showing 51–100"));
-    assert_eq!(mailbox_page("/mailbox?name=INBOX&from=not-an-address").response.status_code, 400);
+    assert_eq!(
+        mailbox_page("/mailbox?name=INBOX&from=not-an-address")
+            .response
+            .status_code,
+        400
+    );
 }
 
 #[test]
@@ -251,9 +269,9 @@ fn eligible_selection_rendered_page(
             subject: Some(format!("Selection fixture {uid:04}")),
             from: Some("sender@example.test".into()),
             to: Some("recipient@example.test".into()),
-            metadata: eligible.contains(&uid).then(|| {
-                StubGateway::fixture_metadata("alice@example.com", mailbox, uid)
-            }),
+            metadata: eligible
+                .contains(&uid)
+                .then(|| StubGateway::fixture_metadata("alice@example.com", mailbox, uid)),
         })
         .collect();
     let mut view = crate::mail_list::ListViewState::from_query(&BTreeMap::from([
@@ -291,9 +309,7 @@ fn eligible_selection_checkbox_tags(html: &str) -> Vec<&str> {
     html.split("<input")
         .skip(1)
         .filter_map(|tail| tail.split_once('>').map(|(tag, _)| tag))
-        .filter(|tag| {
-            tag.contains("type=\"checkbox\"") && tag.contains("form=\"bulk-move-form\"")
-        })
+        .filter(|tag| tag.contains("type=\"checkbox\"") && tag.contains("form=\"bulk-move-form\""))
         .collect()
 }
 
@@ -302,11 +318,23 @@ fn rendered_inbox_sent_selection_counts_only_current_eligible_identities() {
     for mailbox in ["INBOX", "Sent"] {
         let html = eligible_selection_rendered_page(mailbox, 3, &[2], 1);
         let controls = eligible_selection_checkbox_tags(&html);
-        assert_eq!(controls.len(), 1, "only current GUID-bearing row is selectable: {mailbox}");
+        assert_eq!(
+            controls.len(),
+            1,
+            "only current GUID-bearing row is selectable: {mailbox}"
+        );
         assert!(controls[0].contains("name=\"message_2\""));
-        assert_eq!(controls.iter().filter(|tag| tag.contains(" checked")).count(), 1);
-        assert!(html.contains("1 selected for the next action."),
-                "menu count must equal actual checked owned tuples: {mailbox}");
+        assert_eq!(
+            controls
+                .iter()
+                .filter(|tag| tag.contains(" checked"))
+                .count(),
+            1
+        );
+        assert!(
+            html.contains("1 selected for the next action."),
+            "menu count must equal actual checked owned tuples: {mailbox}"
+        );
         assert!(!html.contains("3 selected for the next action."));
         assert!(!html.contains("Select all 3 on this page"));
     }
@@ -319,13 +347,23 @@ fn rendered_inbox_sent_missing_identities_offer_no_automatic_selection() {
         assert!(eligible_selection_checkbox_tags(&html).is_empty());
         assert!(!html.contains("Select all 3 on this page"));
         assert!(!html.contains("3 selected for the next action."));
-        assert!(!html.contains("name=\"action\" value=\"move\">Move Selected"));
-        assert!(!html.contains("name=\"action\" value=\"archive\">Archive Selected"));
+        for action in ["move", "archive"] {
+            assert!(!html.split("<button").skip(1).any(|button| {
+                let tag = button.split('>').next().unwrap();
+                tag.contains("name=\"action\"") && tag.contains(&format!("value=\"{action}\""))
+            }));
+        }
         // A zero-count native message or omission is allowed; do not invent
         // a required label. No enabled automatic-selection link may exist.
-        for nav in html.split("<nav aria-label=\"Select messages on this page\">").skip(1) {
+        for nav in html
+            .split("<nav aria-label=\"Select messages on this page\">")
+            .skip(1)
+        {
             let nav = nav.split("</nav>").next().unwrap();
-            assert!(!nav.contains("select=move"), "no eligibility, no selection action");
+            assert!(
+                !nav.contains("select=move"),
+                "no eligibility, no selection action"
+            );
         }
     }
 }
@@ -340,10 +378,15 @@ fn rendered_page_two_selection_preserves_first_ten_boundary_and_eligible_count()
         let html = eligible_selection_rendered_page(mailbox, 63, &eligible, 2);
         let controls = eligible_selection_checkbox_tags(&html);
         assert_eq!(controls.len(), 3, "visible current-page controls only");
-        let checked: Vec<_> = controls.iter().filter(|tag| tag.contains(" checked")).collect();
+        let checked: Vec<_> = controls
+            .iter()
+            .filter(|tag| tag.contains(" checked"))
+            .collect();
         assert_eq!(checked.len(), 1);
         assert!(checked[0].contains("name=\"message_51\""));
-        assert!(!controls.iter().any(|tag| tag.contains("name=\"message_50\"")));
+        assert!(!controls
+            .iter()
+            .any(|tag| tag.contains("name=\"message_50\"")));
         assert!(html.contains("Showing 51–63"));
         assert!(html.contains("1 selected for the next action."));
         assert!(!html.contains("10 selected for the next action."));
@@ -356,21 +399,43 @@ fn rendered_selection_tenth_row_boundary_keeps_later_manual_controls() {
         let html = eligible_selection_rendered_page(mailbox, 13, &[10, 11], 1);
         let controls = eligible_selection_checkbox_tags(&html);
         assert_eq!(controls.len(), 2);
-        let checked: Vec<_> = controls.iter().filter(|tag| tag.contains(" checked")).collect();
+        let checked: Vec<_> = controls
+            .iter()
+            .filter(|tag| tag.contains(" checked"))
+            .collect();
         assert_eq!(checked.len(), 1, "original first-ten window: {mailbox}");
         assert!(checked[0].contains("name=\"message_10\""));
         assert!(html.contains("1 selected for the next action."));
 
         let html = eligible_selection_rendered_page(mailbox, 13, &[11, 12], 1);
         let controls = eligible_selection_checkbox_tags(&html);
-        assert_eq!(controls.len(), 2, "later manual controls stay available: {mailbox}");
+        assert_eq!(
+            controls.len(),
+            2,
+            "later manual controls stay available: {mailbox}"
+        );
         assert!(!controls.iter().any(|tag| tag.contains(" checked")));
         assert!(html.contains("id=\"bulk-move-form\""));
-        assert!(html.contains("value=\"move\">Move Selected"));
+        assert!(html.split("<button ").any(|button| {
+            let Some((tag, contents)) = button.split_once('>') else {
+                return false;
+            };
+            tag.contains("name=\"action\"")
+                && tag.contains("value=\"move\"")
+                && contents
+                    .split_once("</button>")
+                    .is_some_and(|(caption, _)| rendered_action_caption(caption) == "Move Selected")
+        }));
         assert!(html.contains("No automatic selection."));
-        for nav in html.split("<nav aria-label=\"Select messages on this page\">").skip(1) {
+        for nav in html
+            .split("<nav aria-label=\"Select messages on this page\">")
+            .skip(1)
+        {
             let nav = nav.split("</nav>").next().unwrap();
-            assert!(!nav.contains("select=move"), "no automatic identities: {mailbox}");
+            assert!(
+                !nav.contains("select=move"),
+                "no automatic identities: {mailbox}"
+            );
         }
     }
 }
@@ -692,6 +757,7 @@ fn reader_neighbours_route_checks_link_version_and_fetches_only_current_body() {
 
 fn empty_search_clear_href(response: &HandledHttpResponse) -> String {
     let body = body_text(response);
+    assert!(has_clear_filters_link(&body));
     let card = body
         .split_once("<section class=\"mail-state-card\">")
         .expect("empty search card")
@@ -704,6 +770,18 @@ fn empty_search_clear_href(response: &HandledHttpResponse) -> String {
         .expect("closed native href")
         .0;
     href.replace("&amp;", "&")
+}
+
+fn has_clear_filters_link(body: &str) -> bool {
+    body.split("<a ").skip(1).any(|anchor| {
+        let Some((tag, contents)) = anchor.split_once('>') else {
+            return false;
+        };
+        tag.contains("href=\"")
+            && contents
+                .split_once("</a>")
+                .is_some_and(|(caption, _)| rendered_action_caption(caption) == "Clear filters")
+    })
 }
 
 #[test]
@@ -747,7 +825,7 @@ fn empty_search_clear_is_not_offered_for_unverified_search_context() {
             "127.0.0.1",
         );
         assert_eq!(response.response.status_code, 400);
-        assert!(!body_text(&response).contains(">Clear filters</a>"));
+        assert!(!has_clear_filters_link(&body_text(&response)));
     }
     for headers in [
         vec![("User-Agent", "Firefox/Test")],
@@ -767,7 +845,7 @@ fn empty_search_clear_is_not_offered_for_unverified_search_context() {
         );
         assert_eq!(response.response.status_code, 303);
         assert_eq!(location_header(&response), "/login");
-        assert!(!body_text(&response).contains(">Clear filters</a>"));
+        assert!(!has_clear_filters_link(&body_text(&response)));
     }
     let mut foreign = request(
         "GET",
@@ -781,17 +859,21 @@ fn empty_search_clear_is_not_offered_for_unverified_search_context() {
     let response = app.handle_request(&foreign, "127.0.0.1");
     assert_eq!(response.response.status_code, 503);
     let body = body_text(&response);
-    assert!(!body.contains(">Clear filters</a>"));
+    assert!(!has_clear_filters_link(&body));
     assert!(!body.contains("foreign-secret"));
     assert!(!body.contains("ForeignFolder"));
     assert_eq!(app.request_budgets.search_workers.active_count(), 0);
 }
 
-
 fn neighbour_href(html: &str, label: &str) -> String {
     let marker = format!("aria-label=\"{label} message\" href=\"");
-    html.split_once(&marker).expect("enabled neighbour").1
-        .split_once('"').expect("bounded link").0.replace("&amp;", "&")
+    html.split_once(&marker)
+        .expect("enabled neighbour")
+        .1
+        .split_once('"')
+        .expect("bounded link")
+        .0
+        .replace("&amp;", "&")
 }
 
 #[test]
@@ -815,28 +897,55 @@ fn reader_neighbours_follow_filtered_order_across_pages_in_mailbox_and_search() 
         assert_eq!(followed.response.status_code, 200);
         assert!(body_text(&followed).contains("Synthetic message 101 in INBOX"));
         assert!(body_text(&followed).contains("data-selected=\"true\""));
-        let stale = next.split('#').next().unwrap().split('&')
-            .map(|part| if part.starts_with("selected_message_guid=") { "selected_message_guid=changed" } else { part })
-            .collect::<Vec<_>>().join("&");
+        let stale = next
+            .split('#')
+            .next()
+            .unwrap()
+            .split('&')
+            .map(|part| {
+                if part.starts_with("selected_message_guid=") {
+                    "selected_message_guid=changed"
+                } else {
+                    part
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("&");
         let refused = mailbox_page(&stale);
         assert!(body_text(&refused).contains("selected message identity changed"));
         assert!(!body_text(&refused).contains("Synthetic message 101 in INBOX"));
-        assert!(!refused.audit_events.iter().any(|event| event.action == "stub_message_view"));
+        assert!(!refused
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_message_view"));
     }
 }
 
 #[test]
 fn standalone_search_neighbours_use_actual_search_and_release_both_budgets() {
     let app = app();
-    let return_to = "/search?q=reader-fixture&field=subject&mailbox=INBOX&filter=unread&sort=subject&dir=asc";
-    let mut req = request("GET", &format!("/message?mailbox=INBOX&uid=7&return_to={}", url_encode(return_to)), &authenticated_headers(), "");
-    req.headers.insert("user-agent".into(), "OSMAP/ManyMessages".into());
+    let return_to =
+        "/search?q=reader-fixture&field=subject&mailbox=INBOX&filter=unread&sort=subject&dir=asc";
+    let mut req = request(
+        "GET",
+        &format!(
+            "/message?mailbox=INBOX&uid=7&return_to={}",
+            url_encode(return_to)
+        ),
+        &authenticated_headers(),
+        "",
+    );
+    req.headers
+        .insert("user-agent".into(), "OSMAP/ManyMessages".into());
     let result = app.handle_request(&req, "127.0.0.1");
     assert_eq!(result.response.status_code, 200);
     let html = body_text(&result);
     assert!(neighbour_href(&html, "Previous").contains("uid=5&"));
     assert!(neighbour_href(&html, "Next").contains("uid=9&"));
-    assert!(!result.audit_events.iter().any(|event| event.action == "stub_message_list"));
+    assert!(!result
+        .audit_events
+        .iter()
+        .any(|event| event.action == "stub_message_list"));
     assert_eq!(app.request_budgets.search_workers.active_count(), 0);
     assert_eq!(app.request_budgets.mailbox_workers.active_count(), 0);
     let mut occupied = Vec::new();
@@ -848,12 +957,21 @@ fn standalone_search_neighbours_use_actual_search_and_release_both_budgets() {
     assert_eq!(blocked.response.status_code, 200);
     assert!(!body_text(&blocked).contains("aria-label=\"Next message\" href="));
     assert!(body_text(&blocked).contains("q=reader-fixture"));
-    assert!(!blocked.audit_events.iter().any(|event| event.action == "stub_message_list"));
+    assert!(!blocked
+        .audit_events
+        .iter()
+        .any(|event| event.action == "stub_message_list"));
     drop(occupied);
-    req.headers.insert("user-agent".into(), "OSMAP/StateFailure".into());
+    req.headers
+        .insert("user-agent".into(), "OSMAP/StateFailure".into());
     let denied = app.handle_request(&req, "127.0.0.1");
     assert!(!body_text(&denied).contains("aria-label=\"Next message\" href="));
-    assert!(!denied.audit_events.iter().any(|event| event.action == "stub_message_list"));
-    req.headers.insert("user-agent".into(), "OSMAP/ManyMessages".into());
-    assert!(body_text(&app.handle_request(&req, "127.0.0.1")).contains("aria-label=\"Next message\" href="));
+    assert!(!denied
+        .audit_events
+        .iter()
+        .any(|event| event.action == "stub_message_list"));
+    req.headers
+        .insert("user-agent".into(), "OSMAP/ManyMessages".into());
+    assert!(body_text(&app.handle_request(&req, "127.0.0.1"))
+        .contains("aria-label=\"Next message\" href="));
 }

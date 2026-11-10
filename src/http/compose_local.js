@@ -10,6 +10,25 @@
   const heading = document.getElementById("compose-attachments-heading");
   if (!status || !save || !upload || !heading) return;
 
+  const make = (tag, className, text) => {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text) element.textContent = text;
+    return element;
+  };
+  // Known local controls only; recipient and attachment text is never markup.
+  const actionLabel = (control, text, icon) => {
+    const label = make("span", "presentation-label", text);
+    if (!["compose", "add", "bin", "attachment"].includes(icon)) {
+      control.replaceChildren(label);
+      return;
+    }
+    const mark = make("span", `presentation-icon presentation-icon-${icon}`);
+    mark.setAttribute("aria-hidden", "true");
+    mark.append(make("i"));
+    control.replaceChildren(mark, label);
+  };
+
   let initialState = form.dataset.saveState;
   let blocked = initialState === "unconfirmed";
   let inheritedChanges = initialState === "unsaved" || blocked;
@@ -237,7 +256,7 @@
       if (discard) { const selected = discard.querySelector('input[name^="selected_"]'); if (selected) selected.value = String(result.revision); }
       else {
         const unsaved = form.querySelector('a[data-confirm-discard="true"]');
-        if (unsaved) { unsaved.removeAttribute("data-confirm-discard"); unsaved.href = `/draft?id=${encodeURIComponent(result.draft_id)}`; unsaved.target = "_blank"; unsaved.rel = "noopener noreferrer"; unsaved.textContent = "Open saved draft to review discard"; unsaved.previousElementSibling.textContent = "This message is now saved. Review its stored version before discarding it."; }
+        if (unsaved) { unsaved.removeAttribute("data-confirm-discard"); unsaved.href = `/draft?id=${encodeURIComponent(result.draft_id)}`; unsaved.target = "_blank"; unsaved.rel = "noopener noreferrer"; actionLabel(unsaved, "Open saved draft to review discard", "bin"); unsaved.previousElementSibling.textContent = "This message is now saved. Review its stored version before discarding it."; }
       }
       unlockAuthoring(); updateState();
       announceAuto(dirty() ? "Earlier edits saved. Newer changes remain unsaved." : "Auto-save confirmed.");
@@ -260,12 +279,6 @@
       }).catch(() => announceAuto("Auto-save preference unavailable. Use Save Draft to keep changes."));
   }
 
-  const make = (tag, className, text) => {
-    const element = document.createElement(tag);
-    if (className) element.className = className;
-    if (text) element.textContent = text;
-    return element;
-  };
   const to = form.querySelector('input[name="to"]');
   if (to) {
     // This is a conservative presentation parser, never recipient authority.
@@ -311,7 +324,8 @@
     editor.autocomplete = "off";
     editor.setAttribute("aria-label", "Add recipients");
     editor.placeholder = "Address, then Enter";
-    const edit = make("button", "compose-recipient-edit", "Edit all recipients");
+    const edit = make("button", "compose-recipient-edit");
+    actionLabel(edit, "Edit all recipients", "compose");
     edit.type = "button";
     const label = form.querySelector('label[for="compose-to"]');
     if (label) {
@@ -330,7 +344,8 @@
       for (const part of parts(to.value)) {
         if (!recognised(part.raw) || (!part.separated && !commitLast)) break;
         const chip = make("span", "compose-recipient-chip");
-        const remove = make("button", "compose-recipient-remove", "×");
+        const remove = make("button", "compose-recipient-remove");
+        actionLabel(remove, "Remove recipient", "bin");
         remove.type = "button";
         remove.setAttribute("aria-label", `Remove recipient ${part.raw.trim()}`);
         const index = chips.children.length;
@@ -366,7 +381,7 @@
     edit.addEventListener("click", () => {
       to.hidden = !to.hidden;
       chips.hidden = editor.hidden = !to.hidden;
-      edit.textContent = to.hidden ? "Edit all recipients" : "Use recipient chips";
+      actionLabel(edit, to.hidden ? "Edit all recipients" : "Use recipient chips", "compose");
       if (label) label.htmlFor = to.hidden ? editor.id : to.id;
       if (to.hidden) renderRecipients(true);
       (to.hidden ? editor : to).focus();
@@ -393,7 +408,8 @@
   const alert = make("p", "notice notice-error");
   alert.setAttribute("role", "alert");
   alert.hidden = true;
-  const add = make("button", "compose-add-files", "+ Add more");
+  const add = make("button", "compose-add-files");
+  actionLabel(add, "Add more attachments", "add");
   add.type = "button";
   add.setAttribute("aria-label", "Add more attachments");
   const picker = make("input");
@@ -447,7 +463,8 @@
       const filename = make("strong", "", `📄 ${file.name}`);
       filename.dir = "auto";
       description.append(filename, make("span", "muted", `${bytes(file.size)} · not saved yet`));
-      const remove = make("button", "pending-attachment-remove", "×");
+      const remove = make("button", "pending-attachment-remove");
+      actionLabel(remove, "Remove attachment", "bin");
       remove.type = "button";
       remove.setAttribute("aria-label", `Remove newly added ${file.name}`);
       remove.addEventListener("click", () => {

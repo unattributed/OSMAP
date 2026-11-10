@@ -289,7 +289,10 @@ fn password_page_uses_exact_script_csp_and_independent_empty_fields() {
         assert!(html.contains(&format!("id=\"{name}\" name=\"{name}\" type=\"password\"")));
         assert!(html.contains(&format!("aria-controls=\"{name}\"")));
     }
-    assert!(html.contains("href=\"/settings?section=security\">Cancel"));
+    assert!(html
+        .split("href=\"/settings?section=security\">")
+        .skip(1)
+        .any(|link| link.split("</a>").next().unwrap().contains("Cancel")));
     let csp = result
         .response
         .headers

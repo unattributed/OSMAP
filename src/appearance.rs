@@ -81,6 +81,7 @@ macro_rules! preference {
 preference!(Density, Comfortable, {Comfortable => "comfortable", Compact => "compact"});
 preference!(FontSize, Medium, {Small => "small", Medium => "medium", Large => "large"});
 preference!(ReaderLayout, Split, {Split => "split", Stacked => "stacked"});
+preference!(PresentationStyle, TextLabels, {TextLabels => "text_labels", Icons => "icons"});
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AppearanceSettings {
@@ -90,6 +91,7 @@ pub struct AppearanceSettings {
     pub reader_layout: ReaderLayout,
     pub show_avatars: bool,
     pub message_preview: bool,
+    pub presentation_style: PresentationStyle,
 }
 
 impl Default for AppearanceSettings {
@@ -101,15 +103,16 @@ impl Default for AppearanceSettings {
             reader_layout: ReaderLayout::Split,
             show_avatars: true,
             message_preview: true,
+            presentation_style: PresentationStyle::TextLabels,
         }
     }
 }
 
 impl AppearanceSettings {
     fn record(self) -> String {
-        format!("version=2\nappearance={}\ndensity={}\nfont_size={}\nreader_layout={}\nshow_avatars={}\nmessage_preview={}\n",
+        format!("version=3\nappearance={}\ndensity={}\nfont_size={}\nreader_layout={}\nshow_avatars={}\nmessage_preview={}\npresentation_style={}\n",
             self.theme.as_str(), self.density.as_str(), self.font_size.as_str(), self.reader_layout.as_str(),
-            u8::from(self.show_avatars), u8::from(self.message_preview))
+            u8::from(self.show_avatars), u8::from(self.message_preview), self.presentation_style.as_str())
     }
 
     fn parse_record(bytes: &[u8]) -> io::Result<Self> {
@@ -127,10 +130,14 @@ impl AppearanceSettings {
             }
         }
         let lines: Vec<_> = text.split('\n').collect();
+        let expected_lines = match lines.first().copied() {
+            Some("version=2") => 8,
+            Some("version=3") => 9,
+            _ => return Err(invalid_record()),
+        };
         if bytes.len() > MAX_RECORD_BYTES
-            || lines.len() != 8
-            || lines[0] != "version=2"
-            || !lines[7].is_empty()
+            || lines.len() != expected_lines
+            || !lines[expected_lines - 1].is_empty()
         {
             return Err(invalid_record());
         }
@@ -147,12 +154,19 @@ impl AppearanceSettings {
             show_avatars: parse_bool(field(5, "show_avatars=")?).ok_or_else(invalid_record)?,
             message_preview: parse_bool(field(6, "message_preview=")?)
                 .ok_or_else(invalid_record)?,
+            presentation_style: if expected_lines == 8 {
+                PresentationStyle::TextLabels
+            } else {
+                PresentationStyle::parse(field(7, "presentation_style=")?)
+                    .ok_or_else(invalid_record)?
+            },
         };
         Ok(value)
     }
 
     /// Host-only display hints, never identity or security authority. Theme
-    /// remains in its established cookie; this cookie carries only new fields.
+    /// remains in its established cookie. Account action style is deliberately
+    /// absent: only the authenticated account store can select Icons.
     pub fn cookie(self, secure: bool) -> String {
         format!("{PRESENTATION_COOKIE}=v1.{}.{}.{}.{}.{}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000{}",
             self.density.as_str(), self.font_size.as_str(), self.reader_layout.as_str(),
@@ -193,6 +207,7 @@ impl AppearanceSettings {
                     reader_layout,
                     show_avatars,
                     message_preview,
+                    presentation_style: PresentationStyle::TextLabels,
                 };
             }
         }
@@ -481,7 +496,7 @@ mod tests {
         let root = scratch();
         let store = AppearanceStore::new(&root);
         for content in [
-            "version=3\nappearance=dark\n",
+            "version=4\nappearance=dark\n",
             "version=1\nappearance=invalid\n",
             "version=1\nappearance=dark\nappearance=light\n",
             "appearance=dark\n",
@@ -636,6 +651,7 @@ mod tests {
             reader_layout: ReaderLayout::Stacked,
             show_avatars: false,
             message_preview: false,
+            presentation_style: PresentationStyle::Icons,
         }
     }
 
@@ -649,6 +665,14 @@ mod tests {
             AppearanceSettings {
                 theme: AppearancePreference::Dark,
                 ..AppearanceSettings::default()
+            }
+        );
+        fixture(&store, "version=2\nappearance=dark\ndensity=compact\nfont_size=large\nreader_layout=stacked\nshow_avatars=0\nmessage_preview=0\n");
+        assert_eq!(
+            store.load_settings("alice@example.test").unwrap(),
+            AppearanceSettings {
+                presentation_style: PresentationStyle::TextLabels,
+                ..compact()
             }
         );
         store
@@ -673,23 +697,28 @@ mod tests {
             }
         );
         let bytes = fs::read(store.path("alice@example.test")).unwrap();
-        assert!(bytes.starts_with(b"version=2\n"));
+        assert!(bytes.starts_with(b"version=3\n"));
         assert!(!String::from_utf8(bytes).unwrap().contains("alice"));
         fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn v2_is_strict_and_refusal_never_overwrites_invalid_records() {
+    fn presentation_style_v3_is_strict_and_refusal_never_overwrites_invalid_records() {
         let root = scratch();
         let store = AppearanceStore::new(&root);
         let valid = compact().record();
         for invalid in [
-            valid.replace("version=2", "version=3"),
+            valid.replace("version=3", "version=4"),
+            valid.replace("version=3", "version=2"),
             valid.replace("density=compact", "density=unknown"),
             valid.replace("font_size=large", "font_size=Large"),
             valid.replace("reader_layout=stacked", "reader_layout=unknown"),
             valid.replace("show_avatars=0", "show_avatars=false"),
             valid.replace("message_preview=0\n", ""),
+            valid.replace("presentation_style=icons", "presentation_style=unknown"),
+            valid.replace("presentation_style=icons", "presentation_style=Icons"),
+            valid.replace("presentation_style=icons\n", ""),
+            format!("{valid}presentation_style=text_labels\n"),
             valid.replace("density=compact", "appearance=dark"),
             format!("{valid}message_preview=1\n"),
             valid.replace('\n', "\r\n"),
@@ -727,6 +756,7 @@ mod tests {
             AppearanceSettings::from_cookie_header(Some(&header)),
             AppearanceSettings {
                 theme: AppearancePreference::System,
+                presentation_style: PresentationStyle::TextLabels,
                 ..settings
             }
         );
@@ -739,6 +769,7 @@ mod tests {
             "v1.Compact.large.stacked.0.0",
             "v1.compact.large.stacked.false.0",
             "v1.compact.large.stacked.0.0.extra",
+            "v1.compact.large.stacked.0.0.icons",
             "<script>",
             "v1.compact.large.stacked.0.0; osmap_presentation=v1.compact.large.stacked.0.0",
         ] {
@@ -749,6 +780,43 @@ mod tests {
                 AppearanceSettings::default()
             );
         }
+    }
+
+    #[test]
+    fn presentation_style_round_trips_only_through_the_account_record() {
+        let root = scratch();
+        let store = AppearanceStore::new(&root);
+        assert_eq!(
+            store
+                .load_settings("alice@example.test")
+                .unwrap()
+                .presentation_style,
+            PresentationStyle::TextLabels
+        );
+        for style in [PresentationStyle::Icons, PresentationStyle::TextLabels] {
+            let expected = AppearanceSettings {
+                presentation_style: style,
+                ..compact()
+            };
+            store.save_settings("alice@example.test", expected).unwrap();
+            assert_eq!(
+                AppearanceStore::new(&root)
+                    .load_settings("alice@example.test")
+                    .unwrap(),
+                expected
+            );
+            assert_eq!(
+                store.load_settings("bob@example.test").unwrap(),
+                AppearanceSettings::default()
+            );
+            assert_eq!(expected.cookie(false), compact().cookie(false));
+            assert_eq!(
+                AppearanceSettings::from_cookie_header(Some(&expected.cookie(false)))
+                    .presentation_style,
+                PresentationStyle::TextLabels
+            );
+        }
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -810,6 +878,21 @@ mod tests {
             io::ErrorKind::Interrupted
         );
         assert_eq!(fs::read(store.path("alice@example.test")).unwrap(), before);
+        assert_eq!(
+            store
+                .save_settings("alice@example.test", AppearanceSettings::default())
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::Interrupted
+        );
+        assert_eq!(fs::read(store.path("alice@example.test")).unwrap(), before);
+        assert_eq!(
+            store
+                .load_settings("alice@example.test")
+                .unwrap()
+                .presentation_style,
+            PresentationStyle::Icons
+        );
         assert_eq!(
             fs::read_to_string(&unrelated).unwrap(),
             "unrelated synthetic state"

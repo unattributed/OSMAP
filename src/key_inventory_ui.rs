@@ -183,7 +183,7 @@ pub(crate) fn render_key_inventory(
   Some(keys) if keys.is_empty()=>rows.push_str("<p class=\"key-inventory-state\" role=\"status\">No public keys were reported in this account’s verified inventory.</p>"),
   Some(keys)=>{for key in keys.iter().take(128) {rows.push_str(&format!("<details class=\"public-key-row\"><summary><span class=\"public-key-fingerprint\">{}</span><span>{}</span></summary><div class=\"public-key-details\">{}",escape_html(&key.primary.fingerprint),escape_html(&key.primary.algorithm),material(&key.primary)));for sub in key.subkeys.iter().take(32){rows.push_str(&format!("<h3>Public subkey</h3>{}",material(sub)));}if key.subkeys.len()>32 {rows.push_str("<p>Additional subkeys are not displayed.</p>");}rows.push_str("</div></details>");}if keys.len()>128{rows.push_str("<p>Additional keys are not displayed.</p>");}}
  }
-    TrustedHtml::from_template(format!(concat!("{header}<main id=\"main-content\" class=\"page-shell key-management-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>OpenPGP Key Management</h1><p>Inspect public keys. Account bindings and key changes are unavailable.</p></div><div class=\"key-management-toolbar\"><p><a href=\"/settings?section=security\">Security</a> / <a href=\"/settings?section=openpgp\">OpenPGP</a> / Keys</p><div><button disabled>Import public key</button><button disabled>Add binding</button></div></div><div class=\"key-management-grid\"><section class=\"key-management-card\"><h2>Primary Account Key</h2><div class=\"key-account-state\"><strong>Account binding unavailable</strong><span>{account}</span></div><dl><dt>Fingerprint</dt><dd>Unavailable</dd><dt>Algorithm</dt><dd>Unknown</dd><dt>Created</dt><dd>Unknown</dd><dt>Expires</dt><dd>Unknown</dd><dt>Signing</dt><dd>Unavailable</dd><dt>Binding status</dt><dd>Unverified</dd></dl><div class=\"key-management-actions\"><button disabled>Copy fingerprint</button><button disabled>Rotate binding</button><button disabled>Remove binding</button></div></section><section class=\"key-management-card\"><h2>Public key inventory</h2>{rows}<p class=\"key-inventory-notice\">Public keys do not establish account or recipient trust, private-key availability, or signing and encryption readiness. Open a key to inspect its full fingerprint; select the field to copy using your keyboard.</p></section></div></main>"),header=app_header(account,csrf,"security"),account=escape_html(account),rows=rows))
+    TrustedHtml::from_template(format!(concat!("{header}<main id=\"main-content\" class=\"page-shell key-management-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>OpenPGP Key Management</h1><p>Inspect public keys. Account bindings and key changes are unavailable.</p></div><div class=\"key-management-toolbar\"><p><a href=\"/settings?section=security\">Security</a> / <a href=\"/settings?section=openpgp\">OpenPGP</a> / Keys</p><div><button disabled><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Import public key</span></button><button disabled><span class=\"presentation-icon presentation-icon-add\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Add binding</span></button></div></div><div class=\"key-management-grid\"><section class=\"key-management-card\"><h2>Primary Account Key</h2><div class=\"key-account-state\"><strong>Account binding unavailable</strong><span>{account}</span></div><dl><dt>Fingerprint</dt><dd>Unavailable</dd><dt>Algorithm</dt><dd>Unknown</dd><dt>Created</dt><dd>Unknown</dd><dt>Expires</dt><dd>Unknown</dd><dt>Signing</dt><dd>Unavailable</dd><dt>Binding status</dt><dd>Unverified</dd></dl><div class=\"key-management-actions\"><button disabled><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Copy fingerprint</span></button><button disabled><span class=\"presentation-icon presentation-icon-refresh\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Rotate binding</span></button><button disabled><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Remove binding</span></button></div></section><section class=\"key-management-card\"><h2>Public key inventory</h2>{rows}<p class=\"key-inventory-notice\">Public keys do not establish account or recipient trust, private-key availability, or signing and encryption readiness. Open a key to inspect its full fingerprint; select the field to copy using your keyboard.</p></section></div></main>"),header=app_header(account,csrf,"security"),account=escape_html(account),rows=rows))
 }
 #[cfg(test)]
 mod tests {
@@ -425,7 +425,15 @@ fn binding_form(
     label: &str,
     available: bool,
 ) -> String {
-    format!(concat!("<form method=\"post\" action=\"/settings/keys/change\"{}><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"binding_revision\" value=\"{}\"><input type=\"hidden\" name=\"key_action\" value=\"{}\"><fieldset{}>{}<label>Current mailbox password<input type=\"password\" name=\"current_password\" autocomplete=\"current-password\" required maxlength=\"1024\"></label><label>Fresh authenticator code<input name=\"totp_code\" inputmode=\"numeric\" autocomplete=\"one-time-code\" pattern=\"[0-9]{{6}}\" maxlength=\"6\" required></label><button type=\"submit\">{}</button></fieldset></form>"),if action == "import_public" { " enctype=\"multipart/form-data\"" } else { "" },escape_html(csrf),revision,escape_html(action),if available{""}else{" disabled"},fields,escape_html(label))
+    let icon = match action {
+        "set_account" | "set_recipient" => "save",
+        "set_policy" => "shield",
+        "import_public" => "key",
+        "remove_recipient" => "refresh",
+        "clear_account" | "clear_all_bindings" | "remove_public" => "bin",
+        _ => "",
+    };
+    format!(concat!("<form method=\"post\" action=\"/settings/keys/change\"{}><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"binding_revision\" value=\"{}\"><input type=\"hidden\" name=\"key_action\" value=\"{}\"><fieldset{}>{}<label>Current mailbox password<input type=\"password\" name=\"current_password\" autocomplete=\"current-password\" required maxlength=\"1024\"></label><label>Fresh authenticator code<input name=\"totp_code\" inputmode=\"numeric\" autocomplete=\"one-time-code\" pattern=\"[0-9]{{6}}\" maxlength=\"6\" required></label><button type=\"submit\">{}</button></fieldset></form>"),if action == "import_public" { " enctype=\"multipart/form-data\"" } else { "" },escape_html(csrf),revision,escape_html(action),if available{""}else{" disabled"},fields,presentation_label(label, icon))
 }
 fn fingerprint_input(name: &str, label: &str, value: &str, required: bool) -> String {
     format!("<label>{}<input name=\"{}\" value=\"{}\" maxlength=\"40\" pattern=\"[A-Fa-f0-9]{{40}}\" autocomplete=\"off\" spellcheck=\"false\"{}></label>",escape_html(label),escape_html(name),escape_html(value),if required{" required"}else{""})
@@ -665,7 +673,7 @@ pub(crate) fn render_key_management_panel_with_personal(
         format!("<div class=\"key-account-state\"><strong>{}</strong><span>{}</span></div><dl><dt>Full fingerprint</dt><dd>Unavailable</dd><dt>Algorithm</dt><dd>Unknown</dd><dt>Created</dt><dd>Unknown</dd><dt>Expires</dt><dd>Unknown</dd><dt>Binding status</dt><dd>Unconfirmed</dd></dl>",if record.is_some(){"Not configured"}else{"Account binding unavailable"},escape_html(account))
     };
     let account_actions = if bound.is_some() {
-        format!("<div class=\"key-management-actions\"><a href=\"/settings/keys?panel=account#account-binding\">Change account key</a><a href=\"#account-fingerprint\">Select fingerprint</a><a href=\"/settings/keys?panel=inventory#public-inventory\">Manage imported keys</a></div><details><summary>Remove binding</summary>{clear}</details>")
+        format!("<div class=\"key-management-actions\"><a href=\"/settings/keys?panel=account#account-binding\">{}</a><a href=\"#account-fingerprint\">{}</a><a href=\"/settings/keys?panel=inventory#public-inventory\">{}</a></div><details><summary><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Remove binding</span></summary>{clear}</details>", presentation_label("Change account key", "key"), presentation_label("Select fingerprint", "select"), presentation_label("Manage imported keys", "key"))
     } else {
         String::new()
     };
@@ -711,7 +719,7 @@ pub(crate) fn render_key_management_panel_with_personal(
                         == crate::mail_address::comparison_key(&b.address)
                 })
             }) {
-                format!("<details><summary>Reset saved policy</summary>{}</details>", binding_form(csrf, revision, "remove_recipient",
+                format!("<details><summary><span class=\"presentation-icon presentation-icon-refresh\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Reset saved policy</span></summary>{}</details>", binding_form(csrf, revision, "remove_recipient",
                     &format!("<input type=\"hidden\" name=\"address\" value=\"{}\"><p>This resets the saved key choice and recipient policy. A unique email match from imported keys is then used with encryption off by default. No match leaves no recipient key selected; multiple matching keys require a choice.</p>", escape_html(&b.address)),
                     "Reset saved policy", cleanup_ready))
             } else {
@@ -773,7 +781,7 @@ pub(crate) fn render_key_management_panel_with_personal(
                     else if key.primary.invalid || key.primary.disabled { "Unavailable" }
                     else { "Imported public key" };
                 rows.push_str(&format!(
-                    "<article class=\"imported-key-card\"><p class=\"key-status\">{public_status}</p>{}{}<details class=\"public-key-row\"><summary>Details and key actions</summary><div class=\"public-key-details\">{}",
+                    "<article class=\"imported-key-card\"><p class=\"key-status\">{public_status}</p>{}{}<details class=\"public-key-row\"><summary><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Details and key actions</span></summary><div class=\"public-key-details\">{}",
                     certificate_identities(key, account, record, record.map(|_| effective_recipients.as_slice()), record.is_some() && !projection_unavailable), binding_identities(account, record, &key.primary.fingerprint, Some(&effective_recipients)), material(&key.primary)));
                 for sub in key.subkeys.iter().take(32) {
                     rows.push_str(&format!("<h3>Public subkey</h3>{}", material(sub)));
@@ -792,9 +800,12 @@ pub(crate) fn render_key_management_panel_with_personal(
         })
         .unwrap_or_default();
     let import_link = if public_ready {
-        "<a class=\"button-link\" href=\"/settings/keys?panel=import#public-import\">Import public key</a>"
+        format!(
+            "<a class=\"button-link\" href=\"/settings/keys?panel=import#public-import\">{}</a>",
+            presentation_label("Import public key", "key")
+        )
     } else {
-        "<button disabled>Import public key</button>"
+        "<button disabled>Import public key</button>".to_owned()
     };
     let toolbar_actions = format!("<div>{import_link}</div>");
     let public_state = if public_ready {
@@ -814,7 +825,7 @@ pub(crate) fn render_key_management_panel_with_personal(
         "<details id=\"account-binding\"{account_open}><summary>{account_action}</summary>{account_form}</details><details id=\"protection-policy\"{policy_open}><summary>Protection policy</summary>{policy_form}</details><details><summary>Recover from unavailable or expired bindings</summary>{cleanup}</details></section>",
         "<section id=\"recipient-binding\" class=\"key-management-card\"><h2>Recipient keys and policies</h2>{recipients}",
         "<p class=\"key-inventory-notice\">Automatic online key discovery is off. Email addresses come from the public keys you import, not from independent identity verification. Compare full fingerprints through a trusted channel. Each saved change requires your current mailbox password and a fresh authenticator code. Importing a public key does not configure a private signing key.</p>",
-        "<details id=\"public-import\"{import_open}><summary>Import public key</summary>{import_form}</details></section></div></main>"
+        "<details id=\"public-import\"{import_open}><summary><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Import public key</span></summary>{import_form}</details></section></div></main>"
     ),personal=personal,account_open=opened("account"),policy_open=opened("policy"),import_open=opened("import"),notice=notice,revision=revision,account_form=account_form,account_actions=account_actions,policy_summary=policy_summary,policy_form=policy_form,cleanup=cleanup,recipients=recipients,rows=rows,overview=overview,account_action=if bound.is_some(){"Advanced: change private-key binding"}else{"Advanced: configure private-key binding"},header=app_header(account,csrf,"security"),state_label=if ready{"Verified public inventory and confirmed binding store"}else{"Binding changes unavailable"},toolbar_actions=toolbar_actions,import_form=import_form,public_state=public_state))
 }
 
@@ -893,7 +904,26 @@ mod binding_page_tests {
         assert!(enabled.contains("<section id=\"public-inventory\""));
         assert!(enabled.contains("name=\"public_inventory_revision\" value=\"aaaaaaaa"));
         assert!(enabled.contains("<summary>Remove public certificate</summary>"));
-        assert!(!enabled.contains("<button disabled>Import public key</button>"));
+        let toolbar = enabled
+            .split_once("<div class=\"key-management-toolbar\">")
+            .unwrap()
+            .1
+            .split("</div>")
+            .next()
+            .unwrap();
+        let import_link = toolbar
+            .split_once("href=\"/settings/keys?panel=import#public-import\">")
+            .expect("enabled public import destination")
+            .1
+            .split("</a>")
+            .next()
+            .unwrap();
+        assert!(import_link.contains("Import public key"));
+        assert!(!toolbar.split("<button ").skip(1).any(|button| button
+            .split("</button>")
+            .next()
+            .unwrap()
+            .contains("Import public key")));
         let body = render_key_management(
             account,
             "test",

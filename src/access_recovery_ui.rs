@@ -13,6 +13,11 @@ fn hidden(name: &str, value: &str) -> String {
     )
 }
 fn form(path: &str, csrf: &str, action: &str, fields: &str, button: &str) -> String {
+    let button = if path == "/settings/authenticator" {
+        crate::http_ui::presentation_label(button, "shield")
+    } else {
+        button.to_owned()
+    };
     format!("<form method=\"post\" action=\"{path}\" autocomplete=\"off\">{}{}<fieldset><legend>Confirm this step</legend>{fields}<button type=\"submit\">{button}</button></fieldset></form>", hidden("csrf_token", csrf), hidden("action", action))
 }
 fn otp(name: &str, label: &str) -> String {

@@ -1,8 +1,468 @@
+2026-11-10 — **S08-06 design approved; Presentation style contract IN_PROGRESS.** Owner approved final nine-page desktop/touch mockups and specified Appearance choices Icons or Text labels. Design acceptance only; all product tests/installed/UAT pending. S08-05 remains accepted. See [S08-06](UX_SLICE_S08_06.md).
+
 2026-11-10 (Asia/Bangkok) — **S08-05 PASS / ACCEPTED / CLOSED.** Owner states: “I have reviewed all OSMAP pages and APPROVE PASS this slice as complete”. This accepts the installed logo-continuity correction; matching engineering and independent-review evidence is reused. No S08-05 UAT remains pending. Original S08 stays accepted, S08-06/07 remain queued, and mechanical S01-02 parent obligations remain separately IN_PROGRESS. Historical failures and aggregate V14 limitations are preserved. Documentation-only closeout; no runtime action.
 
 2026-11-10 — **S08-05 resumed: logo continuity only.** Latest operator clarification narrows the November 9 branding plan to reusing the existing login logo across branded pages. Existing copy/navigation remain unchanged. Root integrates the preserved whole-S08 acceptance and extension records from the separate worktree without modifying that worktree. Original S08 stays accepted.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S01-01",
+  "original_requirement": "Theme tokens, persistent preference, system default; define authenticated versus pre-login storage and precedence",
+  "source_baseline": "c76c7c436d580bda20d278fc87979c24636f1ade",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root/s08_delivery_review"
+    ],
+    "scrum_lead": [
+      "/root/s08_scrum"
+    ],
+    "developers": [
+      "/root",
+      "/root/s08_scrum"
+    ],
+    "qa": [
+      "/root/s08_delivery_review"
+    ],
+    "security_review": [
+      "/root/s08_delivery_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/appearance.rs",
+    "src/http/routes_display.rs",
+    "src/settings_ui.rs",
+    "src/http/routes_reading_preferences.rs",
+    "src/http/appearance_tests.rs",
+    "src/http/reading_preferences_tests.rs",
+    "src/http_ui.rs",
+    "src/http_support.rs",
+    "src/http/approved.css",
+    "src/http/browser.js",
+    "src/http_ui_state_tests.rs",
+    "src/http/reader_toolbar.rs",
+    "src/welcome_ui.rs",
+    "src/scheduled_ui.rs",
+    "src/snooze_ui.rs",
+    "src/contacts_ui.rs",
+    "src/settings_general_ui.rs",
+    "src/settings_identity_ui.rs",
+    "src/settings_reading_ui.rs",
+    "src/settings_composition_ui.rs",
+    "src/settings_copies_ui.rs",
+    "src/settings_notifications_ui.rs",
+    "src/settings_openpgp_ui.rs",
+    "src/settings_security_ui.rs",
+    "src/settings_password_ui.rs",
+    "src/settings_recovery_ui.rs",
+    "src/settings_privacy_ui.rs",
+    "tests/v4_hostile_assurance.rs",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/osmap-v14-css-icon-foundation-gate.sh",
+    "maint/ux/wstg-route-controls.json",
+    "docs/UX_SLICE_S08_06.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/UX_DECISIONS.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/README.md",
+    "docs/design/s08-06-approved-20261110/01-compose-desktop.png",
+    "docs/design/s08-06-approved-20261110/01-compose-touch.png",
+    "docs/design/s08-06-approved-20261110/02-inbox-desktop.png",
+    "docs/design/s08-06-approved-20261110/02-inbox-touch.png",
+    "docs/design/s08-06-approved-20261110/03-drafts-desktop.png",
+    "docs/design/s08-06-approved-20261110/03-drafts-touch.png",
+    "docs/design/s08-06-approved-20261110/04-outbox-desktop.png",
+    "docs/design/s08-06-approved-20261110/04-outbox-touch.png",
+    "docs/design/s08-06-approved-20261110/05-sent-desktop.png",
+    "docs/design/s08-06-approved-20261110/05-sent-touch.png",
+    "docs/design/s08-06-approved-20261110/06-contacts-desktop.png",
+    "docs/design/s08-06-approved-20261110/06-contacts-touch.png",
+    "docs/design/s08-06-approved-20261110/07-archive-desktop.png",
+    "docs/design/s08-06-approved-20261110/07-archive-touch.png",
+    "docs/design/s08-06-approved-20261110/08-bin-desktop.png",
+    "docs/design/s08-06-approved-20261110/08-bin-touch.png",
+    "docs/design/s08-06-approved-20261110/09-mailbox-desktop.png",
+    "docs/design/s08-06-approved-20261110/09-mailbox-touch.png",
+    "docs/design/s08-06-approved-20261110/10-touch-navigation-expanded.png",
+    "docs/design/s08-06-approved-20261110/README.md",
+    "docs/design/s08-06-approved-20261110/SHA256SUMS",
+    "src/compose_result_ui.rs",
+    "src/reader_neighbours.rs",
+    "src/http/contacts_ui.rs",
+    "src/http/compose_delivery_ui.rs",
+    "src/http/compose_enhancement.rs",
+    "src/http/compose_preflight.rs",
+    "src/notifications_ui.rs",
+    "src/folder_create_ui.rs",
+    "src/folder_rename_ui.rs",
+    "src/key_inventory_ui.rs",
+    "maint/ux/general_workflows.py",
+    "maint/ux/appearance_workflows.py",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "src/http/personal_key_ui.rs",
+    "src/http/sessions_ui.rs",
+    "src/folder_delete_ui.rs",
+    "src/folder_disposition_ui.rs",
+    "src/access_recovery_ui.rs",
+    "src/http/compose_local.js",
+    "src/http/compose_actions.rs",
+    "src/http/compose_enhancement_tests.rs",
+    "src/http/password_local.js",
+    "src/http/routes_password.rs",
+    "src/http.rs",
+    "src/http/composition_preference_tests.rs",
+    "src/http/content_tests.rs",
+    "src/http/folder_rename_tests.rs",
+    "src/http/key_management_route_tests.rs",
+    "src/http/identity_preference_tests.rs",
+    "src/http/label_filter_tests.rs",
+    "src/http/mail_list_tests.rs",
+    "src/http/notification_tests.rs",
+    "src/http/password_tests.rs",
+    "src/http/stale_binding_recovery_tests.rs",
+    "src/http/ux_fixtures.rs",
+    "src/http/label_tests.rs"
+  ],
+  "outcome": "Each account selects Presentation style: Icons or Text labels in Appearance; actual authenticated pages preserve actions and readable facts, with labelled touch/hybrid fallback.",
+  "prerequisites": "Signed R2 anchor verified and all frozen hashes PASS 2026-11-10. Actual Appearance v2/v1 records, atomic account store, Runtime delegation and existing validated request projection inspected. Before native use recheck exact source/target/capabilities.",
+  "minimum_checks": [
+    "Real Appearance store/Runtime/HTTP save-load, legacy/corrupt/failure cases, theme merge and account isolation.",
+    "Explicit source control/action/disabled/content parity; existing actual synthetic route renderer.",
+    "Browser mouse/keyboard/touch/hybrid/narrow/wide/light/dark/zoom changed boundaries.",
+    "Independent source/results review; normal delivery gates/signing/push equality; matching OpenBSD/installed scope before UAT."
+  ],
+  "expected": "Text labels default; Icons reversible per account; touch/unknown input retains labels; mail/security authority and content unchanged.",
+  "accounting": {
+    "historical_elapsed": "UNKNOWN",
+    "started_at": "2026-11-10T10:13:20Z",
+    "allowance": "One initial candidate through essential checks and normal delivery. Browser fixture 180 seconds, native compiler 600 seconds/action, install 180 seconds, readiness 60 seconds. No automatic allowance increase.",
+    "failure_stop": "Two failures at a boundary stop retries for combined independent reassessment; clocks do not expire operator authority."
+  },
+  "results": [
+    {
+      "scope": "source/Runtime/HTTP",
+      "status": "PASS_SCOPED",
+      "reference": "Appearance32PASS, renderer62PASS, Compose9+2PASS, affected27+Identity1PASS; full Rust2356PASS0FAIL90explicitignores in acceptance02/04. Normal aggregate attempts remain FAIL at preserved subsequent boundaries."
+    },
+    {
+      "scope": "browser",
+      "status": "PASS_SCOPED",
+      "reference": "Browser02 scoped desktop; Browser03 corrected viewport13phonepages; Browser04 navigation/dynamic handlers/autosave; Browser05 nine themes/density/focus/layout/password observations. Physical mixed-input hardware and native browser-UI zoom unobserved."
+    },
+    {
+      "scope": "source review",
+      "status": "GO",
+      "reference": "Independent /root/s08_delivery_review inspected55fileproduction/testfreeze and3derivedregisters; no added production assumption or security-gate changes. Native/installed/human pending."
+    }
+  ],
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner approved final mockups, then specified Appearance Presentation style Icons or Text labels. Design approval only; product UAT pending."
+  },
+  "next_action": "Complete normal V10-V13 components, reviewed signed checkpoint and normal full pre-push security gate with two test threads; after publication bind exact signed archive and reviewed native/Web-only recipes to obsd1.",
+  "validator_scope": "S08-06 mapped mechanically to existing S01-01 Appearance boundary; preserve all original six obligations separately. No frozen plan or validator change.",
+  "extension_id": "S08-06",
+  "delivery_scope": "Operator-added Presentation style extension only; no whole-parent completion or mail/key/configuration change.",
+  "extension_state": "IN_PROGRESS",
+  "outcomes": [
+    {
+      "id": "original-appearance-obligations",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX02-001",
+        "R2-11-006",
+        "R2-12-001",
+        "R2-12-002",
+        "R2-12-003",
+        "R2-12-004"
+      ],
+      "frontend_backend_outcome": "Retain original theme/storage/precedence requirements and historical results independently; extension is not whole-parent qualification.",
+      "essential_qa": "Approved T01-T09; existing small changed-boundary tests, source/native/installed results kept separate.",
+      "next_action": "Implement/verify extension; retain historical original obligations without reacceptance.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": []
+    },
+    {
+      "id": "presentation-style",
+      "owner": "/root",
+      "requirement_ids": [
+        "R2-12-004"
+      ],
+      "frontend_backend_outcome": "Saved account Presentation style changes known actions/sidebar consistently, with labelled touch fallback and unchanged authority/content.",
+      "essential_qa": "Approved T01-T09; existing small changed-boundary tests, source/native/installed results kept separate.",
+      "next_action": "Implement/verify extension; retain historical original obligations without reacceptance.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Independently reviewed source55-file freeze ea70723a00fd30e515f299b7bc54b36449793ee3d6fe2b6cfc9ba125a8e26dd7; approved per-account style implementation."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Focused32/62/Compose9+2/affected27+Identity1 and full Rust2356PASS0FAIL90ignored; actual browser scoped observations. Gate failures and physical-device limits retained separately."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Each account selects Presentation style: Icons or Text labels in Appearance; actual authenticated pages preserve actions and readable facts, with labelled touch/hybrid fallback.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Prior design effort UNKNOWN. Static18page review only; two scope contradictions corrected before owner mockup approval. S08-05 accepted work order retained verbatim below. Mechanical validator initially refused directory allowlist, then fractional/offset UTC stamp; combined independent schema review also corrected local integration evidence level to source. These are declaration failures, not product results. First focused appearance compile refused E0425 before tests due misplaced settings-nav match in native select helper; root restored option escaping and applied match in actual nav loop. Retained log appearance-focused-20261110-01.log SHA256bd4cc7f7957af6508a805e3e008df34a826d7363be40aec0e929b4c56483e4f1. Independent review also identified sidebar clipping/narrow reachability/visible-caption gaps, corrected before next candidate. Renderer focused01 compiled then54PASS/8FAIL due inner-label adjacency; readback source review found original form contracts retained and strengthened vacuous no-action negatives. Log SHA256000e156f8cfaba25fd9842843d3c66050b7d7500e9a202d90420b7a3d56714f3. Independent finite inventory identified additional primary key/folder/session/authenticator controls before coverage closure. Browser01 stopped after4desktop checks on existing fixture Sent shortcut unavailable (actualstatus unretained, priorstage metrics explicitlyidentified). Browser02 passed13desktop/focus/narrow checks but touchcaptureNOT_QUALIFIED: isolated CSS/mediaevents proved fullPage/directCDP capture flips coarse to fine input. Independent combinedreassessment approved one viewport-only touchcapture with before/during/after media invariants; sources/tempfixtures retained. No productfallbackFAIL inferred. Browser03 strict caption-count equality36to40 refused despite allcaptionsvisible and invariantinput; independent combinedreassessment removed invented countprerequisite and preserved27scopedobservations. Browser04 remaining5checks passed, but visualwide-clockoverlap remains separatelyunqualified untiltargetedfix. Passwordpageshow/click captionwipes corrected with exactCSPscriptpin; same12+3negativeconsumersPASS. Read-onlyfmtcheckrefused5ownedfiles; boundedformattercorrectedonlythese. Recordv3 rollbacklimitation independently reviewed/documented beforehost; no ownerprefs mutated. First normal acceptance gate endedFAIL atRusttests2333PASS23FAIL90explicitignores, no compilererror; log5f4f7d477c8008e3f43f8412043e43c29329260f2c0accd352caf2c31432a402 started11:32:39Z ended11:33:48Z. Combinedindependent review requested before next workflow retry, including earlier8renderer assertions. Diagnose real links/permissions/CSP outcomes before adapting old label-adjacency/extraction consumers; no guard weakening. Browser05 scoped9PASS supersedes wideclockoverlap: normalflowclock/tools nonoverlap, themes/density/focus/200percent-equivalentlayout/passwordlabels pass; physicalhybrid unobserved. Combinedreview approved oldmarkupconsumer corrections and stronger negatives. Focusedexact28 ran27PASS1FAIL at laterIdentitycaption assertion105 (earlier refusal/corruption checkspassed), log50bb1ccd39f00ce3f3abbe7f2f70427359b5961fc4f4ed2f4800a0b80dae6875,16seconds. Preserve27PASS; combinedreview and onlyremainingcase retest required. Identityoriginalcase1PASS14cc9cd1064a48b2b54c8a77cc01ba29685f14ca8032cc7f3da3e0b9e516857e. Acceptance02Rust2356PASS0FAIL90ignores thenmissingdesignREADMEindexFAIL e8797e9c08c9485170b61a921b63565b91ad49a1a9c532fb2289649de7b7959a; actualdocguardafterindexfixPASS. Acceptance03Rust2355PASS1FAIL90ignores unchangedimmediateadmissioncase637ErrorUnavailable a29e835f96d879f037e877bf5871c35f19b01aaba1642a33e2eddf467c4e4d65; causeUNKNOWN, retainedresultcannotdisambiguateadmission/cleanupfailures. IsolatedoriginalcasePASS e4c3a371c3261bd9f43598393f41db9ed0b7dd6c8ce16b3e3077d5749232dcff. Combinedindependentreassessment approvednoothergateworkflow/RUST_TEST_THREADS2 withoutguardchanges. Acceptance04Rust2356PASS0FAIL90ignores thenV10derivedtestcount/hashdriftFAIL5127868cdf2c6a4a3e6941e921999202a352b5bc6aa058b05eb12bc3c3e4b058; normalhooksunchanged, generatedregisterrefreshonly pending. CurrentV14aggregateb3587050b64274b859ee5a5841ebc1bc50d4656381c65c6ada0ce687cf46b1c7 stillFAILsameoldreaderfuturetext; remainingOpenPGPoldscaffoldalsoFAIL, compose/account/exactCSP/accessibility/finalcloseoutscopedPASS. NativeidentityreadonlyPASScurrentoldf676; nohostmutation. Privatebuild/install/readinessrecipesreviewed aftercheckedfindandfixedfailureaccountingcorrections. Actualnative10localproducer/consumerPASS andzero/wrongcount/failsummaryrefused07d359fdfef967f9ee15438634558620b2ae32eef7e480606e56b8429415a66e. Existingunchangedscannersrefreshed3derivedregisters: refined13225=13222testfixture+3unchangedmediumruntime, high_after0. Directscanner/V11/V10governancePASS0ea08c6291a17546ed2c0ca886c57a09205b2d54fcfa4a3c4d3ddbae6eb12532. Independentactualsource/derivedreviewGO; source+derivedfreeze58files e37d40ec9656b0c8f9511f1ea8d8dc7250473778c2d001da40dfe05139cc00df. NormalremainingV10-V13components thennormalcommit/pushhooksplanned; earlieraggregatefailuresretained. Normalmakev10-check/v11-check/v12-check/v13-checkPASS a7fa540acde67987d6af7bf3bc7aab6046dea5be7675c85c1194748719d3f3d2,8seconds. IndependentfinalsourceGO; ordinarysignedcommit/fullnormalpushhooknext, nohookbypass.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-10T10:13:20Z",
+      "elapsed_status": "UNMEASURED",
+      "elapsed_seconds": null
+    },
+    "attempts": [],
+    "next_attempt": null
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S01-01",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_06.md",
+      "sha256": "973d9f7c48cccf45b6aa1df54209e2c1a471a9031280ef8b2bc8e979c6cd0033"
+    },
+    "design": {
+      "journey": "Each account selects Presentation style: Icons or Text labels in Appearance; actual authenticated pages preserve actions and readable facts, with labelled touch/hybrid fallback.",
+      "frontend": "Explicit trusted action labels/icons and scoped CSS reuse source-owned templates; field/content/status/confirmation text stays readable.",
+      "backend": "Existing Appearance account store and Runtime gateway only, no new backend authority.",
+      "interfaces": "Existing authenticated /settings/display form with typed presentation_style and validated account response projection.",
+      "persistence": "Backward-compatible Appearance sidecar; no icon choice accepted from cookies; theme-only merge preserves style.",
+      "security": "Keep authentication/CSRF/Origin/escaping/CSP/hostile reader body and original form actions/revisions/disabled state.",
+      "failure_recovery": "Labelled default on unavailable reads without overwrite; failed saves unconfirmed; Web-only matching install/rollback when qualified."
+    },
+    "tests": [
+      {
+        "id": "retained-appearance-negative",
+        "outcome_ids": [
+          "original-appearance-obligations"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Original frozen parent scope and prior evidence.",
+        "action": "Preserve original obligations and historical statuses without a fresh parent acceptance claim.",
+        "expected": "No original unresolved requirement is erased or declared passed by extension tests.",
+        "preserved": "Original scope/evidence/status.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "retained-appearance-positive",
+        "outcome_ids": [
+          "original-appearance-obligations"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Original frozen parent scope and prior evidence.",
+        "action": "Preserve original obligations and historical statuses without a fresh parent acceptance claim.",
+        "expected": "No original unresolved requirement is erased or declared passed by extension tests.",
+        "preserved": "Original scope/evidence/status.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S08-06-T01",
+        "outcome_ids": [
+          "presentation-style"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Approved spec plus actual matching source/runtime; T08 requires independent passing candidate and bounded exact-target recipe; T09 requires engineering readiness.",
+        "action": "Inspect approved mockups, finite mapping and actual existing source contracts.",
+        "expected": "All definitions/prerequisites match actual source and exact owner labels.",
+        "preserved": "Existing owner mail, keys, credentials, backend configuration, action semantics and historical failures.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_06.md retained verification history; focused Appearance/Runtime/HTTP/rendering tests and matching full Rust2356PASS; independent source freeze ea70723a00fd30e515f299b7bc54b36449793ee3d6fe2b6cfc9ba125a8e26dd7. Source scope only."
+        ]
+      },
+      {
+        "id": "S08-06-T02",
+        "outcome_ids": [
+          "presentation-style"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Approved spec plus actual matching source/runtime; T08 requires independent passing candidate and bounded exact-target recipe; T09 requires engineering readiness.",
+        "action": "Render Text labels/Icons controls preserving original action/value/content/disabled states.",
+        "expected": "Known actions change only presentation; no generic misleading glyph.",
+        "preserved": "Existing owner mail, keys, credentials, backend configuration, action semantics and historical failures.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_06.md retained verification history; focused Appearance/Runtime/HTTP/rendering tests and matching full Rust2356PASS; independent source freeze ea70723a00fd30e515f299b7bc54b36449793ee3d6fe2b6cfc9ba125a8e26dd7. Source scope only."
+        ]
+      },
+      {
+        "id": "S08-06-T03",
+        "outcome_ids": [
+          "presentation-style"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Approved spec plus actual matching source/runtime; T08 requires independent passing candidate and bounded exact-target recipe; T09 requires engineering readiness.",
+        "action": "Exercise actual Appearance store/Runtime/HTTP save/read/theme-only/reopen/two-account paths.",
+        "expected": "Saved account style persists and remains isolated; old records use Text labels.",
+        "preserved": "Existing owner mail, keys, credentials, backend configuration, action semantics and historical failures.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_06.md retained verification history; focused Appearance/Runtime/HTTP/rendering tests and matching full Rust2356PASS; independent source freeze ea70723a00fd30e515f299b7bc54b36449793ee3d6fe2b6cfc9ba125a8e26dd7. Source scope only."
+        ]
+      },
+      {
+        "id": "S08-06-T04",
+        "outcome_ids": [
+          "presentation-style"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Approved spec plus actual matching source/runtime; T08 requires independent passing candidate and bounded exact-target recipe; T09 requires engineering readiness.",
+        "action": "Render actual authenticated mail/contacts/settings/notification route families.",
+        "expected": "All agreed actions remain reachable; pre-send/confirm/state restrictions unchanged.",
+        "preserved": "Existing owner mail, keys, credentials, backend configuration, action semantics and historical failures.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_06.md retained verification history; focused Appearance/Runtime/HTTP/rendering tests and matching full Rust2356PASS; independent source freeze ea70723a00fd30e515f299b7bc54b36449793ee3d6fe2b6cfc9ba125a8e26dd7. Source scope only."
+        ]
+      },
+      {
+        "id": "S08-06-T05",
+        "outcome_ids": [
+          "presentation-style"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Approved spec plus actual matching source/runtime; T08 requires independent passing candidate and bounded exact-target recipe; T09 requires engineering readiness.",
+        "action": "Submit invalid/duplicate/CSRF/Origin/foreign requests and inspect refused writes and disabled controls.",
+        "expected": "Refusal preserves stored choices and authority; native content/form labels remain readable.",
+        "preserved": "Existing owner mail, keys, credentials, backend configuration, action semantics and historical failures.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_06.md retained verification history; focused Appearance/Runtime/HTTP/rendering tests and matching full Rust2356PASS; independent source freeze ea70723a00fd30e515f299b7bc54b36449793ee3d6fe2b6cfc9ba125a8e26dd7. Source scope only."
+        ]
+      },
+      {
+        "id": "S08-06-T06",
+        "outcome_ids": [
+          "presentation-style"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Approved spec plus actual matching source/runtime; T08 requires independent passing candidate and bounded exact-target recipe; T09 requires engineering readiness.",
+        "action": "Actual browser desktop keyboard/pointer and touch/hybrid emulation across themes/widths/zoom.",
+        "expected": "Hover/focus names and labelled touch actions/navigation remain usable without overflow.",
+        "preserved": "Existing owner mail, keys, credentials, backend configuration, action semantics and historical failures.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "Browser02 desktop, Browser03 phone13pages, Browser04 dynamic handlers/nav/autosave, Browser05 nine layout/theme/density/password observations PASS. Touch coarse emulation and any-coarse CSS rule inspected; physical mixed-input device and native UI zoom unobserved. Independent final scope reconciliation pending."
+        ]
+      },
+      {
+        "id": "S08-06-T07",
+        "outcome_ids": [
+          "presentation-style"
+        ],
+        "kind": "recovery",
+        "level": "source",
+        "prerequisites": "Approved spec plus actual matching source/runtime; T08 requires independent passing candidate and bounded exact-target recipe; T09 requires engineering readiness.",
+        "action": "Missing/legacy/corrupt/unavailable reads and injected atomic-save interruption.",
+        "expected": "Truthful default/unconfirmed state, no silent choice overwrite or unsent-work loss.",
+        "preserved": "Existing owner mail, keys, credentials, backend configuration, action semantics and historical failures.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S08_06.md retained verification history; focused Appearance/Runtime/HTTP/rendering tests and matching full Rust2356PASS; independent source freeze ea70723a00fd30e515f299b7bc54b36449793ee3d6fe2b6cfc9ba125a8e26dd7. Source scope only."
+        ]
+      },
+      {
+        "id": "S08-06-T08",
+        "outcome_ids": [
+          "presentation-style"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Approved spec plus actual matching source/runtime; T08 requires independent passing candidate and bounded exact-target recipe; T09 requires engineering readiness.",
+        "action": "Independent review, normal gates and signed publication; matching OpenBSD/Web-only installed proof with rollback.",
+        "expected": "Exact tested source/installed artifact and preserved mail/configuration/account boundaries.",
+        "preserved": "Existing owner mail, keys, credentials, backend configuration, action semantics and historical failures.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "Independent source review GO and normal V10-V13 components PASS a7fa540acde67987d6af7bf3bc7aab6046dea5be7675c85c1194748719d3f3d2. Full normal push hook, native and installed proof pending."
+        ]
+      },
+      {
+        "id": "S08-06-T09",
+        "outcome_ids": [
+          "presentation-style"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Approved spec plus actual matching source/runtime; T08 requires independent passing candidate and bounded exact-target recipe; T09 requires engineering readiness.",
+        "action": "Owner checks saved style, desktop primary/sidebar icons and labelled touch behavior.",
+        "expected": "Explicit separate installed-product acceptance; mockup approval not substituted.",
+        "preserved": "Existing owner mail, keys, credentials, backend configuration, action semantics and historical failures.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "All required extension source/browser/native/installed/security/recovery evidence PASS and normal signed publication; parent and release state separate.",
+    "human_exit": "Owner explicitly accepts installed saved style and labelled touch behavior after engineering readiness."
+  }
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+## Preserved accepted S08-05 work order — 2026-11-10
+
+<!-- OSMAP_HISTORICAL_WORK_ORDER_S08_05 -->
 ```json
 {
   "version": 1,
@@ -338,7 +798,7 @@
   }
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_HISTORICAL_WORK_ORDER_S08_05 -->
 
 2026-11-09 (Asia/Bangkok) — **S08 extension contract definition.** Approved order: S08-05 shared branding, S08-06 account-specific icon display mode on all pages, S08-07 Junk folder. [S08-05](UX_SLICE_S08_05.md) now specifies T01–T09 and the S05 failure → analyse → smallest supported correction → retest methodology required for all three extensions, including cumulative failures, independent reassessment after two failures at the same boundary, bounded gates and separate owner acceptance. Planning baseline: `501f6430a5ec2eda95e8d6a942fee2268ab4e6a6` plus preserved existing changes. Status: CONTRACT_DEFINED; implementation/native/browser/installed checks and owner UAT NOT_RUN for these extensions. No subagent review, build, installation or publication is claimed by this planning entry. Original S08 acceptance below remains valid; Documents remains removed from scope.
 

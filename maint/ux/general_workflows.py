@@ -143,7 +143,8 @@ def main():
             checks.append("native default format applies to blank Compose; existing draft and source-backed reply/reply-all/forward stay Plain with notice; invalid/duplicate/missing values and absent/invalid CSRF leave durable bytes unchanged")
             # Establish non-default hidden fields through their actual routes.
             post(alice, "/settings/display", dict(csrf_token=csrf(alice), appearance="system", density="comfortable",
-                font_size="small", reader_layout="split", message_preview="1"))
+                font_size="small", reader_layout="split", message_preview="1",
+                presentation_style=alice.locator('form[action="/settings/display"] [name="presentation_style"]').input_value()))
             post(alice, "/settings", dict(csrf_token=csrf(alice), html_display_preference="prefer_plain_text", archive_mailbox_name=""))
             visit(alice)
             alice.get_by_label("Theme", exact=True).select_option("dark")
@@ -217,7 +218,8 @@ def main():
             # Reference geometry uses the normal text size/density. Durability
             # assertions above have already checked all non-default preferences.
             post(fresh, "/settings/display", dict(csrf_token=csrf(fresh), appearance="light", density="comfortable",
-                font_size="medium", reader_layout="split", show_avatars="1", message_preview="1"))
+                font_size="medium", reader_layout="split", show_avatars="1", message_preview="1",
+                presentation_style=fresh.locator('form[action="/settings/display"] [name="presentation_style"]').input_value()))
             visit(fresh)
             for theme, width, forced in [("light",1600,False),("light",360,False),("dark",1600,False),("dark",360,False),("dark",1600,True),("dark",360,True)]:
                 post(fresh, "/settings/appearance", dict(csrf_token=csrf(fresh), appearance=theme))

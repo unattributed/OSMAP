@@ -59,7 +59,7 @@ pub(crate) fn render_snooze_page(m: &SnoozePageModel<'_>) -> TrustedHtml {
         .map(|value| format!("&amp;return_to={}", escape_html(&url_encode(value))))
         .unwrap_or_default();
     let reload = if !m.available {
-        format!("<p><a href=\"/snooze?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}{reload_context}\">Reload saved snooze</a> before another change. Your submitted time is retained below.</p>",escape_html(&url_encode(m.identity.folder())),m.identity.uid(),escape_html(&url_encode(m.identity.mailbox_guid())),escape_html(&url_encode(m.identity.message_guid())))
+        format!("<p><a href=\"/snooze?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}{reload_context}\"><span class=\"presentation-icon presentation-icon-refresh\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Reload saved snooze</span></a> before another change. Your submitted time is retained below.</p>",escape_html(&url_encode(m.identity.folder())),m.identity.uid(),escape_html(&url_encode(m.identity.mailbox_guid())),escape_html(&url_encode(m.identity.message_guid())))
     } else {
         String::new()
     };
@@ -76,14 +76,14 @@ pub(crate) fn render_snooze_page(m: &SnoozePageModel<'_>) -> TrustedHtml {
         m.until_local.into()
     };
     let cancel = if m.current_until.is_some() {
-        format!("<form method=post action=\"/snooze/change\">{}<button class=secondary name=action value=cancel {}>Cancel snooze</button></form>",fields(m.csrf,m.revision,m.identity),if m.available{""}else{"disabled"})
+        format!("<form method=post action=\"/snooze/change\">{}<button class=secondary name=action value=cancel {}><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Cancel snooze</span></button></form>",fields(m.csrf,m.revision,m.identity),if m.available{""}else{"disabled"})
     } else {
         String::new()
     };
     let back = crate::mail_navigation::safe_mail_return(m.return_to)
         .map(|v| {
             format!(
-                "<a class=\"button-link secondary\" href=\"{}\">Back to message or list</a>",
+                "<a class=\"button-link secondary\" href=\"{}\"><span class=\"presentation-icon presentation-icon-back\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Back to message or list</span></a>",
                 escape_html(&v)
             )
         })
@@ -101,7 +101,7 @@ pub(crate) fn render_snooze_page(m: &SnoozePageModel<'_>) -> TrustedHtml {
             )
         })
         .unwrap_or_default();
-    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell snooze-page\" tabindex=-1><div class=page-intro><h1>Snooze message</h1><p>Choose when this message returns to its source list.</p></div>{notice}<section class=\"panel snooze-card\"><h2>Return time</h2><p class=snooze-reference>{} · Message #{}</p>{state}{reload}<p class=snooze-now>Current time ({zone}): {}</p><form method=post action=\"/snooze/change\">{}{return_field}{zone_field}<fieldset {}><label for=snooze-until>Return at ({zone})</label><input id=snooze-until name=until type=datetime-local step=60 min=\"{}\" max=\"{}\" value=\"{}\" required aria-describedby=snooze-limits><p id=snooze-limits>Choose a future time in your saved OSMAP timezone within 30 days. Up to 100 messages can be snoozed per account.</p><button name=action value=set>Save snooze</button></fieldset></form>{cancel}<p class=snooze-scope>{SCOPE}</p><nav class=snooze-links>{back}<a class=\"button-link secondary\" href=\"/snoozed\">Snoozed messages</a></nav></section></main>",app_header(m.account,m.csrf,"snooze"),escape_html(m.identity.folder()),m.identity.uid(),escape_html(&date(m.now, m.offset)),fields(m.csrf,m.revision,m.identity),if m.available && m.offset.is_some(){""}else{"disabled"},m.offset.and_then(|o| o.schedule_input((m.now/60+1)*60)).unwrap_or_default(),m.offset.and_then(|o| o.schedule_input(m.now.saturating_add(MAX_DURATION))).unwrap_or_default(),escape_html(&value)))
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell snooze-page\" tabindex=-1><div class=page-intro><h1>Snooze message</h1><p>Choose when this message returns to its source list.</p></div>{notice}<section class=\"panel snooze-card\"><h2>Return time</h2><p class=snooze-reference>{} · Message #{}</p>{state}{reload}<p class=snooze-now>Current time ({zone}): {}</p><form method=post action=\"/snooze/change\">{}{return_field}{zone_field}<fieldset {}><label for=snooze-until>Return at ({zone})</label><input id=snooze-until name=until type=datetime-local step=60 min=\"{}\" max=\"{}\" value=\"{}\" required aria-describedby=snooze-limits><p id=snooze-limits>Choose a future time in your saved OSMAP timezone within 30 days. Up to 100 messages can be snoozed per account.</p><button name=action value=set><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save snooze</span></button></fieldset></form>{cancel}<p class=snooze-scope>{SCOPE}</p><nav class=snooze-links>{back}<a class=\"button-link secondary\" href=\"/snoozed\"><span class=\"presentation-icon presentation-icon-clock\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Snoozed messages</span></a></nav></section></main>",app_header(m.account,m.csrf,"snooze"),escape_html(m.identity.folder()),m.identity.uid(),escape_html(&date(m.now, m.offset)),fields(m.csrf,m.revision,m.identity),if m.available && m.offset.is_some(){""}else{"disabled"},m.offset.and_then(|o| o.schedule_input((m.now/60+1)*60)).unwrap_or_default(),m.offset.and_then(|o| o.schedule_input(m.now.saturating_add(MAX_DURATION))).unwrap_or_default(),escape_html(&value)))
 }
 pub(crate) fn render_snoozed_page(
     account: &str,
@@ -121,7 +121,7 @@ pub(crate) fn render_snoozed_page(
         body.push_str(&format!("<p class=snooze-count>{} of {MAX_MARKERS} snooze markers used.</p><ul class=snooze-markers>",r.markers().len()));
         for m in r.markers() {
             let i = m.identity();
-            body.push_str(&format!("<li><div><h2>{} · Message #{}</h2><p>Returns <time datetime=\"{}\">{}</time></p></div><form method=post action=\"/snooze/change\">{}<button class=secondary name=action value=cancel>Cancel snooze</button></form></li>",escape_html(i.folder()),i.uid(),crate::logging::format_unix_timestamp_utc(m.until()),escape_html(&date(m.until(), offset)),fields(csrf,r.revision(),i)))
+            body.push_str(&format!("<li><div><h2>{} · Message #{}</h2><p>Returns <time datetime=\"{}\">{}</time></p></div><form method=post action=\"/snooze/change\">{}<button class=secondary name=action value=cancel><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Cancel snooze</span></button></form></li>",escape_html(i.folder()),i.uid(),crate::logging::format_unix_timestamp_utc(m.until()),escape_html(&date(m.until(), offset)),fields(csrf,r.revision(),i)))
         }
         if r.markers().is_empty() {
             body.push_str("<li>No active snooze markers.</li>")
@@ -130,5 +130,5 @@ pub(crate) fn render_snoozed_page(
     } else {
         body.push_str("<p>Snooze markers could not be loaded. Their state is unknown; cancellation is unavailable.</p>")
     }
-    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell snooze-page\" tabindex=-1><div class=page-intro><h1>Snoozed messages</h1><p>Private return times for your messages.</p></div><section class=\"panel snooze-card\">{body}<p class=snooze-scope>{SCOPE}</p><nav class=snooze-links><a class=\"button-link secondary\" href=\"/snoozed\">Refresh markers</a><a class=\"button-link secondary\" href=\"/mailboxes\">Mailbox</a></nav></section></main>",app_header(account,csrf,"snoozed")))
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell snooze-page\" tabindex=-1><div class=page-intro><h1>Snoozed messages</h1><p>Private return times for your messages.</p></div><section class=\"panel snooze-card\">{body}<p class=snooze-scope>{SCOPE}</p><nav class=snooze-links><a class=\"button-link secondary\" href=\"/snoozed\"><span class=\"presentation-icon presentation-icon-refresh\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Refresh markers</span></a><a class=\"button-link secondary\" href=\"/mailboxes\"><span class=\"presentation-icon presentation-icon-inbox\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Mailbox</span></a></nav></section></main>",app_header(account,csrf,"snoozed")))
 }

@@ -64,7 +64,7 @@ fn label(job: &JobView) -> &'static str {
 }
 fn reason(reason: BlockReason) -> &'static str {
     match reason {
-        BlockReason::KeyLocked => "Personal key access was locked when this scheduled send was checked. <a href=\"/settings/keys\">Open Your personal key in Settings</a> and unlock it, then choose Send now or authorize a new send time below. Unlocking alone does not restart this message.",
+        BlockReason::KeyLocked => "Personal key access was locked when this scheduled send was checked. <a href=\"/settings/keys\"><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Your personal key in Settings</span></a> and unlock it, then choose Send now or authorize a new send time below. Unlocking alone does not restart this message.",
         BlockReason::SessionExpired => "The original send authorization expired. Sign in again, review this message, then choose Send now or authorize a new send time below.",
         BlockReason::AccountChanged => "Account protection changed after this message was authorized. Review your account security and this message before choosing Send now or authorizing a new send time.",
         BlockReason::ServiceUnavailable => "A required service was unavailable when this scheduled send was checked. Review this message and try Send now or a new send time once the service is available. If it fails again, contact the mail operator.",
@@ -93,13 +93,13 @@ fn time_input(display: Display, value: u64, context: &str) -> String {
     format!("<label for=scheduled-due-{context}>Send at ({})</label><input id=scheduled-due-{context} name=due_at type=datetime-local step=60 min=\"{min}\" max=\"{max}\" value=\"{value}\" required>{}<p>Current time in your saved OSMAP timezone: {} {}. Fixed offsets do not automatically adjust for daylight saving.</p>",offset.label(),hidden("timezone_offset",&offset.as_str()),current.replace('T'," "),offset.label())
 }
 fn shell(account: &str, csrf: &str, title: &str, body: String) -> TrustedHtml {
-    TrustedHtml::from_template(format!("{}<main id=main-content class=\"page-shell scheduled-page\" tabindex=-1><div class=page-intro><h1>{title}</h1><p>Manage scheduled messages and send attempts that need attention.</p></div>{body}<nav><a href=\"/outbox\">Outbox</a> · <a href=\"/drafts\">Drafts</a> · <a href=\"/compose\">Compose</a></nav></main>",crate::http_ui::app_header(account,csrf,"outbox")))
+    TrustedHtml::from_template(format!("{}<main id=main-content class=\"page-shell scheduled-page\" tabindex=-1><div class=page-intro><h1>{title}</h1><p>Manage scheduled messages and send attempts that need attention.</p></div>{body}<nav><a href=\"/outbox\"><span class=\"presentation-icon presentation-icon-outbox\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Outbox</span></a> · <a href=\"/drafts\"><span class=\"presentation-icon presentation-icon-drafts\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Drafts</span></a> · <a href=\"/compose\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Compose</span></a></nav></main>",crate::http_ui::app_header(account,csrf,"outbox")))
 }
 fn field(name: &str, title: &str, value: &str) -> String {
     format!("<label for=scheduled-{name}>{title}</label><input id=scheduled-{name} name={name} value=\"{}\">",escape_html(value))
 }
 fn summary(to: &str, cc: &str, bcc: &str, subject: &str, body: &str, attachments: usize) -> String {
-    format!("<dl><dt>To</dt><dd>{}</dd><dt>Cc</dt><dd>{}</dd><dt>Bcc</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>Saved attachments</dt><dd>{attachments}</dd></dl><details><summary>Message text</summary><pre>{}</pre></details>",escape_html(to),escape_html(cc),escape_html(bcc),escape_html(subject),escape_html(body))
+    format!("<dl><dt>To</dt><dd>{}</dd><dt>Cc</dt><dd>{}</dd><dt>Bcc</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>Saved attachments</dt><dd>{attachments}</dd></dl><details><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Message text</span></summary><pre>{}</pre></details>",escape_html(to),escape_html(cc),escape_html(bcc),escape_html(subject),escape_html(body))
 }
 
 pub(crate) fn render_new(
@@ -111,7 +111,7 @@ pub(crate) fn render_new(
 ) -> TrustedHtml {
     let now = display.now;
     let d = &draft.request;
-    let body=format!("<section class=panel><h2>Review saved message</h2>{}<p>This schedules the exact saved revision shown here. Return to the draft to change the message or its attachments.</p><form method=post action=\"/scheduled/create\">{}{}{}{}{}<button>Schedule this saved message</button></form><p><a href=\"/draft?id={}\">Back to draft</a></p></section>",summary(&d.recipients_text,&d.cc_text,&d.bcc_text,&d.subject,&d.body,d.attachments.len()),hidden("csrf_token",csrf),hidden("draft",&draft.draft_id),hidden("revision",&revision.to_string()),time_input(display,now.saturating_add(3600),"new"),limits(),escape_html(&draft.draft_id));
+    let body=format!("<section class=panel><h2>Review saved message</h2>{}<p>This schedules the exact saved revision shown here. Return to the draft to change the message or its attachments.</p><form method=post action=\"/scheduled/create\">{}{}{}{}{}<button><span class=\"presentation-icon presentation-icon-clock\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Schedule this saved message</span></button></form><p><a href=\"/draft?id={}\"><span class=\"presentation-icon presentation-icon-drafts\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Back to draft</span></a></p></section>",summary(&d.recipients_text,&d.cc_text,&d.bcc_text,&d.subject,&d.body,d.attachments.len()),hidden("csrf_token",csrf),hidden("draft",&draft.draft_id),hidden("revision",&revision.to_string()),time_input(display,now.saturating_add(3600),"new"),limits(),escape_html(&draft.draft_id));
     shell(
         account,
         csrf,
@@ -164,7 +164,7 @@ pub(crate) fn render_outbox(
         ));
         for history in [false, true] {
             if history {
-                body.push_str("<details><summary>Completed and cancelled messages</summary>");
+                body.push_str("<details><summary><span class=\"presentation-icon presentation-icon-clock\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Completed and cancelled messages</span></summary>");
             }
             body.push_str("<div class=table-wrap tabindex=0 role=region aria-label=\"Scheduled messages\"><table><thead><tr><th scope=col>Message</th><th scope=col>Send time</th><th scope=col>Status</th><th scope=col>Actions</th></tr></thead><tbody>");
             let mut rows = 0;
@@ -172,9 +172,9 @@ pub(crate) fn render_outbox(
                 matches!(j.state, State::Submitted | State::Cancelled | State::Failed) == history
             }) {
                 rows += 1;
-                body.push_str(&format!("<tr><td>{}</td><td><time datetime=\"{}\">{}</time></td><td>{}</td><td><a href=\"/outbox?id={}\">View message and controls</a>",escape_html(if job.subject.is_empty(){"(No subject)"}else{&job.subject}),crate::logging::format_unix_timestamp_utc(job.due_at),escape_html(&shown_date(job.due_at,display)),label(job),escape_html(&job.id)));
+                body.push_str(&format!("<tr><td>{}</td><td><time datetime=\"{}\">{}</time></td><td>{}</td><td><a href=\"/outbox?id={}\"><span class=\"presentation-icon presentation-icon-eye\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">View message and controls</span></a>",escape_html(if job.subject.is_empty(){"(No subject)"}else{&job.subject}),crate::logging::format_unix_timestamp_utc(job.due_at),escape_html(&shown_date(job.due_at,display)),label(job),escape_html(&job.id)));
                 if editable(job.state) || job.state == State::Staged {
-                    body.push_str(&format!("<form method=post action=\"/scheduled/change\">{}{}{}<button class=secondary name=action value=cancel>Cancel</button></form>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string())));
+                    body.push_str(&format!("<form method=post action=\"/scheduled/change\">{}{}{}<button class=secondary name=action value=cancel><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Cancel</span></button></form>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string())));
                 }
                 body.push_str("</td></tr>");
             }
@@ -197,7 +197,7 @@ pub(crate) fn render_outbox(
         Some(attempts) => {
             body.push_str("<div class=table-wrap tabindex=0 role=region aria-label=\"Send attempts\"><table><thead><tr><th scope=col>Message</th><th scope=col>Attempted</th><th scope=col>Status</th><th scope=col>Actions</th></tr></thead><tbody>");
             for attempt in attempts {
-                body.push_str(&format!("<tr><td>{}</td><td>{}</td><td>{}</td><td><a href=\"/compose?receipt={}\">Review send result</a></td></tr>", escape_html(if attempt.subject.is_empty() {"(No subject)"} else {&attempt.subject}), escape_html(&shown_date(attempt.created_at, display)), escape_html(attempt.status), escape_html(&attempt.intent)));
+                body.push_str(&format!("<tr><td>{}</td><td>{}</td><td>{}</td><td><a href=\"/compose?receipt={}\"><span class=\"presentation-icon presentation-icon-eye\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Review send result</span></a></td></tr>", escape_html(if attempt.subject.is_empty() {"(No subject)"} else {&attempt.subject}), escape_html(&shown_date(attempt.created_at, display)), escape_html(attempt.status), escape_html(&attempt.intent)));
             }
             body.push_str("</tbody></table></div>");
         }
@@ -229,7 +229,7 @@ pub(crate) fn render_outbox(
             ));
             body.push_str(&format!("<p>Saved protection choices: signing {}; encryption {}; include your key for encrypted access {}. Current account and recipient policies are checked again before sending.</p>",if p.protection.sign{"requested"}else{"not requested"},if p.protection.encrypt{"requested"}else{"not requested"},if p.protection.encrypt_to_self{"yes"}else{"no"}));
             if editable(job.state) {
-                body.push_str(&format!("<details><summary>Edit message or send time</summary><form method=post action=\"/scheduled/edit\">{}{}{}{}{}{}{}<label for=scheduled-body>Message text (saved format: {})</label><textarea id=scheduled-body name=body rows=12 required>{}</textarea>{}<p>Saved attachments, sender, message format, reply headers and protection choices are preserved. Return to Drafts to change attachments or protection choices.</p><button>Save scheduled message</button></form></details>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string()),field("to","To",&p.recipients.join(", ")),field("cc","Cc",&p.cc_recipients.join(", ")),field("bcc","Bcc",&p.bcc_recipients.join(", ")),field("subject","Subject",&p.subject),escape_html(p.body_format.as_str()),escape_html(&p.body),time_input(display,job.due_at,"edit")));
+                body.push_str(&format!("<details><summary><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Edit message or send time</span></summary><form method=post action=\"/scheduled/edit\">{}{}{}{}{}{}{}<label for=scheduled-body>Message text (saved format: {})</label><textarea id=scheduled-body name=body rows=12 required>{}</textarea>{}<p>Saved attachments, sender, message format, reply headers and protection choices are preserved. Return to Drafts to change attachments or protection choices.</p><button><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save scheduled message</span></button></form></details>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string()),field("to","To",&p.recipients.join(", ")),field("cc","Cc",&p.cc_recipients.join(", ")),field("bcc","Bcc",&p.bcc_recipients.join(", ")),field("subject","Subject",&p.subject),escape_html(p.body_format.as_str()),escape_html(&p.body),time_input(display,job.due_at,"edit")));
                 for (action, title, explanation) in [
                     ("send_now", "Send now", "Submit this saved message as soon as the worker checks it. Current keys, authorization and protection policy must still pass."),
                     ("move_to_drafts", "Return to Drafts", "Stop this schedule and move its complete saved message into an editable draft. Nothing is sent."),
@@ -240,7 +240,7 @@ pub(crate) fn render_outbox(
             body.push_str(if now>=job.payload_expires_at {"<p>Saved message content is unavailable because its fixed 60-day lifetime expired. The confirmed submission status above remains available.</p>"} else if matches!(job.state,State::Submitted|State::Cancelled|State::Failed) {"<p>Message content is no longer retained for this terminal entry.</p>"} else {"<p>Saved message content could not be loaded. Its confirmed status is shown above; reload before another action.</p>"});
         }
         if job.state == State::Blocked {
-            body.push_str(&format!("<form method=post action=\"/scheduled/change\">{}{}{}{}<button name=action value=reauthorize>Authorize this message for the chosen time</button></form>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string()),time_input(display,now.saturating_add(3600),"reauthorize")));
+            body.push_str(&format!("<form method=post action=\"/scheduled/change\">{}{}{}{}<button name=action value=reauthorize><span class=\"presentation-icon presentation-icon-clock\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Authorize this message for the chosen time</span></button></form>",hidden("csrf_token",csrf),hidden("id",&job.id),hidden("revision",&list.revision.to_string()),time_input(display,now.saturating_add(3600),"reauthorize")));
         }
         if job.state == State::Staged {
             body.push_str("<p>This incomplete entry is not scheduled and will not dispatch. Cancel it from the list to release its saved-message space, then return to Compose.</p>");
@@ -254,7 +254,7 @@ pub(crate) fn render_outbox(
             body.push_str("<p>This submission cannot be edited, cancelled or restarted. Its existing journal receipt must be reconciled; no automatic resend is performed.</p>");
             if let Some(intent) = &job.intent {
                 body.push_str(&format!(
-                    "<a href=\"/compose?receipt={}\">Review send result</a>",
+                    "<a href=\"/compose?receipt={}\"><span class=\"presentation-icon presentation-icon-eye\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Review send result</span></a>",
                     escape_html(intent)
                 ));
             }
@@ -275,7 +275,15 @@ fn confirm_action(
     title: &str,
     explanation: &str,
 ) -> String {
-    format!("<details><summary>{title}</summary><p>{explanation}</p><form method=post action=\"/scheduled/change\">{}{}{}<button name=action value={action}>Confirm: {title}</button></form></details>",hidden("csrf_token",csrf),hidden("id",id),hidden("revision",&revision.to_string()))
+    let icon = match action {
+        "send_now" => "sent",
+        "move_to_drafts" => "drafts",
+        "delete" => "bin",
+        _ => "",
+    };
+    let summary = crate::http_ui::presentation_label(title, icon);
+    let confirm = crate::http_ui::presentation_label(&format!("Confirm: {title}"), icon);
+    format!("<details><summary>{summary}</summary><p>{explanation}</p><form method=post action=\"/scheduled/change\">{}{}{}<button name=action value={action}>{confirm}</button></form></details>",hidden("csrf_token",csrf),hidden("id",id),hidden("revision",&revision.to_string()))
 }
 
 #[cfg(test)]

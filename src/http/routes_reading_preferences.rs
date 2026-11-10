@@ -170,17 +170,36 @@ impl<G: BrowserGateway> BrowserApp<G> {
         if presentation_html(response).is_none() {
             return;
         }
-        let preferences = {
+        let (preferences, presentation_style) = {
             let context = request.notification_context.borrow();
             match (&context.session, &context.authentication_context) {
-                (Some(session), Some(authentication_context)) => self
-                    .gateway
-                    .load_reading_preferences(authentication_context, session)
-                    .unwrap_or_default(),
-                _ => ReadingPreferences::default(),
+                (Some(session), Some(authentication_context)) => (
+                    self.gateway
+                        .load_reading_preferences(authentication_context, session)
+                        .unwrap_or_default(),
+                    Some(
+                        self.gateway
+                            .load_display(authentication_context, session)
+                            .unwrap_or_default()
+                            .presentation_style,
+                    ),
+                ),
+                _ => (ReadingPreferences::default(), None),
             }
         };
         apply_presentation(response, preferences);
+        // Only this request's validated account can select the presentation.
+        // Cookie hints and unavailable reads cannot import another account's
+        // mode or write a fallback into its persistent settings.
+        if let (Some(style), Some(html)) = (presentation_style, presentation_html(response)) {
+            response.body = html
+                .replacen(
+                    "><head>",
+                    &format!(" data-presentation-style=\"{}\"><head>", style.as_str()),
+                    1,
+                )
+                .into_bytes();
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 //! Account-scoped presentation preferences; never a mail/security policy.
 use super::*;
-use crate::appearance::{AppearanceSettings, Density, FontSize, ReaderLayout};
+use crate::appearance::{AppearanceSettings, Density, FontSize, PresentationStyle, ReaderLayout};
 
 impl<G: BrowserGateway> BrowserApp<G> {
     pub(super) fn handle_display_update(
@@ -28,7 +28,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 "<p>The appearance form content type was not supported.</p>",
             );
         }
-        let form = match parse_urlencoded_form(&request.body, 7, 1024) {
+        let form = match parse_urlencoded_form(&request.body, 8, 1024) {
             Ok(form) => form,
             Err(_) => return rejected(
                 400,
@@ -52,6 +52,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             "reader_layout",
             "show_avatars",
             "message_preview",
+            "presentation_style",
         ];
         if form.keys().any(|key| !allowed.contains(&key.as_str())) {
             return rejected(
@@ -72,6 +73,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             Some(reader_layout),
             Some(show_avatars),
             Some(message_preview),
+            Some(presentation_style),
         ) = (
             form.get("appearance")
                 .and_then(|value| AppearancePreference::parse(value)),
@@ -82,6 +84,8 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 .and_then(|value| ReaderLayout::parse(value)),
             checkbox("show_avatars"),
             checkbox("message_preview"),
+            form.get("presentation_style")
+                .and_then(|value| PresentationStyle::parse(value)),
         )
         else {
             return rejected(400, "Bad Request", "<p>Choose the supported appearance options. Your saved preferences were not changed.</p>");
@@ -93,6 +97,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             reader_layout,
             show_avatars,
             message_preview,
+            presentation_style,
         };
         if self
             .gateway

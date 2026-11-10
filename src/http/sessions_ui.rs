@@ -97,7 +97,7 @@ pub(crate) fn render_sessions_page(
 }
 
 fn session_revoke_form(csrf: &str, field: &str, value: &str, label: &str) -> String {
-    format!("<form class=\"session-revoke-form\" method=\"post\" action=\"/sessions/revoke\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"{}\" value=\"{}\"><button type=\"submit\">{}</button></form>", escape_html(csrf), field, escape_html(value), label)
+    format!("<form class=\"session-revoke-form\" method=\"post\" action=\"/sessions/revoke\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"{}\" value=\"{}\"><button type=\"submit\">{}</button></form>", escape_html(csrf), field, escape_html(value), presentation_label(label, "logout"))
 }
 
 fn detailed_timestamp(timestamp: u64) -> String {

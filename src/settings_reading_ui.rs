@@ -128,7 +128,7 @@ pub(crate) fn render_reading_page_with_state(
         Some(saved) => (
             format!("<div class=\"general-field\"><label for=\"reading-mark-read\">Mark read</label><select id=\"reading-mark-read\" name=\"policy\" form=\"reading-mark-read-form\" aria-describedby=\"reading-mark-read-help\">{}</select></div>", select_options(saved.policy.as_str(), &[("manual", "Manual"), ("on_open", "On Open")])),
             format!("<form id=\"reading-mark-read-form\" method=\"post\" action=\"/settings/mark-read\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><input type=\"hidden\" name=\"section\" value=\"reading\"></form>", saved.revision),
-            "<button type=\"submit\" form=\"reading-mark-read-form\">Save mark-read choice</button>",
+            "<button type=\"submit\" form=\"reading-mark-read-form\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save mark-read choice</span></button>",
         ),
         None => ("<div class=\"general-field\"><label for=\"reading-mark-read\">Mark read</label><select id=\"reading-mark-read\" disabled aria-describedby=\"reading-mark-read-help\"><option>Unavailable</option></select></div>".into(), String::new(), "<span>Saved mark-read preference unavailable. Reload settings.</span>"),
     };
@@ -138,8 +138,8 @@ pub(crate) fn render_reading_page_with_state(
         "{mark_control}",
         "<div class=\"general-field\"><label for=\"reading-after-archive\">After archive</label><select id=\"reading-after-archive\" form=\"after-archive-form\" name=\"choice\"{after_disabled} aria-describedby=\"after-archive-help\">{after_options}</select></div>",
         "<div class=\"general-field\"><label for=\"reading-date-order\">Conversation ordering</label><select id=\"reading-date-order\" form=\"reading-preferences-form\" name=\"date_order\">{order}</select></div></section>",
-        "{mark_form}<form id=\"after-archive-form\" method=\"post\" action=\"/settings/after-archive\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"revision\" value=\"{after_revision}\"></form><div class=\"reading-card-actions\">{mark_button}<button type=\"submit\" form=\"after-archive-form\"{after_disabled}>Save after-archive choice</button><button class=\"primary-button\" type=\"submit\" form=\"reading-preferences-form\">Save reading preferences</button></div>",
-        "<details class=\"reading-help\"><summary>Reading preference details</summary><p id=\"reading-behaviour-help\">Start page applies after sign-in. Conversation ordering keeps related messages together using available thread headers within the loaded, filtered results. Members follow received time; missing or ambiguous thread headers remain independent. Explicit list sorts take priority. Thread headers do not verify a sender.</p><p id=\"reading-mark-read-help\">Manual keeps the current read state when opening. On Open marks an unread message read through its opening action. Reload and Back do not mark messages read. Save this choice separately.</p><p id=\"after-archive-help\">After archive applies only to a confirmed single-message Archive. Next uses verified loaded mailbox order and supported list filters; Search, last-row or unavailable context returns to the list. Save this choice separately.</p><p>This save also updates Show source shortcut and Attachment details in the Reader card.</p></details></div>"
+        "{mark_form}<form id=\"after-archive-form\" method=\"post\" action=\"/settings/after-archive\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"revision\" value=\"{after_revision}\"></form><div class=\"reading-card-actions\">{mark_button}<button type=\"submit\" form=\"after-archive-form\"{after_disabled}><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save after-archive choice</span></button><button class=\"primary-button\" type=\"submit\" form=\"reading-preferences-form\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save reading preferences</span></button></div>",
+        "<details class=\"reading-help\"><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Reading preference details</span></summary><p id=\"reading-behaviour-help\">Start page applies after sign-in. Conversation ordering keeps related messages together using available thread headers within the loaded, filtered results. Members follow received time; missing or ambiguous thread headers remain independent. Explicit list sorts take priority. Thread headers do not verify a sender.</p><p id=\"reading-mark-read-help\">Manual keeps the current read state when opening. On Open marks an unread message read through its opening action. Reload and Back do not mark messages read. Save this choice separately.</p><p id=\"after-archive-help\">After archive applies only to a confirmed single-message Archive. Next uses verified loaded mailbox order and supported list filters; Search, last-row or unavailable context returns to the list. Save this choice separately.</p><p>This save also updates Show source shortcut and Attachment details in the Reader card.</p></details></div>"
     ), start=start, order=order,after_options=after_options,after_disabled=after_disabled,after_revision=after_revision,csrf=csrf,mark_control=mark_control,mark_form=mark_form,mark_button=mark_button);
     let archive_missing = model.archive_mailbox_name.is_some_and(|stored| {
         mailboxes.is_some_and(|entries| !entries.iter().any(|entry| entry.name == stored))
@@ -156,7 +156,7 @@ pub(crate) fn render_reading_page_with_state(
         "<form id=\"reading-content-form\" method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"return_section\" value=\"reading\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"settings_action\" value=\"content\">",
         "<div class=\"general-field\"><label for=\"html-display-prefer-sanitized\">Default content</label><select id=\"html-display-prefer-sanitized\" name=\"html_display_preference\">{content}</select></div></form>{source}{attachments}",
         "<div class=\"general-field reading-policy\"><span>External images</span><span class=\"general-enforced\">Blocked by policy</span></div></section>",
-        "<div class=\"reading-card-actions\"><button type=\"submit\" form=\"reading-content-form\">Save content preference</button></div>",
+        "<div class=\"reading-card-actions\"><button type=\"submit\" form=\"reading-content-form\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save content preference</span></button></div>",
         "<p class=\"reading-help\">{help}</p></div>"
     ), csrf=csrf, content=content,
         source=reading_switch("reading-show-source", "Show source shortcut", "show_source_shortcut", preferences.show_source_shortcut),
@@ -194,9 +194,9 @@ pub(crate) fn render_reading_page_with_state(
             ));
         }
         (format!("<form id=\"reading-archive-form\" method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"return_section\" value=\"reading\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"html_display_preference\" value=\"{}\"><div class=\"general-field\"><label for=\"archive-mailbox-name\">Archive folder</label><select id=\"archive-mailbox-name\" name=\"archive_mailbox_name\"{}>{options}</select></div></form>", model.html_display_preference.as_str(), if archive_missing { " aria-describedby=\"reading-archive-help\"" } else { "" }),
-        "<button type=\"submit\" form=\"reading-archive-form\">Save archive folder</button>".to_owned())
+        "<button type=\"submit\" form=\"reading-archive-form\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save archive folder</span></button>".to_owned())
     } else {
-        (format!("<div class=\"general-field\"><label for=\"archive-mailbox-name\">Archive folder</label><input id=\"archive-mailbox-name\" readonly value=\"{}\" aria-describedby=\"reading-archive-help\"></div>", escape_html(model.archive_mailbox_name.unwrap_or("Not configured"))), "<button type=\"button\" disabled aria-describedby=\"reading-archive-help\">Save archive folder</button>".to_owned())
+        (format!("<div class=\"general-field\"><label for=\"archive-mailbox-name\">Archive folder</label><input id=\"archive-mailbox-name\" readonly value=\"{}\" aria-describedby=\"reading-archive-help\"></div>", escape_html(model.archive_mailbox_name.unwrap_or("Not configured"))), "<button type=\"button\" disabled aria-describedby=\"reading-archive-help\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save archive folder</span></button>".to_owned())
     };
     let archive_help = if mailboxes.is_none() {
         "The mailbox list could not be loaded. Archive changes are unavailable."
@@ -211,7 +211,7 @@ pub(crate) fn render_reading_page_with_state(
         "<div class=\"general-field\"><label for=\"reading-sent-folder\">Sent folder</label><input id=\"reading-sent-folder\" value=\"Sent (fixed)\" readonly></div>",
         "<div class=\"general-field\"><label for=\"reading-drafts-folder\">Drafts folder</label><input id=\"reading-drafts-folder\" value=\"{draft_label}\" readonly></div><p><a href=\"/settings?section=copies\">Change new draft location</a>. The Drafts list includes Drafts and Working drafts; existing drafts stay in place.{draft_notice}</p></section>",
         "<div class=\"reading-card-actions\">{archive_save}</div><p class=\"reading-help\" id=\"reading-archive-help\">{archive_help}</p>",
-        "<details class=\"reading-help\"><summary>Folder details</summary><p>Bin moves messages to your saved existing folder; Restore returns them to Inbox. Sent and draft storage locations cannot be changed here.</p></details></div>"
+        "<details class=\"reading-help\"><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Folder details</span></summary><p>Bin moves messages to your saved existing folder; Restore returns them to Inbox. Sent and draft storage locations cannot be changed here.</p></details></div>"
     ), draft_label=draft_label, draft_notice=draft_notice, bin_form=bin_form, archive=archive, archive_save=archive_save, archive_help=archive_help);
     let notices = [
         model
@@ -279,8 +279,14 @@ mod tests {
             assert!(html.contains("action=\"/settings/mark-read\""));
             assert!(html.contains("name=\"expected_revision\" value=\"9\""));
             assert!(html.contains("name=\"section\" value=\"reading\""));
-            assert!(html
-                .contains("type=\"submit\" form=\"reading-mark-read-form\">Save mark-read choice"));
+            let button = html
+                .split_once("<button type=\"submit\" form=\"reading-mark-read-form\">")
+                .expect("native reading mark-read submit target")
+                .1
+                .split("</button>")
+                .next()
+                .unwrap();
+            assert!(button.contains("Save mark-read choice"));
             assert!(html.contains("Reload and Back do not mark messages read."));
         }
     }
@@ -292,7 +298,8 @@ mod tests {
         assert!(html.contains("id=\"reading-mark-read\" disabled"));
         assert!(html.contains("Saved mark-read preference unavailable. Reload settings."));
         assert!(!html.contains("action=\"/settings/mark-read\""));
-        assert!(!html.contains("Save mark-read choice</button>"));
+        assert!(!html.contains("Save mark-read choice"));
+        assert!(!html.contains("form=\"reading-mark-read-form\""));
     }
 
     #[test]
@@ -345,6 +352,15 @@ mod tests {
         let html = html.as_str();
         assert!(html.contains("readonly value=\"Archive\""));
         assert!(!html.contains("id=\"reading-archive-form\""));
-        assert!(html.contains("<button type=\"button\" disabled aria-describedby=\"reading-archive-help\">Save archive folder"));
+        let button = html
+            .split_once(
+                "<button type=\"button\" disabled aria-describedby=\"reading-archive-help\">",
+            )
+            .expect("archive remains non-submitting and disabled")
+            .1
+            .split("</button>")
+            .next()
+            .unwrap();
+        assert!(button.contains("Save archive folder"));
     }
 }

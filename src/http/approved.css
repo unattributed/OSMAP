@@ -826,3 +826,165 @@ body:has(.app-rail) {
 .people-search .people-type,.people-search .people-edit {font-size:.75rem}
 .people-search .search-result-footer {justify-content:space-between}
 @media(max-width:700px){.people-search .search-result-row {grid-template-columns:44px minmax(0,1fr) 40px}.people-search .people-edit {grid-column:3;grid-row:1}.people-search .search-query-panel {min-height:0}.people-search .search-result-date::before {content:"Modified: "}}
+
+/* S08-06: explicit source-owned actions. Labels are the safe base presentation.
+   No selector rewrites message text, form values or security/status facts. */
+.presentation-icon { display:none; position:relative; width:18px; height:18px; flex:0 0 18px; color:inherit; vertical-align:middle; }
+.presentation-icon::before,.presentation-icon::after,.presentation-icon>i { position:absolute; display:block; content:""; box-sizing:border-box; border-color:currentColor; }
+.presentation-label { overflow-wrap:anywhere; }
+html[data-presentation-style] .draft-star button:has(>.presentation-label) { width:auto; min-width:36px; max-width:100%; }
+html[data-presentation-style] .header-search button:has(>.presentation-label) { flex:0 0 auto; width:auto; min-width:4.5rem; white-space:nowrap; }
+body:has(.app-rail) :is(a,button,summary):has(>.presentation-label) { position:relative; }
+/* Inert local geometry also works inside the protected reader: no SVG, image,
+   font download or new message-markup exception is required. */
+.presentation-icon-save::before { inset:2px; border:1.5px solid; border-radius:2px; }
+.presentation-icon-save::after { top:2px; left:5px; width:8px; height:5px; border:1.5px solid; border-top:0; }
+.presentation-icon-save>i { bottom:2px; left:5px; width:8px; height:6px; border:1.5px solid; }
+.presentation-icon-sent::before { content:"➢"; top:-2px; left:0; font:23px/20px Arial,sans-serif; transform:rotate(-15deg); }
+.presentation-icon-clock::before { inset:1px; border:1.5px solid; border-radius:50%; }
+.presentation-icon-clock::after { top:4px; left:8px; width:5px; height:6px; border-left:1.5px solid; border-bottom:1.5px solid; }
+.presentation-icon-compose::before { width:5px; height:15px; top:0; left:7px; border:1.5px solid; transform:rotate(45deg); }
+.presentation-icon-compose::after { width:10px; left:2px; top:16px; border-top:1px solid; }
+.presentation-icon-bin::before { width:11px; height:12px; top:5px; left:4px; border:1.5px solid; border-radius:0 0 2px 2px; }
+.presentation-icon-bin::after { width:15px; left:2px; top:3px; border-top:1.5px solid; }
+.presentation-icon-bin>i { width:5px; height:3px; left:7px; top:1px; border:1.5px solid; border-bottom:0; }
+.presentation-icon-archive::before { inset:5px 3px 1px; border:1.5px solid; }
+.presentation-icon-archive::after { width:16px; height:5px; top:1px; left:1px; border:1.5px solid; }
+.presentation-icon-archive>i { width:6px; left:6px; top:9px; border-top:1.5px solid; }
+.presentation-icon-inbox::before,.presentation-icon-outbox::before { inset:6px 1px 2px; border:1.5px solid; border-radius:2px; }
+.presentation-icon-inbox::after { width:6px; height:5px; left:6px; top:6px; border:1.5px solid; border-top:0; }
+.presentation-icon-read::before,.presentation-icon-unread::before { width:16px; height:12px; top:3px; left:1px; border:1.5px solid; border-radius:1px; }
+.presentation-icon-read::after,.presentation-icon-unread::after { width:10px; height:10px; top:-1px; left:4px; border-right:1.5px solid; border-bottom:1.5px solid; transform:rotate(45deg); }
+.presentation-icon-unread>i { width:4px; height:4px; top:0; right:-1px; border-radius:50%; background:currentColor; box-shadow:0 0 0 2px var(--panel); }
+.presentation-icon-outbox::after { content:"↑"; top:-6px; left:4px; font:22px/1 Arial,sans-serif; background:var(--panel); }
+.presentation-icon-drafts::before { inset:1px 3px; border:1.5px solid; border-radius:1px; }
+.presentation-icon-drafts::after { width:6px; height:5px; top:5px; left:6px; border-top:1px solid; border-bottom:1px solid; }
+.presentation-icon-folders::before { inset:5px 1px 1px; border:1.5px solid; border-radius:2px; }
+.presentation-icon-folders::after { width:7px; height:5px; top:1px; left:1px; border:1.5px solid; border-bottom:0; }
+.presentation-icon-search::before { width:12px; height:12px; top:0; left:0; border:1.5px solid; border-radius:50%; }
+.presentation-icon-search::after { width:8px; left:10px; top:13px; border-top:1.5px solid; transform:rotate(45deg); }
+.presentation-icon-add::before { width:14px; left:2px; top:9px; border-top:1.5px solid; }
+.presentation-icon-add::after { height:14px; top:2px; left:9px; border-left:1.5px solid; }
+.presentation-icon-close::before,.presentation-icon-close::after { width:16px; top:8px; left:1px; border-top:1.5px solid; transform:rotate(45deg); }
+.presentation-icon-close::after { transform:rotate(-45deg); }
+.presentation-icon-back::before,.presentation-icon-previous::before,.presentation-icon-next::before,.presentation-icon-logout::before { width:16px; left:1px; top:9px; border-top:1.5px solid; }
+.presentation-icon-back::after,.presentation-icon-previous::after { width:8px; height:8px; left:1px; top:5px; border-left:1.5px solid; border-bottom:1.5px solid; transform:rotate(45deg); }
+.presentation-icon-next::after,.presentation-icon-logout::after { width:8px; height:8px; left:9px; top:5px; border-right:1.5px solid; border-top:1.5px solid; transform:rotate(45deg); }
+.presentation-icon-people::before { width:7px; height:7px; left:6px; top:0; border:1.5px solid; border-radius:50%; }
+.presentation-icon-people::after { width:15px; height:9px; left:2px; top:9px; border:1.5px solid; border-bottom:0; border-radius:8px 8px 0 0; }
+.presentation-icon-shield::before { width:13px; height:16px; left:3px; top:1px; border:1.5px solid; border-radius:4px 4px 7px 7px; transform:perspective(20px) rotateX(-10deg); }
+.presentation-icon-shield::after { width:7px; height:4px; left:6px; top:7px; border-left:1.5px solid; border-bottom:1.5px solid; transform:rotate(-45deg); }
+.presentation-icon-label::before { width:12px; height:12px; top:3px; left:3px; border:1.5px solid; transform:rotate(45deg); border-radius:1px; }
+.presentation-icon-label::after { width:3px; height:3px; top:5px; left:5px; border:1px solid; border-radius:50%; }
+.presentation-icon-more::before,.presentation-icon-more::after,.presentation-icon-more>i { width:2px; height:2px; left:8px; border:1px solid; border-radius:50%; }
+.presentation-icon-more::before { top:2px; }.presentation-icon-more>i { top:8px; }.presentation-icon-more::after { top:14px; }
+.presentation-icon-eye::before { width:17px; height:11px; left:0; top:4px; border:1.5px solid; border-radius:65% 20%; transform:rotate(10deg); }
+.presentation-icon-eye::after { width:5px; height:5px; left:6px; top:7px; border:1.5px solid; border-radius:50%; }
+.presentation-icon-download::before { content:"↓"; left:2px; top:-4px; font:23px/1 Arial,sans-serif; }
+.presentation-icon-download::after { width:15px; height:5px; left:1px; top:12px; border:1.5px solid; border-top:0; }
+.presentation-icon-info::before { inset:1px; border:1.5px solid; border-radius:50%; }
+.presentation-icon-info::after { content:"i"; top:0; left:7px; font:16px/18px Georgia,serif; }
+.presentation-icon-select::before { inset:1px; border:1.5px solid; border-radius:2px; }
+.presentation-icon-select::after { width:9px; height:5px; left:5px; top:5px; border-left:1.5px solid; border-bottom:1.5px solid; transform:rotate(-45deg); }
+.presentation-icon-key::before { width:9px; height:9px; left:0; top:0; border:1.5px solid; border-radius:50%; }
+.presentation-icon-key::after { width:12px; left:6px; top:11px; border-top:1.5px solid; transform:rotate(45deg); }
+.presentation-icon-settings::before { content:"⚙"; top:-2px; font:22px/20px Arial,sans-serif; }
+.presentation-icon-refresh::before { content:"↻"; top:-3px; font:25px/22px Arial,sans-serif; }
+.presentation-icon-star::before { content:"☆"; top:-3px; font:23px/22px Arial,sans-serif; }
+.presentation-icon-sessions::before { width:17px; height:11px; left:0; top:1px; border:1.5px solid; border-radius:1px; }
+.presentation-icon-sessions::after { width:11px; height:4px; left:3px; top:13px; border-bottom:1.5px solid; }
+.presentation-icon-notifications::before { width:12px; height:13px; top:0; left:3px; border:1.5px solid; border-radius:7px 7px 1px 1px; }
+.presentation-icon-notifications::after { width:5px; left:7px; top:16px; border-top:1.5px solid; }
+.presentation-icon-minimize::before { width:14px; left:2px; top:10px; border-top:1.5px solid; }
+.presentation-icon-bold::before { content:"B"; font:bold 17px/18px Arial,sans-serif; left:3px; }
+.presentation-icon-italic::before { content:"I"; font:italic 18px/18px Georgia,serif; left:5px; }
+.presentation-icon-underline::before { content:"U"; font:16px/18px Arial,sans-serif; text-decoration:underline; left:3px; }
+.presentation-icon-list::before { content:"☷"; font:22px/18px Arial,sans-serif; }
+.presentation-icon-numbers::before { content:"1≡"; font:16px/18px Arial,sans-serif; }
+.presentation-icon-link::before { width:12px; height:6px; left:0; top:3px; border:1.5px solid; border-radius:5px; transform:rotate(-40deg); }
+.presentation-icon-link::after { width:12px; height:6px; left:6px; top:9px; border:1.5px solid; border-radius:5px; transform:rotate(-40deg); }
+.presentation-icon-image::before { inset:2px 0; border:1.5px solid; border-radius:1px; }
+.presentation-icon-image::after { width:8px; height:8px; left:5px; top:7px; border-left:1.5px solid; border-top:1.5px solid; transform:rotate(45deg); }
+.presentation-icon-attachment::before { width:9px; height:17px; top:0; left:4px; border:1.5px solid; border-radius:5px; transform:rotate(35deg); }
+.presentation-icon-attachment::after { width:4px; height:11px; top:1px; left:7px; border:1.5px solid; border-radius:5px; transform:rotate(35deg); }
+.presentation-icon-emoji::before { inset:1px; border:1.5px solid; border-radius:50%; }
+.presentation-icon-emoji::after { width:8px; height:4px; left:5px; top:9px; border-bottom:1.5px solid; border-radius:0 0 6px 6px; }
+.presentation-icon-emoji>i { width:2px; height:2px; top:5px; left:5px; background:currentColor; border-radius:50%; box-shadow:6px 0 currentColor; }
+/* Existing native icon controls gain visible text in Text labels and touch mode. */
+html[data-presentation-style] :is(.reader-icon-toolbar,.header-theme) :is(a,button,summary)[aria-label],
+html[data-presentation-style] .header-notifications { width:auto; height:auto; min-width:36px; min-height:36px; gap:.5rem; padding:.5rem .65rem; }
+html[data-presentation-style] :is(.reader-icon-toolbar,.header-theme) :is(a,button,summary)[aria-label]:not(:has(>.presentation-label))::after,
+html[data-presentation-style] .header-notifications:not(:has(>.presentation-label))::after { content:attr(aria-label); font:inherit; line-height:1.35; }
+/* A fine primary pointer and hover are insufficient on a hybrid: the negative
+   coarse/none clauses keep touch or unknown capability in the labelled base. */
+@media (hover:hover) and (pointer:fine) and (any-pointer:fine) and (not (any-pointer:coarse)) and (not (any-pointer:none)) {
+  html[data-presentation-style=icons] body:has(.app-rail) { --rail-width:4.2rem; }
+  html[data-presentation-style=icons] .app-rail { width:var(--rail-width); padding:.6rem .4rem; }
+  html[data-presentation-style=icons] .app-rail .rail-link { justify-content:center; gap:0; padding:.6rem; min-height:40px; }
+  html[data-presentation-style=icons] .rail-disclosure,html[data-presentation-style=icons] .rail-storage { display:none; }
+  html[data-presentation-style=icons] .presentation-icon { display:inline-block; }
+  html[data-presentation-style=icons] :is(a,button,summary):has(>.presentation-label) { display:inline-flex; align-items:center; justify-content:center; gap:0; min-width:36px; min-height:36px; padding:.5rem; }
+  html[data-presentation-style=icons] :is(.presentation-label,.rail-label,.account-name),
+  html[data-presentation-style=icons] .welcome-shortcut>:last-child { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  html[data-presentation-style=icons] .rail-link { position:relative; }
+  html[data-presentation-style=icons] .rail-link .rail-label { display:block; }
+  html[data-presentation-style=icons] :is(a,button,summary):is(:hover,:focus-visible)>.presentation-label,
+  html[data-presentation-style=icons] .rail-link:is(:hover,:focus-visible)>.rail-label,
+  html[data-presentation-style=icons] .welcome-shortcut:is(:hover,:focus-visible)>:last-child { position:absolute; width:max-content; max-width:min(22rem,80vw); height:auto; margin:0; padding:.45rem .65rem; overflow:visible; clip:auto; white-space:normal; border:1px solid var(--line-strong); border-radius:.3rem; background:var(--ink); color:var(--bg); font-size:.8rem; line-height:1.4; inset-block-start:calc(100% + .35rem); inset-inline-start:0; z-index:100; box-shadow:0 2px 8px var(--shadow); pointer-events:none; }
+  html[data-presentation-style=icons] .rail-link:is(:hover,:focus-visible)>.rail-label { position:fixed; inset-inline-start:4.5rem; inset-block-start:auto; }
+  html[data-presentation-style=icons] .account-menu>summary { position:relative; }
+  html[data-presentation-style=icons] .account-menu>summary:is(:hover,:focus-visible)>.account-name { position:absolute; inset-block-start:calc(100% + .35rem); inset-inline-end:0; inset-inline-start:auto; width:max-content; max-width:min(26rem,80vw); height:auto; margin:0; padding:.45rem .65rem; clip:auto; overflow:visible; white-space:normal; overflow-wrap:anywhere; background:var(--ink); color:var(--bg); border:1px solid var(--line-strong); border-radius:.3rem; z-index:100; font-size:.8rem; }
+  html[data-presentation-style=icons] :is(.reader-icon-toolbar,.header-theme) :is(a,button,summary)[aria-label]:not(:has(>.presentation-label))::after,
+  html[data-presentation-style=icons] .header-notifications:not(:has(>.presentation-label))::after { display:none; }
+  html[data-presentation-style=icons] :is(.reader-icon-toolbar,.header-theme) :is(a,button,summary)[aria-label],html[data-presentation-style=icons] .header-notifications { position:relative; width:36px; height:36px; padding:.4rem; }
+  html[data-presentation-style=icons] :is(.reader-icon-toolbar,.header-theme) :is(a,button,summary)[aria-label]:not(:has(>.presentation-label)):is(:hover,:focus-visible)::after,
+  html[data-presentation-style=icons] .header-notifications:not(:has(>.presentation-label)):is(:hover,:focus-visible)::after { display:block; position:absolute; inset-block-start:calc(100% + .35rem); inset-inline-start:0; width:max-content; max-width:20rem; padding:.45rem .65rem; background:var(--ink); color:var(--bg); border:1px solid var(--line-strong); border-radius:.3rem; z-index:100; pointer-events:none; }
+  html[data-presentation-style=icons] .settings-layout { grid-template-columns:4rem minmax(0,1fr); }
+  html[data-presentation-style=icons] .settings-navigation a { width:100%; }
+  html[data-presentation-style=icons] .welcome-shortcut { position:relative; width:44px; min-height:44px; padding:.65rem; justify-content:center; }
+  html[data-presentation-style=icons] .app-rail .rail-links { display:grid; }
+  html[data-presentation-style=icons] .header-search button:has(>.presentation-label) { flex:0 0 36px; width:36px; min-width:36px; }
+  html[data-presentation-style=icons] .compose-footer .compose-send-controls { flex:0 0 auto; }
+  html[data-presentation-style=icons] .compose-footer .compose-send-controls>.primary-button { flex:0 0 44px; width:44px; min-width:44px; }
+  html[data-presentation-style=icons] label[for=compose-expanded] :is(.expand-text,.collapse-text) { font-size:0; }
+  html[data-presentation-style=icons] label[for=compose-expanded] .expand-text::after { content:"↗"; font:20px/18px Arial,sans-serif; }
+  html[data-presentation-style=icons] label[for=compose-expanded] .collapse-text::after { content:"↙"; font:20px/18px Arial,sans-serif; }
+}
+@media(max-width:56rem) {
+  html[data-presentation-style=text_labels] body:has(.app-rail) { --rail-width:0rem; }
+  html[data-presentation-style=text_labels] .app-rail,html[data-presentation-style=text_labels] .app-rail:has(.rail-disclosure[open]) { position:relative; inset:auto; width:100%; padding:.3rem .65rem; box-shadow:none; border-bottom:1px solid var(--line); }
+  html[data-presentation-style=text_labels] .app-rail .rail-links { display:none; }
+  html[data-presentation-style=text_labels] .app-rail .rail-disclosure[open]~.rail-links { display:grid; grid-template-columns:repeat(auto-fit,minmax(9rem,1fr)); }
+  html[data-presentation-style=text_labels] .rail-disclosure :is(.rail-expand-label,.rail-collapse-label) { position:static; width:auto; height:auto; clip:auto; overflow:visible; margin:0; }
+  html[data-presentation-style=text_labels] .rail-disclosure summary { width:auto; display:flex; gap:.5rem; min-height:44px; align-items:center; }
+}
+/* Visible labels and larger targets on touch, hybrids and unknown capability. */
+@media (any-pointer:coarse), (pointer:coarse), (pointer:none), (any-pointer:none), (hover:none) {
+  html[data-presentation-style] :is(button,a,summary):has(>.presentation-label),
+  html[data-presentation-style] :is(.reader-icon-toolbar,.header-theme) :is(a,button,summary)[aria-label],
+  html[data-presentation-style] :is(.rail-link,.header-notifications,.compose-send-options>summary) { min-width:44px; min-height:44px; width:auto; height:auto; padding:.65rem; }
+  html[data-presentation-style] .reader-icon-toolbar,html[data-presentation-style] .reader-icon-moves,
+  html[data-presentation-style] .compose-footer-actions,html[data-presentation-style] .header-theme { gap:.55rem; flex-wrap:wrap; }
+  html[data-presentation-style] .compose-footer-actions button { max-width:100%; min-width:44px; white-space:normal; }
+  html[data-presentation-style] .topbar { flex-wrap:wrap; }
+  html[data-presentation-style] .topbar .auth-status { flex-wrap:wrap; }
+  html[data-presentation-style] .shell-request-clock { position:static; width:auto; padding:.65rem 1rem 0; text-align:right; }
+  html[data-presentation-style] .shell-request-clock + main .page-intro,html[data-presentation-style] .shell-request-clock + main .welcome-intro,html[data-presentation-style] .shell-request-clock + main > h1,html[data-presentation-style] .shell-request-clock + main > section:first-child > h1 { padding-inline-end:0; }
+  html[data-presentation-style] .compose-recipient-tools,html[data-presentation-style] .compose-recipient-tools:has(details[open]) { position:static; width:auto; max-width:100%; margin:.35rem 0 .75rem; justify-content:flex-start; }
+  html[data-presentation-style] .compose-recipient-editor { padding-inline-end:.7rem; }
+  html[data-presentation-style] .presentation-icon { display:inline-block; margin-inline-end:.45rem; }
+  /* These retained captions already include their familiar plus/minus glyph. */
+  html[data-presentation-style] :is(.compose-cc,.compose-bcc)>summary>.presentation-icon-add,
+  html[data-presentation-style] .compose-window-actions .presentation-icon-minimize { display:none; }
+  html[data-presentation-style] .rail-link { gap:.6rem; }
+  html[data-presentation-style] .rail-disclosure :is(.rail-expand-label,.rail-collapse-label) { position:static; width:auto; height:auto; clip:auto; overflow:visible; margin:0; }
+  html[data-presentation-style] .rail-disclosure summary { width:auto; display:flex; gap:.5rem; min-width:44px; min-height:44px; align-items:center; }
+  html[data-presentation-style] .rail-disclosure[open]~.rail-links .rail-label { display:block; }
+  html[data-presentation-style] .account-menu>summary::after { content:"Account"; font-size:.8rem; }
+}
+@media (max-width:56rem) and (any-pointer:coarse), (max-width:56rem) and (pointer:none), (max-width:56rem) and (hover:none) {
+  html[data-presentation-style] body:has(.app-rail) { --rail-width:0rem; }
+  html[data-presentation-style] .app-rail,html[data-presentation-style] .app-rail:has(.rail-disclosure[open]) { position:relative; inset:auto; width:100%; padding:.3rem .65rem; box-shadow:none; border-bottom:1px solid var(--line); }
+  html[data-presentation-style] .app-rail .rail-links { display:none; }
+  html[data-presentation-style] .app-rail .rail-disclosure[open]~.rail-links { display:grid; grid-template-columns:repeat(auto-fit,minmax(9rem,1fr)); }
+}

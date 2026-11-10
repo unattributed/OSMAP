@@ -174,7 +174,22 @@ fn notification_delete_all_generated_form_refuses_unsafe_requests_and_delegates_
         &request("GET", "/notifications", &authenticated_headers(), ""),
         "127.0.0.1",
     );
-    assert!(body_text(&page).contains("disabled>Delete all notifications</button>"));
+    let empty_html = body_text(&page);
+    let delete_form = empty_html
+        .split_once("<form method=\"post\" action=\"/notifications/delete-all\">")
+        .expect("native delete-all form")
+        .1
+        .split("</form>")
+        .next()
+        .unwrap();
+    let delete_button = delete_form
+        .split_once("<button class=\"secondary\" type=\"submit\" disabled>")
+        .expect("empty inbox disables actual delete-all submit")
+        .1
+        .split("</button>")
+        .next()
+        .unwrap();
+    assert!(delete_button.contains("Delete all notifications"));
     assert_eq!(store.load("bob@example.com", now()).unwrap(), bob);
     // Actual Runtime gateway must override the fail-closed BrowserGateway default.
     store
@@ -331,7 +346,21 @@ fn notification_mark_all_and_delete_are_native_owner_csrf_cas_and_hidden_categor
         "127.0.0.1",
     );
     let html = body_text(&page);
-    assert!(html.contains("Mark all as read</button>"));
+    let read_form = html
+        .split_once("<form method=\"post\" action=\"/notifications/read-all\">")
+        .expect("native read-all form")
+        .1
+        .split("</form>")
+        .next()
+        .unwrap();
+    let read_button = read_form
+        .split_once("<button class=\"secondary\" type=\"submit\">")
+        .expect("unread inbox keeps actual read-all submit enabled")
+        .1
+        .split("</button>")
+        .next()
+        .unwrap();
+    assert!(read_button.contains("Mark all as read"));
     assert!(html.contains("include optional notices hidden by your choices"));
     assert_eq!(html.matches("action=\"/notifications/delete\"").count(), 1);
     assert!(!html.contains("New Inbox message observed"));
@@ -354,7 +383,22 @@ fn notification_mark_all_and_delete_are_native_owner_csrf_cas_and_hidden_categor
         &request("GET", "/notifications", &authenticated_headers(), ""),
         "127.0.0.1",
     );
-    assert!(body_text(&page).contains("disabled>Mark all as read</button>"));
+    let read_html = body_text(&page);
+    let read_form = read_html
+        .split_once("<form method=\"post\" action=\"/notifications/read-all\">")
+        .expect("native read-all form")
+        .1
+        .split("</form>")
+        .next()
+        .unwrap();
+    let read_button = read_form
+        .split_once("<button class=\"secondary\" type=\"submit\" disabled>")
+        .expect("fully read inbox disables actual read-all submit")
+        .1
+        .split("</button>")
+        .next()
+        .unwrap();
+    assert!(read_button.contains("Mark all as read"));
     let id = read
         .events
         .iter()
@@ -437,7 +481,22 @@ fn notification_mark_all_and_delete_are_native_owner_csrf_cas_and_hidden_categor
         &request("GET", "/notifications", &authenticated_headers(), ""),
         "127.0.0.1",
     );
-    assert!(body_text(&page).contains("disabled>Mark all as read</button>"));
+    let empty_html = body_text(&page);
+    let read_form = empty_html
+        .split_once("<form method=\"post\" action=\"/notifications/read-all\">")
+        .expect("native read-all form")
+        .1
+        .split("</form>")
+        .next()
+        .unwrap();
+    let read_button = read_form
+        .split_once("<button class=\"secondary\" type=\"submit\" disabled>")
+        .expect("empty inbox disables actual read-all submit")
+        .1
+        .split("</button>")
+        .next()
+        .unwrap();
+    assert!(read_button.contains("Mark all as read"));
     assert!(!body_text(&page).contains("action=\"/notifications/delete\""));
     let path = fs::read_dir(root.join("settings"))
         .unwrap()

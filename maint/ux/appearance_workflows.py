@@ -13,9 +13,9 @@ from urllib.parse import urlencode
 from playwright.sync_api import sync_playwright, expect
 
 DEFAULTS = dict(appearance="system", density="comfortable", font_size="medium",
-                reader_layout="split", show_avatars=True, message_preview=True)
+                reader_layout="split", show_avatars=True, message_preview=True, presentation_style="text_labels")
 CHANGED = dict(appearance="dark", density="compact", font_size="large",
-               reader_layout="stacked", show_avatars=False, message_preview=False)
+               reader_layout="stacked", show_avatars=False, message_preview=False, presentation_style="text_labels")
 SETTINGS = "/settings?section=appearance"
 MAIL = "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=125"
 

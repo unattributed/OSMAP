@@ -146,7 +146,7 @@ pub(crate) fn render(model: &ComposeResultModel<'_>) -> TrustedHtml {
             "<section aria-labelledby=\"retained-message-heading\"><h2 id=\"retained-message-heading\">Text retained from this attempt</h2>",
             "<p>Message format: {}. These fields are read-only and can be selected and copied.</p>",
             "{retained}{attachment_summary}</section>",
-            "<p><a href=\"/mailbox?name=Sent\">Open Sent</a> · <a href=\"/drafts\">Open Drafts</a></p>",
+            "<p><a href=\"/mailbox?name=Sent\"><span class=\"presentation-icon presentation-icon-next\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Sent</span></a> · <a href=\"/drafts\"><span class=\"presentation-icon presentation-icon-drafts\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Drafts</span></a></p>",
             "</section></main>"
         ),
         crate::http_ui::app_header(model.account, model.csrf, "compose-result"),

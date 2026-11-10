@@ -71,10 +71,22 @@ fn identity_native_owner_csrf_cas_validation_and_corruption_preserve_records() {
     let result = perform(&valid);
     assert_eq!(result.response.status_code, 503);
     assert!(body_text(&result).contains("value=\"Alice Synthetic\""));
-    assert!(
-        body_text(&result).contains("Save identity</button>")
-            && body_text(&result).contains("disabled")
-    );
+    let refused_html = body_text(&result);
+    let identity_form = refused_html
+        .split_once("action=\"/settings/identity\">")
+        .expect("native identity form")
+        .1
+        .split("</form>")
+        .next()
+        .unwrap();
+    let save = identity_form
+        .split_once("<button type=\"submit\" disabled>")
+        .expect("corrupt identity record disables the actual save control")
+        .1
+        .split("</button>")
+        .next()
+        .unwrap();
+    assert!(save.contains("Save identity"));
     assert!(result
         .audit_events
         .iter()
@@ -90,7 +102,19 @@ fn identity_native_owner_csrf_cas_validation_and_corruption_preserve_records() {
     assert_eq!(overview.response.status_code, 200);
     assert!(body_text(&overview).contains("Saved profile unavailable."));
     assert!(!body_text(&overview).contains("Alice Synthetic"));
-    assert!(body_text(&overview).contains("href=\"/settings?section=identity\">Edit in Identity"));
+    let overview_html = body_text(&overview);
+    assert!(overview_html
+        .split("href=\"/settings?section=identity\">")
+        .skip(1)
+        .map(|link| link.split("</a>").next().unwrap())
+        .map(|content| {
+            content
+                .split('>')
+                .flat_map(|part| part.split('<').next().unwrap().split_whitespace())
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
+        .any(|caption| caption == "Edit in Identity"));
     assert!(IdentityPreferences::new("", None).is_ok());
     fs::remove_dir_all(root).unwrap();
 }

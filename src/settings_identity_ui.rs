@@ -27,7 +27,7 @@ pub(crate) fn render_identity_page_with_signature(
         .error_message
         .map(|message| {
             format!(
-                "<p class=\"notice notice-error\" role=\"alert\">{} <a href=\"/settings?section=identity\">Load saved identity</a> to review the current values; this replaces the entries shown below.</p>",
+                "<p class=\"notice notice-error\" role=\"alert\">{} <a href=\"/settings?section=identity\"><span class=\"presentation-icon presentation-icon-refresh\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Load saved identity</span></a> to review the current values; this replaces the entries shown below.</p>",
                 escape_html(message)
             )
         })
@@ -41,7 +41,7 @@ pub(crate) fn render_identity_page_with_signature(
         "<div class=\"identity-field\"><label for=\"identity-email\">Email address</label><input id=\"identity-email\" value=\"{email}\" readonly></div>",
         "<div class=\"identity-field\"><label for=\"identity-reply-to\">Reply-to</label><input id=\"identity-reply-to\" name=\"reply_to\" value=\"{reply_to}\" autocomplete=\"email\" aria-describedby=\"identity-help\"{unavailable}></div>",
         "<div class=\"identity-field\"><label for=\"identity-signature\">Signature</label>{signature_selection}</div>",
-        "<div class=\"identity-field identity-actions\"><label for=\"identity-use-new\">Current new-mail default</label><div><input id=\"identity-use-new\" class=\"settings-switch\" type=\"checkbox\" role=\"switch\"{canonical_default} disabled aria-describedby=\"identity-help\"><button type=\"submit\"{unavailable}>Save identity</button></div></div></form></section>",
+        "<div class=\"identity-field identity-actions\"><label for=\"identity-use-new\">Current new-mail default</label><div><input id=\"identity-use-new\" class=\"settings-switch\" type=\"checkbox\" role=\"switch\"{canonical_default} disabled aria-describedby=\"identity-help\"><button type=\"submit\"{unavailable}><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save identity</span></button></div></div></form></section>",
         "{sender_controls}</div>",
         "<div class=\"identity-authority-note\"><p>Sender choices come only from current server authority. OSMAP does not create aliases or permit arbitrary From addresses.</p><p id=\"identity-help\">New messages capture the saved default identity when first saved or submitted. Saved drafts keep their captured identity after profile changes. Blank Reply-to uses the captured sender address.</p></div>{signature_editor}</div></div></main>"
     ), signature_selection=signature_selection, signature_editor=signature_editor, header=app_header(model.canonical_username,model.csrf_token,"settings-identity"), nav=settings_navigation("identity"), csrf=escape_html(model.csrf_token), revision=model.revision, name=escape_html(model.display_name), email=escape_html(model.canonical_username), reply_to=escape_html(model.reply_to),  sender_controls=sender_controls, canonical_default=if model.sender_record.is_none_or(|record| record.primary_id() == crate::sender_authority::CANONICAL_ID) { " checked" } else { "" }, notice=notice, unavailable=unavailable))
@@ -49,7 +49,7 @@ pub(crate) fn render_identity_page_with_signature(
 
 fn authorized_sender_controls(model: &IdentityPageModel<'_>) -> String {
     let (Some(inventory), Some(record)) = (model.sender_inventory, model.sender_record) else {
-        return "<section class=\"identity-card\"><h2>Authorized Sender Identities</h2><p class=\"identity-unavailable\">Additional sender identities are unavailable.</p><button type=\"button\" disabled>+ Add identity</button></section>".into();
+        return "<section class=\"identity-card\"><h2>Authorized Sender Identities</h2><p class=\"identity-unavailable\">Additional sender identities are unavailable.</p><button type=\"button\" disabled><span class=\"presentation-icon presentation-icon-add\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">+ Add identity</span></button></section>".into();
     };
     if inventory.account != model.canonical_username {
         return String::new();
@@ -67,7 +67,7 @@ fn authorized_sender_controls(model: &IdentityPageModel<'_>) -> String {
             escape_html(&identity.address)
         ));
     }
-    html.push_str("</select><button type=\"submit\">Use for new mail</button></form>");
+    html.push_str("</select><button type=\"submit\"><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Use for new mail</span></button></form>");
     if inventory.identities.len() == 1 {
         html.push_str(
             "<p>No additional sender addresses are authorized by the current server inventory.</p>",
@@ -97,9 +97,9 @@ fn authorized_sender_controls(model: &IdentityPageModel<'_>) -> String {
         }
         let fields = format!("<input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"sender_revision\" value=\"{}\"><input type=\"hidden\" name=\"identity_id\" value=\"{}\">", escape_html(model.csrf_token), record.revision, escape_html(&identity.id));
         if let Some(profile) = registered {
-            html.push_str(&format!("<form class=\"identity-form\" method=\"post\" action=\"/settings/sender-identity\">{}<input type=\"hidden\" name=\"action\" value=\"edit\"><label>Display name<input name=\"display_name\" value=\"{}\"></label><label>Reply-to<input name=\"reply_to\" value=\"{}\"></label><label><input type=\"checkbox\" name=\"use_for_new\" value=\"on\"{}>Use for new mail</label><button type=\"submit\">Save identity</button></form>", fields, escape_html(profile.display_name()), escape_html(profile.reply_to().unwrap_or("")), if primary { " checked" } else { "" }));
+            html.push_str(&format!("<form class=\"identity-form\" method=\"post\" action=\"/settings/sender-identity\">{}<input type=\"hidden\" name=\"action\" value=\"edit\"><label>Display name<input name=\"display_name\" value=\"{}\"></label><label>Reply-to<input name=\"reply_to\" value=\"{}\"></label><label><input type=\"checkbox\" name=\"use_for_new\" value=\"on\"{}>Use for new mail</label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save identity</span></button></form>", fields, escape_html(profile.display_name()), escape_html(profile.reply_to().unwrap_or("")), if primary { " checked" } else { "" }));
         } else {
-            html.push_str(&format!("<form method=\"post\" action=\"/settings/sender-identity\">{}<input type=\"hidden\" name=\"action\" value=\"add\"><button type=\"submit\">+ Add identity</button></form>", fields));
+            html.push_str(&format!("<form method=\"post\" action=\"/settings/sender-identity\">{}<input type=\"hidden\" name=\"action\" value=\"add\"><button type=\"submit\"><span class=\"presentation-icon presentation-icon-add\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">+ Add identity</span></button></form>", fields));
         }
     }
     if !inventory
@@ -140,8 +140,26 @@ mod tests {
             available: false,
             ..model
         };
-        assert!(render_identity_page(&disabled)
+        let disabled = render_identity_page(&disabled);
+        let form = disabled
             .as_str()
-            .contains("type=\"submit\" disabled>Save identity"));
+            .split_once(
+                "<form class=\"identity-form\" method=\"post\" action=\"/settings/identity\">",
+            )
+            .expect("native identity update form")
+            .1
+            .split("</form>")
+            .next()
+            .unwrap();
+        assert!(form.contains("name=\"identity_revision\" value=\"7\""));
+        assert!(form.contains("name=\"csrf_token\" value=\"synthetic\""));
+        let button = form
+            .split_once("<button type=\"submit\" disabled>")
+            .expect("unavailable identity save remains disabled")
+            .1
+            .split("</button>")
+            .next()
+            .unwrap();
+        assert!(button.contains("Save identity"));
     }
 }
