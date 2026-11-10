@@ -15,6 +15,45 @@ then independent review, normal signed publication and matching Web-only native
 delivery. Reuse other passing presentation-style evidence. No preference format,
 action authority, backend service, CSS framework or new test is needed.
 
+The correction is installed and ready for owner re-review. Product change:
+remove only the shortcut builder, its horizontal navigation and unused format
+argument in `src/welcome_ui.rs`. Shared left navigation, greeting/metrics and all
+seven dashboard panels, including Quick Actions, remain. Existing welcome/sidebar
+16 cases pass; actual synthetic desktop Icons, desktop Text labels and touch
+Icons checks pass, including absence of the bar/placeholder and retained sidebar
+links/panels. The three generated security registers changed source line pins
+only; counts/classifications remain identical. The supplied private account
+screenshot was not copied into Git.
+
+Signed implementation `49856393af4abfcab8b6456c2db6d5c050cdc9cf` passed normal
+commit/push hooks (2,356 library passes, zero failures, 90 explicit ignores),
+signature verification and fresh source/origin equality. The archive SHA256 is
+`ba19301f4847104c05e22c9a095085a83b8ed69d6af78ef941d19f6cae98268c`;
+all 592 native source/fixture hashes match. The existing full-page welcome
+renderer passed natively, with zero failures/ignores. An initial guessed test
+module listed zero cases and was unqualified; the actual `activity_tests` name
+was selected from the executed focused inventory before native dispatch. Its
+real local producer and zero/wrong-count/failed-summary consumers were checked.
+The reviewer's first inventory read exceeded its output buffer and was also
+unqualified; comparison against retained baseline data established identical
+entries excluding line offsets. Neither inspection refusal is product evidence.
+
+The assessed corrected Web executable is
+`744cac94df0ad4a7fdc256f205d9e743f91f0332612d49f9d446b83ce4901377`.
+Web-only installation passed in 3.1 seconds and the running executable inode
+matches. Receipt SHA256:
+`40d0237a4b9b44045f39de76fc9c4033b6249648026c2540883d487dc23ae58a`.
+Read-back preservation archive SHA256:
+`3a43fe3f3d4688a7282f0751502320add32dc7e740c75247a1dca601d3f7fdeb`
+(25,600 bytes). All five configuration/GPG/account/helper/public-mail snapshot
+pairs are byte-equal. Explicit-peer HTTPS reached `192.168.1.44` with status
+200; this anonymous observation is service readiness, not an owner page request.
+The compatible predecessor `8d1325dd…` is retained for executable recovery.
+No preference/native-principal replay or owner-data action was needed. Prior
+matching evidence and all original failures/limits remain preserved below.
+Owner re-review of the corrected Mailboxes page is pending; no acceptance PASS
+is inferred. Final normal signed record preservation precedes handoff.
+
 ## Approved outcome — 2026-11-10
 
 The owner approved the nine-page desktop/touch mockup pack, then clarified:
