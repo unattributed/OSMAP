@@ -88,48 +88,6 @@ pub(crate) fn render_mailboxes_page_with_storage(
             .unwrap_or_default(),
         recent_rows(summaries, inbox, csrf_token, open_on_select)
     );
-    let mut shortcuts = String::new();
-    for (label, description, icon, href) in [
-        ("Compose", "New message", "compose", Some("/compose")),
-        (
-            "Inbox",
-            if inbox {
-                "View messages"
-            } else {
-                "Mailbox unavailable"
-            },
-            "inbox",
-            inbox.then_some("/mailbox?name=INBOX"),
-        ),
-        (
-            "Folders",
-            "Browse and manage mail folders",
-            "folders",
-            Some("/folders"),
-        ),
-        (
-            "Security",
-            "Account protection",
-            "shield",
-            Some("/settings?section=security"),
-        ),
-        (
-            "Settings",
-            "Account & preferences",
-            "settings",
-            Some("/settings"),
-        ),
-    ] {
-        // Archive / Bin occupies its approved position between Folders and Security.
-        if label == "Security" {
-            shortcuts.push_str(&format!("<details class=\"welcome-shortcut welcome-shortcut-menu\"><summary><span class=\"welcome-icon\">{}</span><span><strong>Archive / Bin</strong><span>Mailbox shortcuts</span></span></summary><div><a href=\"/mailbox/shortcut?kind=archive\"><span class=\"presentation-icon presentation-icon-archive\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open configured Archive</span></a>{}</div></details>", shell_icon("archive"), "<a href=\"/mailbox/shortcut?kind=bin\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Bin</span></a>"));
-        }
-        let content = format!("<span class=\"welcome-icon\">{}</span><span><strong>{label}</strong><span>{description}</span></span>", shell_icon(icon));
-        shortcuts.push_str(&match href {
-            Some(href) => format!("<a class=\"welcome-shortcut\" href=\"{href}\">{content}</a>"),
-            None => format!("<div class=\"welcome-shortcut welcome-unavailable\" aria-disabled=\"true\">{content}</div>"),
-        });
-    }
     let mut folders = String::new();
     for mailbox in mailboxes.iter().take(DEFAULT_RENDERED_MAILBOXES_MAX) {
         folders.push_str(&format!("<li><a href=\"/mailbox?name={}\"><span class=\"welcome-folder-icon\">{}</span><strong>{}</strong><span class=\"welcome-folder-open\">Open mailbox <span aria-hidden=\"true\">→</span></span></a></li>", escape_html(&url_encode(&mailbox.name)), shell_icon(if mailbox.name == "INBOX" { "inbox" } else { "folders" }), escape_html(&mailbox.name)));
@@ -187,7 +145,6 @@ pub(crate) fn render_mailboxes_page_with_storage(
     TrustedHtml::from_template(format!(concat!(
         "{header}<main id=\"main-content\" class=\"page-shell welcome-page\" tabindex=\"-1\">",
         "<section class=\"welcome-intro\" aria-labelledby=\"mailboxes-title\"><div class=\"welcome-greeting\"><h1 id=\"mailboxes-title\">Welcome back.</h1><p>Choose a mailbox to get started.</p><p class=\"welcome-account\">Signed in as <strong>{account}</strong></p></div><div class=\"welcome-metrics\" aria-label=\"Message counts and scope\">{metrics}</div></section>",
-        "<nav class=\"welcome-shortcuts\" aria-label=\"Workspace shortcuts\">{shortcuts}</nav>",
         "<div class=\"welcome-primary-grid\"><section class=\"welcome-panel welcome-messages\" aria-labelledby=\"welcome-messages-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-messages-title\">Recent Messages</h2>{view_all}</div>{recent}<details class=\"welcome-browse\"><summary id=\"welcome-mailboxes\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Browse your mailboxes</span></summary><div class=\"welcome-folder-scroll\" tabindex=\"0\" role=\"region\" aria-labelledby=\"welcome-mailboxes\"><ul>{folders}</ul></div>{limit}</details></section>",
         "<section class=\"welcome-panel welcome-account-security\" aria-labelledby=\"welcome-security-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-security-title\">Account Security</h2></div><div class=\"welcome-protection\">{shield}<div><strong>Protected by Default</strong><p>Remote images and active content are blocked.</p></div></div><div class=\"welcome-security-detail\"><h3>Authenticated session</h3><p>Password and TOTP were required at sign-in.</p><a href=\"/sessions\">Manage sessions <span aria-hidden=\"true\">→</span></a></div></section>",
         "{key_summary}</div>",
@@ -196,7 +153,7 @@ pub(crate) fn render_mailboxes_page_with_storage(
         "<section class=\"welcome-panel welcome-storage\" aria-labelledby=\"welcome-storage-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-storage-title\">Storage Usage</h2></div><div class=\"welcome-storage-body\">{storage}</div></section></div>",
         "<section class=\"welcome-panel welcome-system\" aria-labelledby=\"welcome-system-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-system-title\">System Status</h2></div><ul>{system}</ul><details><summary><span class=\"presentation-icon presentation-icon-eye\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">View status details</span></summary><p class=\"welcome-note\">Checks apply to <strong>{account}</strong> at page load. Mailbox listing does not verify SMTP or message delivery. Public key inventory does not verify private-key readiness. Session verification does not report every security service. OSMAP does not report host backup or system-update results.</p></details></section></div>",
         "<footer class=\"welcome-footer\"><span>OSMAP · Secure by Design. Private by Default.</span><span>Limited status checks</span><span aria-disabled=\"true\">Help unavailable</span><span aria-disabled=\"true\">Feedback unavailable</span></footer></main>"
-    ), header=header, account=escape_html(canonical_username), metrics=metrics, recent=recent, shortcuts=shortcuts, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), key_summary=key_summary, activity_rows=activity, search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system, storage=storage))
+    ), header=header, account=escape_html(canonical_username), metrics=metrics, recent=recent, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), key_summary=key_summary, activity_rows=activity, search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system, storage=storage))
 }
 
 fn openpgp_summary(

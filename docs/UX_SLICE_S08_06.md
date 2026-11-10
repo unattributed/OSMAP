@@ -1,5 +1,20 @@
 # S08-06 — Presentation style
 
+## Owner review correction — 2026-11-10
+
+The owner requests removal of the horizontal Workspace shortcuts bar from the
+Mailboxes welcome page because the left navigation already provides those
+destinations. Remove only that bar and its dedicated template builder. Preserve
+the shared left navigation, greeting, metrics and all dashboard panels, including
+the separate Quick Actions panel. This direct owner correction supersedes that
+part of the approved visual reference. The supplied account screenshot remains
+private and is not a repository artifact. Product acceptance remains pending.
+
+Use existing welcome/sidebar checks and one synthetic desktop/touch page review,
+then independent review, normal signed publication and matching Web-only native
+delivery. Reuse other passing presentation-style evidence. No preference format,
+action authority, backend service, CSS framework or new test is needed.
+
 ## Approved outcome — 2026-11-10
 
 The owner approved the nine-page desktop/touch mockup pack, then clarified:

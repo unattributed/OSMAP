@@ -2,6 +2,12 @@
 
 # UX engineering decisions
 
+2026-11-10 — Owner review removes the horizontal Workspace shortcuts bar from
+the Mailboxes welcome page because its destinations are already in the left
+navigation. Preserve the shared left menu and every dashboard panel, including
+Quick Actions. This supersedes only that strip in the S08-06 visual reference;
+the owner will review the corrected installed page before acceptance.
+
 2026-11-10 — S08-06 adds Appearance → Presentation style, with Icons and Text
 labels saved in the existing account Appearance record. Text labels is the
 default. Compact actions and sidebar require fine, hover-capable input and no
