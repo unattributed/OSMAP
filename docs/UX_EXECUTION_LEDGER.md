@@ -1,3 +1,5 @@
+2026-11-11 — **S05-02 optional-fingerprint update installed; owner check PENDING.** Blank detects the key from ASC; supplied value still exact-matches. Source4a6eae5 normal hooksPASS, actual native form/importPASS, loadedWebd39a4a48 and preservation/HTTPSPASS. Independent final review GO; signed record preservation follows. Original S05 acceptance/S08-06 review remain separate.
+
 2026-11-11 — **S05-02 owner correction IN_PROGRESS:** expected public-import fingerprint optional; blank derives from file, supplied retains exact match. Existing S05 acceptance and S08-06 pending owner review remain separate.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
@@ -7,7 +9,7 @@
   "slice": "S05-02",
   "original_requirement": "Public-key import/list/remove, full-fingerprint binding, explicit recipient trust, capability/policy UI and private-key provisioning SOP",
   "source_baseline": "1fa43354535aaf2d15e837d5910bc0c0d30b48f7",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -87,15 +89,15 @@
       ],
       "frontend_backend_outcome": "Import a public ASC certificate with blank optional fingerprint; supplied expected still exact-matches. Prior accepted S05 journeys preserved.",
       "essential_qa": "Focused source and actual disposable multipart/native import, explicit mismatch refusal, independent review and Web-only deployment preservation.",
-      "next_action": "Independent exact source/data review, normal signed preservation and one disposable native multipart import.",
+      "next_action": "Minimal owner import with optional field blank; no agent credential/key operation. Finish reviewed signed record preservation.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -105,6 +107,26 @@
         {
           "stage": "source_tests",
           "reference": "focused-1.log SHA256 670cb92101dc33d58f6c365594e28ffe0ef4696864dc5920500deb9f02d96ad2 [b'test result: FAILED. 33 passed; 1 failed; 1 ignored; 0 measured; 2418 filtered out; finished in 0.16s']; focused-corrected-1.log SHA256 38bd65662f5b274ea26b58eefeaa269027d6cd6e86a46e0512a1dce102718847 [b'test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2452 filtered out; finished in 0.00s']; focused-corrected-2.log SHA256 0b602115ae7a4a706d811db0607e73d1fc109bd861f9d2c61205d9573205f1a7 [b'test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 2447 filtered out; finished in 0.00s'] Fixture-only RSA metadata correction; original first failure retained. Normal delivery hook pending."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s05/optional-fingerprint-20261111/native1-result.json SHA256 a855f344a101e34bc13ea40ec12b83283e0474fa46e815e03032766b245fe609"
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "/home/foo/Downloads/osmap-ux-s05/optional-fingerprint-20261111/install-evidence1-result.json SHA256 dadef11646ee0f2bd099060fa2ef424d05e14614478ff5d31f34e63383ebc9bf"
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Independent /root/s08_delivery_review GO after actual source/native/installed results, 12-stream readback/hash, five preservation pairs and exact-peer HTTPS200; no further review required for final status wording. Owner F06 NOT_RUN."
+        },
+        {
+          "stage": "recovery",
+          "reference": "/home/foo/Downloads/osmap-ux-s05/optional-fingerprint-20261111/native1-result.json SHA256 a855f344a101e34bc13ea40ec12b83283e0474fa46e815e03032766b245fe609"
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Normal push1 security-check PASS470.537s; Rust2362PASS/0FAIL/91ignored, signed source4a6eae5 GoodShopkeeper, fresh exact local/origin clean0/0. /home/foo/Downloads/osmap-ux-s05/optional-fingerprint-20261111/push1-result.json SHA256 8abf2cf4732bf8b98fcf43e032847d34bfadd74e63e0712d70b797d60c2fd81c"
         }
       ]
     }
@@ -113,13 +135,13 @@
     "owner": "/root",
     "functional_exit": "Import a public ASC certificate with blank optional fingerprint; supplied expected still exact-matches. Prior accepted S05 journeys preserved.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "New explicit Nov11 owner correction; original S05 acceptance and S08-06 pending review/failures preserved verbatim below. Whole prior cost UNKNOWN. No allowance reset for same-boundary retry. Nov11 focused01 retained33PASS/1FAIL/1ignored: unsupported synthetic RSA2048 inventory correctly refused before new in-use assertion; independent review identified fixture-only3072 correction, exact rerun pending. register-refresh01 source metadata writer used absent field, then narrow V10 check refused stale claims count; corrected actual field without scanner/gate change, v11/v10 PASS. These are test/evidence setup failures, not native import observations. Logs retained in optional-fingerprint-20261111; prior S05/S08 failures remain preserved.",
+    "history_reference": "New explicit Nov11 owner correction; original S05 acceptance and S08-06 pending review/failures preserved verbatim below. Whole prior cost UNKNOWN. No allowance reset for same-boundary retry. Nov11 focused01 retained33PASS/1FAIL/1ignored: unsupported synthetic RSA2048 inventory correctly refused before new in-use assertion; independent review identified fixture-only3072 correction, exact rerun pending. register-refresh01 source metadata writer used absent field, then narrow V10 check refused stale claims count; corrected actual field without scanner/gate change, v11/v10 PASS. These are test/evidence setup failures, not native import observations. Logs retained in optional-fingerprint-20261111; prior S05/S08 failures remain preserved. Normal source publication4a6eae5 PASS470.537s; native260.785s/form1PASS/import1PASS with explicit wrong-expected refusal and durable fixture cleanup; Web-only install3.111s/loaded candidate d39a4a48/protected state preserved/HTTPS200. Before this work-order clock, elapsed effort UNKNOWN; prior failures/costs not erased.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
       "started_at": "2026-11-11T07:30:59Z",
-      "elapsed_status": "UNKNOWN",
-      "elapsed_seconds": null
+      "elapsed_status": "MEASURED",
+      "elapsed_seconds": 1676.099
     },
     "attempts": [],
     "next_attempt": null
@@ -129,7 +151,7 @@
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "2fc4a59c3faf3633b02d4c65a93b0e17dd7e9e76af956c1b1dff445bd55df35d"
+      "sha256": "cc1ba8cf74dc7772b2442acd105b855ed2e69e92277185db4d63d5b7aa5cdc43"
     },
     "design": {
       "journey": "Import a public ASC certificate with blank optional fingerprint; supplied expected still exact-matches. Prior accepted S05 journeys preserved.",
@@ -194,8 +216,10 @@
         "preserved": "Original S05 acceptance, owner keys/private custody/policies and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s08_delivery_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s05/optional-fingerprint-20261111/native1-result.json SHA256 a855f344a101e34bc13ea40ec12b83283e0474fa46e815e03032766b245fe609"
+        ]
       },
       {
         "id": "F04",
@@ -210,8 +234,10 @@
         "preserved": "Original S05 acceptance, owner keys/private custody/policies and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s08_delivery_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s05/optional-fingerprint-20261111/native1-result.json SHA256 a855f344a101e34bc13ea40ec12b83283e0474fa46e815e03032766b245fe609"
+        ]
       },
       {
         "id": "F05",
@@ -226,8 +252,10 @@
         "preserved": "Original S05 acceptance, owner keys/private custody/policies and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s08_delivery_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s05/optional-fingerprint-20261111/install-evidence1-result.json SHA256 dadef11646ee0f2bd099060fa2ef424d05e14614478ff5d31f34e63383ebc9bf"
+        ]
       },
       {
         "id": "F06",
@@ -253,7 +281,7 @@
     "status": "PENDING",
     "reference": "Nov11 optional-fingerprint follow-up only; original S05 acceptance preserved."
   },
-  "next_action": "Implement and review bounded optional-fingerprint correction; no owner key mutation."
+  "next_action": "Minimal owner import with optional field blank; no agent credential/key operation. Finish reviewed signed record preservation."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

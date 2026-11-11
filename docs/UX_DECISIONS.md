@@ -773,3 +773,9 @@ binding or enabling encryption. Existing native public-only inspection, exact
 keybox delta/CAS, in-use restrictions, session and fresh-factor checks remain.
 The follow-up uses the existing S05 specification/work order and disposable
 native Runtime path. No owner credential/key operation is performed by agents.
+
+The correction is installed on obsd1 from signed source4a6eae5. Actual omitted
+multipart import and explicit native mismatch refusal pass; authoritative
+inventory, binding restrictions, fresh verification, trust/private preservation
+and unchanged mail availability remain. Owner performs any real import with
+their own authentication. Engineering delivery and owner acceptance stay separate.

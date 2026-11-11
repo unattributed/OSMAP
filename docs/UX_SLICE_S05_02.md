@@ -49,6 +49,28 @@ monetary costs are UNKNOWN. Private retained artifacts remain under
 Original accepted S05-02 journeys and pending S08-06 owner review are preserved;
 this follow-up does not reopen or declare whole-sprint/release acceptance.
 
+### Optional-fingerprint engineering result — 2026-11-11
+
+Signed source `4a6eae5fa2991186c6f7be53bddd3dede0fbc0df` passed normal
+security-check publication (2362 Rust PASS, zero FAIL, 91 ignored) and fresh
+GitHub equality. Focused source results retain the original unsupported-fixture
+failure (33 PASS/1 FAIL/1 ignored), corrected exact case PASS and six route PASS.
+Actual obsd1 omitted-fingerprint HTTP/Runtime/native import and optional-form
+cases each PASS; explicit mismatch leaves the keybox unchanged. All 598 archive
+source/fixture/Cargo inputs and seven native logs matched by readback/hash.
+Native execution took 260.785 seconds; functional case 72.91 seconds. Disposable
+resources were cleaned only after durable evidence readback/hash.
+
+Web-only installation took 3.111 seconds. Loaded binary
+`d39a4a4876b465084315d09df39f2f711f229980a4e9fedaff4be7179bd639d8`
+passed service/loaded-inode, protected-state and HTTPS checks. Public mail,
+helper/account/GPG processes and four configurations were preserved. No owner
+key import, credential replay, message operation or policy mutation occurred.
+Independent source/native/installed-record review GO.
+Owner checks the optional blank field with their own authentication separately;
+original S05 acceptance and pending S08-06 review remain unchanged. No full
+release qualification is asserted.
+
 ## User outcome and design
 
 Settings -> OpenPGP -> Manage Keys shows imported public keys, their usable email
