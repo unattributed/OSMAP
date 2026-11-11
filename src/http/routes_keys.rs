@@ -482,6 +482,47 @@ mod tests {
         );
     }
     #[test]
+    fn public_key_upload_accepts_blank_or_omitted_expected_fingerprint() {
+        let revision = "a".repeat(64);
+        let fields = vec![
+            ("key_action", "import_public"),
+            ("binding_revision", "0"),
+            ("public_inventory_revision", revision.as_str()),
+        ];
+        for expected in [
+            None,
+            Some(""),
+            Some("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+        ] {
+            let mut fields = fields.clone();
+            if let Some(expected) = expected {
+                fields.push(("expected_primary_fingerprint", expected));
+            }
+            let parsed = key_form(
+                &upload_form(&fields, &[("key.asc", b"public")]),
+                UPLOAD_TYPE,
+            )
+            .unwrap();
+            match action(&parsed).unwrap().0 {
+                Action::ImportPublic {
+                    expected_primary_fingerprint,
+                    ..
+                } => assert_eq!(expected_primary_fingerprint, expected.unwrap_or("")),
+                _ => panic!("public upload delegated another action"),
+            }
+        }
+        let mut duplicated = fields;
+        duplicated.extend([
+            ("expected_primary_fingerprint", ""),
+            ("expected_primary_fingerprint", ""),
+        ]);
+        assert!(key_form(
+            &upload_form(&duplicated, &[("key.asc", b"public")]),
+            UPLOAD_TYPE
+        )
+        .is_err());
+    }
+    #[test]
     fn public_key_upload_requires_one_bounded_ascii_asc_file_and_no_mixed_source() {
         let fields = [("key_action", "import_public")];
         let limit = crate::key_management::MAX_PUBLIC_CERTIFICATE;

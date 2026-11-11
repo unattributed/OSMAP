@@ -7,6 +7,48 @@ Started 2026-10-31 (America/Toronto) from signed S05-01 closeout
 infrastructure closeout and authorized this slice using the same failure-analysis
 method. This slice has a real visual/functional browser UAT.
 
+## Owner correction — optional fingerprint, 2026-11-11
+
+Outcome: a signed-in user can import one public .asc certificate without knowing
+or entering its fingerprint. “Expected full primary fingerprint (optional)” may
+be blank; OSMAP derives the internal primary identifier from the uploaded file.
+When supplied, the expected full fingerprint must still match exactly. The
+existing authoritative inventory displays the imported full fingerprint in
+Details. Import alone does not verify identity, approve a binding or enable
+encryption. Password and fresh authenticator verification remain required.
+
+Implementation stays in the existing Web key-management path. For blank input,
+a bounded v4 public-primary packet identifier is calculated per RFC 9580 section
+5.5.4.2 using the existing SHA-1 library. It feeds both the in-use guard and exact
+native import target. The same certificate bytes reach the unchanged native
+worker, whose public-only, one-primary, exact-match and import-result checks and
+keybox CAS remain authoritative. No native protocol, helper, dependency, trust,
+private custody, recipient policy or autosave change is included.
+
+Minimum checks: independently known primary fingerprint, blank/omitted field,
+explicit matching/mismatching value, malformed/oversize/secret/multiple-primary/
+unsupported certificate refusal, in-use refusal before RPC, unchanged account
+and revision/fresh-authentication controls. Exercise the actual multipart HTTP
+Runtime/native import using disposable keys on obsd1; never replay owner
+credentials or perform an owner key import. Native source is unchanged; qualify
+the changed Web composition, then install only the reviewed Web candidate with
+existing backup, rollback, protected-state and mail-availability checks. Owner
+retests import with their own authentication after engineering readiness.
+
+Root owns integration, Git, native queue and documentation; /root/s08_scrum owns
+the bounded key-management correction; /root/s08_delivery_review independently
+reviews source, QA, security and delivery. Use the failure -> analysis -> smallest
+correction -> distinguishing retest method. Two failures at the same boundary
+stop retries for combined reassessment. This new owner-directed correction has
+an initial cumulative investigation allowance of 14400 seconds; historical S05
+and S08 failures/costs remain retained. Native builds/fixtures/install retain
+existing fixed technical bounds. No calendar expiry is invented. Token and
+monetary costs are UNKNOWN. Private retained artifacts remain under
+`/home/foo/Downloads/osmap-ux-s05/optional-fingerprint-20261111/`.
+
+Original accepted S05-02 journeys and pending S08-06 owner review are preserved;
+this follow-up does not reopen or declare whole-sprint/release acceptance.
+
 ## User outcome and design
 
 Settings -> OpenPGP -> Manage Keys shows imported public keys, their usable email

@@ -1,3 +1,263 @@
+2026-11-11 — **S05-02 owner correction IN_PROGRESS:** expected public-import fingerprint optional; blank derives from file, supplied retains exact match. Existing S05 acceptance and S08-06 pending owner review remain separate.
+
+<!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S05-02",
+  "original_requirement": "Public-key import/list/remove, full-fingerprint binding, explicit recipient trust, capability/policy UI and private-key provisioning SOP",
+  "source_baseline": "1fa43354535aaf2d15e837d5910bc0c0d30b48f7",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s08_scrum"
+    ],
+    "qa": [
+      "/root/s08_delivery_review"
+    ],
+    "security_review": [
+      "/root/s08_delivery_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/key_management.rs",
+    "src/key_management_tests.rs",
+    "src/key_inventory_ui.rs",
+    "src/http/routes_keys.rs",
+    "src/http/key_management_route_tests.rs",
+    "src/http_gateway_keys_tests.rs",
+    "docs/UX_SLICE_S05_02.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/UX_DECISIONS.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-claims-boundary.json"
+  ],
+  "outcomes": [
+    {
+      "id": "optional-public-import-fingerprint",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX09-004",
+        "UX09-005",
+        "UX09-006",
+        "R2-01-015",
+        "R2-01-016",
+        "R2-01-017",
+        "R2-01-018",
+        "R2-01-019",
+        "R2-01-020",
+        "R2-10-003",
+        "R2-10-007",
+        "R2-19-001",
+        "R2-19-002",
+        "R2-19-006",
+        "R2-19-007",
+        "R2-19-009",
+        "R2-19-010",
+        "R2-21-001",
+        "R2-21-002",
+        "R2-21-003",
+        "R2-21-004",
+        "R2-21-005",
+        "R2-21-006",
+        "R2-21-007",
+        "R2-21-008",
+        "R2-21-009",
+        "R2-21-010",
+        "R2-21-011",
+        "R2-21-012",
+        "R2-21-013",
+        "R2-21-014",
+        "R2-21-015",
+        "R2-21-016",
+        "R2-21-017"
+      ],
+      "frontend_backend_outcome": "Import a public ASC certificate with blank optional fingerprint; supplied expected still exact-matches. Prior accepted S05 journeys preserved.",
+      "essential_qa": "Focused source and actual disposable multipart/native import, explicit mismatch refusal, independent review and Web-only deployment preservation.",
+      "next_action": "Independent exact source/data review, normal signed preservation and one disposable native multipart import.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Bounded blank-only effective identifier; native parser/protocol unchanged. Root and scrum changes, independent method review no security blocker; final candidate review pending."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "focused-1.log SHA256 670cb92101dc33d58f6c365594e28ffe0ef4696864dc5920500deb9f02d96ad2 [b'test result: FAILED. 33 passed; 1 failed; 1 ignored; 0 measured; 2418 filtered out; finished in 0.16s']; focused-corrected-1.log SHA256 38bd65662f5b274ea26b58eefeaa269027d6cd6e86a46e0512a1dce102718847 [b'test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2452 filtered out; finished in 0.00s']; focused-corrected-2.log SHA256 0b602115ae7a4a706d811db0607e73d1fc109bd861f9d2c61205d9573205f1a7 [b'test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 2447 filtered out; finished in 0.00s'] Fixture-only RSA metadata correction; original first failure retained. Normal delivery hook pending."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Import a public ASC certificate with blank optional fingerprint; supplied expected still exact-matches. Prior accepted S05 journeys preserved.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "New explicit Nov11 owner correction; original S05 acceptance and S08-06 pending review/failures preserved verbatim below. Whole prior cost UNKNOWN. No allowance reset for same-boundary retry. Nov11 focused01 retained33PASS/1FAIL/1ignored: unsupported synthetic RSA2048 inventory correctly refused before new in-use assertion; independent review identified fixture-only3072 correction, exact rerun pending. register-refresh01 source metadata writer used absent field, then narrow V10 check refused stale claims count; corrected actual field without scanner/gate change, v11/v10 PASS. These are test/evidence setup failures, not native import observations. Logs retained in optional-fingerprint-20261111; prior S05/S08 failures remain preserved.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-11T07:30:59Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
+    },
+    "attempts": [],
+    "next_attempt": null
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S05-02",
+    "specification": {
+      "path": "docs/UX_SLICE_S05_02.md",
+      "sha256": "2fc4a59c3faf3633b02d4c65a93b0e17dd7e9e76af956c1b1dff445bd55df35d"
+    },
+    "design": {
+      "journey": "Import a public ASC certificate with blank optional fingerprint; supplied expected still exact-matches. Prior accepted S05 journeys preserved.",
+      "frontend": "Existing native multipart form marks expected fingerprint optional and explains detection and optional trusted-channel comparison.",
+      "backend": "Derive bounded v4 primary identifier only when blank; existing key-in-use and native full-certificate import validation require exact effective identifier.",
+      "interfaces": "Existing HTTP action, strict fields, account/session/CSRF/Origin, revisions and fresh password/TOTP remain; native protocol unchanged.",
+      "persistence": "Existing public keybox CAS only; preserve bindings, trustdb, private material and encryption policies.",
+      "security": "Refuse malformed, secret, multiple or unsupported primary packets; native worker independently validates exact public certificate.",
+      "failure_recovery": "No ambiguous retry or success before native confirmation; exact-owned fixture disposition and existing hashed Web rollback."
+    },
+    "tests": [
+      {
+        "id": "F01",
+        "outcome_ids": [
+          "optional-public-import-fingerprint"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Exact reviewed changed source and existing bounded disposable fixtures; no owner credentials.",
+        "action": "Run focused form, parser, mutation and route regressions.",
+        "expected": "Blank and omitted derive known exact primary; explicit matching remains accepted; authoritative success only.",
+        "preserved": "Original S05 acceptance, owner keys/private custody/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "focused-1.log SHA256 670cb92101dc33d58f6c365594e28ffe0ef4696864dc5920500deb9f02d96ad2 [b'test result: FAILED. 33 passed; 1 failed; 1 ignored; 0 measured; 2418 filtered out; finished in 0.16s']",
+          "focused-corrected-1.log SHA256 38bd65662f5b274ea26b58eefeaa269027d6cd6e86a46e0512a1dce102718847 [b'test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2452 filtered out; finished in 0.00s']",
+          "focused-corrected-2.log SHA256 0b602115ae7a4a706d811db0607e73d1fc109bd861f9d2c61205d9573205f1a7 [b'test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 2447 filtered out; finished in 0.00s']"
+        ]
+      },
+      {
+        "id": "F02",
+        "outcome_ids": [
+          "optional-public-import-fingerprint"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Exact reviewed changed source and existing bounded disposable fixtures; no owner credentials.",
+        "action": "Run malformed/secret/multi/unsupported/size, in-use, backend-failure and authorization regressions.",
+        "expected": "Rejected inputs and bound keys cannot mutate; wrong expected remains refused by native; existing auth and revisions preserved.",
+        "preserved": "Original S05 acceptance, owner keys/private custody/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "focused-1.log SHA256 670cb92101dc33d58f6c365594e28ffe0ef4696864dc5920500deb9f02d96ad2 [b'test result: FAILED. 33 passed; 1 failed; 1 ignored; 0 measured; 2418 filtered out; finished in 0.16s']",
+          "focused-corrected-1.log SHA256 38bd65662f5b274ea26b58eefeaa269027d6cd6e86a46e0512a1dce102718847 [b'test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2452 filtered out; finished in 0.00s']",
+          "focused-corrected-2.log SHA256 0b602115ae7a4a706d811db0607e73d1fc109bd861f9d2c61205d9573205f1a7 [b'test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 2447 filtered out; finished in 0.00s']"
+        ]
+      },
+      {
+        "id": "F03",
+        "outcome_ids": [
+          "optional-public-import-fingerprint"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Exact reviewed changed source and existing bounded disposable fixtures; no owner credentials.",
+        "action": "Exercise omitted fingerprint multipart through real Runtime/native worker in disposable obsd1 keyboxes.",
+        "expected": "Native confirmed import appears in actual inventory with exact derived primary; bindings/trust/private state preserved.",
+        "preserved": "Original S05 acceptance, owner keys/private custody/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "F04",
+        "outcome_ids": [
+          "optional-public-import-fingerprint"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Exact reviewed changed source and existing bounded disposable fixtures; no owner credentials.",
+        "action": "Exercise explicit wrong expected against the same actual native public-only path.",
+        "expected": "Mismatch refuses and keybox remains unchanged; fixture effects safely disposed.",
+        "preserved": "Original S05 acceptance, owner keys/private custody/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "F05",
+        "outcome_ids": [
+          "optional-public-import-fingerprint"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Exact reviewed changed source and existing bounded disposable fixtures; no owner credentials.",
+        "action": "Install reviewed Web-only candidate and verify loaded binary, form contract, protected-state and HTTPS.",
+        "expected": "Exact candidate loaded; optional field available; mail backend and owner state preserved.",
+        "preserved": "Original S05 acceptance, owner keys/private custody/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "F06",
+        "outcome_ids": [
+          "optional-public-import-fingerprint"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Exact reviewed changed source and existing bounded disposable fixtures; no owner credentials.",
+        "action": "Owner imports public ASC with optional fingerprint blank using their normal fresh authentication.",
+        "expected": "Import works without prior fingerprint knowledge; authoritative imported key details are visible.",
+        "preserved": "Original S05 acceptance, owner keys/private custody/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "Focused source and actual native changed composition pass, independent source/security/result review GO, Web-only install and exact signed GitHub preservation confirmed.",
+    "human_exit": "Owner separately confirms public import works with the optional field blank; no whole-release claim."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Nov11 optional-fingerprint follow-up only; original S05 acceptance preserved."
+  },
+  "next_action": "Implement and review bounded optional-fingerprint correction; no owner key mutation."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
 2026-11-10 — **S08-06 Mailboxes correction installed; owner re-review PENDING.** Only duplicated horizontal Workspace shortcuts removed. Shared left navigation and all7dashboardpanels retained. Source49856393 normalhooksPASS, existing16/browser3/native1PASS; loadedWeb744cac94, preservation/HTTPSPASS and independentGO. Finish normal signed record preservation before handoff. Prior acceptance/failures/limits unchanged.
 
 2026-11-10 — **S08-06 owner review correction IN_PROGRESS.** Remove only duplicated horizontal Workspace shortcuts from Mailboxes; retain left navigation and all dashboard panels. Owner re-review follows corrected installed page. Prior passes/failures and S08/S08-05 acceptance preserved.
@@ -10,7 +270,7 @@
 
 2026-11-10 — **S08-05 resumed: logo continuity only.** Latest operator clarification narrows the November 9 branding plan to reusing the existing login logo across branded pages. Existing copy/navigation remain unchanged. Root integrates the preserved whole-S08 acceptance and extension records from the separate worktree without modifying that worktree. Original S08 stays accepted.
 
-<!-- OSMAP_ACTIVE_WORK_ORDER -->
+<!-- OSMAP_ARCHIVED_S08_06_WORK_ORDER_20261111 -->
 ```json
 {
   "version": 1,
@@ -651,7 +911,7 @@
   }
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_ARCHIVED_S08_06_WORK_ORDER_20261111 -->
 
 ## Preserved accepted S08-05 work order — 2026-11-10
 

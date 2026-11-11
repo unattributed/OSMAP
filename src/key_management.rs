@@ -13,6 +13,8 @@ use crate::openpgp_bindings::{
 };
 use crate::openpgp_inventory::Inventory;
 use crate::session::ValidatedSession;
+use sha1::{Digest, Sha1};
+use std::borrow::Cow;
 
 pub const MAX_PUBLIC_CERTIFICATE: usize = 64 * 1024;
 
@@ -283,18 +285,18 @@ pub fn mutate<B: PublicKeyBackend>(
             certificate,
             expected_primary_fingerprint,
         } => {
-            let certificate =
+            let (certificate, primary_fingerprint) =
                 normalized_public_certificate(certificate, expected_primary_fingerprint)?;
             let public_revision = public_revision(request.expected_public_revision)?;
             return store
                 .with_locked_revision(account, request.expected_revision, |record| {
-                    Ok(if key_in_use(record, expected_primary_fingerprint) {
+                    Ok(if key_in_use(record, primary_fingerprint.as_ref()) {
                         Err(Error::KeyInUse)
                     } else {
                         backend.import_public(
                             account,
                             public_revision,
-                            expected_primary_fingerprint,
+                            primary_fingerprint.as_ref(),
                             certificate,
                         )
                     })
@@ -460,8 +462,13 @@ fn public_revision(value: Option<&str>) -> Result<&str, Error> {
 pub fn validate_public_certificate(bytes: &[u8], expected: &str) -> Result<(), Error> {
     normalized_public_certificate(bytes, expected).map(|_| ())
 }
-fn normalized_public_certificate<'a>(bytes: &'a [u8], expected: &str) -> Result<&'a [u8], Error> {
-    fingerprint(expected)?;
+fn normalized_public_certificate<'a>(
+    bytes: &'a [u8],
+    expected: &'a str,
+) -> Result<(&'a [u8], Cow<'a, str>), Error> {
+    if !expected.is_empty() {
+        fingerprint(expected)?;
+    }
     if bytes.is_empty() || bytes.len() > MAX_PUBLIC_CERTIFICATE || !bytes.is_ascii() {
         return Err(Error::Invalid);
     }
@@ -475,11 +482,187 @@ fn normalized_public_certificate<'a>(bytes: &'a [u8], expected: &str) -> Result<
     {
         return Err(Error::Invalid);
     }
-    // Native before-write inspection still establishes packet/key contents and
-    // exact full fingerprint. Armor labels alone grant no import authority.
+    let primary = if expected.is_empty() {
+        Cow::Owned(derived_public_fingerprint(text)?)
+    } else {
+        Cow::Borrowed(expected)
+    };
+    // Native before-write inspection remains the authority for the complete
+    // certificate and exact fingerprint. Derivation supplies an identifier,
+    // never key validity, trust or permission to bypass that inspection.
     // Forward the same armor representation that passed these checks. The
     // native helper requires BEGIN at byte zero; preserve all interior bytes.
-    Ok(text.as_bytes())
+    Ok((text.as_bytes(), primary))
+}
+
+/// Extract a bounded v4 public-key identity, without replacing native certificate
+/// validation. Only the blank expected-fingerprint path uses this parser.
+fn derived_public_fingerprint(armor: &str) -> Result<String, Error> {
+    let mut lines = armor.lines();
+    if lines.next().map(str::trim_end) != Some("-----BEGIN PGP PUBLIC KEY BLOCK-----") {
+        return Err(Error::Invalid);
+    }
+    let mut separated = false;
+    for line in lines.by_ref() {
+        if line.trim().is_empty() {
+            separated = true;
+            break;
+        }
+        let Some((name, value)) = line.split_once(": ") else {
+            return Err(Error::Invalid);
+        };
+        if name.is_empty()
+            || !name
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+            || !value
+                .bytes()
+                .all(|byte| byte.is_ascii_graphic() || byte == b' ')
+        {
+            return Err(Error::Invalid);
+        }
+    }
+    if !separated {
+        return Err(Error::Invalid);
+    }
+    let mut encoded = String::new();
+    let mut checksum = false;
+    let mut ended = false;
+    for line in lines.by_ref() {
+        let line = line.trim();
+        if line == "-----END PGP PUBLIC KEY BLOCK-----" {
+            ended = true;
+            break;
+        }
+        if line.is_empty() {
+            continue;
+        }
+        if checksum {
+            return Err(Error::Invalid);
+        }
+        // RFC 9580 §6.1 makes the CRC24 footer optional and forbids rejecting
+        // solely for a malformed/mismatched CRC. It supplies no key authority.
+        if line.starts_with('=') && encoded.len() % 4 == 0 {
+            checksum = true;
+            continue;
+        }
+        encoded.extend(
+            line.bytes()
+                .filter(|byte| !byte.is_ascii_whitespace())
+                .map(char::from),
+        );
+    }
+    if !ended || lines.any(|line| !line.trim().is_empty()) || encoded.is_empty() {
+        return Err(Error::Invalid);
+    }
+    let value = |byte| match byte {
+        b'A'..=b'Z' => Some(byte - b'A'),
+        b'a'..=b'z' => Some(byte - b'a' + 26),
+        b'0'..=b'9' => Some(byte - b'0' + 52),
+        b'+' => Some(62),
+        b'/' => Some(63),
+        _ => None,
+    };
+    // The attachment decoder is reused only after canonical padding admission:
+    // no interior padding and no non-zero unused bits in the final quantum.
+    if encoded.len() % 4 != 0 {
+        return Err(Error::Invalid);
+    }
+    for (index, chunk) in encoded.as_bytes().chunks_exact(4).enumerate() {
+        let second = value(chunk[1]).ok_or(Error::Invalid)?;
+        value(chunk[0]).ok_or(Error::Invalid)?;
+        let last = (index + 1) * 4 == encoded.len();
+        if chunk[2] == b'=' {
+            if !last || chunk[3] != b'=' || second & 15 != 0 {
+                return Err(Error::Invalid);
+            }
+        } else {
+            let third = value(chunk[2]).ok_or(Error::Invalid)?;
+            if chunk[3] == b'=' {
+                if !last || third & 3 != 0 {
+                    return Err(Error::Invalid);
+                }
+            } else {
+                value(chunk[3]).ok_or(Error::Invalid)?;
+            }
+        }
+    }
+    let mut decoded = crate::attachment::decode_base64_bytes(&encoded, MAX_PUBLIC_CERTIFICATE)
+        .map_err(|_| Error::Invalid)?;
+    let result = public_packet_fingerprint(&decoded);
+    // A falsely labelled public upload can contain a secret-key packet. Clear
+    // every decoded request-local byte on success and all packet refusals.
+    crate::openpgp_personal::clear(&mut decoded);
+    result
+}
+
+fn public_packet_fingerprint(packets: &[u8]) -> Result<String, Error> {
+    fn take<'a>(bytes: &'a [u8], cursor: &mut usize, count: usize) -> Result<&'a [u8], Error> {
+        let end = cursor.checked_add(count).ok_or(Error::Invalid)?;
+        let value = bytes.get(*cursor..end).ok_or(Error::Invalid)?;
+        *cursor = end;
+        Ok(value)
+    }
+    fn scalar(bytes: &[u8]) -> Result<usize, Error> {
+        bytes.iter().try_fold(0usize, |value, byte| {
+            value
+                .checked_mul(256)
+                .and_then(|value| value.checked_add(usize::from(*byte)))
+                .ok_or(Error::Invalid)
+        })
+    }
+    let mut cursor = 0;
+    let mut primary = None;
+    while cursor < packets.len() {
+        let header = take(packets, &mut cursor, 1)?[0];
+        if header & 0x80 == 0 {
+            return Err(Error::Invalid);
+        }
+        let tag = if header & 0x40 != 0 {
+            header & 0x3f
+        } else {
+            (header >> 2) & 0x0f
+        };
+        if matches!(tag, 5 | 7) {
+            return Err(Error::Invalid);
+        }
+        let length = if header & 0x40 != 0 {
+            match take(packets, &mut cursor, 1)?[0] {
+                first @ 0..=191 => usize::from(first),
+                first @ 192..=223 => {
+                    ((usize::from(first) - 192) << 8)
+                        + usize::from(take(packets, &mut cursor, 1)?[0])
+                        + 192
+                }
+                255 => scalar(take(packets, &mut cursor, 4)?)?,
+                _ => return Err(Error::Invalid),
+            }
+        } else {
+            let count = match header & 3 {
+                0 => 1,
+                1 => 2,
+                2 => 4,
+                _ => return Err(Error::Invalid),
+            };
+            scalar(take(packets, &mut cursor, count)?)?
+        };
+        let body = take(packets, &mut cursor, length)?;
+        if tag == 6 {
+            if primary.is_some() || body.len() < 6 || body[0] != 4 {
+                return Err(Error::Invalid);
+            }
+            primary = Some(body);
+        }
+    }
+    let primary = primary.ok_or(Error::Invalid)?;
+    let length = u16::try_from(primary.len()).map_err(|_| Error::Invalid)?;
+    // RFC 9580 §5.5.4.2: v4 identity hashes the entire Public-Key body,
+    // prefixed by 0x99 and its two-byte big-endian length.
+    let mut digest = Sha1::new();
+    digest.update([0x99]);
+    digest.update(length.to_be_bytes());
+    digest.update(primary);
+    Ok(format!("{:X}", digest.finalize()))
 }
 fn key_in_use(record: &BindingRecord, primary: &str) -> bool {
     record.account_binding.as_ref().is_some_and(|b| {

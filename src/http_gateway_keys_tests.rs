@@ -110,11 +110,24 @@ impl Drop for NativeService {
 #[test]
 #[ignore = "requires disposable OpenBSD keyboxes and real public-admin worker"]
 fn native_runtime_key_management_journey() {
+    native_runtime_key_management_fixture(
+        "http::http_gateway::http_gateway_keys::tests::native_runtime_key_management_journey",
+        false,
+    );
+}
+
+#[test]
+#[ignore = "requires disposable OpenBSD keyboxes and real public-admin worker"]
+fn native_runtime_public_import_optional_fingerprint() {
+    native_runtime_key_management_fixture(
+        "http::http_gateway::http_gateway_keys::tests::native_runtime_public_import_optional_fingerprint", true,
+    );
+}
+
+fn native_runtime_key_management_fixture(test: &str, public_import_only: bool) {
     use crate::openpgp_bindings::{Recipients, Requirement, Selections};
     use std::process::{Command, Stdio};
     use std::time::{Duration, Instant};
-    const TEST: &str =
-        "http::http_gateway::http_gateway_keys::tests::native_runtime_key_management_journey";
     assert_eq!(std::env::consts::OS, "openbsd");
     if let Ok(service) = std::env::var("OSMAP_KEYS_NATIVE_SERVICE") {
         let config = PathBuf::from(std::env::var_os("OSMAP_KEYS_NATIVE_CONFIG").unwrap());
@@ -307,7 +320,7 @@ fn native_runtime_key_management_journey() {
     fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).unwrap();
     let mut service = NativeService(
         Command::new(std::env::current_exe().unwrap())
-            .args(["--exact", TEST, "--ignored"])
+            .args(["--exact", test, "--ignored"])
             .env("OSMAP_KEYS_NATIVE_SERVICE", "admin")
             .env("OSMAP_KEYS_NATIVE_CONFIG", &config)
             .env("OSMAP_KEYS_NATIVE_KEY", &key)
@@ -491,6 +504,29 @@ fn native_runtime_key_management_journey() {
         .unwrap()
         .iter()
         .any(|k| k.primary.fingerprint == bob_fp));
+    // An explicitly supplied different full fingerprint must still fail at
+    // the authoritative native parser without changing the actual keybox.
+    let admin = f.gateway.public_admin_client.as_ref().unwrap();
+    let wrong_expected = "D".repeat(40);
+    assert!(admin
+        .import_public(
+            ACCOUNT,
+            removed.public_inventory_revision.as_deref().unwrap(),
+            &wrong_expected,
+            &certificate.stdout,
+        )
+        .is_err());
+    let after_mismatch = admin.snapshot(ACCOUNT).unwrap();
+    assert_eq!(
+        Some(after_mismatch.revision.as_str()),
+        removed.public_inventory_revision.as_deref()
+    );
+    assert!(!after_mismatch
+        .inventory
+        .keys()
+        .unwrap()
+        .iter()
+        .any(|key| key.primary.fingerprint == bob_fp));
     // A fresh authenticated crypto helper opts in to local imported recipients
     // with an EMPTY static recipient list. It grants no signing/decryption.
     let crypto_socket = f.root.join("crypto.sock");
@@ -507,7 +543,7 @@ fn native_runtime_key_management_journey() {
     fs::set_permissions(&crypto_config, fs::Permissions::from_mode(0o600)).unwrap();
     let mut crypto_service = NativeService(
         Command::new(std::env::current_exe().unwrap())
-            .args(["--exact", TEST, "--ignored"])
+            .args(["--exact", test, "--ignored"])
             .env("OSMAP_KEYS_NATIVE_SERVICE", "crypto")
             .env("OSMAP_KEYS_NATIVE_CONFIG", &crypto_config)
             .env("OSMAP_KEYS_NATIVE_KEY", &crypto_key)
@@ -565,7 +601,8 @@ fn native_runtime_key_management_journey() {
             "public_inventory_revision",
             removed.public_inventory_revision.as_deref().unwrap(),
         ),
-        ("expected_primary_fingerprint", bob_fp.as_str()),
+        // Deliberately omit the optional expected fingerprint. The Web must
+        // derive Bob's exact primary before the unchanged native comparison.
         ("current_password", PASSWORD),
         ("totp_code", fresh_code.as_str()),
         ("csrf_token", f.session.record.csrf_token.as_str()),
@@ -625,6 +662,23 @@ fn native_runtime_key_management_journey() {
         restored.bindings.as_ref().unwrap().policy.encryption,
         Requirement::Required
     );
+    if public_import_only {
+        assert_eq!(fs::read(alice.join("trustdb.gpg")).unwrap(), trustdb);
+        for (path, bytes) in private {
+            assert_eq!(fs::read(path).unwrap(), bytes);
+        }
+        assert!(authenticate_count.load(Ordering::SeqCst) > 0);
+        assert!(admit_count.load(Ordering::SeqCst) > 0);
+        assert!(!f.root.join("primary-called").exists());
+        assert_eq!(
+            mutation_listener.accept().unwrap_err().kind(),
+            std::io::ErrorKind::WouldBlock
+        );
+        drop(selected_primary);
+        drop(crypto_service);
+        drop(service);
+        return;
+    }
     // A successful file import exposes the engine-parsed UID addr-spec. The
     // recipient resolves without another SetRecipient/persisted binding step.
     let inventory = restored.inventory.as_ref().unwrap();

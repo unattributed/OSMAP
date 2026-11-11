@@ -757,7 +757,7 @@ pub(crate) fn render_key_management_panel_with_personal(
         "Save protection policy",
         ready,
     );
-    let import_fields = format!("{public_revision_field}<label>OpenPGP public key file (.asc)<input type=\"file\" name=\"attachment\" accept=\".asc,application/pgp-keys\" required></label>{}<p>Choose one ASCII-armoured public key file, up to 64 KiB. Email addresses are read automatically from the key. Encryption is off by default; existing account and recipient policies still apply. Compare the full fingerprint through a trusted channel.</p>", fingerprint_input("expected_primary_fingerprint", "Expected full primary fingerprint", "", true));
+    let import_fields = format!("{public_revision_field}<label>OpenPGP public key file (.asc)<input type=\"file\" name=\"attachment\" accept=\".asc,application/pgp-keys\" required></label>{}<p>Choose one ASCII-armoured public key file, up to 64 KiB. Email addresses are read automatically from the key. Encryption is off by default; existing account and recipient policies still apply. Leave the optional fingerprint blank to detect it from the file. If you have a fingerprint from the key’s owner through a trusted channel, enter it to require an exact match. Importing does not verify the owner’s identity.</p>", fingerprint_input("expected_primary_fingerprint", "Expected full primary fingerprint (optional)", "", false));
     let import_form = binding_form(
         csrf,
         revision,
@@ -901,6 +901,19 @@ mod binding_page_tests {
             1
         );
         assert!(!enabled.contains("name=\"certificate\""));
+        let fingerprint = enabled
+            .split_once("name=\"expected_primary_fingerprint\"")
+            .unwrap()
+            .1
+            .split_once('>')
+            .unwrap()
+            .0;
+        assert!(!fingerprint.contains("required"));
+        assert!(fingerprint.contains("pattern=\"[A-Fa-f0-9]{40}\""));
+        assert!(enabled.contains("Expected full primary fingerprint (optional)"));
+        assert!(enabled.contains("blank to detect it from the file"));
+        assert!(enabled.contains("Importing does not verify the owner’s identity"));
+
         assert!(enabled.contains("<section id=\"public-inventory\""));
         assert!(enabled.contains("name=\"public_inventory_revision\" value=\"aaaaaaaa"));
         assert!(enabled.contains("<summary>Remove public certificate</summary>"));

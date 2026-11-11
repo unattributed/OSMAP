@@ -607,6 +607,233 @@ fn public_import_dispatches_validated_armor_without_outer_paste_whitespace() {
     assert_eq!(backend.calls.get(), 2);
     assert_eq!(store.load("alice@example.test").unwrap().revision, 0);
 }
+// Public synthetic v4 RSA packet (creation 0, n=211, e=3). This is a parser
+// fixture, not a usable certificate. The constant fingerprint was independently
+// calculated with OpenSSL SHA-1 over 99 00 0c followed by these twelve bytes.
+const DERIVED_PUBLIC_FP: &str = "066CA89D7D52A9C7FE639E865A3A1CDC422D444D";
+const DERIVED_PUBLIC_BODY: &[u8] = &[4, 0, 0, 0, 0, 1, 0, 8, 211, 0, 2, 3];
+const DERIVED_PUBLIC_ARMOR: &[u8] = b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nxgwEAAAAAAEACNMAAgM=\n-----END PGP PUBLIC KEY BLOCK-----";
+
+fn packet_armor(packets: &[u8]) -> Vec<u8> {
+    format!(
+        "-----BEGIN PGP PUBLIC KEY BLOCK-----\n\n{}\n-----END PGP PUBLIC KEY BLOCK-----",
+        crate::send::base64_encode_wrapped(packets)
+    )
+    .into_bytes()
+}
+
+#[test]
+fn blank_public_fingerprint_uses_independent_v4_identity_and_preserves_armor() {
+    for armor in [
+        DERIVED_PUBLIC_ARMOR.to_vec(),
+        b"-----BEGIN PGP PUBLIC KEY BLOCK-----\r\nVersion: Synthetic\r\nComment: Public parser fixture\r\n\r\nxgwEAAAAAAEACNMAAgM=\r\n=AAAA\r\n-----END PGP PUBLIC KEY BLOCK-----".to_vec(),
+        b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nxgwEAAAAAAEACNMAAgM=\n=malformed CRC is not authority\n-----END PGP PUBLIC KEY BLOCK-----".to_vec(),
+    ] {
+        let mut pasted = b" \r\n\t".to_vec();
+        pasted.extend_from_slice(&armor);
+        pasted.extend_from_slice(b"\r\n \t");
+        let (actual_armor, fingerprint) = normalized_public_certificate(&pasted, "").unwrap();
+        assert_eq!(fingerprint.as_ref(), DERIVED_PUBLIC_FP);
+        assert_eq!(actual_armor, armor);
+        assert_eq!(validate_public_certificate(&pasted, ""), Ok(()));
+    }
+    assert_eq!(
+        validate_public_certificate(DERIVED_PUBLIC_ARMOR, " "),
+        Err(Error::Invalid)
+    );
+}
+
+#[test]
+fn blank_public_fingerprint_accepts_checked_old_and_new_definite_packet_lengths() {
+    for header in [
+        vec![0x98, 12],
+        vec![0x99, 0, 12],
+        vec![0x9a, 0, 0, 0, 12],
+        vec![0xc6, 12],
+        vec![0xc6, 255, 0, 0, 0, 12],
+    ] {
+        let mut packets = header;
+        packets.extend_from_slice(DERIVED_PUBLIC_BODY);
+        // Exercise a two-octet new-format length without changing primary bytes.
+        packets.extend_from_slice(&[0xcd, 192, 0]);
+        packets.extend_from_slice(&[b'u'; 192]);
+        packets.extend_from_slice(&[0xce, 12]);
+        packets.extend_from_slice(DERIVED_PUBLIC_BODY);
+        let armor = packet_armor(&packets);
+        assert_eq!(
+            normalized_public_certificate(&armor, "")
+                .unwrap()
+                .1
+                .as_ref(),
+            DERIVED_PUBLIC_FP
+        );
+    }
+}
+
+#[test]
+fn blank_public_fingerprint_refuses_ambiguous_secret_unsupported_and_truncated_packets() {
+    let primary = [vec![0xc6, 12], DERIVED_PUBLIC_BODY.to_vec()].concat();
+    let mut duplicate = primary.clone();
+    duplicate.extend_from_slice(&primary);
+    let mut secret_primary = primary.clone();
+    secret_primary.extend_from_slice(&[0xc5, 3, 1, 2, 3]);
+    let mut secret_subkey = primary.clone();
+    secret_subkey.extend_from_slice(&[0xc7, 3, 1, 2, 3]);
+    let mut version6 = primary.clone();
+    version6[2] = 6;
+    let mut trailing = primary.clone();
+    trailing.push(0);
+    for packets in [
+        duplicate,
+        secret_primary,
+        secret_subkey,
+        version6,
+        trailing,
+        primary[..primary.len() - 1].to_vec(),
+        vec![0xc6, 224], // Partial lengths are outside the certificate boundary.
+        vec![0x9b, 4, 0, 0, 0, 0, 1], // Legacy indeterminate length.
+        vec![0xc6, 255, 0, 0],
+        vec![0xc6, 255, 255, 255, 255, 255],
+        vec![0xc6, 0],
+        vec![0xc6, 5, 4, 0, 0, 0, 0],
+        vec![0xcd, 1, b'u'], // User ID alone cannot supply the primary identity.
+        [vec![0xce, 12], DERIVED_PUBLIC_BODY.to_vec()].concat(),
+    ] {
+        assert_eq!(
+            validate_public_certificate(&packet_armor(&packets), ""),
+            Err(Error::Invalid)
+        );
+    }
+}
+
+#[test]
+fn blank_public_fingerprint_refuses_noncanonical_armor_and_base64_before_rpc() {
+    let armor = std::str::from_utf8(DERIVED_PUBLIC_ARMOR).unwrap();
+    let mut oversized = vec![b' '; MAX_PUBLIC_CERTIFICATE];
+    oversized.extend_from_slice(DERIVED_PUBLIC_ARMOR);
+    let mut non_ascii = DERIVED_PUBLIC_ARMOR.to_vec();
+    non_ascii.push(0xff);
+    for invalid in [
+        armor.replace("AgM=", "AgN=").into_bytes(), // Non-zero unused base64 bits.
+        armor.replace("AgM=", "AgM=AA==").into_bytes(), // Interior padding.
+        armor.replace("AgM=", "Ag=M").into_bytes(),
+        armor.replace("AgM=", "AgM").into_bytes(),
+        armor.replace("AgM=", "Ag-=").into_bytes(),
+        armor.replace("-----\n\n", "-----\n").into_bytes(),
+        armor
+            .replace("-----\n\n", "-----\nInvalid header\n\n")
+            .into_bytes(),
+        format!("{armor}\n{armor}").into_bytes(),
+        armor.replace("PUBLIC KEY", "PRIVATE KEY").into_bytes(),
+        oversized,
+        non_ascii,
+        Vec::new(),
+    ] {
+        assert_eq!(
+            validate_public_certificate(&invalid, ""),
+            Err(Error::Invalid)
+        );
+    }
+}
+
+#[test]
+fn blank_public_fingerprint_is_used_for_in_use_guard_and_exact_native_import() {
+    struct DerivedImport<'a> {
+        armor: &'a [u8],
+        calls: Cell<usize>,
+        result: Result<(), Error>,
+    }
+    impl PublicKeyBackend for DerivedImport<'_> {
+        fn read(&self, _: &str) -> Result<Inventory, Error> {
+            panic!("public import does not read inventory before its native transaction")
+        }
+        fn import_public(
+            &self,
+            account: &str,
+            revision: &str,
+            fingerprint: &str,
+            certificate: &[u8],
+        ) -> Result<(), Error> {
+            assert_eq!(account, "alice@example.test");
+            assert_eq!(revision, PUBLIC_REVISION);
+            assert_eq!(fingerprint, DERIVED_PUBLIC_FP);
+            assert_eq!(certificate, self.armor);
+            self.calls.set(self.calls.get() + 1);
+            self.result
+        }
+    }
+    let root = Scratch::new();
+    let store = BindingStore::new(root.0.join("bindings"));
+    let c = context();
+    let s = session();
+    let request = public_request(
+        Action::ImportPublic {
+            certificate: DERIVED_PUBLIC_ARMOR,
+            expected_primary_fingerprint: "",
+        },
+        0,
+    );
+    for result in [
+        Ok(()),
+        Err(Error::InvalidKey),
+        Err(Error::Unconfirmed),
+        Err(Error::Unavailable),
+    ] {
+        let backend = DerivedImport {
+            armor: DERIVED_PUBLIC_ARMOR,
+            calls: Cell::new(0),
+            result,
+        };
+        assert_eq!(
+            mutate(&backend, &store, proof(&c, &s), &c, &s, &request, 59),
+            result
+        );
+        assert_eq!(backend.calls.get(), 1);
+        assert_eq!(store.load("alice@example.test").unwrap().revision, 0);
+    }
+    let inventory = Inventory::parse(&serde_json::to_vec(&serde_json::json!({
+        "version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.4.8",
+        "keys":[{"primary":{"fingerprint":DERIVED_PUBLIC_FP,"algorithm":1,"bits":3072,"created":1,"expires":0,"revoked":false,"expired":false,"disabled":false,"invalid":false,"can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false},"subkeys":[]}]
+    })).unwrap()).unwrap();
+    store
+        .replace_operator(
+            "alice@example.test",
+            0,
+            Update {
+                account_binding: Some(AccountBinding {
+                    primary_fingerprint: DERIVED_PUBLIC_FP.into(),
+                    signing_fingerprint: None,
+                    decrypt_primary_fingerprints: Vec::new(),
+                }),
+                recipient_bindings: Vec::new(),
+                policy: ProtectionPolicy::default(),
+            },
+            &inventory,
+            59,
+        )
+        .unwrap();
+    let before = store.load("alice@example.test").unwrap();
+    let backend = DerivedImport {
+        armor: DERIVED_PUBLIC_ARMOR,
+        calls: Cell::new(0),
+        result: Ok(()),
+    };
+    let request = public_request(
+        Action::ImportPublic {
+            certificate: DERIVED_PUBLIC_ARMOR,
+            expected_primary_fingerprint: "",
+        },
+        1,
+    );
+    assert_eq!(
+        mutate(&backend, &store, proof(&c, &s), &c, &s, &request, 59),
+        Err(Error::KeyInUse)
+    );
+    assert_eq!(backend.calls.get(), 0);
+    assert_eq!(store.load("alice@example.test").unwrap(), before);
+    assert_eq!(store.load("bob@example.test").unwrap().revision, 0);
+}
+
 struct PublicWriteSpy {
     inventory: Inventory,
     calls: Cell<usize>,

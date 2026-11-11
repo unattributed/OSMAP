@@ -762,3 +762,14 @@ and Junk are separate extensions. No new UI module or backend work.
 ## S08-05 owner acceptance — 2026-11-10
 
 The owner states: “I have reviewed all OSMAP pages and APPROVE PASS this slice as complete”. Record S08-05 PASS / ACCEPTED / CLOSED. Reuse matching engineering and independent-review evidence; no further logo UAT or runtime action. Original S08 remains accepted, S08-06/07 remain queued, and unrelated parent/V14/release obligations retain their existing status.
+
+## S05-02 optional expected fingerprint — 2026-11-11
+
+The owner directs that the expected full primary fingerprint be optional for
+public ASC import. OSMAP reads the internal identifier from the file when blank;
+a provided expected value still requires an exact native match. This removes a
+manual knowledge prerequisite without granting identity trust, approving a key
+binding or enabling encryption. Existing native public-only inspection, exact
+keybox delta/CAS, in-use restrictions, session and fresh-factor checks remain.
+The follow-up uses the existing S05 specification/work order and disposable
+native Runtime path. No owner credential/key operation is performed by agents.
