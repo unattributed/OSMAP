@@ -1,4 +1,4 @@
-2026-11-11 — **S08-07 Junk IN_PROGRESS.** Owner requests a third Junk view on Archive / Bin. Scoped contract and work order defined; focused source/browser checks PASS, native/installed delivery and owner UAT pending. Prior S08/S08-05 acceptance and S08-06 pending checks preserved.
+2026-11-11 — **S08-07 Junk ENGINEERING PASS / UAT_READY.** Signed source `18962ce66bcd2e38287639a8b9168fdf0eafbbff` and GitHub parity PASS; source/browser and five focused native-compiled cases PASS; exact-source Web install, protected-state readback and obsd1 HTTPS 200 PASS; independent review GO. Owner authenticated Junk view/move UAT pending. First push SSH transport failure (cause UNKNOWN) and bounded startup 502→200 retained. Prior S08/S08-05 acceptance and S08-06 pending checks preserved.
 
 2026-11-11 — **Owner panel-control correction PASS / ACCEPTED / CLOSED.** Owner explicitly states “UAT PASS” and “UAT approves” for the installed correction. Existing source, browser, native, installed and independent-review results are reused; documentation-only acceptance. Other slice and historical acceptance records remain unchanged.
 
@@ -9,7 +9,7 @@
   "slice": "S01-01",
   "original_requirement": "Theme tokens, persistent preference, system default; define authenticated versus pre-login storage and precedence",
   "source_baseline": "9daba33f9d3b9d0d620d5112afafad20a86ce003",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -70,15 +70,15 @@
       ],
       "frontend_backend_outcome": "Existing account-owned Junk appears as a third Archive/Bin view with true received dates and normal bounded move controls.",
       "essential_qa": "Focused authenticated route/render/move checks, matching native build, installed Web and owner UAT.",
-      "next_action": "Implement scoped third tab and qualify changed journey.",
+      "next_action": "Owner reviews installed Junk tab and one disposable message; record separate S08-07 UAT.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -88,6 +88,22 @@
         {
           "stage": "source_tests",
           "reference": "/home/foo/Downloads/osmap-ux-s08/s08-07/source-result2.json SHA256 aa9a482bbc99c49140c6696162cd094ec3fcfaae7a100138b80817a1ced04973; Rust5/0 and browser26/cleanupPASS."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/native1-result.json SHA256 b81302dc5791065563a20b031aa058d8c19d19a8db3835b04f76371b0b1f044f; source18962ce, compiler inputs598 parity, five native-compiled Junk casesPASS5/0, synthetic BrowserApp move; no new live backend claim."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/install-evidence1-result.json SHA256 8e9b71d8fb641519094bfe99a68bc70c88890a9efccaffe08683a50cca571989; loaded Web10e2c283, protected snapshots equal, obsd1 HTTPS200; owner authenticated page pending UAT."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/root/s08_delivery_review independent source, method, native and installed evidence GO in current chat; exact hashes and five cases reviewed; owner UAT separate."
+        },
+        {
+          "stage": "recovery",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/install-evidence1-result.json SHA256 8e9b71d8fb641519094bfe99a68bc70c88890a9efccaffe08683a50cca571989; exact old Web backup retained, no rollback invoked; startup 502 then200 resolved within bound, protected state unchanged."
         }
       ]
     }
@@ -96,13 +112,13 @@
     "owner": "/root",
     "functional_exit": "Junk is a truthful, usable third view on Archive / Bin, preserving Bin-only destructive authority.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Owner explicitly requested S08-07 and supplied Archive/Bin screenshot. Original S08 and S08-05 accepted; S08-06 original owner check and responsive/autosave R07 pending. Prior S08-07 effort UNKNOWN. Existing Junk literal and owned move capability inspected; no backend operation or host action yet. Independent source review found confirmed Sent/Junk role collision and vacuous no-delete fixture; fixed with role precedence and metadata-bearing Junk row, retaining original source candidate. Shell label aligned to three-view contract. Mechanical work-order parent remains S01-01 and reuses its original mapped IDs; S08-07 is the related extension, not a frozen-scope amendment. Browser1 Python dependency refused before fixture; browser2 first Archive view absent because saved role unset; browser3 guessed literal Archive option absent. Browser2/3 cleanup PASS and exact receipts retained. Combined independent reviews approved existing INBOX.Projects through actual Copies form; browser4 PASS26/cleanupPASS/external0/send0. Focused Rust5/0 and independent source/security GO. Native/installed/owner remain pending. V10 generated registers refreshed after test line movement; initial one new test-only unwrap briefly raised current count13283, replaced by direct valid fixture identity so current/refined counts remain13282 and high-after0. V10 check PASS; historical high-before claims unchanged. Focused Rust5/0 rerun after this fixture-only change, durable result2.",
+    "history_reference": "Owner explicitly requested S08-07 and supplied Archive/Bin screenshot. Original S08 and S08-05 accepted; S08-06 original owner check and responsive/autosave R07 pending. Prior S08-07 effort UNKNOWN. Existing Junk literal and owned move capability inspected; no backend operation or host action yet. Independent source review found confirmed Sent/Junk role collision and vacuous no-delete fixture; fixed with role precedence and metadata-bearing Junk row, retaining original source candidate. Shell label aligned to three-view contract. Mechanical work-order parent remains S01-01 and reuses its original mapped IDs; S08-07 is the related extension, not a frozen-scope amendment. Browser1 Python dependency refused before fixture; browser2 first Archive view absent because saved role unset; browser3 guessed literal Archive option absent. Browser2/3 cleanup PASS and exact receipts retained. Combined independent reviews approved existing INBOX.Projects through actual Copies form; browser4 PASS26/cleanupPASS/external0/send0. Focused Rust5/0 and independent source/security GO. Native/installed/owner remain pending. V10 generated registers refreshed after test line movement; initial one new test-only unwrap briefly raised current count13283, replaced by direct valid fixture identity so current/refined counts remain13282 and high-after0. V10 check PASS; historical high-before claims unchanged. Focused Rust5/0 rerun after this fixture-only change, durable result2. Source commit18962ce signed/verified. First normal push security-checkPASS but SSH transport closed before transfer (exit141; precise cause UNKNOWN); second normal hook with keepalivesPASS and fresh parity1 clean0/0. Method producer/consumer integrationPASS including real wrong-source pre-host refusal; no host effect from that probe. Native source archive inputs598/readbackPASS, five native-compiled Junk casesPASS, main binary10e2c283. Reviewed Web-only installPASS with exact old backup, unchanged protected state and public mail PIDs; bounded startup502 then200, explicit peerHTTPS200. Independent delivery/security GO for owner UAT; no owner authenticated Junk view/move exercised by agents. No full release claim.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 7200,
       "started_at": "2026-11-11T15:22:51Z",
       "elapsed_status": "MEASURED",
-      "elapsed_seconds": 964.438
+      "elapsed_seconds": 2495.519
     },
     "attempts": [],
     "next_attempt": null
@@ -112,7 +128,7 @@
     "slice": "S01-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_07.md",
-      "sha256": "2b6cef8dfa2766108e42a6f798b1f6c62ee669700a519e2f59987cfa7ce282ed"
+      "sha256": "313d32c6e1b05ec01dfcc2529402ba62890645ff3435c0298cf152875fa7d00f"
     },
     "design": {
       "journey": "Existing account-owned Junk is a third Archive/Bin view.",
@@ -168,13 +184,15 @@
         "kind": "positive",
         "level": "native",
         "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
-        "action": "Build matching source and exercise changed native renderer and disposable move boundary.",
-        "expected": "Junk view and controlled move pass with exact source.",
+        "action": "Build matching source and exercise native-compiled Junk renderer and synthetic BrowserApp move boundary.",
+        "expected": "Five Junk cases pass on OpenBSD with exact source and readback; no new backend persistence claim.",
         "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
         "owner": "/root",
         "reviewer": "/root/s08_delivery_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/native1-result.json SHA256 b81302dc5791065563a20b031aa058d8c19d19a8db3835b04f76371b0b1f044f"
+        ]
       },
       {
         "id": "J04",
@@ -189,8 +207,10 @@
         "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
         "owner": "/root",
         "reviewer": "/root/s08_delivery_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/install-evidence1-result.json SHA256 8e9b71d8fb641519094bfe99a68bc70c88890a9efccaffe08683a50cca571989"
+        ]
       },
       {
         "id": "J05",

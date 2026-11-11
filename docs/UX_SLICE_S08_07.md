@@ -39,8 +39,9 @@ normal signed delivery hooks and fresh GitHub equality. Source/render checks
 do not imply installed or owner UAT PASS. Human exit is a short visual and
 functional review of the third tab and a disposable Junk message.
 
-Status: **IN_PROGRESS**. All new tests, native installation and owner UAT begin
-NOT_RUN. Existing accepted and pending outcomes retain their separate states.
+Status: **UAT_READY**. Source, native and installed qualification are complete;
+owner UAT is pending. Existing accepted and pending outcomes retain their
+separate states.
 
 ## Source and browser checkpoint
 
@@ -67,7 +68,8 @@ focused Rust log SHA256
 `4ec471c11404a395ec32295f7f5cca1f496e5225573db07ad637262feb74edd5`.
 Independent source/security review is GO. Browser screenshots test layout and
 read-only controls; the Rust route case supplies the separate synthetic move
-proof. Matching native/installed qualification and owner UAT remain pending.
+proof. Matching native/installed qualification is recorded below; owner UAT
+remains pending.
 
 Retained source/browser failures: browser1 used system Python without
 Playwright and stopped before fixture startup; browser2 expected the Archive
@@ -76,3 +78,40 @@ literal Archive folder in the preview fixture. Both started fixture runs
 completed cleanup. Combined independent review selected the actual existing
 `INBOX.Projects` folder through the Copies form for browser4. These failures
 remain historical and do not establish product failure or PASS.
+
+## Native and installed checkpoint
+
+Signed source `18962ce66bcd2e38287639a8b9168fdf0eafbbff` passed the normal
+push hook; fresh GitHub fetch proved exact local/remote equality and zero
+ahead/behind. The first push passed its security check, then the SSH transport
+closed before publication (exit 141). The precise close reason is UNKNOWN. A
+normal retry with SSH keepalives passed the unchanged hook and published the
+commit. The transport failure remains
+separate from the successful source result.
+
+On obsd1, the exact source archive built five focused native-compiled Junk
+cases with zero failures or ignores. The dispatcher read back all 598 compiler
+inputs and four native logs by hash. This proves the changed renderer and
+synthetic BrowserApp move boundary on OpenBSD; it does not claim a new
+Runtime-to-mailbox-helper/Dovecot persistence test. The existing backend
+operation was unchanged. Retained private native result:
+`/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/native1-result.json`
+SHA256 `b81302dc5791065563a20b031aa058d8c19d19a8db3835b04f76371b0b1f044f`.
+The actual producer/consumer admission check and pre-host refusal are in
+`method-integration-result.json` SHA256
+`8cf4c2339a38ce5d33ea5dd616a2d8bd2e5003094a369933ff730ab135eee137`.
+
+The reviewed Web-only installer loaded binary
+`10e2c2831f1d144be508284e26458efab10aa8534e72e011e5b4c22580ddd7f3`.
+Readback showed unchanged configuration, public mail PIDs, account/helper/GPG
+processes and a retained exact rollback copy. A bounded startup probe returned
+502 once, then 200; the explicit obsd1 peer returned HTTPS 200. No owner mail
+was mutated and no public mail service was restarted. Retained private install
+result: `install-evidence1-result.json` SHA256
+`8e9b71d8fb641519094bfe99a68bc70c88890a9efccaffe08683a50cca571989`.
+Independent delivery/security review checked the exact native and installation
+receipts and gave GO for owner UAT. The owner should open Archive / Bin / Junk,
+select Junk, confirm Received dates and reader/search controls, and use one
+disposable Junk message to check Move to Inbox if available. An absent Junk
+mailbox should show the unavailable tab and should not create one. The owner
+has not yet reported S08-07 UAT PASS.
