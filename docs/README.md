@@ -4,6 +4,7 @@
 
 ## S08 acceptance and extensions
 
+- `UX_SLICE_S08_07.md` — [S08-07: Junk in Archive / Bin](UX_SLICE_S08_07.md): third view requested; implementation and qualification in progress, owner UAT pending.
 - `UX_SLICE_S08_06.md` — [S08-06: Presentation style](UX_SLICE_S08_06.md): **corrected Mailboxes page installed; owner re-review pending**. The duplicated horizontal shortcut bar is removed; left navigation and dashboard panels remain. Focused/browser/native/installed checks pass within scope. Prior Icons/Text labels evidence and failures remain recorded.
 - `design/s08-06-approved-20261110/README.md` — [approved S08-06 desktop and touch references](design/s08-06-approved-20261110/README.md): synthetic mockups, provenance and checksums; design approval only.
 - `UX_SLICE_S08_05.md` — [S08-05: logo continuity](UX_SLICE_S08_05.md): **PASS / ACCEPTED / CLOSED** on November 10 after the owner reviewed all OSMAP pages; existing engineering evidence reused.

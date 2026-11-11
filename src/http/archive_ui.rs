@@ -5,7 +5,14 @@ pub(super) struct RowState {
     pub timezone: crate::timezone::FixedOffset,
     pub selected: bool,
     pub on_open: bool,
-    pub is_bin: bool,
+    pub kind: FolderView,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum FolderView {
+    Archive,
+    Bin,
+    Junk,
 }
 
 pub(super) fn row(
@@ -27,7 +34,7 @@ pub(super) fn row(
         timezone,
         selected,
         on_open,
-        is_bin,
+        kind,
     } = state;
     let date = if message.date_received.is_empty() {
         "Unavailable".into()
@@ -43,13 +50,17 @@ pub(super) fn row(
         on_open,
         None,
     );
-    let date_label = if is_bin { "Received" } else { "Archived" };
-    let delete = if is_bin {
+    let date_label = if kind == FolderView::Archive {
+        "Archived"
+    } else {
+        "Received"
+    };
+    let delete = if kind == FolderView::Bin {
         message.metadata.as_ref().map(|metadata| format!("<a class=\"button-link\" href=\"/message/delete?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}&amp;return_to={}\">Delete permanently</a>", url_encode(&message.mailbox_name), message.uid, url_encode(&metadata.version.mailbox_guid), url_encode(&metadata.version.message_guid), url_encode(return_to))).unwrap_or_default()
     } else {
         String::new()
     };
-    format!("<tr data-selected=\"{selected}\"><td>{selection}</td><td data-label=\"From\" class=\"archive-sender\">{}</td><td data-label=\"Subject\">{subject}{labels}</td><td data-label=\"Folder\">{}</td><td data-label=\"{date_label}\">{}</td><td data-label=\"Size\">{} B</td><td><details class=\"archive-row-more\"><summary aria-label=\"Actions for message #{}\">⋮</summary><div><p>Received: <span data-label=\"Received\">{}</span></p>{}{delete}</div></details></td></tr>", escape_html(message.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&message.mailbox_name), escape_html(if is_bin { &date } else { &archived }), message.size_virtual, message.uid, escape_html(&date), render_message_state_controls(csrf, &message.mailbox_name, message.uid, &message.flags, message.metadata.as_ref(), return_to))
+    format!("<tr data-selected=\"{selected}\"><td>{selection}</td><td data-label=\"From\" class=\"archive-sender\">{}</td><td data-label=\"Subject\">{subject}{labels}</td><td data-label=\"Folder\">{}</td><td data-label=\"{date_label}\">{}</td><td data-label=\"Size\">{} B</td><td><details class=\"archive-row-more\"><summary aria-label=\"Actions for message #{}\">⋮</summary><div><p>Received: <span data-label=\"Received\">{}</span></p>{}{delete}</div></details></td></tr>", escape_html(message.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&message.mailbox_name), escape_html(if kind == FolderView::Archive { &archived } else { &date }), message.size_virtual, message.uid, escape_html(&date), render_message_state_controls(csrf, &message.mailbox_name, message.uid, &message.flags, message.metadata.as_ref(), return_to))
 }
 
 pub(super) struct Page<'a> {
@@ -63,12 +74,15 @@ pub(super) struct Page<'a> {
     pub banner: &'a str,
     pub bulk_form: &'a str,
     pub automatic_selection_count: usize,
+    pub kind: FolderView,
+    pub junk_available: bool,
 }
 
 pub(super) fn page(p: Page<'_>) -> TrustedHtml {
     let view = p.links.view;
     let bin_name = p.links.reader.bin_mailbox_name.as_deref();
-    let is_bin = bin_name == Some(p.mailbox);
+    let is_bin = p.kind == FolderView::Bin;
+    let is_junk = p.kind == FolderView::Junk;
     let tab_href = |mailbox: &str| {
         let mut destination = view.clone();
         destination.selection = None;
@@ -82,7 +96,7 @@ pub(super) fn page(p: Page<'_>) -> TrustedHtml {
         Some(name) => format!(
             "<a class=\"button-link\" href=\"{}\"{}>Archive</a>",
             tab_href(name),
-            if !is_bin {
+            if p.kind == FolderView::Archive {
                 " aria-current=\"page\""
             } else {
                 ""
@@ -109,6 +123,19 @@ pub(super) fn page(p: Page<'_>) -> TrustedHtml {
     } else {
         "<button disabled>Bin unavailable</button>".into()
     };
+    let junk = if p.junk_available {
+        format!(
+            "<a class=\"button-link\" href=\"{}\"{}>Junk</a>",
+            tab_href("Junk"),
+            if is_junk {
+                " aria-current=\"page\""
+            } else {
+                ""
+            }
+        )
+    } else {
+        "<button disabled>Junk unavailable</button>".into()
+    };
     let mut navigation = render_list_navigation(p.base, view, true).replace(
         "aria-label=\"Sent filters\"",
         "aria-label=\"Archive and Bin filters\"",
@@ -119,16 +146,14 @@ pub(super) fn page(p: Page<'_>) -> TrustedHtml {
     let sort = sort
         .replace("Sorted by Received descending", "Newest first")
         .replace("Sorted by Received ascending", "Oldest first");
-    let search = format!("<form class=\"archive-search\" action=\"/search\" method=\"get\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label class=\"sr-only\" for=\"archive-search\">Search this folder</label><input id=\"archive-search\" name=\"q\" value=\"{}\" placeholder=\"Search {} messages…\"><button type=\"submit\">Search</button></form>", escape_html(p.mailbox), list_form_state(view), escape_html(p.links.search_query.unwrap_or("")), if is_bin { "Trash" } else { "archived" });
+    let search = format!("<form class=\"archive-search\" action=\"/search\" method=\"get\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label class=\"sr-only\" for=\"archive-search\">Search this folder</label><input id=\"archive-search\" name=\"q\" value=\"{}\" placeholder=\"Search {} messages…\"><button type=\"submit\">Search</button></form>", escape_html(p.mailbox), list_form_state(view), escape_html(p.links.search_query.unwrap_or("")), match p.kind { FolderView::Archive => "archived", FolderView::Bin => "Trash", FolderView::Junk => "Junk" });
     let empty = format!("<tr><td colspan=\"7\">{}</td></tr>", mail_state_card("No messages", "No messages are shown in this folder view. Active filters and snoozed messages may limit the loaded results.", "/compose", "Compose", false));
     let rows = if p.rows.is_empty() { &empty } else { p.rows };
     let reader = render_coordinated_reader(p.base, view, p.csrf, p.links.reader, p.account);
-    let title = if is_bin { "Trash" } else { "Archive / Bin" };
-    let date_heading = if is_bin { "Received" } else { "Archived" };
-    let caption = if is_bin {
-        "Messages in your Trash. Date shows when the message was received."
-    } else {
-        "Archived messages. Archived shows the known OSMAP action date; older messages may have no recorded action date."
+    let (title, date_heading, caption, retention) = match p.kind {
+        FolderView::Archive => ("Archive / Bin / Junk", "Archived", "Archived messages. Archived shows the known OSMAP action date; older messages may have no recorded action date.", "Move selected messages to another folder or Bin. Permanent deletion is available only in Trash."),
+        FolderView::Bin => ("Trash", "Received", "Messages in your Trash. Date shows when the message was received.", "Restore returns selected messages to Inbox. Permanent deletion asks for confirmation and cannot be undone."),
+        FolderView::Junk => ("Junk", "Received", "Messages in your Junk folder. Date shows when the message was received.", "Move selected messages to Inbox or another folder. Move to Bin before permanent deletion."),
     };
     let empty_trash = if is_bin {
         format!("<form class=\"empty-trash-control\" method=\"post\" action=\"/trash/empty/review\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\"><button class=\"danger\" type=\"submit\">Empty trash</button></form>", escape_html(p.csrf), escape_html(p.mailbox), escape_html(&format!("/mailbox?name={}", url_encode(p.mailbox))))
@@ -146,12 +171,13 @@ pub(super) fn page(p: Page<'_>) -> TrustedHtml {
     } else {
         selection
     };
-    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell coordinated-mail archive-page{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>{title}</h1><p>Manage messages in this folder.</p>{empty_trash}</div><section class=\"content-pane coordinated-list\" aria-label=\"Archive and Bin messages\"><nav class=\"archive-tabs\" aria-label=\"Archive and Bin\">{archive}{bin}</nav>{}<div class=\"mail-list-toolbar\">{}{search}{navigation}{sort}</div><div class=\"archive-actions\">{}</div><table class=\"archive-table\"><caption class=\"sr-only\">{caption}</caption><thead><tr><th scope=\"col\"><span class=\"sr-only\">Select</span></th><th scope=\"col\">From</th><th scope=\"col\">Subject</th><th scope=\"col\">Folder</th><th scope=\"col\">{date_heading}</th><th scope=\"col\">Size</th><th scope=\"col\"><span class=\"sr-only\">Actions</span></th></tr></thead><tbody>{rows}</tbody></table><p id=\"archive-retention\" class=\"archive-retention\">Restore returns selected messages to Inbox. Permanent deletion asks for confirmation and cannot be undone.</p></section>{reader}</main>", app_header(p.account, p.csrf, if is_bin { "bin" } else { "archive" }), if view.selection.is_some() { " has-selection" } else { "" }, p.banner, selection, p.bulk_form))
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell coordinated-mail archive-page{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>{title}</h1><p>Manage messages in this folder.</p>{empty_trash}</div><section class=\"content-pane coordinated-list\" aria-label=\"Archive, Bin and Junk messages\"><nav class=\"archive-tabs\" aria-label=\"Archive, Bin and Junk\">{archive}{bin}{junk}</nav>{}<div class=\"mail-list-toolbar\">{}{search}{navigation}{sort}</div><div class=\"archive-actions\">{}</div><table class=\"archive-table\"><caption class=\"sr-only\">{caption}</caption><thead><tr><th scope=\"col\"><span class=\"sr-only\">Select</span></th><th scope=\"col\">From</th><th scope=\"col\">Subject</th><th scope=\"col\">Folder</th><th scope=\"col\">{date_heading}</th><th scope=\"col\">Size</th><th scope=\"col\"><span class=\"sr-only\">Actions</span></th></tr></thead><tbody>{rows}</tbody></table><p id=\"archive-retention\" class=\"archive-retention\">{retention}</p></section>{reader}</main>", app_header(p.account, p.csrf, if is_bin { "bin" } else { "archive" }), if view.selection.is_some() { " has-selection" } else { "" }, p.banner, selection, p.bulk_form))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::message_metadata::{MessageMetadata, MessageProtection, MessageVersion};
     #[test]
     fn archive_rows_use_literal_owned_summary_fields_without_archived_date_claims() {
         let message = MessageSummary {
@@ -175,7 +201,7 @@ mod tests {
                 timezone: crate::timezone::FixedOffset::default(),
                 selected: false,
                 on_open: false,
-                is_bin: false,
+                kind: FolderView::Archive,
             },
             "",
         );
@@ -204,7 +230,7 @@ mod tests {
                 timezone: crate::timezone::FixedOffset::default(),
                 selected: false,
                 on_open: false,
-                is_bin: false,
+                kind: FolderView::Archive,
             },
             "",
         );
@@ -220,7 +246,7 @@ mod tests {
                 timezone: crate::timezone::FixedOffset::default(),
                 selected: false,
                 on_open: false,
-                is_bin: false,
+                kind: FolderView::Archive,
             },
             "",
         );
@@ -236,10 +262,55 @@ mod tests {
                 timezone: crate::timezone::FixedOffset::default(),
                 selected: false,
                 on_open: false,
-                is_bin: false,
+                kind: FolderView::Archive,
             },
             "",
         );
         assert!(failed.contains("data-label=\"Archived\">Unavailable"));
+    }
+
+    #[test]
+    fn junk_rows_show_received_date_without_bin_deletion() {
+        let message = MessageSummary {
+            mailbox_name: "Junk".into(),
+            uid: 9,
+            flags: vec![],
+            date_received: "2026-09-30".into(),
+            size_virtual: 512,
+            subject: Some("<untrusted>".into()),
+            from: Some("<sender@example.test>".into()),
+            to: None,
+            metadata: Some(MessageMetadata {
+                threading: None,
+                version: MessageVersion {
+                    mailbox_guid: "1234567890abcdef1234567890abcdef".into(),
+                    message_guid: "abcdef1234567890abcdef1234567890".into(),
+                },
+                attachment_count: Some(0),
+                attachments: Some(vec![]),
+                protection: MessageProtection::Plain,
+                preview: None,
+            }),
+        };
+        let text = row(
+            (&message, crate::archive_event::Date::Known(1234)),
+            "",
+            "/message?mailbox=Junk&uid=9",
+            "csrf",
+            "/mailbox?name=Junk",
+            RowState {
+                timezone: crate::timezone::FixedOffset::default(),
+                selected: false,
+                on_open: false,
+                kind: FolderView::Junk,
+            },
+            "",
+        );
+        assert!(text.contains("data-label=\"Received\">2026-09-30"));
+        assert!(!text.contains("data-label=\"Archived\""));
+        assert!(!text.contains("Delete permanently"));
+        assert!(text.contains("&lt;untrusted&gt;"));
+        assert!(text.contains("&lt;sender@example.test&gt;"));
+        assert!(!text.contains("1970-01-01"));
     }
 }

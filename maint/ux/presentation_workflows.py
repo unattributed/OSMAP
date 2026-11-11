@@ -20,7 +20,7 @@ from browser_workflows import start_server, stop_server, require
 PAGES = [
     "/mailboxes", "/folders", "/mailbox?name=INBOX", "/mailbox?name=Sent",
     "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=125",
-    "/mailbox?name=Archive", "/mailbox?name=Trash", "/compose", "/drafts",
+    "/mailbox?name=Archive", "/mailbox?name=Trash", "/mailbox?name=Junk", "/compose", "/drafts",
     "/outbox", "/contacts", "/search?q=report", "/labels", "/notifications",
     "/settings", "/settings?section=appearance",
     "/settings?section=identity", "/settings?section=reading",
@@ -36,6 +36,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
     parser.add_argument("--panel-controls", action="store_true", help="Only owner-requested panel controls in both styles and desktop sizes, plus touch")
+    parser.add_argument("--junk", action="store_true", help="Only Archive, Trash and Junk in both styles and touch")
     parser.add_argument("--autosave-only", action="store_true")
     parser.add_argument("--visual-only", action="store_true")
     parser.add_argument("--engine", choices=["chromium", "firefox"], default="chromium")
@@ -44,9 +45,14 @@ def main():
     args = parser.parse_args()
     if args.panel_controls and args.autosave_only:
         parser.error("--panel-controls cannot be combined with --autosave-only")
+    if args.junk and (args.autosave_only or args.panel_controls):
+        parser.error("--junk cannot be combined with --autosave-only or --panel-controls")
     if args.panel_controls:
         args.visual_only = True
         args.pages = ["/mailboxes", "/folders", "/settings", "/settings?section=reading", "/settings?section=security"]
+    if args.junk:
+        args.visual_only = True
+        args.pages = ["/mailbox?name=INBOX.Projects", "/mailbox?name=Trash", "/mailbox?name=Junk"]
     args.output.mkdir(parents=True, exist_ok=True, mode=0o700)
     report = dict(result="FAIL", engine=args.engine, scope="synthetic browser; real HTTP and account stores; not live authentication",
                   checks=[], captures=[], requests=[], external=0, sends=0)
@@ -237,6 +243,19 @@ def main():
                         "login_privacy_footer_below_viewport")
             page.set_viewport_size(dict(width=1280, height=720))
             login()
+            if args.junk:
+                phase = "synthetic_archive_preference"
+                visit("/settings?section=copies")
+                archive_choice = page.locator("#copies-archive")
+                require(archive_choice.locator('option[value="INBOX.Projects"]').count() == 1,
+                        "synthetic_archive_folder_missing")
+                archive_choice.select_option("INBOX.Projects")
+                page.get_by_role("button", name="Save archive folder", exact=True).click()
+                page.wait_for_load_state("networkidle")
+                visit("/settings?section=copies")
+                require(page.locator("#copies-archive").input_value() == "INBOX.Projects",
+                        "synthetic_archive_preference_not_saved")
+                report["checks"].append(dict(check="synthetic_archive_preference", result="PASS"))
 
             if not args.visual_only:
                 phase = "autosave_preference"
@@ -326,13 +345,13 @@ def main():
                     page.locator("#compose-body").fill("Public synthetic draft for row-menu layout.")
                     page.locator("#compose-save").click()
                     page.wait_for_load_state("networkidle")
-                for style in (["icons"] if args.pages and not args.panel_controls else ["icons", "text_labels"]):
+                for style in (["icons"] if args.pages and not (args.panel_controls or args.junk) else ["icons", "text_labels"]):
                     visit("/settings?section=appearance")
                     form = page.locator('form[action="/settings/display"]')
                     form.locator('[name="presentation_style"]').select_option(style)
                     form.locator('button[type="submit"]').click()
                     page.wait_for_load_state("networkidle")
-                    for width, height in ([(1280, 720)] if args.pages and not args.panel_controls else [(1280, 720), (1920, 1080)]):
+                    for width, height in ([(1280, 720)] if args.pages and not (args.panel_controls or args.junk) else [(1280, 720), (1920, 1080)]):
                         page.set_viewport_size(dict(width=width, height=height))
                         for index, path in enumerate(args.pages or PAGES):
                             visit(path)
@@ -342,6 +361,17 @@ def main():
                                 capture(f"desktop-{index:02d}.png")
                             if args.panel_controls:
                                 panel_checks(page, path, style)
+                            if args.junk:
+                                tabs = page.locator(".archive-tabs")
+                                require(tabs.count() == 1, "junk_tabs_missing")
+                                require(tabs.get_by_role("link", name="Junk").count() == 1, "junk_destination_missing")
+                                if path.endswith("Junk"):
+                                    require(page.get_by_role("heading", name="Junk", exact=True).count() == 1, "junk_title_missing")
+                                    require(tabs.get_by_role("link", name="Junk").get_attribute("aria-current") == "page", "junk_tab_not_active")
+                                    require(page.locator(".archive-table th").filter(has_text="Received").count() == 1, "junk_received_column_missing")
+                                    require(page.locator(".empty-trash-control, a[href^='/message/delete']").count() == 0, "junk_bin_only_action_visible")
+                                    require(page.locator(".archive-search input[name=mailbox]").input_value() == "Junk", "junk_search_scope_changed")
+                                report["checks"].append(dict(check="junk_view", path=path, style=style, width=width, result="PASS"))
                             if path == "/mailboxes" and style == "icons":
                                 labels = page.locator(".welcome-page .presentation-text .presentation-label")
                                 require(labels.count() >= 5, "dashboard_text_destinations_missing")
@@ -390,8 +420,8 @@ def main():
                     capture("cleared-activity.png")
                     report["checks"].append(dict(check="cleared_activity_full_width", result="PASS"))
                 phase = "touch_presentation"
-            if not args.autosave_only and args.engine == "chromium" and (not args.pages or args.panel_controls):
-                if args.panel_controls:
+            if not args.autosave_only and args.engine == "chromium" and (not args.pages or args.panel_controls or args.junk):
+                if args.panel_controls or args.junk:
                     visit("/settings?section=appearance")
                     form = page.locator('form[action="/settings/display"]')
                     form.locator('[name="presentation_style"]').select_option("icons")
@@ -410,6 +440,11 @@ def main():
                         tp.goto(origin + path, wait_until="networkidle")
                         panel_checks(tp, path, "icons", touch=True)
                     tp.goto(origin + "/settings?section=security", wait_until="networkidle")
+                if args.junk:
+                    tp.goto(origin + "/mailbox?name=Junk", wait_until="networkidle")
+                    require(tp.locator(".archive-tabs").get_by_role("link", name="Junk").is_visible(), "junk_touch_tab_hidden")
+                    require(tp.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), "junk_touch_overflow")
+                    report["checks"].append(dict(check="junk_touch", result="PASS"))
                 tp.screenshot(path=str(args.output / "touch-security.png"), full_page=False)
                 report["captures"].append("touch-security.png")
                 if args.panel_controls:

@@ -8,7 +8,8 @@ fn shell_has_real_named_navigation_and_main_follows_the_header() {
         ("/drafts", "Drafts"),
         ("/sessions", "Settings"),
         ("/settings?section=security", "Settings"),
-        ("/mailbox?name=Trash", "Archive / Bin"),
+        ("/mailbox?name=Trash", "Archive / Bin / Junk"),
+        ("/mailbox?name=Junk", "Archive / Bin / Junk"),
         ("/mailbox?name=INBOX", "Inbox"),
         ("/message?mailbox=INBOX&uid=9", "Inbox"),
     ] {
@@ -21,7 +22,7 @@ fn shell_has_real_named_navigation_and_main_follows_the_header() {
         for (label, href) in [
             ("Inbox", "/mailbox?name=INBOX"),
             ("Sent", "/mailbox/shortcut?kind=sent"),
-            ("Archive / Bin", "/mailbox/shortcut?kind=archive"),
+            ("Archive / Bin / Junk", "/mailbox/shortcut?kind=archive"),
             ("Security", "/settings?section=security"),
         ] {
             assert!(body.contains(&format!("href=\"{href}\" aria-label=\"{label}\"")));
@@ -59,7 +60,7 @@ fn shell_primary_order_single_selection_and_foreign_archive_refusal() {
             "Drafts",
             "Sent",
             "Folders",
-            "Archive / Bin",
+            "Archive / Bin / Junk",
             "Security",
             "Settings",
             "Search",
@@ -140,4 +141,82 @@ fn shell_escapes_identity_and_retains_full_accessible_account_name() {
     assert!(page.contains(&*escape_html(&identity)));
     assert!(page.contains("class=\"account-name\" title=\""));
     assert!(page.contains("class=\"account-menu-panel\""));
+}
+
+#[test]
+fn junk_is_a_third_owned_archive_view_with_received_dates() {
+    let archive = authenticated_get("/mailbox?name=Archive%2F2026");
+    assert_eq!(archive.response.status_code, 200);
+    let archive_html = body_text(&archive);
+    assert!(archive_html.contains("<h1>Archive / Bin / Junk</h1>"));
+    assert!(archive_html.contains("href=\"/mailbox?name=Junk\""));
+    assert!(archive_html.contains("aria-current=\"page\">Archive</a>"));
+
+    let junk = authenticated_get("/mailbox?name=Junk");
+    assert_eq!(junk.response.status_code, 200);
+    let junk_html = body_text(&junk);
+    assert!(junk_html.contains("<h1>Junk</h1>"));
+    assert!(junk_html.contains("aria-current=\"page\">Junk</a>"));
+    assert!(junk_html.contains("<th scope=\"col\">Received</th>"));
+    assert!(junk_html.contains("name=\"mailbox\" value=\"Junk\""));
+    assert!(!junk_html.contains("Empty trash"));
+    assert!(!junk_html.contains("Delete permanently"));
+    assert!(!junk_html.contains("name=\"action\" value=\"restore\""));
+
+    let trash = authenticated_get("/mailbox?name=Trash");
+    assert_eq!(trash.response.status_code, 200);
+    let trash_html = body_text(&trash);
+    assert!(trash_html.contains("aria-current=\"page\">Trash</a>"));
+    assert!(trash_html.contains("Empty trash"));
+}
+
+#[test]
+fn junk_move_to_inbox_uses_existing_owned_bulk_contract() {
+    let app = app();
+    let get = |path| app.handle_request(&request("GET", path, &authenticated_headers(), ""), "127.0.0.1");
+    let page = get("/mailbox?name=Junk");
+    assert_eq!(page.response.status_code, 200);
+    let html = body_text(&page);
+    assert!(html.contains("name=\"message_10\""));
+    assert!(html.contains("<option value=\"INBOX\">INBOX</option>"));
+    assert!(html.contains("name=\"action\" value=\"move\""));
+    let response = app.handle_request(
+        &request(
+            "POST",
+            "/messages/move",
+            &authenticated_same_origin_headers(),
+            &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=Junk&destination_mailbox=INBOX&uid_10=10", "move"),
+        ),
+        "127.0.0.1",
+    );
+    assert_eq!(response.response.status_code, 303);
+    assert!(app.gateway.fixture_message_removed("alice@example.com", "Junk", 10));
+    let moved = app.gateway.fixture_added_message("alice@example.com", "INBOX", 1001);
+    assert_eq!(moved.as_ref().map(|m| m.mailbox_name.as_str()), Some("INBOX"));
+    assert!(!body_text(&get("/mailbox?name=Junk")).contains("name=\"message_10\""));
+    assert!(body_text(&get("/mailbox?name=INBOX")).contains("name=\"message_1001\""));
+}
+
+#[test]
+fn junk_tab_refuses_missing_unavailable_and_foreign_folder_lists() {
+    let app = app();
+    for agent in ["WelcomeMissing", "JunkListUnavailable", "CopiesWrongOwner"] {
+        let page = app.handle_request(
+            &request(
+                "GET",
+                "/mailbox?name=Trash",
+                &[
+                    ("User-Agent", agent),
+                    ("Cookie", "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(page.response.status_code, 200, "{agent}");
+        let html = body_text(&page);
+        assert!(html.contains("<button disabled>Junk unavailable</button>"), "{agent}");
+        assert!(!html.contains("href=\"/mailbox?name=Junk\""), "{agent}");
+        assert!(!app.gateway.fixture_message_removed("alice@example.com", "Trash", 9));
+    }
 }

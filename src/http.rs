@@ -3918,6 +3918,14 @@ mod tests {
             context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserMailboxOutcome {
+            if context.user_agent == "JunkListUnavailable" {
+                return BrowserMailboxOutcome {
+                    decision: BrowserMailboxDecision::Denied {
+                        public_reason: "unavailable".into(),
+                    },
+                    audit_events: vec![],
+                };
+            }
             if context.user_agent == "CopiesWrongOwner" {
                 return BrowserMailboxOutcome {
                     decision: BrowserMailboxDecision::Listed {
@@ -7826,7 +7834,7 @@ mod tests {
 
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert!(body.contains("<h1>Archive / Bin</h1>"));
+        assert!(body.contains("<h1>Archive / Bin / Junk</h1>"));
         assert!(body
             .contains("href=\"/mailbox?name=Archive%2F2026\" aria-current=\"page\">Archive</a>"));
         assert!(!body.contains(">Archive</button>"));

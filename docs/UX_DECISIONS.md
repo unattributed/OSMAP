@@ -833,3 +833,14 @@ panel-control correction is ACCEPTED/CLOSED; its pending owner review is
 superseded by this explicit approval. Existing source/native/installed/review
 evidence is reused. This is documentation-only closeout, with no new product
 change, deployment or acceptance of a separate remaining slice.
+## S08-07 Junk third view — 2026-11-11
+
+The owner requests Junk on the existing Archive / Bin page. Use the existing
+account-owned literal Junk mailbox as a third tab, with truthful Received
+dates and existing search, reader and identity-bound Move controls. The left
+navigation names all three views. A missing/unavailable Junk folder stays
+unavailable; no folder is created or guessed. Saved Bin alone retains Restore,
+Empty trash and permanent deletion. This extension adds no spam classification,
+training, delivery rule, retention or mail-service configuration. Use the S05
+failure-analysis and smallest-correction method; source, installed and owner
+acceptance remain separate. See [S08-07](UX_SLICE_S08_07.md).

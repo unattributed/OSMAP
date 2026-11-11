@@ -1,6 +1,228 @@
+2026-11-11 — **S08-07 Junk IN_PROGRESS.** Owner requests a third Junk view on Archive / Bin. Scoped contract and work order defined; focused source/browser checks PASS, native/installed delivery and owner UAT pending. Prior S08/S08-05 acceptance and S08-06 pending checks preserved.
+
 2026-11-11 — **Owner panel-control correction PASS / ACCEPTED / CLOSED.** Owner explicitly states “UAT PASS” and “UAT approves” for the installed correction. Existing source, browser, native, installed and independent-review results are reused; documentation-only acceptance. Other slice and historical acceptance records remain unchanged.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S01-01",
+  "original_requirement": "Theme tokens, persistent preference, system default; define authenticated versus pre-login storage and precedence",
+  "source_baseline": "9daba33f9d3b9d0d620d5112afafad20a86ce003",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s08_scrum",
+      "/root/web_designer_review"
+    ],
+    "qa": [
+      "/root/s08_delivery_review"
+    ],
+    "security_review": [
+      "/root/s08_delivery_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/http/archive_ui.rs",
+    "src/http_ui.rs",
+    "src/http/routes_mail.rs",
+    "src/http/shell_tests.rs",
+    "src/http/ux_fixtures.rs",
+    "src/http/approved.css",
+    "docs/UX_SLICE_S08_07.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/UX_DECISIONS.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/README.md",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-claims-boundary.json",
+    "src/http.rs",
+    "src/http/bin_folder_tests.rs",
+    "src/http_ui_sent_role_tests.rs",
+    "maint/ux/presentation_workflows.py"
+  ],
+  "related_slices": [
+    "S08-07 Junk in Archive / Bin"
+  ],
+  "outcomes": [
+    {
+      "id": "junk-in-archive-bin",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX02-001",
+        "R2-11-006",
+        "R2-12-001",
+        "R2-12-002",
+        "R2-12-003",
+        "R2-12-004"
+      ],
+      "frontend_backend_outcome": "Existing account-owned Junk appears as a third Archive/Bin view with true received dates and normal bounded move controls.",
+      "essential_qa": "Focused authenticated route/render/move checks, matching native build, installed Web and owner UAT.",
+      "next_action": "Implement scoped third tab and qualify changed journey.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Current scoped Archive/Bin/Junk renderer and left navigation diff; independent source/security review GO in current chat; no backend or mail-service change."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-07/source-result2.json SHA256 aa9a482bbc99c49140c6696162cd094ec3fcfaae7a100138b80817a1ced04973; Rust5/0 and browser26/cleanupPASS."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Junk is a truthful, usable third view on Archive / Bin, preserving Bin-only destructive authority.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Owner explicitly requested S08-07 and supplied Archive/Bin screenshot. Original S08 and S08-05 accepted; S08-06 original owner check and responsive/autosave R07 pending. Prior S08-07 effort UNKNOWN. Existing Junk literal and owned move capability inspected; no backend operation or host action yet. Independent source review found confirmed Sent/Junk role collision and vacuous no-delete fixture; fixed with role precedence and metadata-bearing Junk row, retaining original source candidate. Shell label aligned to three-view contract. Mechanical work-order parent remains S01-01 and reuses its original mapped IDs; S08-07 is the related extension, not a frozen-scope amendment. Browser1 Python dependency refused before fixture; browser2 first Archive view absent because saved role unset; browser3 guessed literal Archive option absent. Browser2/3 cleanup PASS and exact receipts retained. Combined independent reviews approved existing INBOX.Projects through actual Copies form; browser4 PASS26/cleanupPASS/external0/send0. Focused Rust5/0 and independent source/security GO. Native/installed/owner remain pending. V10 generated registers refreshed after test line movement; initial one new test-only unwrap briefly raised current count13283, replaced by direct valid fixture identity so current/refined counts remain13282 and high-after0. V10 check PASS; historical high-before claims unchanged. Focused Rust5/0 rerun after this fixture-only change, durable result2.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 7200,
+      "started_at": "2026-11-11T15:22:51Z",
+      "elapsed_status": "MEASURED",
+      "elapsed_seconds": 964.438
+    },
+    "attempts": [],
+    "next_attempt": null
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S01-01",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_07.md",
+      "sha256": "2b6cef8dfa2766108e42a6f798b1f6c62ee669700a519e2f59987cfa7ce282ed"
+    },
+    "design": {
+      "journey": "Existing account-owned Junk is a third Archive/Bin view.",
+      "frontend": "Finite Junk tab and truthful received date; same search/reader/list.",
+      "backend": "Existing account-owned literal Junk mailbox and generic move; no spam or deletion authority change.",
+      "interfaces": "Authenticated /mailbox?name=Junk and existing move form; preserve CSRF, identity and return context.",
+      "persistence": "Existing mailbox backend only; no new store or schema.",
+      "security": "No owner mail mutation or public mail service changes; Bin-only destructive controls unchanged.",
+      "failure_recovery": "Bounded diagnostics, exact-owned synthetic cleanup and existing Web rollback."
+    },
+    "tests": [
+      {
+        "id": "J01",
+        "outcome_ids": [
+          "junk-in-archive-bin"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
+        "action": "Render authenticated Archive, Trash and Junk views plus tab navigation.",
+        "expected": "Correct active tab, truthful date and folder context.",
+        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/s08-07/source-result2.json SHA256 aa9a482bbc99c49140c6696162cd094ec3fcfaae7a100138b80817a1ced04973"
+        ]
+      },
+      {
+        "id": "J02",
+        "outcome_ids": [
+          "junk-in-archive-bin"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
+        "action": "Exercise missing/denied/foreign Junk list refusal, confirmed Sent precedence and Junk no-delete boundary.",
+        "expected": "Fail closed without invented folder or unauthorized write.",
+        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/s08-07/source-result2.json SHA256 aa9a482bbc99c49140c6696162cd094ec3fcfaae7a100138b80817a1ced04973"
+        ]
+      },
+      {
+        "id": "J03",
+        "outcome_ids": [
+          "junk-in-archive-bin"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
+        "action": "Build matching source and exercise changed native renderer and disposable move boundary.",
+        "expected": "Junk view and controlled move pass with exact source.",
+        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "J04",
+        "outcome_ids": [
+          "junk-in-archive-bin"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
+        "action": "Reviewed Web-only installation and readback.",
+        "expected": "Loaded Web and public mail/owner state preserved.",
+        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "J05",
+        "outcome_ids": [
+          "junk-in-archive-bin"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
+        "action": "Owner reviews Junk tab and disposable message.",
+        "expected": "Separate explicit UAT PASS.",
+        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "Focused source and native/installed journey plus independent review and normal signed GitHub preservation.",
+    "human_exit": "Owner accepts the installed Junk view after reviewing third tab and a disposable message."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "S08-07 owner UAT pending."
+  },
+  "next_action": "Implement and qualify S08-07 without altering accepted/pending other slices."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+<!-- OSMAP_ARCHIVED_S08_06_PANEL_ACCEPTED_20261111 -->
+<!-- OSMAP_HISTORICAL_S08_06_PANEL_WORK_ORDER -->
 ```json
 {
   "version": 1,
@@ -242,7 +464,8 @@
   "next_action": "None for this correction; accepted and closed. Preserve separate remaining-slice status."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_HISTORICAL_S08_06_PANEL_WORK_ORDER -->
+<!-- /OSMAP_ARCHIVED_S08_06_PANEL_ACCEPTED_20261111 -->
 
 <!-- OSMAP_ARCHIVED_RESPONSIVE_UAT_READY_20261111 -->
 ```json

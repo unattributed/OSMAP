@@ -192,3 +192,18 @@ fn configured_sent_inbox_role_uses_sent_table_and_bin_keeps_delete_projection() 
     assert!(!sent_active(&bin));
     assert!(!bin.contains("sent-table"));
 }
+
+#[test]
+fn configured_sent_junk_role_keeps_sent_projection() {
+    let html = list(
+        "Junk",
+        &MailReaderContext {
+            sent_role: Some(role("Junk")),
+            ..MailReaderContext::default()
+        },
+    );
+    assert!(sent_active(&html));
+    assert!(html.contains("sent-table"));
+    assert!(html.contains(">Recipient<"));
+    assert!(!html.contains("archive-page"));
+}

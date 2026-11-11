@@ -462,7 +462,7 @@ pub(crate) fn app_header_with_storage(
         ("labels", "Labels", "/labels", "label"),
         (
             "archive",
-            "Archive / Bin",
+            "Archive / Bin / Junk",
             "/mailbox/shortcut?kind=archive",
             "archive",
         ),
@@ -2079,7 +2079,16 @@ pub(crate) fn render_message_list_page(
             .sent_role
             .as_ref()
             .is_some_and(|role| role.matches(mailbox_name));
-    let archive_page = sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name)
+    let distinct_junk = sort_links.reader.bin_mailbox_name.as_deref() != Some("Junk")
+        && bulk_actions.archive_mailbox_name != Some("Junk")
+        && !sort_links
+            .reader
+            .sent_role
+            .as_ref()
+            .is_some_and(|role| role.matches("Junk"));
+    let is_junk = distinct_junk && mailbox_name == "Junk";
+    let archive_page = is_junk
+        || sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name)
         || (Some(mailbox_name) == bulk_actions.archive_mailbox_name
             && mailbox_name != "INBOX"
             && !is_sent);
@@ -2168,7 +2177,13 @@ pub(crate) fn render_message_list_page(
                     timezone: sort_links.reader.timezone,
                     selected: sort_links.view.is_selected(mailbox_name, message.uid),
                     on_open: sort_links.view.open_on_select,
-                    is_bin: sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name),
+                    kind: if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name) {
+                        archive_ui::FolderView::Bin
+                    } else if is_junk {
+                        archive_ui::FolderView::Junk
+                    } else {
+                        archive_ui::FolderView::Archive
+                    },
                 },
                 &labels,
             ));
@@ -2265,6 +2280,8 @@ pub(crate) fn render_message_list_page(
         };
         let help = if is_trash {
             "Select up to ten messages for Restore, Delete permanently or Move. Empty trash includes every page and ignores filters."
+        } else if is_junk {
+            "Select up to ten messages. Use Move Selected to return them to Inbox or another folder."
         } else {
             "Select up to ten messages. Bin moves to your saved folder; restore returns to Inbox."
         };
@@ -2284,6 +2301,19 @@ pub(crate) fn render_message_list_page(
             banner: &list_notice_banner,
             bulk_form: &bulk_move_form,
             automatic_selection_count,
+            kind: if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name) {
+                archive_ui::FolderView::Bin
+            } else if is_junk {
+                archive_ui::FolderView::Junk
+            } else {
+                archive_ui::FolderView::Archive
+            },
+            junk_available: distinct_junk
+                && (is_junk
+                    || bulk_actions
+                        .move_destinations
+                        .iter()
+                        .any(|name| name == "Junk")),
         });
     }
     let bulk_archive_form = String::new();
