@@ -118,12 +118,15 @@ pub(crate) fn render_security_page_with_recovery(
         })
         .unwrap_or_else(|| "Active session count unknown".into());
     let row = |title: &str, detail: &str, action: &str, enabled: bool| {
-        let action = presentation_label(action, match title {
-            "Password" => "unlock",
-            "Recovery contact" => "people",
-            "Active sessions" => "sessions",
-            _ => "shield",
-        });
+        let action = presentation_label(
+            action,
+            match title {
+                "Password" => "unlock",
+                "Recovery contact" => "people",
+                "Active sessions" => "sessions",
+                _ => "shield",
+            },
+        );
         let control = if enabled {
             format!("<a class=\"button-link secondary\" href=\"/sessions\" aria-label=\"Manage sessions\">{action}</a>")
         } else {
