@@ -107,9 +107,9 @@ body:has(.app-rail) {
 .account-name { max-width: 12rem; font-size: .875rem; }
 .topbar .protection-menu>summary { white-space: nowrap; min-height: 2.5rem; padding: .5rem .8rem; }
 .topbar .account-menu summary { padding: 0; }
-.page-shell { padding: 1.5rem; }
+.page-shell { padding: 1rem; }
 .page-shell h1 { font-size: 2.25rem; line-height: 1.15; letter-spacing: -.04rem; margin: 0 0 .4rem; }
-.page-intro { margin: 0 0 1.2rem; }
+.page-intro { margin: 0 0 1rem; }
 .page-intro p { font-size: 1rem; }
 .shell-request-clock { position:absolute; top:calc(var(--topbar-height) + 1.5rem); right:1.5rem; width:13rem; color:var(--muted); font-size:.875rem; text-align:right; line-height:1.35; }
 .shell-request-clock small { display:block; font-size:.7rem; margin-top:.2rem; }
@@ -476,7 +476,8 @@ body:has(.app-rail) {
   .rail-link { justify-content: center; padding: .6rem; }
   .app-rail:has(.rail-disclosure[open]) { width: 13.75rem; box-shadow: 8px 0 20px var(--shadow); }
   .rail-disclosure[open]~.rail-links .rail-label { display: block; }
-  .topbar { gap: .65rem; padding: .8rem; }
+  .topbar { gap: .65rem; padding: .8rem; flex-wrap:wrap; }
+  .topbar .auth-status { flex:0 1 auto; max-width:100%; flex-wrap:wrap; }
   .topbar .brand { flex-basis: auto; }
   .account-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
   .page-shell { padding: 1rem; }
@@ -832,6 +833,7 @@ body:has(.app-rail) {
 .presentation-icon { display:none; position:relative; width:18px; height:18px; flex:0 0 18px; color:inherit; vertical-align:middle; }
 .presentation-icon::before,.presentation-icon::after,.presentation-icon>i { position:absolute; display:block; content:""; box-sizing:border-box; border-color:currentColor; }
 .presentation-label { overflow-wrap:anywhere; }
+.scheduled-navigation { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem; margin-top:1rem; }
 html[data-presentation-style] .draft-star button:has(>.presentation-label) { width:auto; min-width:36px; max-width:100%; }
 html[data-presentation-style] .header-search button:has(>.presentation-label) { flex:0 0 auto; width:auto; min-width:4.5rem; white-space:nowrap; }
 body:has(.app-rail) :is(a,button,summary):has(>.presentation-label) { position:relative; }
@@ -888,6 +890,13 @@ body:has(.app-rail) :is(a,button,summary):has(>.presentation-label) { position:r
 .presentation-icon-select::after { width:9px; height:5px; left:5px; top:5px; border-left:1.5px solid; border-bottom:1.5px solid; transform:rotate(-45deg); }
 .presentation-icon-key::before { width:9px; height:9px; left:0; top:0; border:1.5px solid; border-radius:50%; }
 .presentation-icon-key::after { width:12px; left:6px; top:11px; border-top:1.5px solid; transform:rotate(45deg); }
+.presentation-icon-key>i { width:6px; height:5px; left:10px; top:9px; border-right:2px solid; border-bottom:2px solid; transform:rotate(45deg); }
+.presentation-icon-import-key::before { width:12px; height:16px; left:1px; top:1px; border:1.5px solid; border-radius:2px; }
+.presentation-icon-import-key::after { content:"↓"; left:8px; top:3px; font:bold 19px/18px Arial,sans-serif; background:var(--panel); }
+.presentation-icon-import-key>i { width:5px; left:4px; top:5px; border-top:1.5px solid; }
+.presentation-icon-unlock::before { width:13px; height:10px; left:2px; top:8px; border:1.5px solid; border-radius:2px; }
+.presentation-icon-unlock::after { width:9px; height:9px; left:8px; top:0; border:1.5px solid; border-bottom:0; border-left:0; border-radius:6px 6px 0 0; }
+.presentation-icon-unlock>i { width:2px; height:4px; left:8px; top:11px; background:currentColor; border-radius:1px; }
 .presentation-icon-settings::before { content:"⚙"; top:-2px; font:22px/20px Arial,sans-serif; }
 .presentation-icon-refresh::before { content:"↻"; top:-3px; font:25px/22px Arial,sans-serif; }
 .presentation-icon-star::before { content:"☆"; top:-3px; font:23px/22px Arial,sans-serif; }
@@ -930,7 +939,7 @@ html[data-presentation-style] .header-notifications:not(:has(>.presentation-labe
   html[data-presentation-style=icons] .rail-link .rail-label { display:block; }
   html[data-presentation-style=icons] :is(a,button,summary):is(:hover,:focus-visible)>.presentation-label,
   html[data-presentation-style=icons] .rail-link:is(:hover,:focus-visible)>.rail-label,
-  html[data-presentation-style=icons] .welcome-shortcut:is(:hover,:focus-visible)>:last-child { position:absolute; width:max-content; max-width:min(22rem,80vw); height:auto; margin:0; padding:.45rem .65rem; overflow:visible; clip:auto; white-space:normal; border:1px solid var(--line-strong); border-radius:.3rem; background:var(--ink); color:var(--bg); font-size:.8rem; line-height:1.4; inset-block-start:calc(100% + .35rem); inset-inline-start:0; z-index:100; box-shadow:0 2px 8px var(--shadow); pointer-events:none; }
+  html[data-presentation-style=icons] .welcome-shortcut:is(:hover,:focus-visible)>:last-child { position:absolute; width:max-content; max-width:min(22rem,calc(100vw - 2rem)); height:auto; margin:0; padding:.45rem .65rem; overflow:visible; clip:auto; white-space:normal; border:1px solid var(--line-strong); border-radius:.3rem; background:var(--ink); color:var(--bg); font-size:.8rem; line-height:1.4; inset-block-start:calc(100% + .35rem); inset-inline-start:0; z-index:100; box-shadow:0 2px 8px var(--shadow); pointer-events:none; }
   html[data-presentation-style=icons] .rail-link:is(:hover,:focus-visible)>.rail-label { position:fixed; inset-inline-start:4.5rem; inset-block-start:auto; }
   html[data-presentation-style=icons] .account-menu>summary { position:relative; }
   html[data-presentation-style=icons] .account-menu>summary:is(:hover,:focus-visible)>.account-name { position:absolute; inset-block-start:calc(100% + .35rem); inset-inline-end:0; inset-inline-start:auto; width:max-content; max-width:min(26rem,80vw); height:auto; margin:0; padding:.45rem .65rem; clip:auto; overflow:visible; white-space:normal; overflow-wrap:anywhere; background:var(--ink); color:var(--bg); border:1px solid var(--line-strong); border-radius:.3rem; z-index:100; font-size:.8rem; }
@@ -949,6 +958,14 @@ html[data-presentation-style] .header-notifications:not(:has(>.presentation-labe
   html[data-presentation-style=icons] label[for=compose-expanded] :is(.expand-text,.collapse-text) { font-size:0; }
   html[data-presentation-style=icons] label[for=compose-expanded] .expand-text::after { content:"↗"; font:20px/18px Arial,sans-serif; }
   html[data-presentation-style=icons] label[for=compose-expanded] .collapse-text::after { content:"↙"; font:20px/18px Arial,sans-serif; }
+  /* Descriptive destinations and scoped setting saves remain readable in Icons. */
+  html[data-presentation-style=icons] :is(a,button,summary).presentation-text>.presentation-icon { display:none; }
+  html[data-presentation-style=icons] :is(a,button,summary).presentation-text>.presentation-label,
+  html[data-presentation-style=icons] :is(a,button,summary).presentation-text:is(:hover,:focus-visible)>.presentation-label { position:static; width:auto; max-width:100%; height:auto; margin:0; padding:0; overflow:visible; clip:auto; white-space:normal; border:0; border-radius:0; background:transparent; color:inherit; font:inherit; line-height:inherit; box-shadow:none; pointer-events:auto; }
+  /* Controls at the trailing edge open their labels into the available panel. */
+  html[data-presentation-style=icons] :is(.settings-save-row,.composition-save-row,.general-card-actions,.compose-send-controls,.auth-status,.key-management-card form) :is(a,button,summary):is(:hover,:focus-visible)>.presentation-label,
+  html[data-presentation-style=icons] .draft-discard>summary:is(:hover,:focus-visible)>.presentation-label { inset-inline-start:auto; inset-inline-end:0; }
+  html[data-presentation-style=icons] :is(.auth-status,.reader-neighbours) :is(a,button,summary)[aria-label]:is(:hover,:focus-visible)::after { inset-inline-start:auto; inset-inline-end:0; max-width:min(20rem,calc(100vw - 2rem)); }
 }
 @media(max-width:56rem) {
   html[data-presentation-style=text_labels] body:has(.app-rail) { --rail-width:0rem; }

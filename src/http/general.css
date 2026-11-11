@@ -1,7 +1,7 @@
 /* PAGE-11 General overview; include after settings.css. */
 .settings-general-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .9rem; align-items: stretch; min-width: 0; }
-.general-card { padding: 1rem; min-width: 0; min-height: 21.6rem; border: 1px solid var(--line); border-radius: .85rem; background: var(--panel); }
-.general-card h2 { margin: .9rem 0 1rem; font-size: 1.4rem; line-height: 1.25; text-transform: none; }
+.general-card { padding: .85rem; min-width: 0; border: 1px solid var(--line); border-radius: .85rem; background: var(--panel); }
+.general-card h2 { margin: .25rem 0 .8rem; font-size: 1.4rem; line-height: 1.25; text-transform: none; }
 .general-card form { margin: 0; }
 .general-field { display: grid; grid-template-columns: 43% minmax(0,1fr); align-items: center; gap: .55rem; margin-bottom: .6rem; }
 .general-field label { margin: 0; font-size: .875rem; font-weight: 400; }
@@ -9,6 +9,9 @@
 .general-card :disabled { opacity: 1; color: var(--muted); background: var(--panel-soft); border-color: var(--line); cursor: not-allowed; }
 .general-help { margin: .55rem 0 0; color: var(--muted); font-size: .75rem; line-height: 1.5; }
 .general-card-actions { display: flex; flex-wrap: wrap; gap: .55rem; align-items: center; margin-top: .65rem; }
+.general-card-actions { justify-content:flex-end; }
+.general-card-actions .presentation-text { flex:0 1 auto; max-width:100%; white-space:normal; }
+#general-timezone-form>button { display:flex; margin-inline-start:auto; margin-top:.65rem; }
 .general-composition-actions > details { flex: 1 1 8rem; min-width: 0; font-size: .75rem; }
 .general-composition-actions > details[open] { flex-basis: 100%; }
 .general-composition-actions summary { cursor: pointer; }

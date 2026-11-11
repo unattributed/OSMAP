@@ -105,7 +105,7 @@ pub(crate) fn render_mailboxes_page_with_storage(
     let view_all = if inbox {
         "<a href=\"/mailbox?name=INBOX\">Open Inbox <span aria-hidden=\"true\">→</span></a>"
     } else {
-        "<a href=\"#welcome-mailboxes\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Browse mailboxes</span></a>"
+        "<a class=\"presentation-text\" href=\"#welcome-mailboxes\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Browse mailboxes</span></a>"
     };
     let imported_keys = (openpgp.0.canonical_username == canonical_username
         && openpgp
@@ -141,17 +141,17 @@ pub(crate) fn render_mailboxes_page_with_storage(
             escape_html(status)
         ));
     }
-    let search = format!("<details class=\"welcome-search\"><summary><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search all mailboxes</span></summary><form class=\"search-row\" method=\"get\" action=\"/search\"><label for=\"mailbox-global-search\">Search all mailboxes<input id=\"mailbox-global-search\" type=\"text\" name=\"q\" autocomplete=\"off\" maxlength=\"256\" required></label>{}<button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search</span></button></form></details>", render_search_field_select(MessageSearchField::All));
+    let search = format!("<details class=\"welcome-search\"><summary class=\"presentation-text\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search all mailboxes</span></summary><form class=\"search-row\" method=\"get\" action=\"/search\"><label for=\"mailbox-global-search\">Search all mailboxes<input id=\"mailbox-global-search\" type=\"text\" name=\"q\" autocomplete=\"off\" maxlength=\"256\" required></label>{}<button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search</span></button></form></details>", render_search_field_select(MessageSearchField::All));
     TrustedHtml::from_template(format!(concat!(
         "{header}<main id=\"main-content\" class=\"page-shell welcome-page\" tabindex=\"-1\">",
         "<section class=\"welcome-intro\" aria-labelledby=\"mailboxes-title\"><div class=\"welcome-greeting\"><h1 id=\"mailboxes-title\">Welcome back.</h1><p>Choose a mailbox to get started.</p><p class=\"welcome-account\">Signed in as <strong>{account}</strong></p></div><div class=\"welcome-metrics\" aria-label=\"Message counts and scope\">{metrics}</div></section>",
-        "<div class=\"welcome-primary-grid\"><section class=\"welcome-panel welcome-messages\" aria-labelledby=\"welcome-messages-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-messages-title\">Recent Messages</h2>{view_all}</div>{recent}<details class=\"welcome-browse\"><summary id=\"welcome-mailboxes\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Browse your mailboxes</span></summary><div class=\"welcome-folder-scroll\" tabindex=\"0\" role=\"region\" aria-labelledby=\"welcome-mailboxes\"><ul>{folders}</ul></div>{limit}</details></section>",
+        "<div class=\"welcome-primary-grid\"><section class=\"welcome-panel welcome-messages\" aria-labelledby=\"welcome-messages-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-messages-title\">Recent Messages</h2>{view_all}</div>{recent}<details class=\"welcome-browse\"><summary id=\"welcome-mailboxes\" class=\"presentation-text\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Browse your mailboxes</span></summary><div class=\"welcome-folder-scroll\" tabindex=\"0\" role=\"region\" aria-labelledby=\"welcome-mailboxes\"><ul>{folders}</ul></div>{limit}</details></section>",
         "<section class=\"welcome-panel welcome-account-security\" aria-labelledby=\"welcome-security-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-security-title\">Account Security</h2></div><div class=\"welcome-protection\">{shield}<div><strong>Protected by Default</strong><p>Remote images and active content are blocked.</p></div></div><div class=\"welcome-security-detail\"><h3>Authenticated session</h3><p>Password and TOTP were required at sign-in.</p><a href=\"/sessions\">Manage sessions <span aria-hidden=\"true\">→</span></a></div></section>",
         "{key_summary}</div>",
         "<div class=\"welcome-secondary-grid\"><section class=\"welcome-panel welcome-activity\" aria-labelledby=\"welcome-activity-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-activity-title\">Recent Activity</h2></div>{activity_rows}</section>",
         "<div class=\"welcome-middle-stack\"><section class=\"welcome-panel welcome-actions\" aria-labelledby=\"welcome-actions-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-actions-title\">Quick Actions</h2></div><div class=\"welcome-action-grid\"><a href=\"/search\">{search_icon}<strong>Search</strong><span>Find messages</span></a><a href=\"{filter_target}\">{filter_icon}<strong>Filters</strong><span>{filter_description}</span></a><a href=\"/labels\">{label_icon}<strong>Labels</strong><span>Organize messages</span></a><details><summary>{more_icon}<strong>More</strong><span>Available tools</span></summary><div><a href=\"/contacts\"><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Contacts</span></a><a href=\"/sessions\"><span class=\"presentation-icon presentation-icon-sessions\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Sessions</span></a><a href=\"/drafts\"><span class=\"presentation-icon presentation-icon-drafts\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Saved drafts</span></a></div></details></div>{search}</section>",
         "<section class=\"welcome-panel welcome-storage\" aria-labelledby=\"welcome-storage-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-storage-title\">Storage Usage</h2></div><div class=\"welcome-storage-body\">{storage}</div></section></div>",
-        "<section class=\"welcome-panel welcome-system\" aria-labelledby=\"welcome-system-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-system-title\">System Status</h2></div><ul>{system}</ul><details><summary><span class=\"presentation-icon presentation-icon-eye\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">View status details</span></summary><p class=\"welcome-note\">Checks apply to <strong>{account}</strong> at page load. Mailbox listing does not verify SMTP or message delivery. Public key inventory does not verify private-key readiness. Session verification does not report every security service. OSMAP does not report host backup or system-update results.</p></details></section></div>",
+        "<section class=\"welcome-panel welcome-system\" aria-labelledby=\"welcome-system-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-system-title\">System Status</h2></div><ul>{system}</ul><details class=\"welcome-status-details\"><summary class=\"presentation-text\"><span class=\"presentation-icon presentation-icon-eye\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">View status details</span></summary><p class=\"welcome-note\">Checks apply to <strong>{account}</strong> at page load. Mailbox listing does not verify SMTP or message delivery. Public key inventory does not verify private-key readiness. Session verification does not report every security service. OSMAP does not report host backup or system-update results.</p></details></section></div>",
         "<footer class=\"welcome-footer\"><span>OSMAP · Secure by Design. Private by Default.</span><span>Limited status checks</span><span aria-disabled=\"true\">Help unavailable</span><span aria-disabled=\"true\">Feedback unavailable</span></footer></main>"
     ), header=header, account=escape_html(canonical_username), metrics=metrics, recent=recent, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), key_summary=key_summary, activity_rows=activity, search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system, storage=storage))
 }
@@ -235,7 +235,7 @@ fn openpgp_summary(
         "<section class=\"welcome-panel welcome-openpgp\" aria-labelledby=\"welcome-openpgp-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-openpgp-title\">OpenPGP Status</h2></div>",
         "<div class=\"welcome-key-state\">{}<div><strong>{status}</strong><p>Public metadata only; private-key readiness is checked when an operation runs.</p></div></div>",
         "<dl class=\"welcome-key-details\"><div><dt>Saved account fingerprint</dt><dd>{fingerprint}</dd></div><div><dt>Signing</dt><dd>{signing}</dd></div><div><dt>Encryption</dt><dd>{encryption}</dd></div><div><dt>Encrypt-to-self</dt><dd>{self_default}</dd></div></dl>",
-        "<a class=\"button-link\" href=\"/settings/keys\"><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage Keys</span></a></section>"
+        "<a class=\"button-link presentation-text welcome-panel-link\" href=\"/settings/keys\"><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage Keys</span></a></section>"
     ), shell_icon("shield"), status=status, fingerprint=fingerprint, signing=signing, encryption=encryption, self_default=self_default)
 }
 
@@ -311,7 +311,7 @@ fn notice_activity(
                 .collect();
             rows.sort_by_key(|event| std::cmp::Reverse(event.occurred_at));
             if rows.is_empty() {
-                html.push_str("<li>No retained notices match your notification choices.</li>");
+                html.push_str("<li class=\"welcome-activity-empty-row\">No retained notices match your notification choices.</li>");
             }
             for event in rows.into_iter().take(5) {
                 let time = crate::logging::format_unix_timestamp_utc(event.occurred_at);
@@ -319,7 +319,7 @@ fn notice_activity(
             }
         }
     }
-    html.push_str("</ul><a class=\"welcome-activity-link\" href=\"/notifications\"><span class=\"presentation-icon presentation-icon-notifications\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">View all notifications →</span></a>");
+    html.push_str("</ul><a class=\"welcome-activity-link presentation-text\" href=\"/notifications\"><span class=\"presentation-icon presentation-icon-notifications\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">View all notifications →</span></a>");
     html
 }
 

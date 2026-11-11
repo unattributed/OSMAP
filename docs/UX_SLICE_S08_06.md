@@ -1,5 +1,64 @@
 # S08-06 — Presentation style
 
+## Responsive and functional correction — 2026-11-11
+
+The owner authorizes correction of the supplied page observations using S05's
+reproduce -> analyse -> smallest correction -> focused retest method. The outcome
+is readable, contextual OSMAP pages at 100% browser zoom and confirmed draft
+autosave when enabled. This extends the existing presentation work and repairs
+the related original S03-02 draft journey; it does not reopen accepted S05-02
+public-key import or change the frozen plan/reference files.
+
+Use one shared placement rule: app controls in the topbar, page/panel controls
+at their heading's trailing edge, row actions in the final column with inward
+menus, scoped setting actions beside their fields, form saves in a trailing
+footer, and descriptive destination links in a labelled panel footer. Keep Send,
+destructive confirmations and account isolation intact. The five requested
+Mailboxes links and Save timezone stay text in Icons mode. Use distinct import,
+unlock and search symbols, a proper Security navigation icon, scoped Mailbox
+Defaults labels, spaced Outbox actions and a full-width activity empty state.
+
+Adapt to actual viewport/input capabilities using existing CSS: desktop
+1280x720 and 1920x1080, touch768x1024, mobile360x740 and390x844. Preserve readable
+text, natural vertical scrolling, keyboard focus, existing Icons/Text labels and
+touch-label fallback; no CSS/browser zoom workaround or blanket field shrinking.
+Reduce excessive panel minima/padding and size fields to their content. Fix
+right-edge help/tooltips, composition actions and Drafts dropdown clipping.
+At the mobile keyboard-closed targets, the Login title through privacy tagline
+must fit; keyboard-open forms must remain scrollable/reachable. Preserve all
+login copy, branding and authentication requirements.
+
+First reproduce autosave in a fresh Compose and an existing Draft editor with
+the real saved preference, actual HTTP/Runtime/store confirmation and readback.
+Preserve the reported unconfirmed state; its root cause is initially UNKNOWN.
+Keep stale-write/uncertain-result pauses, no automatic ambiguous retry, and no
+mail submission. Extend the existing native Runtime fixture only for a missing
+changed boundary; synthetic browser authentication is not real account proof.
+Recognize only exact finite pre-write refusal receipts as confirmed no-write:
+stop autosave and retain edits while allowing manual correction/Save Draft.
+Unknown, stale, missing/foreign-draft and uncertain replies retain the lock.
+Saved receipts still require HTTP200. Add only fixed reason codes to existing
+audit events; the historic refusal's precise reason remains UNKNOWN.
+Do not change the 50-message page size or remove the 2000-result listing bound;
+the Sent pagination question is answered separately from this correction.
+
+Root owns integration/docs/Git/native/deployment. /root/s08_scrum owns autosave;
+/root/web_designer_review owns visual code; /root/s08_delivery_review independently
+reviews source, affected QA, security and delivery. Use existing fixtures and
+one focused presentation workflow, not a new test framework. Qualify a small
+representative set first, then sweep every active page family in both styles,
+with mobile/touch and selected empty/menu/error states. Reuse passing unchanged
+tests and perform normal delivery gates at delivery. Two failures at one boundary
+stop retries for combined reassessment. Initial investigation allowance14400s;
+retain all actual failures and UNKNOWN costs, with no invented calendar expiry.
+
+Deliver a reviewed matching Web-only candidate on obsd1 with the existing
+backup/rollback and protected-state checks. No owner credentials/key/message
+operation, public Dovecot/Postfix/MariaDB restart/configuration change, external
+send, new dependency or unrelated slice. Source synchronization, installed QA
+and owner UAT remain separate. Retained artifacts:
+`/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/`.
+
 ## Owner review correction — 2026-11-10
 
 The owner requests removal of the horizontal Workspace shortcuts bar from the

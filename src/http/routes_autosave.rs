@@ -1,5 +1,47 @@
 //! Finite configuration and confirmation responses for compose-only automatic saves.
 use super::*;
+
+pub(super) enum PrewriteRefusal {
+    ProtectionInvalid,
+    RequestUnsupported,
+    PreferenceDisabled,
+    PreferenceUnavailable,
+}
+impl PrewriteRefusal {
+    fn reason(&self) -> &'static str {
+        match self {
+            Self::ProtectionInvalid => "protection_invalid",
+            Self::RequestUnsupported => "request_unsupported",
+            Self::PreferenceDisabled => "preference_disabled",
+            Self::PreferenceUnavailable => "preference_unavailable",
+        }
+    }
+}
+
+// Only call before draft lookup, send-intent handling or save dispatch. This
+// receipt confirms refusal of this request, never a stored draft or revision.
+pub(super) fn refused_before_write(
+    context: &AuthenticationContext,
+    reason: PrewriteRefusal,
+    mut audit_events: Vec<LogEvent>,
+) -> HandledHttpResponse {
+    audit_events.push(
+        build_http_warning_event(
+            "autosave_refused_before_write",
+            "automatic draft saving refused before write dispatch",
+            context,
+        )
+        .with_field("reason", reason.reason()),
+    );
+    HandledHttpResponse {
+        response: json(
+            409,
+            serde_json::json!({"version":1,"state":"paused","reason":reason.reason()}),
+        ),
+        audit_events,
+    }
+}
+
 pub(super) fn json(status: u16, value: serde_json::Value) -> HttpResponse {
     HttpResponse::text(
         status,

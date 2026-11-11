@@ -1,10 +1,294 @@
+2026-11-11 — **Responsive/control and autosave correction IN_PROGRESS.** Owner authorizes reviewed fixes using S05 methodology. Existing S08-06 presentation follow-up plus related S03-02 draft correction; preserve accepted optional-fingerprint import and prior acceptance/failures.
+
+<!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S01-01",
+  "original_requirement": "Theme tokens, persistent preference, system default; define authenticated versus pre-login storage and precedence",
+  "source_baseline": "16bcefcd7e923bf2c0b3b66eab42b57d61d29cbd",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s08_scrum",
+      "/root/web_designer_review"
+    ],
+    "qa": [
+      "/root/s08_delivery_review"
+    ],
+    "security_review": [
+      "/root/s08_delivery_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/welcome_ui.rs",
+    "src/http/welcome.css",
+    "src/settings_ui.rs",
+    "src/settings_general_ui.rs",
+    "src/settings_composition_ui.rs",
+    "src/scheduled_ui.rs",
+    "src/http/drafts.css",
+    "src/http/approved.css",
+    "src/http/general.css",
+    "src/http/composition.css",
+    "src/http_support.rs",
+    "src/key_inventory_ui.rs",
+    "src/http/personal_key_ui.rs",
+    "src/http/key_inventory.css",
+    "src/http_ui.rs",
+    "src/http/compose_local.js",
+    "src/http/routes_autosave.rs",
+    "src/http_gateway_draft.rs",
+    "src/http/autosave_tests.rs",
+    "src/mailbox_helper_native_draft_autosave_tests.rs",
+    "src/http_ui_state_tests.rs",
+    "maint/ux/autosave_workflows.py",
+    "maint/ux/autosave_review_workflows.py",
+    "maint/ux/presentation_workflows.py",
+    "maint/ux/browser_workflows.py",
+    "docs/UX_SLICE_S08_06.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/UX_DECISIONS.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-claims-boundary.json",
+    "src/http/routes_draft.rs",
+    "src/http/compose_enhancement.rs",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "maint/ux/appearance_workflows.py",
+    "src/http/settings.css"
+  ],
+  "related_slices": [
+    "S08-06 presentation follow-up",
+    "S03-02 autosave correction",
+    "S04-01 Settings presentation"
+  ],
+  "outcomes": [
+    {
+      "id": "responsive-controls-and-draft-continuity",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX02-001",
+        "R2-11-006",
+        "R2-12-001",
+        "R2-12-002",
+        "R2-12-003",
+        "R2-12-004"
+      ],
+      "frontend_backend_outcome": "Pages adapt at100% with contextual controls, readable text and genuine confirmed autosave for fresh/existing drafts; related original S03-02 obligation preserved.",
+      "essential_qa": "Actual Runtime/store autosave, real browser layout/interaction on all active page families, focused failures/native and reviewed Web-only installation.",
+      "next_action": "Independent exact source/data/recipe review, signed normal source preservation, then matching native/Web-only delivery.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Scoped visual CSS/templates and exact finite autosave prewrite receipt handling; no new dependencies/helper changes."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "R01\u2013R04 focused actual Runtime/browser/118 viewport-style checks, targeted menu/empty state, Firefox and native200percent large-font Save/reload PASS; normal delivery hook remains pending. Private root responsive-correction-20261111."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Pages adapt at100% with contextual controls, readable text and genuine confirmed autosave for fresh/existing drafts; related original S03-02 obligation preserved.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Explicit Nov11 operator correction after image/source review. Original S05 optional-fingerprint ACCEPTED and S08/S08-05 acceptance preserved verbatim below; S08-06 prior pending owner review and all historical failures retained. Current autosave root cause UNKNOWN. Earlier planning effort/cost UNKNOWN; current work-order clock starts now. Focused fresh/existing Runtime/store and actual browser timer/reload PASS. Bounded live metadata shows earlier409/317bytes and later4x200; exact historical reason UNKNOWN. Independent review GO for finite exact prewrite no-write receipt permitting manual correction while auto retry stops; all uncertain/stale replies remain locked. Mobile first360x740 footerFAIL, added geometry diagnosticFAIL confirms360x799/footerbottom787.14; root+designer combinedreassessment attributes intrinsic spacing budget, not cascade. Both failures retained; smallest mobile-only spacing correction pending. Existing native200percent/largefont qualifier failed after savedlargefont: DPR2/outer1600/inner796/visualScale1/cssZoom1 with overflowtrue, pre-savefalse. Productlayout failure retained; diagnosticrectangle/screenshot observation added before smallest CSS correction. FullV14 aggregate stops at preexisting reader trust-strip requiredscaffoldwording; affectedCSS/auth/list gates alreadypassed, furtheraffectedgates separately checked. No fullreleaseclaim. Diagnosticzoom11 identified auth-status/header-theme right804.13 vsinner796 (no Settingscontent offender). Root+designer combinedreassessment selected two-rule max56rem headerwrap; correctedzoom12 PASS native200/largeSave/reload/keyboard withoverflowfalse. Visual05 PASS118; focusedmenu06 PASS3, clearedactivity09 PASS2, Firefox08 PASS6 (initialhistoricalengine startup failure retained; currentvendorengine tested). Runtime03/source2/browser02 PASS. OldV14aggregate readertruststripwording FAIL retained; later4affectedgates PASS. Runner lifecycle fixed with exactowned stop/readback before removal and final cleanup accounting. No additional matching passing suite repeated.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-11T11:18:41Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
+    },
+    "attempts": [],
+    "next_attempt": null
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S01-01",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_06.md",
+      "sha256": "288f2e0033244dfbed35d694d05b1282a02d5c1f553eb7cc31da15496cb9014f"
+    },
+    "design": {
+      "journey": "Pages adapt at100% with contextual controls, readable text and genuine confirmed autosave for fresh/existing drafts; related original S03-02 obligation preserved.",
+      "frontend": "Existing native templates/CSS, explicit text exceptions and distinct icons, responsive panels and bounded menus/help; preserve touch labels and user preferences.",
+      "backend": "Existing Compose autosave HTTP/Runtime/store with exact revision and confirmed receipt; diagnose before smallest supported correction, no send.",
+      "interfaces": "Same authenticated routes, fields, CSP, CSRF/Origin/session ownership, quotas and immutable send intent semantics; no new native protocol.",
+      "persistence": "Existing preference/draft/journal stores; preserve accepted key import, owner state, unresolved-save recovery and public mail.",
+      "security": "Fresh/foreign session isolation, stale/CAS/uncertain result refusal, no automatic ambiguous retry or remote script/content; scoped UI presentation only.",
+      "failure_recovery": "Retain actionable fixed-code evidence and private raw output, exact-owned fixture disposition and existing Web rollback; cleanup does not imply function."
+    },
+    "tests": [
+      {
+        "id": "R01",
+        "outcome_ids": [
+          "responsive-controls-and-draft-continuity"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Reviewed exact source; existing account-owned synthetic fixture/store and capability-qualified obsd1 where native; no owner credentials.",
+        "action": "Reproduce new and existing draft autosave through real Runtime/store and browser timer, then reload stored versions.",
+        "expected": "Actual stored content and revision/intent confirmation match; preference and timer work without a send.",
+        "preserved": "Accepted S05 import, original S08/logo acceptance, owner keys/messages/settings and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/autosave-browser-02/report.json SHA256 88d7f1d94c2d63793c6dba87dbcbd41f0f0213fa45c014f94eaee5e49311a8ea",
+          "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/autosave-runtime-03.private.log SHA256 5eb961f65ea5ade7a2b0fb043392c02afdba44229aa0928ecebd7651cb512c09"
+        ]
+      },
+      {
+        "id": "R02",
+        "outcome_ids": [
+          "responsive-controls-and-draft-continuity"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Reviewed exact source; existing account-owned synthetic fixture/store and capability-qualified obsd1 where native; no owner credentials.",
+        "action": "Exercise one stale/conflicting save and unavailable/uncertain reply using existing tests.",
+        "expected": "Local work retained, truthful paused state, no automatic ambiguous retry or submission.",
+        "preserved": "Accepted S05 import, original S08/logo acceptance, owner keys/messages/settings and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/autosave-browser-02/report.json SHA256 88d7f1d94c2d63793c6dba87dbcbd41f0f0213fa45c014f94eaee5e49311a8ea",
+          "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/autosave-source-02.private.log SHA256 79ff6dd8c03e0ae507953ef93c777796655d92b72e9ae154dbc3c542b8965659"
+        ]
+      },
+      {
+        "id": "R03",
+        "outcome_ids": [
+          "responsive-controls-and-draft-continuity"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Reviewed exact source; existing account-owned synthetic fixture/store and capability-qualified obsd1 where native; no owner credentials.",
+        "action": "Exercise representative problem pages then all active page families at agreed desktop/mobile/touch dimensions in Icons/Text labels.",
+        "expected": "Contextual controls, requested text exceptions, mobile Login fit and readable responsive layout; no page-wide overflow.",
+        "preserved": "Accepted S05 import, original S08/logo acceptance, owner keys/messages/settings and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/visual-sweep-05/report.json SHA256 b3f049462ea92089effab27d4dc00d3c6218d9cb77d0943c2fa123dd0c54a262",
+          "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/firefox-representative-08/report.json SHA256 cdca2fd19be9b589964d392a338ee218ab10e7cd9b3a052305c03f5653dddac5",
+          "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/activity-cleared-09/report.json SHA256 6c36321b93659954fdf64422767cfa2416e5133632455bf4e7128e92b108bace"
+        ]
+      },
+      {
+        "id": "R04",
+        "outcome_ids": [
+          "responsive-controls-and-draft-continuity"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Reviewed exact source; existing account-owned synthetic fixture/store and capability-qualified obsd1 where native; no owner credentials.",
+        "action": "Open edge menus/tooltips and empty activity; keyboard/zoom/long-content checks on affected representatives.",
+        "expected": "No clipping or row expansion, full-width empty state, preserved touch labels/focus and no remote content or unsafe actions.",
+        "preserved": "Accepted S05 import, original S08/logo acceptance, owner keys/messages/settings and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/menu-corrected-06/report.json SHA256 02fba3182891a9b7a3d5bd14eba8086033e68164dbedb2ae169993f845ba4089",
+          "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/zoom-corrected-12/workflows.json SHA256 8ccfd1316d63e10da8c797d6a3336330f90b5847162410f83795eb165d878e80",
+          "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/autosave-browser-02/report.json SHA256 88d7f1d94c2d63793c6dba87dbcbd41f0f0213fa45c014f94eaee5e49311a8ea"
+        ]
+      },
+      {
+        "id": "R05",
+        "outcome_ids": [
+          "responsive-controls-and-draft-continuity"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Reviewed exact source; existing account-owned synthetic fixture/store and capability-qualified obsd1 where native; no owner credentials.",
+        "action": "Run actual changed Runtime autosave discriminator and relevant form renderers on obsd1; build matching Web candidate.",
+        "expected": "Exact source compiled; real store/confirmation and native forms match, owned fixture cleanup confirmed.",
+        "preserved": "Accepted S05 import, original S08/logo acceptance, owner keys/messages/settings and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "R06",
+        "outcome_ids": [
+          "responsive-controls-and-draft-continuity"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Reviewed exact source; existing account-owned synthetic fixture/store and capability-qualified obsd1 where native; no owner credentials.",
+        "action": "Install reviewed Web candidate with existing backup/rollback, loaded-binary and state/service/HTTPS verification.",
+        "expected": "Matching Web serves; owner state and public mail/helper/account/GPG/configuration preserved.",
+        "preserved": "Accepted S05 import, original S08/logo acceptance, owner keys/messages/settings and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "R07",
+        "outcome_ids": [
+          "responsive-controls-and-draft-continuity"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Reviewed exact source; existing account-owned synthetic fixture/store and capability-qualified obsd1 where native; no owner credentials.",
+        "action": "Owner reviews corrected pages at100% and uses normal enabled autosave in Compose and existing Draft.",
+        "expected": "Owner separately confirms usability and draft preservation; no agent acceptance on their behalf.",
+        "preserved": "Accepted S05 import, original S08/logo acceptance, owner keys/messages/settings and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "Changed product boundaries and affected security/native/browser QA pass; independent review GO, matching Web installed and normal signed GitHub preservation complete.",
+    "human_exit": "Owner separately accepts corrected layout and genuine autosave after engineering readiness."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Nov11 responsive/autosave follow-up only; preserve accepted optional-fingerprint import."
+  },
+  "next_action": "Independent exact source/data/recipe review, signed normal source preservation, then matching native/Web-only delivery."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
 2026-11-11 — **S05-02 optional-fingerprint correction PASS / ACCEPTED / CLOSED.** Owner states “UAT = PASS”. Reuse signed source4a6eae5, delivery recordsa85f24e, matching native/installed evidence and independent review GO. Documentation-only acceptance; no new test, deployment or owner operation. Separate S08-06 review remains unchanged.
 
 2026-11-11 — **S05-02 optional-fingerprint update installed; owner check PENDING.** Blank detects the key from ASC; supplied value still exact-matches. Source4a6eae5 normal hooksPASS, actual native form/importPASS, loadedWebd39a4a48 and preservation/HTTPSPASS. Independent final review GO; signed record preservation follows. Original S05 acceptance/S08-06 review remain separate.
 
 2026-11-11 — **S05-02 owner correction IN_PROGRESS:** expected public-import fingerprint optional; blank derives from file, supplied retains exact match. Existing S05 acceptance and S08-06 pending owner review remain separate.
 
-<!-- OSMAP_ACTIVE_WORK_ORDER -->
+<!-- OSMAP_ARCHIVED_S05_02_ACCEPTED_20261111 -->
 ```json
 {
   "version": 1,
@@ -288,7 +572,7 @@
   "next_action": "Correction accepted and closed; preserve signed GitHub synchronization. No new development or live action."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_ARCHIVED_S05_02_ACCEPTED_20261111 -->
 
 2026-11-10 — **S08-06 Mailboxes correction installed; owner re-review PENDING.** Only duplicated horizontal Workspace shortcuts removed. Shared left navigation and all7dashboardpanels retained. Source49856393 normalhooksPASS, existing16/browser3/native1PASS; loadedWeb744cac94, preservation/HTTPSPASS and independentGO. Finish normal signed record preservation before handoff. Prior acceptance/failures/limits unchanged.
 

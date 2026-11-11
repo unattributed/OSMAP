@@ -779,3 +779,26 @@ multipart import and explicit native mismatch refusal pass; authoritative
 inventory, binding restrictions, fresh verification, trust/private preservation
 and unchanged mail availability remain. Owner performs any real import with
 their own authentication. Engineering delivery and owner acceptance stay separate.
+
+## Responsive controls and autosave refusal handling — 2026-11-11
+
+The owner authorizes the reviewed page fixes with S05's smallest-correction
+method. Shared CSS adapts to viewport/input capabilities; preserve readable
+text, natural vertical scrolling, user zoom, touch labels and account appearance.
+Requested descriptive destinations and scoped setting saves remain text in Icons.
+No browser fingerprinting, new runtime dependency or automatic zoom is added.
+
+Autosave first/repeat persistence works through the real Runtime/private store
+and the browser timer. Bounded live log metadata shows one earlier409 followed
+by successful200 responses; the historical409's precise reason is UNKNOWN.
+Only finite, exact, same-origin prewrite refusal receipts may stop automatic
+saving while preserving edits and allowing explicit manual correction. Unknown,
+stale, missing/foreign-draft or uncertain replies keep the existing lock and
+no-retry rule. Server authority, CAS and send intent checks remain unchanged.
+
+The native200percent/large-font check exposed header overflow. Actual geometry
+identified the nonwrapping account/status group; the small-width header now
+wraps without shrinking fonts. Earlier mobile-height, fixture-availability,
+Firefox-startup and zoom failures remain retained with matching corrections.
+The preexisting aggregate V14 reader trust-strip wording refusal is preserved;
+affected later UI/CSP/accessibility gates pass. No full release claim follows.

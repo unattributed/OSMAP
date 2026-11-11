@@ -69,6 +69,15 @@ def main():
                         visualScale:visualViewport.scale,cssZoom:Number(getComputedStyle(document.documentElement).zoom),
                         overflow:document.documentElement.scrollWidth > innerWidth})""")
                     report[label] = value  # Retain actual measurements even when a witness refuses.
+                    if label == "native_zoom_after":
+                        page.screenshot(path=str(args.output / "native-zoom-large.png"), full_page=False)
+                    if value["overflow"]:
+                        report["overflow_nodes"] = page.evaluate("""() => Array.from(document.querySelectorAll('body *'))
+                            .filter(e => e.getBoundingClientRect().right > innerWidth + 1 && e.getBoundingClientRect().width > 1)
+                            .slice(-16).map(e => ({tag:e.tagName,classes:e.className,
+                                x:e.getBoundingClientRect().x,width:e.getBoundingClientRect().width,
+                                right:e.getBoundingClientRect().right}))""")
+                        page.screenshot(path=str(args.output / "native-zoom-overflow.png"), full_page=False)
                     require((1.95 <= value["dpr"] <= 2.05), lambda: ("native zoom DPR witness absent"))
                     require((1.95 <= value["outer"] / value["inner"] <= 2.05), lambda: ("native page zoom width witness absent"))
                     require((value["visualScale"] == 1 and value["cssZoom"] == 1), lambda: ("pinch/CSS zoom is not native page zoom"))

@@ -153,7 +153,10 @@ fn settings_navigation(current_section: &str) -> String {
         ("Authentication & Recovery", Some("authentication")),
     ] {
         if label == "OpenPGP" && current_section == "security" {
-            result.push_str("<li><a href=\"/settings?section=security\" aria-current=\"page\">Security</a></li>");
+            result.push_str(&format!(
+                "<li><a href=\"/settings?section=security\" aria-current=\"page\">{}</a></li>",
+                presentation_label("Security", "shield")
+            ));
         }
         if let Some(section) = section {
             result.push_str(&format!(

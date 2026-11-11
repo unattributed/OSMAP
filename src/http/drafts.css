@@ -1,6 +1,11 @@
 /* PAGE06 native controls and verified draft state. */
 .drafts-page .draft-list-toolbar { margin:.35rem 0 .75rem;padding:.45rem .75rem; }
 .drafts-page .draft-list { border-radius:.7rem;border:0;background:var(--panel); }
+.drafts-page .draft-list,.drafts-page .draft-list table { overflow:visible; }
+.drafts-page .draft-discard { position:relative; margin:0; }
+.drafts-page .draft-discard[open] { min-width:0; }
+.drafts-page .draft-action-menu { position:absolute; inset-inline-end:0; inset-block-start:calc(100% + .25rem); z-index:20; width:min(19rem,calc(100vw - 2rem)); max-height:60vh; overflow:auto; box-shadow:0 4px 14px var(--shadow); }
+.drafts-page .draft-action-menu :is(p,a,button) { max-width:100%; overflow-wrap:anywhere; white-space:normal; }
 .drafts-page .draft-list th { background:var(--bg);height:2.3rem; }
 .drafts-page .draft-list td { height:3.6rem;padding:.45rem .75rem;border-bottom:1px solid var(--line); }
 .drafts-page .draft-recipient { width:28%; }.drafts-page .draft-subject { width:29%; }
@@ -16,6 +21,7 @@
  .drafts-page .draft-list td { padding:.35rem 0;border:0; }
  .drafts-page .draft-list td:last-child { width:auto; }
  .drafts-page .draft-selection-actions { flex-wrap:wrap; }
+ .drafts-page .draft-action-menu { position:static; width:auto; margin-top:.4rem; }
 }
 @media(forced-colors:active) {
  .drafts-page .draft-list .badge { color:CanvasText;background:Canvas;border:1px solid CanvasText; }

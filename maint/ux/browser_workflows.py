@@ -137,7 +137,7 @@ def main():
         # permits neither remote scripts nor scripts on any other visited page.
         trusted_script = (repo / "src/http/compose_local.js").read_bytes()
         trusted_hash = "sha256-" + base64.b64encode(hashlib.sha256(trusted_script).digest()).decode("ascii")
-        require((trusted_hash == "sha256-kh8tYa8AQwqxy9l64g1sCx8epjT43a/Wj5pR91Smywc="), lambda: ("Compose source hash changed"))
+        require((trusted_hash == "sha256-Z4wtSIvYB89ZOCoTTRSeQXI1/EKfobT0I2ljt4nWqj4="), lambda: ("Compose source hash changed"))
         base_csp = "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
 
         def visit(path):

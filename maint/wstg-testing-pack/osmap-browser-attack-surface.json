@@ -1078,7 +1078,11 @@
         "reply_uid",
         "reply_mailbox_guid",
         "reply_message_guid",
-        "sender_id"
+        "sender_id",
+        "pgp_sign",
+        "pgp_encrypt",
+        "pgp_self",
+        "pgp_binding_revision"
       ],
       "wstg_test_ids": [
         "OSMAP-WSTG-BUSL-002",

@@ -68,6 +68,52 @@ fn automatic_save(
 ) -> HandledHttpResponse {
     http(app, Some(session), "POST", "/drafts/autosave", fields)
 }
+fn automatic_fields(body: &str) -> BTreeMap<String, String> {
+    // Match the finite field set sent by compose_local.js, including the
+    // generated selected sender rather than relying on the Runtime default.
+    let allowed = [
+        "csrf_token",
+        "send_intent",
+        "from",
+        "sender_id",
+        "to",
+        "cc",
+        "bcc",
+        "subject",
+        "body",
+        "body_format",
+        "pgp_sign",
+        "pgp_encrypt",
+        "pgp_self",
+        "pgp_binding_revision",
+        "draft_id",
+        "draft_revision",
+        "reply_mailbox",
+        "reply_uid",
+        "reply_mailbox_guid",
+        "reply_message_guid",
+    ];
+    let mut fields: BTreeMap<_, _> = compose_fields(body)
+        .into_iter()
+        .filter(|(key, _)| allowed.contains(&key.as_str()))
+        .collect();
+    if let Some((_, tail)) = body.split_once("<select id=\"compose-sender-identity\"") {
+        let options = tail.split_once("</select>").unwrap().0;
+        assert!(options.contains("name=\"sender_id\""));
+        let mut selected = None;
+        for option in options.split("<option ").skip(1) {
+            let tag = option.split_once('>').unwrap().0;
+            if tag.split_whitespace().any(|word| word == "selected") {
+                assert!(selected.replace(attribute(tag, "value").unwrap()).is_none());
+            }
+        }
+        fields.insert(
+            "sender_id".into(),
+            selected.expect("generated selected sender ID"),
+        );
+    }
+    fields
+}
 fn confirmed(response: &HandledHttpResponse, id: &str, revision: u64) -> String {
     assert_eq!(response.response.status_code, 200);
     assert!(response
@@ -75,6 +121,9 @@ fn confirmed(response: &HandledHttpResponse, id: &str, revision: u64) -> String 
         .headers
         .iter()
         .any(|(key, value)| key.eq_ignore_ascii_case("cache-control") && value == "no-store"));
+    assert!(response.response.headers.iter().any(|(key, value)| key
+        .eq_ignore_ascii_case("content-type")
+        && value == "application/json"));
     let value: serde_json::Value = serde_json::from_slice(&response.response.body).unwrap();
     assert_eq!(value["version"], 1);
     assert_eq!(value["state"], "saved");
@@ -219,6 +268,158 @@ fn run_interactions() {
     let bob_path = working.resolved_draft_dir(BOB, &bob_id).unwrap().unwrap();
     let bob_bytes = tree_bytes(&bob_path);
     enable_automatic_saves(&app, &alice);
+    // A fresh browser form must cross the real Runtime/FileDraftStore path
+    // before any manual save has created an ID or captured sender identity.
+    let fresh_page = get(&app, &alice, "/compose");
+    assert_eq!(fresh_page.response.status_code, 200);
+    let mut first_automatic = automatic_fields(text(&fresh_page));
+    assert_eq!(
+        first_automatic.get("sender_id").map(String::as_str),
+        Some("canonical")
+    );
+    assert!(!first_automatic.contains_key("draft_id"));
+    assert!(!first_automatic.contains_key("draft_revision"));
+    first_automatic.insert("subject".into(), "Fresh automatic public fixture".into());
+    first_automatic.insert("body".into(), "Fresh automatic first\nline café 🦊".into());
+    let fresh_saved = automatic_save(&app, &alice, &first_automatic);
+    assert_eq!(
+        fresh_saved.response.status_code, 200,
+        "fresh Runtime autosave status"
+    );
+    let receipt: serde_json::Value = serde_json::from_slice(&fresh_saved.response.body).unwrap();
+    let fresh_id = receipt["draft_id"].as_str().unwrap().to_owned();
+    let fresh_intent = confirmed(&fresh_saved, &fresh_id, 1);
+    let fresh_record = ordinary
+        .load(ALICE, &fresh_id, SystemTimeProvider.unix_timestamp())
+        .unwrap()
+        .unwrap();
+    assert_eq!(fresh_record.revision, Some(1));
+    assert_eq!(
+        fresh_record.request.body,
+        "Fresh automatic first\nline café 🦊"
+    );
+    assert!(fresh_record.request.attachments.is_empty());
+    assert!(ordinary
+        .load(BOB, &fresh_id, SystemTimeProvider.unix_timestamp())
+        .unwrap()
+        .is_none());
+    let first_reopened = resumed(&app, &alice, &fresh_id);
+    let mut continued = automatic_fields(text(&first_reopened));
+    assert_eq!(continued.get("send_intent"), Some(&fresh_intent));
+    assert_eq!(continued.get("draft_id"), Some(&fresh_id));
+    assert_eq!(
+        continued.get("draft_revision").map(String::as_str),
+        Some("1")
+    );
+    assert_eq!(
+        continued.get("body").map(String::as_str),
+        Some("Fresh automatic first\nline café 🦊")
+    );
+    continued.insert(
+        "body".into(),
+        "Existing automatic second\nline café 🦊".into(),
+    );
+    let continued_saved = automatic_save(&app, &alice, &continued);
+    confirmed(&continued_saved, &fresh_id, 2);
+    let fresh_path = ordinary
+        .resolved_draft_dir(ALICE, &fresh_id)
+        .unwrap()
+        .unwrap();
+    let confirmed_bytes = tree_bytes(&fresh_path);
+    let second_reopened = resumed(&app, &alice, &fresh_id);
+    let mut second_fields = automatic_fields(text(&second_reopened));
+    assert_eq!(
+        second_fields.get("body").map(String::as_str),
+        Some("Existing automatic second\nline café 🦊")
+    );
+    assert_eq!(
+        second_fields.get("draft_revision").map(String::as_str),
+        Some("2")
+    );
+    continued.insert("body".into(), "Stale local public edit retained".into());
+    assert_eq!(
+        automatic_save(&app, &alice, &continued)
+            .response
+            .status_code,
+        409
+    );
+    assert!(tree_bytes(&fresh_path) == confirmed_bytes);
+    // Change the actual saved preference after this editor was generated. The
+    // refusal must leave its current revision/intent usable by a manual save.
+    let settings = get(&app, &alice, "/settings?section=composition");
+    assert_eq!(settings.response.status_code, 200);
+    let mut preference = hidden_fields(generated_form(
+        text(&settings),
+        "<form id=\"autosave-settings-form\"",
+        "/settings/autosave",
+    ));
+    assert_eq!(preference.get("revision").map(String::as_str), Some("1"));
+    preference.insert("interval".into(), "30".into());
+    preference.remove("enabled");
+    assert_eq!(
+        http(
+            &app,
+            Some(&alice),
+            "POST",
+            "/settings/autosave",
+            &preference
+        )
+        .response
+        .status_code,
+        303
+    );
+    second_fields.insert(
+        "body".into(),
+        "Retained manual correction\nline café 🦊".into(),
+    );
+    let safely_refused = automatic_save(&app, &alice, &second_fields);
+    assert_eq!(safely_refused.response.status_code, 409);
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&safely_refused.response.body).unwrap(),
+        serde_json::json!({"version":1,"state":"paused","reason":"preference_disabled"})
+    );
+    assert!(tree_bytes(&fresh_path) == confirmed_bytes);
+    let manual = http(&app, Some(&alice), "POST", "/drafts/save", &second_fields);
+    assert_eq!(saved_id(&manual), fresh_id);
+    let manual_record = ordinary
+        .load(ALICE, &fresh_id, SystemTimeProvider.unix_timestamp())
+        .unwrap()
+        .unwrap();
+    assert_eq!(manual_record.revision, Some(3));
+    assert_eq!(
+        manual_record.request.body,
+        "Retained manual correction\nline café 🦊"
+    );
+    let manual_reopened = resumed(&app, &alice, &fresh_id);
+    let manual_fields = automatic_fields(text(&manual_reopened));
+    assert_eq!(
+        manual_fields.get("draft_revision").map(String::as_str),
+        Some("3")
+    );
+    assert_eq!(manual_fields.get("body"), second_fields.get("body"));
+    let confirmed_bytes = tree_bytes(&fresh_path);
+    let settings = get(&app, &alice, "/settings?section=composition");
+    assert_eq!(settings.response.status_code, 200);
+    let mut preference = hidden_fields(generated_form(
+        text(&settings),
+        "<form id=\"autosave-settings-form\"",
+        "/settings/autosave",
+    ));
+    assert_eq!(preference.get("revision").map(String::as_str), Some("2"));
+    preference.insert("enabled".into(), "1".into());
+    preference.insert("interval".into(), "30".into());
+    assert_eq!(
+        http(
+            &app,
+            Some(&alice),
+            "POST",
+            "/settings/autosave",
+            &preference
+        )
+        .response
+        .status_code,
+        303
+    );
     choose(&app, &alice, Location::Working, 0);
     let fields = fresh(&app, &alice, "Automatic Working public fixture");
     let id = saved_id(&compose_post(
@@ -241,33 +442,7 @@ fn run_interactions() {
     let selected = format!("selected_{id}");
     assert_eq!(discard.get(&selected).map(String::as_str), Some("1"));
     assert!(!discard.contains_key("send_intent"));
-    // Match the finite native autosave request constructed by compose_local.js.
-    // New uploads/formatting controls stay outside automatic-save admission.
-    let allowed = [
-        "csrf_token",
-        "send_intent",
-        "from",
-        "to",
-        "cc",
-        "bcc",
-        "subject",
-        "body",
-        "body_format",
-        "pgp_sign",
-        "pgp_encrypt",
-        "pgp_self",
-        "pgp_binding_revision",
-        "draft_id",
-        "draft_revision",
-        "reply_mailbox",
-        "reply_uid",
-        "reply_mailbox_guid",
-        "reply_message_guid",
-    ];
-    let mut automatic: BTreeMap<_, _> = compose_fields(text(&page))
-        .into_iter()
-        .filter(|(key, _)| allowed.contains(&key.as_str()))
-        .collect();
+    let mut automatic = automatic_fields(text(&page));
     automatic.insert("body".into(), "Working automatic first publication".into());
     let first = automatic_save(&app, &alice, &automatic);
     let first_intent = confirmed(&first, &id, 2);
@@ -396,6 +571,7 @@ fn run_interactions() {
         .is_none());
     assert!(!working_path.exists());
     assert!(tree_bytes(&default_path) == default_bytes && tree_bytes(&bob_path) == bob_bytes);
+    assert!(tree_bytes(&fresh_path) == confirmed_bytes);
     assert_eq!(forbidden.load(Ordering::SeqCst), 0);
     assert!(!marker.exists());
     assert!(reads.load(Ordering::SeqCst) > 0);
@@ -406,6 +582,9 @@ fn run_interactions() {
     assert!(!root.exists());
     assert!(standard_metadata() == before);
     for marker in [
+        "draft_autosave_fresh_generated_sender_runtime_first_save_and_reopen",
+        "draft_autosave_existing_second_revision_reopen_and_stale_refusal",
+        "draft_autosave_disabled_preference_no_write_original_intent_manual_save_and_reopen",
         "draft_autosave_generated_preferences_and_working_attachment",
         "draft_autosave_current_default_does_not_retarget_existing_id",
         "draft_autosave_concurrent_one_saved_one_conflict_exact_latest_bytes",

@@ -428,7 +428,7 @@ fn binding_form(
     let icon = match action {
         "set_account" | "set_recipient" => "save",
         "set_policy" => "shield",
-        "import_public" => "key",
+        "import_public" => "import-key",
         "remove_recipient" => "refresh",
         "clear_account" | "clear_all_bindings" | "remove_public" => "bin",
         _ => "",

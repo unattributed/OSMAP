@@ -5,11 +5,13 @@
 .key-management-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
 .key-management-card{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:20px;min-width:0}
 .key-management-card h2{font-size:1.2rem;margin:0 0 12px}
-.key-management-card p{line-height:1.5}
+.key-management-card p{line-height:1.5;min-width:0;overflow-wrap:anywhere}
 .key-management-card details{margin-top:14px}
 .key-management-card summary{cursor:pointer;min-height:36px;padding:6px 0;overflow-wrap:anywhere}
 .key-management-card summary:focus-visible,.key-management-actions a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .key-management-card fieldset{min-width:0}
+.key-management-card legend{max-width:100%;overflow-wrap:anywhere}
+.key-management-card form>fieldset>button{display:flex;margin:.75rem 0 0 auto;max-width:100%;white-space:normal}
 .key-management-card label{display:block;margin:12px 0}
 .key-management-card input,.key-management-card select,.key-management-card textarea{max-width:100%;width:100%;min-width:0}
 .key-management-page textarea{min-height:120px;resize:vertical}

@@ -75,10 +75,10 @@ pub(crate) fn render(
         unlock_open = if installed { " open" } else { "" },
         unlock_required = if unlock_required { " required" } else { "" },
         lock_fields = fields("lock_personal"), lock_disabled = disabled(installed),
-        import_summary = crate::http_ui::presentation_label("Import your personal private key", "key"),
-        import_label = crate::http_ui::presentation_label("Import personal key", "key"),
-        unlock_summary = crate::http_ui::presentation_label("Unlock your personal key", "key"),
-        unlock_label = crate::http_ui::presentation_label("Unlock personal key", "key"),
+        import_summary = crate::http_ui::presentation_label("Import your personal private key", "import-key"),
+        import_label = crate::http_ui::presentation_label("Import personal key", "import-key"),
+        unlock_summary = crate::http_ui::presentation_label("Unlock your personal key", "unlock"),
+        unlock_label = crate::http_ui::presentation_label("Unlock personal key", "unlock"),
         lock_label = crate::http_ui::presentation_label("Lock this account’s personal key", "shield"),
     )
 }

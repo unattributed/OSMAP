@@ -313,6 +313,8 @@ pub(crate) fn presentation_label(label: &str, icon: &str) -> String {
             | "people"
             | "settings"
             | "key"
+            | "import-key"
+            | "unlock"
             | "shield"
             | "label"
             | "more"

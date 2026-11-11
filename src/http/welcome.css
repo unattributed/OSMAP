@@ -1,7 +1,7 @@
 /* PAGE-01 only. Shared header/rail, Login and other pages retain their styles. */
-.welcome-page { padding: 1.9rem 1.4rem 0; }
+.welcome-page { padding: 1rem 1rem 0; }
 .welcome-page .shell-icon { width: 1.35rem; height: 1.35rem; flex: 0 0 auto; }
-.welcome-intro { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; margin-bottom: 1.2rem; }
+.welcome-intro { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .85rem; }
 .welcome-greeting { min-width: 0; flex: 1 1 23rem; }
 .welcome-page h1 { font-size: 2.15rem; letter-spacing: -.04rem; margin: 0 0 .3rem; }
 .welcome-greeting p { margin: .35rem 0; color: var(--muted); font-size: 1.1rem; }
@@ -21,7 +21,7 @@
 .welcome-shortcut-menu summary { display: flex; gap: .8rem; align-items: center; cursor: pointer; list-style: none; }
 .welcome-shortcut-menu[open] > div, .welcome-action-grid details[open] > div { padding: .7rem; border: 1px solid var(--line); background: var(--panel); border-radius: .4rem; position: absolute; top: 100%; left: 0; min-width: 100%; z-index: 5; box-shadow: 0 2px 4px var(--shadow); }
 .welcome-shortcut-menu > div a, .welcome-shortcut-menu > div span, .welcome-action-grid details > div a { display: block; padding: .45rem; overflow-wrap: anywhere; }
-.welcome-primary-grid { display: grid; grid-template-columns: minmax(0,2.8fr) minmax(0,.88fr) minmax(0,1.05fr); gap: .8rem; align-items: stretch; margin-bottom: .8rem; }
+.welcome-primary-grid { display: grid; grid-template-columns: minmax(0,2.8fr) minmax(0,.88fr) minmax(0,1.05fr); gap: .8rem; align-items: start; margin-bottom: .8rem; }
 .welcome-panel { min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: .45rem; }
 .welcome-panel-heading { display: flex; justify-content: space-between; gap: .65rem; align-items: center; min-height: 2.5rem; padding: .6rem .85rem; border-bottom: 1px solid var(--line); }
 .welcome-panel-heading h2 { font-size: 1rem; text-transform: none; margin: 0; line-height: 1.3; }
@@ -50,7 +50,7 @@
 .welcome-key-details dt, .welcome-key-details dd { margin: 0; }
 .welcome-key-details dd { color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
 .welcome-openpgp > button { display: block; width: auto; margin: .5rem .85rem .8rem auto; max-width: calc(100% - 1.7rem); font-size: .7rem; padding: .45rem .55rem; }
-.welcome-secondary-grid { display: grid; grid-template-columns: minmax(0,.9fr) minmax(0,1.05fr) minmax(0,1fr); gap: 1rem; }
+.welcome-secondary-grid { display: grid; grid-template-columns: minmax(0,.9fr) minmax(0,1.05fr) minmax(0,1fr); gap: .8rem; align-items:start; }
 .welcome-activity-empty { padding: 1.4rem .9rem; }
 .welcome-activity-empty > .shell-icon { width: 2rem; height: 2rem; color: var(--muted); }
 .welcome-activity-empty h3 { font-size: .9rem; margin: 1rem 0 .5rem; }
@@ -142,7 +142,12 @@
 .welcome-activity-scope { color:var(--muted); font-size:.75rem; margin:.65rem .85rem; }
 .welcome-activity-rows { list-style:none; padding:0 .85rem; margin:0; }
 .welcome-activity-rows li { display:grid; grid-template-columns:.8rem minmax(0,1fr) minmax(7rem,.9fr); gap:.45rem; align-items:center; padding:.55rem 0; border-bottom:1px solid var(--line); font-size:.8rem; overflow-wrap:anywhere; }
+.welcome-activity-rows li.welcome-activity-empty-row { display:block; padding:.85rem 0; line-height:1.5; }
 .welcome-activity-dot { color:var(--link); font-size:1.5rem; }
 .welcome-activity-device { display:block; color:var(--muted); font-size:.75rem; }
 .welcome-activity-rows time { text-align:right; color:var(--muted); font-size:.7rem; }
 .welcome-activity-link { display:block; padding:.65rem .85rem; font-size:.8rem; }
+.welcome-panel .welcome-panel-link { width:fit-content; margin:.55rem .85rem .8rem; }
+.welcome-page :is(.welcome-browse,.welcome-search,.welcome-status-details)>.presentation-text { display:block; padding:.55rem .85rem; font-size:.8rem; line-height:1.4; }
+.welcome-page .welcome-search>.presentation-text { padding-inline:0; }
+.welcome-status-details { margin:0; }

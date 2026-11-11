@@ -138,8 +138,14 @@
     link.target = "_blank"; link.rel = "noopener noreferrer";
     link.textContent = "Review saved state in a new tab"; autoStatus?.append(link);
   };
+  const prewriteMessages = {
+    protection_invalid: "Auto-save stopped: the OpenPGP selections need correction. No draft was written by this request. Your edits are retained; correct the selections and use Save Draft. No automatic retry will occur.",
+    request_unsupported: "Auto-save stopped: this request requires a manual save. No draft was written by this request. Your edits are retained; use Save Draft. No automatic retry will occur.",
+    preference_disabled: "Auto-save stopped: the saved preference is off. No draft was written by this request. Your edits are retained; use Save Draft. No automatic retry will occur.",
+    preference_unavailable: "Auto-save stopped: the saved preference could not be read. No draft was written by this request. Your edits are retained; use Save Draft. No automatic retry will occur."
+  };
   document.addEventListener("submit", (event) => {
-    if (autoFlight || (autoPaused && (event.target === form || event.target.id === "compose-discard-form"))) {
+    if (autoFlight || (blocked && (event.target === form || event.target.id === "compose-discard-form"))) {
       event.preventDefault(); event.stopImmediatePropagation(); submitting = false;
       if (autoFlight) announceAuto("Auto-save in progress. Wait before saving, sending, formatting or leaving this page.");
     } else if (event.target === form || event.target.id === "compose-discard-form") { clearTimeout(autoTimer); submitting = true; announceAuto("Auto-save stopped for the manual action. If it is cancelled, use Save Draft or reload to resume auto-save."); }
@@ -235,8 +241,26 @@
     autoFlight = true; lockAuthoring(); announceAuto("Saving draft automatically…");
     const timeout = setTimeout(() => controller.abort(), 15000);
     try {
-      const result = await jsonReply(await fetch("/drafts/autosave", { method: "POST", body: fields,
-        credentials: "same-origin", mode: "same-origin", redirect: "error", cache: "no-store", signal: controller.signal }));
+      const response = await fetch("/drafts/autosave", { method: "POST", body: fields,
+        credentials: "same-origin", mode: "same-origin", redirect: "error", cache: "no-store", signal: controller.signal });
+      // Only this exact pre-write refusal contract permits manual correction.
+      // Configuration and saved receipts retain their separate HTTP200 parser.
+      if (response.status === 409 && !response.redirected && response.type === "basic" &&
+          response.url === new URL("/drafts/autosave", location.href).href &&
+          response.headers.get("content-type") === "application/json") {
+        const reader = response.body.getReader(); let text = "", bytes = 0; const decoder = new TextDecoder();
+        for (;;) { const { done, value } = await reader.read(); if (done) break; bytes += value.length;
+          if (bytes > 4096) { await reader.cancel(); throw new Error("unconfirmed"); } text += decoder.decode(value, { stream: true }); }
+        text += decoder.decode(); const refusal = JSON.parse(text);
+        if (refusal && !Array.isArray(refusal) && Object.keys(refusal).length === 3 &&
+            refusal.version === 1 && refusal.state === "paused" &&
+            typeof refusal.reason === "string" && Object.prototype.hasOwnProperty.call(prewriteMessages, refusal.reason)) {
+          autoPaused = true; blocked = false; submitting = false;
+          unlockAuthoring(); updateState(); announceAuto(prewriteMessages[refusal.reason]); return;
+        }
+        throw new Error("unconfirmed");
+      }
+      const result = await jsonReply(response);
       if (result.version !== 1 || result.state !== "saved" || typeof result.draft_id !== "string" ||
           !/^[a-f0-9]{32}$/.test(result.draft_id) || (expectedId && expectedId !== result.draft_id) ||
           !Number.isSafeInteger(result.revision) || result.revision !== Number(previousRevision) + 1 ||

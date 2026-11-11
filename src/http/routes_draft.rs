@@ -503,15 +503,12 @@ where
 
         let mut protection = match super::compose_protection::intent_from_form(&form) {
             Ok(intent) => intent,
-            Err(message) if request.path == "/drafts/autosave" => {
-                let _ = message;
-                return HandledHttpResponse {
-                    response: super::routes_autosave::json(
-                        409,
-                        serde_json::json!({"version":1,"state":"paused"}),
-                    ),
+            Err(_) if request.path == "/drafts/autosave" => {
+                return super::routes_autosave::refused_before_write(
+                    context,
+                    super::routes_autosave::PrewriteRefusal::ProtectionInvalid,
                     audit_events,
-                };
+                );
             }
             Err(message) => {
                 return HandledHttpResponse {
@@ -552,18 +549,20 @@ where
             if form.keys().any(|k| !allowed.contains(&k.as_str()))
                 || !parsed_form.attachments.is_empty()
                 || parsed_form.upload_error.is_some()
-                || !self
-                    .gateway
-                    .load_autosave(&validated_session)
-                    .is_ok_and(|v| v.enabled)
             {
-                return HandledHttpResponse {
-                    response: super::routes_autosave::json(
-                        409,
-                        serde_json::json!({"version":1,"state":"paused"}),
-                    ),
+                return super::routes_autosave::refused_before_write(
+                    context,
+                    super::routes_autosave::PrewriteRefusal::RequestUnsupported,
                     audit_events,
-                };
+                );
+            }
+            let refusal = match self.gateway.load_autosave(&validated_session) {
+                Ok(preference) if preference.enabled => None,
+                Ok(_) => Some(super::routes_autosave::PrewriteRefusal::PreferenceDisabled),
+                Err(_) => Some(super::routes_autosave::PrewriteRefusal::PreferenceUnavailable),
+            };
+            if let Some(reason) = refusal {
+                return super::routes_autosave::refused_before_write(context, reason, audit_events);
             }
         }
 
