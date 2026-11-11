@@ -39,9 +39,8 @@ normal signed delivery hooks and fresh GitHub equality. Source/render checks
 do not imply installed or owner UAT PASS. Human exit is a short visual and
 functional review of the third tab and a disposable Junk message.
 
-Status: **UAT_READY**. Source, native and installed qualification are complete;
-owner UAT is pending. Existing accepted and pending outcomes retain their
-separate states.
+Status: **ACCEPTED / CLOSED**. Source, native, installed and owner UAT are
+PASS. Existing accepted and pending outcomes retain their separate states.
 
 ## Source and browser checkpoint
 
@@ -69,7 +68,7 @@ focused Rust log SHA256
 Independent source/security review is GO. Browser screenshots test layout and
 read-only controls; the Rust route case supplies the separate synthetic move
 proof. Matching native/installed qualification is recorded below; owner UAT
-remains pending.
+is recorded separately at the end of this slice.
 
 Retained source/browser failures: browser1 used system Python without
 Playwright and stopped before fixture startup; browser2 expected the Archive
@@ -114,4 +113,14 @@ receipts and gave GO for owner UAT. The owner should open Archive / Bin / Junk,
 select Junk, confirm Received dates and reader/search controls, and use one
 disposable Junk message to check Move to Inbox if available. An absent Junk
 mailbox should show the unavailable tab and should not create one. The owner
-has not yet reported S08-07 UAT PASS.
+later reported S08-07 UAT PASS, as recorded below.
+
+## Owner UAT and acceptance
+
+On 2026-11-11 the owner explicitly reported `UAT = PASS` after moving one
+message from Archive to Junk without issue. The supplied screenshot shows the
+authenticated Junk tab selected and one message listed in Junk with a Received
+date. This is owner-observed Archive-to-Junk movement and page presentation;
+it does not claim an owner Junk-to-Inbox move, search action or reader opening.
+No additional agent mail mutation or deployment was performed for acceptance.
+S08-07 is **ACCEPTED / CLOSED**.

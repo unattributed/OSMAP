@@ -1,4 +1,4 @@
-2026-11-11 — **S08-07 Junk ENGINEERING PASS / UAT_READY.** Signed source `18962ce66bcd2e38287639a8b9168fdf0eafbbff` and GitHub parity PASS; source/browser and five focused native-compiled cases PASS; exact-source Web install, protected-state readback and obsd1 HTTPS 200 PASS; independent review GO. Owner authenticated Junk view/move UAT pending. First push SSH transport failure (cause UNKNOWN) and bounded startup 502→200 retained. Prior S08/S08-05 acceptance and S08-06 pending checks preserved.
+2026-11-11 — **S08-07 Junk PASS / ACCEPTED / CLOSED.** Owner explicitly reports “UAT = PASS” after moving one message from Archive to Junk without issue; screenshot shows selected Junk tab and one received-dated message. Prior source/browser/native/installed/independent GO reused; documentation-only acceptance, no new host or mail operation. Owner Junk-to-Inbox move, search and reader opening are not claimed. Prior S08/S08-05 acceptance and S08-06 pending checks preserved.
 
 2026-11-11 — **Owner panel-control correction PASS / ACCEPTED / CLOSED.** Owner explicitly states “UAT PASS” and “UAT approves” for the installed correction. Existing source, browser, native, installed and independent-review results are reused; documentation-only acceptance. Other slice and historical acceptance records remain unchanged.
 
@@ -9,7 +9,7 @@
   "slice": "S01-01",
   "original_requirement": "Theme tokens, persistent preference, system default; define authenticated versus pre-login storage and precedence",
   "source_baseline": "9daba33f9d3b9d0d620d5112afafad20a86ce003",
-  "state": "UAT_READY",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -70,7 +70,7 @@
       ],
       "frontend_backend_outcome": "Existing account-owned Junk appears as a third Archive/Bin view with true received dates and normal bounded move controls.",
       "essential_qa": "Focused authenticated route/render/move checks, matching native build, installed Web and owner UAT.",
-      "next_action": "Owner reviews installed Junk tab and one disposable message; record separate S08-07 UAT.",
+      "next_action": "S08-07 closed; retain owner UAT and prior slice states.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -112,7 +112,7 @@
     "owner": "/root",
     "functional_exit": "Junk is a truthful, usable third view on Archive / Bin, preserving Bin-only destructive authority.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Owner explicitly requested S08-07 and supplied Archive/Bin screenshot. Original S08 and S08-05 accepted; S08-06 original owner check and responsive/autosave R07 pending. Prior S08-07 effort UNKNOWN. Existing Junk literal and owned move capability inspected; no backend operation or host action yet. Independent source review found confirmed Sent/Junk role collision and vacuous no-delete fixture; fixed with role precedence and metadata-bearing Junk row, retaining original source candidate. Shell label aligned to three-view contract. Mechanical work-order parent remains S01-01 and reuses its original mapped IDs; S08-07 is the related extension, not a frozen-scope amendment. Browser1 Python dependency refused before fixture; browser2 first Archive view absent because saved role unset; browser3 guessed literal Archive option absent. Browser2/3 cleanup PASS and exact receipts retained. Combined independent reviews approved existing INBOX.Projects through actual Copies form; browser4 PASS26/cleanupPASS/external0/send0. Focused Rust5/0 and independent source/security GO. Native/installed/owner remain pending. V10 generated registers refreshed after test line movement; initial one new test-only unwrap briefly raised current count13283, replaced by direct valid fixture identity so current/refined counts remain13282 and high-after0. V10 check PASS; historical high-before claims unchanged. Focused Rust5/0 rerun after this fixture-only change, durable result2. Source commit18962ce signed/verified. First normal push security-checkPASS but SSH transport closed before transfer (exit141; precise cause UNKNOWN); second normal hook with keepalivesPASS and fresh parity1 clean0/0. Method producer/consumer integrationPASS including real wrong-source pre-host refusal; no host effect from that probe. Native source archive inputs598/readbackPASS, five native-compiled Junk casesPASS, main binary10e2c283. Reviewed Web-only installPASS with exact old backup, unchanged protected state and public mail PIDs; bounded startup502 then200, explicit peerHTTPS200. Independent delivery/security GO for owner UAT; no owner authenticated Junk view/move exercised by agents. No full release claim.",
+    "history_reference": "Owner explicitly requested S08-07 and supplied Archive/Bin screenshot. Original S08 and S08-05 accepted; S08-06 original owner check and responsive/autosave R07 pending. Prior S08-07 effort UNKNOWN. Existing Junk literal and owned move capability inspected; no backend operation or host action yet. Independent source review found confirmed Sent/Junk role collision and vacuous no-delete fixture; fixed with role precedence and metadata-bearing Junk row, retaining original source candidate. Shell label aligned to three-view contract. Mechanical work-order parent remains S01-01 and reuses its original mapped IDs; S08-07 is the related extension, not a frozen-scope amendment. Browser1 Python dependency refused before fixture; browser2 first Archive view absent because saved role unset; browser3 guessed literal Archive option absent. Browser2/3 cleanup PASS and exact receipts retained. Combined independent reviews approved existing INBOX.Projects through actual Copies form; browser4 PASS26/cleanupPASS/external0/send0. Focused Rust5/0 and independent source/security GO. Native/installed/owner remain pending. V10 generated registers refreshed after test line movement; initial one new test-only unwrap briefly raised current count13283, replaced by direct valid fixture identity so current/refined counts remain13282 and high-after0. V10 check PASS; historical high-before claims unchanged. Focused Rust5/0 rerun after this fixture-only change, durable result2. Source commit18962ce signed/verified. First normal push security-checkPASS but SSH transport closed before transfer (exit141; precise cause UNKNOWN); second normal hook with keepalivesPASS and fresh parity1 clean0/0. Method producer/consumer integrationPASS including real wrong-source pre-host refusal; no host effect from that probe. Native source archive inputs598/readbackPASS, five native-compiled Junk casesPASS, main binary10e2c283. Reviewed Web-only installPASS with exact old backup, unchanged protected state and public mail PIDs; bounded startup502 then200, explicit peerHTTPS200. Independent delivery/security GO for owner UAT; no owner authenticated Junk view/move exercised by agents. No full release claim. Owner later reported S08-07 UAT = PASS after moving one message Archive-to-Junk without issue; screenshot shows authenticated Junk tab and one received-dated row. Acceptance is limited to this observation; no new agent mail test or host action.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 7200,
@@ -128,7 +128,7 @@
     "slice": "S01-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_07.md",
-      "sha256": "313d32c6e1b05ec01dfcc2529402ba62890645ff3435c0298cf152875fa7d00f"
+      "sha256": "cc2dcd4334e4f5a13de7b3abee8b4e82a7748c46d7a934af6652156b62ca150c"
     },
     "design": {
       "journey": "Existing account-owned Junk is a third Archive/Bin view.",
@@ -225,18 +225,20 @@
         "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
         "owner": "/root",
         "reviewer": "/root/s08_delivery_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Owner chat 2026-11-11: UAT = PASS after Archive-to-Junk message move; supplied screenshot shows authenticated Junk tab selected with one received-dated message."
+        ]
       }
     ],
     "engineering_exit": "Focused source and native/installed journey plus independent review and normal signed GitHub preservation.",
     "human_exit": "Owner accepts the installed Junk view after reviewing third tab and a disposable message."
   },
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "S08-07 owner UAT pending."
+    "status": "PASS",
+    "reference": "Owner chat 2026-11-11 explicitly reports UAT = PASS; Archive-to-Junk move worked; supplied Junk screenshot. No owner Junk-to-Inbox/search/reader claim."
   },
-  "next_action": "Implement and qualify S08-07 without altering accepted/pending other slices."
+  "next_action": "S08-07 accepted and closed; preserve separate pending S08-06 checks."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
