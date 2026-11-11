@@ -1,4 +1,4 @@
-2026-11-11 — **Owner panel-control correction ENGINEERING PASS / UAT_READY.** Signed source549078a,45 scoped browser checks, native General/Reading forms and matching Web-only obsd1 installation PASS. Protected state/public-mail processes unchanged; owner P05 acceptance remains PENDING. See [S08-06](UX_SLICE_S08_06.md).
+2026-11-11 — **Owner panel-control correction PASS / ACCEPTED / CLOSED.** Owner explicitly states “UAT PASS” and “UAT approves” for the installed correction. Existing source, browser, native, installed and independent-review results are reused; documentation-only acceptance. Other slice and historical acceptance records remain unchanged. See [S08-06](UX_SLICE_S08_06.md).
 
 2026-11-11 — **Responsive/control and autosave correction ENGINEERING PASS / UAT_READY.** Reviewed source1b451971 passed normal hooks and exact clean GitHub parity. Native Runtime/store/forms and matching Web-only obsd1 install PASS; loadedWebde20c844, protected-state preservation and HTTPS200 PASS. Owner R07 remains PENDING; accepted S05 import and prior S08/logo acceptance/failures are preserved. See [S08-06](UX_SLICE_S08_06.md).
 

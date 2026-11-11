@@ -2,6 +2,10 @@
 
 ## Owner panel-control correction — 2026-11-11
 
+**PASS / ACCEPTED / CLOSED.** The owner explicitly confirms “UAT PASS” and
+“UAT approves” for the installed panel-control correction. This closes its
+remaining owner acceptance; no new product change or deployment is required.
+
 Outcome: the owner-requested Mailboxes, Folders, General/Reading Settings and
 Security Controls use consistent, readable contextual actions. Mailboxes empty
 message, note and Browse align; descriptive dashboard links share typography
@@ -37,7 +41,7 @@ V11/V10 consumers pass. Source1's old Reading selector and Browser1's touch icon
 inset failure are retained; narrow corresponding corrections pass. Audit-pin
 updater schema refusals/stale-pin gate failure are retained and corrected by
 actual-schema review; counts/classifications and historical claims are unchanged.
-The correction is installed and ready for owner review. Signed source
+The installed correction is accepted by the owner. Signed source
 `549078a5c0df0132d6c85172ef11b1810a59e1ba` passed the normal delivery gate
 (2,363 library passes, zero failures, 91 explicit ignores), signature verification
 and fresh exact clean 0/0 GitHub equality. The two earlier normal push failures
@@ -55,7 +59,7 @@ is retained for rollback. No owner account/message mutation or public-mail
 restart/configuration change occurred. Anonymous HTTPS is service readiness;
 owner page review remains separate. The bounded startup probe returned502,
 then200; both observations remain in the hashed readiness stream. Final
-installed-result/docs independent review is GO; owner acceptance remains pending.
+installed-result/docs independent review is GO; owner acceptance is now PASS.
 
 ## Responsive and functional correction — 2026-11-11
 

@@ -827,3 +827,9 @@ forms, installed executable446b0928, protected-state comparisons and
 explicit obsd1 HTTPS200 pass. Preserve the two push failures and earlier
 source/touch/pin diagnostics. Owner review is pending; native form/anonymous
 readiness evidence does not claim live owner-account or full release acceptance.
+
+2026-11-11 — The owner states “UAT PASS” and “UAT approves”. The installed
+panel-control correction is ACCEPTED/CLOSED; its pending owner review is
+superseded by this explicit approval. Existing source/native/installed/review
+evidence is reused. This is documentation-only closeout, with no new product
+change, deployment or acceptance of a separate remaining slice.
