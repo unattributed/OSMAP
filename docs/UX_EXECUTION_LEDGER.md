@@ -1,4 +1,4 @@
-2026-11-11 — **Owner panel-control correction IN_PROGRESS.** Targeted Mailboxes/Folders/General/Reading/Security presentation follow-up; retain prior responsive/autosave results and all accepted work.
+2026-11-11 — **Owner panel-control correction ENGINEERING PASS / UAT_READY.** Signed source549078a,45 scoped browser checks, native General/Reading forms and matching Web-only obsd1 installation PASS. Protected state/public-mail processes unchanged; owner P05 acceptance remains PENDING.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
 ```json
@@ -7,7 +7,7 @@
   "slice": "S01-01",
   "original_requirement": "Theme tokens, persistent preference, system default; define authenticated versus pre-login storage and precedence",
   "source_baseline": "aac276a680fcb539aafe8c9475e6a8e774a87380",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -69,15 +69,15 @@
       ],
       "frontend_backend_outcome": "Requested panel actions and dashboard links are consistent, readable and correctly aligned in both presentation styles, with touch labels preserved.",
       "essential_qa": "Existing synthetic HTTP/browser checks of five routes, actual native renderer and installed identity/preservation.",
-      "next_action": "Implement scoped templates/CSS, exercise five affected routes, independent review and normal signed matching Web-only delivery.",
+      "next_action": "Owner reviews requested Mailboxes/Folders/General/Reading/Security panel corrections; P05 acceptance pending. Normal signed closeout follows.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -87,6 +87,22 @@
         {
           "stage": "source_tests",
           "reference": "/home/foo/Downloads/osmap-ux-s08/panel-controls-20261111/source-results.json SHA256 afcd3c39556e84229237ce824cffce59533dc07fd800cc6cd65d73b2fe10b05c"
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/panel-controls-20261111/native1-result.json SHA256 dff383d02b65fbd916bcd6d83ba01dfbf09e479f0a6c38fadf19fb6c11da8a9b; exact reviewed source/results; final installed review accompanies closeout; owner acceptance separate."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/panel-controls-20261111/install-evidence1-result.json SHA256 dcf25f56ba441603fa2c98e0ffe8cbd067b27924620668fe96197b4f6e02a8f6; exact reviewed source/results; final installed review accompanies closeout; owner acceptance separate."
+        },
+        {
+          "stage": "recovery",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/panel-controls-20261111/install-evidence1-result.json SHA256 dcf25f56ba441603fa2c98e0ffe8cbd067b27924620668fe96197b4f6e02a8f6; exact reviewed source/results; final installed review accompanies closeout; owner acceptance separate."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/panel-controls-20261111/source-results.json SHA256 afcd3c39556e84229237ce824cffce59533dc07fd800cc6cd65d73b2fe10b05c; Final independent source/native/installed/docs GO; five native log hashes/12 read-back streams/five protected pairs reconcile. Owner acceptance separate."
         }
       ]
     }
@@ -95,13 +111,13 @@
     "owner": "/root",
     "functional_exit": "Requested panel actions and dashboard links are consistent, readable and correctly aligned in both presentation styles, with touch labels preserved.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Nov11 owner screenshot follow-up after prior responsive/autosave delivery; prior UAT remains pending, no acceptance inferred. Archived previous workorder retained verbatim. No new Inbox or autosave change requested. Earlier token/monetary costs UNKNOWN. Initial declaration validator refused fractional UTC timestamp; corrected to supported seconds format. No product execution or host effect. Second declaration refusal: negative coverage misclassified as positive. Combined root/reviewer source/schema reassessment GO: classify existing edge/no-overflow/no-hidden-touch/no-semantic-mutation P02 as negative; no new fixture/gate/test. No product execution or host effect. Settings source1:18PASS/1FAIL from exact old Reading button-opening selector after presentation class addition. Initial integration guessed class order; actual product markup has class after form. Correct only selector to actual opening, retain CSRF/revision/form semantics and failure log. Welcome SystemStatus disclosure selector likewise requires added scoped style class. Browser1:20desktop contexts and panel checks PASS; first coarse Icons Mailboxes Browse text-inset FAIL. Actual numeric coords absent from initial generic assertion (missing observation); report and owned cleanup PASS retained. Source coarse media forces icons+margin, selected smallest welcome-panel-link child-icon hide across inputs; global touch labels unchanged. Add numeric text-inset observation before correction retest. Browser2PASS45 checks (20desktopcontexts+20panelchecks+5touch); savedIcons/coarse verified, note/Browse/empty CSS probe x equal. General/Reading/status exact source casesPASS. Security-register pin updater refused2 nonexistent guessed schema fields, preserved fixeddiagnostic; actualschema root/reviewer reassessmentGO uses audit.summary.inventory_sha256 and remediation.refined_current.inventory_sha256. V11PASS and staleclaimsV10FAIL retained; updateonly2claimpins, counts/classifications/historicalhighbefore3154 unchanged. Confirmed fields corrected2pins; v10 corrected2PASS. Source/browser resultpacket retained with hashes; matching native/deployed/owner stillpending. Independent frozen source/data/method GO covers normal signed sourcepush and exact result-gated native/Web-only recipes. Buildrecipee6dd6a1f andinstall978c5fa6 preserve oldde20 rollback/protectedstate. Native/installed/owner outcomes remainpending. Normal sourcepush1 d01a604 FAILED98.495s:2360PASS/3FAIL/91ignored. Three old exactmarkup assertions (General composition buttonopening and unavailable password caption twice) superseded by explicit labels/icons. Retain signedcommit and pushlogSHAf9a6a336a22ac290b7f8bdde5d328213825fe354f25c2f5a8cf36346fda59137; update only matching selectors, preserve disabled/form/security assertions, rerun exact3 before normalpush2. No runtime code change. Exact3 corrected source casesPASS1each; scanner/remediation narrow checksPASS with samepins. Independent review GO for 3testselector+ledger correction and normalpush2; nativeadmission requires freshparity2. No production edit or browserrepeat. Normal sourcepush2 72dbcb9 FAIL106.916s: fullRust2363/0/91, integration andclippyPASS, thenformatter required only new settings_security_ui.rs helperlayout. LogSHA99d59a3b73f6d11a8a29d058331207cbe672c6059369f86471c0d2e3a3a232ba retained. Stopnormalpublicationafter2failures for root/independent combinedreassessment; propose exactscopedformatter correction and narrowfmt/pinchecks, no product change/browserrepeat. Combined independent reassessmentGO for exactrustfmt-only helperlayout; fmtcheckPASS. Narrowconsumers demonstrated linepin drift and approved producer refresh+2claimpinsPASS, samecounts/classifications/history. Earlier zeroentry query used absent entries key with defaultempty; actual register assumptions contains2 affectedfile entries. Corrected observed schema; no productfinding. Signed formatting/history checkpoint then unchangednormalpush3/freshparity3; no browserrepeat.",
+    "history_reference": "Nov11 owner screenshot follow-up after prior responsive/autosave delivery; prior UAT remains pending, no acceptance inferred. Archived previous workorder retained verbatim. No new Inbox or autosave change requested. Earlier token/monetary costs UNKNOWN. Initial declaration validator refused fractional UTC timestamp; corrected to supported seconds format. No product execution or host effect. Second declaration refusal: negative coverage misclassified as positive. Combined root/reviewer source/schema reassessment GO: classify existing edge/no-overflow/no-hidden-touch/no-semantic-mutation P02 as negative; no new fixture/gate/test. No product execution or host effect. Settings source1:18PASS/1FAIL from exact old Reading button-opening selector after presentation class addition. Initial integration guessed class order; actual product markup has class after form. Correct only selector to actual opening, retain CSRF/revision/form semantics and failure log. Welcome SystemStatus disclosure selector likewise requires added scoped style class. Browser1:20desktop contexts and panel checks PASS; first coarse Icons Mailboxes Browse text-inset FAIL. Actual numeric coords absent from initial generic assertion (missing observation); report and owned cleanup PASS retained. Source coarse media forces icons+margin, selected smallest welcome-panel-link child-icon hide across inputs; global touch labels unchanged. Add numeric text-inset observation before correction retest. Browser2PASS45 checks (20desktopcontexts+20panelchecks+5touch); savedIcons/coarse verified, note/Browse/empty CSS probe x equal. General/Reading/status exact source casesPASS. Security-register pin updater refused2 nonexistent guessed schema fields, preserved fixeddiagnostic; actualschema root/reviewer reassessmentGO uses audit.summary.inventory_sha256 and remediation.refined_current.inventory_sha256. V11PASS and staleclaimsV10FAIL retained; updateonly2claimpins, counts/classifications/historicalhighbefore3154 unchanged. Confirmed fields corrected2pins; v10 corrected2PASS. Source/browser resultpacket retained with hashes; matching native/deployed/owner stillpending. Independent frozen source/data/method GO covers normal signed sourcepush and exact result-gated native/Web-only recipes. Buildrecipee6dd6a1f andinstall978c5fa6 preserve oldde20 rollback/protectedstate. Native/installed/owner outcomes remainpending. Normal sourcepush1 d01a604 FAILED98.495s:2360PASS/3FAIL/91ignored. Three old exactmarkup assertions (General composition buttonopening and unavailable password caption twice) superseded by explicit labels/icons. Retain signedcommit and pushlogSHAf9a6a336a22ac290b7f8bdde5d328213825fe354f25c2f5a8cf36346fda59137; update only matching selectors, preserve disabled/form/security assertions, rerun exact3 before normalpush2. No runtime code change. Exact3 corrected source casesPASS1each; scanner/remediation narrow checksPASS with samepins. Independent review GO for 3testselector+ledger correction and normalpush2; nativeadmission requires freshparity2. No production edit or browserrepeat. Normal sourcepush2 72dbcb9 FAIL106.916s: fullRust2363/0/91, integration andclippyPASS, thenformatter required only new settings_security_ui.rs helperlayout. LogSHA99d59a3b73f6d11a8a29d058331207cbe672c6059369f86471c0d2e3a3a232ba retained. Stopnormalpublicationafter2failures for root/independent combinedreassessment; propose exactscopedformatter correction and narrowfmt/pinchecks, no product change/browserrepeat. Combined independent reassessmentGO for exactrustfmt-only helperlayout; fmtcheckPASS. Narrowconsumers demonstrated linepin drift and approved producer refresh+2claimpinsPASS, samecounts/classifications/history. Earlier zeroentry query used absent entries key with defaultempty; actual register assumptions contains2 affectedfile entries. Corrected observed schema; no productfinding. Signed formatting/history checkpoint then unchangednormalpush3/freshparity3; no browserrepeat. Source549078a normalpush3PASS436.614s, exactclean0/0. Native1PASS193.801s total/187.704s build,598inputs, General1/Reading1. WebinstallPASS3.269s loaded446b0928dc50116af23447f49deb80709722d185ff8a6e7a6c7335d06cab1118, fiveprotectedpairs/nineroles/HTTPS200; previousde20 retained. Final independent installed/docs review and signed closeout follow; P05ownerpending. Elapsed measured through2026-11-11T13:42:07.770604+00:00; later finalpreservation measured separately in retained receipts. Earlier token/moneycostUNKNOWN. Final independent actual-result/docsGO: verified5native logs, exactGeneral/Reading1each, fullsourcepush3,12archive streams/fivepairs, loaded446b0928 and explicitpeerHTTPS200. Initial bounded startup502 then200 retained/read-back hashed; final readinessPASS, no ownerjourney claim. Normal signed records/push4 and freshparity/hostrecords sync follow.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 7200,
       "started_at": "2026-11-11T13:06:59Z",
-      "elapsed_status": "UNKNOWN",
-      "elapsed_seconds": null
+      "elapsed_status": "MEASURED",
+      "elapsed_seconds": 2108.771
     },
     "attempts": [],
     "next_attempt": null
@@ -111,7 +127,7 @@
     "slice": "S01-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_06.md",
-      "sha256": "381057c64252bfb20e6517a9aa7edc43f5b08ae185271f3fd8f577736db6936d"
+      "sha256": "4768b67dbdd29d665d785db03bce1a8758a8eee88f8c4cddeb7b5719161e7080"
     },
     "design": {
       "journey": "Requested panel actions and dashboard links are consistent, readable and correctly aligned in both presentation styles, with touch labels preserved.",
@@ -174,8 +190,10 @@
         "preserved": "Accepted S05 import and prior S08/logo results; owner accounts/mail/preferences and public services.",
         "owner": "/root",
         "reviewer": "/root/s08_delivery_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/panel-controls-20261111/native1-result.json SHA256 dff383d02b65fbd916bcd6d83ba01dfbf09e479f0a6c38fadf19fb6c11da8a9b"
+        ]
       },
       {
         "id": "P04",
@@ -190,8 +208,10 @@
         "preserved": "Accepted S05 import and prior S08/logo results; owner accounts/mail/preferences and public services.",
         "owner": "/root",
         "reviewer": "/root/s08_delivery_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/panel-controls-20261111/install-evidence1-result.json SHA256 dcf25f56ba441603fa2c98e0ffe8cbd067b27924620668fe96197b4f6e02a8f6"
+        ]
       },
       {
         "id": "P05",
@@ -217,7 +237,7 @@
     "status": "PENDING",
     "reference": "Owner panel-control correction Nov11; prior accepted work preserved."
   },
-  "next_action": "Implement scoped templates/CSS, exercise five affected routes, independent review and normal signed matching Web-only delivery."
+  "next_action": "Owner reviews requested Mailboxes/Folders/General/Reading/Security panel corrections; P05 acceptance pending. Normal signed closeout follows."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

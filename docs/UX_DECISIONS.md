@@ -820,3 +820,10 @@ actions; use contextual icons consistently in Security Controls under Icons
 mode, preserving Text labels and touch fallback. Dashboard descriptive links
 share alignment, typography and trailing arrows. No Inbox/autosave/backend
 behaviour change follows from the supplied contextual screenshots.
+
+Scoped panel correction delivered from signed source549078a5,
+normal hooks and fresh source/origin parity PASS. Matching native General/Reading
+forms, installed executable446b0928, protected-state comparisons and
+explicit obsd1 HTTPS200 pass. Preserve the two push failures and earlier
+source/touch/pin diagnostics. Owner review is pending; native form/anonymous
+readiness evidence does not claim live owner-account or full release acceptance.

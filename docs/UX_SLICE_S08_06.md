@@ -37,8 +37,25 @@ V11/V10 consumers pass. Source1's old Reading selector and Browser1's touch icon
 inset failure are retained; narrow corresponding corrections pass. Audit-pin
 updater schema refusals/stale-pin gate failure are retained and corrected by
 actual-schema review; counts/classifications and historical claims are unchanged.
-Independent final source/data/method review is GO. Signed normal preservation,
-matching native build/Web-only installation and separate owner review remain pending.
+The correction is installed and ready for owner review. Signed source
+`549078a5c0df0132d6c85172ef11b1810a59e1ba` passed the normal delivery gate
+(2,363 library passes, zero failures, 91 explicit ignores), signature verification
+and fresh exact clean 0/0 GitHub equality. The two earlier normal push failures
+(old-markup test expectations, then formatter layout) remain separately retained;
+three matching test corrections and the formatter-only correction pass.
+
+The matching OpenBSD build took 187.704 seconds; all 598
+compiler inputs match. Actual General and Reading native form cases each pass
+with original form ownership/revision/CSRF checks. Installed executable SHA256:
+`446b0928dc50116af23447f49deb80709722d185ff8a6e7a6c7335d06cab1118`. Web-only replacement took
+3.269 seconds; loaded identity, nine roles, five byte-equal protected
+snapshot pairs and explicit-peer HTTPS200 at 192.168.1.44 pass. Read-back archive:
+`3aeed3465bd5a293df8db1113c3352c0f2239fbc281c21c3585691b2baa469db`. Previous Web `de20c844`
+is retained for rollback. No owner account/message mutation or public-mail
+restart/configuration change occurred. Anonymous HTTPS is service readiness;
+owner page review remains separate. The bounded startup probe returned502,
+then200; both observations remain in the hashed readiness stream. Final
+installed-result/docs independent review is GO; owner acceptance remains pending.
 
 ## Responsive and functional correction — 2026-11-11
 
