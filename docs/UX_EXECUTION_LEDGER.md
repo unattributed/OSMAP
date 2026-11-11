@@ -59785,3 +59785,56 @@ the zero-test invocation.
   "independent_next_action": "Review sidebar acceptance-only record and assess remaining S08-01/03/04 source gaps; existing sidebar source/carrier/result review GO. Preserve earlier failures and owner Login successful."
 }
 ```
+## 2026-11-11 — S10-02 whole-application security assessment started
+
+**Outcome:** Independently assess the complete OSMAP application at a named
+source revision, reconcile applicable OWASP WSTG coverage, and resolve confirmed
+security findings before S10-02 acceptance. This includes the HTTP/browser
+surface, authentication and recovery, mailbox and account helpers, mail
+submission, MIME and attachments, OpenPGP services, OpenBSD confinement, and
+operational code. The browser WSTG pack does not by itself qualify the other
+application components. S10-01's existing journey evidence is reused only for
+the cases it actually proves; its parent result is not changed here.
+
+**Work order:** Root owns the single integration, source/Git and future target
+execution queue. Codex Security provides an independent source review; root
+validates candidates and reconciles WSTG coverage. Any remediation author must
+receive independent source and result review. Baseline is clean UX branch
+`0c1e2876ace85a8b0f0b996ab5fe243dec2541a5`; accepted R2 plan anchor
+`6b3ce8fff27ca3dabf87039d54098bd9967a2e42` and frozen manifest verified.
+Current source-review scope is repository-wide and read-only. No host, account,
+credential, mail-submission, service or configuration action is part of this
+source-review dispatch. A later target-facing WSTG action must name its exact
+target, account/fixture, affected route set, bounded recipe, stop and cleanup
+disposition before dispatch. Public mail availability and owner state are
+preserved. Use the existing WSTG matrices/runner and delivery gates; no new
+test framework. Initial cumulative assessment allowance is 24 hours of agent
+work, including review and local evidence reconciliation; record measured time
+and unknown gaps, stop at exhaustion or two failures at one functional boundary
+for combined independent reassessment. This allowance is not a clock expiry or
+permission for a host action.
+
+| Task | Observable result | Current state |
+| --- | --- | --- |
+| S10-02-T01 | Pin source, actual application entry points, accepted plan and reusable S10-01 evidence; list gaps without replaying passed journeys. | IN_PROGRESS; clean source and plan anchor verified; journey reconciliation pending. |
+| S10-02-T02 | Complete independent whole-repository code review, threat model and source-backed coverage/finding report. | IN_PROGRESS; Codex Security Standard scan `77bcdc9d-4585-4a1a-bd9e-41742a32ed9a` at the baseline has a partial model; no completed report. |
+| S10-02-T03 | Reconcile v4.2 and pinned latest WSTG rows to actual web routes and edge controls, naming evidence or gaps; map nonweb controls to other security evidence. | IN_PROGRESS; matrix inventories inspected, route/evidence reconciliation pending. |
+| S10-02-T04 | Run applicable bounded local synthetic WSTG and changed-boundary checks; retain actual PASS/FAIL/SKIP and sanitized evidence. | NOT_RUN. |
+| S10-02-T05 | Review helper, account, mail, crypto and confinement boundaries with the smallest relevant local synthetic security tests; reconcile existing native evidence by exact source and scope. New native qualification belongs to its separately authorized action. | NOT_RUN. |
+| S10-02-T06 | Independently validate candidates for reachability, impact and counterevidence; record confirmed, rejected, uncertain and uncovered states. | IN_PROGRESS; login-CSRF candidate remains unconfirmed. |
+| S10-02-T07 | Fix confirmed defects in bounded units; retest affected paths, perform required gates and independent review. Unresolved required findings block acceptance. | NOT_RUN. |
+| S10-02-T08 | Reconcile final source, WSTG results, nonweb assurance and residual gaps; sign and synchronize public-safe delivery through normal hooks and fresh SHA parity. | NOT_RUN. |
+
+The source scan is partial and a candidate is not a confirmed vulnerability.
+Live WSTG, release qualification and S10-02 acceptance are NOT_RUN. Retain
+failed/unknown outcomes separately from cleanup. The existing S10-03 resource
+and restart qualification and S11 live qualification remain distinct.
+
+Local WSTG machinery check `sh maint/security/test-osmap-wstg-testing-pack.sh`
+exited 0: 15 runner tests passed and mapping/manifest validation covered 46
+mapped tests. The v4.2 matrix contains 97 rows (64 automated, 33 not
+applicable); the pinned latest matrix contains 114 rows (70 automated, 44 not
+applicable). These are local runner and mapping checks, not target WSTG results
+or proof that every mapped scenario has current application evidence. The six
+printed FAIL lines are expected incomplete-response fixtures within passing
+runner tests, not live OSMAP findings.
