@@ -29,6 +29,23 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
+        let request_host = request
+            .headers
+            .get("host")
+            .map(|host| host.to_ascii_lowercase())
+            .unwrap_or_default();
+        if let Some((action, message)) = same_origin_metadata_error(request, &[request_host]) {
+            return HandledHttpResponse {
+                response: html_response(
+                    403,
+                    "Forbidden",
+                    "Request Origin Rejected",
+                    "<p>The request did not include accepted same-origin request metadata.</p>",
+                ),
+                audit_events: vec![build_http_warning_event(action, message, context)],
+            };
+        }
+
         if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str))
         {
             return HandledHttpResponse {
@@ -638,60 +655,55 @@ where
         validated_session: &ValidatedSession,
         context: &AuthenticationContext,
     ) -> Option<HandledHttpResponse> {
-        if let Some(origin) = request.headers.get("origin") {
-            if is_opaque_origin(origin) {
-                if let Some(referer) = request.headers.get("referer") {
-                    return validate_same_origin_header(
-                        SameOriginHeaderKind::Referer,
-                        referer,
-                        &self.policy.allowed_hosts,
-                        validated_session,
-                        context,
-                    );
-                }
-
-                if is_same_origin_fetch_site(request.headers.get("sec-fetch-site")) {
-                    return None;
-                }
-
-                return Some(rejected_same_origin_response(
-                    "http_origin_opaque",
-                    "origin header was opaque and no fallback referer was present",
-                    context,
-                    validated_session,
-                ));
-            }
-
-            return validate_same_origin_header(
-                SameOriginHeaderKind::Origin,
-                origin,
-                &self.policy.allowed_hosts,
-                validated_session,
-                context,
-            );
-        }
-
-        if is_same_origin_fetch_site(request.headers.get("sec-fetch-site")) {
-            return None;
-        }
-
-        if let Some(referer) = request.headers.get("referer") {
-            return validate_same_origin_header(
-                SameOriginHeaderKind::Referer,
-                referer,
-                &self.policy.allowed_hosts,
-                validated_session,
-                context,
-            );
-        }
-
+        let (action, message) = same_origin_metadata_error(request, &self.policy.allowed_hosts)?;
         Some(rejected_same_origin_response(
-            "http_same_origin_missing",
-            "same-origin request metadata missing from state-changing request",
+            action,
+            message,
             context,
             validated_session,
         ))
     }
+}
+
+fn same_origin_metadata_error(
+    request: &HttpRequest,
+    allowed_hosts: &[String],
+) -> Option<(&'static str, &'static str)> {
+    if let Some(origin) = request.headers.get("origin") {
+        if is_opaque_origin(origin) {
+            if let Some(referer) = request.headers.get("referer") {
+                return same_origin_header_error(
+                    SameOriginHeaderKind::Referer,
+                    referer,
+                    allowed_hosts,
+                );
+            }
+
+            if is_same_origin_fetch_site(request.headers.get("sec-fetch-site")) {
+                return None;
+            }
+
+            return Some((
+                "http_origin_opaque",
+                "origin header was opaque and no fallback referer was present",
+            ));
+        }
+
+        return same_origin_header_error(SameOriginHeaderKind::Origin, origin, allowed_hosts);
+    }
+
+    if is_same_origin_fetch_site(request.headers.get("sec-fetch-site")) {
+        return None;
+    }
+
+    if let Some(referer) = request.headers.get("referer") {
+        return same_origin_header_error(SameOriginHeaderKind::Referer, referer, allowed_hosts);
+    }
+
+    Some((
+        "http_same_origin_missing",
+        "same-origin request metadata missing from state-changing request",
+    ))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -700,13 +712,11 @@ enum SameOriginHeaderKind {
     Referer,
 }
 
-fn validate_same_origin_header(
+fn same_origin_header_error(
     header_kind: SameOriginHeaderKind,
     value: &str,
     allowed_hosts: &[String],
-    validated_session: &ValidatedSession,
-    context: &AuthenticationContext,
-) -> Option<HandledHttpResponse> {
+) -> Option<(&'static str, &'static str)> {
     let Some((scheme, header_host)) = extract_absolute_uri_scheme_authority(value) else {
         let (action, message) = match header_kind {
             SameOriginHeaderKind::Origin => (
@@ -718,12 +728,7 @@ fn validate_same_origin_header(
                 "referer header was not a valid absolute http(s) uri",
             ),
         };
-        return Some(rejected_same_origin_response(
-            action,
-            message,
-            context,
-            validated_session,
-        ));
+        return Some((action, message));
     };
 
     if scheme == "http" && !is_loopback_authority(&header_host) {
@@ -737,12 +742,7 @@ fn validate_same_origin_header(
                 "referer header used http for a non-loopback authority",
             ),
         };
-        return Some(rejected_same_origin_response(
-            action,
-            message,
-            context,
-            validated_session,
-        ));
+        return Some((action, message));
     }
 
     if !allowed_hosts
@@ -759,12 +759,7 @@ fn validate_same_origin_header(
                 "referer header did not match configured allowed hosts",
             ),
         };
-        return Some(rejected_same_origin_response(
-            action,
-            message,
-            context,
-            validated_session,
-        ));
+        return Some((action, message));
     }
 
     None

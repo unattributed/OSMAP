@@ -1131,6 +1131,7 @@ mod tests {
 
     #[derive(Debug, Clone)]
     pub(super) struct StubGateway {
+        login_calls: Arc<std::sync::atomic::AtomicUsize>,
         access_views: AccessViewQueue,
         access_outcomes: AccessOutcomeQueue,
         access_calls: Arc<Mutex<Vec<String>>>,
@@ -1220,6 +1221,7 @@ mod tests {
     impl Default for StubGateway {
         fn default() -> Self {
             Self {
+                login_calls: Default::default(),
                 access_views: Default::default(),
                 access_outcomes: Default::default(),
                 access_calls: Default::default(),
@@ -2350,6 +2352,7 @@ mod tests {
             password: &str,
             totp_code: &str,
         ) -> BrowserLoginOutcome {
+            self.login_calls.fetch_add(1, Ordering::Relaxed);
             let account_allowed = username == "alice@example.com"
                 || self.browser_fixture_accounts && username == "bob@example.com";
             if !account_allowed || password != "correct horse battery staple" {
@@ -6291,7 +6294,7 @@ mod tests {
             &request(
                 "POST",
                 "/login",
-                &[("User-Agent", "Firefox/Test")],
+                &[("User-Agent", "Firefox/Test"), ("Origin", "http://localhost")],
                 "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=123456",
             ),
             "127.0.0.1",
@@ -6307,18 +6310,84 @@ mod tests {
     }
 
     #[test]
+    fn login_rejects_foreign_or_missing_origin_before_authentication() {
+        let app = app();
+        let body =
+            "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=123456";
+        for headers in [
+            vec![
+                ("User-Agent", "Firefox/Test"),
+                ("Origin", "https://attacker.example"),
+            ],
+            vec![
+                ("User-Agent", "Firefox/Test"),
+                ("Origin", "http://localhost:8080"),
+            ],
+            vec![("User-Agent", "Firefox/Test"), ("Origin", "null")],
+            vec![
+                ("User-Agent", "Firefox/Test"),
+                ("Sec-Fetch-Site", "cross-site"),
+            ],
+            vec![("User-Agent", "Firefox/Test")],
+        ] {
+            let response =
+                app.handle_request(&request("POST", "/login", &headers, body), "127.0.0.1");
+            assert_eq!(response.response.status_code, 403);
+            assert!(!response
+                .response
+                .headers
+                .iter()
+                .any(|(name, _)| name == "Set-Cookie"));
+            assert_eq!(app.gateway.login_calls.load(Ordering::Relaxed), 0);
+        }
+    }
+
+    #[test]
+    fn login_accepts_same_origin_referer_or_fetch_metadata() {
+        let body =
+            "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=123456";
+        for headers in [
+            vec![
+                ("User-Agent", "Firefox/Test"),
+                ("Referer", "http://localhost/login"),
+            ],
+            vec![
+                ("User-Agent", "Firefox/Test"),
+                ("Sec-Fetch-Site", "same-origin"),
+            ],
+        ] {
+            let app = app();
+            let response =
+                app.handle_request(&request("POST", "/login", &headers, body), "127.0.0.1");
+            assert_eq!(response.response.status_code, 303);
+            assert!(response
+                .response
+                .headers
+                .iter()
+                .any(|(name, value)| name == "Set-Cookie" && value.starts_with("osmap_session=")));
+            assert_eq!(app.gateway.login_calls.load(Ordering::Relaxed), 1);
+        }
+    }
+
+    #[test]
     fn login_failure_banner_is_identical_for_wrong_password_and_wrong_totp() {
         let app = app();
         let wrong_password_request = request(
             "POST",
             "/login",
-            &[("content-type", "application/x-www-form-urlencoded")],
+            &[
+                ("content-type", "application/x-www-form-urlencoded"),
+                ("Origin", "http://localhost"),
+            ],
             "username=alice%40example.com&password=wrong&totp_code=123456",
         );
         let wrong_totp_request = request(
             "POST",
             "/login",
-            &[("content-type", "application/x-www-form-urlencoded")],
+            &[
+                ("content-type", "application/x-www-form-urlencoded"),
+                ("Origin", "http://localhost"),
+            ],
             "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=000000",
         );
 
@@ -6555,6 +6624,7 @@ mod tests {
                 &[
                     ("User-Agent", "Firefox/Test"),
                     ("Content-Type", "application/json"),
+                    ("Origin", "http://localhost"),
                 ],
                 "{\"username\":\"alice@example.com\"}",
             ),
@@ -7327,7 +7397,10 @@ mod tests {
             &request(
                 "POST",
                 "/login",
-                &[("content-type", "application/x-www-form-urlencoded")],
+                &[
+                    ("content-type", "application/x-www-form-urlencoded"),
+                    ("Origin", "http://localhost"),
+                ],
                 "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=123456",
             ),
             "127.0.0.1",
@@ -7356,7 +7429,10 @@ mod tests {
             &request(
                 "POST",
                 "/login",
-                &[("content-type", "application/x-www-form-urlencoded")],
+                &[
+                    ("content-type", "application/x-www-form-urlencoded"),
+                    ("Origin", "http://localhost"),
+                ],
                 "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=123456",
             ),
             "127.0.0.1",

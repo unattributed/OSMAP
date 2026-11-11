@@ -552,7 +552,10 @@ class Runner:
         store_body_evidence: bool = True,
     ) -> HttpEvidence:
         encoded = urllib.parse.urlencode(values)
-        merged_headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        merged_headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Origin": self.config.origin,
+        }
         if headers:
             merged_headers.update(headers)
         return self.request(
@@ -2926,7 +2929,7 @@ class Runner:
                 "http_inpv04_login_json_content_type",
                 "POST",
                 "/login",
-                headers={"Content-Type": "application/json"},
+                headers={"Content-Type": "application/json", **same_origin_headers(self.config)},
                 body='{"username":"probe","password":"probe","totp_code":"000000"}',
             ),
             "http_inpv04_send_json_content_type": self.request(
@@ -2945,7 +2948,10 @@ class Runner:
                 "http_inpv04_duplicate_login_field",
                 "POST",
                 "/login",
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    **same_origin_headers(self.config),
+                },
                 body="username=probe&username=admin&password=probe&totp_code=000000",
             ),
             "http_inpv04_duplicate_send_field": self.request(
@@ -2967,6 +2973,12 @@ class Runner:
                 continue
             if 200 <= evidence.status < 400:
                 failures[label] = evidence.status
+        for label in (
+            "http_inpv04_login_json_content_type",
+            "http_inpv04_duplicate_login_field",
+        ):
+            if probes[label].status != 400:
+                failures[label] = probes[label].status
         if not static_ok:
             failures["static_boundary"] = "missing HTTP input tampering markers"
 

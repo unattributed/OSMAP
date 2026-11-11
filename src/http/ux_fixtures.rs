@@ -415,7 +415,10 @@ fn ux_synthetic_route_baselines() {
         } else {
             "GET"
         };
-        let body = if name == "draft-save-unconfirmed" {
+        let body = if name == "login-error" {
+            headers.push(("Origin", "http://localhost"));
+            String::new()
+        } else if name == "draft-save-unconfirmed" {
             headers.push(("Origin", "https://localhost"));
             format!("csrf_token={}&to=still%20choosing&subject=Public%20project%20notes&body=Unconfirmed%20save%20-%20public%20synthetic%20text", StubGateway::validated_session().record.csrf_token)
         } else if name == "drafts-review" {

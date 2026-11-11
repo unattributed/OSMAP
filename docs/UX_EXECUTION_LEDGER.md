@@ -59819,11 +59819,11 @@ permission for a host action.
 | S10-02-T01 | Pin source, actual application entry points, accepted plan and reusable S10-01 evidence; list gaps without replaying passed journeys. | IN_PROGRESS; clean source and plan anchor verified; journey reconciliation pending. |
 | S10-02-T02 | Complete independent whole-repository code review, threat model and source-backed coverage/finding report. | IN_PROGRESS; Codex Security Standard scan `77bcdc9d-4585-4a1a-bd9e-41742a32ed9a` at the baseline has a partial model; no completed report. |
 | S10-02-T03 | Reconcile v4.2 and pinned latest WSTG rows to actual web routes and edge controls, naming evidence or gaps; map nonweb controls to other security evidence. | IN_PROGRESS; matrix inventories inspected, route/evidence reconciliation pending. |
-| S10-02-T04 | Run applicable bounded local synthetic WSTG and changed-boundary checks; retain actual PASS/FAIL/SKIP and sanitized evidence. | NOT_RUN. |
+| S10-02-T04 | Run applicable bounded local synthetic WSTG and changed-boundary checks; retain actual PASS/FAIL/SKIP and sanitized evidence. | IN_PROGRESS; focused login route and WSTG runner checks PASS, broader local WSTG cases remain NOT_RUN. |
 | S10-02-T05 | Review helper, account, mail, crypto and confinement boundaries with the smallest relevant local synthetic security tests; reconcile existing native evidence by exact source and scope. New native qualification belongs to its separately authorized action. | NOT_RUN. |
-| S10-02-T06 | Independently validate candidates for reachability, impact and counterevidence; record confirmed, rejected, uncertain and uncovered states. | IN_PROGRESS; login-CSRF candidate remains unconfirmed. |
-| S10-02-T07 | Fix confirmed defects in bounded units; retest affected paths, perform required gates and independent review. Unresolved required findings block acceptance. | NOT_RUN. |
-| S10-02-T08 | Reconcile final source, WSTG results, nonweb assurance and residual gaps; sign and synchronize public-safe delivery through normal hooks and fresh SHA parity. | NOT_RUN. |
+| S10-02-T06 | Independently validate candidates for reachability, impact and counterevidence; record confirmed, rejected, uncertain and uncovered states. | IN_PROGRESS; login-CSRF route defect confirmed in source, practical browser impact provisional; other areas remain incomplete. |
+| S10-02-T07 | Fix confirmed defects in bounded units; retest affected paths, perform required gates and independent review. Unresolved required findings block acceptance. | IN_PROGRESS; login route correction has focused tests, independent source review and local developer gate PASS; installed retest NOT_RUN. |
+| S10-02-T08 | Reconcile final source, WSTG results, nonweb assurance and residual gaps; sign and synchronize public-safe delivery through normal hooks and fresh SHA parity. | IN_PROGRESS; bounded source candidate reviewed and local developer gate PASS; whole-app reconciliation and Git synchronization pending. |
 
 The source scan is partial and a candidate is not a confirmed vulnerability.
 Live WSTG, release qualification and S10-02 acceptance are NOT_RUN. Retain
@@ -59838,3 +59838,180 @@ applicable). These are local runner and mapping checks, not target WSTG results
 or proof that every mapped scenario has current application evidence. The six
 printed FAIL lines are expected incomplete-response fixtures within passing
 runner tests, not live OSMAP findings.
+
+### S10-02 bounded obsd1 HTTPS admission probe — planned 2026-11-11
+
+The operator separately directs a senior-level UX penetration test and permits
+disposable credentials if required. First target action is exactly one
+unauthenticated `OSMAP-WSTG-ATHN-001` GET `/login` using the existing WSTG runner,
+`--base-url https://obsd1.blackbagsecurity.com`, explicit matching `--host`,
+`--unauthenticated`, `--no-host`, and one selected `--test-id`. Pin only this
+hostname to `192.168.1.44` within the runner process while retaining its TLS
+SNI, Host and certificate checks. Clear release/auth/host environment overrides;
+use no credentials, mail, account mutation, helper or public mail operation.
+The exact target separately answered certificate-verified HTTPS200 at that IP.
+Read-only SSH by IP reports hostname obsd1, OpenBSD, clean host checkout
+`18962ce66bcd2e38287639a8b9168fdf0eafbbff` and Web SHA256
+`10e2c2831f1d144be508284e26458efab10aa8534e72e011e5b4c22580ddd7f3`.
+Host and current UX branch have equal `src` and WSTG-pack Git tree hashes;
+later three commits changed only documentation. This qualifies source mapping
+for the narrow probe, not installed runtime or whole-test acceptance.
+Independent recipe review GO only for this first selected GET; full unauth pack
+is NO-GO as an initial dispatch because it includes invalid login POSTs,
+raw/smuggling requests and subprocess TLS checks not covered by the process DNS
+pin. Bound the probe to one request, five-second connection and twenty-second
+response deadlines, a private S10 sprint evidence directory, and no retry on
+uncertain outcome. Record actual result and cleanup separately before any
+expanded target action.
+
+Probe01 executed with a clean process environment and the single selected
+`ATHN-001` test. Runner exit 0, one PASS, zero FAIL/SKIP/WARNING: the obsd1
+HTTPS login form exposed username, password and TOTP fields. Retained private
+summary SHA256 `5a907793ac7b056b57f738ce512830df2c2879a29d1d4fe5c29c7b70fa0479b5`
+and report SHA256 `6dd378171ba9cdd24045d5d719631a0c224ea3cded54ecdd2036d0b66b7b236c`
+under `/home/foo/Downloads/osmap-ux-s10/wstg-unauth-20261111-probe01/osmap-wstg-20261111-172753/`.
+Readback confirmed the exact test ID and counts. No account credential, POST,
+mail or service mutation was used. Output is retained; cleanup was not needed.
+This result covers one HTTPS form/transport case, not WSTG or Top 10 overall.
+
+Next bounded target packet: independent source review GO for exactly seven
+additional unauthenticated HTTPS IDs: `CONF-002`, `CONF-003`, `INFO-001`,
+`INFO-002`, `CLNT-001`, `INPV-001`, `INPV-002` (all prefixed `OSMAP-WSTG-`).
+Their executed runner paths make at most 36 requests: GET and OPTIONS only,
+with no redirect following, login attempts, POST, helper, host-assisted or
+subprocess invocation. Reuse the exact obsd1 IP pin, certificate and Host
+binding, clean environment and private sprint root; cap the overall process at
+600 seconds in addition to five-second connect/twenty-second response and
+256 KiB response-body limits. Stop after any nonzero/timeout result for
+reassessment; retained partial output does not imply a pass. All response
+bodies remain private pending sanitization. No temporary account is needed for
+this packet. Preserve any uncertain observation and do not repeat unchanged
+target requests.
+
+Packet02 executed once against the pinned obsd1 HTTPS target. The runner exited
+1 with five PASS and two FAIL: `INFO-001` and `INPV-001`. The private summary is
+`/home/foo/Downloads/osmap-ux-s10/wstg-unauth-20261111-packet02/osmap-wstg-20261111-172906/summary.json`;
+its readback SHA256 is `c8325b3d5c539622488cbee63d42fc56ee22523cbc445e8246ff1f571920f30b`;
+the report SHA256 is `3ddf1bec589d516fb686fce552272d3fc69091f45522571ccad76007ce6d7f7a`.
+Raw response bodies remain private. Readback and the runner's exact
+predicates show `INFO-001` matched `TOTP`/`session` in identical 404 HTML
+fallback bodies for both metafiles. The five traversal probes returned 400,
+404 or 303; none returned 200 or a session cookie. `INPV-001` matched the
+`:root:` CSS selector inside the shared HTML page body, including the 404
+fallback. These are retained
+runner FAIL results with a separately assessed false-positive explanation;
+they do not establish a metafile secret exposure or successful traversal.
+No retry or product change was made. No account, mail, service or configuration
+mutation occurred; cleanup was not required. The other five PASS results cover
+only their selected predicates.
+
+### S10-02 login CSRF correction — planned 2026-11-11
+
+Observable outcome: a browser form submitted from another origin cannot issue
+an OSMAP session, while an ordinary same-origin password/TOTP login continues
+to work. Source baseline is the UX branch at `4c91ff3cf1cedcd7e3812f13f2c07f83b83d0a4b`,
+with the same `src` tree as the host checkout. Independent read-only source
+trace found `POST /login` dispatches without the existing same-origin metadata
+guard, calls credential/TOTP verification, then sets a session cookie on
+success. Practical browser cookie replacement and downstream impact remain
+unverified; severity is provisional Medium. No owner credential or live exploit
+is part of this correction.
+
+Root owns the minimal route correction, focused test, integration and Git queue;
+an independent reviewer checks the changed source, denial-before-auth and
+same-origin success. Reuse the existing origin/Referer/Fetch-Metadata rules
+without adding a new protocol or framework. Planned negative synthetic test:
+valid fixture credentials plus a foreign Origin must receive 403 with zero
+gateway login dispatch, zero TOTP consumption and no session cookie. Planned
+positive test: the same fixture credentials with same-origin metadata receive
+the existing successful session response. Test missing/opaque metadata and
+Referer/Fetch-Metadata fallback where the existing rule defines them. Preserve
+all real account, factor, session and mail state. Run the focused route tests,
+then the mandatory normal delivery gate once on the frozen candidate. Stop on
+two failures at this same boundary for combined reassessment. Installed/browser
+qualification and WSTG authenticated coverage remain separate NOT_RUN until a
+safe disposable-account path is verified. This paragraph plans the tests; it
+does not claim a fix or PASS.
+
+Implementation at the local candidate now applies the existing origin metadata
+rules before login form parsing, auth-budget acquisition and gateway/TOTP
+dispatch, binding the login Origin/Referer authority to the actual allowed
+request Host. Synthetic negative cases for foreign, other allowed host, opaque,
+cross-site Fetch Metadata and absent metadata each returned 403 with no session
+cookie and zero fixture gateway login calls. Same-origin Origin, Referer and
+Fetch Metadata login cases returned the expected session response. The WSTG
+runner's ordinary URL-encoded form helper now sends its configured Origin; a
+new local runner test confirms the default and an intentional override. Local
+runner test result: 16 PASS, zero FAIL. Independent source review GO for this
+specific patched boundary; it does not qualify an installed browser.
+
+Failure history: the first focused `http::tests::login_` run had five PASS and
+two FAIL because existing login fixtures omitted origin metadata and now
+correctly received 403 instead of their intended 400/401. Those fixtures were
+updated to model same-origin submission; the changed seven-test login set then
+passed. The first full `make security-check` exited 2 after 2,369 Rust tests
+passed, 91 were ignored, and one failed: `ux_synthetic_route_baselines`
+`login-error` expected 401 and observed 403 for the same omitted-metadata
+fixture. Earlier Python checks had passed, but the full developer gate did not.
+The fixture now sends same-origin Origin and its one focused test passed. The
+repeated fixture assumption is under combined independent reassessment before
+one changed full-gate run. No failure has been converted into a pass.
+
+Combined independent reassessment found two further WSTG `POST /login` input
+probes whose old any-4xx oracle could mistake the new 403 origin refusal for
+the intended parser 400. Both now supply same-origin metadata and require exact
+400; one focused runner discriminator passed for 400 and failed for 403.
+The retained live login-normalization wrapper also now supplies matching
+Origin so its future 401/303 checks can reach authentication. This wrapper was
+syntax-checked but not run against a host. Seventeen WSTG runner unit tests
+passed; their six printed FAIL lines are expected unavailable-response fixtures
+inside passing tests. Independent reviewer inspected all discovered login
+callers and reported GO for one changed developer-gate run after that focused
+discriminator. Installed qualification remains NOT_RUN.
+
+The second `make security-check` exited 2 after its Rust tests and later
+account/mail regression groups passed; it stopped at the V11 governance chain
+because the V10 Rust assumption inventory hash had drifted with changed Rust
+line numbers. This was a delivery-metadata failure, not a product-test PASS or
+host result. The existing V10 generators were run on the current source:
+the inventory still has 13,282 entries with unchanged summary counts and
+classifications. The Rust audit, refined remediation register and claims
+boundary now carry the matching current hashes. Their two direct checks and
+the V10 governance gate each passed. An independent review of this generated
+refresh is pending before one final aggregate developer-gate run.
+
+Independent review of the regenerated V10 inventory found exactly 176 changed
+entry fields, all line numbers caused by the S10 Rust source/test insertions;
+the 13,282 entry count, kinds and classifications were unchanged. Both
+generator hashes matched their registers and the claims boundary. Reviewer GO
+supports one final aggregate gate run; it does not erase the earlier two gate
+failures.
+
+Final changed-candidate `make security-check` completed with exit 0 and the
+terminal `security-check complete` marker. This is the developer delivery gate
+for local source. The earlier two failed aggregate runs remain retained above.
+Private S10 sprint-root logs were copied and read back byte-for-byte before
+temporary sources are discarded: failed second-gate log SHA256
+`49eba455830d948c75aaae21ce39300493a50674544d5f32113be2959032d82b`,
+final passing-gate log SHA256
+`668f80241b5f66aa3cffec85924d06eedae8df80cad08960e1e6c20cab94d47e`.
+Independent delivery control reviewed the 11-file public-safe candidate and
+reported GO for a signed commit and ordinary push, with NO-GO for installed
+qualification or S10-02 acceptance. The review found no credential/private
+artifact in the tracked diff; private target response bodies stay outside Git.
+It does not prove an installed obsd1 binary, authenticated WSTG, strict release
+gate or S10-02 acceptance. Normal signed Git delivery and fresh remote equality
+remain pending at this record point.
+
+Authenticated live WSTG remains blocked on prerequisite access and account
+ownership. Two fresh disposable mailbox identities would have to be created in
+Toronto's authoritative PostfixAdmin/Dovecot store, with separate no-overwrite
+TOTP factors at obsd1. The local WSTG runner's secondary account lane is not
+an independent secondary login, and its single SSH host setting conflates
+mailbox-fixture and web-host posture checks. Direct SSH to the current
+`mail.blackbagsecurity.com` route timed out; the checked obsd1 jump route also
+timed out during banner exchange. Neither host path was used to change an
+account. The operator has been asked for a reachable authoritative mailbox
+administration route, without requesting secret material. No credential was
+created, no authenticated live test was run, and these gaps block any claim
+that the UX or Top 10 is clear.

@@ -354,7 +354,7 @@ fn appearance_cookie_covers_navigation_errors_logout_and_login_precedence() {
     let mut login = request(
         "POST",
         "/login",
-        &[],
+        &[("Origin", "http://localhost")],
         "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=123456",
     );
     login

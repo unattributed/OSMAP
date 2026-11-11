@@ -118,6 +118,51 @@ class RunnerBehaviorTests(unittest.TestCase):
             server.server_close()
             thread.join(timeout=2)
 
+    def test_form_post_uses_target_origin_unless_probe_overrides_it(self) -> None:
+        cfg = config("https://mail.example.test:8443", "mail.example.test", self.root)
+        runner = WSTG.Runner(cfg, self.mapping, self.root / "form-origin")
+        response = WSTG.HttpEvidence("login", 401, "Unauthorized", [], b"")
+        with mock.patch.object(runner, "request", return_value=response) as request:
+            runner.form_post("login", "/login", {"username": "fixture"})
+            self.assertEqual(request.call_args.kwargs["headers"]["Origin"], cfg.origin)
+            runner.form_post(
+                "foreign_login",
+                "/login",
+                {"username": "fixture"},
+                headers={"Origin": "https://foreign.example"},
+            )
+            self.assertEqual(
+                request.call_args.kwargs["headers"]["Origin"],
+                "https://foreign.example",
+            )
+
+    def test_login_input_tampering_reaches_parser_guard(self) -> None:
+        cfg = config("https://mail.example.test", "mail.example.test", self.root)
+        runner = WSTG.Runner(cfg, self.mapping, self.root / "input-tampering")
+        statuses = {
+            "http_inpv04_login_json_content_type": 400,
+            "http_inpv04_duplicate_login_field": 400,
+        }
+        calls = []
+
+        def response(label: str, method: str, path: str, **kwargs: object) -> object:
+            calls.append((label, method, path, kwargs))
+            return WSTG.HttpEvidence(label, statuses.get(label, 403), "Rejected", [], b"")
+
+        with mock.patch.object(runner, "request", side_effect=response), mock.patch.object(
+            runner, "write_http_input_tampering_static_evidence", return_value=True
+        ):
+            result = runner.test_http_input_tampering()
+            self.assertEqual(result.status, WSTG.STATUS_PASS)
+            for label in statuses:
+                headers = next(args[3]["headers"] for args in calls if args[0] == label)
+                self.assertEqual(headers["Origin"], cfg.origin)
+
+            statuses["http_inpv04_duplicate_login_field"] = 403
+            result = runner.test_http_input_tampering()
+            self.assertEqual(result.status, WSTG.STATUS_FAIL)
+            self.assertEqual(result.details["failures"]["http_inpv04_duplicate_login_field"], 403)
+
     def test_connection_and_response_deadlines_are_independent(self) -> None:
         cfg = replace(
             config("http://example.test", "example.test", self.root),
