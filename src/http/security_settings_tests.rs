@@ -109,7 +109,7 @@ fn security_settings_native_routes_are_readonly_and_linked() {
         assert!(body.contains("2 active browser sessions"));
         assert!(body.contains("href=\"/sessions\" aria-label=\"Manage sessions\""));
         assert!(body.contains("Password changes are currently unavailable."));
-        assert!(body.contains("disabled>Unavailable</button>"));
+        assert!(body.contains("disabled><span class=\"presentation-icon presentation-icon-unlock\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Unavailable</span></button>"));
         assert!(!body.contains("aria-label=\"Change password\""));
         assert!(!body.contains("action=\"/settings/"));
         assert!(body.contains("Authenticator state and last use are unavailable."));

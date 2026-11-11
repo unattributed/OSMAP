@@ -589,7 +589,7 @@ fn ux_synthetic_route_baselines() {
             );
         }
         if name == "settings-authentication" {
-            assert!(html.contains("disabled>Unavailable</button>"));
+            assert!(html.contains("disabled><span class=\"presentation-icon presentation-icon-unlock\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Unavailable</span></button>"));
             assert!(html.contains("Password changes are currently unavailable."));
             assert!(html.split("<button ").any(|button| {
                 let Some((tag, contents)) = button.split_once('>') else {

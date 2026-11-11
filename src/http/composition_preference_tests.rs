@@ -348,7 +348,7 @@ fn composition_page_and_general_native_form_project_saved_defaults() {
         assert!(body.contains("href=\"/settings?section=composition\""));
         if section == "general" {
             assert!(body.contains("name=\"reply_placement\" form=\"general-composition-form\""));
-            let button = body.split_once("<button type=\"submit\" form=\"general-composition-form\" aria-label=\"Save composition defaults\">").expect("native composition submit target").1.split("</button>").next().unwrap();
+            let button = body.split_once("<button type=\"submit\" form=\"general-composition-form\" aria-label=\"Save composition defaults\" class=\"presentation-text\">").expect("native composition submit target").1.split("</button>").next().unwrap();
             assert!(button.contains("Save composition"));
             assert!(body.contains("<form id=\"general-composition-form\" method=\"post\" action=\"/settings/composition\">"));
         } else {
