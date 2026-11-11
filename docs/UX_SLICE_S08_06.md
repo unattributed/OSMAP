@@ -59,6 +59,46 @@ send, new dependency or unrelated slice. Source synchronization, installed QA
 and owner UAT remain separate. Retained artifacts:
 `/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/`.
 
+### Correction delivery and remaining owner review
+
+The correction is installed on obsd1 and ready for owner review. Signed source
+`1b451971e9595140b760a1834dc558b4e8c2d277` includes the reviewed implementation
+`f693d7d48c2aabcc7b1d194bccaf307de73c35d1` and two matching regression-selector
+updates. Normal delivery hooks pass: 2,363 library tests, zero failures and 91
+explicit ignores; fresh source/origin equality is clean, zero ahead/behind.
+The initial hook's two old-markup selector failures remain retained.
+
+Actual browser evidence passes 118 desktop/style/mobile checks, six Firefox
+representatives, three focused menu/help cases and the cleared-activity state.
+Actual browser 200% zoom with saved large text passes without horizontal
+overflow. Mobile Login fits title through privacy tagline at 360x740 and 390x844
+with readable 44px inputs and actions; touch labels remain visible. Fresh and
+repeat autosave persist/reopen; the exact known prewrite refusal permits manual
+Save Draft with the same retained intent, while unknown/stale/uncertain outcomes
+remain locked without automatic retry. The earlier live409's precise reason
+remains UNKNOWN; no owner credentials or mail were used by this qualification.
+
+The OpenBSD build took 186.968 seconds. All 598 compiler-input hashes match;
+actual native Runtime/store autosave and the native dashboard form each pass.
+The Runtime case confirms stale/concurrent/location isolation and exact-owned
+cleanup, using an isolated private store rather than live backend authentication
+or helper draft persistence. Installed executable SHA256 is
+`de20c84435736e01f7042bdc46fce3879485050868115bff8b4f452a4b0f22bc`.
+Web-only replacement took 3.104 seconds; loaded executable identity, nine service
+checks, five byte-equal protected-state snapshot pairs and explicit-peer HTTPS200
+at 192.168.1.44 pass. Read-back archive SHA256 is
+`5d952552d4489b163b162cef5d2b4416a39172346a5768ae2a991ad9bb85ed77`.
+The previous executable d39a4a48 remains retained for rollback; public mail parent
+PIDs and configuration are unchanged. Independent source/native/installer review
+is GO; independent installed-result and documentation review is also GO.
+
+The affected UI/CSP/accessibility gates pass. The preexisting aggregate V14
+reader trust-strip wording refusal remains a separate limitation; this is scoped
+engineering readiness, not a full release or owner acceptance. Owner R07 remains
+pending: review affected pages at 100%, menus/touch labels, and enabled autosave
+in fresh Compose and an existing Draft. Accepted S05 import and original S08/logo
+acceptance remain preserved. Final records use normal signed preservation.
+
 ## Owner review correction — 2026-11-10
 
 The owner requests removal of the horizontal Workspace shortcuts bar from the

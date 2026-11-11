@@ -1,4 +1,4 @@
-2026-11-11 — **Responsive/control and autosave correction IN_PROGRESS.** Owner authorizes reviewed fixes using S05 methodology. Existing S08-06 presentation follow-up plus related S03-02 draft correction; preserve accepted optional-fingerprint import and prior acceptance/failures.
+2026-11-11 — **Responsive/control and autosave correction ENGINEERING PASS / UAT_READY.** Reviewed source1b451971 passed normal hooks and exact clean GitHub parity. Native Runtime/store/forms and matching Web-only obsd1 install PASS; loadedWebde20c844, protected-state preservation and HTTPS200 PASS. Owner R07 remains PENDING; accepted S05 import and prior S08/logo acceptance/failures are preserved.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
 ```json
@@ -7,7 +7,7 @@
   "slice": "S01-01",
   "original_requirement": "Theme tokens, persistent preference, system default; define authenticated versus pre-login storage and precedence",
   "source_baseline": "16bcefcd7e923bf2c0b3b66eab42b57d61d29cbd",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -90,15 +90,15 @@
       ],
       "frontend_backend_outcome": "Pages adapt at100% with contextual controls, readable text and genuine confirmed autosave for fresh/existing drafts; related original S03-02 obligation preserved.",
       "essential_qa": "Actual Runtime/store autosave, real browser layout/interaction on all active page families, focused failures/native and reviewed Web-only installation.",
-      "next_action": "Independent exact source/data/recipe review, signed normal source preservation, then matching native/Web-only delivery.",
+      "next_action": "Owner reviews corrected installed pages at100% and enabled fresh/existing-draft autosave; separate R07 acceptance pending. Final records use normal signed preservation.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -107,7 +107,23 @@
         },
         {
           "stage": "source_tests",
-          "reference": "R01\u2013R04 focused actual Runtime/browser/118 viewport-style checks, targeted menu/empty state, Firefox and native200percent large-font Save/reload PASS; normal delivery hook remains pending. Private root responsive-correction-20261111."
+          "reference": "R01\u2013R04 actual Runtime/browser/118 viewport-style checks, focused menus/empty state, Firefox and actual200percent large-font Save/reload PASS; normal sourcepush2 hook2363PASS/0FAIL/91ignored and fresh exact clean0/0 parity. Private root responsive-correction-20261111."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/native1-result.json SHA256 ffcf26995db2a8bc2bc12106e93cd9f6e3cc9d4feee270adcde25ed8f81c00a6; 598 compiler inputs match; native Runtime/store1 and native form1 PASS; exact-owned cleanup."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/install-evidence1-result.json SHA256 808c124ea447233339dd13b75f226d01563405c3afff68187d23aa7e8b903789; Webde20c844 loaded; five protected-state pairs equal, nine roles and explicit-peer HTTPS200; no owner operation."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/native1-result.json SHA256 ffcf26995db2a8bc2bc12106e93cd9f6e3cc9d4feee270adcde25ed8f81c00a6; Independent source/security/native/installer and final installed-result/docs GO; all598 inputs/five logs/12 read-back streams reconciled. Owner UAT remains separate."
+        },
+        {
+          "stage": "recovery",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/install-evidence1-result.json SHA256 808c124ea447233339dd13b75f226d01563405c3afff68187d23aa7e8b903789; Owned Runtime fixture cleanup PASS; installer retained exact prior d39a executable and durable read-back evidence; no rollback needed."
         }
       ]
     }
@@ -116,13 +132,13 @@
     "owner": "/root",
     "functional_exit": "Pages adapt at100% with contextual controls, readable text and genuine confirmed autosave for fresh/existing drafts; related original S03-02 obligation preserved.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Explicit Nov11 operator correction after image/source review. Original S05 optional-fingerprint ACCEPTED and S08/S08-05 acceptance preserved verbatim below; S08-06 prior pending owner review and all historical failures retained. Current autosave root cause UNKNOWN. Earlier planning effort/cost UNKNOWN; current work-order clock starts now. Focused fresh/existing Runtime/store and actual browser timer/reload PASS. Bounded live metadata shows earlier409/317bytes and later4x200; exact historical reason UNKNOWN. Independent review GO for finite exact prewrite no-write receipt permitting manual correction while auto retry stops; all uncertain/stale replies remain locked. Mobile first360x740 footerFAIL, added geometry diagnosticFAIL confirms360x799/footerbottom787.14; root+designer combinedreassessment attributes intrinsic spacing budget, not cascade. Both failures retained; smallest mobile-only spacing correction pending. Existing native200percent/largefont qualifier failed after savedlargefont: DPR2/outer1600/inner796/visualScale1/cssZoom1 with overflowtrue, pre-savefalse. Productlayout failure retained; diagnosticrectangle/screenshot observation added before smallest CSS correction. FullV14 aggregate stops at preexisting reader trust-strip requiredscaffoldwording; affectedCSS/auth/list gates alreadypassed, furtheraffectedgates separately checked. No fullreleaseclaim. Diagnosticzoom11 identified auth-status/header-theme right804.13 vsinner796 (no Settingscontent offender). Root+designer combinedreassessment selected two-rule max56rem headerwrap; correctedzoom12 PASS native200/largeSave/reload/keyboard withoverflowfalse. Visual05 PASS118; focusedmenu06 PASS3, clearedactivity09 PASS2, Firefox08 PASS6 (initialhistoricalengine startup failure retained; currentvendorengine tested). Runtime03/source2/browser02 PASS. OldV14aggregate readertruststripwording FAIL retained; later4affectedgates PASS. Runner lifecycle fixed with exactowned stop/readback before removal and final cleanup accounting. No additional matching passing suite repeated. Normal sourcepush1 f693d7d4 FAILED112.646s at Rust:2361PASS/2FAIL/91ignored. Two failures are old exactmarkup openings (welcome statusdetails and Generalmarkreadbutton) superseded by explicit always-text classes. Production status/form semantics unchanged; updateonly matching testselectors, exactfailedcases before normalpush2. Failedpush/logSHA4e0bd416a7fdf88574647b6480a6dfbdf8822858e28d38c384bbaa60ebeb1b49 retained; sourcef693 remains local ahead1 until routinepush succeeds.",
+    "history_reference": "Explicit Nov11 operator correction after image/source review. Original S05 optional-fingerprint ACCEPTED and S08/S08-05 acceptance preserved verbatim below; S08-06 prior pending owner review and all historical failures retained. Current autosave root cause UNKNOWN. Earlier planning effort/cost UNKNOWN; current work-order clock starts now. Focused fresh/existing Runtime/store and actual browser timer/reload PASS. Bounded live metadata shows earlier409/317bytes and later4x200; exact historical reason UNKNOWN. Independent review GO for finite exact prewrite no-write receipt permitting manual correction while auto retry stops; all uncertain/stale replies remain locked. Mobile first360x740 footerFAIL, added geometry diagnosticFAIL confirms360x799/footerbottom787.14; root+designer combinedreassessment attributes intrinsic spacing budget, not cascade. Both failures retained; smallest mobile-only spacing correction pending. Existing native200percent/largefont qualifier failed after savedlargefont: DPR2/outer1600/inner796/visualScale1/cssZoom1 with overflowtrue, pre-savefalse. Productlayout failure retained; diagnosticrectangle/screenshot observation added before smallest CSS correction. FullV14 aggregate stops at preexisting reader trust-strip requiredscaffoldwording; affectedCSS/auth/list gates alreadypassed, furtheraffectedgates separately checked. No fullreleaseclaim. Diagnosticzoom11 identified auth-status/header-theme right804.13 vsinner796 (no Settingscontent offender). Root+designer combinedreassessment selected two-rule max56rem headerwrap; correctedzoom12 PASS native200/largeSave/reload/keyboard withoverflowfalse. Visual05 PASS118; focusedmenu06 PASS3, clearedactivity09 PASS2, Firefox08 PASS6 (initialhistoricalengine startup failure retained; currentvendorengine tested). Runtime03/source2/browser02 PASS. OldV14aggregate readertruststripwording FAIL retained; later4affectedgates PASS. Runner lifecycle fixed with exactowned stop/readback before removal and final cleanup accounting. No additional matching passing suite repeated. Normal sourcepush1 f693d7d4 FAILED112.646s at Rust:2361PASS/2FAIL/91ignored. Two failures are old exactmarkup openings (welcome statusdetails and Generalmarkreadbutton) superseded by explicit always-text classes. Production status/form semantics unchanged; updateonly matching testselectors, exactfailedcases before normalpush2. Failedpush/logSHA4e0bd416a7fdf88574647b6480a6dfbdf8822858e28d38c384bbaa60ebeb1b49 retained; sourcef693 remains local ahead1 until routinepush succeeds. Superseding results: mobile correctionPASS atbothviewports; sourcepush2 PASS448.646s with2363/0/91ignored, verifiedShopkeeper and exactclean0/0source1b451971. Native1 PASS193.568s total/186.968s build,598inputs; isolated Runtime/store and dashboardform PASS. Webinstall1 PASS3.104s, loadedde20c844, fiveprotectedpairs equal/nine roles/explicitpeer HTTPS200; noowneroperation/publicmailchange. Independent source/native/installer GO; final installedresult/docs review and normal signed closeout follow. OwnerR07 remainspending; no fullV14/releaseclaim. Final independent installed-result/docs review GO: exact12 read-back streams/fiveprotectedpairs/archive5d952552 and anonymous explicitpeerHTTPS200 reconcile; no further product test needed.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
       "started_at": "2026-11-11T11:18:41Z",
-      "elapsed_status": "UNKNOWN",
-      "elapsed_seconds": null
+      "elapsed_status": "MEASURED",
+      "elapsed_seconds": 3781.371
     },
     "attempts": [],
     "next_attempt": null
@@ -132,7 +148,7 @@
     "slice": "S01-01",
     "specification": {
       "path": "docs/UX_SLICE_S08_06.md",
-      "sha256": "288f2e0033244dfbed35d694d05b1282a02d5c1f553eb7cc31da15496cb9014f"
+      "sha256": "c6f06066613e988f0d94ef916ba60215d98bc83bba57e7f61d1f3718ef631b12"
     },
     "design": {
       "journey": "Pages adapt at100% with contextual controls, readable text and genuine confirmed autosave for fresh/existing drafts; related original S03-02 obligation preserved.",
@@ -235,8 +251,10 @@
         "preserved": "Accepted S05 import, original S08/logo acceptance, owner keys/messages/settings and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s08_delivery_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/native1-result.json SHA256 ffcf26995db2a8bc2bc12106e93cd9f6e3cc9d4feee270adcde25ed8f81c00a6; actual isolated Runtime/store1 and form1 PASS;598 compiler input hashes match; owned cleanup PASS."
+        ]
       },
       {
         "id": "R06",
@@ -251,8 +269,11 @@
         "preserved": "Accepted S05 import, original S08/logo acceptance, owner keys/messages/settings and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s08_delivery_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/install-evidence1-result.json SHA256 808c124ea447233339dd13b75f226d01563405c3afff68187d23aa7e8b903789",
+          "/home/foo/Downloads/osmap-ux-s08/responsive-correction-20261111/live-login-result.json SHA256 2f6c7510b715274cae9ec95794b4f17b5ef2997dc24bbfeb61f52b9d4e58eb80; Web-only loadedidentity/nine roles/fiveequalpairs/explicitpeerHTTPS200; owner operationNONE."
+        ]
       },
       {
         "id": "R07",
@@ -278,7 +299,7 @@
     "status": "PENDING",
     "reference": "Nov11 responsive/autosave follow-up only; preserve accepted optional-fingerprint import."
   },
-  "next_action": "Independent exact source/data/recipe review, signed normal source preservation, then matching native/Web-only delivery."
+  "next_action": "Owner reviews corrected installed pages at100% and enabled fresh/existing-draft autosave; separate R07 acceptance pending. Final records use normal signed preservation."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

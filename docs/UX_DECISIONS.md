@@ -802,3 +802,13 @@ wraps without shrinking fonts. Earlier mobile-height, fixture-availability,
 Firefox-startup and zoom failures remain retained with matching corrections.
 The preexisting aggregate V14 reader trust-strip wording refusal is preserved;
 affected later UI/CSP/accessibility gates pass. No full release claim follows.
+
+The reviewed correction is installed from signed source1b451971: normal hooks
+2,363PASS/0FAIL/91ignored and fresh source/origin parity pass. Matching native
+Runtime/store and form checks pass; all598 compiler inputs match. Webde20c844
+loaded with five protected-state pairs unchanged, nine roles healthy and explicit
+obsd1 HTTPS200. Prior d39a executable and hashed read-back evidence are retained.
+No owner account operation or public-mail restart/configuration change occurred.
+Source/native/installer and final installed/docs independent review are GO;
+normal signed record preservation accompanies delivery. Owner review remains
+pending, separate from engineering readiness and full release qualification.
