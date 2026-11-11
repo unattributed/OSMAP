@@ -812,3 +812,11 @@ No owner account operation or public-mail restart/configuration change occurred.
 Source/native/installer and final installed/docs independent review are GO;
 normal signed record preservation accompanies delivery. Owner review remains
 pending, separate from engineering readiness and full release qualification.
+
+## Owner panel controls — 2026-11-11
+
+Use explicit text exceptions on selected-folder and General/Reading settings
+actions; use contextual icons consistently in Security Controls under Icons
+mode, preserving Text labels and touch fallback. Dashboard descriptive links
+share alignment, typography and trailing arrows. No Inbox/autosave/backend
+behaviour change follows from the supplied contextual screenshots.

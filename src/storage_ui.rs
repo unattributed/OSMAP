@@ -44,7 +44,7 @@ pub(crate) fn render_rail(account: &str, view: Option<&StorageView>) -> String {
     format!("<section class=\"rail-storage\" aria-label=\"Storage\"><strong>Storage</strong>{content}<p><a href=\"/settings?section=general\">View storage</a></p></section>")
 }
 pub(crate) fn render_dashboard(account: &str, view: Option<&StorageView>) -> String {
-    format!("<div>{}<p>Mail retention unavailable.</p><a href=\"/settings?section=general\">View storage details</a></div>", mailbox_storage(owned(account, view)))
+    format!("<div>{}<p>Mail retention unavailable.</p><a class=\"welcome-panel-link\" href=\"/settings?section=general\">View storage details →</a></div>", mailbox_storage(owned(account, view)))
 }
 pub(crate) fn render_settings(account: &str, view: Option<&StorageView>) -> String {
     format!(

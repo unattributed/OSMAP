@@ -1,5 +1,45 @@
 # S08-06 — Presentation style
 
+## Owner panel-control correction — 2026-11-11
+
+Outcome: the owner-requested Mailboxes, Folders, General/Reading Settings and
+Security Controls use consistent, readable contextual actions. Mailboxes empty
+message, note and Browse align; descriptive dashboard links share typography
+and the trailing ` →` cue, including disclosure summaries. Selected-folder
+controls are always labelled. General Appearance/Composition Defaults and
+Reading Mailbox Behavior actions retain visible labels in Icons mode. Security
+Controls each have a contextual icon in Icons mode; Text labels and touch
+fallback remain readable. Existing forms, routes, authentication and mutation
+semantics stay unchanged. The Inbox screenshots supply context only; no new
+Inbox change was requested. No autosave change or repeat autosave qualification.
+
+Root owns integration, existing-browser checks, records, Git and Web delivery;
+/root/web_designer_review owns the scoped UI/template files and welcome CSS;
+/root/s08_delivery_review owns independent source/result/security review.
+Use the existing presentation workflow on the five affected routes in both
+styles at1280x720 and1920x1080, plus touch labels and focused geometry/typography,
+arrow, destination and form-association checks. Run matching native renderers
+and reviewed Web-only installation; preserve accepted work and owner state.
+Initial bounded allowance7200s, two failures at a boundary require combined
+reassessment; preserve actual time/failures and UNKNOWN prior costs. Existing
+normal hooks/signing/push and exact read-back/rollback apply; no new framework,
+owner account mutation, mail send or public-mail restart/configuration change.
+Artifacts: `/home/foo/Downloads/osmap-ux-s08/panel-controls-20261111/`.
+
+The scoped correction passes45 browser checks:20desktop page contexts and20
+panel checks across both styles/sizes, plus five saved-Icons/coarse touch routes.
+Status/Search computed typography agrees; note/Browse/empty CSS-probe text x is
+identical at each checked size/input. The empty probe only qualifies CSS; it is
+not owner authentication or an actual empty-mailbox backend journey. Keyboard
+disclosures, folder destinations, General/Reading form bindings and all five
+Security icon/text/touch states pass. Existing General/Reading/status cases and
+V11/V10 consumers pass. Source1's old Reading selector and Browser1's touch icon
+inset failure are retained; narrow corresponding corrections pass. Audit-pin
+updater schema refusals/stale-pin gate failure are retained and corrected by
+actual-schema review; counts/classifications and historical claims are unchanged.
+Independent final source/data/method review is GO. Signed normal preservation,
+matching native build/Web-only installation and separate owner review remain pending.
+
 ## Responsive and functional correction — 2026-11-11
 
 The owner authorizes correction of the supplied page observations using S05's

@@ -18,7 +18,7 @@ from browser_workflows import start_server, stop_server, require
 
 
 PAGES = [
-    "/mailboxes", "/mailbox?name=INBOX", "/mailbox?name=Sent",
+    "/mailboxes", "/folders", "/mailbox?name=INBOX", "/mailbox?name=Sent",
     "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=125",
     "/mailbox?name=Archive", "/mailbox?name=Trash", "/compose", "/drafts",
     "/outbox", "/contacts", "/search?q=report", "/labels", "/notifications",
@@ -35,12 +35,18 @@ PAGES = [
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--panel-controls", action="store_true", help="Only owner-requested panel controls in both styles and desktop sizes, plus touch")
     parser.add_argument("--autosave-only", action="store_true")
     parser.add_argument("--visual-only", action="store_true")
     parser.add_argument("--engine", choices=["chromium", "firefox"], default="chromium")
     parser.add_argument("--browser")
     parser.add_argument("--pages", nargs="+", choices=PAGES)
     args = parser.parse_args()
+    if args.panel_controls and args.autosave_only:
+        parser.error("--panel-controls cannot be combined with --autosave-only")
+    if args.panel_controls:
+        args.visual_only = True
+        args.pages = ["/mailboxes", "/folders", "/settings", "/settings?section=reading", "/settings?section=security"]
     args.output.mkdir(parents=True, exist_ok=True, mode=0o700)
     report = dict(result="FAIL", engine=args.engine, scope="synthetic browser; real HTTP and account stores; not live authentication",
                   checks=[], captures=[], requests=[], external=0, sends=0)
@@ -140,6 +146,75 @@ def main():
         def capture(name):
             page.screenshot(path=str(args.output / name), full_page=False)
             report["captures"].append(name)
+
+        def panel_checks(target, path, style, touch=False):
+            actual_style = target.locator("html").get_attribute("data-presentation-style")
+            require(actual_style == style, "saved_presentation_style_mismatch")
+            coarse = target.evaluate("matchMedia('(pointer:coarse)').matches || matchMedia('(any-pointer:coarse)').matches")
+            if touch:
+                require(coarse, "touch_capability_missing")
+            def text_x(locator):
+                return locator.evaluate("e => {const w=document.createTreeWalker(e,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(n.textContent.trim()){const r=document.createRange();r.selectNodeContents(n);return r.getBoundingClientRect().x}}return null}")
+            def readable(selector):
+                labels = target.locator(selector)
+                require(labels.count() > 0, "panel_labels_missing")
+                require(labels.evaluate_all("els => els.every(e => getComputedStyle(e).position === 'static' && e.getBoundingClientRect().width > 16)"),
+                        "panel_text_labels_hidden")
+
+            if path == "/mailboxes":
+                summary = target.locator(".welcome-status-details>summary")
+                reference = target.locator(".welcome-search>summary")
+                signature = "e => {const s=getComputedStyle(e); return [s.fontFamily,s.fontSize,s.fontWeight,s.color,s.lineHeight]}"
+                require(summary.evaluate(signature) == reference.evaluate(signature), "dashboard_link_typography_differs")
+                for selector in [".welcome-browse>summary", ".welcome-search>summary", ".welcome-status-details>summary", ".welcome-activity-link", ".welcome-openpgp a", ".welcome-storage a", ".welcome-security-detail a", ".welcome-panel-heading a"]:
+                    links = target.locator(selector)
+                    require(links.count() > 0 and links.evaluate_all("els => els.every(e => e.textContent.trim().endsWith('→'))"),
+                            "dashboard_destination_arrow_missing")
+                note = target.locator(".welcome-messages>.welcome-note").first
+                browse = target.locator(".welcome-browse>summary>.presentation-label")
+                insets = dict(note=text_x(note), browse=text_x(browse), touch=touch, style=actual_style)
+                report.setdefault("dashboard_insets", []).append(insets)
+                if abs(insets["note"] - insets["browse"]) > 1:
+                    target.screenshot(path=str(args.output / "dashboard-inset-failure.png"), full_page=False)
+                require(abs(insets["note"] - insets["browse"]) <= 1, "dashboard_browse_inset_differs")
+                # CSS empty-state probe only: native renderer/source tests cover the
+                # actual empty text; this disposable DOM tests its shared CSS inset.
+                target.locator(".welcome-recent").evaluate("list => {const p=document.createElement('p');p.className='welcome-empty';p.textContent='No messages were returned from Inbox.';list.before(p);list.remove()}")
+                empty = target.locator(".welcome-messages>.welcome-empty")
+                insets["empty"] = text_x(empty)
+                require(abs(insets["note"] - insets["empty"]) <= 1, "dashboard_empty_inset_differs")
+                summary.press("Space")
+                require(target.locator(".welcome-status-details").get_attribute("open") is not None, "status_disclosure_keyboard_failed")
+            elif path == "/folders":
+                readable(".copies-details>a .presentation-label, .copies-details>.copies-secondary>summary .presentation-label")
+                link = target.locator(".copies-details>a")
+                require(link.get_attribute("href").startswith("/mailbox?name="), "folder_open_destination_changed")
+                summary = target.locator(".copies-details>.copies-secondary>summary")
+                summary.press("Space")
+                require(summary.locator("..").get_attribute("open") is not None, "folder_disclosure_keyboard_failed")
+            elif path == "/settings":
+                readable("section[aria-labelledby=general-appearance-title] .presentation-label, section[aria-labelledby=general-composition-title] .general-card-actions>.presentation-text>.presentation-label, section[aria-labelledby=general-composition-title] summary>.presentation-label")
+                for name, action in [("Save appearance", "/settings/display"), ("Save composition defaults", "/settings/composition"), ("Save signature choice", "/settings/signature")]:
+                    control = target.get_by_role("button", name=name, exact=True)
+                    require(control.evaluate("e => e.form.getAttribute('action')") == action, "general_form_association_changed")
+            elif path.endswith("reading"):
+                controls = target.locator(".reading-card-actions").first
+                require(controls.locator(".presentation-label").evaluate_all("els => els.length === 3 && els.every(e => getComputedStyle(e).position === 'static')"), "reading_behaviour_labels_hidden")
+                require(controls.locator("button").count() == 3, "reading_behaviour_actions_missing")
+                for control in controls.locator("button").all():
+                    require(control.evaluate("e => !!e.form && e.form.method === 'post' && !!e.form.querySelector('[name=csrf_token]')"), "reading_form_association_changed")
+            elif path.endswith("security"):
+                controls = target.locator(".security-overview-cards>.security-card").first.locator(".security-control>a")
+                require(controls.count() == 5, "security_controls_missing")
+                for control in controls.all():
+                    expect(control.locator(".presentation-icon")).to_be_visible() if style == "icons" and not touch else None
+                    label = control.locator(".presentation-label")
+                    require(label.count() == 1, "security_action_label_missing")
+                    if style == "text_labels" or touch:
+                        require(label.evaluate("e => getComputedStyle(e).position === 'static'"), "security_text_or_touch_label_hidden")
+                require(len(set(controls.evaluate_all("els => els.map(e=>e.getAttribute('href'))"))) == 5, "security_destinations_changed")
+            require(target.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), "panel_control_overflow")
+            report["checks"].append(dict(check="panel_controls", path=path, style=actual_style, touch=touch, coarse=coarse, result="PASS"))
 
         def login():
             visit("/login")
@@ -246,17 +321,18 @@ def main():
 
             if not args.autosave_only:
                 phase = "desktop_presentation"
-                visit("/compose")
-                page.locator("#compose-body").fill("Public synthetic draft for row-menu layout.")
-                page.locator("#compose-save").click()
-                page.wait_for_load_state("networkidle")
-                for style in (["icons"] if args.pages else ["icons", "text_labels"]):
+                if not args.panel_controls:
+                    visit("/compose")
+                    page.locator("#compose-body").fill("Public synthetic draft for row-menu layout.")
+                    page.locator("#compose-save").click()
+                    page.wait_for_load_state("networkidle")
+                for style in (["icons"] if args.pages and not args.panel_controls else ["icons", "text_labels"]):
                     visit("/settings?section=appearance")
                     form = page.locator('form[action="/settings/display"]')
                     form.locator('[name="presentation_style"]').select_option(style)
                     form.locator('button[type="submit"]').click()
                     page.wait_for_load_state("networkidle")
-                    for width, height in ([(1280, 720)] if args.pages else [(1280, 720), (1920, 1080)]):
+                    for width, height in ([(1280, 720)] if args.pages and not args.panel_controls else [(1280, 720), (1920, 1080)]):
                         page.set_viewport_size(dict(width=width, height=height))
                         for index, path in enumerate(args.pages or PAGES):
                             visit(path)
@@ -264,6 +340,8 @@ def main():
                             report["checks"].append(dict(check="page_fit", path=path, style=style, metrics=metrics))
                             if width == 1280 and style == "icons":
                                 capture(f"desktop-{index:02d}.png")
+                            if args.panel_controls:
+                                panel_checks(page, path, style)
                             if path == "/mailboxes" and style == "icons":
                                 labels = page.locator(".welcome-page .presentation-text .presentation-label")
                                 require(labels.count() >= 5, "dashboard_text_destinations_missing")
@@ -298,7 +376,7 @@ def main():
                                 label = control.locator(".presentation-label").bounding_box()
                                 require(label is not None and label["x"] >= 0 and label["x"] + label["width"] <= width + 1,
                                         "action_tooltip_outside_viewport")
-                if args.pages and "/mailboxes" in args.pages:
+                if args.pages and "/mailboxes" in args.pages and not args.panel_controls:
                     phase = "cleared_activity"
                     visit("/notifications")
                     page.get_by_role("button", name="Delete all notifications", exact=True).click()
@@ -312,7 +390,13 @@ def main():
                     capture("cleared-activity.png")
                     report["checks"].append(dict(check="cleared_activity_full_width", result="PASS"))
                 phase = "touch_presentation"
-            if not args.autosave_only and args.engine == "chromium" and not args.pages:
+            if not args.autosave_only and args.engine == "chromium" and (not args.pages or args.panel_controls):
+                if args.panel_controls:
+                    visit("/settings?section=appearance")
+                    form = page.locator('form[action="/settings/display"]')
+                    form.locator('[name="presentation_style"]').select_option("icons")
+                    form.locator('button[type="submit"]').click()
+                    page.wait_for_load_state("networkidle")
                 touch = browser.new_context(viewport=dict(width=768, height=1024), has_touch=True,
                                             storage_state=context.storage_state(), user_agent="KeyInventoryPractical")
                 touch.route("**/*", guard)
@@ -321,8 +405,15 @@ def main():
                 require(tp.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), "touch_overflow")
                 labels = tp.locator(".settings-navigation .presentation-label")
                 require(labels.count() > 0 and labels.first.is_visible(), "touch_labels_missing")
+                if args.panel_controls:
+                    for path in args.pages:
+                        tp.goto(origin + path, wait_until="networkidle")
+                        panel_checks(tp, path, "icons", touch=True)
+                    tp.goto(origin + "/settings?section=security", wait_until="networkidle")
                 tp.screenshot(path=str(args.output / "touch-security.png"), full_page=False)
                 report["captures"].append("touch-security.png")
+                if args.panel_controls:
+                    require(tp.locator("html").get_attribute("data-presentation-style") == "icons" and tp.evaluate("matchMedia('(pointer:coarse)').matches || matchMedia('(any-pointer:coarse)').matches"), "touch_capture_state_mismatch")
                 touch.close()
             require(report["external"] == 0 and report["sends"] == 0, "unexpected_external_or_send")
             report["result"] = "PASS"

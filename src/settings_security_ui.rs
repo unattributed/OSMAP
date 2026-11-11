@@ -118,6 +118,12 @@ pub(crate) fn render_security_page_with_recovery(
         })
         .unwrap_or_else(|| "Active session count unknown".into());
     let row = |title: &str, detail: &str, action: &str, enabled: bool| {
+        let action = presentation_label(action, match title {
+            "Password" => "unlock",
+            "Recovery contact" => "people",
+            "Active sessions" => "sessions",
+            _ => "shield",
+        });
         let control = if enabled {
             format!("<a class=\"button-link secondary\" href=\"/sessions\" aria-label=\"Manage sessions\">{action}</a>")
         } else {
@@ -126,7 +132,7 @@ pub(crate) fn render_security_page_with_recovery(
         format!("<div class=\"security-control\"><div><strong>{title}</strong><p>{detail}</p></div>{control}</div>")
     };
     let password = if password_available {
-        format!("<div class=\"security-control\"><div><strong>Password</strong><p>{password_detail}</p></div><a class=\"button-link secondary\" href=\"/settings/password\" aria-label=\"Change password\">Change</a></div>")
+        format!("<div class=\"security-control\"><div><strong>Password</strong><p>{password_detail}</p></div><a class=\"button-link secondary\" href=\"/settings/password\" aria-label=\"Change password\">{}</a></div>", presentation_label("Change", "unlock"))
     } else {
         row(
             "Password",

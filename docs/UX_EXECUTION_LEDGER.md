@@ -1,6 +1,225 @@
-2026-11-11 — **Responsive/control and autosave correction ENGINEERING PASS / UAT_READY.** Reviewed source1b451971 passed normal hooks and exact clean GitHub parity. Native Runtime/store/forms and matching Web-only obsd1 install PASS; loadedWebde20c844, protected-state preservation and HTTPS200 PASS. Owner R07 remains PENDING; accepted S05 import and prior S08/logo acceptance/failures are preserved.
+2026-11-11 — **Owner panel-control correction IN_PROGRESS.** Targeted Mailboxes/Folders/General/Reading/Security presentation follow-up; retain prior responsive/autosave results and all accepted work.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S01-01",
+  "original_requirement": "Theme tokens, persistent preference, system default; define authenticated versus pre-login storage and precedence",
+  "source_baseline": "aac276a680fcb539aafe8c9475e6a8e774a87380",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s08_scrum",
+      "/root/web_designer_review"
+    ],
+    "qa": [
+      "/root/s08_delivery_review"
+    ],
+    "security_review": [
+      "/root/s08_delivery_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/welcome_ui.rs",
+    "src/http/welcome.css",
+    "src/settings_general_ui.rs",
+    "src/settings_reading_ui.rs",
+    "src/settings_security_ui.rs",
+    "src/settings_copies_ui.rs",
+    "maint/ux/presentation_workflows.py",
+    "docs/UX_SLICE_S08_06.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/UX_DECISIONS.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-claims-boundary.json",
+    "src/storage_ui.rs",
+    "src/http/key_management_route_tests.rs"
+  ],
+  "related_slices": [
+    "S08-06 owner panel-control correction"
+  ],
+  "outcomes": [
+    {
+      "id": "panel-controls-consistency",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX02-001",
+        "R2-11-006",
+        "R2-12-001",
+        "R2-12-002",
+        "R2-12-003",
+        "R2-12-004"
+      ],
+      "frontend_backend_outcome": "Requested panel actions and dashboard links are consistent, readable and correctly aligned in both presentation styles, with touch labels preserved.",
+      "essential_qa": "Existing synthetic HTTP/browser checks of five routes, actual native renderer and installed identity/preservation.",
+      "next_action": "Implement scoped templates/CSS, exercise five affected routes, independent review and normal signed matching Web-only delivery.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Seven scoped UI/CSS files; no backend, URLs/form authority or persistence change."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/panel-controls-20261111/source-results.json SHA256 afcd3c39556e84229237ce824cffce59533dc07fd800cc6cd65d73b2fe10b05c"
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Requested panel actions and dashboard links are consistent, readable and correctly aligned in both presentation styles, with touch labels preserved.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Nov11 owner screenshot follow-up after prior responsive/autosave delivery; prior UAT remains pending, no acceptance inferred. Archived previous workorder retained verbatim. No new Inbox or autosave change requested. Earlier token/monetary costs UNKNOWN. Initial declaration validator refused fractional UTC timestamp; corrected to supported seconds format. No product execution or host effect. Second declaration refusal: negative coverage misclassified as positive. Combined root/reviewer source/schema reassessment GO: classify existing edge/no-overflow/no-hidden-touch/no-semantic-mutation P02 as negative; no new fixture/gate/test. No product execution or host effect. Settings source1:18PASS/1FAIL from exact old Reading button-opening selector after presentation class addition. Initial integration guessed class order; actual product markup has class after form. Correct only selector to actual opening, retain CSRF/revision/form semantics and failure log. Welcome SystemStatus disclosure selector likewise requires added scoped style class. Browser1:20desktop contexts and panel checks PASS; first coarse Icons Mailboxes Browse text-inset FAIL. Actual numeric coords absent from initial generic assertion (missing observation); report and owned cleanup PASS retained. Source coarse media forces icons+margin, selected smallest welcome-panel-link child-icon hide across inputs; global touch labels unchanged. Add numeric text-inset observation before correction retest. Browser2PASS45 checks (20desktopcontexts+20panelchecks+5touch); savedIcons/coarse verified, note/Browse/empty CSS probe x equal. General/Reading/status exact source casesPASS. Security-register pin updater refused2 nonexistent guessed schema fields, preserved fixeddiagnostic; actualschema root/reviewer reassessmentGO uses audit.summary.inventory_sha256 and remediation.refined_current.inventory_sha256. V11PASS and staleclaimsV10FAIL retained; updateonly2claimpins, counts/classifications/historicalhighbefore3154 unchanged. Confirmed fields corrected2pins; v10 corrected2PASS. Source/browser resultpacket retained with hashes; matching native/deployed/owner stillpending. Independent frozen source/data/method GO covers normal signed sourcepush and exact result-gated native/Web-only recipes. Buildrecipee6dd6a1f andinstall978c5fa6 preserve oldde20 rollback/protectedstate. Native/installed/owner outcomes remainpending.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 7200,
+      "started_at": "2026-11-11T13:06:59Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
+    },
+    "attempts": [],
+    "next_attempt": null
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S01-01",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_06.md",
+      "sha256": "381057c64252bfb20e6517a9aa7edc43f5b08ae185271f3fd8f577736db6936d"
+    },
+    "design": {
+      "journey": "Requested panel actions and dashboard links are consistent, readable and correctly aligned in both presentation styles, with touch labels preserved.",
+      "frontend": "Existing scoped templates/CSS and presentation-text exception; icons only under saved Icons preference/fine pointer.",
+      "backend": "Unchanged authenticated forms/routes; UI-only correction.",
+      "interfaces": "Preserve URLs, labels accessible names, form ownership and CSRF/revision fields.",
+      "persistence": "No schema or persistence change; preserve existing preferences and autosave.",
+      "security": "No owner credentials/key/message mutations or remote content; native synthetic renderers only.",
+      "failure_recovery": "Bounded fixed diagnostics, retain exact sources, existing executable backup/readback and Web-only recovery."
+    },
+    "tests": [
+      {
+        "id": "P01",
+        "outcome_ids": [
+          "panel-controls-consistency"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Reviewed scoped source and existing synthetic fixture/native APIs; no owner credentials.",
+        "action": "Five affected routes in both styles at desktop100%; inspect alignment, typography, arrows and label/icon states.",
+        "expected": "Requested links/controls and form destinations match; no overflow.",
+        "preserved": "Accepted S05 import and prior S08/logo results; owner accounts/mail/preferences and public services.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/panel-controls-20261111/browser2/report.json SHA256 1d1b1ac2e6cf4d5642d4cb8eca878d9920cb57092f8c5e59569809f3b42be0ba",
+          "/home/foo/Downloads/osmap-ux-s08/panel-controls-20261111/local-forms-result.json SHA256 13282d65c6654bf9600875794b66a9a2ed592881a222fc2cca9d5ec59eb74133"
+        ]
+      },
+      {
+        "id": "P02",
+        "outcome_ids": [
+          "panel-controls-consistency"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Reviewed scoped source and existing synthetic fixture/native APIs; no owner credentials.",
+        "action": "Touch/focus/disclosure checks on affected routes; preserve label fallback and action semantics.",
+        "expected": "No clipping, overflow or hidden touch labels; reachable disclosures, preserved form associations and no semantic mutation.",
+        "preserved": "Accepted S05 import and prior S08/logo results; owner accounts/mail/preferences and public services.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/panel-controls-20261111/browser2/report.json SHA256 1d1b1ac2e6cf4d5642d4cb8eca878d9920cb57092f8c5e59569809f3b42be0ba",
+          "/home/foo/Downloads/osmap-ux-s08/panel-controls-20261111/local-forms-result.json SHA256 13282d65c6654bf9600875794b66a9a2ed592881a222fc2cca9d5ec59eb74133"
+        ]
+      },
+      {
+        "id": "P03",
+        "outcome_ids": [
+          "panel-controls-consistency"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Reviewed scoped source and existing synthetic fixture/native APIs; no owner credentials.",
+        "action": "Compile exact source and run matching existing native renderers.",
+        "expected": "Matching renderer results and binary input hashes pass.",
+        "preserved": "Accepted S05 import and prior S08/logo results; owner accounts/mail/preferences and public services.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "P04",
+        "outcome_ids": [
+          "panel-controls-consistency"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Reviewed scoped source and existing synthetic fixture/native APIs; no owner credentials.",
+        "action": "Reviewed Web-only replacement and loaded identity/protected-state/service/HTTPS readback.",
+        "expected": "Matching Web serves, prior executable retained, public mail/config/owner state preserved.",
+        "preserved": "Accepted S05 import and prior S08/logo results; owner accounts/mail/preferences and public services.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "P05",
+        "outcome_ids": [
+          "panel-controls-consistency"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Reviewed scoped source and existing synthetic fixture/native APIs; no owner credentials.",
+        "action": "Owner reviews corrected panels.",
+        "expected": "Separate owner acceptance, no acceptance on their behalf.",
+        "preserved": "Accepted S05 import and prior S08/logo results; owner accounts/mail/preferences and public services.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "Scoped browser/native/installed results and independent review GO; normal signed hooks/push and fresh equality.",
+    "human_exit": "Owner accepts requested panel-control corrections."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner panel-control correction Nov11; prior accepted work preserved."
+  },
+  "next_action": "Implement scoped templates/CSS, exercise five affected routes, independent review and normal signed matching Web-only delivery."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+<!-- OSMAP_ARCHIVED_RESPONSIVE_UAT_READY_20261111 -->
 ```json
 {
   "version": 1,
@@ -302,7 +521,7 @@
   "next_action": "Owner reviews corrected installed pages at100% and enabled fresh/existing-draft autosave; separate R07 acceptance pending. Final records use normal signed preservation."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_ARCHIVED_RESPONSIVE_UAT_READY_20261111 -->
 
 2026-11-11 — **S05-02 optional-fingerprint correction PASS / ACCEPTED / CLOSED.** Owner states “UAT = PASS”. Reuse signed source4a6eae5, delivery recordsa85f24e, matching native/installed evidence and independent review GO. Documentation-only acceptance; no new test, deployment or owner operation. Separate S08-06 review remains unchanged.
 
