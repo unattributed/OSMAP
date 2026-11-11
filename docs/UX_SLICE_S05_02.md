@@ -49,6 +49,13 @@ monetary costs are UNKNOWN. Private retained artifacts remain under
 Original accepted S05-02 journeys and pending S08-06 owner review are preserved;
 this follow-up does not reopen or declare whole-sprint/release acceptance.
 
+### Optional-fingerprint owner acceptance — 2026-11-11
+
+Owner reports **UAT = PASS** for the installed optional-fingerprint correction.
+This follow-up is **PASS / ACCEPTED / CLOSED**. Matching source/native/installed
+evidence below is reused; no further import test or deployment is required.
+Prior S05 acceptance and the separate pending S08-06 review remain unchanged.
+
 ### Optional-fingerprint engineering result — 2026-11-11
 
 Signed source `4a6eae5fa2991186c6f7be53bddd3dede0fbc0df` passed normal
@@ -67,8 +74,8 @@ passed service/loaded-inode, protected-state and HTTPS checks. Public mail,
 helper/account/GPG processes and four configurations were preserved. No owner
 key import, credential replay, message operation or policy mutation occurred.
 Independent source/native/installed-record review GO.
-Owner checks the optional blank field with their own authentication separately;
-original S05 acceptance and pending S08-06 review remain unchanged. No full
+Owner acceptance of this correction is PASS as recorded above; original S05
+acceptance and pending S08-06 review remain unchanged. No full
 release qualification is asserted.
 
 ## User outcome and design

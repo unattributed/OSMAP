@@ -1,3 +1,5 @@
+2026-11-11 — **S05-02 optional-fingerprint correction PASS / ACCEPTED / CLOSED.** Owner states “UAT = PASS”. Reuse signed source4a6eae5, delivery recordsa85f24e, matching native/installed evidence and independent review GO. Documentation-only acceptance; no new test, deployment or owner operation. Separate S08-06 review remains unchanged.
+
 2026-11-11 — **S05-02 optional-fingerprint update installed; owner check PENDING.** Blank detects the key from ASC; supplied value still exact-matches. Source4a6eae5 normal hooksPASS, actual native form/importPASS, loadedWebd39a4a48 and preservation/HTTPSPASS. Independent final review GO; signed record preservation follows. Original S05 acceptance/S08-06 review remain separate.
 
 2026-11-11 — **S05-02 owner correction IN_PROGRESS:** expected public-import fingerprint optional; blank derives from file, supplied retains exact match. Existing S05 acceptance and S08-06 pending owner review remain separate.
@@ -9,7 +11,7 @@
   "slice": "S05-02",
   "original_requirement": "Public-key import/list/remove, full-fingerprint binding, explicit recipient trust, capability/policy UI and private-key provisioning SOP",
   "source_baseline": "1fa43354535aaf2d15e837d5910bc0c0d30b48f7",
-  "state": "UAT_READY",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -89,7 +91,7 @@
       ],
       "frontend_backend_outcome": "Import a public ASC certificate with blank optional fingerprint; supplied expected still exact-matches. Prior accepted S05 journeys preserved.",
       "essential_qa": "Focused source and actual disposable multipart/native import, explicit mismatch refusal, independent review and Web-only deployment preservation.",
-      "next_action": "Minimal owner import with optional field blank; no agent credential/key operation. Finish reviewed signed record preservation.",
+      "next_action": "Correction accepted and closed; preserve signed GitHub synchronization. No new development or live action.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -151,7 +153,7 @@
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "cc1ba8cf74dc7772b2442acd105b855ed2e69e92277185db4d63d5b7aa5cdc43"
+      "sha256": "07f753e08f0e56dab436ed4d274bcd472f14aea0ccee9d63d57231f1ae754fa3"
     },
     "design": {
       "journey": "Import a public ASC certificate with blank optional fingerprint; supplied expected still exact-matches. Prior accepted S05 journeys preserved.",
@@ -270,18 +272,20 @@
         "preserved": "Original S05 acceptance, owner keys/private custody/policies and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s08_delivery_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Owner message \u201cUAT = PASS\u201d, 2026-11-11 Asia/Bangkok, for the installed S05-02 optional public-import fingerprint correction."
+        ]
       }
     ],
     "engineering_exit": "Focused source and actual native changed composition pass, independent source/security/result review GO, Web-only install and exact signed GitHub preservation confirmed.",
     "human_exit": "Owner separately confirms public import works with the optional field blank; no whole-release claim."
   },
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "Nov11 optional-fingerprint follow-up only; original S05 acceptance preserved."
+    "status": "PASS",
+    "reference": "Owner message \u201cUAT = PASS\u201d, 2026-11-11 Asia/Bangkok, for the installed S05-02 optional public-import fingerprint correction."
   },
-  "next_action": "Minimal owner import with optional field blank; no agent credential/key operation. Finish reviewed signed record preservation."
+  "next_action": "Correction accepted and closed; preserve signed GitHub synchronization. No new development or live action."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
