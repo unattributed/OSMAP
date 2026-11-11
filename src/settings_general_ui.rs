@@ -503,7 +503,7 @@ mod tests {
         assert!(html
             .contains("id=\"general-mark-read\" name=\"policy\" form=\"general-mark-read-form\""));
         let button = html
-            .split_once("<button type=\"submit\" form=\"general-mark-read-form\">")
+            .split_once("<button class=\"presentation-text\" type=\"submit\" form=\"general-mark-read-form\">")
             .expect("native mark-read submit target")
             .1
             .split("</button>")

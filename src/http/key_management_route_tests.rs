@@ -1247,7 +1247,7 @@ fn welcome_system_status_reports_only_verified_account_scoped_observations() {
         }
         assert!(
             system
-                .split("<details><summary>")
+                .split("<details class=\"welcome-status-details\"><summary class=\"presentation-text\">")
                 .skip(1)
                 .any(|details| details
                     .split("</summary>")
