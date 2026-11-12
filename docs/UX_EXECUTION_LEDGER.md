@@ -60516,3 +60516,107 @@ failure's cause; router/NAT path and challenge request tuple were unobserved.
 Renewal failure is an operational finding and potential release blocker.
 No renewal run, PF opening, DNS update or mail-stack reload is authorized by
 this S10-02 test action or was performed.
+
+### 2026-11-12 — Separate S05-method ACME scope for obsd1
+
+The operator clarified that one `mail.blackbagsecurity.com` endpoint serves
+mailboxes across all domains and directed correction by the S05 method:
+expected observation → execution → diagnosis → smallest supported correction
+→ original-case and essential-negative retest. This is a separate mail
+operations work order, not S10-02 host-test authority. Root owns its single
+host queue; independent review checks the exact candidate and result. The
+initial cumulative allowance for this new scope is 2 hours of agent work,
+with actual elapsed time recorded and unknown cost retained. Two failures at
+the same functional boundary stop further retries for combined reassessment.
+
+**M01 outcome:** obsd1's scheduled ACME job no longer attempts renewal of the
+three expired legacy `mail.stumblesthedrunk.com`, `mail.unattributed.blog`, and
+`mail.waywardclowns.com` certificates that no active TLS configuration on
+obsd1 or Toronto references. The seven active configured certificates and the
+daily PF open/close renewal design remain eligible. This does not claim the
+expired files were renewed or prove that an external client never used a
+legacy hostname. The operator's one-endpoint clarification and bounded
+effective nginx/Postfix/Dovecot/httpd/Toronto/ACME review supply the account
+and service scope; no device identity is inferred from public DNS.
+
+At M01 preflight, obsd1 `/etc/acme-client.conf` was root:wheel mode 0600, one link,
+SHA256 `c2ec3c3171b29ac5d82ece2a99ec2ba8fee1beb2389f43f7f35606d08e27f118`.
+It had ten domain blocks, of which the three named legacy blocks contained only
+their own key/fullchain paths, Let's Encrypt signer and `/var/www/acme`
+challenge directory. Actual `acme-client` supports `-n` as no-operation
+configuration checking. Active nginx, Postfix and Dovecot configs on both
+known hosts contain no reference to the three legacy names; the seven active
+certificate files parse and are more than 21 days from expiry at inspection.
+The latest scheduled obsd1 run failed on the first legacy HTTP challenge and
+restored the closed PF anchor. These observations are prerequisites, not a
+candidate change or new renewal result.
+
+**Initial planned correction (before dispatch):** make one private byte-exact backup
+and one candidate of the installed ACME config, removing only the three named
+domain blocks. Reject an unexpected source hash, stanza count, duplicate,
+link/type/mode or any other content delta. Independently review the candidate
+diff. Check all seven retained handles with `acme-client -n -f <candidate>`
+without network renewal, then atomically install root:wheel mode 0600 and
+read back the exact hash/content. Run the existing scheduled wrapper once only
+if the candidate's seven certs are freshly confirmed outside its 21-day
+threshold; expected result is a no-renewal skip, no ACME PF opening, and the
+same effective closed rule. Verify cron entry, active TLS configuration,
+OSMAP and public mail service health before/after. On any config/install
+failure, restore only the exact saved original bytes, verify readback and
+retain the first failure separately from recovery. No DNS, router, public
+Dovecot/Postfix/MariaDB service or configuration change or certificate-file
+deletion is part of M01.
+Staging/validation is bounded to 15 minutes, install/recovery to 5 minutes,
+and the whole action to 30 minutes. An unexpected renewal need or any
+uncertain external effect stops before the wrapper. Matching installed
+readback and one original-case skip plus essential negative (three handles
+absent, seven present) are required before M01 PASS; neither a config parse
+nor cleanup alone qualifies the outcome.
+
+**M01 execution and retained process failure:** An exact candidate was staged
+root:wheel 0600 under `/etc/.osmap-acme-m01-20261112`, and independent
+readback confirmed that its only change is deletion of the three named
+six-line blocks (original SHA256 `c2ec3c3171b29ac5d82ece2a99ec2ba8fee1beb2389f43f7f35606d08e27f118`,
+candidate SHA256 `a902d8862eb395fe6bbdc9deb2ced87d785a8ee9791abe604a9a248f56a30577`).
+All seven retained handles returned exit 0 under `acme-client -n -f` with
+zero output bytes. A test harness then incorrectly kept the installer's live
+globals while intending to use an isolated fixture and prematurely invoked
+the installer on obsd1. It reported candidate installation PASS, but this was
+an unreviewed process deviation and is not M01 PASS. Root immediately
+restored the exact staged original through an atomic replacement; root-owned
+0600 single-link readback verified the original hash. There was no renewal,
+PF opening, DNS change, public mail-service restart or certificate deletion.
+This is the first retained install-boundary process failure; it does not
+replenish the allowance. The corrected fixture explicitly asserts that the
+real controller function's global `LIVE` and stage paths are under its
+root-owned temporary directory before invocation. Its positive, preflight
+no-replacement, post-replacement fsync failure/verified rollback, unknown
+third-state retention, and rollback-failure diagnostic cases passed. The
+live original was then installed pending independent GO for one controlled
+install and the original-case scheduled-wrapper skip retest.
+
+**M01 reviewed retest result:** Independent review gave GO for one exact
+installer SHA256 `d2b47dab7072850c215959fca1e84f3fc7f265cf4bfa8b52e82b3759743a8905`
+dispatch from a single hash-checked in-memory read over the strict obsd1 SSH
+route. It exited 0 with fixed `M01_INSTALL_PASS`, stdout 110 bytes and stderr
+0 bytes. Independent installed readback found the exact candidate SHA256
+`a902d8862eb395fe6bbdc9deb2ced87d785a8ee9791abe604a9a248f56a30577`,
+root:wheel 0600 single link, seven retained handles and exactly the three
+reviewed legacy blocks absent. No other byte of `/etc/acme-client.conf` changed. Fresh
+checks of the seven retained certificate files all passed `openssl x509
+-checkend 1814400`. The unchanged installed ACME PF wrapper then exited 0
+with one no-renewal skip marker and no open marker (stdout 73 bytes, stderr
+0); the effective `acme` PF rule was the same one-rule closed hash before
+and after (`97a3fa3db802f9d2a2011f487727b9527a197dcec93e3536ba107540c2c76e19`).
+OSMAP, mailbox helper, nginx, Postfix and Dovecot service checks passed.
+The first HTTPS post-health probe failed before execution because it used
+absent `/usr/bin/curl`; the installed executable was then observed at
+`/usr/local/bin/curl`, and only that probe was rerun. It passed TLS-verified
+`/login` content with the obsd1 hostname. This diagnostic failure is retained
+separately from installation and service health. M01's narrow outcome is
+PASS: the existing scheduled wrapper sees seven active certs outside its
+21-day threshold and skips the three removed renewal entries. It does not
+establish an external ACME challenge path, renew any certificate, change
+public DNS/router settings, or prove absence of historical direct clients.
+The cumulative agent-work duration was not precisely metered and remains
+UNKNOWN within the recorded action chronology; no allowance is reset.
