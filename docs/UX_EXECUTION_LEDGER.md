@@ -60526,6 +60526,57 @@ operator-reported maintenance results, not an OSMAP retest; no reboot was
 performed in this action. Installed OSMAP qualification remains open after
 the failed H01b cutover.
 
+**S10-02-H01c S05-method pre-dispatch plan.** The operator
+directed resolution of the H01/H01b failures and installation of the new
+binary before either host reboots. Combined independent reassessment read
+both retained receipts and separated H01's two-PID observer ambiguity from
+H01b's nested status collision and missing new-helper socket at the immediate
+observation. Expected outcome: signed source `d5ca7e13`, exact built binary
+SHA256 `fa600c0f`, and one loaded helper/serve identity on obsd1, with
+TLS-verified `/login` and preserved public mail availability. Use a fresh
+private H01c evidence directory and `new-c` in H01's root-only stage directory;
+retain H01/H01b evidence and the exact old backup. The smallest correction is
+to remove nested stream/status capture and wait a finite interval for the
+new helper's actual listener before starting serve; recovery waits finitely
+through a transient 502 to a correct-host 200, retaining each failed probe.
+Before dispatch, test the actual controller's delayed-ready original case,
+persistent-missing negative and failed-install rollback with 502→200; then
+obtain independent source/result GO and fresh post-update obsd1 capability,
+binary, stage, service and quiet-state admission. Root owns the one native
+queue; architecture prepares the private controller, baseline independently
+reviews. H01/H01b failures and the existing 24-hour cumulative allowance
+remain charged; no allowance reset or release pin is introduced. No public
+Postfix/Dovecot/MariaDB/nginx/PF mutation or host reboot is in scope. If
+native H01c fails or recovery is uncertain, preserve first failure and
+exact-owned state, stop cutover retries and report the concrete blocker.
+
+**S10-02-H01c installed result — PASS for binary cutover and immediate
+health only.** The final private controller SHA256
+`a508bd5eac207a07fc51d638538e76c7bf27786214dc24b8b1f1c2942a372999`
+passed independent source review and three actual-controller synthetic cases
+at the same hash: delayed listener and failed-serve rollback with 502→200,
+successful delayed listener/HTTPS readiness, and persistent missing listener
+refusal before new serve. After the operator-reported patches, obsd1 `ldd`
+resolved the candidate's runtime libraries; fresh target, clean signed source,
+old backup/installed binary, probe, stage hash/metadata/same filesystem and
+service checks passed. The exact candidate was staged as `new-c` and the
+controller dispatched once by hash-checked memory over strict SSH. It exited
+0 with `functional_install=PASS`, `first_failure=none`, `recovery=NOT_NEEDED`;
+receipt SHA256 is `228fc8233ee331b839ebef5bbceb88651e6c465d1f7ceb7fef8b78668d06cdf2`.
+Its private log readback matched the receipt's log SHA256, and the native
+action elapsed six seconds. The helper listener and HTTPS login each became
+ready on the second observation. Subsequent direct readback found
+`/usr/local/bin/osmap` SHA256
+`fa600c0f3d5a07b5421808eaebe204632d7fa2ad4deb6ed3df18ddcadb15cb0e`,
+root:bin 0555 one link; the pinned probe matched both loaded helper and serve
+processes to that installed inode. One helper Unix listener FD matched its
+socket path. OSMAP helper/serve, nginx, Postfix and Dovecot checks passed, and
+TLS-verified obsd1 `/login` returned the expected OSMAP page. The original
+H01/H01b failures remain retained. No host reboot or public mail-stack
+service/configuration mutation occurred. Authenticated journeys, WSTG and
+whole-application security acceptance remain separate and unqualified by
+this binary cutover.
+
 **S10-02-H03 port-80/ACME read-only reconciliation, 2026-11-12.** The operator
 clarified that temporary HTTP/80 is required for Let's Encrypt ACME HTTP
 challenges, not an always-open OSMAP browser route. On obsd1, the active root
