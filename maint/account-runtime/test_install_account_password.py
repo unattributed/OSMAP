@@ -85,6 +85,29 @@ class InstallerFailures(unittest.TestCase):
                              result)
 
 
+class NumericFstatContract(unittest.TestCase):
+    def observe(self, header, images=()):
+        row = b'root account-passwd 42 text 4, 2 88 100555 r 9041720\n'
+        def producer(name, end):
+            return b'' if name == 'ps' else header + b'\n' + row
+        with patch.object(installer, 'fixed_observation', side_effect=producer):
+            installer.require_helper_absent(set(images), time.monotonic() + 2)
+
+    def test_numeric_header_without_optional_name_accepts_and_still_checks_image(self):
+        header = b'USER CMD PID FD DEV INUM MODE R/W SZ|DV'
+        self.observe(header)
+        with self.assertRaises(installer.Refused) as error:
+            self.observe(header, [(4, 2, 88)])
+        self.assertEqual(str(error.exception), 'active_account_helper_text')
+
+    def test_optional_name_is_accepted_but_changed_columns_refuse(self):
+        header = b'USER CMD PID FD DEV INUM MODE R/W SZ|DV'
+        self.observe(header + b' NAME')
+        with self.assertRaises(installer.Refused) as error:
+            self.observe(header.replace(b'DEV', b'MOUNT'))
+        self.assertEqual(str(error.exception), 'installation_fstat_header')
+
+
 class CandidateInstallerFailures(InstallerFailures):
     def setUp(self):
         path = (Path(__file__).resolve().parents[1] / 'ux' /

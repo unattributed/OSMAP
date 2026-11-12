@@ -61426,3 +61426,21 @@ Publication-safe candidate8d6b51f uses a root-selected canonical account supplie
 privately at dispatch; source/instructions no longer contain the primary mailbox.
 No root authority or file-custody check was relaxed. All six focused tests and
 publication hygiene pass. Native dispatch still awaits normal signed delivery.
+
+Native provisioning PASS: distinct private root/Web keys, matched owner enrollment,
+epoch0 and hash identity born with readback; no service or credential changed.
+Standard installer attempt1 FAIL before publication with installation_fstat_header;
+root receipt hashf0f44587063c96516b58f91d11ee567dfbb81ac0240bf287bf15ba7054840b6a.
+Readonly installed observation identifies the same nine numeric columns with no
+optional NAME column. A distinguishing existing-consumer regression first failed;
+accept the optional pathname column while retaining ordered numeric columns,
+malformed-row refusal and loaded-image DEV/INUM refusal. This is an installer
+compatibility correction, not native service qualification. Earlier staging1
+refused before copying while transfer completion was not yet confirmed; precise
+predicate unavailable in its coarse receipt. Completed source-transfer readback,
+protected-empty-stage observation and bounded full-file reading corrected stage2,
+which passed every frozen hash. No functional test or public service was run by it.
+
+Normal push3 completed its full gate and preserved the source branch, but main
+rejected a direct update under branch protection. Draft PR82 is the ordinary main
+promotion route. No force or protection/hook bypass is authorized or used.
