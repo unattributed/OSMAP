@@ -1,5 +1,18 @@
 2026-11-12 — **S09 final UX and accessibility PASS / ACCEPTED / CLOSED under R5.** Owner all-S09 UAT, final reader Settings link, source-backed routes, actual 200% Edge zoom, signed source and matching obsd1 Web readback passed. All ten PAGE-18 security controls remain open for S10 and block epic/release acceptance. See the S09 closeout below.
 
+## Current OSMAP-UX slice status — 2026-11-12
+
+| Slice | Current status | Boundary |
+| --- | --- | --- |
+| S09-01 | PASS / ACCEPTED / CLOSED | Theme, responsive layout, focus and actual 200% browser zoom. |
+| S09-02 | PASS / ACCEPTED / CLOSED | Final mail-page and reader UI, including the OpenPGP Settings link. |
+| S09-03 | PASS / ACCEPTED / CLOSED under R5 | Settings/key/account UI and owner UAT; ten PAGE-18 security controls remain open in S10. |
+| S09-04 | PASS / ACCEPTED / CLOSED | Owner reports complete keyboard and screen-reader UAT; independent UX review passed. |
+| S10-01 / S10-02 | OPEN | Actual-helper PAGE-18 tests and independent whole-application security review remain required. |
+| OSMAP-UX epic / release | OPEN | No epic or release acceptance is inferred from S09 closure. |
+
+The JSON block labelled `OSMAP_ACTIVE_WORK_ORDER` below retains the **last completed S09 work order** for the existing validator. Its state is `ACCEPTED`; it is not an open S09 action. The S10 work order has not been activated by this closeout. Historical work-order snapshots later in this file are retained evidence, not current status.
+
 2026-11-11 — **S08-07 Junk PASS / ACCEPTED / CLOSED.** Owner explicitly reports “UAT = PASS” after moving one message from Archive to Junk without issue; screenshot shows selected Junk tab and one received-dated message. Prior source/browser/native/installed/independent GO reused; documentation-only acceptance, no new host or mail operation. Owner Junk-to-Inbox move, search and reader opening are not claimed. Prior S08/S08-05 acceptance and S08-06 pending checks preserved.
 
 2026-11-11 — **Owner panel-control correction PASS / ACCEPTED / CLOSED.** Owner explicitly states “UAT PASS” and “UAT approves” for the installed correction. Existing source, browser, native, installed and independent-review results are reused; documentation-only acceptance. Other slice and historical acceptance records remain unchanged.
