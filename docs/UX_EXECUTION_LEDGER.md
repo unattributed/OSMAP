@@ -60122,3 +60122,17 @@ No hook was bypassed and the branch remains ahead of GitHub. The changed
 dispatch will pre-create a 0600 private log but preserve the normal process
 mask while running the full unmodified push hook. A repeated failure at this
 boundary requires combined reassessment, not an unbounded retry.
+
+The changed second normal push under workstation `umask 0002` passed its
+`security-check` through the terminal completion marker but exited 141 after
+`Connection to github.com closed by remote host` appeared during the long
+pre-push check. Private hook log SHA256 is
+`8eb01614c10bdac99fba77f8708cecf9f1870c4278bdc69d71cc862450164e5a`.
+A fresh fetch showed remote `99cb01fd341db7a288d9ffc3e4faaf89dd45e269`
+and local `1b01351a0a0a3b353a691210b6729b3308219735`, still ahead two;
+there was no remote preservation. This is a transport failure after the gate
+completed, distinct from the previous test-fixture failure. Current SSH
+configuration has `ServerAliveInterval 0`. One bounded normal-hook retry with
+SSH keepalive, no force and no hook bypass is proposed; a repeated transport
+failure stops for combined reassessment. The two failures and remote state
+remain part of S10-02 delivery evidence, not product qualification.
