@@ -60274,3 +60274,245 @@ OpenAI API-key setup. Connected Codex Security Daybreak Blue access is granted,
 but the active source scan has no attested Daybreak-program execution and
 remains partial. This S10-02 ledger is the owner-authorized OSMAP scope and
 evidence record; neither historical SEP contract is an OSMAP target authority.
+
+### S10-02 reviewed obsd1 install and changed-boundary retest — planned 2026-11-11
+
+The operator explicitly directed continuation through a reviewed obsd1 install,
+live retest of the two signed fixes, port-80 reconciliation, then authenticated
+and cross-account WSTG using exact-owned identities. These are separate
+supplemental live actions; this entry does not alter the frozen S10-02 slice or
+turn source synchronization into deployment authority. Root owns the single
+host queue. Architecture review checks the install and rollback recipe;
+baseline/security review checks the retest and transport plan. The existing
+S10-02 cumulative allowance and two-failure stop continue unchanged.
+
+**Install action S10-02-H01 — original plan; final FAIL, recovery PASS.**
+Observable outcome: obsd1's
+running `osmap_serve` and `osmap_mailbox_helper` use a binary built from signed
+UX-branch source `d5ca7e13bc82a1047913eb6a1424b8b7237af44c`, with the
+login-CSRF and private search-log corrections active. Target is
+`obsd1.blackbagsecurity.com` at `192.168.1.44`, reached by the operator's
+strict-key SSH route. Read-only admission observed a clean host checkout at
+`18962ce66bcd2e38287639a8b9168fdf0eafbbff`, fast-forwardable to the
+fetched signed target, and both services healthy. Installed binary SHA256 was
+`10e2c2831f1d144be508284e26458efab10aa8534e72e011e5b4c22580ddd7f3`,
+root:bin mode 0555. These are dated starting observations, not install PASS.
+
+After independent GO, recheck target identity, clean checkout, fast-forward
+ancestry, target SHA/signatures, running services/PIDs and any in-flight or
+uncertain OSMAP operation, binary ownership/mode/hash, relevant private config
+hashes, locked dependency availability and measured build/install storage.
+Fast-forward only the host checkout; build the single release `osmap` binary
+with the lockfile and actual installed cargo toolchain, preferring offline
+cached dependencies. Check build exit, ELF identity and resulting hash before
+service mutation. Keep one private exact-owned backup of the old binary with
+verified readback SHA and a staged new root:bin mode-0555 file in
+`/usr/local/bin`. Stop `osmap_serve` first and confirm its process is gone and
+no OSMAP operation is known to be in flight; stop `osmap_mailbox_helper` and
+confirm stopped. An unobserved/uncertain active operation stops cutover for
+reassessment. Atomically rename the staged binary on the same filesystem;
+start/check helper and its exact socket/process first, then start/check serve.
+Verify new PIDs, loaded text inode per PID, installed SHA and bounded
+certificate-verified HTTPS GET `/login` 200. The preflight/build bound is 30
+minutes, cutover 3 minutes, recovery 5 minutes, with a 40-minute total bound;
+expiry or uncertain effect stops automatic workflow retry.
+No public Dovecot, Postfix, MariaDB, relay or nginx change is in scope.
+Expected: both OSMAP services run the new hash and HTTPS login remains 200.
+If an install or restart check fails, stop/check both OSMAP services, restore
+only the exact saved binary, verify its original SHA, then start/check helper
+and serve in that order within the bounded recovery action;
+retain the earliest failure and any uncertain service/resource state. A
+successful rollback is not functional PASS. No automatic retry follows a
+failed build/install. Build output and arbitrary exceptions remain private;
+the public result records fixed stage codes, outcomes and bounded accounting.
+
+**Retest action S10-02-H02, PLANNED / NOT_RUN.** After H01 PASS, use a bounded
+unauthenticated `/login` metadata probe: two bounded POSTs with empty bodies
+and unsupported `Content-Type: text/plain`, foreign Origin expecting an
+application 403 and actual Host-matching HTTPS Origin expecting application
+400 before authentication. Verify response provenance and fixed audit actions;
+neither request contains credentials, tokens or cookies. Verify installed
+search-log behavior only with an exact-owned disposable mailbox and synthetic
+query after identity/factor setup and independent account recipe review; no
+private owner mailbox contents are used. The existing local focused tests and
+developer gate remain source evidence, not installed evidence.
+
+**S10-02-H03 transport: read-only reconciliation complete.** A new HTTP
+probe remains NOT_RUN. Packet05's port-80 timeout
+remains UNKNOWN despite the healthy nginx listener. Reconcile host listener,
+PF/nginx routing and the exact LAN request path read-only; any new target
+request requires the independently reviewed changed recipe, bounded timeout
+and a classification that does not convert transport failure to PASS. Do not
+repeat packet05 unchanged.
+
+H01 preflight/build attempt 1 executed once after independent GO for that phase.
+The host checkout fast-forwarded cleanly from `18962ce6` to signed
+`d5ca7e13`; offline locked dependency admission passed. The bounded release
+build failed at `release_build`, cargo exit 101, after about 50 seconds.
+Private log SHA256 is
+`d2b3a01bc3fa246dff8b6408bdf424422d6cbdcf1976d976b9e6658fc29bf12f`;
+receipt SHA256 is
+`1fb4056474d328f94381dffa50fc739c0be70784df5efc69107163123b27de28`.
+The retained compiler diagnostic is LLVM allocation failure and rustc signal
+6, with no Rust source error, dependency-fetch error, linker failure or disk
+exhaustion observed. The host shell's measured soft data cap was 1,572,864 KiB
+and hard cap 134,217,728 KiB; causality has not been proved by allocation
+tracing. An exact-owned mode-0600 1,535,991,120-byte compiler core was moved
+from the checkout into the private H01 host directory after SHA256 readback;
+its retained hash is
+`edb9a90b1861f8d2bf1c03c5acda372e7e65c5cff46a224999b28db5e10cc9e7`.
+The host checkout is clean at `d5ca7e13`. Both OSMAP services remained healthy,
+and `/usr/local/bin/osmap` retained its original SHA. No binary staging,
+service mutation or HTTPS retest occurred at this first build attempt.
+
+The changed build-only proposal is one reviewed retry with a shell-local soft
+data cap of 8,388,608 KiB, within the measured hard cap, and one cargo job;
+the source, locked offline release profile, binary target, private diagnostic
+custody and 30-minute build bound stay fixed. This is a process-limit response
+to an observed allocation failure, not a fixed free-memory admission floor or
+claim that the server lacks capacity. Independent review of this changed
+action is pending. If this second build at the same boundary fails, stop for
+combined reassessment and preserve both failures; do not proceed to cutover.
+
+Independent review approved exactly one build-only retry after read-only
+confirmation of the 1.5 GiB soft data cap and LLVM allocation failure. A
+shell-local 8,388,608 KiB soft cap and one cargo job were used with the same
+signed source, locked offline release profile and binary target. The retry
+passed in 200 seconds, producing an ELF binary of 11,112,752 bytes with
+SHA256 `fa600c0f3d5a07b5421808eaebe204632d7fa2ad4deb6ed3df18ddcadb15cb0e`.
+Its private log SHA256 is
+`c67e18e7004bab3878902c52de3261ff9d1f69c0e108851e47be96e91372ad61`;
+receipt SHA256 is
+`dc40bb54762e5d8be8affee01351ac7dcf63314f6015b6f0a9705c5e6406e0ab`.
+Readback confirmed effective soft cap, clean host checkout at `d5ca7e13`,
+artifact hash, no second core, both OSMAP services healthy and the installed
+old binary hash unchanged. First-attempt failure remains retained. Cutover,
+installed login/search retest and S10-02 acceptance remain NOT_RUN pending
+separate review of the actual build result and cutover recipe.
+
+H01 cutover attempted after conditional independent GO, with an immediate
+quiescence check: each service had one expected listener and no accepted socket
+or child process; the persisted scheduled store parsed with five terminal jobs,
+zero nonterminal jobs and zero parse failures. The root-only exact-owned backup
+and staged binary had correct owner/mode and hashes. The first unprivileged
+readback refused access to that private directory; privileged readback then
+verified both files without restaging. Serve and helper stopped in order, and
+the new binary was atomically installed as inode 363394. Helper start and
+`rcctl check` passed, but the immediate exact process query returned two helper
+PIDs, so loaded-binary identity was ambiguous. This is H01's first cutover
+failure. Serve was not started on the new binary, and no new-binary HTTPS or
+login/security retest occurred. The duplicate was transient on the next read;
+its cause is not established. Do not turn subsequent recovery into install
+PASS.
+
+Recovery stopped the helper, verified the exact old backup, atomically
+restored its hash `10e2c2831f1d144be508284e26458efab10aa8534e72e011e5b4c22580ddd7f3`,
+then started/check both OSMAP services in helper→serve order. Their fresh PIDs
+and loaded text inodes matched the restored file. A certificate-verified probe
+using `mail.blackbagsecurity.com` pinned to obsd1 returned HTTP 421 because
+that was the wrong Host for this vhost; the corrected probe using
+`obsd1.blackbagsecurity.com` pinned to `192.168.1.44` returned HTTP 200 for
+`/login`. Cleanup/recovery PASS is separate from functional install FAIL. No
+public mail, relay or nginx service was changed. Private bounded cutover
+receipt SHA256 is
+`ee6c705cd9cb3fe53251328de73dc838b3c60318931ff01057e78f7630fd4f74`.
+The build failure and cutover observer failure occurred at distinct H01 stages;
+further install retries stopped conservatively for combined independent
+reassessment. H02
+installed login and search-log retests, authenticated WSTG and S10-02
+acceptance remain NOT_RUN.
+
+Combined independent reassessment of H01 found the cutover's immediate refusal
+was an observer defect: the exact `pgrep -xf` yielded two newline-separated
+helper PIDs, which were passed as one `fstat -p` argument. `rcctl check` only
+checks process existence. The loaded text inode of the new helper was therefore
+UNOBSERVED, not shown mismatched. Neither the rc.d wrapper nor private log
+established why the extra PID appeared, and no parent/start-time/fstat snapshot
+of it was retained; its identity and cause remain UNKNOWN. The incorrect-host
+HTTP 421 was an invalid probe, not product failure. Recovery evidence remains
+separate.
+
+**Changed action S10-02-H01b, PLANNED / NOT_RUN:** Reuse the verified signed
+source `d5ca7e13`, clean obsd1 checkout and exact release artifact SHA256
+`fa600c0f3d5a07b5421808eaebe204632d7fa2ad4deb6ed3df18ddcadb15cb0e`.
+Do not rebuild or repeat passing dependency tests. Keep H01's first two
+failures and cumulative allowance. Before any renewed cutover, exercise the
+actual exact-PID producer through the exact cardinality consumer: the retained
+two-PID value must refuse before `fstat`, and a live one-PID value must reach
+loaded-inode comparison. Independently review this changed observer and one
+finite restart/rollback recipe. Recheck current source, old binary/service
+hashes, exact backup and stage. Apply the same quiet-state, serve→helper stop,
+atomic replacement, helper→serve start and correct-host certificate-verified
+HTTPS checks. The PID consumer must accept exactly one numeric PID before
+calling `fstat`; zero or multiple PIDs triggers bounded sanitized PID/parent/
+start-time/text/socket capture and a stop before serve starts. On any failure,
+restore the exact old binary and both service states within five minutes.
+Cutover plus checks is bounded to three minutes and the whole changed action
+to ten minutes. No public mail/relay/nginx/PF changes. A cleanup PASS cannot
+close H01b functional outcome. Independent GO, actual probe discrimination
+and fresh host admission remain prerequisites; this entry is not dispatch.
+
+The first H01b PID discriminator exercised the retained actual two-PID
+producer value through the same cardinality consumer: it refused before any
+`fstat` call. Empty/failed producer and failed `fstat` each refused; a single
+PID reached inode comparison. A live obsd1 exact-PID producer then qualified
+the restored old helper's one PID and loaded inode. These checks passed but do
+not establish a failure-safe post-replacement controller or authorize another
+cutover. Private discriminator SHA256 is
+`fe0d1991b1bb08fa86aa593da0aadc6872e61fb5606327da622ae9fdd7ac32fb`.
+Independent review of the actual cutover failure handler remains pending.
+
+The first discriminator selftest wrote and removed a fixed marker in the
+private H01 host directory; this was a limited host file action, not a wholly
+read-only test. Independent review rejected its unguarded `fstat` pipeline and
+all-zero PID grammar. The corrected private discriminator checks `fstat` exit
+before parsing, accepts only bounded canonical positive-decimal PIDs, and
+uses no marker. Changed selftest PASS covered two-PID refusal, empty/failed
+producer, all-zero refusal, nonzero `fstat` with a matching text row, and
+one-PID comparison. Live one-PID loaded-inode checks passed for the restored
+helper and serve. Corrected discriminator SHA256 is
+`2e14947a568b0d3c6bc428d475bd75b66025a365e2d3c49ded7a0aa51723c52e`.
+These are observer checks only.
+
+Independent review of draft H01b controller SHA256
+`0ab60a9c5e534fe146219e9680462e4abf87097bea53a562d5f61c15513864e2`
+returned NO-GO. The draft did not capture transient PID/parent/start/text/socket
+evidence before rollback on cardinality failure; recovery could stop with a
+missing installed binary even when the verified backup remained; it did not
+pin the tested probe hash, enforce all observer/recovery timeouts, or repeat
+the fresh quiet-state admission. These are concrete controller gaps, not a
+new installed-product finding. No H01b stage, service stop, replacement or
+retest was dispatched. H01b remains PLANNED / NOT_RUN until a smaller
+failure-safe command path passes the real producer/consumer failure and
+cleanup discriminator and independent review. The two H01 failures and
+existing cumulative allowance still bind any future action.
+
+**S10-02-H03 port-80/ACME read-only reconciliation, 2026-11-12.** The operator
+clarified that temporary HTTP/80 is required for Let's Encrypt ACME HTTP
+challenges, not an always-open OSMAP browser route. On obsd1, the active root
+cron job runs the ACME PF toggle daily at 02:05 host local time with a 21-day
+renewal threshold and a one-hour cron wrapper. The installed script loads
+`acme.open.pf`, runs `acme-renew.sh`, and loads `acme.closed.pf`; an EXIT/INT/
+TERM cleanup attempts the closed rule if opened. Nginx listens on port 80 and
+serves `/.well-known/acme-challenge/` during the PF exception. Current
+effective `acme` anchor is a quick TCP/80 drop. The workstation has a direct
+LAN route to obsd1's egress interface; this rule path is consistent with
+packet05's timeout, but aggregate PF counters cannot attribute that exact historical
+packet. Keep packet05 dynamic result UNKNOWN and record the current closed
+policy separately. No port-80 request or PF/config/service change occurred.
+
+Toronto independently has the same open/closed anchor hashes, a daily 02:05
+root ACME toggle job, healthy cron and a current closed PF anchor. Its latest
+run skipped renewal because the configured certs were outside the threshold.
+On obsd1 the latest run instead opened the anchor, invoked ACME, then failed
+at HTTP challenge validation and restored the closed anchor; the wrapper
+reported exit 1. The retained error lacks HTTP status, network tuple and
+specific transport cause. Three of ten configured obsd1 certificates are
+already expired by about 24 days; the other seven are not near the 21-day
+threshold. Public DNS for the three expired names and obsd1's hostname gave
+different dynamic IPv4 addresses during read-only inspection. That mismatch
+is a routing hypothesis, not proof of host/device identity or the validation
+failure's cause; router/NAT path and challenge request tuple were unobserved.
+Renewal failure is an operational finding and potential release blocker.
+No renewal run, PF opening, DNS update or mail-stack reload is authorized by
+this S10-02 test action or was performed.
