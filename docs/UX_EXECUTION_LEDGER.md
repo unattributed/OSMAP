@@ -60107,3 +60107,18 @@ mail or service mutation occurred; cleanup was unnecessary. This proves the
 selected public path responses and local static assertion only, not installed
 binary identity, authenticated UX or Top 10 clearance. Actual elapsed time was
 not recorded and remains UNKNOWN.
+
+The first normal push attempt for signed checkpoint `7ba9b72` failed in its
+pre-push `security-check` at
+`test_account_password_rc.AccountPasswordRcTests.test_missing_and_correct_existing_directories`
+(`existing=True`): the fixture returned `PRIVATE_RUNTIME_CUSTODY_REFUSED`.
+Private hook log SHA256 is
+`f6441dc1e599fed776a5d29d8a106c8f75b9e3bacdb2d539b2888a5f346f326d`.
+The dispatch shell had set `umask 077` for private log creation and passed it
+to the hook. The test creates an existing directory with requested mode 0750;
+under that mask it becomes 0700 and correctly fails its runtime custody check.
+A single focused run under the workstation's normal `umask 0002` passed.
+No hook was bypassed and the branch remains ahead of GitHub. The changed
+dispatch will pre-create a 0600 private log but preserve the normal process
+mask while running the full unmodified push hook. A repeated failure at this
+boundary requires combined reassessment, not an unbounded retry.
