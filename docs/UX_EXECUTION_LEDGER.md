@@ -60487,6 +60487,45 @@ failure-safe command path passes the real producer/consumer failure and
 cleanup discriminator and independent review. The two H01 failures and
 existing cumulative allowance still bind any future action.
 
+**S10-02-H01b actual cutover, 2026-11-12 — FAIL; later direct recovery
+checks PASS.** The corrected private controller SHA256
+`35c664e8b5afb6617d0ba777f617748059a4b7de8d686a8bd0b8eec20d300fbe`
+passed independent source/synthetic failure-path review. Fresh obsd1 admission
+verified signed checkout `d5ca7e13`, old installed/backup SHA256 `10e2c283`,
+built/staged new SHA256 `fa600c0f`, pinned probe SHA256 `2e14947a`, clean
+checkout, running OSMAP services and absent H01b receipt/log. The exact
+controller was sent by hash-checked memory over strict SSH and ran once. Its
+receipt records `functional_install=FAIL`, first failure
+`helper_socket_owner`, `process_exit=125`, and recovery
+`OLD_HTTPS_UNKNOWN`; receipt SHA256 was
+`94276174a687fa21339898c6d91d8d7132515326f0201d5dec048ca1c43a800c`.
+Private log SHA256 `57fc98f2f9dfdd94d6f8a75fcba21dc6fcacee57d6e8a7c9ef664f414cadf418`
+matched receipt readback. The outer `helper_socket_owner` stream's retained
+status leaf was empty while its nested `quiet_fstat` log recorded exit 0. This
+identifies a controller status-capture failure. Independent count-only review
+of that retained `quiet_fstat` stream also found zero internet/unix sockets
+under the controller's predicate, so helper socket readiness failed at that
+instant; startup timing versus a sustained helper defect remains UNKNOWN.
+The nested status leaf was altered after its recorded hash by the outer
+stream's status write, and cannot be treated as a durable matching status
+readback. The recovery HTTPS body was 150 bytes with a 502 marker,
+so the controller correctly left recovery uncertain at exit. A subsequent
+direct TLS-verified obsd1 `/login` probe returned the expected OSMAP Login
+page, the installed binary and both loaded OSMAP process inodes matched the
+old binary, and OSMAP, nginx, Postfix and Dovecot service checks passed.
+These later checks establish the observed restored state, not an H01b install
+PASS or a successful in-controller recovery probe. No second H01b dispatch
+is authorized by this result. H01 and H01b are two failed cutovers at the
+same functional boundary; stop retries for combined independent reassessment
+under the existing cumulative allowance.
+
+The operator subsequently reported running `syspatch` and `pkg_add -u` on
+obsd1 and the authoritative Toronto mail host. Both supplied `syspatch`
+outputs said a reboot is needed to load the new kernel. These are
+operator-reported maintenance results, not an OSMAP retest; no reboot was
+performed in this action. Installed OSMAP qualification remains open after
+the failed H01b cutover.
+
 **S10-02-H03 port-80/ACME read-only reconciliation, 2026-11-12.** The operator
 clarified that temporary HTTP/80 is required for Let's Encrypt ACME HTTP
 challenges, not an always-open OSMAP browser route. On obsd1, the active root
