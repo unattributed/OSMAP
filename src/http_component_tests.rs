@@ -60,6 +60,7 @@ fn refused_protected_reader_does_not_report_known_empty_attachments() {
         assert!(!page.contains("No attachments."));
         assert!(!page.contains("href=\"/attachment?"));
         assert!(page.contains("data-openpgp-reader-states=\"refused\""));
+        assert!(page.contains("href=\"/settings?section=openpgp\""));
         assert!(page.contains("View source"));
     }
 }
@@ -261,6 +262,7 @@ fn compact_security_states_do_not_claim_undelivered_capabilities() {
     assert!(reader.contains("data-openpgp-reader-states=\"unassessed\""));
     assert!(!reader.contains("Decrypted locally"));
     assert!(reader.contains("<details class=\"openpgp-reader-states\""));
+    assert!(reader.contains("href=\"/settings?section=openpgp\""));
     assert!(reader.contains("data-protected-body-panel=\"true\""));
     let compose = body_text(&authenticated_get("/compose"));
     assert!(compose.contains("This message will be sent without OpenPGP protection."));

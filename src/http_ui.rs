@@ -2837,6 +2837,7 @@ fn render_reader_fragment(
         "<p>Signature and decryption results appear here when protected content is processed. This message has no such result.</p>",
         "<dl class=\"openpgp-state-list\"><dt>Decryption</dt><dd>not produced</dd><dt>Signature</dt><dd>not verified</dd><dt>Signer identity</dt><dd>not established</dd></dl>",
         "<p class=\"muted openpgp-boundary-note\">Remote content and active content remain blocked.</p>",
+        "<p><a href=\"/settings?section=openpgp\">OpenPGP settings</a></p>",
         "</details>"
     ).to_string());
     let toolbar = if let Some(neighbours) = neighbours {

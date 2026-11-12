@@ -41,6 +41,8 @@
     "src/http/drafts.css",
     "src/http_ui.rs",
     "src/welcome_ui.rs",
+    "src/openpgp_reader_ui.rs",
+    "src/http_component_tests.rs",
     "maint/security/v10-rust-assumption-audit.json",
     "maint/security/v10-fail-closed-remediation.json",
     "maint/security/v10-claims-boundary.json",
@@ -61,7 +63,7 @@
       "requirement_ids": [],
       "frontend_backend_outcome": "Reconcile final UX visuals, interaction and accessibility against the accepted references and actual authenticated route contracts across S09-01 through S09-04.",
       "essential_qa": "Focused source-browser checks, matching native and installed UX checks, independent accessibility review and separate owner usability acceptance.",
-      "next_action": "Owner approved R5. Admit the separate signed R5 planning supplement and reconcile S09 UI evidence; retain all ten PAGE-18 security controls as S10/epic/release blockers.",
+      "next_action": "R5 signed planning anchor d88793b admitted. Add the missing reader-local OpenPGP Settings link and one focused real 200% browser-zoom check, then reconcile S09 UI evidence. Ten PAGE-18 security controls remain S10/epic/release blockers.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -207,7 +209,7 @@
         "expected": "Readable labels, long content, focus and contrast with no page overflow or unexplained reference deviation.",
         "status": "PASS",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s09/retest-header-capture/capture.json; /home/foo/Downloads/osmap-ux-s09/retest-breakpoint-capture/capture.json; /home/foo/Downloads/osmap-ux-s09/final-zoom/capture.json; /home/foo/Downloads/osmap-ux-s09/final-forced-colors/capture.json; Edge visual review in S09 ledger section."
+          "/home/foo/Downloads/osmap-ux-s09/retest-header-capture/capture.json; /home/foo/Downloads/osmap-ux-s09/retest-breakpoint-capture/capture.json; /home/foo/Downloads/osmap-ux-s09/final-zoom/capture.json; /home/foo/Downloads/osmap-ux-s09/final-forced-colors/capture.json; actual Edge 200% zoom /home/foo/Downloads/osmap-ux-s09/zoom200-native/result.json SHA256 64c7991c0677972f167dba12009d579219d9a6827ab42d8e086c3436c83a6d97; Edge visual review in S09 ledger section."
         ],
         "outcome_ids": [
           "s09-final-ux"
@@ -61003,6 +61005,40 @@ The separate `docs/UX_PLAN_AMENDMENT_R5.md` supplement and new plan-manifest
 entries record that approval. This paragraph records authority, not a S09
 functional PASS or a PAGE-18 security PASS. Admission still requires the
 signed planning commit, manifest readback and independent review.
+
+**R5 admission and final source gap correction.** The R5 planning supplement
+was introduced by Shopkeeper-signed commit
+`d88793b03f8d84192645f4ad6b91fbba5e96d516`; normal checks/push passed,
+`sha256sum -c docs/UX_PLAN_SHA256SUMS` and fresh origin parity passed. All
+ten PAGE-18 result rows remain `NOT_YET_ACCEPTED`, `executed:false`.
+Independent S09 closure audit found that the retained `--zoom 2` capture was
+a CSS viewport reflow simulation, not native browser zoom, and I14's reader
+OpenPGP state had no direct Settings link. The focused correction adds an
+`/settings?section=openpgp` link to both assessed/refused and unassessed
+reader-state details, without changing crypto or mail behavior. Actual HTTP
+wrapper `compact_security_states_do_not_claim_undelivered_capabilities`,
+refused standalone/coordinated component
+`refused_protected_reader_does_not_report_known_empty_attachments`, and
+four OpenPGP reader-state tests passed; `cargo fmt --check` passed. A disposable
+Edge/Xvfb check used five native Ctrl+plus window events at a 1440 px physical
+viewport: DPR 2, CSS inner width 720, no horizontal overflow on Inbox long
+headers, legacy reader, Privacy Settings and login-error current-source
+synthetic fixtures. The reader route contains the direct Settings link.
+`/home/foo/Downloads/osmap-ux-s09/zoom200-native/result.json` SHA256
+`64c7991c0677972f167dba12009d579219d9a6827ab42d8e086c3436c83a6d97`;
+screenshots are retained alongside it. This is source/browser evidence; the
+changed Web binary is not installed yet, and S09 closure remains pending.
+The first full source gate stopped at V11 because the existing generated V10
+Rust inventories were stale after source line movement; private gate log SHA256
+`24dce95ddcac2c665014d29d51fcb0a5fcde76b7de4d4bacb9be3935cccebc18`
+is retained. The existing V10 generators refreshed the audit and remediation
+registers and two derived claims hashes. Total counts, classifications and
+fail-closed relevance were compared with signed HEAD and are unchanged;
+generator checks and the V10 governance gate pass. This is evidence metadata
+reconciliation, not new product or native qualification. The first gate
+failure remains historical. The superseding full `make security-check` passed;
+private log SHA256
+`c52b38b6082377066306481fcc9f55dedeef885a73e48f3dd76b34c0d49230d9`.
 
 
 ## Historical accepted S08-07 active order before S09 focus

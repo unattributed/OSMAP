@@ -47550,7 +47550,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http_component_tests.rs",
       "kind": "unwrap_call",
-      "line": 77
+      "line": 78
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -47558,7 +47558,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http_component_tests.rs",
       "kind": "panic_macro",
-      "line": 83
+      "line": 84
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -47566,7 +47566,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http_component_tests.rs",
       "kind": "unwrap_call",
-      "line": 89
+      "line": 90
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -47574,7 +47574,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http_component_tests.rs",
       "kind": "unwrap_call",
-      "line": 110
+      "line": 111
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -47582,7 +47582,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http_component_tests.rs",
       "kind": "unwrap_call",
-      "line": 130
+      "line": 131
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -47590,7 +47590,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http_component_tests.rs",
       "kind": "unwrap_call",
-      "line": 177
+      "line": 178
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -47598,7 +47598,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http_component_tests.rs",
       "kind": "expect_call",
-      "line": 223
+      "line": 224
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54870,7 +54870,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3367
+      "line": 3368
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54878,7 +54878,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3369
+      "line": 3370
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54886,7 +54886,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3372
+      "line": 3373
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54894,7 +54894,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3375
+      "line": 3376
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54902,7 +54902,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3382
+      "line": 3383
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54910,7 +54910,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3402
+      "line": 3403
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54918,7 +54918,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "expect_call",
-      "line": 3402
+      "line": 3403
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54926,7 +54926,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3409
+      "line": 3410
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54934,7 +54934,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "expect_call",
-      "line": 3409
+      "line": 3410
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54942,7 +54942,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3418
+      "line": 3419
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54950,7 +54950,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3427
+      "line": 3428
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54958,7 +54958,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3433
+      "line": 3434
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54966,7 +54966,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3476
+      "line": 3477
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54974,7 +54974,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "expect_call",
-      "line": 3476
+      "line": 3477
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54982,7 +54982,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "expect_call",
-      "line": 3837
+      "line": 3838
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54990,7 +54990,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "expect_call",
-      "line": 3839
+      "line": 3840
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54998,7 +54998,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3900
+      "line": 3901
     },
     {
       "classification": "production_adjacent_assumption",
@@ -55006,7 +55006,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3936
+      "line": 3937
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -106273,7 +106273,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-11-12T08:59:59Z",
+  "generated_at_utc": "2026-11-12T12:24:27Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -106329,7 +106329,7 @@
       "unwrap_call": 11604
     },
     "classification_complete": true,
-    "inventory_sha256": "b676d87e167f7f08db474bef6f857527d63d0398fe72900d94474534bbce4292",
+    "inventory_sha256": "13d79367faaae22afd36b7ac20cef19e05563848998ac99d9357474a6a581e91",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,

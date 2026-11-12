@@ -81,7 +81,7 @@ pub fn render(state: &ReaderState) -> String {
     format!(concat!(
         "<details class=\"openpgp-reader-states\" aria-label=\"OpenPGP reader states\" data-openpgp-reader-states=\"{}\"><summary><strong>{}</strong><span>{}</span></summary>",
         "<p>{}</p><dl class=\"openpgp-state-list\"><dt>Decrypted on mail host</dt><dd>{}</dd><dt>Signature</dt><dd>{}</dd><dt>Signer identity</dt><dd>{}</dd><dt>Signer fingerprint</dt><dd>{}</dd><dt>Key validity</dt><dd>{}</dd></dl>",
-        "<p class=\"muted openpgp-boundary-note\">Verified signatures do not make content safe. Active content and remote images remain blocked.</p></details>"
+        "<p class=\"muted openpgp-boundary-note\">Verified signatures do not make content safe. Active content and remote images remain blocked.</p><p><a href=\"/settings?section=openpgp\">OpenPGP settings</a></p></details>"
     ), assessment, crate::http_support::escape_html(summary), crate::http_support::escape_html(signature), crate::http_support::escape_html(explanation), decrypted, signature, identity, crate::http_support::escape_html(fingerprint), key)
 }
 
@@ -103,6 +103,7 @@ mod tests {
         assert!(html.contains("Verified signatures do not make content safe"));
         assert!(!html.contains("ui-only"));
         assert!(html.contains("data-openpgp-reader-states=\"assessed\""));
+        assert!(html.contains("href=\"/settings?section=openpgp\""));
     }
     #[test]
     fn refused_content_is_not_reported_as_successful_decryption() {
@@ -111,6 +112,7 @@ mod tests {
         assert!(html.contains("not released"));
         assert!(!html.contains("cryptographically valid"));
         assert!(html.contains("data-openpgp-reader-states=\"refused\""));
+        assert!(html.contains("href=\"/settings?section=openpgp\""));
         assert!(!html.contains("data-openpgp-reader-states=\"assessed\""));
     }
 
