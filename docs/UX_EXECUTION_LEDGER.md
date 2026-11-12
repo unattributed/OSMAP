@@ -60136,3 +60136,141 @@ configuration has `ServerAliveInterval 0`. One bounded normal-hook retry with
 SSH keepalive, no force and no hook bypass is proposed; a repeated transport
 failure stops for combined reassessment. The two failures and remote state
 remain part of S10-02 delivery evidence, not product qualification.
+
+The bounded keepalive retry kept the normal pre-push hook and workstation mask,
+passed `security-check`, and exited 0. Private push log SHA256 is
+`b1b1766827bb348535c55f6a9d0a8c2c39db8d4b160e3c98658416a7a1eba7ed`.
+Fresh fetch showed exact local/origin equality at
+`d0989fee42e9602a1671d8137b30f85fb1f5aab2`, zero ahead/behind and a
+clean tree. These delivery results do not qualify installed application code.
+
+### S10-02 transport packet05 and scoped search-log correction — 2026-11-11
+
+Independent WSTG recipe review approved exactly `OSMAP-WSTG-CONF-001`, at most
+two GET `/login` requests: verified obsd1 HTTPS first, then cleartext HTTP
+port 80 only after HTTPS200. The single-process hostname pin covered both;
+neither request included credentials, cookies or mail operations. Clean
+environment, private evidence, 5-second connect/20-second response limits and
+a 60-second outer deadline applied. The review warned that the runner treats
+any port 80 transport failure as PASS; timeout must remain uncertain and stop
+further live packets. No automatic unchanged retry was authorized.
+
+Packet05 ran once and the runner exited 0 with one reported PASS. HTTPS
+`/login` returned 200, while the HTTP port 80 request timed out. This is an
+UNKNOWN redirect/cleartext-reachability observation, not proof that port 80
+is closed or redirects. Private wrapper SHA256 is
+`089374c8c0f36d589bc839a5d6d123903964239f1f7834fe7ada1ac340ee5ecc`;
+process log SHA256 is
+`d39afcb29444e552a7a6107bd6217b920f64e104a3938a778feff6894c3879aa`.
+The private summary at
+`/home/foo/Downloads/osmap-ux-s10/wstg-unauth-20261111-packet05/osmap-wstg-20261111-230748/summary.json`
+has SHA256 `cc4e19cf48c469c6ad977a8b5f3d642067c4a9c2c56ba8bce2d552941ab16af6`;
+the report SHA256 is
+`a3babbf173bc2e1722cda67201714f328efd0139c0d3cd4f35ff3cc4cf14a306`.
+Read-only obsd1 inspection then showed nginx healthy and an IPv4 port 80
+listener, but did not establish packet05's network path or PF disposition.
+No target request was retried; further live packets and account creation
+stopped pending combined review. No cleanup was needed for these GETs.
+
+Focused independent source review identified a validated private-data logging
+boundary at current source `d0989fee`: authenticated single-mailbox `/search`
+places the exact free-text query into browser success and failure audit events,
+and the helper success audit also includes it. Both runtime loggers emit those
+events to OSMAP service logs at info/warn level. The query may be
+an excerpt of private mail. The observed source path supports CWE-532; exact
+installed log access/retention and live reproduction remain unverified. The
+separate all-mailbox batch path already omits the query. Other reviewed
+account, recovery, mail-bridge, crypto and rendering paths produced no new
+validated finding within their stated static coverage; they are not full-app
+or installed qualification. Native failed-command diagnostics and missing-Rust
+developer-gate behavior are separately retained as conditional candidates,
+not proven remote UX vulnerabilities.
+
+For T07, the one planned correction is to remove the private query field from
+browser success/failure and helper success scoped-search audit outcomes while
+preserving the user-visible search decision, result count, fixed action and
+correlation fields. Source owner is
+root; independent security and delivery reviewers are the existing
+crypto/render and baseline workers. No host, credential, mail or service action
+is part of this source change. Minimum focused checks: synthetic sensitive
+query on success and failure must be absent from rendered logs, with expected
+decision and fixed fields unchanged; then normal developer and delivery gates.
+Preserve any test failure separately. Two failures at this changed boundary
+stop for combined independent reassessment. The existing S10-02 cumulative
+allowance and prior failed runs continue; no new allowance is created.
+
+The first independent patch review returned NO-GO: the initial edit removed
+an unrelated mailbox-list `backend_reason` while leaving the scoped search
+failure `backend_reason` intact. That missed sink can contain the private
+query when the helper client reports a response mismatch. The unrelated
+mailbox-list field was restored; the scoped search field was removed. The
+helper search success event now omits query, and helper search errors use the
+fixed `backend_failed` code without copying a free-form reason. The user-facing
+search request, decision and helper protocol query remain intact. The
+separate non-search native-diagnostic logging candidate remains open.
+
+Before formatting, `cargo fmt --check` exited 1 with layout-only differences
+in `src/mailbox.rs` and `src/mailbox_helper_dispatch.rs`; `cargo fmt --all`
+applied those differences. Focused final-source checks then passed:
+`cargo test --lib helper_search_audit_omits_private_query_and_failure_reason`
+(1/1), `cargo test --lib message_search_service` (2/2), and
+`cargo test --test v8_mailbox_operation_matrix` (5/5). The focused tests render
+browser and helper search audit events with a synthetic private phrase, including
+a failure reason that echoes it, and assert the phrase is absent while fixed
+event/result fields remain. These are local changed-boundary tests, not
+installed logging or whole-app qualification. Independent final-diff review,
+full developer gate, signed preservation and installed retest remain NOT_RUN
+at this record point.
+
+The first full changed-candidate `make security-check` exited 2 at V11's V10
+fail-closed remediation consistency check. Private gate log SHA256 is
+`d71d5250c1278f9a90217be706ce5049bc65926af41b84acae325477c2a356aa`.
+The retained diagnostic names `summary.refined_total_count` 13282 versus
+13284, source-test count 13198 versus 13200, test/fixture-after 13279 versus
+13281, and a refined inventory hash drift. The newly added helper audit test
+changed derived source-test inventory; the gate failure is not a product-test
+or installed PASS. Refresh only the existing V10 audit/remediation registers
+and their claims-boundary bindings with the unchanged generators, inspect the
+actual entry delta and run their direct checks before one changed full gate.
+A repeated failure at this metadata boundary stops for combined reassessment.
+
+The unchanged V10 generators refreshed the two existing registers. The Rust
+audit now has 13,284 entries versus 13,282; the only file/count delta is two
+test `expect` calls in `src/mailbox_helper_dispatch.rs`. Its raw scanner labels
+them high-relevance production-adjacent assumptions, while the existing
+remediation classifier treats them as source test-module assumptions; refined
+high relevance remains zero. Other inventory changes are derived line offsets
+from the source edit, with non-claims unchanged. The claims boundary now binds
+the exact new counts and inventory hashes. Direct Rust-audit and remediation
+checks and the V10 governance gate each passed. Independent delta review and
+one changed full developer-gate run remain pending at this record point.
+
+Independent delta review reported GO for the changed full gate: only the two
+new helper-test `expect` entries were added, other scanner churn was line
+offsets, the refined classifier and non-claims were unchanged, and the
+claims-boundary binding matched the generated registers. The changed
+`make security-check` then exited 0 and reached `security-check complete`.
+Its private log SHA256 is
+`be7dd990d82fc70c4c924be86175f485a7905dfeda3fbdc1a47fdc681faa5278`.
+The prior V10 consistency failure remains a separate failed run. This is a
+local source delivery gate, not installed logging, authenticated WSTG or S10-02
+acceptance. Final independent delivery review, signed commit, normal push and
+fresh remote equality remain pending at this record point.
+
+Toronto credential preparation remains read-only. Two exact candidate mailbox
+names, schema, auth/userdb mappings and absence of their rows and Maildirs
+were checked. A private exact-owned SQL carrier and local fake-consumer
+failure/cleanup discriminator were prepared under the S10 sprint root, but
+real MariaDB producer-to-consumer qualification, obsd1 factor enrollment and
+exact cleanup remain NOT_RUN. The carrier has not been dispatched; no account,
+password, TOTP factor, mail or session was created. The operator offered
+optional interaction with an existing TOTP account for a later narrow login
+check; no owner credential or code was requested or used. The packet05 HTTP
+uncertainty stops further live packets until a separate reviewed recipe.
+
+The operator also corrected the working method: prior Daybreak Blue work used
+SEP authorization/evidence contracts for FCM and EPR, without a separate
+OpenAI API-key setup. Connected Codex Security Daybreak Blue access is granted,
+but the active source scan has no attested Daybreak-program execution and
+remains partial. This S10-02 ledger is the owner-authorized OSMAP scope and
+evidence record; neither historical SEP contract is an OSMAP target authority.

@@ -244,11 +244,14 @@ mod tests {
         fn search_messages(
             &self,
             _canonical_username: &str,
-            _request: &MessageSearchRequest,
+            request: &MessageSearchRequest,
         ) -> Result<Vec<MessageSearchResult>, MailboxBackendError> {
             Err(MailboxBackendError {
                 backend: "test-message-search-backend",
-                reason: "message search unavailable".to_string(),
+                reason: format!(
+                    "helper response query mismatch: expected {:?}",
+                    request.query
+                ),
             })
         }
     }
@@ -1173,9 +1176,11 @@ mod tests {
         assert_eq!(
             rendered,
             format!(
-                "ts=\"1970-01-01T01:29:13Z\" ts_unix=5353 level=info category=mailbox action=message_searched msg=\"message search completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" mailbox_name=\"INBOX\" query=\"quarterly report\" result_count=\"2\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+                "ts=\"1970-01-01T01:29:13Z\" ts_unix=5353 level=info category=mailbox action=message_searched msg=\"message search completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" mailbox_name=\"INBOX\" result_count=\"2\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
             )
         );
+        assert!(!rendered.contains("quarterly report"));
+        assert!(!rendered.contains("query="));
     }
 
     #[test]
@@ -1197,6 +1202,12 @@ mod tests {
         );
         assert_eq!(outcome.audit_event.action, "message_search_failed");
         assert_eq!(outcome.audit_event.level, LogLevel::Warn);
+        let rendered = Logger::new(LogFormat::Text, LogLevel::Debug)
+            .render_with_timestamp(&outcome.audit_event, 5353);
+        assert!(!rendered.contains("quarterly report"));
+        assert!(!rendered.contains("query="));
+        assert!(!rendered.contains("backend_reason="));
+        assert!(rendered.contains("action=message_search_failed"));
     }
 
     #[test]

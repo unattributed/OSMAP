@@ -436,6 +436,65 @@ where
 }
 
 #[cfg(unix)]
+fn search_success_audit_event(
+    response: &MailboxHelperResponse,
+    request: &MailboxHelperRequest,
+) -> Option<LogEvent> {
+    let (
+        MailboxHelperResponse::MessageSearchOk {
+            mailbox_name,
+            field,
+            results,
+            ..
+        },
+        MailboxHelperRequest::MessageSearch {
+            canonical_username, ..
+        },
+    ) = (response, request)
+    else {
+        return None;
+    };
+    Some(
+        LogEvent::new(
+            LogLevel::Info,
+            EventCategory::Mailbox,
+            "mailbox_helper_message_searched",
+            "mailbox helper searched messages",
+        )
+        .with_field("canonical_username", canonical_username.clone())
+        .with_field("mailbox_name", mailbox_name.clone())
+        .with_field("search_field", field.query_value())
+        .with_field("result_count", results.len().to_string()),
+    )
+}
+
+#[cfg(unix)]
+fn search_failure_audit_event(
+    response: &MailboxHelperResponse,
+    request: &MailboxHelperRequest,
+) -> Option<LogEvent> {
+    if !matches!(response, MailboxHelperResponse::Error { .. })
+        || !matches!(
+            request,
+            MailboxHelperRequest::MessageSearch { .. }
+                | MailboxHelperRequest::MessageSearchBatch { .. }
+        )
+    {
+        return None;
+    }
+    Some(
+        LogEvent::new(
+            LogLevel::Warn,
+            EventCategory::Mailbox,
+            "mailbox_helper_request_failed",
+            "mailbox helper request failed",
+        )
+        .with_field("operation", helper_operation_label(request))
+        .with_field("reason_code", "backend_failed"),
+    )
+}
+
+#[cfg(unix)]
 pub(super) fn log_helper_response(
     logger: &Logger,
     response: &MailboxHelperResponse,
@@ -542,28 +601,13 @@ pub(super) fn log_helper_response(
             .with_field("message_count", messages.len().to_string()),
         ),
         (
-            MailboxHelperResponse::MessageSearchOk {
-                mailbox_name,
-                query,
-                field,
-                results,
-            },
-            Some(MailboxHelperRequest::MessageSearch {
-                canonical_username, ..
-            }),
-        ) => logger.emit(
-            &LogEvent::new(
-                LogLevel::Info,
-                EventCategory::Mailbox,
-                "mailbox_helper_message_searched",
-                "mailbox helper searched messages",
-            )
-            .with_field("canonical_username", canonical_username.clone())
-            .with_field("mailbox_name", mailbox_name.clone())
-            .with_field("query", query.clone())
-            .with_field("search_field", field.query_value())
-            .with_field("result_count", results.len().to_string()),
-        ),
+            response @ MailboxHelperResponse::MessageSearchOk { .. },
+            Some(request @ MailboxHelperRequest::MessageSearch { .. }),
+        ) => {
+            if let Some(event) = search_success_audit_event(response, request) {
+                logger.emit(&event);
+            }
+        }
         (
             MailboxHelperResponse::MessageSearchBatchOk {
                 mailbox_names,
@@ -660,6 +704,17 @@ pub(super) fn log_helper_response(
             .with_field("mailbox_name", mailbox_name.clone())
             .with_field("message_bytes", message_bytes.to_string()),
         ),
+        (
+            response @ MailboxHelperResponse::Error { .. },
+            Some(
+                request @ (MailboxHelperRequest::MessageSearch { .. }
+                | MailboxHelperRequest::MessageSearchBatch { .. }),
+            ),
+        ) => {
+            if let Some(event) = search_failure_audit_event(response, request) {
+                logger.emit(&event);
+            }
+        }
         (MailboxHelperResponse::Error { backend, reason }, Some(request)) => logger.emit(
             &LogEvent::new(
                 LogLevel::Warn,
@@ -707,5 +762,53 @@ fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
         MailboxHelperRequest::AttachmentDownload { .. } => "attachment_download",
         MailboxHelperRequest::MessageMove { .. } => "message_move",
         MailboxHelperRequest::MessageAppend { .. } => "message_append",
+    }
+}
+
+#[cfg(all(test, unix))]
+mod search_audit_tests {
+    use super::*;
+    use crate::config::LogFormat;
+    use crate::mailbox::MessageSearchField;
+    use crate::mailbox_helper::MailboxHelperGrant;
+
+    #[test]
+    fn helper_search_audit_omits_private_query_and_failure_reason() {
+        let private_query = "private-mail-phrase-7a9";
+        let request = MailboxHelperRequest::MessageSearch {
+            canonical_username: "tester@example.invalid".into(),
+            mailbox_name: "INBOX".into(),
+            query: private_query.into(),
+            field: MessageSearchField::All,
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let success = MailboxHelperResponse::MessageSearchOk {
+            mailbox_name: "INBOX".into(),
+            query: private_query.into(),
+            field: MessageSearchField::All,
+            results: Vec::new(),
+        };
+        let logger = Logger::new(LogFormat::Text, LogLevel::Debug);
+        let success_line = logger.render_with_timestamp(
+            &search_success_audit_event(&success, &request).expect("search success event"),
+            5353,
+        );
+        assert!(success_line.contains("action=mailbox_helper_message_searched"));
+        assert!(success_line.contains("result_count=\"0\""));
+        assert!(!success_line.contains(private_query));
+        assert!(!success_line.contains("query="));
+
+        let failure = MailboxHelperResponse::Error {
+            backend: "private-native-output".into(),
+            reason: format!("failed while searching {private_query}"),
+        };
+        let failure_line = logger.render_with_timestamp(
+            &search_failure_audit_event(&failure, &request).expect("search failure event"),
+            5353,
+        );
+        assert!(failure_line.contains("operation=\"message_search\""));
+        assert!(failure_line.contains("reason_code=\"backend_failed\""));
+        assert!(!failure_line.contains(private_query));
+        assert!(!failure_line.contains("private-native-output"));
     }
 }
