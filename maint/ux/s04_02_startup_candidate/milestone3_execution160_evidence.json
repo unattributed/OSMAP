@@ -1,0 +1,288 @@
+{
+  "approved_delivery_head": "8848ba89950270a2c10b36e1c14a5315a17aa47e",
+  "attempt_id": "S04-02-milestone3-controlled-change160",
+  "authoritative_state_certainty": "CONFIRMED_NO_WRITE",
+  "authorization_consumed": true,
+  "bob_session_and_completed_mail_witness": "NOT_RUN",
+  "browser_sessions_created": 0,
+  "cleanup_failures": [],
+  "compiler_provenance": {
+    "compiler_receipt_sha256": "e5ff314ae456d9988df7a324165c60ff0b0fcdce9e70e2dd1d8a705e0db075cf",
+    "compiler_source_manifest_sha256": "c06f963f924c94f8652834eef58d9a90c4892a870864cba8f61b88b9a5c9c2ef",
+    "helper_compiler_receipt_sha256": "8199a698536b6d0f5c78f0901cc33c693e146df4643ede712ca9a68974071896",
+    "helper_compiler_source_manifest_sha256": "2c73b7b76d09e9b59aa34241fb57b28220c013bf7f6d69852171ef92d99c3471",
+    "helper_source_commit": "77f63794d3f60e4003db157eada39f4bd4222b6a",
+    "source_commit": "213b2f3b9ee878fcbaf37e27acb45743a3782434"
+  },
+  "current_password_fresh_totp": "NOT_RUN",
+  "diagnostic_completeness": "COMPLETE",
+  "diagnostic_preservation": "READBACK_VERIFIED",
+  "durable_intents": {
+    "alice@osmap-password.invalid": {
+      "changed_at": null,
+      "epoch": 0,
+      "pending_intent": false,
+      "state": "active",
+      "used_intent_count": 0
+    },
+    "bob@osmap-password.invalid": {
+      "changed_at": null,
+      "epoch": 0,
+      "pending_intent": false,
+      "state": "active",
+      "used_intent_count": 0
+    }
+  },
+  "elapsed_seconds": 6.062,
+  "evidence_sha256": {
+    "RUN_SOURCE_SHA256.json": "f68954f8ec5822db25b34e41d2ff34ab25f3d3c2d3e9d72be2ba561918244218",
+    "current-prerequisites.json": "137e071464b81cc1b5c817b5eab7ab2209ddd682727c66e5f2fe18d22c33f4bc",
+    "host-identity-preflight.txt": "16e90b199d1390d8a6d93fe2228b7a25b3b94cb8e0a3fd634dcf626553acfe10",
+    "independent-outcome-review.json": "d7bd898ff3faff384d9f68f62926fa15c7da69326ff5acf7cd9f729e6edce6a0",
+    "independent_full_runtime_absence.json": "21d50772fa6d8c48cbb5c3bf2cfe9d2db63c7d08d5c275aadd293225636436b6",
+    "native-http-diagnostic-before-stop.json": "94c480a1ca2101a4f1fb753cce048194244a49aa77a67c8aacdae57222898352",
+    "native-http-diagnostic.json": "b30768c64600770c60abf39579caedd08050d05d5251bc5a3edc6d0daede011d",
+    "operator-authorization.json": "87825ee96267dd1be59078e114750fe200a561c351d3b165a7fe283d418ee113",
+    "recovery_observed.json": "0b5521558b0769fb644af28b5c779b91f1737ff68506ba61c4d234d188164207",
+    "retained-evidence-fstat.txt": "f3dec1d430440c6b13247994ef783702ea690fef72c2c72976c4a3cb10824af5",
+    "startup-independent-review.json": "cb7a6fc515ac3d70393a14b4b3a5feceb795b933c36fa0998f6aa0076e0fafef",
+    "startup-result.json": "0c45a46714118da97a5c5d281e1d8741078e1f3098a46c727d4682bec6b02795"
+  },
+  "execution_ended_at": "2026-10-24T04:52:56.417046+00:00",
+  "execution_started_at": "2026-10-24T04:52:50.351181+00:00",
+  "failure_boundary": "src/http/password_tests.rs:1279-1284 apply_runtime_confinement_for_accounts(...).expect; before BrowserApp, READY and G",
+  "failure_reason": "native_confinement",
+  "final_authority_before_disposal": {
+    "alice@osmap-password.invalid": {
+      "account": "alice@osmap-password.invalid",
+      "changed_at": null,
+      "epoch": 0,
+      "noncredential_sha256": "51d1f2316fd2a99ed278d52aacdb0b7281540974b3bbdab3b5e7e1ac9699db3a",
+      "password_sha256": "087842d607ba26b6aff9092707a0b38b0180c431032ac103be5599e4f3168c07",
+      "row_count": 1,
+      "row_sha256": "76c791a64406cb6d3c880b1081b5eef38bb0cab7ad087287d8e43b971bd7e146",
+      "sql_changed_at": "20000101000000",
+      "state": "active"
+    },
+    "bob@osmap-password.invalid": {
+      "account": "bob@osmap-password.invalid",
+      "changed_at": null,
+      "epoch": 0,
+      "noncredential_sha256": "88e90fdf1d32a11ea50fe0e3b778b09948037079276666a947e467596a8a1cf7",
+      "password_sha256": "19a77e1e693e2e15d6df31eb3fd15bb2059998b532a28b60243977a57947e526",
+      "row_count": 1,
+      "row_sha256": "fba5f4210852ead9f28b6e33806268a9dd7d58db0f57834804907ce52de0ae68",
+      "sql_changed_at": "20000101000000",
+      "state": "active"
+    }
+  },
+  "frontend_cleanup": {
+    "disposed": true,
+    "requests_stopped": true
+  },
+  "guardian_child_custody": {
+    "binary_sha256": "213f40e73fb6d6a8c9116950892faf711946d7c1b3fc0e27e80d449a0f7ed550",
+    "guardian_group": 24240,
+    "guardian_pid": 24240,
+    "schema": "osmap-http-web-custody-v1",
+    "selector": "http::tests::password_tests::genuine_http_pilot::native_single_host_rust_http_password_runtime_entrypoint",
+    "web_gid": 1001,
+    "web_pid": 60184,
+    "web_uid": 1001
+  },
+  "helper_diagnostic": {
+    "helper_child_created": true,
+    "helper_exit_code": 0,
+    "helper_exit_known": true,
+    "helper_output_known": true,
+    "helper_reaped": true,
+    "helper_signal": 0,
+    "helper_signaled": false,
+    "helper_stderr_bytes": 0,
+    "helper_stdout_bytes": 0,
+    "helper_trace_category_id": 0,
+    "helper_trace_error_id": 0,
+    "helper_trace_known": false,
+    "helper_trace_operation_id": 0,
+    "helper_trace_worker": false
+  },
+  "http_artifact_sha256": "213f40e73fb6d6a8c9116950892faf711946d7c1b3fc0e27e80d449a0f7ed550",
+  "http_requests_sent_by_driver": 0,
+  "independent_outcome": "FAIL_BEFORE_READY_CONFIRMED_NO_WRITE_RUNTIME_CLEANUP_PASS_STAGES_RETAINED",
+  "independent_runtime_absent_path_count": 33,
+  "initial_authority_full17_digests": {
+    "alice@osmap-password.invalid": "76c791a64406cb6d3c880b1081b5eef38bb0cab7ad087287d8e43b971bd7e146",
+    "bob@osmap-password.invalid": "fba5f4210852ead9f28b6e33806268a9dd7d58db0f57834804907ce52de0ae68"
+  },
+  "installed_qualified": false,
+  "internal_confinement_subcause": "UNKNOWN",
+  "milestone3": "FAIL",
+  "missing_observation": "Specific confinement error/syscall/errno is not represented in the fixed sanitized diagnostic schema; raw native output was not exported or retained. No inference about execution158 cause.",
+  "native_diagnostic_evidence": {
+    "readback_verified": true,
+    "record": {
+      "compiler_source_manifest_sha256": "c06f963f924c94f8652834eef58d9a90c4892a870864cba8f61b88b9a5c9c2ef",
+      "execution_admission_sha256": "9195180f385115b4b5b850112886e4ff3e35c9f412da1fb987f976a8cb025e8e",
+      "helper_sha256": "8f1ed891c8349863db59a95ba1e3d4908bc62ba7d583ea8634d3259262ab3559",
+      "native_diagnostic": {
+        "cleanup_code": null,
+        "cleanup_status": "CONFIRMED",
+        "control_status": "EOF",
+        "first_failure": {
+          "code": "control_eof",
+          "component": "frontend_controller",
+          "operation": "ready_read",
+          "stage": "BOOTSTRAP_SENT"
+        },
+        "guardian_capture": {
+          "capture_error": null,
+          "native_code": "CAUSE_UNKNOWN",
+          "stderr_bytes": 979,
+          "stderr_eof": true,
+          "stderr_sha256": "2842e244675b27e18c92a10725b65e1c5932474acaeb697c5f6f6f73916a9a3c",
+          "stderr_stored_bytes": 979,
+          "stderr_truncated": false,
+          "stdout_bytes": 0,
+          "stdout_eof": true,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_stored_bytes": 0,
+          "stdout_truncated": false
+        },
+        "guardian_created": true,
+        "guardian_diagnostic": {
+          "capture": {
+            "capture_error": null,
+            "native_code": "native_confinement",
+            "stderr_bytes": 329,
+            "stderr_eof": true,
+            "stderr_sha256": "dff62eecbf30188f2722a9f10033f9f0ea6f71a5a15683253e06933cf335703e",
+            "stderr_stored_bytes": 329,
+            "stderr_truncated": false,
+            "stdout_bytes": 373,
+            "stdout_eof": true,
+            "stdout_sha256": "a4e112cd7234537dcb8a80571b408259e05a0f48e34e5a5382a9a887f7a09b36",
+            "stdout_stored_bytes": 373,
+            "stdout_truncated": false
+          },
+          "cause": "native_confinement",
+          "cleanup": {
+            "code": null,
+            "kill_sent": false,
+            "status": "PASS"
+          },
+          "code": "control_eof",
+          "component": "native_http_child",
+          "control_status": "eof",
+          "operation": "ready_read",
+          "schema": "osmap-http-web-guardian-failure-v2",
+          "source": {
+            "binary_sha256": "213f40e73fb6d6a8c9116950892faf711946d7c1b3fc0e27e80d449a0f7ed550",
+            "guardian_sha256": "a9e7c565affffb12a4de0623f22b6171947ab33941dab163eaaa9425d7966ee4",
+            "source_manifest_sha256": "4a6ca18f9d2de4fda4f602ed971c4e40d4c872e6373bc6cf0cc1feeb649c2de3"
+          },
+          "stage": "bootstrap_sent",
+          "web_reaped": true,
+          "web_terminal": 101
+        },
+        "guardian_diagnostic_status": "AVAILABLE",
+        "guardian_pid": 24240,
+        "guardian_reaped": true,
+        "guardian_terminal": 1,
+        "schema": "osmap-native-startup-diagnostic-v1"
+      },
+      "schema": "osmap-native-diagnostic-evidence-v1",
+      "source_commit": "213b2f3b9ee878fcbaf37e27acb45743a3782434",
+      "web_sha256": "213f40e73fb6d6a8c9116950892faf711946d7c1b3fc0e27e80d449a0f7ed550"
+    },
+    "recovery_sha256": "f481c393241a5c722fe7e2e3d9dba63dcc2bd4350414af8762776d4ff96eb87f",
+    "sha256": "5b33981852aa1744b92b112eecb49c73ea4267c4d6ab5e3d6885b7e2854071b7"
+  },
+  "native_dispatch_marker_at": "2026-10-24T04:52:52.259198+00:00",
+  "native_ready": false,
+  "old_new_password_verification": "NOT_RUN",
+  "operation_attempts": 1,
+  "original_not_after_utc": 1792818172,
+  "password_changes": 0,
+  "password_submissions": 0,
+  "post_change_cache_witness": "NOT_RUN",
+  "pre_dispatch_admission": "PASS",
+  "private_evidence_root": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261024/execution160",
+  "process_custody": {
+    "born_child_reaped": true,
+    "born_group_gone": true,
+    "root_exit": 1
+  },
+  "public_preservation": {
+    "auth_cache_size": 0,
+    "dovecot_master": true,
+    "dovecot_original_config_files": 23,
+    "explicit_original_absences": 2,
+    "operator_credentials_changed": false,
+    "password_rollback": false,
+    "production_host_accessed": false,
+    "public_config_writes": false,
+    "public_service_operations": false,
+    "qualification_flags_changed": false,
+    "rebuild": false,
+    "sql_configuration": true,
+    "workflow_retry": false
+  },
+  "result": "FAIL",
+  "retained_stages": [
+    "/var/run/osmap-service-admission-root-761cd8e2fab77df5",
+    "/tmp/osmap-pxp-stage-3561fac0ea76b0a1"
+  ],
+  "runtime_cleanup": {
+    "database_users_removed": 1,
+    "directories_removed": 5,
+    "files_removed": 12,
+    "groups_removed": 2,
+    "rows_removed": 2,
+    "users_removed": 2
+  },
+  "runtime_cleanup_disposition": "CONFIRMED",
+  "schema": "osmap-s04-02-milestone3-execution160-evidence-v1",
+  "service_sha256": "8f1ed891c8349863db59a95ba1e3d4908bc62ba7d583ea8634d3259262ab3559",
+  "service_startup": {
+    "acceptance_proof": "PENDING_ACTUAL_TRUSTED_PEER_ADMISSION",
+    "configured_trusted_relay_uid": 1001,
+    "configured_trusted_web_uid": 1001,
+    "paired_sockets_published": true,
+    "parent_prepare": false,
+    "parent_seal": false,
+    "result": "PASS",
+    "service_binary_sha256": "8f1ed891c8349863db59a95ba1e3d4908bc62ba7d583ea8634d3259262ab3559",
+    "socket_metadata": {
+      "/var/run/osmap-account-admission/admission.sock": {
+        "gid": 1003,
+        "mode": 432,
+        "uid": 0
+      },
+      "/var/run/osmap-account-mutation/mutation.sock": {
+        "gid": 1003,
+        "mode": 432,
+        "uid": 0
+      }
+    },
+    "startup_deadline_seconds": 5,
+    "startup_seconds": 0.598007
+  },
+  "session_issuance_revocation": "NOT_RUN",
+  "signature": "VERIFIED_SHOPKEEPER_F55E404E91A0753701F91B01A7228D3FB5084B34",
+  "slice_complete": false,
+  "stage_cleanup_disposition": "RETAINED_PROTECTED_DIAGNOSTIC_STAGES",
+  "stage_retention_reason": "Existing approved exact-owned stage cleanup deliberately rejects diagnostic leaves; retained under Issue79 preservation contract without adding a new cleanup wrapper or changing its admitted leaf set. Runtime resources already disposed; protected diagnostic and recovery readbacks retained locally.",
+  "start_time_provenance": "Local O_EXCL attempt/dispatch marker filesystem mtime; end is dispatcher UTC record",
+  "t03": "NOT_QUALIFIED",
+  "target": "obsd1.blackbagsecurity.com",
+  "technical_limits_seconds": {
+    "actor_lifetime": 600,
+    "cleanup_reserve": 150,
+    "enclosing_action": 690,
+    "guardian_lifetime": 330,
+    "http_journey": 300,
+    "product_password_operation": 60,
+    "ssh_transport": 650
+  },
+  "uat_accepted": false
+}

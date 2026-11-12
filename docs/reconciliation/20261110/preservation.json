@@ -1,0 +1,15 @@
+{
+  "purpose": "Public-safe historical inputs superseded by owner logo-only scope, not active source or execution.",
+  "files": [
+    {
+      "path": "s08-branding-plan.md.gz",
+      "uncompressed_sha256": "bfa4d2309479febb4508999799d5a6bbfb0cd8039ab86d3360341ad6c665a3ec",
+      "archive_sha256": "862b16605a26e525f89a9dfe1b4ee2863847c12f0b1c28df9e2668fdee8f9a92"
+    },
+    {
+      "path": "s08-partial-header.patch.gz",
+      "uncompressed_sha256": "5f91b8474c9f28778a10414686af7e31b0d689fd27cd8238c368a3b6670b0c68",
+      "archive_sha256": "43acdb045bed09e5261390b900bd25e57243bb3df3d0054e5fa770531b71d9c3"
+    }
+  ]
+}

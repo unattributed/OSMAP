@@ -1,0 +1,12 @@
+#!/bin/ksh
+# Disabled purpose-exclusive obsd1 -> Toronto account admission/epoch transport.
+# Qualification and exact key/grant provisioning precede installation.
+daemon="/usr/local/bin/python3"
+script="/usr/local/libexec/osmap/mail-backend/admission_relay.py"
+daemon_user="_osmapbridge"
+daemon_flags="${script}"
+rc_bg=YES
+rc_reload=NO
+. /etc/rc.d/rc.subr
+pexp="/usr/local/bin/python3 ${script}"
+rc_cmd "$1"

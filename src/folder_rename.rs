@@ -1,0 +1,848 @@
+//! Confirmed native rename or move of one private user-folder subtree.
+pub use crate::folder_subtree_recovery::RecoveryOutcome;
+use crate::{
+    folder_create::Refusal, folder_metadata::FolderSnapshot, mailbox_status::MailboxStatus,
+};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub enum Outcome {
+    Renamed,
+    Conflict,
+    Refused(Refusal),
+    Unknown,
+}
+/// Internal native lifecycle evidence. This is never a caller-supplied grant.
+pub struct NativeAttempt {
+    pub(crate) outcome: Outcome,
+    pub(crate) settled: bool,
+}
+impl NativeAttempt {
+    pub(crate) fn undispatched(outcome: Outcome) -> Self {
+        Self {
+            outcome,
+            settled: true,
+        }
+    }
+    pub(crate) fn unsettled(outcome: Outcome) -> Self {
+        Self {
+            outcome,
+            settled: false,
+        }
+    }
+    pub(crate) fn returned(outcome: Outcome) -> Self {
+        Self {
+            outcome,
+            settled: true,
+        }
+    }
+}
+pub struct NativeRecoveryAttempt {
+    pub(crate) attempt: NativeAttempt,
+    pub(crate) complete: bool,
+}
+/// Not serializable or cloneable; only the authenticated helper creates this
+/// while it holds the exact original completion-record lock and settlement.
+pub struct RecoveryPermit<'a> {
+    original: &'a RenameFolderRequest,
+    _step: &'a str,
+    _lock: &'a crate::private_account_file::LockedAccountFile,
+}
+impl<'a> RecoveryPermit<'a> {
+    pub(crate) fn new(
+        original: &'a RenameFolderRequest,
+        step: &'a str,
+        lock: &'a crate::private_account_file::LockedAccountFile,
+    ) -> Self {
+        Self {
+            original,
+            _step: step,
+            _lock: lock,
+        }
+    }
+    pub(crate) fn original(&self) -> &RenameFolderRequest {
+        self.original
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RenameFolderRequest {
+    account: String,
+    source: String,
+    source_guid: String,
+    parent_guid: String,
+    leaf: String,
+    action_nonce: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    destination_parent: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    source_parent_guid: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    disposition: Option<crate::folder_disposition::Purpose>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    descendants: Vec<crate::folder_subtree::Descendant>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    recovery_original_action: Option<String>,
+}
+impl RenameFolderRequest {
+    pub fn new(
+        account: &str,
+        source: &str,
+        source_guid: &str,
+        parent_guid: &str,
+        leaf: &str,
+    ) -> Result<Self, Refusal> {
+        let (parent, old_leaf) = source.rsplit_once('.').ok_or(Refusal::Invalid)?;
+        crate::folder_create::CreateFolderRequest::new(account, parent, parent_guid, old_leaf)?;
+        let create =
+            crate::folder_create::CreateFolderRequest::new(account, parent, parent_guid, leaf)?;
+        MailboxStatus::new(source, source_guid, 0, 0).map_err(|_| Refusal::Invalid)?;
+        if source == create.child()
+            || protected_name(source)
+            || protected_name(&create.child())
+            || source_guid == parent_guid
+        {
+            return Err(Refusal::Invalid);
+        }
+        Ok(Self {
+            account: account.into(),
+            source: source.into(),
+            source_guid: source_guid.into(),
+            parent_guid: parent_guid.into(),
+            leaf: leaf.into(),
+            action_nonce: crate::draft::generate_draft_id().map_err(|_| Refusal::Unavailable)?,
+            destination_parent: None,
+            source_parent_guid: None,
+            disposition: None,
+            descendants: Vec::new(),
+            recovery_original_action: None,
+        })
+    }
+    pub fn for_move(
+        account: &str,
+        source: &str,
+        source_guid: &str,
+        source_parent_guid: &str,
+        destination_parent: &str,
+        destination_parent_guid: &str,
+    ) -> Result<Self, Refusal> {
+        let (source_parent, leaf) = source.rsplit_once('.').ok_or(Refusal::Invalid)?;
+        // Reuse the source/name checks without manufacturing a same-name rename.
+        crate::folder_create::CreateFolderRequest::new(
+            account,
+            source_parent,
+            source_parent_guid,
+            leaf,
+        )?;
+        let target = crate::folder_create::CreateFolderRequest::new(
+            account,
+            destination_parent,
+            destination_parent_guid,
+            leaf,
+        )?;
+        MailboxStatus::new(source, source_guid, 0, 0).map_err(|_| Refusal::Invalid)?;
+        if protected_name(source)
+            || protected_name(&target.child())
+            || destination_parent == source_parent
+            || destination_parent == source
+            || destination_parent.starts_with(&format!("{source}."))
+            || source_guid == source_parent_guid
+            || source_guid == destination_parent_guid
+            || source_parent_guid == destination_parent_guid
+        {
+            return Err(Refusal::Invalid);
+        }
+        Ok(Self {
+            account: account.into(),
+            source: source.into(),
+            source_guid: source_guid.into(),
+            parent_guid: destination_parent_guid.into(),
+            leaf: leaf.into(),
+            action_nonce: crate::draft::generate_draft_id().map_err(|_| Refusal::Unavailable)?,
+            destination_parent: Some(destination_parent.into()),
+            source_parent_guid: Some(source_parent_guid.into()),
+            disposition: None,
+            descendants: Vec::new(),
+            recovery_original_action: None,
+        })
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn for_disposition(
+        account: &str,
+        source: &str,
+        source_guid: &str,
+        source_parent_guid: &str,
+        parent: &str,
+        parent_guid: &str,
+        leaf: &str,
+        action_nonce: &str,
+        purpose: crate::folder_disposition::Purpose,
+    ) -> Result<Self, Refusal> {
+        let result = Self {
+            account: account.into(),
+            source: source.into(),
+            source_guid: source_guid.into(),
+            parent_guid: parent_guid.into(),
+            leaf: leaf.into(),
+            action_nonce: action_nonce.into(),
+            destination_parent: Some(parent.into()),
+            source_parent_guid: Some(source_parent_guid.into()),
+            disposition: Some(purpose),
+            descendants: Vec::new(),
+            recovery_original_action: None,
+        };
+        crate::folder_disposition::validate_request(&result)?;
+        Ok(result)
+    }
+    pub fn disposition(&self) -> Option<&crate::folder_disposition::Purpose> {
+        self.disposition.as_ref()
+    }
+    pub(crate) fn is_recovery(&self) -> bool {
+        self.recovery_original_action.is_some()
+    }
+    pub(crate) fn reserved_recovery_bytes(&self) -> Result<usize, Refusal> {
+        let mut recovery = self.clone();
+        recovery.recovery_original_action = Some(self.action_nonce.clone());
+        // Both action nonces have fixed width. This is a capacity projection,
+        // not a valid request or a dispatch authority.
+        serde_json::to_vec(&recovery)
+            .map(|b| b.len())
+            .map_err(|_| Refusal::Unavailable)
+    }
+    pub(crate) fn recovery_original(&self) -> Result<Self, Refusal> {
+        let action = self
+            .recovery_original_action
+            .as_ref()
+            .ok_or(Refusal::Invalid)?;
+        if action == self.action_nonce() {
+            return Err(Refusal::Invalid);
+        }
+        let mut original = self.clone();
+        original.action_nonce = action.clone();
+        original.recovery_original_action = None;
+        original.validate()?;
+        if original.descendants().is_empty() {
+            return Err(Refusal::Invalid);
+        }
+        Ok(original)
+    }
+    pub(crate) fn for_recovery(&self, nonce: &str) -> Result<Self, Refusal> {
+        if self.is_recovery() {
+            return Err(Refusal::Invalid);
+        }
+        let mut request = self.clone();
+        request.recovery_original_action = Some(self.action_nonce.clone());
+        request.action_nonce = nonce.into();
+        request.validate()?;
+        Ok(request)
+    }
+    pub(crate) fn descendants(&self) -> &[crate::folder_subtree::Descendant] {
+        &self.descendants
+    }
+    #[cfg(test)]
+    pub(crate) fn fixture_destination_guid(&self, name: &str) -> Option<String> {
+        crate::folder_subtree::fixture_destination_guid(self, name)
+    }
+    pub(crate) fn with_descendants(
+        mut self,
+        children: Vec<crate::folder_subtree::Descendant>,
+    ) -> Result<Self, Refusal> {
+        self.descendants = children;
+        self.validate()?;
+        Ok(self)
+    }
+    #[cfg(test)]
+    pub(crate) fn bind_subtree<B: crate::mailbox::MailboxBackend>(
+        &self,
+        backend: &B,
+    ) -> Result<Self, Refusal> {
+        self.clone()
+            .with_descendants(crate::folder_subtree::capture(backend, self)?)
+    }
+    pub fn is_move(&self) -> bool {
+        self.destination_parent.is_some()
+    }
+    pub fn source_parent(&self) -> &str {
+        self.source.rsplit_once('.').map_or("", |v| v.0)
+    }
+    pub fn source_parent_guid(&self) -> &str {
+        self.source_parent_guid
+            .as_deref()
+            .unwrap_or(&self.parent_guid)
+    }
+    pub fn account(&self) -> &str {
+        &self.account
+    }
+    pub fn source(&self) -> &str {
+        &self.source
+    }
+    pub fn source_guid(&self) -> &str {
+        &self.source_guid
+    }
+    pub fn parent_guid(&self) -> &str {
+        &self.parent_guid
+    }
+    pub fn leaf(&self) -> &str {
+        &self.leaf
+    }
+    pub fn parent(&self) -> &str {
+        self.destination_parent
+            .as_deref()
+            .unwrap_or_else(|| self.source_parent())
+    }
+    pub fn destination(&self) -> String {
+        format!("{}.{}", self.parent(), self.leaf)
+    }
+    pub fn action_nonce(&self) -> &str {
+        &self.action_nonce
+    }
+    pub fn validate(&self) -> Result<(), Refusal> {
+        if self.is_recovery() {
+            if self.action_nonce.len() != 32
+                || !self
+                    .action_nonce
+                    .bytes()
+                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+            {
+                return Err(Refusal::Invalid);
+            }
+            self.recovery_original()?;
+            if serde_json::to_vec(self)
+                .map_err(|_| Refusal::Unavailable)?
+                .len()
+                > 2048
+            {
+                return Err(Refusal::Capacity);
+            }
+            return Ok(());
+        }
+        crate::folder_subtree::validate_bindings(self)?;
+        if self.disposition.is_some() {
+            return crate::folder_disposition::validate_request(self);
+        }
+        if self.action_nonce.len() != 32
+            || !self
+                .action_nonce
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        {
+            return Err(Refusal::Invalid);
+        }
+        if let Some(parent) = &self.destination_parent {
+            if self.source.rsplit_once('.').map(|v| v.1) != Some(self.leaf.as_str()) {
+                return Err(Refusal::Invalid);
+            }
+            return Self::for_move(
+                &self.account,
+                &self.source,
+                &self.source_guid,
+                self.source_parent_guid.as_deref().ok_or(Refusal::Invalid)?,
+                parent,
+                &self.parent_guid,
+            )
+            .map(|_| ());
+        }
+        if self.source_parent_guid.is_some() {
+            return Err(Refusal::Invalid);
+        }
+        Self::new(
+            &self.account,
+            &self.source,
+            &self.source_guid,
+            &self.parent_guid,
+            &self.leaf,
+        )
+        .map(|_| ())
+    }
+    pub fn validate_source_parent(
+        &self,
+        snapshot: &FolderSnapshot,
+        status: &MailboxStatus,
+    ) -> Result<(), Refusal> {
+        if self.disposition.is_some() {
+            return crate::folder_disposition::validate_source_parent(self, snapshot, status);
+        }
+        match crate::folder_create::validate_creation_parent(
+            self.account(),
+            self.source_parent(),
+            snapshot,
+            status,
+        ) {
+            Ok(()) | Err(Refusal::Capacity) => (),
+            Err(e) => return Err(e),
+        }
+        if status.guid() != self.source_parent_guid() {
+            return Err(Refusal::Stale);
+        }
+        Ok(())
+    }
+    pub(crate) fn validate_destination_parent(
+        &self,
+        snapshot: &FolderSnapshot,
+        parent: &MailboxStatus,
+    ) -> Result<(), Refusal> {
+        if self.disposition.is_some() {
+            return crate::folder_disposition::validate_destination_parent(self, snapshot, parent);
+        }
+        self.validate()?;
+        let create = crate::folder_create::CreateFolderRequest::new(
+            self.account(),
+            self.parent(),
+            self.parent_guid(),
+            self.leaf(),
+        )?;
+        match create.validate_parent(snapshot, parent) {
+            Ok(()) | Err(Refusal::Capacity) => (),
+            Err(e) => return Err(e),
+        }
+        if self.is_move()
+            && snapshot
+                .folders()
+                .iter()
+                .filter(|folder| {
+                    folder.name() == self.parent()
+                        || self.parent().starts_with(&format!("{}.", folder.name()))
+                })
+                .any(|folder| {
+                    !folder.special_use().is_empty()
+                        || folder.flags().iter().any(|flag| {
+                            ![
+                                "\\HasChildren",
+                                "\\HasNoChildren",
+                                "\\Subscribed",
+                                "\\Marked",
+                                "\\Unmarked",
+                            ]
+                            .iter()
+                            .any(|allowed| flag.eq_ignore_ascii_case(allowed))
+                        })
+                })
+        {
+            return Err(Refusal::Invalid);
+        }
+        Ok(())
+    }
+    pub fn validate_before(
+        &self,
+        snapshot: &FolderSnapshot,
+        source: &MailboxStatus,
+        parent: &MailboxStatus,
+    ) -> Result<(), Refusal> {
+        if self.disposition.is_some() {
+            return crate::folder_disposition::validate_before(self, snapshot, source, parent);
+        }
+        self.validate()?;
+        validate_source(self.account(), self.source(), snapshot, source)?;
+        self.validate_destination_parent(snapshot, parent)?;
+        if source.guid() != self.source_guid() || parent.guid() != self.parent_guid() {
+            return Err(Refusal::Stale);
+        }
+        Ok(())
+    }
+    pub(crate) fn accepts_response(&self, returned: &Self) -> bool {
+        self == returned && returned.validate().is_ok()
+    }
+}
+/// Fixed system names are protected at every INBOX hierarchy level.
+pub(crate) fn protected_name(name: &str) -> bool {
+    !name.starts_with("INBOX.")
+        || name.split('.').skip(1).any(|part| {
+            [
+                "inbox",
+                "drafts",
+                "working drafts",
+                "sent",
+                "archive",
+                "bin",
+                "trash",
+                "junk",
+                "spam",
+                "osmap",
+                "documents",
+                "documentsbin",
+            ]
+            .iter()
+            .any(|protected| part.eq_ignore_ascii_case(protected))
+        })
+}
+pub(crate) fn validate_source(
+    account: &str,
+    name: &str,
+    snapshot: &FolderSnapshot,
+    status: &MailboxStatus,
+) -> Result<(), Refusal> {
+    snapshot
+        .validate_for(account)
+        .map_err(|_| Refusal::Unavailable)?;
+    status.validate(name).map_err(|_| Refusal::Unavailable)?;
+    if protected_name(name) {
+        return Err(Refusal::Invalid);
+    }
+    crate::folder_create::validate_private_namespace(snapshot, name)?;
+    let folder = snapshot
+        .folder(account, name)
+        .map_err(|_| Refusal::Unavailable)?;
+    if !crate::sent_location::selectable(snapshot, account, name)
+        || folder.delimiter() != Some('.')
+        || folder.flags().iter().any(|flag| {
+            ![
+                "\\HasChildren",
+                "\\HasNoChildren",
+                "\\Subscribed",
+                "\\Marked",
+                "\\Unmarked",
+            ]
+            .iter()
+            .any(|allowed| flag.eq_ignore_ascii_case(allowed))
+        })
+    {
+        return Err(Refusal::Invalid);
+    }
+    crate::folder_subtree::names(snapshot, account, name, false)?;
+    // Ancestor role facts also protect user-looking children of system folders.
+    for ancestor in snapshot
+        .folders()
+        .iter()
+        .filter(|f| name.starts_with(&format!("{}.", f.name())) && f.name() != "INBOX")
+    {
+        if !ancestor.special_use().is_empty() || ancestor.has_flag("\\NonExistent") {
+            return Err(Refusal::Invalid);
+        }
+    }
+    Ok(())
+}
+/// One account-bound pending rename; role writers use the same private lock.
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct RecoveryIntent {
+    pub(crate) nonce: String,
+    pub(crate) dispatched: bool,
+}
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RoleRecord {
+    version: u8,
+    account: String,
+    pending: Option<RenameFolderRequest>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pending_delete: Option<crate::folder_delete::DeleteFolderRequest>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    recovery: Option<RecoveryIntent>,
+}
+pub(crate) struct RoleLease {
+    file: crate::private_account_file::LockedAccountFile,
+    account: String,
+    pending: Option<RenameFolderRequest>,
+    pending_delete: Option<crate::folder_delete::DeleteFolderRequest>,
+    recovery: Option<RecoveryIntent>,
+}
+impl RoleLease {
+    pub(crate) fn recovery(&self) -> Option<&RecoveryIntent> {
+        self.recovery.as_ref()
+    }
+    pub(crate) fn set_recovery(&mut self, recovery: Option<RecoveryIntent>) -> Result<(), Refusal> {
+        let bytes = serde_json::to_vec(&RoleRecord {
+            version: 1,
+            account: self.account.clone(),
+            pending: self.pending.clone(),
+            pending_delete: self.pending_delete.clone(),
+            recovery: recovery.clone(),
+        })
+        .map_err(|_| Refusal::Unavailable)?;
+        if bytes.len() > 4096 {
+            return Err(Refusal::Capacity);
+        }
+        self.file.write(&bytes).map_err(|_| Refusal::Unavailable)?;
+        self.recovery = recovery;
+        Ok(())
+    }
+    pub(crate) fn account(&self) -> &str {
+        &self.account
+    }
+    pub(crate) fn can_begin(&self, request: &RenameFolderRequest) -> Result<(), Refusal> {
+        request.validate()?;
+        if request.is_recovery()
+            || request.account() != self.account
+            || self.pending.is_some()
+            || self.pending_delete.is_some()
+        {
+            return Err(Refusal::Invalid);
+        }
+        let bytes = serde_json::to_vec(&RoleRecord {
+            version: 1,
+            account: self.account.clone(),
+            pending: Some(request.clone()),
+            pending_delete: None,
+            recovery: None,
+        })
+        .map_err(|_| Refusal::Unavailable)?;
+        if bytes.len() > 4096 {
+            return Err(Refusal::Capacity);
+        }
+        Ok(())
+    }
+    pub(crate) fn pending(&self) -> Option<&RenameFolderRequest> {
+        self.pending.as_ref()
+    }
+    pub(crate) fn begin(&mut self, request: &RenameFolderRequest) -> Result<(), Refusal> {
+        self.can_begin(request)?;
+        self.publish(Some(request.clone()))
+    }
+    pub(crate) fn pending_delete(&self) -> Option<&crate::folder_delete::DeleteFolderRequest> {
+        self.pending_delete.as_ref()
+    }
+    pub(crate) fn begin_delete(
+        &mut self,
+        request: &crate::folder_delete::DeleteFolderRequest,
+    ) -> Result<(), Refusal> {
+        request.validate()?;
+        if request.account() != self.account
+            || self.pending.is_some()
+            || self.pending_delete.is_some()
+        {
+            return Err(Refusal::Invalid);
+        }
+        self.publish_state(None, Some(request.clone()))
+    }
+    pub(crate) fn confirm(&mut self) -> Result<(), Refusal> {
+        self.publish_state(None, None)
+    }
+    fn publish_state(
+        &mut self,
+        pending: Option<RenameFolderRequest>,
+        pending_delete: Option<crate::folder_delete::DeleteFolderRequest>,
+    ) -> Result<(), Refusal> {
+        let bytes = serde_json::to_vec(&RoleRecord {
+            version: 1,
+            account: self.account.clone(),
+            pending: pending.clone(),
+            pending_delete: pending_delete.clone(),
+            recovery: if pending.is_some() {
+                self.recovery.clone()
+            } else {
+                None
+            },
+        })
+        .map_err(|_| Refusal::Unavailable)?;
+        self.file.write(&bytes).map_err(|_| Refusal::Unavailable)?;
+        self.pending = pending;
+        self.pending_delete = pending_delete;
+        if self.pending.is_none() {
+            self.recovery = None;
+        }
+        Ok(())
+    }
+    fn publish(&mut self, pending: Option<RenameFolderRequest>) -> Result<(), Refusal> {
+        let bytes = serde_json::to_vec(&RoleRecord {
+            version: 1,
+            account: self.account.clone(),
+            pending: pending.clone(),
+            pending_delete: self.pending_delete.clone(),
+            recovery: if pending.is_some() {
+                self.recovery.clone()
+            } else {
+                None
+            },
+        })
+        .map_err(|_| Refusal::Unavailable)?;
+        self.file.write(&bytes).map_err(|_| Refusal::Unavailable)?;
+        self.pending = pending;
+        Ok(())
+    }
+}
+pub(crate) fn role_lease(directory: &std::path::Path, account: &str) -> Result<RoleLease, Refusal> {
+    crate::identity::CanonicalUsername::parse(account).map_err(|_| Refusal::Invalid)?;
+    let file = crate::private_account_file::PrivateAccountFile::new(
+        directory.to_path_buf(),
+        "osmap-folder-roles-v1",
+        4096,
+    )
+    .lock(account)
+    .map_err(|_| Refusal::Unavailable)?;
+    let (pending, pending_delete, recovery) = match file.read().map_err(|_| Refusal::Unavailable)? {
+        None => (None, None, None),
+        Some(bytes) => {
+            let record: RoleRecord =
+                serde_json::from_slice(&bytes).map_err(|_| Refusal::Unavailable)?;
+            if record.version != 1
+                || record.account != account
+                || record
+                    .pending
+                    .as_ref()
+                    .is_some_and(|r| r.account() != account || r.validate().is_err())
+            {
+                return Err(Refusal::Unavailable);
+            }
+            if record
+                .pending
+                .as_ref()
+                .is_some_and(RenameFolderRequest::is_recovery)
+            {
+                return Err(Refusal::Unavailable);
+            }
+            if record.pending.is_some() && record.pending_delete.is_some()
+                || record
+                    .pending_delete
+                    .as_ref()
+                    .is_some_and(|r| r.account() != account || r.validate().is_err())
+            {
+                return Err(Refusal::Unavailable);
+            }
+            if let Some(intent) = &record.recovery {
+                if record.pending.as_ref().is_none_or(|r| {
+                    r.descendants().is_empty()
+                        || r.is_recovery()
+                        || r.action_nonce() == intent.nonce
+                }) || intent.nonce.len() != 32
+                    || !intent
+                        .nonce
+                        .bytes()
+                        .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                {
+                    return Err(Refusal::Unavailable);
+                }
+            }
+            (record.pending, record.pending_delete, record.recovery)
+        }
+    };
+    Ok(RoleLease {
+        file,
+        account: account.into(),
+        pending,
+        pending_delete,
+        recovery,
+    })
+}
+pub(crate) fn settings_gate(
+    directory: &std::path::Path,
+    account: &str,
+) -> Result<RoleLease, Refusal> {
+    let lease = role_lease(directory, account)?;
+    if lease.pending.is_some() || lease.pending_delete.is_some() {
+        return Err(Refusal::Unavailable);
+    }
+    Ok(lease)
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CheckOutcome {
+    Renamed { destination: String },
+    Unconfirmed,
+    Unavailable,
+    NoPending,
+    Unchanged,
+}
+pub(crate) fn confirmed_result(
+    request: &RenameFolderRequest,
+    snapshot: &FolderSnapshot,
+    destination: &MailboxStatus,
+    parent: &MailboxStatus,
+) -> bool {
+    if request.disposition().is_some() {
+        return crate::folder_disposition::confirmed_result(request, snapshot, destination, parent);
+    }
+    request
+        .validate_destination_parent(snapshot, parent)
+        .is_ok()
+        && snapshot
+            .folder(request.account(), request.source())
+            .is_err()
+        && destination.guid() == request.source_guid()
+        && parent.guid() == request.parent_guid()
+        && validate_source(
+            request.account(),
+            &request.destination(),
+            snapshot,
+            destination,
+        )
+        .is_ok()
+        && parent.validate(request.parent()).is_ok()
+}
+
+/// A current placement alone cannot settle a consumed command whose child
+/// lifecycle was never durably witnessed by the authoritative helper.
+pub(crate) fn confirmed_settled_result<B: crate::mailbox::MailboxBackend>(
+    backend: &B,
+    request: &RenameFolderRequest,
+    snapshot: &FolderSnapshot,
+    destination: &MailboxStatus,
+    parent: &MailboxStatus,
+) -> bool {
+    backend.folder_rename_completion(request) == Completion::Renamed
+        && confirmed_result(request, snapshot, destination, parent)
+        && crate::folder_subtree::check(backend, request, snapshot, true).is_ok()
+}
+
+pub(crate) fn protected_destinations<G: crate::http::BrowserGateway>(
+    gateway: &G,
+    context: &crate::auth::AuthenticationContext,
+    session: &crate::session::ValidatedSession,
+) -> Result<Vec<String>, Refusal> {
+    let settings = gateway.load_settings(context, session);
+    let crate::http::BrowserSettingsDecision::Loaded {
+        canonical_username,
+        settings,
+    } = settings.decision
+    else {
+        return Err(Refusal::Unavailable);
+    };
+    if canonical_username != session.record.canonical_username {
+        return Err(Refusal::Unavailable);
+    }
+    let bin = gateway
+        .load_bin_preference(session)
+        .map_err(|_| Refusal::Unavailable)?;
+    let sent = gateway
+        .load_sent_location_preference(session)
+        .map_err(|_| Refusal::Unavailable)?;
+    if !sent.valid() || crate::mailbox_status::validate_name(&bin.mailbox_name).is_err() {
+        return Err(Refusal::Unavailable);
+    }
+    let mut names = vec![bin.mailbox_name, sent.mailbox_name];
+    names.extend(settings.archive_mailbox_name);
+    Ok(names)
+}
+pub(crate) fn role_conflict(names: &[String], source: &str, destination: &str) -> bool {
+    names.iter().any(|name| {
+        name == source
+            || name == destination
+            || name.starts_with(&format!("{source}."))
+            || name.starts_with(&format!("{destination}."))
+            || source.starts_with(&format!("{name}."))
+            || destination.starts_with(&format!("{name}."))
+    })
+}
+
+/// Only a durably settled pre-dispatch refusal is a no-mutation witness.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Completion {
+    NoMutation,
+    Renamed,
+    Unconfirmed,
+    /// Only a recovery step: its native child settled, its result is still partial.
+    SettledRecovery,
+}
+pub(crate) fn confirmed_unchanged(
+    request: &RenameFolderRequest,
+    snapshot: &FolderSnapshot,
+    source: &MailboxStatus,
+    parent: &MailboxStatus,
+) -> bool {
+    request.validate_before(snapshot, source, parent).is_ok()
+        && snapshot
+            .folder(request.account(), &request.destination())
+            .is_err()
+}
+
+/// Role lease remains held across both bounded index updates; pending survives partial failure.
+pub(crate) fn reconcile_metadata(
+    directory: &std::path::Path,
+    request: &RenameFolderRequest,
+) -> Result<(), Refusal> {
+    crate::labels::LabelStore::new(directory.join("labels-v1"))
+        .reconcile_folder_rename(request)
+        .map_err(|_| Refusal::Unavailable)?;
+    crate::snooze::SnoozeStore::new(directory)
+        .reconcile_folder_rename(request)
+        .map_err(|_| Refusal::Unavailable)
+}

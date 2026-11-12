@@ -1,5 +1,37 @@
 # Architecture Overview
 
+## Selected S04-02 account path — 2026-10-19
+
+OSMAP remains a web frontend over the existing mail stack. The selected password
+source uses the existing Rust browser coordinator, account admission, durable
+account epoch/pending state and conditional SQL update. A fixed account helper
+performs current-password authentication through the existing Dovecot auth
+socket with an unprivileged stock-auth child. Protected configuration, selected
+SQL passdb, socket/worker custody and the current mail master must match the
+captured authority before requests are admitted.
+
+Successful completion requires all OSMAP browser sessions for the changed
+account to be revoked and authoritative old-password rejection/new-password
+acceptance, with another account preserved. The stock adapter requires a
+source-bound, observed disabled authentication cache; it does not perform or
+claim a cache flush. Existing external IMAP/SMTP authenticated connections may
+remain open. The selected path does not use a global mail-ingress epoch fence,
+IMAP plugin, submission proxy/Generation or public mail configuration/lifecycle
+changes. Earlier fixture/cold-cutover designs are retired from this path.
+
+This describes selected source, not deployed password functionality. Native
+stock journey46 failed at helper startup (stage5), before HTTP or any ordered
+backend event; helper disposition was unconfirmed in that result. Both native
+qualification flags remain false and the installed form remains disabled.
+S04-02, installed acceptance, operator UAT and release readiness remain open.
+No additional functional retry follows from this documentation update.
+
+The October 17 stop remains a historical outcome in
+[the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md). Explicit later
+operator instructions resumed S04-02; the current assignment and retained results
+are in [the execution ledger](UX_EXECUTION_LEDGER.md) and
+[Current Project Status](CURRENT_PROJECT_STATUS.md).
+
 ## Status
 
 This document is the Phase 4 architecture baseline for OSMAP. It uses:

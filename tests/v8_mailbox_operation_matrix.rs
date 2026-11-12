@@ -215,6 +215,7 @@ fn test_context() -> AuthenticationContext {
 fn validated_session_fixture() -> ValidatedSession {
     ValidatedSession {
         record: SessionRecord {
+            account_epoch: None,
             session_id: SESSION_ID.to_string(),
             csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
                 .to_string(),
@@ -270,6 +271,8 @@ fn mailbox_entries() -> Vec<MailboxEntry> {
 fn message_summaries() -> Vec<MessageSummary> {
     vec![
         MessageSummary {
+            to: None,
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 303,
             flags: vec!["\\Seen".to_string()],
@@ -279,6 +282,8 @@ fn message_summaries() -> Vec<MessageSummary> {
             from: Some("alice@example.com".to_string()),
         },
         MessageSummary {
+            to: None,
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 101,
             flags: vec!["\\Answered".to_string()],
@@ -288,6 +293,8 @@ fn message_summaries() -> Vec<MessageSummary> {
             from: Some("bob@example.com".to_string()),
         },
         MessageSummary {
+            to: None,
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 202,
             flags: vec!["\\Flagged".to_string(), "\\Seen".to_string()],
@@ -302,6 +309,7 @@ fn message_summaries() -> Vec<MessageSummary> {
 fn search_results() -> Vec<MessageSearchResult> {
     vec![
         MessageSearchResult {
+            metadata: None,
             mailbox_name: "Archive".to_string(),
             uid: 77,
             flags: vec!["\\Seen".to_string()],
@@ -311,6 +319,7 @@ fn search_results() -> Vec<MessageSearchResult> {
             from: Some("archive@example.com".to_string()),
         },
         MessageSearchResult {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 88,
             flags: vec!["\\Flagged".to_string()],
@@ -320,6 +329,7 @@ fn search_results() -> Vec<MessageSearchResult> {
             from: Some("current@example.com".to_string()),
         },
         MessageSearchResult {
+            metadata: None,
             mailbox_name: "Projects/OSMAP".to_string(),
             uid: 99,
             flags: vec!["\\Answered".to_string()],
@@ -337,6 +347,7 @@ fn message_view_fixture() -> MessageView {
         .split_once("\n\n")
         .expect("message view fixture should contain a header/body separator");
     MessageView {
+        metadata: None,
         mailbox_name: "INBOX".to_string(),
         uid: 303,
         flags: vec!["\\Seen".to_string()],
@@ -439,8 +450,22 @@ fn v8_mailbox_operation_matrix_validates_requests_and_sort_controls() {
         MessageSearchRequest::new(MessageSearchPolicy::default(), "INBOX", "bad\nquery").is_err()
     );
     assert!(MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 0).is_err());
-    assert!(MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "INBOX", 303).is_err());
-    assert!(MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive", 0).is_err());
+    assert!(MessageMoveRequest::new(
+        MessageMovePolicy::default(),
+        "INBOX",
+        "INBOX",
+        303,
+        osmap::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into()).unwrap()
+    )
+    .is_err());
+    assert!(MessageMoveRequest::new(
+        MessageMovePolicy::default(),
+        "INBOX",
+        "Archive",
+        0,
+        osmap::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into()).unwrap()
+    )
+    .is_err());
 }
 
 #[test]
@@ -597,9 +622,14 @@ fn v8_mailbox_operation_matrix_exercises_success_paths_and_audit_redaction() {
     assert_eq!(view_outcome.audit_event.action, "message_viewed");
     assert_audit_redacts_raw_session_id(&view_outcome.audit_event);
 
-    let move_request =
-        MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive", 303)
-            .expect("valid move request");
+    let move_request = MessageMoveRequest::new(
+        MessageMovePolicy::default(),
+        "INBOX",
+        "Archive",
+        303,
+        osmap::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into()).unwrap(),
+    )
+    .expect("valid move request");
     let move_outcome = MessageMoveService::new(StaticMessageMoveBackend)
         .move_for_validated_session(&context, &session, &move_request);
     match move_outcome.decision {
@@ -713,9 +743,14 @@ fn v8_mailbox_operation_matrix_exercises_fail_closed_paths() {
     );
     assert_audit_redacts_raw_session_id(&view_not_found.audit_event);
 
-    let move_request =
-        MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive", 303)
-            .expect("valid move request");
+    let move_request = MessageMoveRequest::new(
+        MessageMovePolicy::default(),
+        "INBOX",
+        "Archive",
+        303,
+        osmap::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into()).unwrap(),
+    )
+    .expect("valid move request");
     let move_failure = MessageMoveService::new(FailingMessageMoveBackend {
         backend: "message-move-helper",
         reason: "move backend unavailable",

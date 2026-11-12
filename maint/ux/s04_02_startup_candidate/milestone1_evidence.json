@@ -1,0 +1,145 @@
+{
+  "T03": "NOT_RUN",
+  "cleanup": {
+    "compiled_artifacts": "RETAINED_FOR_REUSE",
+    "current_startup_stages": {
+      "elapsed_seconds": 0.557,
+      "exact_paths_absent": true,
+      "open_leaf_references_absent": true,
+      "recovery_evidence_retained_locally": true,
+      "removed_directories": 2,
+      "removed_files": 21,
+      "result": "PASS",
+      "service_or_account_operations": false
+    },
+    "owned_fixture_removal_counts": {
+      "database_users_removed": 1,
+      "directories_removed": 5,
+      "files_removed": 12,
+      "groups_removed": 2,
+      "rows_removed": 2,
+      "users_removed": 2
+    },
+    "owned_runtime_fixture": "CONFIRMED",
+    "owned_sql_hash_uids_absent": true,
+    "prior_retained_stages": {
+      "exact_paths_absent": true,
+      "removed_directories": 2,
+      "removed_files": 19,
+      "result": "PASS"
+    },
+    "service_child_reaped": true,
+    "service_exit_code": 0,
+    "transport_children_reaped_and_groups_absent": true
+  },
+  "database_observation": {
+    "engine": "InnoDB",
+    "version": "12.3.3-MariaDB",
+    "version_used_as_compatibility_predicate": false
+  },
+  "evidence_sha256": {
+    "build_outcome_review": "99be7579346b412c18f9bbefedbc0f3f9bc2c629a108bb27b0f657a156da893f",
+    "build_result": "8199a698536b6d0f5c78f0901cc33c693e146df4643ede712ca9a68974071896",
+    "current_stages_cleanup_result": "419db3fb0095af249e535b3ad74cdaeefdfe70060165409be962fa8983f601db",
+    "current_stages_cleanup_review": "3d5308e832edbc394393e63b24966a7a64d5b798d478c7cf9afe9a9601b6faab",
+    "final_outcome_review": "5499cc3ed21a126ac97802a9545725dc695d25c21d9fc5713e2958ffb8517f0a",
+    "prior_stages_cleanup_result": "373f64419bcbb572d6cbbeca6390133b24ef9195bbf05fb302f7783fd1bb6d43",
+    "source_review": "ab554b048634091e9262cdd133a14c0883cf55377f6beb49897dedfd5df8fa27",
+    "startup_bound_packet": "584cbcce4390c005d055e0a86a19df79d32e21aa3946e573e38f7afc6dba80ad",
+    "startup_independent_review": "ae7fa9417fbde7db0d384ca94398238a2740bc58db9b6528113b7abf9f750a6e",
+    "startup_result": "16e7b114cb87c94ffd11aa7d8aaf8f2310ebe650f144edb4f52e7a3d68c66c78",
+    "startup_source_map": "6716f3606fd59cfe83f3d50aeab1608df74ec32d68bf9bbd854cd4465a3c2756"
+  },
+  "installed_production_readiness": "NOT_CLAIMED",
+  "limits": [
+    "Milestone 1 qualifies the controlled native startup and paired non-mutating socket boundary on obsd1.",
+    "Full password journey T03, ordinary installation and human acceptance remain separate and are not claimed.",
+    "The nested base fixture full-workflow result remains its unexecuted default; the dedicated startup actor and independently reproduced consumer establish this Milestone 1 result.",
+    "Paired socket publication took 0.627818 seconds; this is not an individual ParentPrepare or ParentSeal completion timestamp."
+  ],
+  "milestone1": "PASS",
+  "native_build": {
+    "built_once": true,
+    "compiler_executable_sha256": {
+      "cargo": "75440124d901cb6ba5a7133ebf2d54765cd4f5eef607a18dd82268b45c84ee1d",
+      "rustc": "fe087b41daa6ef0f27106739a43f45e981641247ec6377d16410b41eec47a391"
+    },
+    "compiler_receipt_sha256": "8199a698536b6d0f5c78f0901cc33c693e146df4643ede712ca9a68974071896",
+    "compiler_versions": {
+      "cargo": "cargo 1.98.1 (797e8a9bc 2026-08-05) (built from a source tarball)",
+      "rustc": "rustc 1.98.1 (48a229cea 2026-09-01) (built from a source tarball)"
+    },
+    "elapsed_seconds": 374.632,
+    "helper_profile": {
+      "debug_assertions": false,
+      "debuginfo": 0,
+      "opt_level": "3",
+      "overflow_checks": false,
+      "test": false
+    },
+    "helper_sha256": "8f1ed891c8349863db59a95ba1e3d4908bc62ba7d583ea8634d3259262ab3559",
+    "matching_binary_and_compiler_logs_retained": true,
+    "result": "PASS",
+    "source_files": 461,
+    "source_manifest_sha256": "2c73b7b76d09e9b59aa34241fb57b28220c013bf7f6d69852171ef92d99c3471",
+    "test_caller_profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "test_caller_sha256": "660ba2466a163762943c1045c6df1d5dc20317d90d1b3022a02d73fa876b30f7"
+  },
+  "observed_at": "2026-10-23T14:59:42.301002+00:00",
+  "preservation": {
+    "controlled_account_epochs_unchanged": true,
+    "controlled_account_rows_unchanged": true,
+    "operator_account_mutation": false,
+    "public_config_writes": false,
+    "public_configuration_preserved": true,
+    "public_master_preserved": true,
+    "public_service_controls": false
+  },
+  "reviewed_at": "2026-10-23T15:44:45.746733+00:00",
+  "schema": "osmap-milestone1-native-evidence-v1",
+  "source_commit": "77f63794d3f60e4003db157eada39f4bd4222b6a",
+  "startup": {
+    "actor_seconds": 3.481,
+    "credential_request_frames": 0,
+    "dispatch_elapsed_seconds": 5.08,
+    "paired_socket_publication_seconds": 0.627818,
+    "parent_prepare": "PASS",
+    "parent_prepare_seal_timing": "Completion proved by handled EOF connections after both phases; individual phase timestamps not recorded.",
+    "parent_seal": "PASS",
+    "password_mutation": false,
+    "probes": {
+      "admission": {
+        "cleanup_confirmed": true,
+        "connected_ms": 0.024,
+        "handled_ms": 572.871
+      },
+      "mutation": {
+        "cleanup_confirmed": true,
+        "connected_ms": 0.025,
+        "handled_ms": 100.698
+      }
+    },
+    "proof": "AUTHORIZED_UID_CONNECT_EOF_HANDLED_ON_BOTH_SOCKETS",
+    "result": "PASS",
+    "socket_publication_bound_seconds": 5,
+    "sockets": {
+      "/var/run/osmap-account-admission/admission.sock": {
+        "gid": 1003,
+        "mode": 432,
+        "uid": 0
+      },
+      "/var/run/osmap-account-mutation/mutation.sock": {
+        "gid": 1003,
+        "mode": 432,
+        "uid": 0
+      }
+    }
+  },
+  "target": "obsd1"
+}

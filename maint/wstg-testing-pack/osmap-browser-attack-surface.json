@@ -2,28 +2,1947 @@
   "schema_version": 1,
   "generated_for": "OSMAP V13 WSTG assurance",
   "routes": [
-    {"method": "GET", "path": "/healthz", "query_fields": [], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-CONF-001"]},
-    {"method": "GET", "path": "/login", "query_fields": [], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-ATHN-001", "OSMAP-WSTG-INPV-002"]},
-    {"method": "POST", "path": "/login", "query_fields": [], "form_fields": ["username", "password", "totp_code"], "wstg_test_ids": ["OSMAP-WSTG-ATHN-002", "OSMAP-WSTG-ATHN-003", "OSMAP-WSTG-ATHN-004"]},
-    {"method": "GET", "path": "/", "query_fields": [], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-CONF-001"]},
-    {"method": "GET", "path": "/mailboxes", "query_fields": [], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001"]},
-    {"method": "GET", "path": "/mailbox", "query_fields": ["name", "moved_to", "moved_count", "sort", "dir", "q", "scope"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-INPV-001", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-INPV-005"]},
-    {"method": "GET", "path": "/search", "query_fields": ["q", "mailbox", "scope", "field", "sort", "dir"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-INPV-002", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-INPV-005"]},
-    {"method": "GET", "path": "/message", "query_fields": ["mailbox", "uid"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-INPV-001"]},
-    {"method": "GET", "path": "/attachment", "query_fields": ["mailbox", "uid", "part"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-INPV-001"]},
-    {"method": "GET", "path": "/compose", "query_fields": ["sent", "mode", "mailbox", "uid"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-BUSL-003", "OSMAP-WSTG-INPV-005"]},
-    {"method": "GET", "path": "/drafts", "query_fields": ["saved", "deleted"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-BUSL-002"]},
-    {"method": "GET", "path": "/draft", "query_fields": ["id"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-BUSL-002", "OSMAP-WSTG-ATHZ-001"]},
-    {"method": "GET", "path": "/sessions", "query_fields": ["revoked"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-SESS-006"]},
-    {"method": "GET", "path": "/settings", "query_fields": ["updated"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]},
-    {"method": "POST", "path": "/message/move", "query_fields": [], "form_fields": ["csrf_token", "mailbox", "destination_mailbox", "uid"], "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-BUSL-005"]},
-    {"method": "POST", "path": "/messages/move", "query_fields": [], "form_fields": ["csrf_token", "mailbox", "destination_mailbox", "uid_*"], "wstg_test_ids": ["OSMAP-WSTG-BUSL-004", "OSMAP-WSTG-BUSL-005"]},
-    {"method": "POST", "path": "/messages/archive", "query_fields": [], "form_fields": ["csrf_token", "mailbox", "destination_mailbox", "uid_*"], "wstg_test_ids": ["OSMAP-WSTG-BUSL-004", "OSMAP-WSTG-BUSL-005"]},
-    {"method": "POST", "path": "/send", "query_fields": [], "form_fields": ["csrf_token", "to", "cc", "bcc", "subject", "body", "draft_id", "source_mailbox", "source_uid", "include_original_attachment_*", "attachment"], "wstg_test_ids": ["OSMAP-WSTG-INPV-003", "OSMAP-WSTG-INPV-004", "OSMAP-WSTG-BUSL-003"]},
-    {"method": "POST", "path": "/drafts/save", "query_fields": [], "form_fields": ["csrf_token", "to", "cc", "bcc", "subject", "body", "draft_id", "source_mailbox", "source_uid", "include_original_attachment_*", "attachment"], "wstg_test_ids": ["OSMAP-WSTG-BUSL-002", "OSMAP-WSTG-INPV-004"]},
-    {"method": "POST", "path": "/drafts/delete", "query_fields": [], "form_fields": ["csrf_token", "draft_id"], "wstg_test_ids": ["OSMAP-WSTG-BUSL-002", "OSMAP-WSTG-ATHZ-001"]},
-    {"method": "POST", "path": "/sessions/revoke", "query_fields": [], "form_fields": ["csrf_token", "scope", "session_id"], "wstg_test_ids": ["OSMAP-WSTG-SESS-006", "OSMAP-WSTG-BUSL-005"]},
-    {"method": "POST", "path": "/settings", "query_fields": [], "form_fields": ["csrf_token", "html_display_preference", "archive_mailbox_name"], "wstg_test_ids": ["OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]},
-    {"method": "POST", "path": "/logout", "query_fields": [], "form_fields": ["csrf_token"], "wstg_test_ids": ["OSMAP-WSTG-SESS-003", "OSMAP-WSTG-SESS-006"]}
+    {
+      "method": "GET",
+      "path": "/settings/authenticator",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/authenticator",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "action",
+        "current_password",
+        "current_totp_code",
+        "enrollment_id",
+        "revision",
+        "new_totp_code"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings/recovery",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/recovery",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "action",
+        "email",
+        "current_password",
+        "totp_code",
+        "token"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings/keys",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/keys/change",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "key_action",
+        "binding_revision",
+        "public_inventory_revision",
+        "current_password",
+        "totp_code",
+        "primary_fingerprint",
+        "signing_fingerprint",
+        "decrypt_fingerprints",
+        "address",
+        "encryption",
+        "signing",
+        "certificate",
+        "expected_primary_fingerprint"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings/password",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings/password/result",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/password",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "current_password",
+        "new_password",
+        "confirmation",
+        "totp_code"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/healthz",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-CONF-001"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/login",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHN-001",
+        "OSMAP-WSTG-INPV-002"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/login",
+      "query_fields": [],
+      "form_fields": [
+        "username",
+        "password",
+        "totp_code"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-ATHN-004"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-CONF-001"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/mailboxes",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/mailbox/shortcut",
+      "query_fields": [
+        "kind"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/mailbox",
+      "query_fields": [
+        "name",
+        "moved_to",
+        "moved_count",
+        "sort",
+        "dir",
+        "q",
+        "scope",
+        "filter",
+        "attachment",
+        "after",
+        "before",
+        "page",
+        "selected_mailbox",
+        "selected_uid",
+        "select",
+        "label"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-INPV-001",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-INPV-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/search",
+      "query_fields": [
+        "q",
+        "category",
+        "mailbox",
+        "scope",
+        "field",
+        "sort",
+        "dir",
+        "filter",
+        "attachment",
+        "after",
+        "before",
+        "page",
+        "selected_mailbox",
+        "selected_uid",
+        "select"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-INPV-002",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-INPV-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/message",
+      "query_fields": [
+        "mailbox",
+        "uid",
+        "view",
+        "mailbox_guid",
+        "message_guid",
+        "return_to"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-INPV-001"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/attachment",
+      "query_fields": [
+        "mailbox",
+        "uid",
+        "part"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-INPV-001"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/compose",
+      "query_fields": [
+        "sent",
+        "mode",
+        "mailbox",
+        "uid",
+        "mailbox_guid",
+        "message_guid"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-INPV-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/contacts",
+      "query_fields": [
+        "edit",
+        "delete",
+        "revision"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-INPV-002"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/contacts/save",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "id",
+        "name",
+        "address"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/contacts/delete",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "id",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/drafts",
+      "query_fields": [
+        "filter",
+        "sort",
+        "q",
+        "saved",
+        "deleted",
+        "select"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-BUSL-002"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/draft",
+      "query_fields": [
+        "id"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-ATHZ-001"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/notifications",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/snoozed",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/snooze",
+      "query_fields": [
+        "mailbox",
+        "uid",
+        "mailbox_guid",
+        "message_guid",
+        "return_to"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-INPV-001"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/snooze/change",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "action",
+        "revision",
+        "mailbox",
+        "uid",
+        "mailbox_guid",
+        "message_guid",
+        "until",
+        "return_to",
+        "timezone_offset"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/notifications/read",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "event_id",
+        "revision",
+        "read"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/notifications/read-all",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/notifications/delete-all",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/notifications/delete",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "event_id"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/labels",
+      "query_fields": [
+        "mailbox",
+        "uid",
+        "mailbox_guid",
+        "message_guid"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-INPV-001"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/labels/change",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "action",
+        "label_id",
+        "name",
+        "confirm",
+        "mailbox",
+        "uid",
+        "mailbox_guid",
+        "message_guid"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/sessions",
+      "query_fields": [
+        "revoked"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-SESS-006"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings",
+      "query_fields": [
+        "updated",
+        "appearance_updated",
+        "saved_revision",
+        "section",
+        "q",
+        "folder"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/message/delete",
+      "query_fields": [
+        "mailbox",
+        "uid",
+        "mailbox_guid",
+        "message_guid",
+        "return_to"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/message/delete",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "mailbox",
+        "uid",
+        "mailbox_guid",
+        "message_guid",
+        "return_to",
+        "policy_revision",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/messages/delete/review",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "mailbox",
+        "return_to",
+        "action",
+        "destination_mailbox",
+        "message_*"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/messages/delete",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "mailbox",
+        "return_to",
+        "policy_revision",
+        "confirm",
+        "message_*"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/message/move",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "mailbox",
+        "destination_mailbox",
+        "uid"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/message/flag",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "mailbox",
+        "uid",
+        "mailbox_guid",
+        "message_guid",
+        "flag",
+        "enabled",
+        "return_to"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/message/open",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "mailbox",
+        "uid",
+        "mailbox_guid",
+        "message_guid",
+        "return_to"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/messages/move",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "mailbox",
+        "destination_mailbox",
+        "uid_*"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/messages/archive",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "mailbox",
+        "destination_mailbox",
+        "uid_*"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/send",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "from",
+        "to",
+        "cc",
+        "bcc",
+        "subject",
+        "body",
+        "draft_id",
+        "draft_revision",
+        "reply_mailbox",
+        "reply_uid",
+        "reply_mailbox_guid",
+        "reply_message_guid",
+        "contact_id",
+        "contact_revision",
+        "contact_target",
+        "source_mailbox",
+        "source_uid",
+        "source_mailbox_guid",
+        "source_message_guid",
+        "include_original_attachment_*",
+        "remove_saved_attachment_*",
+        "attachment",
+        "sender_id"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-INPV-004",
+        "OSMAP-WSTG-BUSL-003"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/drafts/save",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "from",
+        "to",
+        "cc",
+        "bcc",
+        "subject",
+        "body",
+        "draft_id",
+        "draft_revision",
+        "reply_mailbox",
+        "reply_uid",
+        "reply_mailbox_guid",
+        "reply_message_guid",
+        "contact_id",
+        "contact_revision",
+        "contact_target",
+        "compose_action",
+        "source_mailbox",
+        "source_uid",
+        "source_mailbox_guid",
+        "source_message_guid",
+        "include_original_attachment_*",
+        "remove_saved_attachment_*",
+        "attachment",
+        "sender_id"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-INPV-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/drafts/delete",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "draft_id",
+        "draft_revision",
+        "confirm",
+        "filter",
+        "sort",
+        "q"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/drafts/star",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "draft_id",
+        "draft_revision",
+        "starred",
+        "filter",
+        "sort",
+        "q"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/drafts/discard",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "selected_*",
+        "stage",
+        "filter",
+        "sort",
+        "q"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/sessions/revoke",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "scope",
+        "session_id"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-SESS-006",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "html_display_preference",
+        "archive_mailbox_name",
+        "return_section"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/appearance",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "appearance",
+        "return_to"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/display",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "appearance",
+        "density",
+        "font_size",
+        "reader_layout",
+        "show_avatars",
+        "message_preview",
+        "presentation_style"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/composition",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "default_body_format"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/identity",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "display_name",
+        "reply_to"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/sender-identity",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "sender_revision",
+        "action",
+        "identity_id",
+        "display_name",
+        "reply_to",
+        "use_for_new"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/reading",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "reading_action",
+        "start_page",
+        "date_order",
+        "show_source_shortcut",
+        "attachment_details"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/logout",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-SESS-003",
+        "OSMAP-WSTG-SESS-006"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/messages/labels/review",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "mailbox",
+        "return_to",
+        "destination_mailbox",
+        "action",
+        "message_*"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/messages/labels/apply",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "mailbox",
+        "return_to",
+        "revision",
+        "label_id",
+        "action",
+        "confirm",
+        "message_*"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/signature",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "signature_revision",
+        "selection",
+        "operation",
+        "text",
+        "return_section"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/drafts/autosave/config",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/drafts/autosave",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "send_intent",
+        "from",
+        "to",
+        "cc",
+        "bcc",
+        "subject",
+        "body",
+        "body_format",
+        "draft_id",
+        "draft_revision",
+        "reply_mailbox",
+        "reply_uid",
+        "reply_mailbox_guid",
+        "reply_message_guid",
+        "sender_id",
+        "pgp_sign",
+        "pgp_encrypt",
+        "pgp_self",
+        "pgp_binding_revision"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-INPV-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/notifications",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "expected_revision",
+        "digest",
+        "choice_version",
+        "new_mail",
+        "mentions",
+        "openpgp",
+        "submission",
+        "sound",
+        "desktop"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-INPV-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/autosave",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "enabled",
+        "interval"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-INPV-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/after-archive",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "choice"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-INPV-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/timezone",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "expected_revision",
+        "timezone"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-INPV-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/mark-read",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "expected_revision",
+        "policy",
+        "section"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-INPV-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/sent-copy",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "expected_revision",
+        "save_sent"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-INPV-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/sent-location",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "expected_revision",
+        "mailbox_name"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-INPV-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/draft-location",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "expected_revision",
+        "location"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-INPV-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/bin-folder",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "expected_revision",
+        "mailbox_name",
+        "section"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-INPV-004"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/folders",
+      "query_fields": [
+        "folder"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings/folders/create",
+      "query_fields": [
+        "parent"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/folders/create",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "parent",
+        "parent_guid",
+        "leaf",
+        "action",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings/folders/rename",
+      "query_fields": [
+        "source"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/folders/rename",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "source",
+        "source_guid",
+        "parent_guid",
+        "leaf",
+        "action",
+        "confirm",
+        "descendants"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings/folders/rename/check",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/folders/rename/check",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings/folders/rename/recover",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/folders/rename/recover",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "confirm",
+        "recovery_nonce"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings/folders/move",
+      "query_fields": [
+        "source"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/folders/move",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "source",
+        "source_guid",
+        "parent_guid",
+        "leaf",
+        "action",
+        "confirm",
+        "destination_parent",
+        "source_parent_guid",
+        "descendants"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/folders/deleted",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings/folders/delete",
+      "query_fields": [
+        "source"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/folders/delete",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "source",
+        "source_guid",
+        "parent_guid",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings/folders/delete/check",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/folders/delete/check",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings/folders/bin",
+      "query_fields": [
+        "source"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/folders/bin",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "expected_request",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings/folders/restore",
+      "query_fields": [
+        "id"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/folders/restore",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "expected_request",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/settings/folders/disposition/check",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/folders/disposition/check",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/documents",
+      "query_fields": [
+        "q",
+        "sort",
+        "view",
+        "bin",
+        "folder",
+        "selected"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003"
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
+    },
+    {
+      "method": "GET",
+      "path": "/documents/download",
+      "query_fields": [
+        "id"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003"
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
+    },
+    {
+      "method": "GET",
+      "path": "/documents/delete",
+      "query_fields": [
+        "id"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003"
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
+    },
+    {
+      "method": "POST",
+      "path": "/documents/upload",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "attachment"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
+    },
+    {
+      "method": "POST",
+      "path": "/documents/folders",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "name"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
+    },
+    {
+      "method": "POST",
+      "path": "/documents/folder",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "id",
+        "folder_id"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
+    },
+    {
+      "method": "POST",
+      "path": "/documents/bin",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "id"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
+    },
+    {
+      "method": "POST",
+      "path": "/documents/restore",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "id"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
+    },
+    {
+      "method": "POST",
+      "path": "/documents/reconcile",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "id"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
+    },
+    {
+      "method": "POST",
+      "path": "/documents/delete",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "id",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "status": "Retired: HTTP 404 before authentication or retained Documents state dispatch; retained data is preserved."
+    },
+    {
+      "method": "GET",
+      "path": "/recover",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/recover",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "action",
+        "email",
+        "challenge_id",
+        "code"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/recover/setup",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/recover/setup",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "action",
+        "enrollment_id",
+        "revision",
+        "new_password",
+        "confirmation",
+        "new_totp_code"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/outbox",
+      "query_fields": [
+        "id"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-INPV-001"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/scheduled",
+      "query_fields": [
+        "id"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-INPV-001"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/scheduled/new",
+      "query_fields": [
+        "draft",
+        "revision"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-INPV-001"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/scheduled/create",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "draft",
+        "revision",
+        "due_at",
+        "timezone_offset"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/scheduled/edit",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "id",
+        "revision",
+        "due_at",
+        "to",
+        "cc",
+        "bcc",
+        "subject",
+        "body",
+        "timezone_offset"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/scheduled/change",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "id",
+        "revision",
+        "action",
+        "due_at",
+        "timezone_offset"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/notifications/updates",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/trash/empty/review",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "mailbox",
+        "return_to"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/trash/empty",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "mailbox",
+        "return_to",
+        "policy_revision",
+        "snapshot",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    }
   ]
 }

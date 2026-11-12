@@ -24,10 +24,21 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[path = "mailbox_helper_client.rs"]
 mod mailbox_helper_client;
+#[path = "mailbox_helper_documents.rs"]
+mod mailbox_helper_documents;
+#[path = "mailbox_helper_rename.rs"]
+pub(crate) mod mailbox_helper_rename;
+pub use self::mailbox_helper_documents::MailboxHelperDocumentsBackend;
+#[path = "mailbox_helper_delete.rs"]
+mod mailbox_helper_delete;
+pub use self::mailbox_helper_delete::MailboxHelperMessageDeleteBackend;
+#[path = "mailbox_helper_flags.rs"]
+mod mailbox_helper_flags;
+pub use self::mailbox_helper_flags::MailboxHelperMessageFlagBackend;
 #[path = "mailbox_helper_dispatch.rs"]
 mod mailbox_helper_dispatch;
 #[path = "mailbox_helper_protocol.rs"]
-mod mailbox_helper_protocol;
+pub(crate) mod mailbox_helper_protocol;
 
 pub use self::mailbox_helper_client::{
     MailboxHelperAttachmentDownloadBackend, MailboxHelperMailboxListBackend,
@@ -35,7 +46,9 @@ pub use self::mailbox_helper_client::{
     MailboxHelperMessageMoveBackend, MailboxHelperMessageSearchBackend,
     MailboxHelperMessageViewBackend,
 };
-use self::mailbox_helper_dispatch::{dispatch_helper_request, log_helper_response, HelperBackends};
+use self::mailbox_helper_dispatch::{
+    dispatch_helper_request_with_delete, log_helper_response, HelperBackends,
+};
 #[cfg(test)]
 use self::mailbox_helper_protocol::issue_request_grant_with_nonce;
 use self::mailbox_helper_protocol::{
@@ -55,6 +68,9 @@ use crate::mailbox::{
     MessageSearchRequest, MessageSearchResult, MessageSummary, MessageView, MessageViewBackend,
     MessageViewPolicy, MessageViewRequest, DEFAULT_MESSAGE_APPEND_MAX_BYTES,
 };
+use crate::mailbox::{DoveadmMessageFlagBackend, MessageFlagBackend};
+#[cfg(test)]
+use crate::mailbox::{MessageFlagRequest, MessageFlagResult};
 #[cfg(test)]
 use crate::mailbox::{MessageMovePolicy, MessageSearchField};
 use crate::openbsd::{apply_runtime_confinement, unix_stream_peer_uid};
@@ -174,14 +190,46 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
             )
             .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
         );
+        let mutation_gate = Arc::new(Mutex::new(()));
         let message_move_backend = Arc::new(
             DoveadmMessageMoveBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
+                .with_operation_gate(Arc::clone(&mutation_gate))
                 .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
+        );
+        let message_flag_backend = Arc::new(
+            DoveadmMessageFlagBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
+                .with_operation_gate(Arc::clone(&mutation_gate))
+                .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
+        );
+        let message_delete_backend = Arc::new(
+            crate::mailbox::DoveadmMessageDeleteBackend::new(
+                SystemCommandExecutor,
+                "/usr/local/bin/doveadm",
+                crate::mailbox::FileMailboxRetentionPolicy::new(
+                    config.mailbox_retention_policy_path.clone(),
+                    0,
+                ),
+            )
+            .with_operation_gate(Arc::clone(&mutation_gate))
+            .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
         );
         let message_append_backend = Arc::new(
             DoveadmMessageAppendBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
+                .with_operation_gate(mutation_gate)
                 .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
         );
+        let documents_backend = Arc::new(
+            crate::documents_doveadm::DoveadmDocumentsBackend::new(
+                SystemCommandExecutor,
+                "/usr/local/bin/doveadm",
+                "/usr/local/bin/doveconf",
+            )
+            .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
+        );
+        let rename_completion_dir = config
+            .state_layout
+            .runtime_dir
+            .join("folder-rename-completions");
         let policy = MailboxHelperPolicy::default();
         let replay_cache = Arc::new(Mutex::new(BTreeMap::<String, u64>::new()));
         let active_connections = Arc::new(AtomicUsize::new(0));
@@ -232,14 +280,18 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                     let message_view_backend = Arc::clone(&message_view_backend);
                     let message_move_backend = Arc::clone(&message_move_backend);
                     let message_append_backend = Arc::clone(&message_append_backend);
+                    let message_flag_backend = Arc::clone(&message_flag_backend);
+                    let message_delete_backend = Arc::clone(&message_delete_backend);
+                    let documents_backend = Arc::clone(&documents_backend);
                     let replay_cache = Arc::clone(&replay_cache);
                     let trusted_caller_policy = trusted_caller_policy.clone();
                     let worker_logger = logger.clone();
+                    let rename_completion_dir = rename_completion_dir.clone();
                     if let Err(error) = thread::Builder::new()
                         .name("osmap-mailbox-helper".to_string())
                         .spawn(move || {
                             let _slot = slot;
-                            handle_helper_client(
+                            handle_helper_client_with_documents_and_rename(
                                 HelperBackends {
                                     mailbox_backend: mailbox_backend.as_ref(),
                                     message_list_backend: message_list_backend.as_ref(),
@@ -247,12 +299,18 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                                     message_view_backend: message_view_backend.as_ref(),
                                     message_move_backend: message_move_backend.as_ref(),
                                     message_append_backend: message_append_backend.as_ref(),
+                                    message_flag_backend: message_flag_backend.as_ref(),
                                 },
+                                Some(message_delete_backend.as_ref()),
+                                Some(documents_backend.as_ref()),
                                 &worker_logger,
                                 &mut stream,
                                 policy,
-                                trusted_caller_policy,
-                                replay_cache.as_ref(),
+                                HelperRequestAuthority {
+                                    trusted_caller_policy,
+                                    replay_cache: replay_cache.as_ref(),
+                                    rename_completion_dir: Some(&rename_completion_dir),
+                                },
                             );
                         })
                     {
@@ -283,9 +341,9 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
     }
 }
 
-#[cfg(unix)]
-fn handle_helper_client<MB, MLB, MSB, MVB, MMB, MAB>(
-    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB>,
+#[cfg(all(test, unix))]
+fn handle_helper_client<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
+    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
     logger: &Logger,
     stream: &mut UnixStream,
     policy: MailboxHelperPolicy,
@@ -298,7 +356,114 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB, MAB>(
     MVB: MessageViewBackend,
     MMB: MessageMoveBackend,
     MAB: MessageAppendBackend,
+    MFB: MessageFlagBackend,
 {
+    handle_helper_client_with_delete(
+        backends,
+        None,
+        logger,
+        stream,
+        policy,
+        trusted_caller_policy,
+        replay_cache,
+    );
+}
+
+#[cfg(all(test, unix))]
+fn handle_helper_client_with_delete<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
+    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
+    delete_backend: Option<&dyn crate::mailbox::MessageDeleteBackend>,
+    logger: &Logger,
+    stream: &mut UnixStream,
+    policy: MailboxHelperPolicy,
+    trusted_caller_policy: MailboxHelperTrustedCallerPolicy,
+    replay_cache: &Mutex<BTreeMap<String, u64>>,
+) where
+    MB: MailboxBackend,
+    MLB: MessageListBackend,
+    MSB: MessageSearchBackend,
+    MVB: MessageViewBackend,
+    MMB: MessageMoveBackend,
+    MAB: MessageAppendBackend,
+    MFB: MessageFlagBackend,
+{
+    handle_helper_client_with_documents(
+        backends,
+        delete_backend,
+        None,
+        logger,
+        stream,
+        policy,
+        trusted_caller_policy,
+        replay_cache,
+    );
+}
+
+#[cfg(all(test, unix))]
+#[allow(clippy::too_many_arguments)]
+fn handle_helper_client_with_documents<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
+    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
+    delete_backend: Option<&dyn crate::mailbox::MessageDeleteBackend>,
+    documents_backend: Option<&dyn crate::documents::Backend>,
+    logger: &Logger,
+    stream: &mut UnixStream,
+    policy: MailboxHelperPolicy,
+    trusted_caller_policy: MailboxHelperTrustedCallerPolicy,
+    replay_cache: &Mutex<BTreeMap<String, u64>>,
+) where
+    MB: MailboxBackend,
+    MLB: MessageListBackend,
+    MSB: MessageSearchBackend,
+    MVB: MessageViewBackend,
+    MMB: MessageMoveBackend,
+    MAB: MessageAppendBackend,
+    MFB: MessageFlagBackend,
+{
+    handle_helper_client_with_documents_and_rename(
+        backends,
+        delete_backend,
+        documents_backend,
+        logger,
+        stream,
+        policy,
+        HelperRequestAuthority {
+            trusted_caller_policy,
+            replay_cache,
+            rename_completion_dir: None,
+        },
+    );
+}
+
+#[cfg(unix)]
+struct HelperRequestAuthority<'a> {
+    trusted_caller_policy: MailboxHelperTrustedCallerPolicy,
+    replay_cache: &'a Mutex<BTreeMap<String, u64>>,
+    rename_completion_dir: Option<&'a Path>,
+}
+
+#[cfg(unix)]
+fn handle_helper_client_with_documents_and_rename<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
+    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
+    delete_backend: Option<&dyn crate::mailbox::MessageDeleteBackend>,
+    documents_backend: Option<&dyn crate::documents::Backend>,
+    logger: &Logger,
+    stream: &mut UnixStream,
+    policy: MailboxHelperPolicy,
+    authority: HelperRequestAuthority<'_>,
+) where
+    MB: MailboxBackend,
+    MLB: MessageListBackend,
+    MSB: MessageSearchBackend,
+    MVB: MessageViewBackend,
+    MMB: MessageMoveBackend,
+    MAB: MessageAppendBackend,
+    MFB: MessageFlagBackend,
+{
+    let HelperRequestAuthority {
+        trusted_caller_policy,
+        replay_cache,
+        rename_completion_dir,
+    } = authority;
     configure_stream_timeouts(stream, policy);
 
     match helper_stream_peer_uid(stream)
@@ -325,7 +490,28 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB, MAB>(
         }
     }
 
-    let request = match read_bounded_from_stream(stream, policy.max_request_bytes)
+    let request_bytes = match mailbox_helper_documents::read_request_bytes(stream, policy) {
+        Ok(bytes) => bytes,
+        Err(reason) => {
+            let response = MailboxHelperResponse::Error {
+                backend: "mailbox-helper-request".into(),
+                reason,
+            };
+            let _ = write_response(stream, &response);
+            log_helper_response(logger, &response, None);
+            return;
+        }
+    };
+    if mailbox_helper_documents::handle(
+        &request_bytes,
+        documents_backend,
+        stream,
+        &trusted_caller_policy.grant_key,
+        replay_cache,
+    ) {
+        return;
+    }
+    let request = match Ok(request_bytes)
         .map_err(|reason| MailboxHelperResponse::Error {
             backend: "mailbox-helper-request".to_string(),
             reason,
@@ -363,7 +549,14 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB, MAB>(
         return;
     }
 
-    let response = dispatch_helper_request(backends, &request);
+    let response = match mailbox_helper_rename::handle(
+        rename_completion_dir,
+        backends.mailbox_backend,
+        &request,
+    ) {
+        Some(response) => response,
+        None => dispatch_helper_request_with_delete(backends, delete_backend, &request),
+    };
 
     let _ = write_response(stream, &response);
     log_helper_response(logger, &response, Some(&request));
@@ -620,8 +813,80 @@ fn remove_stale_socket_if_needed(socket_path: &Path) -> Result<(), String> {
     }
 }
 
+// Test-only S06 composition; the caller owns all disposable homes/services.
+#[cfg(all(test, unix))]
+pub(crate) fn prove_native_stored_signed_profile(
+    root: &std::path::Path,
+    crypto: &crate::openpgp_crypto_runtime::Client,
+    inventory: &crate::openpgp_inventory_runtime::Client,
+    alice: &str,
+    bob: &str,
+) {
+    tests::native_reader_tests::prove_stored_signed_profile(root, crypto, inventory, alice, bob);
+}
+
+// Test-only bridge reuses the existing owned Dovecot reader fixture for actual Sent append.
+#[cfg(all(test, unix))]
+pub(crate) use tests::native_reader_tests::ProtectedSentMailbox as NativeProtectedSentMailbox;
+
+// Test-only bridge exercises the production Documents peer/grant/framing path
+// against a caller-owned real native backend and private socket.
+#[cfg(all(test, unix))]
+pub(crate) use mailbox_helper_documents::native_test_stream as native_documents_test_stream;
+
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
+    mod delete_tests {
+        use super::*;
+        include!("mailbox_helper_delete_tests.rs");
+    }
+
+    #[cfg(unix)]
+    pub(crate) mod native_reader_tests {
+        include!("mailbox_helper_native_reader_tests.rs");
+    }
+    #[cfg(unix)]
+    mod native_search_batch_tests {
+        include!("mailbox_helper/native_search_batch_tests.rs");
+    }
+    #[cfg(unix)]
+    mod native_metadata_tests {
+        include!("mailbox_helper_native_metadata_tests.rs");
+    }
+    #[cfg(unix)]
+    mod native_create_tests {
+        include!("mailbox_helper_native_create_tests.rs");
+    }
+    #[cfg(unix)]
+    mod native_rename_tests {
+        include!("mailbox_helper_native_rename_tests.rs");
+    }
+    #[cfg(unix)]
+    mod rename_tests {
+        include!("mailbox_helper_rename_tests.rs");
+    }
+    mod create_tests {
+        include!("mailbox_helper_create_tests.rs");
+    }
+    #[cfg(unix)]
+    mod metadata_tests {
+        include!("mailbox_helper_metadata_tests.rs");
+    }
+    #[cfg(unix)]
+    mod status_tests {
+        include!("mailbox_helper_status_tests.rs");
+    }
+    mod flag_tests {
+        include!("mailbox_helper_flag_tests.rs");
+    }
+    #[cfg(unix)]
+    mod native_flag_tests {
+        include!("mailbox_helper_native_flag_tests.rs");
+    }
+    mod move_tests {
+        include!("mailbox_helper_move_tests.rs");
+    }
     use super::*;
     use crate::mailbox::MailboxBackendError;
     use std::env;
@@ -690,6 +955,19 @@ mod tests {
         }
     }
 
+    impl MessageFlagBackend for StaticHelperBackend {
+        fn set_message_flag(
+            &self,
+            _username: &str,
+            _request: &MessageFlagRequest,
+        ) -> Result<MessageFlagResult, MailboxBackendError> {
+            self.message_move_result
+                .as_ref()
+                .clone()
+                .map(|()| MessageFlagResult::Updated)
+        }
+    }
+
     impl MessageMoveBackend for StaticHelperBackend {
         fn move_message(
             &self,
@@ -738,6 +1016,7 @@ mod tests {
     #[test]
     fn message_append_grant_binds_mailbox_and_message_digest() {
         let mut request = MailboxHelperRequest::MessageAppend {
+            destination_mailbox_guid: None,
             canonical_username: "alice@example.com".to_string(),
             mailbox_name: "Sent".to_string(),
             message: b"Subject: original\r\n\r\nBody\r\n".to_vec(),
@@ -897,6 +1176,11 @@ mod tests {
             source_mailbox_name: "INBOX".to_string(),
             destination_mailbox_name: "Archive/2026".to_string(),
             uid: 9,
+            version: crate::message_metadata::MessageVersion::new(
+                "a".repeat(32),
+                "fixture-9".into(),
+            )
+            .unwrap(),
             grant: MailboxHelperGrant::unsigned(),
         };
         let text = sign_test_request(&mut expected);
@@ -913,6 +1197,7 @@ mod tests {
             message_list_result: Arc::new(Ok(Vec::new())),
             message_search_result: Arc::new(Ok(Vec::new())),
             message_view_result: Arc::new(Ok(MessageView {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 1,
                 flags: Vec::new(),
@@ -1120,6 +1405,11 @@ mod tests {
             source_mailbox_name: "INBOX".to_string(),
             destination_mailbox_name: "Archive".to_string(),
             uid: 9,
+            version: crate::message_metadata::MessageVersion::new(
+                "a".repeat(32),
+                "fixture-9".into(),
+            )
+            .unwrap(),
             grant: read_grant,
         };
         let response = run_helper_round_trip(current_uid, &encode_request(&move_request));
@@ -1176,6 +1466,12 @@ mod tests {
         fs::set_permissions(&grant_key_path, fs::Permissions::from_mode(0o600))
             .expect("grant key permissions should be restricted");
         let config = AppConfig {
+            recovery_contact_local_domain: None,
+            recovery_contact_external_delivery: false,
+            account_runtime: None,
+            openpgp_inventory: None,
+            openpgp_crypto: None,
+            openpgp_public_admin: None,
             run_mode: AppRunMode::MailboxHelper,
             environment: crate::config::RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),
@@ -1183,6 +1479,9 @@ mod tests {
             doveadm_auth_socket_path: Some(socket_path.clone()),
             trusted_web_runtime_uid: Some(test_runtime_uid()),
             doveadm_userdb_socket_path: None,
+            mailbox_helper_peer_uid: None,
+            mailbox_retention_policy_path: None,
+            sender_authority_path: None,
             mailbox_helper_socket_path: Some(temp_root.join("mailbox-helper.sock")),
             mailbox_helper_grant_key_path: Some(grant_key_path),
             state_root: temp_root.clone(),
@@ -1254,6 +1553,12 @@ mod tests {
             .uid();
         let mismatched_uid = actual_uid.saturating_add(1);
         let config = AppConfig {
+            recovery_contact_local_domain: None,
+            recovery_contact_external_delivery: false,
+            account_runtime: None,
+            openpgp_inventory: None,
+            openpgp_crypto: None,
+            openpgp_public_admin: None,
             run_mode: AppRunMode::MailboxHelper,
             environment: crate::config::RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),
@@ -1261,6 +1566,9 @@ mod tests {
             doveadm_auth_socket_path: Some(socket_path.clone()),
             trusted_web_runtime_uid: Some(mismatched_uid),
             doveadm_userdb_socket_path: None,
+            mailbox_helper_peer_uid: None,
+            mailbox_retention_policy_path: None,
+            sender_authority_path: None,
             mailbox_helper_socket_path: Some(temp_root.join("mailbox-helper.sock")),
             mailbox_helper_grant_key_path: Some(temp_root.join("mailbox-helper-grant.key")),
             state_root: temp_root.clone(),
@@ -1365,6 +1673,8 @@ mod tests {
             mailbox_name: "INBOX".to_string(),
             messages: vec![
                 MessageSummary {
+                    to: None,
+                    metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 7,
                     flags: vec!["\\Seen".to_string()],
@@ -1374,6 +1684,8 @@ mod tests {
                     from: Some("Alice <alice@example.com>".to_string()),
                 },
                 MessageSummary {
+                    to: None,
+                    metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 8,
                     flags: Vec::new(),
@@ -1404,6 +1716,7 @@ mod tests {
             query: "quarterly report".to_string(),
             field: MessageSearchField::Subject,
             results: vec![MessageSearchResult {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 9,
                 flags: vec!["\\Seen".to_string()],
@@ -1453,6 +1766,7 @@ mod tests {
     fn parses_message_view_response() {
         let expected = MailboxHelperResponse::MessageViewOk {
             message: Box::new(MessageView {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 9,
                 flags: vec!["\\Seen".to_string()],
@@ -1506,6 +1820,11 @@ mod tests {
             source_mailbox_name: "INBOX".to_string(),
             destination_mailbox_name: "Archive/2026".to_string(),
             uid: 9,
+            version: crate::message_metadata::MessageVersion::new(
+                "a".repeat(32),
+                "fixture-9".into(),
+            )
+            .unwrap(),
         };
         let text = encode_response(&expected);
         let response = parse_response(
@@ -1645,6 +1964,8 @@ mod tests {
             mailbox_result: Arc::new(Ok(Vec::new())),
             message_list_result: Arc::new(Ok(vec![
                 MessageSummary {
+                    to: None,
+                    metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 10,
                     flags: vec!["\\Seen".to_string()],
@@ -1654,6 +1975,8 @@ mod tests {
                     from: Some("Alice <alice@example.com>".to_string()),
                 },
                 MessageSummary {
+                    to: None,
+                    metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 11,
                     flags: Vec::new(),
@@ -1703,12 +2026,81 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn client_message_list_accepts_correct_helper_peer() {
+        let socket_path = temp_socket_path("message-list-correct-peer");
+        let backend = StaticHelperBackend {
+            mailbox_result: Arc::new(Ok(Vec::new())),
+            message_list_result: Arc::new(Ok(Vec::new())),
+            message_search_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Err(MailboxBackendError {
+                backend: "message-view-not-used",
+                reason: "unexpected message-view request".into(),
+            })),
+            message_move_result: Arc::new(Ok(())),
+        };
+        let server = spawn_test_helper(socket_path.clone(), backend);
+        wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-list-correct-peer");
+        let client = MailboxHelperMessageListBackend::new(
+            &socket_path,
+            &grant_key_path,
+            MailboxHelperPolicy::default(),
+            MessageListPolicy::default(),
+        )
+        .with_helper_uid(Some(test_runtime_uid()));
+        let request = MessageListRequest::new(MessageListPolicy::default(), "INBOX")
+            .expect("request should parse");
+
+        let messages = client
+            .list_messages("alice@example.com", &request)
+            .expect("matching helper peer should permit message list");
+        server.join().expect("test helper should finish");
+        let _ = fs::remove_file(&socket_path);
+        let _ = fs::remove_file(&grant_key_path);
+        assert!(messages.is_empty());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn client_message_list_refuses_wrong_helper_peer_before_wire() {
+        let socket_path = temp_socket_path("message-list-wrong-peer");
+        let server = spawn_wire_capture_helper(socket_path.clone());
+        wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-list-wrong-peer");
+        let client = MailboxHelperMessageListBackend::new(
+            &socket_path,
+            &grant_key_path,
+            MailboxHelperPolicy::default(),
+            MessageListPolicy::default(),
+        )
+        .with_helper_uid(Some(test_runtime_uid().wrapping_add(1)));
+        let request = MessageListRequest::new(MessageListPolicy::default(), "INBOX")
+            .expect("request should parse");
+
+        let error = client
+            .list_messages("alice@example.com", &request)
+            .expect_err("wrong helper peer must be refused");
+        let bytes_received = server.join().expect("test helper should finish");
+        let _ = fs::remove_file(&socket_path);
+        let _ = fs::remove_file(&grant_key_path);
+
+        assert_eq!(
+            bytes_received, 0,
+            "wrong peer must receive no request bytes"
+        );
+        assert_eq!(error.backend, "mailbox-helper-client");
+        assert_eq!(error.reason, "helper peer refused");
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn client_searches_messages_over_helper_socket() {
         let socket_path = temp_socket_path("message-search-helper-ok");
         let backend = StaticHelperBackend {
             mailbox_result: Arc::new(Ok(Vec::new())),
             message_list_result: Arc::new(Ok(Vec::new())),
             message_search_result: Arc::new(Ok(vec![MessageSearchResult {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 18,
                 flags: vec!["\\Seen".to_string()],
@@ -1795,6 +2187,7 @@ mod tests {
             message_list_result: Arc::new(Ok(Vec::new())),
             message_search_result: Arc::new(Ok(Vec::new())),
             message_view_result: Arc::new(Ok(MessageView {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 12,
                 flags: vec!["\\Seen".to_string()],
@@ -1813,7 +2206,8 @@ mod tests {
             &grant_key_path,
             MailboxHelperPolicy::default(),
             MessageViewPolicy::default(),
-        );
+        )
+        .with_helper_uid(Some(test_runtime_uid()));
         let request = MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 12)
             .expect("request should parse");
 
@@ -1831,6 +2225,38 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn client_message_view_refuses_wrong_helper_peer_before_wire() {
+        let socket_path = temp_socket_path("message-view-wrong-peer");
+        let server = spawn_wire_capture_helper(socket_path.clone());
+        wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-view-wrong-peer");
+        let client = MailboxHelperMessageViewBackend::new(
+            &socket_path,
+            &grant_key_path,
+            MailboxHelperPolicy::default(),
+            MessageViewPolicy::default(),
+        )
+        .with_helper_uid(Some(test_runtime_uid().wrapping_add(1)));
+        let request = MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 12)
+            .expect("request should parse");
+
+        let error = client
+            .fetch_message("alice@example.com", &request)
+            .expect_err("wrong helper peer must be refused");
+        let bytes_received = server.join().expect("test helper should finish");
+        let _ = fs::remove_file(&socket_path);
+        let _ = fs::remove_file(&grant_key_path);
+
+        assert_eq!(
+            bytes_received, 0,
+            "wrong peer must receive no request bytes"
+        );
+        assert_eq!(error.backend, "mailbox-helper-client");
+        assert_eq!(error.reason, "helper peer refused");
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn client_fetches_maximum_bounded_message_view_over_helper_socket() {
         let socket_path = temp_socket_path("message-view-helper-max-body");
         let body_text = "x".repeat(crate::mailbox::DEFAULT_MESSAGE_BODY_MAX_LEN);
@@ -1839,6 +2265,7 @@ mod tests {
             message_list_result: Arc::new(Ok(Vec::new())),
             message_search_result: Arc::new(Ok(Vec::new())),
             message_view_result: Arc::new(Ok(MessageView {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 12,
                 flags: Vec::new(),
@@ -1921,6 +2348,7 @@ mod tests {
             message_list_result: Arc::new(Ok(Vec::new())),
             message_search_result: Arc::new(Ok(Vec::new())),
             message_view_result: Arc::new(Ok(MessageView {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 12,
                 flags: vec!["\\Seen".to_string()],
@@ -2026,10 +2454,17 @@ mod tests {
             &socket_path,
             &grant_key_path,
             MailboxHelperPolicy::default(),
-        );
-        let request =
-            MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive/2026", 9)
-                .expect("request should parse");
+        )
+        .with_helper_uid(Some(test_runtime_uid()));
+        let request = MessageMoveRequest::new(
+            MessageMovePolicy::default(),
+            "INBOX",
+            "Archive/2026",
+            9,
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into())
+                .unwrap(),
+        )
+        .expect("request should parse");
 
         client
             .move_message("alice@example.com", &request)
@@ -2037,6 +2472,40 @@ mod tests {
 
         server.join().expect("helper thread should finish");
         let _ = fs::remove_file(&socket_path);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn client_message_move_refuses_wrong_peer_before_wire() {
+        let socket_path = temp_socket_path("message-move-wrong-peer");
+        let server = spawn_wire_capture_helper(socket_path.clone());
+        wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-move-wrong-peer");
+        let client = MailboxHelperMessageMoveBackend::new(
+            &socket_path,
+            &grant_key_path,
+            MailboxHelperPolicy::default(),
+        )
+        .with_helper_uid(Some(test_runtime_uid().wrapping_add(1)));
+        let request = MessageMoveRequest::new(
+            MessageMovePolicy::default(),
+            "INBOX",
+            "Archive/2026",
+            9,
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into())
+                .unwrap(),
+        )
+        .expect("request should parse");
+
+        let error = client
+            .move_message("alice@example.com", &request)
+            .expect_err("wrong helper peer must refuse before move dispatch");
+        let received = server.join().expect("test helper should finish");
+        let _ = fs::remove_file(&socket_path);
+        let _ = fs::remove_file(&grant_key_path);
+        assert_eq!(received, 0, "wrong peer received move request bytes");
+        assert_eq!(error.backend, "message-move-unavailable");
+        assert_eq!(error.reason, "move helper peer refused");
     }
 
     #[cfg(unix)]
@@ -2085,6 +2554,7 @@ mod tests {
             + MessageViewBackend
             + MessageMoveBackend
             + MessageAppendBackend
+            + MessageFlagBackend
             + Send
             + 'static,
     {
@@ -2104,6 +2574,7 @@ mod tests {
             + MessageViewBackend
             + MessageMoveBackend
             + MessageAppendBackend
+            + MessageFlagBackend
             + Send
             + 'static,
     {
@@ -2121,6 +2592,7 @@ mod tests {
                     message_view_backend: &backend,
                     message_move_backend: &backend,
                     message_append_backend: &backend,
+                    message_flag_backend: &backend,
                 },
                 &logger,
                 &mut stream,
@@ -2145,6 +2617,22 @@ mod tests {
                 .read_to_end(&mut request)
                 .expect("test helper should read request");
             thread::sleep(Duration::from_secs(3));
+        })
+    }
+
+    #[cfg(unix)]
+    fn spawn_wire_capture_helper(socket_path: PathBuf) -> thread::JoinHandle<usize> {
+        thread::spawn(move || {
+            let _ = remove_stale_socket_if_needed(&socket_path);
+            let listener = UnixListener::bind(&socket_path).expect("test helper should bind");
+            let (mut stream, _) = listener.accept().expect("test helper should accept");
+            stream
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .expect("test helper read should be bounded");
+            let mut first_byte = [0_u8; 1];
+            stream
+                .read(&mut first_byte)
+                .expect("test helper should observe request or EOF")
         })
     }
 

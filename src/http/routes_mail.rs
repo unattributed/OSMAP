@@ -5,13 +5,16 @@
 //! `http.rs` without changing the route surface.
 
 use super::*;
+use crate::mail_list::ListViewState;
 
-fn mailbox_is_user_visible(mailbox_name: &str) -> bool {
-    matches!(mailbox_name, "INBOX" | "Drafts" | "Junk" | "Sent" | "Trash")
-        || mailbox_name.starts_with("INBOX.")
+pub(super) fn mailbox_is_user_visible(mailbox_name: &str) -> bool {
+    matches!(
+        mailbox_name,
+        "INBOX" | "Archive" | "Drafts" | "Junk" | "Sent" | "Trash"
+    ) || mailbox_name.starts_with("INBOX.")
 }
 
-fn filter_user_visible_mailboxes(mailboxes: &[MailboxEntry]) -> Vec<MailboxEntry> {
+pub(super) fn filter_user_visible_mailboxes(mailboxes: &[MailboxEntry]) -> Vec<MailboxEntry> {
     mailboxes
         .iter()
         .filter(|mailbox| mailbox_is_user_visible(&mailbox.name))
@@ -23,13 +26,482 @@ fn mailbox_name_exists(mailboxes: &[MailboxEntry], mailbox_name: &str) -> bool {
     mailboxes.iter().any(|mailbox| mailbox.name == mailbox_name)
 }
 
-const MAX_BULK_ARCHIVE_MESSAGES: usize = 10;
+fn list_view_state(
+    request: &HttpRequest,
+    saved: Option<crate::reading_preferences::ReadingPreferences>,
+) -> Result<ListViewState, HttpResponse> {
+    if request.path != "/mailbox" && request.query_params.contains_key("label") {
+        return Err(invalid_list_response("Label filtering applies to mailbox lists. Return to the mailbox to clear it before searching."));
+    }
+    if let Some(preferences) = saved {
+        return ListViewState::from_query(&request.query_params)
+            .map(|mut view| {
+                view.apply_saved_reading_defaults(preferences);
+                view
+            })
+            .map_err(invalid_list_response);
+    }
+    let mut query = request.query_params.clone();
+    if !query.contains_key("sort") && !query.contains_key("dir") {
+        let preferences = crate::reading_preferences::ReadingPreferences::from_cookie_header(
+            request.headers.get("cookie").map(String::as_str),
+        );
+        query.insert("sort".into(), "received".into());
+        query.insert("dir".into(), preferences.date_order.sort_direction().into());
+    }
+    // A cookie remains only a presentation hint when storage is unavailable;
+    // it cannot establish a saved conversation preference.
+    ListViewState::from_query(&query).map_err(invalid_list_response)
+}
+
+fn invalid_list_response(message: &str) -> HttpResponse {
+    html_response(
+        400,
+        "Bad Request",
+        "Invalid Message List Request",
+        TrustedHtml::from_template(format!("<p>{}</p>", escape_html(message))),
+    )
+}
+
+fn list_origin(request: &HttpRequest) -> Option<String> {
+    crate::mail_navigation::safe_mail_return(&format!(
+        "{}?{}",
+        request.path,
+        request
+            .query_params
+            .iter()
+            .map(|(key, value)| format!("{}={}", url_encode(key), url_encode(value)))
+            .collect::<Vec<_>>()
+            .join("&")
+    ))
+}
+
+// A failed read still carries the requested object identity. Reconstruct only
+// the existing finite GET context; invalid supplied fields cannot become an
+// unversioned retry. A GUID-free legacy request remains deliberately supported.
+fn message_recovery_links(request: &HttpRequest, mailbox: &str) -> (String, Option<String>) {
+    let back = request
+        .query_params
+        .get("return_to")
+        .and_then(|origin| crate::mail_navigation::safe_mail_return(origin))
+        .or_else(|| {
+            crate::mail_navigation::safe_mail_return(&format!(
+                "/mailbox?name={}",
+                url_encode(mailbox)
+            ))
+        })
+        .unwrap_or_else(|| "/mailboxes".into());
+    (back, list_origin(request))
+}
+
+// A standalone reader may outlive its Unread membership. This only derives
+// navigation from an already rendered owned identity; it changes no stored flag.
+fn opened_reader_view(view: &ListViewState, rendered: &RenderedMessageView) -> ListViewState {
+    let mut candidate = view.clone();
+    if view.filter == crate::mail_list::MessageFilter::Unread
+        && crate::mail_list::has_flag(&rendered.flags, "\\Seen")
+    {
+        candidate.selection = Some(crate::mail_list::ListSelection {
+            mailbox: rendered.mailbox_name.clone(),
+            uid: rendered.uid,
+        });
+        candidate.requested_version = rendered
+            .metadata
+            .as_ref()
+            .map(|metadata| metadata.version.clone());
+        candidate.opened_read = candidate.requested_version.is_some();
+    }
+    candidate
+}
 
 impl<G> BrowserApp<G>
 where
     G: BrowserGateway,
 {
-    fn validated_archive_mailbox_name(
+    fn standalone_neighbours(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        rendered: &RenderedMessageView,
+        audit: &mut Vec<LogEvent>,
+    ) -> crate::reader_neighbours::ReaderNeighbours {
+        use crate::reader_neighbours::{ReaderLocation, ReaderNeighbours};
+        let account = &session.record.canonical_username;
+        let Some(return_to) = request.query_params.get("return_to") else {
+            let preferences = self.gateway.load_reading_preferences(context, session).ok();
+            let summaries = self
+                .gateway
+                .list_messages(context, session, &rendered.mailbox_name);
+            audit.extend(summaries.audit_events);
+            return ReaderNeighbours::derive(
+                account,
+                rendered,
+                preferences,
+                &summaries.decision,
+                None,
+            );
+        };
+        let Some(origin) = crate::mail_navigation::safe_mail_return(return_to) else {
+            return ReaderNeighbours::default();
+        };
+        let Some((path, query)) = origin.split_once('?') else {
+            return ReaderNeighbours::unavailable(Some(origin.clone()));
+        };
+        let Ok(fields) = crate::http_form::parse_urlencoded_form(
+            query.as_bytes(),
+            crate::mail_navigation::MAIL_RETURN_MAX_FIELDS,
+            2048,
+        ) else {
+            return ReaderNeighbours::unavailable(Some(origin.clone()));
+        };
+        // All has a separate twenty-row category window and finite filter
+        // context; parse it before the ordinary mail-list five-page model.
+        if path == "/search" && fields.get("category").map(String::as_str) == Some("all") {
+            let Some(filters) = crate::mail_navigation::SearchFilterContext::parse(&fields) else {
+                return ReaderNeighbours::unavailable(Some(origin.clone()));
+            };
+            let Some(query) = fields
+                .get("q")
+                .map(|query| query.trim())
+                .filter(|query| !query.is_empty())
+            else {
+                return ReaderNeighbours::unavailable(Some(origin.clone()));
+            };
+            let (guard, event) = match self.acquire_search_budget(context, session) {
+                Ok(value) => value,
+                Err(response) => {
+                    audit.extend(response.audit_events);
+                    return ReaderNeighbours::unavailable(Some(origin.clone()));
+                }
+            };
+            audit.push(event);
+            let deadline = std::time::Instant::now()
+                + std::time::Duration::from_secs(
+                    self.policy.expensive_request_timeout_secs.clamp(1, 30),
+                );
+            let outcome = self.gateway.search_messages(
+                context,
+                session,
+                filters.mailbox.as_deref(),
+                query,
+                MessageSearchField::All,
+            );
+            audit.extend(outcome.audit_events);
+            let mut open_on_select = false;
+            let mut neighbours = if std::time::Instant::now() < deadline {
+                let recover_opened = self
+                    .gateway
+                    .load_mark_read_policy(session)
+                    .is_ok_and(|preference| preference.policy == crate::mark_read::Policy::OnOpen);
+                open_on_select = recover_opened;
+                if std::time::Instant::now() < deadline {
+                    ReaderNeighbours::derive_all_search(
+                        account,
+                        rendered,
+                        &outcome.decision,
+                        &origin,
+                        recover_opened,
+                    )
+                } else {
+                    ReaderNeighbours::unavailable(Some(origin.clone()))
+                }
+            } else {
+                ReaderNeighbours::unavailable(Some(origin.clone()))
+            };
+            audit.push(self.release_request_budget(guard, "message_search", context, session));
+            if std::time::Instant::now() >= deadline {
+                neighbours = ReaderNeighbours::unavailable(Some(origin.clone()));
+                open_on_select = false;
+            }
+            neighbours.set_open_on_select(open_on_select);
+            return neighbours;
+        }
+        let mut origin_request = request.clone();
+        origin_request.path = path.into();
+        origin_request.query_params = fields.clone();
+        let preferences = self.gateway.load_reading_preferences(context, session).ok();
+        let Ok(view) = list_view_state(&origin_request, preferences) else {
+            return ReaderNeighbours::unavailable(Some(origin.clone()));
+        };
+        match path {
+            "/mailbox" => {
+                let Some(name) = fields.get("name") else {
+                    return ReaderNeighbours::unavailable(Some(origin.clone()));
+                };
+                let mut summaries = self.gateway.list_messages(context, session, name);
+                audit.append(&mut summaries.audit_events);
+                if let BrowserMessageListDecision::Listed {
+                    canonical_username,
+                    mailbox_name,
+                    messages,
+                } = &mut summaries.decision
+                {
+                    let mut view = view.clone();
+                    if self
+                        .filter_labeled_messages(
+                            session,
+                            &mut view,
+                            canonical_username,
+                            mailbox_name,
+                            messages,
+                        )
+                        .is_err()
+                    {
+                        return ReaderNeighbours::unavailable(Some(origin.clone()));
+                    }
+                    self.apply_snooze(session, canonical_username, mailbox_name, messages);
+                    let mut reader_view = opened_reader_view(&view, rendered);
+                    let mut filtered = messages.clone();
+                    reader_view.order_messages(&mut filtered);
+                    reader_view.recover_opened_messages(messages);
+                }
+                ReaderNeighbours::derive_messages(
+                    account,
+                    rendered,
+                    &summaries.decision,
+                    &view,
+                    &origin,
+                    ReaderLocation::Standalone,
+                )
+            }
+            "/search" if !fields.contains_key("category") => {
+                let Some(query) = fields.get("q") else {
+                    return ReaderNeighbours::unavailable(Some(origin.clone()));
+                };
+                let mailbox = if fields.get("scope").map(String::as_str) == Some("all") {
+                    None
+                } else {
+                    fields.get("mailbox").map(String::as_str)
+                };
+                let field = fields
+                    .get("field")
+                    .and_then(|field| MessageSearchField::from_query_value(field))
+                    .unwrap_or(MessageSearchField::All);
+                let (guard, event) = match self.acquire_search_budget(context, session) {
+                    Ok(value) => value,
+                    Err(response) => {
+                        audit.extend(response.audit_events);
+                        return ReaderNeighbours::unavailable(Some(origin.clone()));
+                    }
+                };
+                audit.push(event);
+                let mut outcome = self
+                    .gateway
+                    .search_messages(context, session, mailbox, query, field);
+                if let BrowserMessageSearchDecision::Listed { results, .. } = &mut outcome.decision
+                {
+                    let mut reader_view = opened_reader_view(&view, rendered);
+                    let mut filtered = results.clone();
+                    reader_view.order_search(&mut filtered);
+                    reader_view.recover_opened_search(results);
+                }
+                audit.extend(outcome.audit_events);
+                audit.push(self.release_request_budget(guard, "message_search", context, session));
+                ReaderNeighbours::derive_search(
+                    account,
+                    rendered,
+                    &outcome.decision,
+                    &view,
+                    &origin,
+                    ReaderLocation::Standalone,
+                )
+            }
+            _ => ReaderNeighbours::unavailable(Some(origin.clone())),
+        }
+    }
+
+    /// The URL chooses a candidate, not authority. Bind this response to the
+    /// fresh filtered list identity before exposing the rendered message body.
+    fn selected_message_pane(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        view: &ListViewState,
+        audit: &mut Vec<LogEvent>,
+    ) -> SelectedMessagePane {
+        let Some(selection) = &view.selection else {
+            return SelectedMessagePane::Unselected;
+        };
+        if view.selection_page.is_none() {
+            return SelectedMessagePane::Unavailable("The selected message is no longer in these results. Choose another message or clear the selection.");
+        }
+        let Some(version) = &view.selected_version else {
+            return SelectedMessagePane::Unavailable("The selected message has no current stored identity. Refresh the list or open the standalone message view.");
+        };
+        if view
+            .requested_version
+            .as_ref()
+            .is_some_and(|expected| expected != version)
+        {
+            return SelectedMessagePane::Unavailable(
+                "The selected message identity changed. Refresh the list before opening it again.",
+            );
+        }
+        let (guard, event) = match self.acquire_mailbox_budget(context, session, "selected_message")
+        {
+            Ok(value) => value,
+            Err(response) => {
+                audit.extend(response.audit_events);
+                return SelectedMessagePane::Unavailable(
+                    "The reading pane is busy. Refresh this page to try again.",
+                );
+            }
+        };
+        audit.push(event);
+        let outcome =
+            self.gateway
+                .view_message(context, session, &selection.mailbox, selection.uid);
+        audit.extend(outcome.audit_events);
+        audit.push(self.release_request_budget(guard, "selected_message", context, session));
+        match outcome.decision {
+            BrowserMessageViewDecision::Rendered { canonical_username, rendered }
+                if canonical_username == session.record.canonical_username
+                    && rendered.mailbox_name == selection.mailbox
+                    && rendered.uid == selection.uid
+                    && rendered.metadata.as_ref().is_some_and(|metadata| &metadata.version == version) => {
+                SelectedMessagePane::Ready(rendered)
+            }
+            BrowserMessageViewDecision::Rendered { .. } => {
+                audit.push(build_http_warning_event("selected_message_identity_changed", "selected message no longer matched the current list identity", context));
+                SelectedMessagePane::Unavailable("The selected message changed while opening it. Refresh the list before opening it again.")
+            }
+            BrowserMessageViewDecision::Denied { .. } => SelectedMessagePane::Unavailable("The selected message could not be opened. Refresh this page or choose another message."),
+        }
+    }
+
+    /// Resolves a configured account-owned target; never invents a folder.
+    pub(super) fn handle_mailbox_shortcut(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        if request.query_params.len() == 1
+            && request.query_params.get("kind").map(String::as_str) == Some("sent")
+        {
+            return self.handle_sent_location_shortcut(request, context);
+        }
+        let (validated_session, mut audit_events) =
+            match self.require_validated_session(request, context) {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
+        let notice = |status, reason, title, message, audit_events| HandledHttpResponse {
+            response: html_response(
+                status,
+                reason,
+                title,
+                render_navigation_notice(
+                    &validated_session.record.canonical_username,
+                    &validated_session.record.csrf_token,
+                    title,
+                    message,
+                ),
+            ),
+            audit_events,
+        };
+        if request.query_params.len() == 1
+            && request.query_params.get("kind").map(String::as_str) == Some("bin")
+        {
+            let Ok(bin) = self.gateway.load_bin_preference(&validated_session) else {
+                return notice(
+                    503,
+                    "Service Unavailable",
+                    "Bin Unavailable",
+                    "Your saved Bin folder could not be loaded. Reload folder settings.",
+                    audit_events,
+                );
+            };
+            return match self.bin_folder_choices(context, &validated_session, &mut audit_events) {
+                Some(choices) if choices.iter().any(|entry| entry.name == bin.mailbox_name) => {
+                    HandledHttpResponse {
+                        response: redirect_response(
+                            303,
+                            "See Other",
+                            &format!("/mailbox?name={}", url_encode(&bin.mailbox_name)),
+                        ),
+                        audit_events,
+                    }
+                }
+                Some(_) => notice(
+                    404,
+                    "Not Found",
+                    "Bin Unavailable",
+                    "Your saved Bin folder is unavailable. Choose an existing folder in Settings.",
+                    audit_events,
+                ),
+                None => notice(
+                    503,
+                    "Service Unavailable",
+                    "Bin Unavailable",
+                    "Your Bin folder could not be checked. Try loading Settings again.",
+                    audit_events,
+                ),
+            };
+        }
+        if request.query_params.len() != 1
+            || request.query_params.get("kind").map(String::as_str) != Some("archive")
+        {
+            return notice(
+                400,
+                "Bad Request",
+                "Unknown Mailbox Shortcut",
+                "Choose a mailbox from the navigation.",
+                audit_events,
+            );
+        }
+        let outcome = self.gateway.load_settings(context, &validated_session);
+        audit_events.extend(outcome.audit_events);
+        let archive = match outcome.decision {
+            BrowserSettingsDecision::Loaded {
+                ref canonical_username,
+                ..
+            } if canonical_username != &validated_session.record.canonical_username => {
+                return notice(
+                    503,
+                    "Service Unavailable",
+                    "Archive Temporarily Unavailable",
+                    "Your archive setting could not be confirmed for this account.",
+                    audit_events,
+                );
+            }
+            BrowserSettingsDecision::Loaded { settings, .. } => match settings.archive_mailbox_name
+            {
+                Some(name) => name,
+                None => {
+                    return notice(
+                        200,
+                        "OK",
+                        "Choose Your Archive Mailbox",
+                        "Select an existing archive mailbox in Settings to use this shortcut.",
+                        audit_events,
+                    )
+                }
+            },
+            BrowserSettingsDecision::Denied { .. } => {
+                return notice(
+                    503,
+                    "Service Unavailable",
+                    "Archive Temporarily Unavailable",
+                    "Your archive setting could not be loaded. Try again shortly.",
+                    audit_events,
+                )
+            }
+        };
+        let outcome = self.gateway.list_mailboxes(context, &validated_session);
+        audit_events.extend(outcome.audit_events);
+        match outcome.decision {
+            BrowserMailboxDecision::Listed { ref canonical_username, .. } if canonical_username != &validated_session.record.canonical_username => notice(503, "Service Unavailable", "Archive Temporarily Unavailable", "Your mailbox list could not be confirmed for this account.", audit_events),
+            BrowserMailboxDecision::Listed { mailboxes, .. } if mailbox_name_exists(&mailboxes, &archive) => HandledHttpResponse {
+                response: redirect_response(303, "See Other", &format!("/mailbox?name={}", url_encode(&archive))),
+                audit_events,
+            },
+            BrowserMailboxDecision::Listed { .. } => notice(404, "Not Found", "Archive Mailbox Not Found", "Your saved archive mailbox is no longer available. Choose another mailbox in Settings.", audit_events),
+            BrowserMailboxDecision::Denied { .. } => notice(503, "Service Unavailable", "Archive Temporarily Unavailable", "Your mailboxes could not be loaded. Try again shortly.", audit_events),
+        }
+    }
+
+    pub(super) fn validated_archive_mailbox_name(
         &self,
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
@@ -37,11 +509,17 @@ where
     ) -> Option<String> {
         let archive_mailbox_name = match self.gateway.load_settings(context, validated_session) {
             BrowserSettingsOutcome {
-                decision: BrowserSettingsDecision::Loaded { settings, .. },
+                decision:
+                    BrowserSettingsDecision::Loaded {
+                        canonical_username,
+                        settings,
+                    },
                 audit_events: settings_audit_events,
             } => {
                 audit_events.extend(settings_audit_events);
-                settings.archive_mailbox_name
+                (canonical_username == validated_session.record.canonical_username)
+                    .then_some(settings.archive_mailbox_name)
+                    .flatten()
             }
             BrowserSettingsOutcome {
                 decision: BrowserSettingsDecision::Denied { .. },
@@ -56,7 +534,13 @@ where
         audit_events.extend(mailbox_outcome.audit_events);
 
         match mailbox_outcome.decision {
-            BrowserMailboxDecision::Listed { mailboxes, .. } => {
+            BrowserMailboxDecision::Listed {
+                canonical_username,
+                mailboxes,
+            } => {
+                if canonical_username != validated_session.record.canonical_username {
+                    return None;
+                }
                 if mailbox_name_exists(&mailboxes, &archive_mailbox_name) {
                     Some(archive_mailbox_name)
                 } else {
@@ -105,16 +589,64 @@ where
                 canonical_username,
                 mailboxes,
             } => {
+                if canonical_username != validated_session.record.canonical_username {
+                    return HandledHttpResponse {
+                        response: html_response(
+                            503,
+                            "Service Unavailable",
+                            "Mailbox Access Unavailable",
+                            "<p>The mailbox list could not be verified.</p>",
+                        ),
+                        audit_events,
+                    };
+                }
+                let (recent, draft_count, sent_count, snooze_notice) =
+                    self.welcome_data(context, &validated_session, &mailboxes, &mut audit_events);
+                let activity = self.gateway.list_sessions(context, &validated_session);
+                audit_events.extend(activity.audit_events);
+                let keys = self.gateway.key_management(context, &validated_session);
+                audit_events.extend(keys.audit_events);
+                let openpgp_defaults = self
+                    .gateway
+                    .load_composition_preferences(context, &validated_session)
+                    .ok()
+                    .map(|preferences| preferences.openpgp);
                 let visible_mailboxes = filter_user_visible_mailboxes(&mailboxes);
+                let notices = self.gateway.notification_inbox(&validated_session).ok();
+                let notice_preferences = self
+                    .gateway
+                    .load_notification_preference(&validated_session)
+                    .ok();
+                let storage = crate::storage_ui::StorageView::from_report(
+                    &canonical_username,
+                    self.gateway.mail_storage_report(&validated_session),
+                );
                 HandledHttpResponse {
                     response: html_response(
                         200,
                         "OK",
                         "Mailboxes",
-                        render_mailboxes_page(
+                        render_mailboxes_page_with_storage(
                             &canonical_username,
                             &validated_session.record.csrf_token,
                             &visible_mailboxes,
+                            (recent.as_deref(), snooze_notice.as_deref()),
+                            draft_count,
+                            sent_count,
+                            &activity.decision,
+                            self.gateway
+                                .load_mark_read_policy(&validated_session)
+                                .is_ok_and(|preference| {
+                                    preference.policy == crate::mark_read::Policy::OnOpen
+                                }),
+                            crate::http_ui::WelcomeAccountState {
+                                openpgp: &keys.state,
+                                defaults: openpgp_defaults,
+                                storage: Some(&storage),
+                                notices: notices
+                                    .as_ref()
+                                    .map(|inbox| (inbox, notice_preferences.as_ref())),
+                            },
                         ),
                     ),
                     audit_events,
@@ -165,21 +697,21 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
-        let success_message = request.query_params.get("moved_to").and_then(|value| {
-            if value.is_empty() {
-                return None;
-            }
-            let moved_count = request
-                .query_params
-                .get("moved_count")
-                .and_then(|value| value.parse::<usize>().ok())
-                .filter(|count| *count > 1);
-            match moved_count {
-                Some(count) => Some(format!("{count} messages moved to {value}.")),
-                None => Some(format!("Message moved to {value}.")),
-            }
-        });
+        // A query parameter is not evidence that a mutation completed.
 
+        let saved_reading = self
+            .gateway
+            .load_reading_preferences(context, &validated_session)
+            .ok();
+        let mut view = match list_view_state(request, saved_reading) {
+            Ok(view) => view,
+            Err(response) => {
+                return HandledHttpResponse {
+                    response,
+                    audit_events,
+                }
+            }
+        };
         let outcome = self
             .gateway
             .list_messages(context, &validated_session, &mailbox_name);
@@ -191,6 +723,64 @@ where
                 mailbox_name,
                 mut messages,
             } => {
+                if canonical_username != validated_session.record.canonical_username
+                    || request.query_params.get("name") != Some(&mailbox_name)
+                {
+                    return HandledHttpResponse {
+                        response: html_response(
+                            503,
+                            "Service Unavailable",
+                            "Mailbox unavailable",
+                            "<p>The returned mailbox summaries could not be verified.</p>",
+                        ),
+                        audit_events,
+                    };
+                }
+                let labels = match self.filter_labeled_messages(
+                    &validated_session,
+                    &mut view,
+                    &canonical_username,
+                    &mailbox_name,
+                    &mut messages,
+                ) {
+                    Ok(record) => record,
+                    Err(reason) => {
+                        let mut cleared = request.clone();
+                        for key in [
+                            "label",
+                            "selected_mailbox",
+                            "selected_uid",
+                            "selected_mailbox_guid",
+                            "selected_message_guid",
+                            "opened_read",
+                            "select",
+                            "page",
+                        ] {
+                            cleared.query_params.remove(key);
+                        }
+                        let clear = list_origin(&cleared).unwrap_or_else(|| {
+                            format!("/mailbox?name={}", url_encode(&mailbox_name))
+                        });
+                        return HandledHttpResponse {
+                            response: html_response(
+                                409,
+                                "Conflict",
+                                "Label filter unavailable",
+                                TrustedHtml::from_template(format!(
+                                    "{}<p><a href=\"{}\">Clear label filter</a></p>",
+                                    render_navigation_notice(
+                                        &canonical_username,
+                                        &validated_session.record.csrf_token,
+                                        "Label filter unavailable",
+                                        reason
+                                    ),
+                                    escape_html(&clear)
+                                )),
+                            ),
+                            audit_events,
+                        };
+                    }
+                };
                 let archive_mailbox_name = self.validated_archive_mailbox_name(
                     context,
                     &validated_session,
@@ -203,11 +793,71 @@ where
                     &mailbox_name,
                     archive_mailbox_name.as_deref(),
                 );
-                let sort = MessageSort::from_query_values(
-                    request.query_params.get("sort").map(String::as_str),
-                    request.query_params.get("dir").map(String::as_str),
+                let snooze_notice = self.apply_snooze(
+                    &validated_session,
+                    &canonical_username,
+                    &mailbox_name,
+                    &mut messages,
                 );
-                sort_message_summaries(&mut messages, sort);
+                view.open_on_select = self
+                    .gateway
+                    .load_mark_read_policy(&validated_session)
+                    .is_ok_and(|preference| preference.policy == crate::mark_read::Policy::OnOpen);
+                let mut snapshot = BrowserMessageListDecision::Listed {
+                    canonical_username: canonical_username.clone(),
+                    mailbox_name: mailbox_name.clone(),
+                    messages: messages.clone(),
+                };
+                view.apply_messages(&mut messages);
+                if let BrowserMessageListDecision::Listed { messages, .. } = &mut snapshot {
+                    view.recover_opened_messages(messages);
+                }
+                let mut reader = MailReaderContext {
+                    timezone: self
+                        .gateway
+                        .load_timezone(&validated_session)
+                        .map(|saved| saved.offset)
+                        .unwrap_or_default(),
+                    labels,
+                    pane: self.selected_message_pane(
+                        context,
+                        &validated_session,
+                        &view,
+                        &mut audit_events,
+                    ),
+                    sent_role: self.confirmed_sent_folder_role(
+                        context,
+                        &validated_session,
+                        &mailbox_name,
+                        &mut audit_events,
+                        None,
+                    ),
+                    archive_mailbox_name: archive_mailbox_name.clone(),
+                    archive_events: self.gateway.load_archive_events(&validated_session).ok(),
+                    bin_mailbox_name: self
+                        .gateway
+                        .load_bin_preference(&validated_session)
+                        .ok()
+                        .map(|v| v.mailbox_name),
+                    mailboxes: bulk_move_destinations
+                        .iter()
+                        .map(|name| MailboxEntry { name: name.clone() })
+                        .collect(),
+                    ..MailReaderContext::default()
+                };
+                if let (SelectedMessagePane::Ready(rendered), Some(origin)) =
+                    (&reader.pane, list_origin(request))
+                {
+                    reader.neighbours = crate::reader_neighbours::ReaderNeighbours::derive_messages(
+                        &canonical_username,
+                        rendered,
+                        &snapshot,
+                        &view,
+                        &origin,
+                        crate::reader_neighbours::ReaderLocation::Coordinated,
+                    );
+                }
+                reader.neighbours.set_open_on_select(view.open_on_select);
                 let search_query = request
                     .query_params
                     .get("q")
@@ -229,15 +879,16 @@ where
                             &validated_session.record.csrf_token,
                             &mailbox_name,
                             &messages,
-                            success_message.as_deref(),
+                            (!snooze_notice.is_empty()).then_some(snooze_notice.as_str()),
                             MessageListBulkActions {
                                 archive_mailbox_name: archive_mailbox_name.as_deref(),
                                 move_destinations: &bulk_move_destinations,
                             },
                             MessageListSortLinks {
-                                active_sort: sort,
+                                view: &view,
                                 search_query,
                                 search_scope,
+                                reader: &reader,
                             },
                         ),
                     ),
@@ -249,10 +900,17 @@ where
                     503,
                     "Service Unavailable",
                     "Message List Unavailable",
-                    TrustedHtml::from_template(format!(
-                        "<p>{}</p>",
-                        escape_html(public_reason_message(&public_reason))
-                    )),
+                    crate::http_ui::render_mail_load_failure(
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.csrf_token,
+                        crate::http_ui::mailbox_nav_section(&mailbox_name, None),
+                        public_reason_message(&public_reason),
+                        &crate::http_ui::list_navigation_href(
+                            &format!("/mailbox?name={}", url_encode(&mailbox_name)),
+                            &view,
+                            view.requested_page,
+                        ),
+                    ),
                 ),
                 audit_events,
             },
@@ -270,7 +928,11 @@ where
         let outcome = self.gateway.list_mailboxes(context, validated_session);
         audit_events.extend(outcome.audit_events);
         let mailboxes = match outcome.decision {
-            BrowserMailboxDecision::Listed { mailboxes, .. } => mailboxes,
+            BrowserMailboxDecision::Listed {
+                canonical_username,
+                mailboxes,
+            } if canonical_username == validated_session.record.canonical_username => mailboxes,
+            BrowserMailboxDecision::Listed { .. } => return Vec::new(),
             BrowserMailboxDecision::Denied { public_reason } => {
                 audit_events.push(
                     build_http_warning_event(
@@ -300,618 +962,15 @@ where
                 destinations.insert(0, archive_mailbox_name.to_string());
             }
         }
+        if let Ok(bin) = self.gateway.load_bin_preference(validated_session) {
+            if bin.mailbox_name != source_mailbox_name
+                && mailbox_name_exists(&mailboxes, &bin.mailbox_name)
+                && !destinations.contains(&bin.mailbox_name)
+            {
+                destinations.push(bin.mailbox_name);
+            }
+        }
         destinations
-    }
-
-    /// Handles one CSRF-bound message-move request from the message view.
-    pub(super) fn handle_message_move(
-        &self,
-        request: &HttpRequest,
-        context: &AuthenticationContext,
-    ) -> HandledHttpResponse {
-        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str))
-        {
-            return HandledHttpResponse {
-                response: html_response(
-                    400,
-                    "Bad Request",
-                    "Invalid Message Move Request",
-                    "<p>The move form content type was not supported.</p>",
-                ),
-                audit_events: vec![build_http_warning_event(
-                    "http_message_move_content_type_rejected",
-                    "message move form content type was not supported",
-                    context,
-                )],
-            };
-        }
-
-        let form = match parse_urlencoded_form(
-            &request.body,
-            self.policy.max_form_fields,
-            self.policy.max_body_bytes,
-        ) {
-            Ok(form) => form,
-            Err(error) => {
-                return HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Message Move Request",
-                        "<p>The move form could not be parsed.</p>",
-                    ),
-                    audit_events: vec![build_http_warning_event(
-                        "http_message_move_parse_failed",
-                        "message move form parsing failed",
-                        context,
-                    )
-                    .with_field("reason", error.reason)],
-                };
-            }
-        };
-
-        let (validated_session, mut audit_events) =
-            match self.require_validated_session(request, context) {
-                Ok(result) => result,
-                Err(response) => return response,
-            };
-        if let Some(response) = self.require_valid_csrf(
-            request,
-            form.get("csrf_token").map(String::as_str),
-            &validated_session,
-            context,
-        ) {
-            return response;
-        }
-
-        let source_mailbox_name = form.get("mailbox").cloned().unwrap_or_default();
-        let destination_mailbox_name = form.get("destination_mailbox").cloned().unwrap_or_default();
-        let uid = match form.get("uid").and_then(|value| value.parse::<u64>().ok()) {
-            Some(uid) => uid,
-            None => {
-                return HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Message Move Request",
-                        "<p>A positive IMAP UID is required.</p>",
-                    ),
-                    audit_events: vec![build_http_warning_event(
-                        "http_message_move_uid_rejected",
-                        "message move uid parameter invalid",
-                        context,
-                    )],
-                };
-            }
-        };
-
-        let (budget_guard, budget_event) =
-            match self.acquire_mailbox_budget(context, &validated_session, "message_move") {
-                Ok(result) => result,
-                Err(mut response) => {
-                    audit_events.extend(response.audit_events);
-                    response.audit_events = audit_events;
-                    return response;
-                }
-            };
-        audit_events.push(budget_event);
-
-        let outcome = self.gateway.move_message(
-            context,
-            &validated_session,
-            &source_mailbox_name,
-            uid,
-            &destination_mailbox_name,
-        );
-        audit_events.extend(outcome.audit_events);
-
-        let mut handled = match outcome.decision {
-            BrowserMessageMoveDecision::Moved {
-                source_mailbox_name,
-                destination_mailbox_name,
-                ..
-            } => HandledHttpResponse {
-                response: redirect_response(
-                    303,
-                    "See Other",
-                    &format!(
-                        "/mailbox?name={}&moved_to={}",
-                        url_encode(&source_mailbox_name),
-                        url_encode(&destination_mailbox_name)
-                    ),
-                ),
-                audit_events,
-            },
-            BrowserMessageMoveDecision::Denied {
-                public_reason,
-                retry_after_seconds,
-            } => {
-                let (status_code, reason_phrase, title) = match public_reason.as_str() {
-                    "invalid_mailbox" | "invalid_request" => {
-                        (400, "Bad Request", "Invalid Message Move Request")
-                    }
-                    "invalid_message_reference" => (404, "Not Found", "Message Move Not Available"),
-                    "not_found" => (404, "Not Found", "Message Move Not Available"),
-                    TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON => {
-                        (429, "Too Many Requests", "Message Move Temporarily Limited")
-                    }
-                    _ => (503, "Service Unavailable", "Message Move Unavailable"),
-                };
-
-                let mut response = html_response(
-                    status_code,
-                    reason_phrase,
-                    title,
-                    TrustedHtml::from_template(format!(
-                        "<p>{}</p>",
-                        escape_html(public_reason_message(&public_reason))
-                    )),
-                );
-                if let Some(retry_after_seconds) = retry_after_seconds {
-                    response = response.with_header("Retry-After", retry_after_seconds.to_string());
-                }
-                HandledHttpResponse {
-                    response,
-                    audit_events,
-                }
-            }
-        };
-        handled.audit_events.push(self.release_request_budget(
-            budget_guard,
-            "message_move",
-            context,
-            &validated_session,
-        ));
-        handled
-    }
-
-    /// Handles a bounded CSRF-bound selected-message archive request.
-    pub(super) fn handle_bulk_archive(
-        &self,
-        request: &HttpRequest,
-        context: &AuthenticationContext,
-    ) -> HandledHttpResponse {
-        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str))
-        {
-            return HandledHttpResponse {
-                response: html_response(
-                    400,
-                    "Bad Request",
-                    "Invalid Bulk Archive Request",
-                    "<p>The archive form content type was not supported.</p>",
-                ),
-                audit_events: vec![build_http_warning_event(
-                    "http_bulk_archive_content_type_rejected",
-                    "bulk archive form content type was not supported",
-                    context,
-                )],
-            };
-        }
-
-        let form = match parse_urlencoded_form(
-            &request.body,
-            self.policy.max_form_fields,
-            self.policy.max_body_bytes,
-        ) {
-            Ok(form) => form,
-            Err(error) => {
-                return HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Bulk Archive Request",
-                        "<p>The archive form could not be parsed.</p>",
-                    ),
-                    audit_events: vec![build_http_warning_event(
-                        "http_bulk_archive_parse_failed",
-                        "bulk archive form parsing failed",
-                        context,
-                    )
-                    .with_field("reason", error.reason)],
-                };
-            }
-        };
-
-        let (validated_session, mut audit_events) =
-            match self.require_validated_session(request, context) {
-                Ok(result) => result,
-                Err(response) => return response,
-            };
-        if let Some(response) = self.require_valid_csrf(
-            request,
-            form.get("csrf_token").map(String::as_str),
-            &validated_session,
-            context,
-        ) {
-            return response;
-        }
-
-        let source_mailbox_name = form.get("mailbox").cloned().unwrap_or_default();
-        let destination_mailbox_name = form.get("destination_mailbox").cloned().unwrap_or_default();
-        let selected_uids = match selected_bulk_archive_uids(&form) {
-            Ok(selected_uids) if !selected_uids.is_empty() => selected_uids,
-            Ok(_) => {
-                return HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Bulk Archive Request",
-                        "<p>Select at least one message to archive.</p>",
-                    ),
-                    audit_events: vec![build_http_warning_event(
-                        "http_bulk_archive_empty_selection",
-                        "bulk archive request did not include selected messages",
-                        context,
-                    )],
-                };
-            }
-            Err(reason) => {
-                return HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Bulk Archive Request",
-                        "<p>The archive selection was not valid.</p>",
-                    ),
-                    audit_events: vec![build_http_warning_event(
-                        "http_bulk_archive_uid_rejected",
-                        "bulk archive uid parameter invalid",
-                        context,
-                    )
-                    .with_field("reason", reason)],
-                };
-            }
-        };
-
-        let (budget_guard, budget_event) = match self.acquire_mailbox_budget(
-            context,
-            &validated_session,
-            "bulk_message_archive",
-        ) {
-            Ok(result) => result,
-            Err(mut response) => {
-                audit_events.extend(response.audit_events);
-                response.audit_events = audit_events;
-                return response;
-            }
-        };
-        audit_events.push(budget_event);
-
-        let mut moved_count = 0_usize;
-        let mut handled = None;
-        for uid in selected_uids {
-            let outcome = self.gateway.move_message(
-                context,
-                &validated_session,
-                &source_mailbox_name,
-                uid,
-                &destination_mailbox_name,
-            );
-            audit_events.extend(outcome.audit_events);
-
-            match outcome.decision {
-                BrowserMessageMoveDecision::Moved { .. } => {
-                    moved_count += 1;
-                }
-                BrowserMessageMoveDecision::Denied {
-                    public_reason,
-                    retry_after_seconds,
-                } => {
-                    let (status_code, reason_phrase, title) = match public_reason.as_str() {
-                        "invalid_mailbox" | "invalid_request" => {
-                            (400, "Bad Request", "Invalid Bulk Archive Request")
-                        }
-                        "invalid_message_reference" => {
-                            (404, "Not Found", "Bulk Archive Not Available")
-                        }
-                        "not_found" => (404, "Not Found", "Bulk Archive Not Available"),
-                        TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON => {
-                            (429, "Too Many Requests", "Bulk Archive Temporarily Limited")
-                        }
-                        _ => (503, "Service Unavailable", "Bulk Archive Unavailable"),
-                    };
-
-                    let mut response = html_response(
-                        status_code,
-                        reason_phrase,
-                        title,
-                        TrustedHtml::from_template(format!(
-                            "<p>{}</p><p>{} message(s) were archived before this request stopped.</p>",
-                            escape_html(public_reason_message(&public_reason)),
-                            moved_count
-                        )),
-                    );
-                    if let Some(retry_after_seconds) = retry_after_seconds {
-                        response =
-                            response.with_header("Retry-After", retry_after_seconds.to_string());
-                    }
-                    handled = Some(HandledHttpResponse {
-                        response,
-                        audit_events: audit_events.clone(),
-                    });
-                    break;
-                }
-            }
-        }
-
-        let mut handled = handled.unwrap_or_else(|| HandledHttpResponse {
-            response: redirect_response(
-                303,
-                "See Other",
-                &format!(
-                    "/mailbox?name={}&moved_to={}&moved_count={}",
-                    url_encode(&source_mailbox_name),
-                    url_encode(&destination_mailbox_name),
-                    moved_count
-                ),
-            ),
-            audit_events,
-        });
-        handled.audit_events.push(self.release_request_budget(
-            budget_guard,
-            "bulk_message_archive",
-            context,
-            &validated_session,
-        ));
-        handled
-    }
-
-    /// Handles a bounded CSRF-bound selected-message move request.
-    pub(super) fn handle_bulk_move(
-        &self,
-        request: &HttpRequest,
-        context: &AuthenticationContext,
-    ) -> HandledHttpResponse {
-        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str))
-        {
-            return HandledHttpResponse {
-                response: html_response(
-                    400,
-                    "Bad Request",
-                    "Invalid Bulk Move Request",
-                    "<p>The move form content type was not supported.</p>",
-                ),
-                audit_events: vec![build_http_warning_event(
-                    "http_bulk_move_content_type_rejected",
-                    "bulk move form content type was not supported",
-                    context,
-                )],
-            };
-        }
-
-        let form = match parse_urlencoded_form(
-            &request.body,
-            self.policy.max_form_fields,
-            self.policy.max_body_bytes,
-        ) {
-            Ok(form) => form,
-            Err(error) => {
-                return HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Bulk Move Request",
-                        "<p>The move form could not be parsed.</p>",
-                    ),
-                    audit_events: vec![build_http_warning_event(
-                        "http_bulk_move_parse_failed",
-                        "bulk move form parsing failed",
-                        context,
-                    )
-                    .with_field("reason", error.reason)],
-                };
-            }
-        };
-
-        let (validated_session, mut audit_events) =
-            match self.require_validated_session(request, context) {
-                Ok(result) => result,
-                Err(response) => return response,
-            };
-        if let Some(response) = self.require_valid_csrf(
-            request,
-            form.get("csrf_token").map(String::as_str),
-            &validated_session,
-            context,
-        ) {
-            return response;
-        }
-
-        let source_mailbox_name = form.get("mailbox").cloned().unwrap_or_default();
-        let destination_mailbox_name = form.get("destination_mailbox").cloned().unwrap_or_default();
-        let selected_uids = match selected_bulk_archive_uids(&form) {
-            Ok(selected_uids) if !selected_uids.is_empty() => selected_uids,
-            Ok(_) => {
-                return HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Bulk Move Request",
-                        "<p>Select at least one message to move.</p>",
-                    ),
-                    audit_events: vec![build_http_warning_event(
-                        "http_bulk_move_empty_selection",
-                        "bulk move request did not include selected messages",
-                        context,
-                    )],
-                };
-            }
-            Err(reason) => {
-                return HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Bulk Move Request",
-                        "<p>The move selection was not valid.</p>",
-                    ),
-                    audit_events: vec![build_http_warning_event(
-                        "http_bulk_move_uid_rejected",
-                        "bulk move uid parameter invalid",
-                        context,
-                    )
-                    .with_field("reason", reason)],
-                };
-            }
-        };
-
-        let (budget_guard, budget_event) =
-            match self.acquire_mailbox_budget(context, &validated_session, "bulk_message_move") {
-                Ok(result) => result,
-                Err(mut response) => {
-                    audit_events.extend(response.audit_events);
-                    response.audit_events = audit_events;
-                    return response;
-                }
-            };
-        audit_events.push(budget_event);
-
-        if !self.bulk_move_destination_allowed(
-            context,
-            &validated_session,
-            &mut audit_events,
-            &source_mailbox_name,
-            &destination_mailbox_name,
-        ) {
-            audit_events.push(
-                build_http_warning_event(
-                    "http_bulk_move_destination_rejected",
-                    "bulk move destination was not visible or approved",
-                    context,
-                )
-                .with_field("source_mailbox_name", source_mailbox_name.clone())
-                .with_field("destination_mailbox_name", destination_mailbox_name.clone()),
-            );
-            let mut handled = HandledHttpResponse {
-                response: html_response(
-                    400,
-                    "Bad Request",
-                    "Invalid Bulk Move Request",
-                    "<p>The selected destination mailbox is not available for bulk move.</p>",
-                ),
-                audit_events,
-            };
-            handled.audit_events.push(self.release_request_budget(
-                budget_guard,
-                "bulk_message_move",
-                context,
-                &validated_session,
-            ));
-            return handled;
-        }
-
-        let mut moved_count = 0_usize;
-        let mut handled = None;
-        for uid in selected_uids {
-            let outcome = self.gateway.move_message(
-                context,
-                &validated_session,
-                &source_mailbox_name,
-                uid,
-                &destination_mailbox_name,
-            );
-            audit_events.extend(outcome.audit_events);
-
-            match outcome.decision {
-                BrowserMessageMoveDecision::Moved { .. } => moved_count += 1,
-                BrowserMessageMoveDecision::Denied {
-                    public_reason,
-                    retry_after_seconds,
-                } => {
-                    let (status_code, reason_phrase, title) = match public_reason.as_str() {
-                        "invalid_mailbox" | "invalid_request" => {
-                            (400, "Bad Request", "Invalid Bulk Move Request")
-                        }
-                        "invalid_message_reference" => {
-                            (404, "Not Found", "Bulk Move Not Available")
-                        }
-                        "not_found" => (404, "Not Found", "Bulk Move Not Available"),
-                        TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON => {
-                            (429, "Too Many Requests", "Bulk Move Temporarily Limited")
-                        }
-                        _ => (503, "Service Unavailable", "Bulk Move Unavailable"),
-                    };
-                    let mut response = html_response(
-                        status_code,
-                        reason_phrase,
-                        title,
-                        TrustedHtml::from_template(format!(
-                            "<p>{}</p><p>{} message(s) were moved before this request stopped.</p>",
-                            escape_html(public_reason_message(&public_reason)),
-                            moved_count
-                        )),
-                    );
-                    if let Some(retry_after_seconds) = retry_after_seconds {
-                        response =
-                            response.with_header("Retry-After", retry_after_seconds.to_string());
-                    }
-                    handled = Some(HandledHttpResponse {
-                        response,
-                        audit_events: audit_events.clone(),
-                    });
-                    break;
-                }
-            }
-        }
-
-        let mut handled = handled.unwrap_or_else(|| HandledHttpResponse {
-            response: redirect_response(
-                303,
-                "See Other",
-                &format!(
-                    "/mailbox?name={}&moved_to={}&moved_count={}",
-                    url_encode(&source_mailbox_name),
-                    url_encode(&destination_mailbox_name),
-                    moved_count
-                ),
-            ),
-            audit_events,
-        });
-        handled.audit_events.push(self.release_request_budget(
-            budget_guard,
-            "bulk_message_move",
-            context,
-            &validated_session,
-        ));
-        handled
-    }
-
-    fn bulk_move_destination_allowed(
-        &self,
-        context: &AuthenticationContext,
-        validated_session: &ValidatedSession,
-        audit_events: &mut Vec<LogEvent>,
-        source_mailbox_name: &str,
-        destination_mailbox_name: &str,
-    ) -> bool {
-        if destination_mailbox_name.is_empty() || destination_mailbox_name == source_mailbox_name {
-            return false;
-        }
-        let archive_mailbox_name =
-            self.validated_archive_mailbox_name(context, validated_session, audit_events);
-        if archive_mailbox_name.as_deref() == Some(destination_mailbox_name) {
-            return true;
-        }
-
-        let outcome = self.gateway.list_mailboxes(context, validated_session);
-        audit_events.extend(outcome.audit_events);
-        match outcome.decision {
-            BrowserMailboxDecision::Listed { mailboxes, .. } => {
-                filter_user_visible_mailboxes(&mailboxes)
-                    .iter()
-                    .any(|mailbox| mailbox.name == destination_mailbox_name)
-            }
-            BrowserMailboxDecision::Denied { public_reason } => {
-                audit_events.push(
-                    build_http_warning_event(
-                        "bulk_move_destination_unresolved",
-                        "bulk move destination could not be resolved",
-                        context,
-                    )
-                    .with_field("public_reason", public_reason),
-                );
-                false
-            }
-        }
     }
 
     /// Handles bounded message-search requests for one mailbox or all mailboxes.
@@ -920,24 +979,7 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
-        let query = match request.query_params.get("q") {
-            Some(query) if !query.trim().is_empty() => query.clone(),
-            _ => {
-                return HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Search Request",
-                        "<p>A search query is required.</p>",
-                    ),
-                    audit_events: vec![build_http_warning_event(
-                        "http_search_query_rejected",
-                        "search query parameter missing",
-                        context,
-                    )],
-                };
-            }
-        };
+        let query = request.query_params.get("q").cloned().unwrap_or_default();
         let mut mailbox_name = request
             .query_params
             .get("mailbox")
@@ -974,6 +1016,44 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
+        let saved_reading = self
+            .gateway
+            .load_reading_preferences(context, &validated_session)
+            .ok();
+        let mut view = match list_view_state(request, saved_reading) {
+            Ok(view) => view,
+            Err(response) => {
+                return HandledHttpResponse {
+                    response,
+                    audit_events,
+                }
+            }
+        };
+        if query.trim().is_empty() {
+            view.selection = None;
+            view.page = 1;
+            view.requested_page = 1;
+            return HandledHttpResponse {
+                response: html_response(
+                    200,
+                    "OK",
+                    "Search",
+                    render_message_search_page(
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.csrf_token,
+                        mailbox_name.as_deref(),
+                        &query,
+                        &[],
+                        MessageSearchContext {
+                            view: &view,
+                            field: search_field,
+                            reader: &MailReaderContext::default(),
+                        },
+                    ),
+                ),
+                audit_events,
+            };
+        }
         let (budget_guard, budget_event) =
             match self.acquire_search_budget(context, &validated_session) {
                 Ok(result) => result,
@@ -996,17 +1076,97 @@ where
 
         let mut handled = match outcome.decision {
             BrowserMessageSearchDecision::Listed {
+                canonical_username, ..
+            } if canonical_username != validated_session.record.canonical_username => {
+                HandledHttpResponse {
+                    response: html_response(
+                        503,
+                        "Service Unavailable",
+                        "Message Search Unavailable",
+                        "<p>The search results could not be verified for this account.</p>",
+                    ),
+                    audit_events,
+                }
+            }
+            BrowserMessageSearchDecision::Listed {
                 canonical_username,
                 mailbox_name,
                 query,
                 mut results,
             } => {
-                let sort = MessageSort::from_query_values(
-                    request.query_params.get("sort").map(String::as_str),
-                    request.query_params.get("dir").map(String::as_str),
+                view.open_on_select = self
+                    .gateway
+                    .load_mark_read_policy(&validated_session)
+                    .is_ok_and(|preference| preference.policy == crate::mark_read::Policy::OnOpen);
+                let mut snapshot = BrowserMessageSearchDecision::Listed {
+                    canonical_username: canonical_username.clone(),
+                    mailbox_name: mailbox_name.clone(),
+                    query: query.clone(),
+                    results: results.clone(),
+                };
+                view.apply_search(&mut results);
+                if let BrowserMessageSearchDecision::Listed { results, .. } = &mut snapshot {
+                    view.recover_opened_search(results);
+                }
+                let pane = self.selected_message_pane(
+                    context,
+                    &validated_session,
+                    &view,
+                    &mut audit_events,
                 );
-                sort_message_search_results(&mut results, sort);
+                let mut reader = MailReaderContext {
+                    timezone: self
+                        .gateway
+                        .load_timezone(&validated_session)
+                        .map(|saved| saved.offset)
+                        .unwrap_or_default(),
+                    pane,
+                    labels: self.owned_label_record(&validated_session),
+                    bin_mailbox_name: self
+                        .gateway
+                        .load_bin_preference(&validated_session)
+                        .ok()
+                        .map(|v| v.mailbox_name),
+                    ..MailReaderContext::default()
+                };
+                if let SelectedMessagePane::Ready(rendered) = &reader.pane {
+                    if let Some(origin) = list_origin(request) {
+                        reader.neighbours =
+                            crate::reader_neighbours::ReaderNeighbours::derive_search(
+                                &canonical_username,
+                                rendered,
+                                &snapshot,
+                                &view,
+                                &origin,
+                                crate::reader_neighbours::ReaderLocation::Coordinated,
+                            );
+                    }
+                    reader.sent_role = self.confirmed_sent_folder_role(
+                        context,
+                        &validated_session,
+                        &rendered.mailbox_name,
+                        &mut audit_events,
+                        Some(&budget_guard),
+                    );
+                    reader.archive_mailbox_name = self.validated_archive_mailbox_name(
+                        context,
+                        &validated_session,
+                        &mut audit_events,
+                    );
+                    reader.mailboxes = self
+                        .bulk_move_destinations(
+                            context,
+                            &validated_session,
+                            &mut audit_events,
+                            &rendered.mailbox_name,
+                            reader.archive_mailbox_name.as_deref(),
+                        )
+                        .into_iter()
+                        .map(|name| MailboxEntry { name })
+                        .collect();
+                }
 
+                reader.neighbours.set_open_on_select(view.open_on_select);
                 HandledHttpResponse {
                     response: html_response(
                         200,
@@ -1018,8 +1178,11 @@ where
                             mailbox_name.as_deref(),
                             &query,
                             &results,
-                            sort,
-                            search_field,
+                            MessageSearchContext {
+                                view: &view,
+                                field: search_field,
+                                reader: &reader,
+                            },
                         ),
                     ),
                     audit_events,
@@ -1038,10 +1201,32 @@ where
                         status_code,
                         reason_phrase,
                         title,
-                        TrustedHtml::from_template(format!(
-                            "<p>{}</p>",
-                            escape_html(public_reason_message(&public_reason))
-                        )),
+                        if status_code == 503 {
+                            let base = match &mailbox_name {
+                                Some(name) => format!("/search?mailbox={}", url_encode(name)),
+                                None => "/search?scope=all".into(),
+                            };
+                            crate::http_ui::render_mail_load_failure(
+                                &validated_session.record.canonical_username,
+                                &validated_session.record.csrf_token,
+                                "search",
+                                public_reason_message(&public_reason),
+                                &crate::http_ui::list_navigation_href(
+                                    &format!(
+                                        "{base}&q={}&field={}",
+                                        url_encode(&query),
+                                        search_field.query_value()
+                                    ),
+                                    &view,
+                                    view.requested_page,
+                                ),
+                            )
+                        } else {
+                            TrustedHtml::from_template(format!(
+                                "<p>{}</p>",
+                                escape_html(public_reason_message(&public_reason))
+                            ))
+                        },
                     ),
                     audit_events,
                 }
@@ -1062,6 +1247,9 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
+        if request.query_params.contains_key("view") {
+            return self.handle_stored_content(request, context, false);
+        }
         let mailbox_name = match request.query_params.get("mailbox") {
             Some(mailbox_name) if !mailbox_name.is_empty() => mailbox_name.clone(),
             _ => {
@@ -1124,58 +1312,141 @@ where
             .view_message(context, &validated_session, &mailbox_name, uid);
         audit_events.extend(outcome.audit_events);
 
+        let (recovery_back, recovery_retry) = message_recovery_links(request, &mailbox_name);
         let mut handled = match outcome.decision {
             BrowserMessageViewDecision::Rendered {
                 canonical_username,
                 rendered,
-            } => {
+            } if canonical_username == validated_session.record.canonical_username
+                && rendered.mailbox_name == mailbox_name
+                && rendered.uid == uid
+                && crate::reader_neighbours::query_version_matches(
+                    &request.query_params,
+                    &rendered,
+                ) =>
+            {
+                let mut neighbours = self.standalone_neighbours(
+                    request,
+                    context,
+                    &validated_session,
+                    &rendered,
+                    &mut audit_events,
+                );
+                if !neighbours.opening_policy_bound() {
+                    neighbours.set_open_on_select(
+                        self.gateway
+                            .load_mark_read_policy(&validated_session)
+                            .is_ok_and(|preference| {
+                                preference.policy == crate::mark_read::Policy::OnOpen
+                            }),
+                    );
+                }
                 let archive_mailbox_name = self.validated_archive_mailbox_name(
                     context,
                     &validated_session,
                     &mut audit_events,
                 );
-                let visible_mailboxes =
-                    match self.gateway.list_mailboxes(context, &validated_session) {
-                        BrowserMailboxOutcome {
-                            decision: BrowserMailboxDecision::Listed { mailboxes, .. },
-                            audit_events: mailbox_audit_events,
-                        } => {
-                            audit_events.extend(mailbox_audit_events);
-                            filter_user_visible_mailboxes(&mailboxes)
-                        }
-                        BrowserMailboxOutcome {
-                            decision: BrowserMailboxDecision::Denied { public_reason },
-                            audit_events: mailbox_audit_events,
-                        } => {
-                            audit_events.extend(mailbox_audit_events);
-                            audit_events.push(
-                                build_http_warning_event(
-                                    "message_view_move_destinations_unresolved",
-                                    "message view visible move destinations could not be resolved",
-                                    context,
-                                )
-                                .with_field("public_reason", public_reason),
-                            );
+                let bin_mailbox_name = self
+                    .gateway
+                    .load_bin_preference(&validated_session)
+                    .ok()
+                    .map(|v| v.mailbox_name);
+                let visible_mailboxes = match self
+                    .gateway
+                    .list_mailboxes(context, &validated_session)
+                {
+                    BrowserMailboxOutcome {
+                        decision:
+                            BrowserMailboxDecision::Listed {
+                                canonical_username,
+                                mailboxes,
+                            },
+                        audit_events: mailbox_audit_events,
+                    } => {
+                        audit_events.extend(mailbox_audit_events);
+                        if canonical_username == validated_session.record.canonical_username {
+                            let mut visible = filter_user_visible_mailboxes(&mailboxes);
+                            if let Some(bin) = bin_mailbox_name.as_deref() {
+                                if !visible.iter().any(|m| m.name == bin) {
+                                    if let Some(entry) = mailboxes.iter().find(|m| m.name == bin) {
+                                        visible.push(entry.clone());
+                                    }
+                                }
+                            }
+                            visible
+                        } else {
                             Vec::new()
                         }
-                    };
+                    }
+                    BrowserMailboxOutcome {
+                        decision: BrowserMailboxDecision::Denied { public_reason },
+                        audit_events: mailbox_audit_events,
+                    } => {
+                        audit_events.extend(mailbox_audit_events);
+                        audit_events.push(
+                            build_http_warning_event(
+                                "message_view_move_destinations_unresolved",
+                                "message view visible move destinations could not be resolved",
+                                context,
+                            )
+                            .with_field("public_reason", public_reason),
+                        );
+                        Vec::new()
+                    }
+                };
+
+                let reader_context = MailReaderContext {
+                    timezone: self
+                        .gateway
+                        .load_timezone(&validated_session)
+                        .map(|saved| saved.offset)
+                        .unwrap_or_default(),
+                    labels: self.owned_label_record(&validated_session),
+                    sent_role: self.confirmed_sent_folder_role(
+                        context,
+                        &validated_session,
+                        &rendered.mailbox_name,
+                        &mut audit_events,
+                        Some(&budget_guard),
+                    ),
+                    archive_mailbox_name,
+                    bin_mailbox_name,
+                    mailboxes: visible_mailboxes,
+                    ..MailReaderContext::default()
+                };
 
                 HandledHttpResponse {
                     response: html_response(
                         200,
                         "OK",
                         "Message View",
-                        render_message_view_page(
+                        crate::http_ui::render_message_view_page_with_context(
                             &canonical_username,
                             &validated_session.record.csrf_token,
                             &rendered,
-                            archive_mailbox_name.as_deref(),
-                            &visible_mailboxes,
+                            &reader_context,
+                            &neighbours,
                         ),
                     ),
                     audit_events,
                 }
             }
+            BrowserMessageViewDecision::Rendered { .. } => HandledHttpResponse {
+                response: html_response(
+                    503,
+                    "Service Unavailable",
+                    "Message View Unavailable",
+                    crate::http_ui::render_content_notice(
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.csrf_token,
+                        "Message unavailable",
+                        "The message identity could not be confirmed. Return to the mailbox.",
+                        &recovery_back,
+                        None,
+                    ),
+                ),
+                audit_events,
+            },
             BrowserMessageViewDecision::Denied { public_reason } => HandledHttpResponse {
                 response: {
                     let (status_code, reason_phrase, title) = match public_reason.as_str() {
@@ -1187,10 +1458,18 @@ where
                         status_code,
                         reason_phrase,
                         title,
-                        TrustedHtml::from_template(format!(
-                            "<p>{}</p>",
-                            escape_html(public_reason_message(&public_reason))
-                        )),
+                        crate::http_ui::render_content_notice(
+                            &validated_session.record.canonical_username,
+                            &validated_session.record.csrf_token,
+                            title,
+                            public_reason_message(&public_reason),
+                            &recovery_back,
+                            if status_code == 503 {
+                                recovery_retry.as_deref()
+                            } else {
+                                None
+                            },
+                        ),
                     )
                 },
                 audit_events,
@@ -1211,6 +1490,11 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
+        if request.query_params.contains_key("mailbox_guid")
+            || request.query_params.contains_key("message_guid")
+        {
+            return self.handle_stored_content(request, context, true);
+        }
         let mailbox_name = match request.query_params.get("mailbox") {
             Some(mailbox_name) if !mailbox_name.is_empty() => mailbox_name.clone(),
             _ => {
@@ -1297,12 +1581,19 @@ where
         audit_events.extend(outcome.audit_events);
 
         let mut handled = match outcome.decision {
-            BrowserAttachmentDownloadDecision::Downloaded { attachment, .. } => {
+            BrowserAttachmentDownloadDecision::Downloaded { canonical_username, attachment }
+                if canonical_username == validated_session.record.canonical_username
+                    && attachment.mailbox_name == mailbox_name && attachment.uid == uid
+                    && attachment.part_path == part_path => {
                 HandledHttpResponse {
                     response: attachment_download_response(&attachment),
                     audit_events,
                 }
             }
+            BrowserAttachmentDownloadDecision::Downloaded { .. } => HandledHttpResponse {
+                response: html_response(503, "Service Unavailable", "Attachment Download Unavailable", "<p>The attachment identity could not be confirmed. Return to the message and try again.</p>"),
+                audit_events,
+            },
             BrowserAttachmentDownloadDecision::Denied { public_reason } => {
                 let (status_code, reason_phrase, title) = match public_reason.as_str() {
                     "invalid_request" => (400, "Bad Request", "Invalid Attachment Request"),
@@ -1319,10 +1610,10 @@ where
                         status_code,
                         reason_phrase,
                         title,
-                        TrustedHtml::from_template(format!(
-                            "<p>{}</p>",
-                            escape_html(public_reason_message(&public_reason))
-                        )),
+                        crate::http_ui::render_content_notice(&validated_session.record.canonical_username,
+                            &validated_session.record.csrf_token, title, public_reason_message(&public_reason),
+                            &format!("/message?mailbox={}&uid={uid}", url_encode(&mailbox_name)),
+                            (status_code == 503).then_some(format!("/attachment?mailbox={}&uid={uid}&part={}", url_encode(&mailbox_name), url_encode(&part_path))).as_deref()),
                     ),
                     audit_events,
                 }
@@ -1338,25 +1629,24 @@ where
     }
 }
 
-fn selected_bulk_archive_uids(
-    form: &std::collections::BTreeMap<String, String>,
-) -> Result<Vec<u64>, String> {
-    let mut selected = std::collections::BTreeSet::new();
-    for (field_name, field_value) in form {
-        if !field_name.starts_with("uid_") {
-            continue;
-        }
-        if selected.len() >= MAX_BULK_ARCHIVE_MESSAGES {
-            return Err("too many selected messages".to_string());
-        }
-        let uid = field_value
-            .parse::<u64>()
-            .map_err(|_| format!("invalid selected uid value in {field_name}"))?;
-        if uid == 0 {
-            return Err(format!("invalid selected uid value in {field_name}"));
-        }
-        selected.insert(uid);
-    }
+#[cfg(test)]
+mod visibility_tests {
+    use super::*;
 
-    Ok(selected.into_iter().collect())
+    #[test]
+    fn archive_folder_is_offered_only_when_returned_for_the_account() {
+        let entry = |name: &str| MailboxEntry { name: name.into() };
+        let listed = filter_user_visible_mailboxes(&[
+            entry("INBOX"),
+            entry("Archive"),
+            entry("Shared/Other"),
+        ]);
+        assert_eq!(
+            listed.iter().map(|m| m.name.as_str()).collect::<Vec<_>>(),
+            vec!["INBOX", "Archive"]
+        );
+        assert!(!filter_user_visible_mailboxes(&[entry("INBOX")])
+            .iter()
+            .any(|m| m.name == "Archive"));
+    }
 }

@@ -1,7 +1,7 @@
 use std::io::Write as _;
 use std::net::{TcpListener, TcpStream};
 use std::panic::{catch_unwind, AssertUnwindSafe};
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -13,7 +13,7 @@ use crate::http_support::{
     build_http_info_event, build_http_warning_event, html_response, plain_text_response,
 };
 use crate::logging::{EventCategory, LogEvent, Logger};
-use crate::openbsd::apply_runtime_confinement;
+use crate::openbsd::apply_runtime_confinement_for_accounts;
 
 use super::{
     BrowserApp, BrowserGateway, HandledHttpResponse, HttpMethod, HttpPolicy, HttpRequest,
@@ -27,6 +27,51 @@ const HTTP_RESPONSE_WRITE_FAILURE_ESCALATION_THRESHOLD: u32 = 5;
 const HTTP_REQUEST_SLOW_THRESHOLD_MILLIS: u128 = 1000;
 const HTTP_OVER_CAPACITY_RETRY_AFTER_SECS: u64 = 1;
 const HTTP_WORKER_THREAD_NAME: &str = "osmap-http-conn";
+
+#[cfg(all(test, target_os = "openbsd"))]
+#[path = "http_runtime_scheduled_native_tests.rs"]
+mod scheduled_native_tests;
+
+#[cfg(all(test, target_os = "openbsd"))]
+#[path = "http_runtime_scheduled_positive_native_tests.rs"]
+pub(crate) mod scheduled_positive_fixture;
+
+struct ScheduledWorkerThread {
+    stop: Arc<AtomicBool>,
+    handle: Option<thread::JoinHandle<()>>,
+}
+impl ScheduledWorkerThread {
+    fn start(gateway: RuntimeBrowserGateway, logger: Logger) -> Result<Self, String> {
+        let stop = Arc::new(AtomicBool::new(false));
+        let thread_stop = Arc::clone(&stop);
+        let handle = thread::Builder::new().name("osmap-scheduled".into()).spawn(move || {
+            while !thread_stop.load(Ordering::Acquire) {
+                let result = catch_unwind(AssertUnwindSafe(|| gateway.run_scheduled_once(&logger)));
+                if !matches!(result, Ok(Ok(_))) {
+                    logger.emit(&LogEvent::new(LogLevel::Warn, EventCategory::Submission,
+                        "scheduled_worker_unavailable", "scheduled pass could not be confirmed; persisted uncertain attempts will not be retried"));
+                }
+                // Short checks let a normal server shutdown stop the worker.
+                for _ in 0..15 {
+                    if thread_stop.load(Ordering::Acquire) { return }
+                    thread::sleep(Duration::from_secs(1));
+                }
+            }
+        }).map_err(|_| "scheduled worker thread could not start".to_string())?;
+        Ok(Self {
+            stop,
+            handle: Some(handle),
+        })
+    }
+}
+impl Drop for ScheduledWorkerThread {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Release);
+        if let Some(handle) = self.handle.take() {
+            let _ = handle.join();
+        }
+    }
+}
 
 pub(super) struct ResponseWriteFailureContext<'a> {
     pub(super) remote_addr: String,
@@ -69,6 +114,23 @@ where
 {
     /// Handles one parsed HTTP request from the supplied remote address.
     pub fn handle_request(&self, request: &HttpRequest, remote_addr: &str) -> HandledHttpResponse {
+        let _notification_scope = super::notification_badge::RenderScope::new(request);
+        let mut handled = self.handle_request_inner(request, remote_addr);
+        self.apply_notification_badge(&mut handled.response, request);
+        crate::http_support::apply_appearance(
+            &mut handled.response,
+            request.headers.get("cookie").map(String::as_str),
+        );
+        super::header_theme::apply_context(&mut handled.response, request);
+        self.apply_reading_presentation(&mut handled.response, request);
+        handled
+    }
+
+    fn handle_request_inner(
+        &self,
+        request: &HttpRequest,
+        remote_addr: &str,
+    ) -> HandledHttpResponse {
         let effective_remote_addr = effective_remote_addr(request, remote_addr);
         let context = match AuthenticationContext::new(
             self.policy.authentication_policy,
@@ -107,6 +169,28 @@ where
             return response;
         }
 
+        // Documents was retired. Refuse before any authenticated read or write;
+        // retained indexes and stored messages are deliberately left untouched.
+        if request.path == "/documents"
+            || request.path.starts_with("/documents/")
+            || request.path == "/search"
+                && request.query_params.get("category").map(String::as_str) == Some("documents")
+        {
+            return HandledHttpResponse {
+                response: html_response(
+                    404,
+                    "Not Found",
+                    "Not Found",
+                    "<p>This page could not be found.</p>",
+                ),
+                audit_events: vec![build_http_info_event(
+                    "http_retired_route",
+                    "retired route refused",
+                    &context,
+                )],
+            };
+        }
+
         match (request.method, request.path.as_str()) {
             (HttpMethod::Get, "/healthz") => HandledHttpResponse {
                 response: plain_text_response(200, "OK", "ok\n"),
@@ -118,24 +202,246 @@ where
             },
             (HttpMethod::Get, "/login") => self.handle_login_form(&context),
             (HttpMethod::Post, "/login") => self.handle_login(request, &context),
+            (HttpMethod::Get | HttpMethod::Post, "/recover") => {
+                self.handle_access_recovery(request, &context)
+            }
+            (HttpMethod::Get | HttpMethod::Post, "/recover/setup") => {
+                self.handle_access_recovery(request, &context)
+            }
             (HttpMethod::Get, "/") => self.handle_root_redirect(request, &context),
             (HttpMethod::Get, "/mailboxes") => self.handle_mailboxes(request, &context),
+            (HttpMethod::Get, "/folders") => self.handle_settings_page(request, &context),
+            (HttpMethod::Get, "/mailbox/shortcut") => {
+                self.handle_mailbox_shortcut(request, &context)
+            }
             (HttpMethod::Get, "/mailbox") => self.handle_mailbox_messages(request, &context),
+            (HttpMethod::Get, "/search")
+                if request.query_params.get("category").map(String::as_str) == Some("all") =>
+            {
+                self.handle_all_search(request, &context)
+            }
+            (HttpMethod::Get, "/search")
+                if request.query_params.get("category").map(String::as_str)
+                    == Some("documents") =>
+            {
+                self.handle_documents_search(request, &context)
+            }
+            (HttpMethod::Get, "/search") if request.query_params.contains_key("category") => {
+                self.handle_people_search(request, &context)
+            }
             (HttpMethod::Get, "/search") => self.handle_message_search(request, &context),
             (HttpMethod::Get, "/message") => self.handle_message_view(request, &context),
             (HttpMethod::Get, "/attachment") => self.handle_attachment_download(request, &context),
             (HttpMethod::Get, "/compose") => self.handle_compose_form(request, &context),
+            (HttpMethod::Post, "/messages/labels/review") => {
+                self.handle_label_selection(request, &context, false)
+            }
+            (HttpMethod::Post, "/messages/labels/apply") => {
+                self.handle_label_selection(request, &context, true)
+            }
+            (HttpMethod::Get, "/labels") => self.handle_labels(request, &context, false),
+            (HttpMethod::Post, "/labels/change") => self.handle_labels(request, &context, true),
+            (HttpMethod::Get, "/contacts") => self.handle_contacts(request, &context),
+            (HttpMethod::Get, "/documents") => self.handle_documents(request, &context),
+            (HttpMethod::Post, "/documents/folders") => {
+                self.handle_document_folder_create(request, &context)
+            }
+            (HttpMethod::Post, "/documents/folder") => {
+                self.handle_document_folder_move(request, &context)
+            }
+            (HttpMethod::Get, "/documents/download") => {
+                self.handle_document_download(request, &context)
+            }
+            (HttpMethod::Post, "/documents/upload") => {
+                self.handle_document_upload(request, &context)
+            }
+            (HttpMethod::Post, "/documents/bin") => {
+                self.handle_document_move(request, &context, false)
+            }
+            (HttpMethod::Post, "/documents/restore") => {
+                self.handle_document_move(request, &context, true)
+            }
+            (HttpMethod::Get, "/documents/delete") => {
+                self.handle_document_delete_review(request, &context)
+            }
+            (HttpMethod::Post, "/documents/delete") => {
+                self.handle_document_delete_confirm(request, &context)
+            }
+            (HttpMethod::Post, "/documents/reconcile") => {
+                self.handle_document_reconcile(request, &context)
+            }
+            (HttpMethod::Post, "/contacts/save") => {
+                self.handle_contact_change(request, &context, false)
+            }
+            (HttpMethod::Post, "/contacts/delete") => {
+                self.handle_contact_change(request, &context, true)
+            }
             (HttpMethod::Get, "/drafts") => self.handle_draft_list(request, &context),
             (HttpMethod::Get, "/draft") => self.handle_draft_resume(request, &context),
             (HttpMethod::Get, "/sessions") => self.handle_sessions_page(request, &context),
+            (HttpMethod::Get, "/folders/deleted") => self.handle_deleted_folders(request, &context),
+            (HttpMethod::Get | HttpMethod::Post, "/settings/folders/bin") => {
+                self.handle_folder_disposition(request, &context, false)
+            }
+            (HttpMethod::Get | HttpMethod::Post, "/settings/folders/restore") => {
+                self.handle_folder_disposition(request, &context, true)
+            }
+            (HttpMethod::Get | HttpMethod::Post, "/settings/folders/disposition/check") => {
+                self.handle_folder_disposition_check(request, &context)
+            }
+            (HttpMethod::Get | HttpMethod::Post, "/settings/folders/delete") => {
+                self.handle_folder_delete(request, &context)
+            }
+            (HttpMethod::Get | HttpMethod::Post, "/settings/folders/delete/check") => {
+                self.handle_folder_delete_check(request, &context)
+            }
+            (HttpMethod::Get, "/settings/folders/rename/check") => {
+                self.handle_folder_rename_check(request, &context)
+            }
+            (HttpMethod::Get | HttpMethod::Post, "/settings/folders/rename/recover") => {
+                self.handle_folder_rename_recover(request, &context)
+            }
+            (HttpMethod::Post, "/settings/folders/rename/check") => {
+                self.handle_folder_rename_check(request, &context)
+            }
+            (HttpMethod::Get, "/settings/folders/rename") => {
+                self.handle_folder_rename(request, &context, false)
+            }
+            (HttpMethod::Post, "/settings/folders/rename") => {
+                self.handle_folder_rename(request, &context, false)
+            }
+            (HttpMethod::Get | HttpMethod::Post, "/settings/folders/move") => {
+                self.handle_folder_rename(request, &context, true)
+            }
+            (HttpMethod::Get, "/settings/folders/create") => {
+                self.handle_folder_create(request, &context)
+            }
+            (HttpMethod::Post, "/settings/folders/create") => {
+                self.handle_folder_create(request, &context)
+            }
             (HttpMethod::Get, "/settings") => self.handle_settings_page(request, &context),
+            (HttpMethod::Get | HttpMethod::Post, "/settings/authenticator") => {
+                self.handle_access_recovery(request, &context)
+            }
+            (HttpMethod::Get | HttpMethod::Post, "/settings/recovery") => {
+                self.handle_recovery_contact(request, &context)
+            }
+            (HttpMethod::Get, "/settings/password/result") => self.handle_password_result(request),
+            (HttpMethod::Get | HttpMethod::Post, "/settings/password") => {
+                self.handle_password_change(request, &context)
+            }
+            (HttpMethod::Get, "/settings/keys") => {
+                self.handle_key_management_page(request, &context)
+            }
+            (HttpMethod::Post, "/settings/keys/change") => {
+                self.handle_key_management_change(request, &context)
+            }
+            (HttpMethod::Get, "/message/delete") | (HttpMethod::Post, "/message/delete") => {
+                self.handle_message_delete(request, &context)
+            }
+            (HttpMethod::Post, "/messages/delete/review") => {
+                self.handle_bulk_delete(request, &context, true)
+            }
+            (HttpMethod::Post, "/messages/delete") => {
+                self.handle_bulk_delete(request, &context, false)
+            }
+            (HttpMethod::Post, "/trash/empty/review") => {
+                self.handle_bulk_delete(request, &context, true)
+            }
+            (HttpMethod::Post, "/trash/empty") => self.handle_bulk_delete(request, &context, false),
             (HttpMethod::Post, "/message/move") => self.handle_message_move(request, &context),
+            (HttpMethod::Post, "/message/flag") => self.handle_message_flag(request, &context),
+            (HttpMethod::Post, "/message/open") => self.handle_message_open(request, &context),
+            (HttpMethod::Post, "/settings/timezone") => {
+                self.handle_timezone_update(request, &context)
+            }
+            (HttpMethod::Post, "/settings/mark-read") => {
+                self.handle_mark_read_settings(request, &context)
+            }
+            (HttpMethod::Post, "/settings/draft-location") => {
+                self.handle_draft_location_settings(request, &context)
+            }
+            (HttpMethod::Post, "/settings/sent-copy") => {
+                self.handle_sent_copy_settings(request, &context)
+            }
+            (HttpMethod::Post, "/settings/sent-location") => {
+                self.handle_sent_location_settings(request, &context)
+            }
             (HttpMethod::Post, "/messages/move") => self.handle_bulk_move(request, &context),
             (HttpMethod::Post, "/messages/archive") => self.handle_bulk_archive(request, &context),
             (HttpMethod::Post, "/send") => self.handle_send(request, &context),
             (HttpMethod::Post, "/drafts/save") => self.handle_draft_save(request, &context),
             (HttpMethod::Post, "/drafts/delete") => self.handle_draft_delete(request, &context),
+            (HttpMethod::Post, "/drafts/star") => self.handle_draft_star(request, &context),
+            (HttpMethod::Post, "/drafts/discard") => self.handle_draft_selection(request, &context),
             (HttpMethod::Post, "/sessions/revoke") => self.handle_session_revoke(request, &context),
+            (HttpMethod::Post, "/settings/appearance") => {
+                self.handle_appearance_update(request, &context)
+            }
+            (HttpMethod::Get, "/snoozed") => self.handle_snoozed(request, &context),
+            (HttpMethod::Get, "/outbox") | (HttpMethod::Get, "/scheduled") => {
+                self.handle_scheduled(request, &context)
+            }
+            (HttpMethod::Get, "/scheduled/new") => self.handle_scheduled_new(request, &context),
+            (HttpMethod::Post, "/scheduled/create") => {
+                self.handle_scheduled_create(request, &context)
+            }
+            (HttpMethod::Post, "/scheduled/edit") => self.handle_scheduled_edit(request, &context),
+            (HttpMethod::Post, "/scheduled/change") => {
+                self.handle_scheduled_change(request, &context)
+            }
+            (HttpMethod::Get, "/snooze") => self.handle_snooze(request, &context),
+            (HttpMethod::Post, "/snooze/change") => self.handle_snooze_change(request, &context),
+            (HttpMethod::Get, "/notifications") => self.handle_notifications(request, &context),
+            (HttpMethod::Get, "/notifications/updates") => {
+                self.handle_notification_updates(request, &context)
+            }
+            (HttpMethod::Post, "/notifications/read") => {
+                self.handle_notification_read(request, &context)
+            }
+            (HttpMethod::Post, "/notifications/read-all") => {
+                self.handle_notification_manage(request, &context)
+            }
+            (HttpMethod::Post, "/notifications/delete") => {
+                self.handle_notification_manage(request, &context)
+            }
+            (HttpMethod::Post, "/notifications/delete-all") => {
+                self.handle_notification_manage(request, &context)
+            }
+            (HttpMethod::Post, "/settings/notifications") => {
+                self.handle_notification_settings(request, &context)
+            }
+            (HttpMethod::Get, "/drafts/autosave/config") => {
+                self.handle_autosave_config(request, &context)
+            }
+            (HttpMethod::Post, "/drafts/autosave") => self.handle_draft_save(request, &context),
+            (HttpMethod::Post, "/settings/bin-folder") => {
+                self.handle_bin_folder_settings(request, &context)
+            }
+            (HttpMethod::Post, "/settings/after-archive") => {
+                self.handle_after_archive_settings(request, &context)
+            }
+            (HttpMethod::Post, "/settings/autosave") => {
+                self.handle_autosave_settings(request, &context)
+            }
+            (HttpMethod::Post, "/settings/signature") => {
+                self.handle_signature_update(request, &context)
+            }
+            (HttpMethod::Post, "/settings/identity") => {
+                self.handle_identity_preferences_update(request, &context)
+            }
+            (HttpMethod::Post, "/settings/sender-identity") => {
+                self.handle_sender_identity_update(request, &context)
+            }
+            (HttpMethod::Post, "/settings/composition") => {
+                self.handle_composition_preferences_update(request, &context)
+            }
+            (HttpMethod::Post, "/settings/reading") => {
+                self.handle_reading_preferences_update(request, &context)
+            }
+            (HttpMethod::Post, "/settings/display") => {
+                self.handle_display_update(request, &context)
+            }
             (HttpMethod::Post, "/settings") => self.handle_settings_update(request, &context),
             (HttpMethod::Post, "/logout") => self.handle_logout(request, &context),
             _ => HandledHttpResponse {
@@ -143,7 +449,7 @@ where
                     404,
                     "Not Found",
                     "Not Found",
-                    "<p>The requested path does not exist in the current OSMAP browser slice.</p>",
+                    "<p>This page could not be found.</p>",
                 ),
                 audit_events: vec![build_http_warning_event(
                     "http_route_not_found",
@@ -203,18 +509,33 @@ fn rejected_host_response(
 
 /// Runs the current bounded-concurrency HTTP server for the browser slice.
 pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String> {
+    #[cfg(unix)]
+    crate::openbsd::disable_core_dumps()
+        .map_err(|_| "http runtime cannot disable core dumps".to_string())?;
     if config.run_mode != AppRunMode::Serve {
         return Ok(());
     }
 
-    apply_runtime_confinement(config, logger)?;
+    // Only account custody needs the complete protected ancestry before seal.
+    // The rest of gateway startup retains its existing postconfinement order.
+    let account_runtime = RuntimeBrowserGateway::prepare_account_runtime(config);
+    let account_seal = apply_runtime_confinement_for_accounts(
+        config,
+        logger,
+        account_runtime.confinement_clients(),
+    )?;
+    let account_runtime = account_runtime.after_confinement(account_seal.as_ref());
 
     let listener = TcpListener::bind(&config.listen_addr)
         .map_err(|error| format!("failed to bind {}: {error}", config.listen_addr))?;
-    let app = Arc::new(BrowserApp::new(
-        HttpPolicy::from_config(config),
-        RuntimeBrowserGateway::from_config(config),
-    ));
+    let gateway = RuntimeBrowserGateway::from_config_with_account(config, account_runtime);
+    #[cfg(all(test, target_os = "openbsd"))]
+    let gateway = gateway.with_scheduled_serve_fixture_transports(config);
+    for event in gateway.helper_client_status_events() {
+        logger.emit(&event);
+    }
+    let _scheduled_worker = ScheduledWorkerThread::start(gateway.clone(), logger.clone())?;
+    let app = Arc::new(BrowserApp::new(HttpPolicy::from_config(config), gateway));
     let active_connections = Arc::new(AtomicUsize::new(0));
     let peak_connections = Arc::new(AtomicUsize::new(0));
     let consecutive_response_write_failures = Arc::new(AtomicUsize::new(0));

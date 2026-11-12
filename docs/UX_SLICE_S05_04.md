@@ -1,0 +1,112 @@
+# S05-04: native OpenBSD isolation qualification
+
+Approved 2026-11-02 (Asia/Bangkok). The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.
+
+The frozen S05-04 scope is native build, confinement, dependency qualification, helper privilege/socket/descriptor isolation, crash/core/log policy, restart and rollback. This infrastructure slice adds no visual page or capability flag merely because compilation succeeds. Reuse matching S05-01/S05-03 crypto and F3 installation evidence; recent single-principal fixtures do not qualify separate service identities.
+
+## T01–T09
+
+| Test | Observation |
+| --- | --- |
+| T01 Baseline and evidence reuse | Reconcile source, installed identities and retained evidence; name only uncovered boundaries. |
+| T02 Native build and dependencies | Record current compiler, GPGME/GnuPG and linked dependencies; build and test matching changed native artifacts. |
+| T03 Privilege and socket authority | Use existing Web/helper identities and a reachable unauthorized root peer with actual signed clients; prove authorized success and reachable unauthorized peer refusal. |
+| T04 OpenBSD confinement | Exercise actual pledge/unveil functions with allowed public access, denied private/foreign access and engine-child restrictions. |
+| T05 Descriptor isolation | Establish usable inherited descriptors before closure, then prove unneeded descriptors unavailable and real transport functional. |
+| T06 Crash core and log safety | Exercise bounded failures and synthetic marker handling; verify zero core limits and no partial sensitive result or exported native diagnostics. |
+| T07 Stop restart and recovery | Correct inventory process cleanup through the proven supervisor and exercise owned descendant absence, disposable stop/restart and fresh request. |
+| T08 Install preservation and rollback | Qualify matching installed artifacts and protected state; exercise actual disposable binary restore and install changed OSMAP artifacts only if needed. |
+| T09 Independent delivery and owner acceptance | Review source/native/installed evidence and normal signed GitHub delivery; owner accepts this infrastructure result separately. |
+
+## Smallest engineering route
+
+Reuse current Rust service/client protocols, hardened process supervisor and fixed GPGME workers. The operator retired the two Python principal runners after their temporary OS account creation/deletion invalidated the persistent account helper pin. Replacement qualification lives in ignored Rust libtests, using existing identities and disposable homes. Inspection of the baseline inventory supervisor shows leader reaping before group signals and leader-only cleanup; establish the discriminator and route it through the existing proven supervisor. Preserve inventory limits and typed failures. Bounded Rust checks, sanitized diagnostics and exact-owned cleanup replace the retired principal orchestration; no new QA framework, dependency, service or store. Public inventory/crypto/admin parents retain their actual confinement scope; worker confinement does not imply parent confinement. Shared helper identity does not imply per-account OS identity isolation.
+
+Root owns the single native/compiler/host/Git queue and integration records. Runtime engineer owns inventory supervisor and its focused regression; scope QA owns retirement of the two initial principal runners and extraction of fixed C probes; the runtime engineer owns the Rust replacement; protocol reviewer independently checks source, dispatch and actual results.
+
+## Boundaries and exit
+
+Use only the existing Web UID1001/GID1001 and helper UID1002/GID1003, plus root as a reachable unauthorized protocol peer; isolate synthetic keys and state in uniquely owned private scratch. Do not create/delete system accounts or groups, alter account databases, or signal by UID. Root refusal qualifies protocol peer checking, not resistance to OS root. No owner password/TOTP/private-key operation, key/contact/policy mutation, message send, or public Dovecot/Postfix/MariaDB stop/start/reload/configuration change. OSMAP artifacts may be replaced only after matching native proof and independent review, with protected-state readback and guarded rollback. Actual rollback qualification uses an isolated service.
+
+Record semantic APIs, native libraries and actual versions as evidence, without release-number predicates or free-memory floors. Native compilation uses the proven jobs1/debug0/private-TMP/core0/4GiB data-soft-limit profile, 600 seconds per compiler action; focused native principal actions360 seconds plus15 seconds termination (commands clamp to the240second functional deadline and cleanup ends at the fixed start+330second deadline), installation360 seconds. These bounds do not expire operator authority. Retain earliest failure separately from cleanup and authoritative-state certainty. Two failures at the same functional boundary require combined independent reassessment before a changed retry. Existing historical cost remains UNKNOWN; actual invocations record elapsed wall time. Investigation timebox14400 seconds is accounting, not authority expiry.
+
+Engineering exit requires matching source/native/installed observations, truthful limits, actual isolated restore, independent review and ordinary signed GitHub preservation. Owner T09 accepts only the infrastructure result; no whole-sprint, whole-epic or production-release acceptance is inferred. Private evidence is retained under `/home/foo/Downloads/osmap-ux-s05/s05-04-20261102/`. All cases remain NOT RUN until executed or explicitly reconciled to matching retained proof.
+
+## Source correction evidence
+
+The actual baseline ownership regression fails1case with2 post-reap group-signal attempts (10.322seconds including compilation); its callback refuses those signals. Reusing the established supervisor then passes3 inventory tests/1explicit child fixture (11.840seconds). Shared process tests pass3/1explicit fixture; strict Clippy and fmt pass. Independent source review approves the smallest correction. Inventory keeps10seconds/64KiBstdout/8KiBstderr and Limit/Expired error mapping. Other failures remain Unavailable. Cleanup uncertainty now quarantines all callers sharing this supervisor within that process, not other daemons. Stdin is an immediately closed pipe rather than `/dev/null`; the native inventory worker consumes no input. Native and installed qualification remain pending.
+
+Independent review identifies a second T07 discriminator: inventory service currently detaches connection threads, so active SIGTERM cleanup is not established by the process-runner fix. Reuse the existing actual helper/short-worker fixture to observe this boundary safely. If confirmed, stop admission and join at most2 existing requests within their original10second absolute deadline before helper exit; no new cancellation protocol or relaxed limit. Idle restart must not be represented as active-stop proof.
+
+The active-stop discriminator confirms the second defect: helper exit is observed while the authenticated worker is still alive; its later natural absence is recorded separately. Actual RED1FAIL takes15.218seconds including compilation (3.01second test). Root and independent reviewer jointly reassess both T07 failures before the changed action. The existing termination guard/accept-loop pattern now stops admission and joins at most2 already admitted requests under their original10second budgets. Actual GREEN runtime module8PASS/1nativeignore takes14.238seconds; worker_alive_at_helper_exit=false, confirmed absence,176stdout/0stderr bytes. This drains admitted work; it does not introduce immediate inventory cancellation. The first native d6d11d8 process tests3PASS qualify only the earlier ownership correction; changed service code requires a refreshed native build and consumer proof.
+
+## Native and installed qualification — 2026-11-02
+
+The final runtime source is signed checkpoint `4c041501b76996e6948deeea42a24e4db2d4c231`. Its native build passes in169.444seconds (actor168.888), producing libtest `58ee84bb41c071265ea8f47870c4b33d272684881876d44ebb960dd88a164a61` and inventory helper `6853a1005412f60ae7e7290c9169ad8cd22e60ef247510d4fde74091fc283eb1`. Current native process3PASS/1child-fixture ignore and runtime8PASS/2separately gated native ignores finish in4.067seconds. The active SIGTERM case confirms worker absence before helper exit. These are11 focused Rust tests, not the full delivery suite.
+
+The existing principal fixtures pass with three distinct disposable users each:
+
+- Crypto/inventory:21 recorded Boolean checks,3.720seconds overall (runner3.209), including real authorized crypto/public-inventory clients, reachable unauthorized clients with the same disposable grant, key-home DAC denial, descriptor closure, worker confinement and bounds. Actual previous inventory binary → qualified candidate → previous binary transitions each have a successful authorized client and preserved configuration, grant, public and private fixture files.
+- Public administration:9 recorded Boolean checks,2.920seconds overall (runner2.411), including real synthetic import/remove/CAS, secret-certificate/private-primary refusal, account isolation and durable replay refusal after actual service restart. These21/9 checks are not30 separate Rust tests.
+- Both runs report service stdout/stderr0 and successful service/agent/principal cleanup. Private scratch is retained0700 until durable log/manifest readback, exact identity and open-descriptor checks, then removed. Log/manifest hashes and exact cleanup are retained privately. The root readback initially added an unnecessary no-stale-socket prerequisite and refused without changing anything. That consumer-only refusal remains recorded; closed socket files were then recorded as metadata, actual matching open descriptors were absent, and exact cleanup passed without replaying the functional workflow.
+
+The initial, now-retired Python runners used explicit checks under ordinary and optimized Python, pinned root-custody inputs, bounded pipes and phase deadlines, precise source-owned failure codes/counts, and private bounded failure streams. Their actual final consumers pass11 local check groups per runner under ordinary Python0.509seconds and optimized Python0.570seconds. Those utility checks do not substitute for native functional proof.
+
+Observed capabilities are OpenBSD, Rust/Cargo1.98.1, clang22.1.6, GPGME2.2.0 and GnuPG2.5.24, with encrypted swap enabled. Loaded worker dependencies include libgpgme25.1, libgpg-error3.32, libassuan3.0, libintl8.2, libiconv7.2 and libc103.0. These versions are observations, not admission predicates. Cargo.lock remains byte-identical, SHA256 `1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c`; no dependency or capability flag was added.
+
+Only the inventory-helper production binary is replaced on obsd1. Installation passes in4.694seconds, with loaded PID28267/inode3758861 matching the qualified hash. Fresh readback passes in0.637seconds. Existing Web/crypto/admin/worker/engine/environment/configuration artifacts remain unchanged; all eight roles are healthy and CA-verified HTTPS login returns200. Protected cutover manifests match at `3d13995c9f68cc92ee9692364ed17029416b3cf24585543dd05a7002270a4db0`. A pinned, read-only authenticated client confirms Duncan's available public inventory before and after replacement; the existing launcher redirects its two fixed success records into the configured private log, which was read back explicitly. The exact temporary probe and publication names are subsequently confirmed absent; probe cleanup takes0.312seconds. The previous qualified binary and candidate remain in the root-only rollback backup. Live rollback was not needed; actual isolated restore was exercised.
+
+Independent installed review is `896c65f4ee3d7826380ee4981c167e71a064a3e18c4974082f744dc6494209d9`; earlier source/combined and runner reviews remain separately retained. The installed review predates final exact-probe cleanup, whose separate receipt is retained. Normal signed commit/push hooks and fresh remote equality are the final publication gate; owner readiness notification requires their actual completion.
+
+## Qualification limits and T09
+
+Worker pledge/unveil proof does not assert equivalent confinement of the Rust service parent. A shared helper UID is not per-account OS identity isolation. The foreign-agent case establishes endpoint custody refusal, not a fresh agent-peer-credential test. Core tests exercise the configured inherited-zero limit and actual worker entry/abort/no-file behavior; they do not claim an independent positive-to-zero reset test. Inventory shutdown drains existing bounded requests, rather than adding immediate IPC cancellation. Actual worker absence is observed independently; a zero helper exit alone does not prove all possible cleanup outcomes. Unknown cleanup remains fail-closed. No visual page or new user capability is introduced.
+
+T01–T08 engineering/native/installed/recovery observations pass. T09 remains owner acceptance of this infrastructure result after ordinary signed GitHub publication is verified. Accepted S05-03, Contacts/Compose and bounded F3 results remain intact. Whole-epic and production-release acceptance are separate.
+
+## Reopened owner UAT — login and Rust test replacement
+
+Owner reports3freshlogin failures. Actualprimaryauditshowsaccount-helperbackendUnavailable beforeTOTP, notauthenticatedpasswordrejection. Python principalfixtures rewrote/etc/passwd; itsmtime/ctime19:15:50UTC matchesadminfixturecompletion andpostdatesOct30persistentaccounthelperstartup. ExistingStockPeerpinsfullpasswdidentity/digest. RefreshonlyOSMAPaccountauthoritythenWebclients; preservecredentials/TOTP/epoch/state andpublicmailavailability. Owner explicitlyretiresPythonprincipaltestcode andrequiresRusttesting/verification. Replacementmustreuseexistingprincipalsanddisposablehomes, withoutsystemuser/groupcreationorUID-widesignals. ExistingnativePASS retained; deployed/owneracceptance reopened.
+
+## Rust replacement qualification route
+
+Owner fresh sign-in succeeded at20:19:07UTC; screenshot at20:19:08UTC shows authenticated mailbox access and4 imported keys. Account authority/Web refresh restored login without changing credentials, factors, epoch or public mail services. The first recovery command retained exit1 because its immediate cold-start HTTP observation failed; that HTTP value was not retained and remains UNKNOWN. A separate later HTTPS200 and Rust signed epoch admission PASS, followed by owner sign-in, establish restoration.
+
+Root runs the focused local Rust refusal test and strict Clippy, then one matching native libtest build and fixed C probes. Pinned artifacts feed the ignored crypto/inventory and public-admin Rust tests (360+15seconds each). They exercise actual signed clients, confinement, descriptor/core limits, reachable wrong-peer refusal, restart/replay and isolated prior inventory restore; account database identities must remain unchanged. Follow with the installed read-only Rust epoch check and fresh service availability. Functional and cleanup results remain separate; retain private failures before exact-owned cleanup. No additional production artifact replacement is needed for test-only source changes.
+
+## Replacement failure-analysis observations
+
+Retain native build1 PASS120.280s, build2 FAIL53.620s (E0282; also observed locally), and corrected build3 PASS119.325s separately. The one-line explicit closure result type fixes compiler inference without changing the shutdown method. Independent review corrected missing-home cleanup, exact-home agent PID absence and owned TERM-timeout KILL/reap handling before any fixture dispatch.
+
+Rust fixture attempt01 FAIL0.767s: MANIFEST_CUSTODY_REFUSED before keys/children because native /var/tmp is a symlink to /tmp. Correct only the measured canonical path bindings, preserving hash/custody requirements. Exact empty fixture cleanup passes. Attempt02 FAIL9.521s after foreign-agent custody and descriptor/core probes: nested crypto SDK test returned nonzero; its assertion was unavailable because --nocapture routed it to the production supervisor's discarded stderr. Cleanup, external namespace process/FD absence and exact scratch removal pass; system account databases, installed artifacts and authority PID46956 remain unchanged. Combined independent reassessment authorizes only removal of nested --nocapture so ordinary libtest failure capture reaches the existing bounded private stdout file. Production supervisor and expected outcomes are unchanged. Matching diagnostic build/next native observation are pending.
+
+## Final Rust replacement qualification — 2026-11-02
+
+The login repair and Rust replacement are engineering-complete. The original Python principal runners are deleted. Their temporary account creation/deletion had changed the password database pinned by the long-running account helper. Refreshing only the OSMAP account helper and Web clients restored service; the owner confirmed a fresh password/TOTP login and a subsequent three-recipient mail test. No password, TOTP, epoch or replay reset, owner key/policy/contact mutation, or public mail service/configuration change was used.
+
+The replacement uses the existing Web and helper identities and a reachable unauthorized root protocol peer. It does not invoke an interpreter, create/delete system accounts/groups, or signal by UID. Fixture roots use0755 so the helper can resolve its physical working directory; private homes remain0700 and grants0600. The short osmap-p- prefix preserves the same128-bit random identifier and keeps derived staging-agent sockets within the native path bound. A physical-cwd differential and a native FileNameTooLong diagnostic supported these two fixture corrections; the subsequent actual client results verify their functional effect.
+
+| Final observation | Actual result |
+| --- | --- |
+| Matching native build06 | PASS119.058s; libtest SHA256 4703c0fdde138e4a35aed8fdade8f027025703620a082ef0766f6336db36addb |
+| Rust crypto/inventory qualification | PASS 10.597s; functional/cleanup PASS;7 tracked children; actual signed clients, wrong-peer refusal, worker probes and disposable candidate→previous→candidate inventory restore |
+| Rust public-admin qualification | PASS 10.367s; functional/cleanup PASS;2 tracked children; import/remove/CAS/private guard, wrong-peer refusal and durable replay refusal after restart |
+| Post-test installed Rust admission | PASS 1.020s; no password submitted, no TOTP consumed, no credential write |
+| Live preservation | All account databases and installed artifacts unchanged; account helper PID46956 unchanged; eight role checks healthy; HTTPS sign-in200 |
+| Exact disposal | Fixture descriptors/processes absent and exact scratch removed after durable readback; root publication removed; native libtest retained privately by hash |
+
+Final qualification uses the original newly compiled C pair, not the diagnostic installed-pair substitution. Failed attempts are retained separately: canonical-path refusal; first-sign failure with missing assertion; captured first-sign Unavailable; the same failure with the installed pair; and first admin-import failure. Build2's E0282 failure, the original recovery-observer exit1 and its missing cold HTTP value remain recorded. No failed result is reclassified as PASS because cleanup or a later test succeeded.
+
+Independent source/producer/cleanup/consumer and actual-result review: rust-migration-independent-review.json, SHA256 d5f1b40fa5fa55cc7bb64f1103d3a5825d534bc3a2ac8702e28f3126f4da5372. Final crypto log 1288b1e8e551bc7da1efb4a640161efd1325bc52da5433ce06fbc883d5d3a27a; admin log 43c67590ce13a6da6dcbbc501a32cbbb64e5890189181e0ea6b0ccf06be2f4d6; installed admission log 4db86691617d303587ce13251df78c0a5165f1ee13a5c7370edfb85b9fae0fb1. Private evidence remains under /home/foo/Downloads/osmap-ux-s05/s05-04-login-incident-20261102/. Normal signed repository gates and GitHub equality are delivery checks; infrastructure T09 acceptance remains the owner's separate decision. No additional password or send operation is needed to reproduce the already supplied owner evidence.
+
+Limits remain explicit: root-peer refusal tests the protocol, not resistance to OS root; core probes begin with an inherited zero limit; foreign-agent proof covers endpoint custody; inventory restore is isolated, not a live rollback. Existing production helper behavior remains from source4c041501; this follow-up changes tests and records only.
+
+## Owner T09 acceptance — 2026-11-02
+
+The owner explicitly accepted the completed infrastructure result:
+
+> S05-04-T09 = PASS. I accept the completed infrastructure result.
+
+S05-04 is **ACCEPTED**, with T01–T09 PASS. Acceptance applies to the recorded OpenBSD OpenPGP infrastructure, its recovery and Rust qualification, and preservation of the working login/mail workflows. The accepted engineering source is signed commit `d7a87574c220e1b1474fdb8378e671ed159ba987`; its normal commit/full push gates and fresh GitHub equality passed before the owner decision. The owner's successful fresh sign-in and three-recipient mail evidence remain part of that record.
+
+This closure updates acceptance records only. Existing failed attempts, qualification limits and the distinction between source, native, installed and human evidence are preserved. No runtime change, host operation, credential/key/policy mutation or repeated user test is needed for this acceptance. Other slice/control obligations and whole-epic/production-release decisions retain their separate status. The next planned slice is S06-01; its work has not started through this acceptance update.

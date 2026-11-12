@@ -16,6 +16,7 @@ use crate::auth::{
     AuthenticationContext, CommandExecutor, SystemCommandExecutor,
     DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
 };
+use crate::compose_format::{self, BodyFormat, FormattedBody};
 use crate::config::LogLevel;
 use crate::identity::MailboxIdentity;
 use crate::logging::{EventCategory, LogEvent};
@@ -93,6 +94,7 @@ impl Default for ComposePolicy {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ComposeIntent {
     Reply,
+    ReplyAll,
     Forward,
 }
 
@@ -101,6 +103,7 @@ impl ComposeIntent {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Reply => "reply",
+            Self::ReplyAll => "reply-all",
             Self::Forward => "forward",
         }
     }
@@ -111,6 +114,9 @@ impl ComposeIntent {
 pub struct ComposeDraft {
     pub intent: ComposeIntent,
     pub to: String,
+    pub cc: String,
+    pub reply_thread: Option<crate::reply_thread::ReplyThread>,
+    pub protection: ProtectionIntent,
     pub subject: String,
     pub body: String,
     pub context_notice: Option<String>,
@@ -125,6 +131,12 @@ pub struct UploadedAttachment {
 }
 
 impl UploadedAttachment {
+    pub(crate) fn validate(&self, policy: ComposePolicy) -> Result<(), ComposeError> {
+        validate_attachment_filename(policy, &self.filename)?;
+        normalize_attachment_content_type(policy, &self.content_type)?;
+        validate_attachment_body(policy, &self.body)
+    }
+
     /// Validates and stores one uploaded attachment for later submission.
     pub fn new(
         policy: ComposePolicy,
@@ -151,6 +163,27 @@ impl UploadedAttachment {
     }
 }
 
+/// Explicit authored delivery selections and the observed trusted-store
+/// revision. These are intent, never browser-provided key authority.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProtectionIntent {
+    pub sign: bool,
+    pub encrypt: bool,
+    pub encrypt_to_self: bool,
+    pub binding_revision: Option<u64>,
+}
+
+impl ProtectionIntent {
+    pub fn selections(self) -> crate::openpgp_bindings::Selections {
+        crate::openpgp_bindings::Selections {
+            sign: self.sign,
+            encrypt: self.encrypt,
+            encrypt_to_self: self.encrypt_to_self,
+        }
+    }
+}
+
 /// A bounded compose request for the current outbound message slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ComposeRequest {
@@ -159,7 +192,11 @@ pub struct ComposeRequest {
     pub bcc_recipients: Vec<String>,
     pub subject: String,
     pub body: String,
+    pub sender_identity: crate::identity_preferences::IdentityPreferences,
+    pub body_format: BodyFormat,
     pub attachments: Vec<UploadedAttachment>,
+    pub reply_thread: Option<crate::reply_thread::ReplyThread>,
+    pub protection: ProtectionIntent,
 }
 
 struct RecipientFields {
@@ -218,22 +255,37 @@ impl ComposeRequest {
             bcc_recipients: recipient_fields.bcc,
             subject,
             body,
+            sender_identity: crate::identity_preferences::IdentityPreferences::default(),
+            body_format: BodyFormat::Plain,
             attachments,
+            reply_thread: None,
+            protection: ProtectionIntent::default(),
         })
+    }
+
+    /// Selects source notation explicitly and refuses invalid formatting before
+    /// submission. Plain mode preserves the existing body semantics.
+    pub fn with_body_format(mut self, body_format: BodyFormat) -> Result<Self, ComposeError> {
+        if body_format == BodyFormat::Formatted {
+            formatted_body(&self.body)?;
+        }
+        self.body_format = body_format;
+        Ok(self)
     }
 
     /// Returns every envelope recipient, including BCC.
     pub fn all_recipients(&self) -> Vec<String> {
-        let mut recipients = Vec::with_capacity(self.total_recipient_count());
-        recipients.extend(self.recipients.iter().cloned());
-        recipients.extend(self.cc_recipients.iter().cloned());
-        recipients.extend(self.bcc_recipients.iter().cloned());
-        recipients
+        crate::mail_address::deduplicate(
+            self.recipients
+                .iter()
+                .chain(&self.cc_recipients)
+                .chain(&self.bcc_recipients),
+        )
     }
 
     /// Returns the total recipient count across To, CC, and BCC.
     pub fn total_recipient_count(&self) -> usize {
-        self.recipients.len() + self.cc_recipients.len() + self.bcc_recipients.len()
+        self.all_recipients().len()
     }
 }
 
@@ -244,20 +296,79 @@ impl ComposeDraft {
         intent: ComposeIntent,
         rendered: &RenderedMessageView,
     ) -> Result<Self, ComposeError> {
+        Self::build_from_rendered(policy, intent, rendered, None)
+    }
+
+    pub fn for_sender(
+        policy: ComposePolicy,
+        intent: ComposeIntent,
+        rendered: &RenderedMessageView,
+        sender: &str,
+    ) -> Result<Self, ComposeError> {
+        Self::build_from_rendered(policy, intent, rendered, Some(sender))
+    }
+
+    fn build_from_rendered(
+        policy: ComposePolicy,
+        intent: ComposeIntent,
+        rendered: &RenderedMessageView,
+        sender: Option<&str>,
+    ) -> Result<Self, ComposeError> {
         let attachment_notice = build_attachment_notice(policy, intent, &rendered.attachments)?;
 
-        let (to, subject, body, note) = match intent {
-            ComposeIntent::Reply => {
+        let (mut to, subject, body, mut note) = match intent {
+            ComposeIntent::Reply | ComposeIntent::ReplyAll => {
                 build_reply_draft(policy, rendered, attachment_notice.as_deref())?
             }
             ComposeIntent::Forward => {
                 build_forward_draft(policy, rendered, attachment_notice.as_deref())?
             }
         };
+        let mut cc = String::new();
+        if intent == ComposeIntent::ReplyAll {
+            let sender = sender.ok_or_else(|| ComposeError {
+                reason: "reply-all requires a validated sender identity".into(),
+            })?;
+            if let Some(metadata) = &rendered.reply_metadata {
+                match metadata.reply_all_targets(sender) {
+                    Ok((targets, copied)) => {
+                        to = targets.join(", ");
+                        cc = copied.join(", ");
+                    }
+                    Err(reason) => {
+                        to.clear();
+                        note = Some(reason.into());
+                    }
+                }
+            }
+        }
+        let reply_thread = if intent == ComposeIntent::Forward {
+            None
+        } else {
+            rendered
+                .reply_metadata
+                .as_ref()
+                .and_then(|metadata| metadata.thread.clone())
+        };
+        if intent != ComposeIntent::Forward && reply_thread.is_none() && note.is_none() {
+            note = Some("Original threading headers are unsupported. This reply will start without thread headers.".into());
+        }
+        if reply_thread
+            .as_ref()
+            .is_some_and(|thread| thread.shortened())
+            && note.is_none()
+        {
+            note = Some(
+                "Long thread history was shortened to its root and most recent messages.".into(),
+            );
+        }
 
         Ok(Self {
             intent,
             to,
+            cc,
+            reply_thread,
+            protection: ProtectionIntent::default(),
             subject,
             body,
             context_notice: note.or(attachment_notice),
@@ -312,6 +423,10 @@ pub enum SubmissionDecision {
         canonical_username: String,
         recipients: Vec<String>,
     },
+    /// The backend could not confirm acceptance; dispatch may have occurred.
+    Unconfirmed {
+        public_reason: SubmissionPublicFailureReason,
+    },
     Denied {
         public_reason: SubmissionPublicFailureReason,
     },
@@ -338,6 +453,32 @@ pub trait SubmissionBackend {
         canonical_username: &str,
         request: &ComposeRequest,
     ) -> Result<(), SubmissionBackendError>;
+
+    /// Backends must explicitly support protected wire bytes. The compatibility
+    /// default can handle only an ordinary, account/request-bound message.
+    fn submit_prepared_message(
+        &self,
+        canonical_username: &str,
+        request: &ComposeRequest,
+        prepared: &crate::protected_submission::PreparedSubmission,
+    ) -> Result<(), SubmissionBackendError> {
+        let account = crate::identity::CanonicalUsername::parse(canonical_username)
+            .map_err(|_| prepared_submission_error())?;
+        prepared
+            .validate_for(&account, request)
+            .map_err(|_| prepared_submission_error())?;
+        if prepared.protection() != crate::protected_submission::SubmissionProtection::Ordinary {
+            return Err(prepared_submission_error());
+        }
+        self.submit_message(canonical_username, request)
+    }
+}
+
+fn prepared_submission_error() -> SubmissionBackendError {
+    SubmissionBackendError {
+        backend: "prepared-submission",
+        reason: "prepared message unavailable or identity mismatch".into(),
+    }
 }
 
 /// Submits composed messages through the local `sendmail` compatibility surface.
@@ -345,6 +486,7 @@ pub struct SendmailSubmissionBackend<E> {
     command_executor: E,
     sendmail_path: PathBuf,
     command_timeout_secs: u64,
+    sender_authority: crate::sender_authority::Provider,
 }
 
 impl<E> SendmailSubmissionBackend<E> {
@@ -354,7 +496,13 @@ impl<E> SendmailSubmissionBackend<E> {
             command_executor,
             sendmail_path: sendmail_path.into(),
             command_timeout_secs: DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
+            sender_authority: crate::sender_authority::Provider::default(),
         }
+    }
+
+    pub fn with_sender_authority(mut self, provider: crate::sender_authority::Provider) -> Self {
+        self.sender_authority = provider;
+        self
     }
 
     /// Caps the sendmail command timeout for route-level deadline use.
@@ -379,6 +527,12 @@ where
         canonical_username: &str,
         request: &ComposeRequest,
     ) -> Result<(), SubmissionBackendError> {
+        if request.protection.sign
+            || request.protection.encrypt
+            || request.protection.encrypt_to_self
+        {
+            return Err(prepared_submission_error());
+        }
         let mailbox_identity =
             MailboxIdentity::parse(canonical_username.to_string()).map_err(|error| {
                 SubmissionBackendError {
@@ -386,7 +540,14 @@ where
                     reason: format!("invalid outbound mailbox identity: {}", error.as_str()),
                 }
             })?;
-        let submission_message = build_submission_message(mailbox_identity.as_str(), request);
+        self.sender_authority
+            .authorize(mailbox_identity.as_str(), request.sender_identity.sender())
+            .map_err(|_| prepared_submission_error())?;
+        let submission_message = build_submission_message(mailbox_identity.as_str(), request)
+            .map_err(|error| SubmissionBackendError {
+                backend: "sendmail-submission",
+                reason: error.reason,
+            })?;
         let execution = self
             .command_executor
             .run_with_stdin_bytes_timeout(
@@ -413,11 +574,78 @@ where
 
         Ok(())
     }
+
+    fn submit_prepared_message(
+        &self,
+        canonical_username: &str,
+        request: &ComposeRequest,
+        prepared: &crate::protected_submission::PreparedSubmission,
+    ) -> Result<(), SubmissionBackendError> {
+        let account = crate::identity::CanonicalUsername::parse(canonical_username)
+            .map_err(|_| prepared_submission_error())?;
+        prepared
+            .validate_for(&account, request)
+            .map_err(|_| prepared_submission_error())?;
+        self.sender_authority
+            .authorize(account.as_str(), request.sender_identity.sender())
+            .map_err(|_| prepared_submission_error())?;
+        let execution = self
+            .command_executor
+            .run_with_stdin_bytes_timeout(
+                self.sendmail_path.to_string_lossy().as_ref(),
+                &sendmail_args(account.as_str(), request),
+                prepared.as_bytes(),
+                Duration::from_secs(self.command_timeout_secs),
+            )
+            .map_err(|_| prepared_submission_error())?;
+        if execution.status_code != 0 {
+            return Err(prepared_submission_error());
+        }
+        Ok(())
+    }
 }
 
 /// Submits composed messages for an already validated browser session.
 pub struct SubmissionService<B> {
     backend: B,
+}
+
+#[derive(Clone, Copy)]
+enum SubmissionAuditOrigin<'a> {
+    Browser {
+        context: &'a AuthenticationContext,
+        session_id: &'a str,
+    },
+    Scheduled {
+        job_id: &'a str,
+    },
+}
+impl SubmissionAuditOrigin<'_> {
+    fn identity(self, event: LogEvent) -> LogEvent {
+        match self {
+            Self::Browser { session_id, .. } => {
+                event.with_field("session_ref", audit_session_ref(session_id))
+            }
+            Self::Scheduled { job_id } => event
+                .with_field("submission_origin", "scheduled")
+                .with_field("scheduled_job_ref", job_id),
+        }
+    }
+    fn context(self, event: LogEvent) -> LogEvent {
+        match self {
+            Self::Browser { context, .. } => event
+                .with_field("request_id", &context.request_id)
+                .with_field("remote_addr", &context.remote_addr)
+                .with_field("user_agent", &context.user_agent),
+            Self::Scheduled { .. } => event,
+        }
+    }
+    fn denied(self, event: LogEvent) -> LogEvent {
+        match self {
+            Self::Browser { context, .. } => event.with_field("request_id", &context.request_id),
+            Self::Scheduled { .. } => self.identity(event),
+        }
+    }
 }
 
 impl<B> SubmissionService<B>
@@ -436,81 +664,191 @@ where
         validated_session: &ValidatedSession,
         request: &ComposeRequest,
     ) -> SubmissionOutcome {
-        match self
-            .backend
-            .submit_message(&validated_session.record.canonical_username, request)
+        if request.protection.sign
+            || request.protection.encrypt
+            || request.protection.encrypt_to_self
         {
-            Ok(()) => SubmissionOutcome {
-                decision: SubmissionDecision::Submitted {
-                    canonical_username: validated_session.record.canonical_username.clone(),
-                    recipients: request.all_recipients(),
-                },
-                audit_event: LogEvent::new(
-                    LogLevel::Info,
-                    EventCategory::Submission,
-                    "message_submitted",
-                    "outbound message submission completed",
-                )
-                .with_field(
-                    "canonical_username",
-                    validated_session.record.canonical_username.clone(),
-                )
-                .with_field(
-                    "session_ref",
-                    audit_session_ref(&validated_session.record.session_id),
-                )
-                .with_field(
-                    "recipient_count",
-                    request.total_recipient_count().to_string(),
-                )
-                .with_field("attachment_count", request.attachments.len().to_string())
-                .with_field(
-                    "attachment_bytes_total",
-                    total_attachment_bytes(&request.attachments).to_string(),
-                )
-                .with_field(
-                    "has_subject",
-                    if request.subject.is_empty() {
-                        "false"
-                    } else {
-                        "true"
-                    },
-                )
-                .with_field("request_id", context.request_id.clone())
-                .with_field("remote_addr", context.remote_addr.clone())
-                .with_field("user_agent", context.user_agent.clone()),
+            return Self::prepared_denied(context, validated_session);
+        }
+        let result = self
+            .backend
+            .submit_message(&validated_session.record.canonical_username, request);
+        Self::submission_outcome(context, validated_session, request, result)
+    }
+
+    pub fn submit_prepared_for_validated_session(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &ComposeRequest,
+        prepared: &crate::protected_submission::PreparedSubmission,
+    ) -> SubmissionOutcome {
+        let Ok(account) =
+            crate::identity::CanonicalUsername::parse(&validated_session.record.canonical_username)
+        else {
+            return Self::prepared_denied(context, validated_session);
+        };
+        self.submit_prepared_for_account(
+            &account,
+            SubmissionAuditOrigin::Browser {
+                context,
+                session_id: &validated_session.record.session_id,
             },
-            Err(error) => SubmissionOutcome {
-                decision: SubmissionDecision::Denied {
-                    public_reason: SubmissionPublicFailureReason::TemporarilyUnavailable,
-                },
-                audit_event: LogEvent::new(
+            request,
+            prepared,
+        )
+    }
+
+    /// The caller must freshly admit the claimed job's account/epoch and enforce
+    /// journal, sender, key/policy and private-grant checks before this boundary.
+    /// This performs one backend call, not retry or job-state reconciliation.
+    pub(crate) fn submit_prepared_for_scheduled_job(
+        &self,
+        claim: &crate::scheduled_send::ClaimedJob,
+        prepared: &crate::protected_submission::PreparedSubmission,
+    ) -> SubmissionOutcome {
+        let origin = SubmissionAuditOrigin::Scheduled { job_id: claim.id() };
+        let Ok(account) = crate::identity::CanonicalUsername::parse(claim.account()) else {
+            return Self::prepared_denied_for(claim.account(), origin);
+        };
+        if crate::send_journal::snapshot_digest(account.as_str(), claim.request()) != claim.digest()
+        {
+            return Self::prepared_denied_for(account.as_str(), origin);
+        }
+        self.submit_prepared_for_account(&account, origin, claim.request(), prepared)
+    }
+
+    fn submit_prepared_for_account(
+        &self,
+        account: &crate::identity::CanonicalUsername,
+        origin: SubmissionAuditOrigin<'_>,
+        request: &ComposeRequest,
+        prepared: &crate::protected_submission::PreparedSubmission,
+    ) -> SubmissionOutcome {
+        if prepared.validate_for(account, request).is_err() {
+            return Self::prepared_denied_for(account.as_str(), origin);
+        }
+        let result = self
+            .backend
+            .submit_prepared_message(account.as_str(), request, prepared);
+        Self::submission_outcome_for(account.as_str(), origin, request, result)
+    }
+
+    fn prepared_denied(
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> SubmissionOutcome {
+        Self::prepared_denied_for(
+            &session.record.canonical_username,
+            SubmissionAuditOrigin::Browser {
+                context,
+                session_id: &session.record.session_id,
+            },
+        )
+    }
+
+    fn prepared_denied_for(account: &str, origin: SubmissionAuditOrigin<'_>) -> SubmissionOutcome {
+        SubmissionOutcome {
+            decision: SubmissionDecision::Denied {
+                public_reason: SubmissionPublicFailureReason::InvalidRequest,
+            },
+            audit_event: origin.denied(
+                LogEvent::new(
                     LogLevel::Warn,
                     EventCategory::Submission,
-                    "message_submit_failed",
-                    "outbound message submission failed",
+                    "prepared_submission_denied",
+                    "prepared submission account or request was invalid",
                 )
-                .with_field(
-                    "canonical_username",
-                    validated_session.record.canonical_username.clone(),
-                )
-                .with_field(
-                    "session_ref",
-                    audit_session_ref(&validated_session.record.session_id),
-                )
-                .with_field("attachment_count", request.attachments.len().to_string())
-                .with_field(
-                    "public_reason",
-                    SubmissionPublicFailureReason::TemporarilyUnavailable.as_str(),
-                )
-                .with_field(
-                    "audit_reason",
-                    SubmissionAuditFailureReason::BackendUnavailable.as_str(),
-                )
-                .with_field("backend", error.backend)
-                .with_field("request_id", context.request_id.clone())
-                .with_field("remote_addr", context.remote_addr.clone())
-                .with_field("user_agent", context.user_agent.clone()),
+                .with_field("canonical_username", account),
+            ),
+        }
+    }
+
+    fn submission_outcome(
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &ComposeRequest,
+        result: Result<(), SubmissionBackendError>,
+    ) -> SubmissionOutcome {
+        Self::submission_outcome_for(
+            &validated_session.record.canonical_username,
+            SubmissionAuditOrigin::Browser {
+                context,
+                session_id: &validated_session.record.session_id,
+            },
+            request,
+            result,
+        )
+    }
+
+    fn submission_outcome_for(
+        account: &str,
+        origin: SubmissionAuditOrigin<'_>,
+        request: &ComposeRequest,
+        result: Result<(), SubmissionBackendError>,
+    ) -> SubmissionOutcome {
+        match result {
+            Ok(()) => SubmissionOutcome {
+                decision: SubmissionDecision::Submitted {
+                    canonical_username: account.to_owned(),
+                    recipients: request.all_recipients(),
+                },
+                audit_event: origin.context(
+                    origin
+                        .identity(
+                            LogEvent::new(
+                                LogLevel::Info,
+                                EventCategory::Submission,
+                                "message_submitted",
+                                "outbound message accepted for submission",
+                            )
+                            .with_field("canonical_username", account),
+                        )
+                        .with_field(
+                            "recipient_count",
+                            request.total_recipient_count().to_string(),
+                        )
+                        .with_field("attachment_count", request.attachments.len().to_string())
+                        .with_field(
+                            "attachment_bytes_total",
+                            total_attachment_bytes(&request.attachments).to_string(),
+                        )
+                        .with_field(
+                            "has_subject",
+                            if request.subject.is_empty() {
+                                "false"
+                            } else {
+                                "true"
+                            },
+                        ),
+                ),
+            },
+            Err(error) => SubmissionOutcome {
+                decision: SubmissionDecision::Unconfirmed {
+                    public_reason: SubmissionPublicFailureReason::TemporarilyUnavailable,
+                },
+                audit_event: origin.context(
+                    origin
+                        .identity(
+                            LogEvent::new(
+                                LogLevel::Warn,
+                                EventCategory::Submission,
+                                "message_submit_unconfirmed",
+                                "outbound message submission acceptance could not be confirmed",
+                            )
+                            .with_field("canonical_username", account),
+                        )
+                        .with_field("attachment_count", request.attachments.len().to_string())
+                        .with_field(
+                            "public_reason",
+                            SubmissionPublicFailureReason::TemporarilyUnavailable.as_str(),
+                        )
+                        .with_field(
+                            "audit_reason",
+                            SubmissionAuditFailureReason::BackendUnavailable.as_str(),
+                        )
+                        .with_field("backend", error.backend),
+                ),
             },
         }
     }
@@ -547,71 +885,21 @@ fn parse_optional_recipients(
     recipients_text: &str,
     total_count: &mut usize,
 ) -> Result<Vec<String>, ComposeError> {
-    let mut recipients = Vec::new();
-
-    for raw_recipient in recipients_text.split(',') {
-        let recipient = raw_recipient.trim();
-        if recipient.is_empty() {
-            continue;
-        }
-
-        if *total_count >= policy.max_recipients {
-            return Err(ComposeError {
-                reason: format!(
-                    "recipient count exceeded maximum of {}",
-                    policy.max_recipients
-                ),
-            });
-        }
-
-        validate_recipient(policy, recipient)?;
-        recipients.push(recipient.to_string());
-        *total_count += 1;
-    }
-
-    Ok(recipients)
-}
-
-/// Validates one recipient address for the first narrow send slice.
-fn validate_recipient(policy: ComposePolicy, recipient: &str) -> Result<(), ComposeError> {
-    if recipient.len() > policy.recipient_max_len {
+    let recipients = crate::mail_address::parse_address_list(policy, recipients_text)?;
+    *total_count = total_count.saturating_add(recipients.len());
+    if *total_count > policy.max_recipients {
         return Err(ComposeError {
             reason: format!(
-                "recipient exceeded maximum length of {} bytes",
-                policy.recipient_max_len
+                "recipient count exceeded maximum of {}",
+                policy.max_recipients
             ),
         });
     }
-
-    if recipient.chars().any(char::is_control) || recipient.contains(char::is_whitespace) {
-        return Err(ComposeError {
-            reason: "recipient contained control or whitespace characters".to_string(),
-        });
-    }
-
-    let mut parts = recipient.split('@');
-    let local = parts.next().unwrap_or_default();
-    let domain = parts.next().unwrap_or_default();
-    if local.is_empty() || domain.is_empty() || parts.next().is_some() {
-        return Err(ComposeError {
-            reason: "recipient must be a simple addr-spec style mailbox".to_string(),
-        });
-    }
-
-    if !local.chars().all(is_allowed_email_local_char)
-        || !domain.chars().all(is_allowed_email_domain_char)
-        || !domain.contains('.')
-    {
-        return Err(ComposeError {
-            reason: "recipient contained unsupported mailbox characters".to_string(),
-        });
-    }
-
-    Ok(())
+    Ok(crate::mail_address::deduplicate(&recipients))
 }
 
 /// Validates the subject line against bounded header rules.
-fn validate_subject(policy: ComposePolicy, subject: &str) -> Result<(), ComposeError> {
+pub(crate) fn validate_subject(policy: ComposePolicy, subject: &str) -> Result<(), ComposeError> {
     if subject.len() > policy.subject_max_len {
         return Err(ComposeError {
             reason: format!(
@@ -637,7 +925,7 @@ fn validate_subject(policy: ComposePolicy, subject: &str) -> Result<(), ComposeE
 }
 
 /// Validates the body while allowing ordinary text formatting characters.
-fn validate_body(policy: ComposePolicy, body: &str) -> Result<(), ComposeError> {
+pub(crate) fn validate_body(policy: ComposePolicy, body: &str) -> Result<(), ComposeError> {
     if body.len() > policy.body_max_len {
         return Err(ComposeError {
             reason: format!(
@@ -660,7 +948,7 @@ fn validate_body(policy: ComposePolicy, body: &str) -> Result<(), ComposeError> 
 }
 
 /// Validates the current uploaded attachment set as one bounded group.
-fn validate_attachment_set(
+pub(crate) fn validate_attachment_set(
     policy: ComposePolicy,
     attachments: &[UploadedAttachment],
 ) -> Result<(), ComposeError> {
@@ -778,7 +1066,11 @@ fn build_reply_draft(
     rendered: &RenderedMessageView,
     attachment_notice: Option<&str>,
 ) -> Result<(String, String, String, Option<String>), ComposeError> {
-    let reply_target = extract_reply_recipient(policy, rendered.from.as_deref())?;
+    let reply_target = rendered
+        .reply_metadata
+        .as_ref()
+        .map(|metadata| metadata.reply_targets().join(", "))
+        .unwrap_or_default();
     let subject = prefixed_subject(policy, rendered.subject.as_deref(), "Re: ")?;
 
     let mut body_lines = vec![String::new(), String::new()];
@@ -798,7 +1090,7 @@ fn build_reply_draft(
     let context_notice = if reply_target.is_empty() {
         Some(bounded_notice(
             policy,
-            "Original From header could not be converted into a simple reply target; fill the recipient manually.",
+            "Original reply addresses could not be selected safely; fill the recipients manually.",
         )?)
     } else {
         None
@@ -861,7 +1153,7 @@ fn build_attachment_notice(
     }
 
     let notice = match intent {
-        ComposeIntent::Reply => format!(
+        ComposeIntent::Reply | ComposeIntent::ReplyAll => format!(
             "Original message included {} attachment(s); source attachments are not selected automatically.",
             attachments.len()
         ),
@@ -955,30 +1247,6 @@ fn prefixed_subject(
     Ok(prefixed)
 }
 
-/// Extracts a conservative simple reply target from the rendered `From` value.
-fn extract_reply_recipient(
-    policy: ComposePolicy,
-    from_header: Option<&str>,
-) -> Result<String, ComposeError> {
-    let Some(from_header) = from_header.map(str::trim) else {
-        return Ok(String::new());
-    };
-
-    if let Some((_, address_and_rest)) = from_header.rsplit_once('<') {
-        if let Some((address, _)) = address_and_rest.split_once('>') {
-            let address = address.trim();
-            validate_recipient(policy, address)?;
-            return Ok(address.to_string());
-        }
-    }
-
-    if validate_recipient(policy, from_header).is_ok() {
-        return Ok(from_header.to_string());
-    }
-
-    Ok(String::new())
-}
-
 /// Quotes one plain-text body block for reply composition.
 fn quote_plain_text(body_text: &str) -> Vec<String> {
     if body_text.is_empty() {
@@ -1004,12 +1272,117 @@ fn describe_attachment_for_forward(attachment: &AttachmentMetadata) -> String {
 pub(crate) fn build_submission_message(
     canonical_username: &str,
     request: &ComposeRequest,
-) -> Vec<u8> {
-    if request.attachments.is_empty() {
-        return build_plain_text_submission_message(canonical_username, request).into_bytes();
+) -> Result<Vec<u8>, ComposeError> {
+    crate::identity::MailboxIdentity::parse(canonical_username).map_err(|_| ComposeError {
+        reason: "invalid authorized sender".into(),
+    })?;
+    let sender = request
+        .sender_identity
+        .sender()
+        .map(|capture| capture.address())
+        .unwrap_or(canonical_username);
+    crate::identity::MailboxIdentity::parse(sender).map_err(|_| ComposeError {
+        reason: "invalid captured sender".into(),
+    })?;
+    let raw = if request.body_format == BodyFormat::Formatted {
+        build_formatted_submission_message(sender, request, &formatted_body(&request.body)?)
+    } else if request.attachments.is_empty() {
+        build_plain_text_submission_message(sender, request)
+    } else {
+        build_multipart_submission_message(sender, request)
+    };
+    let name = request.sender_identity.display_name();
+    if name.is_empty() && request.sender_identity.reply_to().is_none() {
+        return Ok(raw.into_bytes());
     }
+    let from = if name.is_empty() {
+        sender.to_owned()
+    } else {
+        // RFC2047 B words: <=45 UTF-8 bytes, never split a code point; <=72 encoded bytes.
+        let mut words = Vec::new();
+        let mut chunk = String::new();
+        for c in name.chars() {
+            if chunk.len() + c.len_utf8() > 45 {
+                words.push(format!(
+                    "=?UTF-8?B?{}?=",
+                    base64_encode_wrapped(chunk.as_bytes())
+                ));
+                chunk.clear();
+            }
+            chunk.push(c);
+        }
+        if !chunk.is_empty() {
+            words.push(format!(
+                "=?UTF-8?B?{}?=",
+                base64_encode_wrapped(chunk.as_bytes())
+            ));
+        }
+        format!("{}\r\n <{sender}>", words.join("\r\n "))
+    };
+    let reply = request
+        .sender_identity
+        .reply_to()
+        .map(|value| format!("Reply-To: {value}\r\n"))
+        .unwrap_or_default();
+    let prefix = format!("From: {sender}\r\n");
+    let tail = raw.strip_prefix(&prefix).ok_or_else(|| ComposeError {
+        reason: "sender header assembly failed".into(),
+    })?;
+    Ok(format!("From: {from}\r\n{reply}{tail}").into_bytes())
+}
 
-    build_multipart_submission_message(canonical_username, request).into_bytes()
+fn formatted_body(source: &str) -> Result<FormattedBody, ComposeError> {
+    compose_format::render(source).map_err(|error| ComposeError {
+        reason: error.to_string(),
+    })
+}
+
+/// Both alternatives use MIME base64: arbitrary source lines cannot become
+/// MIME boundaries, and long/Unicode lines have a portable transport encoding.
+fn build_formatted_submission_message(
+    canonical_username: &str,
+    request: &ComposeRequest,
+    body: &FormattedBody,
+) -> String {
+    let mixed = build_multipart_boundary(canonical_username, request);
+    let alternative = mixed.replacen("osmap-mixed-", "osmap-alternative-", 1);
+    let has_attachments = !request.attachments.is_empty();
+    let (content_type, outer) = if has_attachments {
+        ("mixed", &mixed)
+    } else {
+        ("alternative", &alternative)
+    };
+    let mut output = format!(
+        "From: {canonical_username}\r\nTo: {}\r\n{}{}Subject: {}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/{content_type}; boundary=\"{outer}\"\r\n\r\n",
+        header_recipients(&request.recipients), cc_header(request),
+        request.reply_thread.as_ref().map(|thread| thread.header_lines()).unwrap_or_default(),
+        request.subject,
+    );
+    if has_attachments {
+        output.push_str(&format!(
+            "--{mixed}\r\nContent-Type: multipart/alternative; boundary=\"{alternative}\"\r\n\r\n"
+        ));
+    }
+    for (subtype, text) in [("plain", &body.plain), ("html", &body.html)] {
+        output.push_str(&format!(
+            "--{alternative}\r\nContent-Type: text/{subtype}; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n{}\r\n",
+            base64_encode_wrapped(normalize_body_line_endings(text).as_bytes()),
+        ));
+    }
+    output.push_str(&format!("--{alternative}--\r\n"));
+    if has_attachments {
+        for attachment in &request.attachments {
+            output.push_str(&format!(
+                "--{mixed}\r\nContent-Type: {}; name=\"{}\"\r\nContent-Disposition: attachment; filename=\"{}\"\r\nContent-Transfer-Encoding: base64\r\n\r\n{}\r\n",
+                attachment.content_type,
+                escape_mime_parameter_value(&attachment.filename),
+                escape_mime_parameter_value(&attachment.filename),
+                base64_encode_wrapped(&attachment.body),
+            ));
+        }
+        output.push_str(&format!("--{mixed}--\r\n"));
+    }
+    output
 }
 
 /// Builds the plain-text-only message handed to the local sendmail surface.
@@ -1019,9 +1392,10 @@ fn build_plain_text_submission_message(
 ) -> String {
     let body = normalize_body_line_endings(&request.body);
     format!(
-        "From: {canonical_username}\r\nTo: {}\r\n{}Subject: {}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n{}",
+        "From: {canonical_username}\r\nTo: {}\r\n{}{}Subject: {}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n{}",
         header_recipients(&request.recipients),
         cc_header(request),
+        request.reply_thread.as_ref().map(|thread| thread.header_lines()).unwrap_or_default(),
         request.subject,
         body,
     )
@@ -1035,9 +1409,10 @@ fn build_multipart_submission_message(
     let boundary = build_multipart_boundary(canonical_username, request);
     let mut output = String::new();
     output.push_str(&format!(
-        "From: {canonical_username}\r\nTo: {}\r\n{}Subject: {}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=\"{}\"\r\n\r\n",
+        "From: {canonical_username}\r\nTo: {}\r\n{}{}Subject: {}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=\"{}\"\r\n\r\n",
         header_recipients(&request.recipients),
         cc_header(request),
+        request.reply_thread.as_ref().map(|thread| thread.header_lines()).unwrap_or_default(),
         request.subject,
         boundary,
     ));
@@ -1066,7 +1441,13 @@ fn sendmail_args(canonical_username: &str, request: &ComposeRequest) -> Vec<Stri
     let mut args = vec![
         "-oi".to_string(),
         "-f".to_string(),
-        canonical_username.to_string(),
+        request
+            .sender_identity
+            .sender()
+            .map(|capture| capture.address())
+            .unwrap_or(canonical_username)
+            .to_string(),
+        "--".to_string(),
     ];
     args.extend(request.all_recipients());
     args
@@ -1139,7 +1520,7 @@ fn escape_mime_parameter_value(value: &str) -> String {
 }
 
 /// Encodes one attachment body as MIME base64 wrapped at 76 characters.
-fn base64_encode_wrapped(bytes: &[u8]) -> String {
+pub(crate) fn base64_encode_wrapped(bytes: &[u8]) -> String {
     const BASE64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut output = String::new();
     let mut line_len = 0;
@@ -1190,41 +1571,9 @@ fn hex_encode(bytes: &[u8]) -> String {
     output
 }
 
-/// Allowed characters for the local part in the current narrow mailbox parser.
-fn is_allowed_email_local_char(ch: char) -> bool {
-    ch.is_ascii_alphanumeric()
-        || matches!(
-            ch,
-            '!' | '#'
-                | '$'
-                | '%'
-                | '&'
-                | '\''
-                | '*'
-                | '+'
-                | '-'
-                | '/'
-                | '='
-                | '?'
-                | '^'
-                | '_'
-                | '`'
-                | '{'
-                | '|'
-                | '}'
-                | '~'
-                | '.'
-        )
-}
-
-/// Allowed characters for the domain part in the current narrow mailbox parser.
-fn is_allowed_email_domain_char(ch: char) -> bool {
-    ch.is_ascii_alphanumeric() || matches!(ch, '-' | '.')
-}
-
 /// Allowed characters for the current narrow uploaded-attachment file names.
 fn is_allowed_attachment_filename_char(ch: char) -> bool {
-    ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-' | '+' | ' ' | '(' | ')')
+    ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-' | '+' | '@' | ' ' | '(' | ')')
 }
 
 /// Allowed token characters for a narrow MIME content type parser.
@@ -1235,6 +1584,12 @@ fn is_allowed_content_type_token_char(ch: char) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod protected_tests {
+        include!("send_protected_tests.rs");
+    }
+    mod scheduled_tests {
+        include!("send_scheduled_tests.rs");
+    }
     use crate::auth::{AuthenticationPolicy, CommandExecution, CommandExecutionError};
     use crate::config::LogFormat;
     use crate::logging::Logger;
@@ -1292,7 +1647,9 @@ mod tests {
     }
 
     #[derive(Debug, Clone)]
-    struct FailingSubmissionBackend;
+    struct FailingSubmissionBackend {
+        calls: std::cell::Cell<usize>,
+    }
 
     impl SubmissionBackend for FailingSubmissionBackend {
         fn submit_message(
@@ -1300,6 +1657,7 @@ mod tests {
             _canonical_username: &str,
             _request: &ComposeRequest,
         ) -> Result<(), SubmissionBackendError> {
+            self.calls.set(self.calls.get() + 1);
             Err(SubmissionBackendError {
                 backend: "test-submission-backend",
                 reason: "submission unavailable".to_string(),
@@ -1320,6 +1678,7 @@ mod tests {
     fn validated_session_fixture() -> ValidatedSession {
         ValidatedSession {
             record: SessionRecord {
+                account_epoch: None,
                 session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                     .to_string(),
                 canonical_username: "alice@example.com".to_string(),
@@ -1344,10 +1703,15 @@ mod tests {
 
     fn rendered_message_fixture() -> RenderedMessageView {
         RenderedMessageView {
+            openpgp: None,            metadata: None,
+            flags: Vec::new(),
             mailbox_name: "INBOX".to_string(),
             uid: 42,
             subject: Some("Quarterly report".to_string()),
             from: Some("Alice Example <alice@example.com>".to_string()),
+            to: Some("Bob <bob@example.com>".into()),
+            cc: None,
+            reply_metadata: crate::reply_thread::ReplyMetadata::from_original("From: Alice Example <alice@example.com>\nTo: Bob <bob@example.com>\nMessage-ID: <parent@example.com>\n").ok(),
             date_received: "2026-03-27 12:00:00 +0000".to_string(),
             mime_top_level_content_type: "multipart/mixed".to_string(),
             body_source: MimeBodySource::MultipartPlainTextPart,
@@ -1417,18 +1781,53 @@ mod tests {
     fn rejects_invalid_recipient_shapes() {
         let error = ComposeRequest::new(
             ComposePolicy::default(),
-            "Bob Example <bob@example.com>",
+            "Bob Example <bob@example.com> unexpected-suffix",
             "Test",
             "Hello",
         )
-        .expect_err("display-name recipients are intentionally rejected");
+        .expect_err("ambiguous display-name recipient must be rejected");
 
         assert_eq!(
             error,
             ComposeError {
-                reason: "recipient contained control or whitespace characters".to_string(),
+                reason: "recipient used ambiguous mailbox syntax".to_string(),
             }
         );
+    }
+
+    #[test]
+    fn envelope_recipients_are_unique_while_to_cc_intent_and_bcc_privacy_remain() {
+        let request = ComposeRequest::new_with_routing(
+            ComposePolicy::default(),
+            "\"Bob, Example\" <bob@example.test>, bob@EXAMPLE.test",
+            "bob@example.test, carol@example.test",
+            "carol@example.test, private@example.test",
+            "Bounded recipients",
+            "Synthetic body",
+            Vec::new(),
+        )
+        .unwrap();
+        assert_eq!(request.recipients, ["bob@example.test"]);
+        assert_eq!(
+            request.cc_recipients,
+            ["bob@example.test", "carol@example.test"]
+        );
+        assert_eq!(
+            request.all_recipients(),
+            [
+                "bob@example.test",
+                "carol@example.test",
+                "private@example.test"
+            ]
+        );
+        assert_eq!(request.total_recipient_count(), 3);
+        let wire =
+            String::from_utf8(build_submission_message("alice@example.test", &request).unwrap())
+                .unwrap();
+        assert!(
+            wire.contains("To: bob@example.test\r\nCc: bob@example.test, carol@example.test\r\n")
+        );
+        assert!(!wire.contains("private@example.test") && !wire.contains("Bcc:"));
     }
 
     #[test]
@@ -1634,6 +2033,7 @@ mod tests {
                 "-oi".to_string(),
                 "-f".to_string(),
                 "alice@example.com".to_string(),
+                "--".to_string(),
                 "bob@example.com".to_string(),
             ]
         );
@@ -1681,6 +2081,7 @@ mod tests {
                 "-oi".to_string(),
                 "-f".to_string(),
                 "alice@example.com".to_string(),
+                "--".to_string(),
                 "bob@example.com".to_string(),
                 "carol@example.net".to_string(),
                 "dana@example.org".to_string(),
@@ -1762,6 +2163,7 @@ mod tests {
                 "-oi".to_string(),
                 "-f".to_string(),
                 sender.to_string(),
+                "--".to_string(),
                 "bob@example.com".to_string(),
             ]
         );
@@ -1821,6 +2223,125 @@ mod tests {
     }
 
     #[test]
+    fn formatted_submission_round_trips_alternatives_attachments_and_thread_headers() {
+        use crate::mime::{MimeAnalysisPolicy, MimeAnalyzer};
+        for with_attachment in [false, true] {
+            let attachments = if with_attachment {
+                vec![UploadedAttachment::new(
+                    ComposePolicy::default(),
+                    "report.bin",
+                    "application/octet-stream",
+                    vec![0, 255, 16, 65],
+                )
+                .unwrap()]
+            } else {
+                Vec::new()
+            };
+            let mut request = ComposeRequest::new_with_routing(
+                ComposePolicy::default(), "to@example.test", "cc@example.test", "secret@example.test",
+                "Formatted", "**Bold** café 🦊\n- __one__\n- [site](https://example.test/?a=1&b=2)\n<script>x</script>", attachments,
+            ).unwrap().with_body_format(BodyFormat::Formatted).unwrap();
+            request.reply_thread = crate::reply_thread::ReplyMetadata::from_original(
+                "From: other@example.test\r\nMessage-ID: <parent@example.test>\r\nReferences: <ancestor@example.test>\r\n",
+            ).unwrap().thread;
+            let bytes = build_submission_message("alice@example.test", &request).unwrap();
+            // Rebuilding a Sent copy must give exactly the submitted bytes.
+            assert_eq!(
+                bytes,
+                build_submission_message("alice@example.test", &request).unwrap()
+            );
+            let raw = String::from_utf8(bytes).unwrap();
+            let normalized = raw.replace("\r\n", "\n");
+            let (headers, body) = normalized.split_once("\n\n").unwrap();
+            assert!(!headers.contains("Bcc:"));
+            assert!(!raw.contains("secret@example.test"));
+            assert!(headers.contains("Cc: cc@example.test"));
+            assert!(headers.contains("In-Reply-To: <parent@example.test>"));
+            assert!(headers.contains("References: <ancestor@example.test> <parent@example.test>"));
+            let analysis = MimeAnalyzer::new(MimeAnalysisPolicy::default())
+                .analyze_message(&crate::mailbox::MessageView {
+                    metadata: None,
+                    mailbox_name: "Sent".into(),
+                    uid: 1,
+                    flags: Vec::new(),
+                    date_received: String::new(),
+                    size_virtual: raw.len() as u64,
+                    header_block: headers.into(),
+                    body_text: body.into(),
+                })
+                .unwrap();
+            let rendered = compose_format::render(&request.body).unwrap();
+            assert_eq!(
+                analysis.selected_plain_text_body,
+                Some(normalize_body_line_endings(&rendered.plain))
+            );
+            assert_eq!(
+                analysis.selected_html_body,
+                Some(normalize_body_line_endings(&rendered.html))
+            );
+            assert_eq!(
+                analysis.top_level_content_type,
+                if with_attachment {
+                    "multipart/mixed"
+                } else {
+                    "multipart/alternative"
+                }
+            );
+            assert_eq!(analysis.attachments.len(), usize::from(with_attachment));
+            if with_attachment {
+                assert_eq!(
+                    analysis.attachments[0].filename.as_deref(),
+                    Some("report.bin")
+                );
+                assert!(raw.contains("AP8QQQ=="));
+            }
+        }
+    }
+
+    #[test]
+    fn plain_mode_retains_original_body_bytes_and_does_not_interpret_notation() {
+        let request = ComposeRequest::new(
+            ComposePolicy::default(),
+            "bob@example.test",
+            "Plain",
+            "**literal**\n<script>x</script>\r\n[unsafe](javascript:x)",
+        )
+        .unwrap();
+        assert_eq!(request.body_format, BodyFormat::Plain);
+        assert_eq!(String::from_utf8(build_submission_message("alice@example.test", &request).unwrap()).unwrap(),
+            "From: alice@example.test\r\nTo: bob@example.test\r\nSubject: Plain\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n**literal**\r\n<script>x</script>\r\n[unsafe](javascript:x)");
+        assert!(request.with_body_format(BodyFormat::Formatted).is_err());
+    }
+
+    #[test]
+    fn invalid_formatted_source_never_reaches_sendmail_even_after_request_mutation() {
+        let executor = Rc::new(RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: String::new(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = SendmailSubmissionBackend::new(executor.clone(), "/usr/sbin/sendmail");
+        let mut request = ComposeRequest::new(
+            ComposePolicy::default(),
+            "bob@example.test",
+            "Invalid formatting",
+            "**valid**",
+        )
+        .unwrap()
+        .with_body_format(BodyFormat::Formatted)
+        .unwrap();
+        request.body = "[bad](javascript:x)".into();
+        assert!(build_submission_message("alice@example.test", &request).is_err());
+        assert!(backend
+            .submit_message("alice@example.test", &request)
+            .is_err());
+        assert!(executor.borrow().program.is_none());
+        assert!(executor.borrow().stdin_data.is_none());
+    }
+
+    #[test]
     fn submission_service_emits_audit_quality_success_events() {
         let executor = Rc::new(RefCell::new(StubCommandExecutor::success(
             CommandExecution {
@@ -1854,13 +2375,15 @@ mod tests {
         let rendered = logger.render_with_timestamp(&outcome.audit_event, 8080);
         assert_eq!(
             rendered,
-            "ts=\"1970-01-01T02:14:40Z\" ts_unix=8080 level=info category=submission action=message_submitted msg=\"outbound message submission completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" recipient_count=\"1\" attachment_count=\"0\" attachment_bytes_total=\"0\" has_subject=\"true\" request_id=\"req-send\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+            "ts=\"1970-01-01T02:14:40Z\" ts_unix=8080 level=info category=submission action=message_submitted msg=\"outbound message accepted for submission\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" recipient_count=\"1\" attachment_count=\"0\" attachment_bytes_total=\"0\" has_subject=\"true\" request_id=\"req-send\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
         );
     }
 
     #[test]
-    fn submission_service_translates_backend_failures() {
-        let service = SubmissionService::new(FailingSubmissionBackend);
+    fn submission_service_preserves_uncertainty_without_retrying() {
+        let service = SubmissionService::new(FailingSubmissionBackend {
+            calls: std::cell::Cell::new(0),
+        });
         let request = ComposeRequest::new(
             ComposePolicy::default(),
             "bob@example.com",
@@ -1877,10 +2400,118 @@ mod tests {
 
         assert_eq!(
             outcome.decision,
-            SubmissionDecision::Denied {
+            SubmissionDecision::Unconfirmed {
                 public_reason: SubmissionPublicFailureReason::TemporarilyUnavailable,
             }
         );
-        assert_eq!(outcome.audit_event.action, "message_submit_failed");
+        assert_eq!(service.backend.calls.get(), 1);
+        assert_eq!(outcome.audit_event.action, "message_submit_unconfirmed");
+        let rendered = Logger::new(LogFormat::Text, LogLevel::Debug)
+            .render_with_timestamp(&outcome.audit_event, 8080);
+        assert!(!rendered.contains("Hello world"));
+        assert!(!rendered.contains("Test message"));
+        assert!(!rendered.contains("submission unavailable"));
     }
+
+    #[test]
+    fn sendmail_exit_and_executor_errors_remain_unconfirmed() {
+        let request = ComposeRequest::new(
+            ComposePolicy::default(),
+            "bob@example.com",
+            "Synthetic subject",
+            "Synthetic body",
+        )
+        .unwrap();
+        for execution in [
+            Ok(CommandExecution {
+                status_code: 75,
+                stdout: String::new(),
+                stderr: "synthetic status failure".into(),
+            }),
+            Err(CommandExecutionError {
+                reason: "synthetic timeout after input write".into(),
+            }),
+        ] {
+            let executor = Rc::new(RefCell::new(StubCommandExecutor {
+                execution,
+                program: None,
+                args: None,
+                stdin_data: None,
+                timeout_secs: None,
+            }));
+            let service = SubmissionService::new(SendmailSubmissionBackend::new(
+                executor.clone(),
+                "/synthetic/not-executed/sendmail",
+            ));
+            let outcome = service.submit_for_validated_session(
+                &test_context(),
+                &validated_session_fixture(),
+                &request,
+            );
+            assert!(matches!(
+                outcome.decision,
+                SubmissionDecision::Unconfirmed { .. }
+            ));
+            assert!(executor.borrow().stdin_data.is_some());
+            assert_eq!(outcome.audit_event.action, "message_submit_unconfirmed");
+        }
+    }
+    #[test]
+    fn identity_headers_roundtrip_canonical_envelope_and_snapshot_digest() {
+        let mut request = ComposeRequest::new_with_routing(
+            ComposePolicy::default(),
+            "bob@example.test",
+            "",
+            "hidden@example.test",
+            "Identity proof",
+            "Synthetic body",
+            vec![],
+        )
+        .unwrap();
+        let before = crate::send_journal::snapshot_digest("alice@example.test", &request);
+        // Golden from the pre-identity v1 snapshot layout: old receipts stay readable.
+        assert_eq!(
+            before,
+            "492b826355f65f157f1ed49327f6c1e6c4c7270b8b4875fa660de6ad8cdc7753"
+        );
+        for name in ["Zoë 🦊, \"Review\"".to_owned(), "é".repeat(128)] {
+            request.sender_identity = crate::identity_preferences::IdentityPreferences::new(
+                &name,
+                Some("reply+desk@example.test"),
+            )
+            .unwrap();
+            let bytes = build_submission_message("alice@example.test", &request).unwrap();
+            let text = String::from_utf8(bytes.clone()).unwrap();
+            assert!(
+                text.contains("\r\n <alice@example.test>\r\nReply-To: reply+desk@example.test\r\n")
+            );
+            assert!(!text.contains("Bcc:"));
+            assert_ne!(
+                before,
+                crate::send_journal::snapshot_digest("alice@example.test", &request)
+            );
+            let args = sendmail_args("alice@example.test", &request);
+            assert!(args.windows(2).any(|a| a == ["-f", "alice@example.test"]));
+            assert!(!args.iter().any(|a| a == "reply+desk@example.test"));
+            if let Some(path) = std::env::var_os("OSMAP_IDENTITY_MIME_PROOF") {
+                let path = std::path::PathBuf::from(path);
+                std::fs::create_dir_all(&path).unwrap();
+                std::fs::write(
+                    path.join(if name.starts_with("Zoë") {
+                        "unicode.eml"
+                    } else {
+                        "maximum.eml"
+                    }),
+                    bytes,
+                )
+                .unwrap();
+            }
+        }
+        request.sender_identity = crate::identity_preferences::IdentityPreferences::default();
+        assert_eq!(
+            before,
+            crate::send_journal::snapshot_digest("alice@example.test", &request)
+        );
+    }
+    include!("send_sender_tests.rs");
 }

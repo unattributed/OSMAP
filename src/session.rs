@@ -23,6 +23,21 @@ use crate::identity::CanonicalUsername;
 use crate::logging::{EventCategory, LogEvent};
 use crate::totp::TimeProvider;
 
+#[path = "session_action.rs"]
+mod session_action;
+pub use session_action::{GuardedSessionError, GuardedSessionLease};
+#[path = "session_password_cleanup.rs"]
+mod session_password_cleanup;
+pub use session_password_cleanup::BrowserRevocation;
+#[cfg(unix)]
+#[path = "session_recovery.rs"]
+mod session_recovery;
+#[cfg(unix)]
+pub(crate) use session_recovery::{
+    revoke_recovery_sessions, validate_recovery_session, verify_recovery_sessions,
+    RecoveryRevocation, RecoveryRevocationFailure, RecoveryRevocationStage, RecoverySessionLease,
+};
+
 /// Conservative token size for opaque browser sessions.
 pub const SESSION_TOKEN_BYTES: usize = 32;
 
@@ -47,6 +62,8 @@ const SESSION_LOCK_FILE: &str = ".session-store.lock";
 /// Describes the persisted session metadata visible to operators.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SessionRecord {
+    /// Captured authoritative credential epoch; absent only in legacy mode.
+    pub account_epoch: Option<u64>,
     pub session_id: String,
     pub csrf_token: String,
     pub canonical_username: String,
@@ -131,6 +148,7 @@ pub struct ValidatedSession {
 /// Describes the outcome of revoking a session.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RevokedSession {
+    pub newly_revoked: bool,
     pub record: SessionRecord,
     pub audit_event: LogEvent,
 }
@@ -404,6 +422,8 @@ impl Drop for SessionFileLock {
 
 /// Issues, validates, and revokes browser sessions.
 pub struct SessionService<S, T, R> {
+    epoch_authority: Option<std::sync::Arc<dyn crate::account_admission::EpochAuthority>>,
+    epoch_account: Option<String>,
     session_store: S,
     time_provider: T,
     random_source: R,
@@ -412,6 +432,53 @@ pub struct SessionService<S, T, R> {
 }
 
 impl<S, T, R> SessionService<S, T, R> {
+    /// Enabling admission rejects legacy unbound sessions; no fallback.
+    pub fn with_epoch_authority(
+        mut self,
+        authority: std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
+    ) -> Self {
+        self.epoch_authority = Some(authority);
+        self.epoch_account = None;
+        self
+    }
+
+    /// Enforce authority only for the configured canonical identity. Other
+    /// accounts retain the Disabled contract, including refusal of bound epochs.
+    pub(crate) fn with_account_epoch_authority(
+        mut self,
+        account: String,
+        authority: std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
+    ) -> Self {
+        self.epoch_authority = Some(authority);
+        self.epoch_account = Some(account);
+        self
+    }
+
+    fn check_epoch(&self, account: &str, epoch: Option<u64>) -> Result<(), SessionError> {
+        if epoch.is_some_and(|value| !crate::account_admission::valid_epoch(value)) {
+            return Err(SessionError::StoreFailure {
+                reason: "account epoch binding invalid".into(),
+            });
+        }
+        let authority = self.epoch_authority.as_ref().filter(|_| {
+            self.epoch_account
+                .as_deref()
+                .is_none_or(|selected| selected == account)
+        });
+        match (authority, epoch) {
+            (None, None) => Ok(()),
+            (Some(authority), Some(epoch)) => {
+                authority
+                    .admit(account, epoch)
+                    .map_err(|_| SessionError::StoreFailure {
+                        reason: "account epoch admission refused".into(),
+                    })
+            }
+            _ => Err(SessionError::StoreFailure {
+                reason: "account epoch binding unavailable".into(),
+            }),
+        }
+    }
     /// Creates a new session service.
     pub fn new(
         session_store: S,
@@ -421,6 +488,8 @@ impl<S, T, R> SessionService<S, T, R> {
         idle_timeout_seconds: u64,
     ) -> Self {
         Self {
+            epoch_authority: None,
+            epoch_account: None,
             session_store,
             time_provider,
             random_source,
@@ -443,6 +512,18 @@ where
         canonical_username: &str,
         factor: RequiredSecondFactor,
     ) -> Result<IssuedSession, SessionError> {
+        self.issue_with_epoch(context, canonical_username, factor, None)
+    }
+
+    /// The epoch must be captured by primary verification, never read afresh
+    /// after TOTP; a credential change in that gap invalidates issuance.
+    pub fn issue_with_epoch(
+        &self,
+        context: &AuthenticationContext,
+        canonical_username: &str,
+        factor: RequiredSecondFactor,
+        authenticated_epoch: Option<u64>,
+    ) -> Result<IssuedSession, SessionError> {
         let canonical_username =
             CanonicalUsername::parse(canonical_username.to_string()).map_err(|error| {
                 SessionError::StoreFailure {
@@ -450,6 +531,7 @@ where
                 }
             })?;
         self.session_store.with_exclusive_lock(|| {
+            self.check_epoch(canonical_username.as_str(), authenticated_epoch)?;
             let issued_at = self.time_provider.unix_timestamp();
             let expires_at = issued_at.saturating_add(self.lifetime_seconds);
             let token = generate_session_token(&self.random_source)?;
@@ -457,6 +539,7 @@ where
             let csrf_token = csrf_token_from_session_token(token.as_str());
 
             let record = SessionRecord {
+                account_epoch: authenticated_epoch,
                 session_id: session_id.clone(),
                 csrf_token,
                 canonical_username: canonical_username.into_string(),
@@ -529,6 +612,7 @@ where
             });
         }
 
+        self.check_epoch(&record.canonical_username, record.account_epoch)?;
         record.last_seen_at = now;
         self.session_store.save_unlocked(&record)?;
 
@@ -580,10 +664,12 @@ where
         };
 
         let now = self.time_provider.unix_timestamp();
+        let newly_revoked = record.revoked_at.is_none();
         record.revoked_at = Some(now);
         self.session_store.save_unlocked(&record)?;
 
         Ok(RevokedSession {
+            newly_revoked,
             audit_event: LogEvent::new(
                 crate::config::LogLevel::Info,
                 EventCategory::Session,
@@ -730,7 +816,7 @@ fn serialize_session_record(record: &SessionRecord) -> String {
         .map(|value| value.to_string())
         .unwrap_or_default();
 
-    format!(
+    let mut content = format!(
         "session_id={}\ncsrf_token={}\ncanonical_username={}\nissued_at={}\nexpires_at={}\nlast_seen_at={}\nrevoked_at={}\nremote_addr={}\nuser_agent={}\nfactor={}\n",
         record.session_id,
         record.csrf_token,
@@ -742,12 +828,17 @@ fn serialize_session_record(record: &SessionRecord) -> String {
         record.remote_addr,
         record.user_agent,
         record.factor.as_str(),
-    )
+    );
+    if let Some(epoch) = record.account_epoch {
+        content.push_str(&format!("account_epoch={epoch}\n"));
+    }
+    content
 }
 
 /// Parses a serialized session record.
 fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionError> {
     let mut session_id = None;
+    let mut account_epoch = None;
     let mut csrf_token = None;
     let mut canonical_username = None;
     let mut issued_at = None;
@@ -775,6 +866,15 @@ fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionE
         };
 
         match key {
+            "account_epoch" => {
+                let epoch = parse_u64_field("account_epoch", value)?;
+                if account_epoch.is_some() || !crate::account_admission::valid_epoch(epoch) {
+                    return Err(SessionError::StoreFailure {
+                        reason: "invalid account epoch field".into(),
+                    });
+                }
+                account_epoch = Some(epoch);
+            }
             "session_id" => {
                 if value.len() != SESSION_ID_HEX_LEN
                     || !value.chars().all(|ch| ch.is_ascii_hexdigit())
@@ -848,6 +948,7 @@ fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionE
     };
 
     Ok(Some(SessionRecord {
+        account_epoch,
         session_id,
         csrf_token: required_field("csrf_token", csrf_token)?,
         canonical_username: required_field("canonical_username", canonical_username)?,
@@ -1041,6 +1142,7 @@ mod tests {
         issued_at: u64,
     ) -> SessionRecord {
         SessionRecord {
+            account_epoch: None,
             session_id: id_char.to_string().repeat(SESSION_ID_HEX_LEN),
             csrf_token: "c".repeat(CSRF_TOKEN_HEX_LEN),
             canonical_username: canonical_username.to_string(),
@@ -1690,6 +1792,7 @@ mod tests {
             )
             .expect("current session issuance should succeed");
         let other_record = SessionRecord {
+            account_epoch: None,
             session_id: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
                 .to_string(),
             csrf_token: "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
@@ -1729,6 +1832,7 @@ mod tests {
     #[test]
     fn parses_serialized_session_records() {
         let record = SessionRecord {
+            account_epoch: None,
             session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                 .to_string(),
             csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
@@ -1908,4 +2012,45 @@ mod tests {
         assert_eq!(issued.record.issued_at, 59);
         assert_eq!(issued.record.expires_at, 3659);
     }
+    #[test]
+    fn notification_revocation_transition_is_reported_once_under_store_lock() {
+        let root = temp_dir("notification-revoke-once");
+        let service = SessionService::new(
+            FileSessionStore::new(&root),
+            FixedTimeProvider::new(100),
+            StaticRandomSource {
+                bytes: vec![0xaa; SESSION_TOKEN_BYTES],
+            },
+            3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
+        );
+        let issued = service
+            .issue(
+                &test_context(),
+                "alice@example.com",
+                RequiredSecondFactor::Totp,
+            )
+            .unwrap();
+        assert!(
+            service
+                .revoke(&test_context(), &issued.record.session_id)
+                .unwrap()
+                .newly_revoked
+        );
+        assert!(
+            !service
+                .revoke(&test_context(), &issued.record.session_id)
+                .unwrap()
+                .newly_revoked
+        );
+        assert!(service
+            .revoke_all_for_user(&test_context(), "alice@example.com")
+            .unwrap()
+            .is_empty());
+        fs::remove_dir_all(root).unwrap();
+    }
 }
+
+#[cfg(all(test, unix))]
+#[path = "account_epoch_session_tests.rs"]
+mod account_epoch_session_tests;

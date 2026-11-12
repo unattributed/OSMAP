@@ -1,0 +1,194 @@
+//! Authenticated compose protection projection and strict finite form choices.
+use super::*;
+use crate::openpgp_bindings::{Preflight, PreflightState, Recipients, Selections};
+use crate::send::ProtectionIntent;
+
+pub struct ComposeProtectionView {
+    pub imported_recipients: Option<crate::contacts::ImportedRecipientSnapshot>,
+    pub runtime_configured: bool,
+    pub revision: Option<u64>,
+    pub preflight: Option<Preflight>,
+    pub account_binding: Option<crate::openpgp_bindings::AccountBinding>,
+    pub policy: crate::openpgp_bindings::ProtectionPolicy,
+    pub recipient_binding_count: usize,
+}
+
+/// Browser choices are intent, never fingerprints, key paths or agent authority.
+pub(super) fn intent_from_form(
+    form: &BTreeMap<String, String>,
+) -> Result<ProtectionIntent, &'static str> {
+    let flag = |name| match form.get(name).map(String::as_str) {
+        None => Ok(false),
+        Some("on") => Ok(true),
+        _ => Err("Invalid OpenPGP selection. Refresh the compose page."),
+    };
+    let sign = flag("pgp_sign")?;
+    let encrypt = flag("pgp_encrypt")?;
+    let encrypt_to_self = flag("pgp_self")?;
+    if encrypt_to_self && !encrypt {
+        return Err("Encrypt to self requires encryption.");
+    }
+    let binding_revision = match form.get("pgp_binding_revision") {
+        None => None,
+        Some(value)
+            if !value.is_empty()
+                && value.len() <= 20
+                && value.bytes().all(|b| b.is_ascii_digit())
+                && (value == "0" || !value.starts_with('0')) =>
+        {
+            Some(
+                value
+                    .parse()
+                    .map_err(|_| "Invalid OpenPGP binding revision. Refresh the compose page.")?,
+            )
+        }
+        _ => return Err("Invalid OpenPGP binding revision. Refresh the compose page."),
+    };
+    if (sign || encrypt) && binding_revision.is_none() {
+        return Err("OpenPGP binding state is missing. Refresh the compose page.");
+    }
+    Ok(ProtectionIntent {
+        sign,
+        encrypt,
+        encrypt_to_self,
+        binding_revision,
+    })
+}
+
+/// Render only: retain finite submitted choices after a refused form without
+/// granting them dispatch authority or replacing the pinned binding revision.
+pub(super) fn retained_intent_from_form(form: &BTreeMap<String, String>) -> ProtectionIntent {
+    let revision = form.get("pgp_binding_revision").and_then(|value| {
+        if value.is_empty()
+            || value.len() > 20
+            || !value.bytes().all(|b| b.is_ascii_digit())
+            || (value != "0" && value.starts_with('0'))
+        {
+            None
+        } else {
+            value.parse().ok()
+        }
+    });
+    ProtectionIntent {
+        sign: form.get("pgp_sign").is_some_and(|value| value == "on"),
+        encrypt: form.get("pgp_encrypt").is_some_and(|value| value == "on"),
+        encrypt_to_self: form.get("pgp_self").is_some_and(|value| value == "on"),
+        binding_revision: revision,
+    }
+}
+
+impl RuntimeBrowserGateway {
+    pub(super) fn compose_protection_view(
+        &self,
+        session: &ValidatedSession,
+        to: &str,
+        cc: &str,
+        bcc: &str,
+        intent: ProtectionIntent,
+    ) -> Option<ComposeProtectionView> {
+        // Binding policy and revision remain authoritative even when the
+        // private-operation client is unavailable; ordinary mail still needs them.
+        let runtime_configured = self.crypto_client().is_some();
+        let account = &session.record.canonical_username;
+        let record =
+            crate::openpgp_bindings::BindingStore::new(self.settings_dir.join("openpgp-bindings"))
+                .load(account)
+                .ok()?;
+        let revision = Some(record.revision);
+        let inventory = self
+            .inventory_client()
+            .as_ref()
+            .and_then(|client| client.read(account).ok());
+        // A missing public inventory establishes no key capability. As in
+        // prepare_for_delivery, trusted policy can still be evaluated for an
+        // ordinary message and can still require protection before submission.
+        let unavailable = crate::openpgp_inventory::Inventory::parse(
+            br#"{"version":1,"ok":false,"error":"inventory_unavailable"}"#,
+        )
+        .ok()?;
+        let parse =
+            |raw: &str| crate::mail_address::parse_address_list(ComposePolicy::default(), raw).ok();
+        let preflight = match (
+            Some(inventory.as_ref().unwrap_or(&unavailable)),
+            parse(to),
+            parse(cc),
+            parse(bcc),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .ok()
+                .map(|v| v.as_secs()),
+        ) {
+            (Some(inventory), Some(to), Some(cc), Some(bcc), Some(now)) => {
+                crate::openpgp_bindings::evaluate(
+                    account,
+                    &record,
+                    inventory,
+                    Recipients {
+                        to: &to,
+                        cc: &cc,
+                        bcc: &bcc,
+                    },
+                    Selections {
+                        sign: intent.sign,
+                        encrypt: intent.encrypt,
+                        encrypt_to_self: intent.encrypt_to_self,
+                    },
+                    now,
+                )
+                .ok()
+            }
+            _ => None,
+        };
+        Some(ComposeProtectionView {
+            imported_recipients: inventory.as_ref().and_then(|inventory| {
+                crate::contacts::ImportedRecipientSnapshot::from_inventory(
+                    account, &record, inventory,
+                )
+                .ok()
+            }),
+            runtime_configured,
+            revision,
+            preflight,
+            account_binding: record.account_binding.clone(),
+            policy: record.policy,
+            // When inventory is unavailable, retain only the known saved
+            // choices; never imply that automatic matches were established.
+            recipient_binding_count: inventory
+                .as_ref()
+                .and_then(|inventory| record.with_certificate_recipients(inventory).ok())
+                .map(|recipients| recipients.len())
+                .unwrap_or(record.recipient_bindings.len()),
+        })
+    }
+}
+
+impl<G: BrowserGateway> BrowserApp<G> {
+    pub(super) fn render_protected_compose_page(
+        &self,
+        session: &ValidatedSession,
+        mut model: ComposePageModel<'_>,
+    ) -> TrustedHtml {
+        model.openpgp = self.gateway.compose_protection(
+            session,
+            model.to_value,
+            model.cc_value,
+            model.bcc_value,
+            model.protection,
+        );
+        let sender_choices = self.gateway.sender_inventory(session).ok();
+        model.sender_choices = sender_choices;
+        render_compose_page(&model)
+    }
+}
+
+pub(crate) fn selection_text(state: PreflightState) -> &'static str {
+    match state {
+        PreflightState::Green => "Eligible public keys",
+        PreflightState::Orange => "Attention",
+        PreflightState::Blocked => "Blocked",
+    }
+}
+
+#[cfg(test)]
+#[path = "compose_protection_tests.rs"]
+mod tests;

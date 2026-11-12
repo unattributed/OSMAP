@@ -1,5 +1,10 @@
 # OpenBSD Service Guidance
 
+For mailbox locations and quota, use [account-based mail storage](MAIL_STORAGE.md).
+The mail stack owns per-account paths and limits; OSMAP reuses its authenticated
+Rust/helper report. The historical named storage volume service is retired.
+Documents remains removed from product scope; retained data is preserved.
+
 ## Purpose
 
 This directory carries the first repo-owned OpenBSD operator scaffolding for
@@ -111,6 +116,33 @@ operator-visible.
 GET-only checks do not prove the authentication path. Every production release
 also requires an operator-controlled password-plus-TOTP login followed by
 service, listener, root redirect, and login-page revalidation.
+
+### Account authority after Dovecot configuration changes
+
+The persistent Rust `osmap_account_password` service pins the protected Dovecot
+configuration and authentication endpoint it observes at startup. Even a valid
+read-only `user_query` metadata addition changes that snapshot. A running process
+and HTTP200 login form can therefore coexist with refused account admission.
+
+After an authorized Dovecot configuration change/reload on a host using this
+service, refresh dependencies in this order:
+
+1. Restart `osmap_account_password` to validate and observe the current Dovecot
+   configuration. Preserve its existing configuration, keys and epoch store.
+2. Restart `osmap_serve` afterward: its account client pins the admission socket
+   identity and must observe the replacement endpoint.
+3. As the existing Web identity, run the matching Rust ignored test
+   `account_admission_runtime::tests::native_installed_epoch_readiness`, using
+   the configured admission key and current active account epoch. Require its
+   fixed `INSTALLED_EPOCH_READINESS=PASS` marker and one actual passing test.
+   This read-only check submits no password, consumes no TOTP and changes no
+   credential. Do not reset an epoch or disable custody checks to make it pass.
+4. Verify one fresh owner password-plus-TOTP sign-in before accepting the journey.
+
+Mailbox/report rendering tests remain useful within their own scope and cannot
+replace this admission check. Crypto/inventory services need no restart for this
+dependency refresh. This procedure does not authorize a mail configuration change
+or mail-service interruption by itself.
 
 The `rc.d` examples assume:
 

@@ -1,0 +1,269 @@
+#!/usr/bin/env python3
+"""Capture synthetic route HTML with an external, test-only Playwright install.
+
+No mail host is contacted. The temporary server exposes only the supplied
+fixture directory on loopback, and browser requests outside that server fail.
+The browser runs in a disposable context without an operator profile.
+"""
+
+import argparse
+import hashlib
+import json
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from threading import Thread
+
+from playwright.sync_api import sync_playwright
+from contrast_audit import TEXT_AUDIT
+from browser_workflows import require
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("fixtures", type=Path)
+    parser.add_argument("output", type=Path)
+    parser.add_argument("--browser", default="/usr/bin/microsoft-edge-stable")
+    parser.add_argument("--engine", choices=["chromium", "firefox"], default="chromium")
+    parser.add_argument("--zoom", type=int, choices=[1, 2], default=1,
+                        help="reflow simulation: divide CSS viewport and scale pixels; not native browser zoom")
+    parser.add_argument("--forced-colors", choices=["none", "active"], default="none")
+    parser.add_argument("--contrast", action="store_true", help="audit computed flat text and meaningful UI colours")
+    parser.add_argument("--expand-details", action="store_true", help="audit disclosed main-content states")
+    parser.add_argument("--viewport-only", action="store_true", help="capture the visible viewport for review; DOM audits still cover the full page")
+    parser.add_argument("--height", type=int, default=1000, help="CSS viewport height; use 1100 for the approved page references")
+    parser.add_argument("--schemes", nargs="+", choices=["light", "dark"], default=["light"])
+    parser.add_argument("--widths", nargs="+", type=int, default=[360, 768, 1440])
+    parser.add_argument("--names", nargs="+", help="capture only these manifest fixture names")
+    parser.add_argument("--shell-checks", action="store_true", help="exercise native keyboard and shell disclosures")
+    args = parser.parse_args()
+    fixtures = args.fixtures.resolve(strict=True)
+    routes = json.loads((fixtures / "routes.json").read_text())
+    require((all(item["synthetic"] and item["tokens_redacted"] for item in routes)), 'capture_pages_check_41')
+    if args.names:
+        require((set(args.names) <= {item["name"] for item in routes}), 'capture_pages_check_43')
+        routes = [item for item in routes if item["name"] in args.names]
+    policies = {f"/{item['name']}.html": item["csp"] for item in routes}
+    args.output.mkdir(parents=True, exist_ok=True, mode=0o700)
+
+    class FixtureHandler(SimpleHTTPRequestHandler):
+        def do_GET(self):
+            if self.path not in policies:
+                # Scripted snapshots may request an unavailable backend URL.
+                # Keep it refused, but finish the empty response explicitly:
+                # fetch can reject the status without consuming an error body,
+                # leaving browser network-idle accounting pending indefinitely.
+                self.send_response(404)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+            super().do_GET()
+
+        def end_headers(self):
+            self.send_header("Content-Security-Policy", policies.get(self.path, "default-src 'none'"))
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            super().end_headers()
+
+        def log_message(self, *_args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), partial(FixtureHandler, directory=str(fixtures)))
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    origin = f"http://127.0.0.1:{server.server_port}"
+    results = []
+    shell_results = []
+    try:
+        with sync_playwright() as playwright:
+            browser = getattr(playwright, args.engine).launch(executable_path=args.browser, headless=True)
+            for scheme in args.schemes:
+                for physical_width in args.widths:
+                    width = physical_width // args.zoom
+                    context = browser.new_context(viewport={"width": width, "height": args.height},
+                                                  device_scale_factor=args.zoom,
+                                                  color_scheme=scheme, reduced_motion="reduce",
+                                                  forced_colors=args.forced_colors)
+                    blocked_requests = []
+
+                    def constrain_request(route):
+                        if route.request.url.startswith(origin + "/"):
+                            route.continue_()
+                        else:
+                            blocked_requests.append(route.request.resource_type)
+                            route.abort()
+
+                    context.route("**/*", constrain_request)
+                    page = context.new_page()
+                    for item in routes:
+                        response = page.goto(f"{origin}/{item['name']}.html", wait_until="networkidle")
+                        require((response and response.status == 200), 'capture_pages_check_99')
+                        if args.forced_colors == "active":
+                            # Edge can retain the media-query value but lose its
+                            # actual forced palette on a later navigation after
+                            # a full-page capture. Reapply and verify the palette.
+                            page.emulate_media(forced_colors="none")
+                            page.emulate_media(forced_colors="active")
+                        if args.shell_checks and item["name"] in {"settings", "settings-long-identity"}:
+                            page.keyboard.press("Tab")
+                            require((page.locator(":focus").get_attribute("class") == "skip-link"), 'capture_pages_check_108')
+                            page.keyboard.press("Enter")
+                            require((page.locator(":focus").get_attribute("id") == "main-content"), 'capture_pages_check_110')
+                            page.evaluate("window.scrollTo(0, 0)")
+                            toggle = page.locator(".rail-disclosure summary")
+                            focus = None
+                            if toggle.is_visible():
+                                toggle.focus()
+                                page.keyboard.press("Enter")
+                                require((page.locator(".rail-disclosure").get_attribute("open") is not None), 'capture_pages_check_117')
+                                focus = toggle.evaluate("e => ({style:getComputedStyle(e).outlineStyle,width:parseFloat(getComputedStyle(e).outlineWidth)})")
+                                require((focus["style"] != "none" and focus["width"] >= 2), 'capture_pages_check_119')
+                            require((page.locator(".rail-label").first.is_visible()), 'capture_pages_check_120')
+                            require((page.locator(".rail-links a[aria-current=page]").get_attribute("aria-label") == "Settings"), 'capture_pages_check_121')
+                            expanded = args.output / f"{item['name']}-expanded-{scheme}-{width}.png"
+                            page.screenshot(path=str(expanded), full_page=True)
+                            if toggle.is_visible():
+                                page.keyboard.press("Enter")
+                                require((page.locator(".rail-disclosure").get_attribute("open") is None), 'capture_pages_check_126')
+                            if page.locator(".protection-menu").count():
+                                page.locator(".protection-menu summary").focus()
+                                page.keyboard.press("Enter")
+                                require((page.locator(".protection-menu").get_attribute("open") is not None), 'capture_pages_check_130')
+                            menu = page.locator(".account-menu summary")
+                            menu.focus()
+                            page.keyboard.press("Enter")
+                            if page.locator(".protection-menu").count():
+                                require((page.locator(".protection-menu").get_attribute("open") is None), 'capture_pages_check_135')
+                            require((page.locator(".account-menu-panel .logout-button").is_visible()), 'capture_pages_check_136')
+                            require((page.locator(".account-menu-panel a[href='/sessions']").is_visible()), 'capture_pages_check_137')
+                            bounds = page.locator(".account-menu .account-menu-panel").bounding_box()
+                            require((bounds and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width + 1), 'capture_pages_check_139')
+                            account = args.output / f"{item['name']}-account-menu-{scheme}-{width}.png"
+                            page.screenshot(path=str(account), full_page=True)
+                            page.keyboard.press("Enter")
+                            shell_results.append({"fixture": item["name"], "scheme": scheme, "width": width,
+                                                  "skip_link": True, "keyboard_disclosures": True,
+                                                  "visible_focus_outline": focus,
+                                                  "account_menu_within_viewport": True,
+                                                  "screenshots": {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                                                                  for p in [expanded, account]}})
+                        if args.shell_checks and page.locator(".global-search-menu summary").is_visible():
+                            search = page.locator(".global-search-menu summary")
+                            search.focus()
+                            page.keyboard.press("Enter")
+                            require((page.get_by_label("Search all mail", exact=True).is_visible()), 'capture_pages_check_153')
+                            bounds = page.locator(".global-search-panel").bounding_box()
+                            require((bounds and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width + 1), 'capture_pages_check_155')
+                            opened = args.output / f"{item['name']}-search-menu-{scheme}-{width}.png"
+                            page.screenshot(path=str(opened), full_page=not args.viewport_only)
+                            page.locator(".account-menu summary").click()
+                            require((page.locator(".global-search-menu").get_attribute("open") is None), 'capture_pages_check_159')
+                            page.locator(".account-menu summary").click()
+                            shell_results.append({"fixture": item["name"], "scheme": scheme, "width": width,
+                                                  "global_search_keyboard": True, "global_search_within_viewport": True,
+                                                  "exclusive_menus": True,
+                                                  "screenshots": {opened.name: hashlib.sha256(opened.read_bytes()).hexdigest()}})
+                        if item["name"] == "source":
+                            for summary in page.locator("summary").all():
+                                if "source" in summary.inner_text().lower():
+                                    summary.click()
+                        if args.expand_details:
+                            closed = page.locator("main details:not([open]) > summary:visible")
+                            for _ in range(closed.count()):
+                                closed.first.click()
+                        table_checks = []
+                        for region in page.locator(".table-wrap").all():
+                            require((region.get_attribute("tabindex") == "0"), 'capture_pages_check_175')
+                            require((region.get_attribute("aria-label")), 'capture_pages_check_176')
+                            region.focus()
+                            overflow = region.evaluate("e => e.scrollWidth > e.clientWidth")
+                            if overflow:
+                                page.keyboard.press("ArrowRight")
+                                page.wait_for_timeout(150)
+                                require((region.evaluate("e => e.scrollLeft") > 0), 'capture_pages_check_182')
+                                region.evaluate("e => e.scrollLeft = 0")
+                            table_checks.append({"keyboard_focus": True, "horizontal_scroll": overflow})
+                        metrics = page.evaluate("""() => ({
+                            viewport: window.innerWidth,
+                            document_width: document.documentElement.scrollWidth,
+                            background: getComputedStyle(document.body).backgroundColor,
+                            foreground: getComputedStyle(document.body).color,
+                            appearance: document.documentElement.dataset.appearance,
+                            authenticated_shell: !!document.querySelector('.app-rail'),
+                            main_left: document.querySelector('main').getBoundingClientRect().left,
+                            navigation_width: parseFloat(getComputedStyle(document.body).getPropertyValue('--rail-width')) * parseFloat(getComputedStyle(document.documentElement).fontSize),
+                            forced_colors_active: matchMedia('(forced-colors:active)').matches,
+                            system_dark: matchMedia('(prefers-color-scheme:dark)').matches,
+                            device_pixel_ratio: window.devicePixelRatio,
+                            headings: Array.from(document.querySelectorAll('h1')).map(e => e.textContent),
+                            main_landmarks: document.querySelectorAll('main').length,
+                            controls: document.querySelectorAll('a,button,input,select,textarea,summary').length,
+                            scripts: document.scripts.length
+                        })""")
+                        name = f"{item['name']}-{scheme}-{width}.png"
+                        screenshot = args.output / name
+                        page.screenshot(path=str(screenshot), full_page=not args.viewport_only)
+                        contrast = page.evaluate(TEXT_AUDIT) if args.contrast else None
+                        results.append({"file": name, "route": item["route"], "scheme": scheme,
+                                        "width": width, "physical_width": physical_width,
+                                        "metrics": metrics, "contrast": contrast,
+                                        "expected_appearance": item["appearance"], "table_checks": table_checks,
+                                        "expected_script_count": item.get("script_count", 0),
+                                        "sha256": hashlib.sha256(screenshot.read_bytes()).hexdigest()})
+                    require((not blocked_requests), lambda: ("synthetic pages attempted external requests"))
+                    context.close()
+            failures = []
+            for result in results:
+                metrics = result["metrics"]
+                reasons = []
+                if metrics["document_width"] > result["width"]:
+                    reasons.append("horizontal page overflow")
+                if metrics["authenticated_shell"] and metrics["main_left"] + 1 < metrics["navigation_width"]:
+                    reasons.append("main content overlaps the fixed navigation")
+                if metrics["scripts"] != result["expected_script_count"] or metrics["main_landmarks"] != 1 or len(metrics["headings"]) != 1:
+                    reasons.append("script or landmark mismatch")
+                if metrics["appearance"] != result["expected_appearance"]:
+                    reasons.append("appearance preference mismatch")
+                if metrics["forced_colors_active"] != (args.forced_colors == "active"):
+                    reasons.append("forced-colour emulation mismatch")
+                if args.forced_colors == "active" and metrics["background"] not in {"rgb(255, 255, 255)", "rgb(0, 0, 0)"}:
+                    reasons.append("emulated forced palette was not applied")
+                if metrics["system_dark"] != (result["scheme"] == "dark"):
+                    reasons.append("system scheme emulation mismatch")
+                effective = result["scheme"] if result["expected_appearance"] == "system" else result["expected_appearance"]
+                expected_background = "rgb(13, 21, 38)" if effective == "dark" else (
+                    "rgb(245, 248, 254)" if metrics["authenticated_shell"] else "rgb(245, 247, 251)")
+                if args.forced_colors == "none" and metrics["background"] != expected_background:
+                    reasons.append("appearance colour mismatch")
+                if result["contrast"] and (result["contrast"]["failures"] or result["contrast"]["ui_failures"]):
+                    reasons.append("computed contrast below target")
+                if reasons:
+                    failures.append({"file": result["file"], "reasons": reasons})
+            report = {"synthetic": True, "browser_version": browser.version,
+                      "browser_executable": args.browser, "screenshots": results,
+                      "harness_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                      "outside_requests": 0,
+                      "engine": args.engine, "reflow_simulation_scale": args.zoom,
+                      "forced_colors": args.forced_colors,
+                      "expanded_details": args.expand_details,
+                      "viewport_only": args.viewport_only,
+                      "viewport_height": args.height,
+                      "passed": not failures, "failures": failures,
+                      "shell_checks": shell_results}
+            (args.output / "capture.json").write_text(json.dumps(report, indent=2) + "\n")
+            browser.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
+    print(json.dumps({"screenshots": len(results),
+                      "overflow_cases": sum(r["metrics"]["document_width"] > r["width"] for r in results),
+                      "text_contrast_failures": sum(len((r["contrast"] or {}).get("failures", [])) for r in results),
+                      "ui_contrast_failures": sum(len((r["contrast"] or {}).get("ui_failures", [])) for r in results),
+                      "report": str(args.output / "capture.json")}))
+    if failures:
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

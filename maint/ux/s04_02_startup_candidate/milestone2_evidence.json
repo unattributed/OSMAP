@@ -1,0 +1,225 @@
+{
+  "T03_full_password_change": "NOT_RUN",
+  "after": {
+    "alice@osmap-password.invalid": {
+      "account": "alice@osmap-password.invalid",
+      "changed_at": null,
+      "epoch": 0,
+      "noncredential_sha256": "e3342b47d214c75b5c2ba0229c04c3aed3c90c3ca16d4ddbfa0cf5d4da0e5646",
+      "password_sha256": "dce976f4befbed2ed8491a2a58d2f973bb12e6d91210b549682a367ea4d9d3ad",
+      "row_count": 1,
+      "row_sha256": "b9a59190ff68b6390f9416b7bde9c23a3ee0b5247037c970f7c38c740697933b",
+      "sql_changed_at": "20000101000000",
+      "state": "active"
+    },
+    "bob@osmap-password.invalid": {
+      "account": "bob@osmap-password.invalid",
+      "changed_at": null,
+      "epoch": 0,
+      "noncredential_sha256": "c938b0fa11baec7f0f8070047be4537157e43bda254dee24862c49aad32c0a1b",
+      "password_sha256": "6f53cf06e495893e2335f31ebfa6c61e25bedef73d3a11b2e71c07bcefee6f22",
+      "row_count": 1,
+      "row_sha256": "5748cec07d00afd81cf89854b95ac2759b90075cf51d9c90e1200a7c19606040",
+      "sql_changed_at": "20000101000000",
+      "state": "active"
+    }
+  },
+  "approved_baseline_commit": "9b3326efe3b29929472398535b2f707abcb9ef01",
+  "baseline": {
+    "alice@osmap-password.invalid": {
+      "account": "alice@osmap-password.invalid",
+      "changed_at": null,
+      "epoch": 0,
+      "noncredential_sha256": "e3342b47d214c75b5c2ba0229c04c3aed3c90c3ca16d4ddbfa0cf5d4da0e5646",
+      "password_sha256": "dce976f4befbed2ed8491a2a58d2f973bb12e6d91210b549682a367ea4d9d3ad",
+      "row_count": 1,
+      "row_sha256": "b9a59190ff68b6390f9416b7bde9c23a3ee0b5247037c970f7c38c740697933b",
+      "sql_changed_at": "20000101000000",
+      "state": "active"
+    },
+    "bob@osmap-password.invalid": {
+      "account": "bob@osmap-password.invalid",
+      "changed_at": null,
+      "epoch": 0,
+      "noncredential_sha256": "c938b0fa11baec7f0f8070047be4537157e43bda254dee24862c49aad32c0a1b",
+      "password_sha256": "6f53cf06e495893e2335f31ebfa6c61e25bedef73d3a11b2e71c07bcefee6f22",
+      "row_count": 1,
+      "row_sha256": "5748cec07d00afd81cf89854b95ac2759b90075cf51d9c90e1200a7c19606040",
+      "sql_changed_at": "20000101000000",
+      "state": "active"
+    }
+  },
+  "cleanup": {
+    "compiler_artifacts": "RETAINED_FOR_REUSE",
+    "counts": {
+      "database_users_removed": 1,
+      "directories_removed": 5,
+      "files_removed": 12,
+      "groups_removed": 2,
+      "rows_removed": 2,
+      "users_removed": 2
+    },
+    "dedicated_role_processes_absent": true,
+    "helper_exit_code": 0,
+    "helper_reaped": true,
+    "local_transport": "CONFIRMED",
+    "root_transport_group_absent": true,
+    "runtime_fixture": "CONFIRMED",
+    "stage_cleanup_seconds": 0.623,
+    "stages": {
+      "open_leaf_references_absent": true,
+      "removed_directories": 2,
+      "removed_files": 21,
+      "result": "PASS",
+      "schema": "osmap-startup145-stage-cleanup-v1",
+      "service_or_account_operations": false,
+      "stage_paths_absent": true
+    }
+  },
+  "compiled_http_caller": {
+    "executed": false,
+    "identity_verified": true,
+    "sha256": "660ba2466a163762943c1045c6df1d5dc20317d90d1b3022a02d73fa876b30f7"
+  },
+  "evidence_sha256": {
+    "cleanup-result.json": "aec98d79586b1a72e2a45bb118ecd48481e867870726ab90d4ef41c4d152ea62",
+    "cleanup-review.json": "221e7d981ff483716bb8a53186d1a9f25da013d6285d11684d6f19859b671f24",
+    "local-owned-recovery.json": "eddb3bd2e0ca91cc5d17652f78c1e64a1f1dc6d721c4eb8115a068ed1efb77da",
+    "outcome-review.json": "890dd9f550047d83ae7545f094d7f08ac748bd854f2be74f750b4b658bdbaf5b",
+    "startup-bound-packet.json": "87a8f5eec395e951f54d0a7978eda58ad166f9f5a246f160763b010da07faa2f",
+    "startup-independent-review.json": "bad401da4eb0571ea33eff5dd2c1167e0c9559b53fb9123bd7da221cd6bb2a46",
+    "startup-result.json": "de810d48ce93d9cf491bbdfdc4140f52d661fa2fa0e707366ce89f224e548f8f"
+  },
+  "executed_caller": {
+    "kind": "Python protected-stdin native wire caller",
+    "server_peer_uid": 0,
+    "source_path": "maint/ux/s04_02_startup_candidate/startup_only.py:ADMISSION_CALLER",
+    "source_sha256": "7ddc14381e84b99383a9aa37a8615709f29d2745290c982b9ef3f0505de55bb9",
+    "uid": 1001
+  },
+  "first_attempt": {
+    "correction": "Allow exact admission schema; retain validated prefix on a later malformed frame. Existing integration test now executes actor to stage to wrapper to consumer, plus malformed/partial-frame and cleanup refusal cases.",
+    "defect": "Carrier wrapper omitted the new admission schema, then discarded accepted earlier frames. Native exit0 alone was not accepted as functional PASS.",
+    "disposition": "CONFIRMED including independently observed SQL/principal/identity/runtime absence and exact stage cleanup152",
+    "functional_result": "UNKNOWN",
+    "id": "S04-02-native-admission151"
+  },
+  "installed_browser_acceptance": "NOT_RUN",
+  "milestone2": "PASS",
+  "milestone3": "NOT_RUN_NOT_AUTHORIZED_BY_THIS_INSTRUCTION",
+  "observed_at": "2026-10-23T16:22:18.826510+00:00",
+  "preservation": {
+    "complete_epoch_records_equal": true,
+    "credential_replacement": false,
+    "epoch_advancement": false,
+    "exact_full17_rows_equal": true,
+    "external_sessions_terminated": false,
+    "mail_operations_dispatched": false,
+    "manufactured_changed_at": false,
+    "mutation_frames": 0,
+    "public_config_writes": false,
+    "public_configuration_preserved": true,
+    "public_master_preserved": true,
+    "public_service_controls": false
+  },
+  "production_qualification_flags_changed": false,
+  "requests": {
+    "alice_admit": {
+      "account": "alice@osmap-password.invalid",
+      "authenticated_response": true,
+      "caller_uid": 1001,
+      "cleanup_confirmed": true,
+      "epoch": 0,
+      "frame_sent": true,
+      "result": "PASS",
+      "round_trip_ms": 21.8,
+      "server_peer_uid": 0,
+      "status": "active"
+    },
+    "alice_authenticate": {
+      "account": "alice@osmap-password.invalid",
+      "authenticated_response": true,
+      "caller_uid": 1001,
+      "cleanup_confirmed": true,
+      "epoch": 0,
+      "frame_sent": true,
+      "result": "PASS",
+      "round_trip_ms": 672.118,
+      "server_peer_uid": 0,
+      "status": "active"
+    },
+    "alice_wrong_epoch": {
+      "account": "alice@osmap-password.invalid",
+      "authenticated_response": true,
+      "caller_uid": 1001,
+      "cleanup_confirmed": true,
+      "epoch": null,
+      "frame_sent": true,
+      "result": "PASS",
+      "round_trip_ms": 22.571,
+      "server_peer_uid": 0,
+      "status": "rejected"
+    },
+    "alice_wrong_password": {
+      "account": "alice@osmap-password.invalid",
+      "authenticated_response": true,
+      "caller_uid": 1001,
+      "cleanup_confirmed": true,
+      "epoch": null,
+      "frame_sent": true,
+      "result": "PASS",
+      "round_trip_ms": 2225.558,
+      "server_peer_uid": 0,
+      "status": "rejected"
+    },
+    "bob_authenticate": {
+      "account": "bob@osmap-password.invalid",
+      "authenticated_response": true,
+      "caller_uid": 1001,
+      "cleanup_confirmed": true,
+      "epoch": 0,
+      "frame_sent": true,
+      "result": "PASS",
+      "round_trip_ms": 4203.619,
+      "server_peer_uid": 0,
+      "status": "active"
+    },
+    "invalid_mac": {
+      "authenticated_response": false,
+      "caller_uid": 1001,
+      "cleanup_confirmed": true,
+      "frame_sent": true,
+      "native_refusal": "Authentication",
+      "result": "PASS",
+      "round_trip_ms": 18.537,
+      "server_peer_uid": 0,
+      "status": "closed"
+    }
+  },
+  "schema": "osmap-milestone2-native-evidence-v1",
+  "service_binary_sha256": "8f1ed891c8349863db59a95ba1e3d4908bc62ba7d583ea8634d3259262ab3559",
+  "service_rebuilt": false,
+  "source_commit": "77f63794d3f60e4003db157eada39f4bd4222b6a",
+  "stored_sessions": {
+    "existing_controlled_session": "ABSENT_IN_THIS_FIXTURE",
+    "issuance": "NOT_RUN",
+    "reason": "No guarded session runtime started; epoch admission is not session issuance."
+  },
+  "target": "obsd1.blackbagsecurity.com",
+  "timing": {
+    "clock": "monotonic",
+    "dispatch_seconds": 12.31,
+    "fixture_overhead_seconds": 1.37988,
+    "limits": "Single samples. Backend subprocess phases were not separately timed; no latency cause or optimization claimed.",
+    "native_actor_seconds": 10.609,
+    "paired_socket_publication_seconds": 0.628333,
+    "request_timings": "requests.*.round_trip_ms exclude process startup"
+  },
+  "validation": {
+    "final_outcome_review": "PASS",
+    "focused_failures": 0,
+    "focused_tests": 27,
+    "independent_native_result_review": "PASS",
+    "independent_source_review": "CLEAR"
+  }
+}

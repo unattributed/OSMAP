@@ -1,0 +1,743 @@
+//! Nonblocking duplex worker pipes share a single deadline and bounded buffers.
+use crate::openpgp_crypto::{Error, Operation, Outcome, MAX_CONTENT, MAX_METADATA};
+use std::io::{ErrorKind, Read, Write};
+use std::os::fd::AsRawFd;
+use std::os::unix::process::CommandExt;
+use std::path::Path;
+use std::process::{Child, Command, Stdio};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Mutex,
+};
+use std::time::{Duration, Instant};
+static CLEANUP_UNCONFIRMED: AtomicBool = AtomicBool::new(false);
+static UNREAPED: Mutex<Vec<Child>> = Mutex::new(Vec::new());
+
+/// Observation only: native diagnostics must never clear uncertain cleanup.
+#[cfg(test)]
+pub(crate) fn cleanup_unconfirmed_for_test() -> bool {
+    CLEANUP_UNCONFIRMED.load(Ordering::SeqCst)
+}
+
+#[cfg(test)]
+pub(crate) fn execute(
+    worker: &Path,
+    engine: &Path,
+    home: &Path,
+    operation: &Operation,
+    deadline: Instant,
+) -> Result<Outcome, Error> {
+    execute_cancellable(worker, engine, home, operation, deadline, || Ok(false))
+}
+pub(crate) fn execute_cancellable(
+    worker: &Path,
+    engine: &Path,
+    home: &Path,
+    operation: &Operation,
+    deadline: Instant,
+    mut cancelled: impl FnMut() -> Result<bool, Error>,
+) -> Result<Outcome, Error> {
+    if cancelled()? {
+        return Err(Error::Unavailable);
+    }
+    let frame = operation.worker_frame()?;
+    let command = crate::auth::crypto_worker_command(worker, engine, home);
+    let (bytes, success) = run_limited_with_group_ops(
+        command,
+        &frame,
+        deadline,
+        RunProfile {
+            output_limit: MAX_CONTENT + MAX_METADATA + 8,
+            operation_limit: Duration::from_secs(10),
+            strict_group: false,
+        },
+        GroupOps::native(),
+        &mut cancelled,
+    )?;
+    Outcome::worker_result(operation, &bytes, success)
+}
+#[cfg(test)]
+fn run(command: Command, input: &[u8], deadline: Instant) -> Result<(Vec<u8>, bool), Error> {
+    run_bounded(command, input, deadline, MAX_CONTENT + MAX_METADATA + 8)
+}
+pub(crate) fn run_public_admin(
+    command: Command,
+    input: &[u8],
+    deadline: Instant,
+) -> Result<Vec<u8>, Error> {
+    if input.len() > MAX_METADATA {
+        return Err(Error::Limit);
+    }
+    let (output, success) = run_bounded(command, input, deadline, MAX_METADATA)?;
+    if !success {
+        return Err(Error::Unavailable);
+    }
+    Ok(output)
+}
+pub(crate) fn run_personal(
+    command: Command,
+    input: &[u8],
+    deadline: Instant,
+) -> Result<(Vec<u8>, bool), Error> {
+    if input.len() > 65536 + 1024 + 1024 {
+        return Err(Error::Limit);
+    }
+    run_bounded(command, input, deadline, MAX_METADATA)
+}
+/// A daemon launcher may exit before its child leaves the original group.
+/// Only personal-agent Start uses a protocol handshake before owned-group kill.
+pub(crate) fn run_personal_start(
+    command: Command,
+    deadline: Instant,
+    ready: impl Fn(u32, Instant) -> Result<bool, Error>,
+) -> Result<(Vec<u8>, bool), Error> {
+    let deadline = deadline.min(Instant::now() + Duration::from_secs(10));
+    let handshake_deadline = deadline
+        .checked_sub(Duration::from_millis(100))
+        .unwrap_or(deadline);
+    let acknowledged = std::cell::Cell::new(false);
+    let result = run_limited_with_group_ops(
+        command,
+        &[],
+        deadline,
+        RunProfile {
+            output_limit: MAX_METADATA,
+            operation_limit: Duration::from_secs(10),
+            strict_group: false,
+        },
+        GroupOps {
+            kill: &|leader| {
+                acknowledged.set(ready(leader, handshake_deadline).unwrap_or(false));
+                // A refused/failed handshake must never skip owned cleanup.
+                crate::openbsd::kill_process_group(leader)
+            },
+            exists: &crate::openbsd::process_group_exists,
+        },
+        || Ok(false),
+    )?;
+    if !acknowledged.get() {
+        return Err(Error::Unavailable);
+    }
+    Ok(result)
+}
+/// Inventory regression seam; production uses the existing public-admin API.
+#[cfg(test)]
+pub(crate) fn run_inventory_fixture_with_group_ops(
+    command: Command,
+    deadline: Instant,
+    kill: &dyn Fn(u32) -> std::io::Result<()>,
+    exists: &dyn Fn(u32) -> std::io::Result<bool>,
+) -> Result<Vec<u8>, Error> {
+    let (output, success) = run_limited_with_group_ops(
+        command,
+        b"",
+        deadline,
+        RunProfile {
+            output_limit: MAX_METADATA,
+            operation_limit: Duration::from_secs(10),
+            strict_group: false,
+        },
+        GroupOps { kill, exists },
+        || Ok(false),
+    )?;
+    if !success {
+        return Err(Error::Unavailable);
+    }
+    Ok(output)
+}
+/// Existing bounded supervisor exposed only to native fixture orchestration.
+#[cfg(test)]
+pub(crate) fn run_native_fixture(
+    command: Command,
+    input: &[u8],
+    deadline: Instant,
+) -> Result<(Vec<u8>, bool), Error> {
+    run_bounded(command, input, deadline, MAX_METADATA)
+}
+/// Separate primary-auth profile: Dovecot may delay a failed credential by15s.
+/// Existing crypto/admin callers retain their original ten-second cap.
+pub(crate) fn run_account_admission(
+    command: Command,
+    input: &[u8],
+    deadline: Instant,
+) -> Result<Vec<u8>, Error> {
+    if input.len() > 4096 {
+        return Err(Error::Limit);
+    }
+    let (output, success) = run_limited(
+        command,
+        input,
+        deadline,
+        4096,
+        Duration::from_secs(30),
+        true,
+    )?;
+    if !success {
+        return Err(Error::Unavailable);
+    }
+    Ok(output)
+}
+/// Mutation-only whole-worker profile; production bootstrap remains disabled.
+/// Existing authentication and crypto/admin profiles retain their prior limits.
+#[allow(dead_code)] // Not wired until fixed native mutation bootstrap is qualified.
+pub(crate) fn run_account_mutation(
+    command: Command,
+    input: &[u8],
+    deadline: Instant,
+) -> Result<Vec<u8>, Error> {
+    if input.len() > 12288 {
+        return Err(Error::Limit);
+    }
+    let (output, success) = run_limited(
+        command,
+        input,
+        deadline,
+        4096,
+        Duration::from_secs(60),
+        true,
+    )?;
+    if !success {
+        return Err(Error::Unavailable);
+    }
+    Ok(output)
+}
+
+#[cfg(test)]
+fn cleanup_owned_group_before(child: &mut Child, deadline: Instant) -> Result<(), Error> {
+    cleanup_owned_group_with(
+        child,
+        deadline,
+        crate::openbsd::kill_process_group,
+        crate::openbsd::process_group_exists,
+    )
+}
+fn cleanup_owned_group_with(
+    child: &mut Child,
+    deadline: Instant,
+    kill: impl Fn(u32) -> std::io::Result<()>,
+    exists: impl Fn(u32) -> std::io::Result<bool>,
+) -> Result<(), Error> {
+    let pid = child.id();
+    signal_owned_group_with(child, kill)?;
+    while Instant::now() < deadline {
+        let reaped = child.try_wait().map_err(|_| Error::Unavailable)?.is_some();
+        let absent = !exists(pid).map_err(|_| Error::Unavailable)?;
+        if reaped && absent && Instant::now() < deadline {
+            return Ok(());
+        }
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        std::thread::sleep(remaining.min(Duration::from_millis(2)));
+    }
+    Err(Error::Unavailable)
+}
+fn signal_owned_group_with(
+    child: &Child,
+    kill: impl Fn(u32) -> std::io::Result<()>,
+) -> Result<(), Error> {
+    // WNOWAIT proves that this process still owns the unreaped leader. A
+    // historical Child::id after reaping is never authority to signal a group.
+    crate::openbsd::owned_child_exited_without_reap(child.id()).map_err(|_| Error::Unavailable)?;
+    let pid = child.id();
+    match kill(pid) {
+        Ok(()) => {}
+        Err(e) if e.raw_os_error() == Some(libc::ESRCH) => {}
+        Err(_) => return Err(Error::Unavailable),
+    }
+    Ok(())
+}
+
+#[derive(Clone, Copy)]
+struct RunProfile {
+    output_limit: usize,
+    operation_limit: Duration,
+    strict_group: bool,
+}
+#[derive(Clone, Copy)]
+struct GroupOps<'a> {
+    kill: &'a dyn Fn(u32) -> std::io::Result<()>,
+    exists: &'a dyn Fn(u32) -> std::io::Result<bool>,
+}
+impl GroupOps<'static> {
+    fn native() -> Self {
+        Self {
+            kill: &crate::openbsd::kill_process_group,
+            exists: &crate::openbsd::process_group_exists,
+        }
+    }
+}
+
+fn run_bounded(
+    command: Command,
+    input: &[u8],
+    deadline: Instant,
+    output_limit: usize,
+) -> Result<(Vec<u8>, bool), Error> {
+    run_limited(
+        command,
+        input,
+        deadline,
+        output_limit,
+        Duration::from_secs(10),
+        false,
+    )
+}
+fn run_limited(
+    command: Command,
+    input: &[u8],
+    deadline: Instant,
+    output_limit: usize,
+    operation_limit: Duration,
+    strict_group: bool,
+) -> Result<(Vec<u8>, bool), Error> {
+    run_limited_with_group_ops(
+        command,
+        input,
+        deadline,
+        RunProfile {
+            output_limit,
+            operation_limit,
+            strict_group,
+        },
+        GroupOps::native(),
+        || Ok(false),
+    )
+}
+fn run_limited_with_group_ops(
+    mut command: Command,
+    input: &[u8],
+    deadline: Instant,
+    profile: RunProfile,
+    group: GroupOps<'_>,
+    mut cancelled: impl FnMut() -> Result<bool, Error>,
+) -> Result<(Vec<u8>, bool), Error> {
+    if CLEANUP_UNCONFIRMED.load(Ordering::SeqCst) {
+        return Err(Error::Unavailable);
+    }
+    let deadline = deadline.min(Instant::now() + profile.operation_limit);
+    if deadline.saturating_duration_since(Instant::now()) <= Duration::from_millis(100) {
+        return Err(Error::Expired);
+    }
+    let command_deadline = deadline - Duration::from_millis(100);
+    if cancelled()? {
+        return Err(Error::Unavailable);
+    }
+    command
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .process_group(0);
+    let mut child = command.spawn().map_err(|_| Error::Unavailable)?;
+    let pid = child.id();
+    let mut group_signalled = false;
+    let result = (|| {
+        let input_pipe = child.stdin.take().ok_or(Error::Unavailable)?;
+        let mut stdout = child.stdout.take().ok_or(Error::Unavailable)?;
+        let mut stderr = child.stderr.take().ok_or(Error::Unavailable)?;
+        for fd in [
+            input_pipe.as_raw_fd(),
+            stdout.as_raw_fd(),
+            stderr.as_raw_fd(),
+        ] {
+            crate::openbsd::set_descriptor_nonblocking(fd).map_err(|_| Error::Unavailable)?;
+        }
+        let mut stdin = Some(input_pipe);
+        if input.is_empty() {
+            stdin.take();
+        }
+        let mut output = Vec::new();
+        let mut discarded = 0usize;
+        let mut written = 0usize;
+        let mut out_done = false;
+        let mut err_done = false;
+        loop {
+            if cancelled()? {
+                return Err(Error::Unavailable);
+            }
+            if Instant::now() >= command_deadline {
+                return Err(Error::Expired);
+            }
+            if let Some(pipe) = stdin.as_mut() {
+                match pipe.write(&input[written..input.len().min(written + 65536)]) {
+                    Ok(0) => return Err(Error::Unavailable),
+                    Ok(n) => written += n,
+                    Err(e)
+                        if matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::Interrupted) => {}
+                    Err(_) => return Err(Error::Unavailable),
+                }
+                if written == input.len() {
+                    stdin.take();
+                }
+            }
+            if !out_done {
+                out_done = drain(&mut stdout, &mut output, profile.output_limit, false)?;
+            }
+            if !err_done {
+                let mut bytes = Vec::new();
+                err_done = drain(
+                    &mut stderr,
+                    &mut bytes,
+                    8192usize.saturating_sub(discarded),
+                    true,
+                )?;
+                discarded += bytes.len();
+            }
+            if profile.strict_group && out_done && err_done {
+                // Do not reap/release the leader PID before the owned group
+                // kill. The true exit status is reconciled after strict cleanup.
+                return if written == input.len() {
+                    Ok((output, true))
+                } else {
+                    Err(Error::Unavailable)
+                };
+            }
+            if !profile.strict_group
+                && crate::openbsd::owned_child_exited_without_reap(pid)
+                    .map_err(|_| Error::Unavailable)?
+            {
+                if !group_signalled {
+                    signal_owned_group_with(&child, group.kill)?;
+                    group_signalled = true;
+                }
+                if out_done && err_done {
+                    return if written == input.len() {
+                        Ok((output, true))
+                    } else {
+                        Err(Error::Unavailable)
+                    };
+                }
+            }
+            if cancelled()? {
+                return Err(Error::Unavailable);
+            }
+            crate::openbsd::wait_worker_pipes(
+                stdin.as_ref().map(AsRawFd::as_raw_fd),
+                (!out_done).then(|| stdout.as_raw_fd()),
+                (!err_done).then(|| stderr.as_raw_fd()),
+                command_deadline,
+            )
+            .map_err(|error| {
+                if error.kind() == ErrorKind::TimedOut {
+                    Error::Expired
+                } else {
+                    Error::Unavailable
+                }
+            })?;
+        }
+    })();
+    if cleanup_owned_group_with(
+        &mut child,
+        deadline,
+        |pid| {
+            if group_signalled {
+                Ok(())
+            } else {
+                (group.kill)(pid)
+            }
+        },
+        group.exists,
+    )
+    .is_ok()
+    {
+        let confirmed_status = child.try_wait().ok().flatten();
+        if let Some(status) = confirmed_status {
+            if Instant::now() < deadline {
+                if result.is_ok() && cancelled()? {
+                    return Err(Error::Unavailable);
+                }
+                return result.map(|(output, _)| (output, status.success()));
+            }
+        }
+    }
+    CLEANUP_UNCONFIRMED.store(true, Ordering::SeqCst);
+    if let Ok(mut children) = UNREAPED.try_lock() {
+        children.push(child);
+    }
+    Err(Error::Unavailable)
+}
+
+/// Test-only current-executable adapter; it shares the production crypto cap,
+/// cancellation checks and cleanup without pretending fixture bytes are crypto.
+#[cfg(test)]
+pub(crate) fn run_cancellable_fixture(
+    mode: &str,
+    input: &[u8],
+    deadline: Instant,
+    cancelled: impl FnMut() -> Result<bool, Error>,
+    ready: Option<&Path>,
+) -> Result<(Vec<u8>, bool), Error> {
+    let mut command = crate::auth::crypto_fixture_command(mode);
+    if let Some(path) = ready {
+        command.env("OSMAP_CRYPTO_PROCESS_READY", path);
+    }
+    run_limited_with_group_ops(
+        command,
+        input,
+        deadline,
+        RunProfile {
+            output_limit: 4096,
+            operation_limit: Duration::from_secs(10),
+            strict_group: false,
+        },
+        GroupOps::native(),
+        cancelled,
+    )
+}
+fn drain(
+    reader: &mut impl Read,
+    output: &mut Vec<u8>,
+    max: usize,
+    discard: bool,
+) -> Result<bool, Error> {
+    let mut buffer = [0u8; 4096];
+    for _ in 0..17 {
+        match reader.read(&mut buffer) {
+            Ok(0) => return Ok(true),
+            Ok(n) => {
+                if output.len().saturating_add(n) > max {
+                    return Err(Error::Limit);
+                }
+                if discard {
+                    output.resize(output.len() + n, 0);
+                } else {
+                    output.extend_from_slice(&buffer[..n]);
+                }
+            }
+            Err(e) if e.kind() == ErrorKind::WouldBlock => return Ok(false),
+            Err(e) if e.kind() == ErrorKind::Interrupted => continue,
+            Err(_) => return Err(Error::Unavailable),
+        }
+    }
+    Ok(false)
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::auth::crypto_fixture_command as fixture;
+    #[test]
+    fn personal_start_failed_handshake_still_cleans_owned_group_and_allows_followup() {
+        // Synthetic exit qualifies cleanup ordering, not native agent readiness.
+        for refused in [Ok(false), Err(Error::Unavailable)] {
+            let witnessed = std::cell::Cell::new(0);
+            let result = run_personal_start(
+                fixture("success"),
+                Instant::now() + Duration::from_secs(2),
+                |leader, deadline| {
+                    assert!(Instant::now() < deadline);
+                    assert!(crate::openbsd::owned_child_exited_without_reap(leader).unwrap());
+                    witnessed.set(leader);
+                    refused
+                },
+            );
+            assert!(matches!(result, Err(Error::Unavailable)));
+            assert!(witnessed.get() > 1);
+            assert!(!crate::openbsd::process_id_exists(witnessed.get()).unwrap());
+            assert!(!crate::openbsd::process_group_exists(witnessed.get()).unwrap());
+            assert!(!cleanup_unconfirmed_for_test());
+        }
+        assert!(
+            run_personal_start(
+                fixture("success"),
+                Instant::now() + Duration::from_secs(2),
+                |_, _| Ok(true),
+            )
+            .unwrap()
+            .1
+        );
+    }
+    #[test]
+    #[ignore = "child process fixture; invoked by duplex process test"]
+    fn worker_fixture() {
+        match std::env::var("OSMAP_CRYPTO_PROCESS_FIXTURE")
+            .unwrap()
+            .as_str()
+        {
+            "descendant_disposition" => {
+                super::lifecycle_tests::descendant_disposition_fixture();
+            }
+            "runtime_service_hold" => {
+                crate::openpgp_crypto_runtime::lifecycle_tests::serve_hold_child();
+            }
+            mode @ ("cancellable_hold" | "cancellable_hold_short") => {
+                if let Some(path) = std::env::var_os("OSMAP_CRYPTO_PROCESS_READY") {
+                    use std::os::unix::fs::OpenOptionsExt as _;
+                    let path = std::path::PathBuf::from(path);
+                    crate::private_account_file::check_directory(path.parent().unwrap()).unwrap();
+                    let staged = path.with_extension("ready-stage");
+                    let mut marker = std::fs::OpenOptions::new()
+                        .write(true)
+                        .create_new(true)
+                        .mode(0o600)
+                        .open(&staged)
+                        .unwrap();
+                    writeln!(marker, "{}", std::process::id()).unwrap();
+                    marker.sync_all().unwrap();
+                    std::fs::hard_link(&staged, &path).unwrap();
+                    std::fs::remove_file(&staged).unwrap();
+                }
+                std::thread::sleep(Duration::from_secs(if mode == "cancellable_hold_short" {
+                    3
+                } else {
+                    30
+                }));
+            }
+            "blocked_stdin" => std::thread::sleep(Duration::from_secs(5)),
+            "closed_output_running" => {
+                // Exact existing disposable test child only. EOF precedes exit;
+                // the admission owner must kill before releasing its leader PID.
+                crate::openbsd::close_disposable_fixture_output().unwrap();
+                std::thread::sleep(Duration::from_secs(5));
+            }
+            "account_auth_delay" => {
+                std::thread::sleep(Duration::from_secs(11));
+                std::io::stdout()
+                    .write_all(b"bounded-account-auth-delay")
+                    .unwrap();
+            }
+            "duplex" => {
+                std::io::stdout().write_all(&vec![1; 256 * 1024]).unwrap();
+                let mut input = Vec::new();
+                std::io::stdin().read_to_end(&mut input).unwrap();
+                assert_eq!(input.len(), 256 * 1024);
+            }
+            "descendant" => {
+                let _child = fixture("blocked_stdin").spawn().unwrap();
+                std::io::stdout().write_all(b"complete").unwrap();
+                std::io::stdout().flush().unwrap();
+                std::process::exit(0);
+            }
+            "stdout_limit" => std::io::stdout()
+                .write_all(&vec![0; MAX_CONTENT + MAX_METADATA + 9])
+                .unwrap(),
+            "stderr_limit" => std::io::stderr().write_all(&[0; 8193]).unwrap(),
+            "failure" => std::process::exit(1),
+            "success" => (),
+            _ => panic!("unknown fixture"),
+        }
+    }
+
+    #[test]
+    fn admission_eof_before_exit_uses_owned_group_cleanup_without_false_quarantine() {
+        let began = Instant::now();
+        assert!(matches!(
+            run_account_admission(
+                fixture("closed_output_running"),
+                b"",
+                began + Duration::from_secs(2)
+            ),
+            Err(Error::Unavailable)
+        ));
+        // Existing strict cleanup kills/reaps/confirms absence immediately after
+        // both EOFs; the old try_wait path waits for its original deadline.
+        assert!(began.elapsed() < Duration::from_secs(1));
+        assert!(run_account_admission(
+            crate::auth::mutation_immediate_fixture(),
+            b"",
+            Instant::now() + Duration::from_secs(1)
+        )
+        .unwrap()
+        .is_empty());
+    }
+    #[test]
+    fn account_auth_delay_profile_preserves_crypto_admin_ten_second_cap() {
+        // Synthetic current-executable children only; no native authentication,
+        // credentials, cryptography or provider operations are performed.
+        let ordinary = std::thread::spawn(|| {
+            run_public_admin(
+                fixture("account_auth_delay"),
+                b"",
+                Instant::now() + Duration::from_secs(14),
+            )
+        });
+        let account = std::thread::spawn(|| {
+            run_account_admission(
+                fixture("account_auth_delay"),
+                b"",
+                Instant::now() + Duration::from_secs(14),
+            )
+        });
+        assert!(ordinary.join().unwrap().is_err());
+        let output = account.join().unwrap().unwrap();
+        assert!(output
+            .windows(b"bounded-account-auth-delay".len())
+            .any(|w| w == b"bounded-account-auth-delay"));
+    }
+    #[test]
+    fn duplex_stdin_deadlines_limits_and_descendant_cleanup() {
+        let start = Instant::now();
+        assert!(matches!(
+            run(
+                fixture("blocked_stdin"),
+                &vec![1; 256 * 1024],
+                Instant::now() + Duration::from_millis(250)
+            ),
+            Err(Error::Expired)
+        ));
+        assert!(start.elapsed() < Duration::from_secs(1));
+        let (output, success) = run(
+            fixture("duplex"),
+            &vec![1; 256 * 1024],
+            Instant::now() + Duration::from_secs(2),
+        )
+        .unwrap();
+        assert!(success && output.len() >= 256 * 1024);
+        super::lifecycle_tests::assert_isolated_descendant_cleanup();
+        let limited = run(
+            fixture("stdout_limit"),
+            &[1],
+            // OpenBSD pipe capacity is smaller than Linux's; this fixture must
+            // reach the actual 16 MiB limit within the production deadline.
+            Instant::now() + Duration::from_secs(10),
+        );
+        assert!(
+            matches!(limited, Err(Error::Limit)),
+            "stdout limit error: {:?}",
+            limited.as_ref().err()
+        );
+        assert!(matches!(
+            run(
+                fixture("stderr_limit"),
+                &[1],
+                Instant::now() + Duration::from_secs(1)
+            ),
+            Err(Error::Limit)
+        ));
+        assert!(
+            !run(
+                fixture("failure"),
+                &[1],
+                Instant::now() + Duration::from_secs(1)
+            )
+            .unwrap()
+            .1
+        );
+        // Failure to confirm reaping disables future admission in this process.
+        let child = fixture("success")
+            .process_group(0)
+            .stdout(Stdio::null())
+            .spawn()
+            .unwrap();
+        CLEANUP_UNCONFIRMED.store(true, Ordering::SeqCst);
+        UNREAPED.lock().unwrap().push(child);
+        assert!(matches!(
+            run(
+                fixture("success"),
+                &[1],
+                Instant::now() + Duration::from_secs(1)
+            ),
+            Err(Error::Unavailable)
+        ));
+        for mut child in UNREAPED.lock().unwrap().drain(..) {
+            let _ = child.kill();
+            let _ = child.wait();
+        }
+        CLEANUP_UNCONFIRMED.store(false, Ordering::SeqCst);
+    }
+}
+
+#[cfg(test)]
+#[path = "account_mutation_supervisor_tests.rs"]
+mod mutation_supervisor_tests;
+
+#[cfg(test)]
+#[path = "openpgp_crypto_lifecycle_tests.rs"]
+mod lifecycle_tests;

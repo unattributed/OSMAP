@@ -1,0 +1,208 @@
+#!/bin/ksh
+# Existing Rust application/helper tests with disposable native keys, no live mail.
+set -eu
+# Bound this exact fixture and its process group. This does not supervise live services.
+if [[ ${OSMAP_S05_NATIVE_BOUND:-no} != yes ]]; then
+    bound=240
+    [[ ${OSMAP_S05_LIFECYCLE:-no} != yes ]] || bound=300
+    [[ ${OSMAP_S07_PERSONAL:-no} != yes ]] || bound=300
+    exec /usr/bin/timeout -k 15 "$bound" /usr/bin/env OSMAP_S05_NATIVE_BOUND=yes \
+        /bin/ksh "$0" "$@"
+fi
+umask 077
+ulimit -c 0
+export PATH=/usr/local/bin:/usr/bin:/bin
+export LC_ALL=C
+
+[[ $# -eq 2 && $(uname -s) = OpenBSD ]] || exit 64
+source_root=$(cd "$1" && pwd -P)
+test_binary=$2
+[[ "$source_root" = "$1" && -x "$test_binary" && "$test_binary" = /* ]] || exit 64
+fixture=$(mktemp -d /tmp/osmap-crypto-fixture-XXXXXXXX)
+print "DISPOSABLE_FIXTURE=$fixture"
+stage=prepare
+complete=no
+cleanup() {
+    result=$?
+    trap - EXIT HUP INT TERM
+    stopped=yes
+    for account in alice bob hidden personal-origin personal-target; do
+        home_dir=$fixture/$account
+        if [[ -d "$home_dir" ]]; then
+            agent_socket=$(/usr/local/bin/gpgconf --homedir "$home_dir" --list-dirs agent-socket \
+                2>>"$fixture/commands.log") || stopped=no
+            /usr/local/bin/gpgconf --homedir "$home_dir" --kill gpg-agent \
+                >>"$fixture/commands.log" 2>&1 || stopped=no
+            attempts=0
+            while [[ -n "$agent_socket" && -S "$agent_socket" && "$attempts" -lt 20 ]]; do
+                sleep 0.1
+                attempts=$((attempts + 1))
+            done
+            [[ -n "$agent_socket" && ! -S "$agent_socket" ]] || stopped=no
+        fi
+    done
+    if [[ "$complete" = yes && "$result" -eq 0 && "$stopped" = yes ]]; then
+        rm -r -- "$fixture"
+        print 'DISPOSABLE_CLEANUP=PASS'
+    else
+        print "NATIVE_FAILURE_STAGE=$stage"
+        print "NATIVE_PROCESS_EXIT=$result"
+        print "OWNED_AGENT_STOP=$stopped"
+        print "RETAINED_PRIVATE_FIXTURE=$fixture"
+        [[ "$result" -ne 0 ]] || result=1
+    fi
+    exit "$result"
+}
+trap cleanup EXIT
+trap 'exit 130' HUP INT TERM
+
+for unit in crypto crypto_engine inventory; do
+    stage=compile_$unit
+    if [[ "$unit" = crypto_engine ]]; then
+        cc -std=c99 -Wall -Wextra -Werror \
+            "$source_root/maint/openpgp-runtime/$unit.c" -o "$fixture/$unit" \
+            >"$fixture/commands.log" 2>&1
+    else
+        cc -std=c99 -Wall -Wextra -Werror -I/usr/local/include \
+            "$source_root/maint/openpgp-runtime/$unit.c" \
+            -L/usr/local/lib -lgpgme -lgpg-error -o "$fixture/$unit" \
+            >>"$fixture/commands.log" 2>&1
+    fi
+done
+print 'NATIVE_C_WORKER_BUILD=PASS'
+if [[ -n ${OSMAP_NATIVE_EVIDENCE_DIR:-} ]]; then
+    [[ -d "$OSMAP_NATIVE_EVIDENCE_DIR" && ! -L "$OSMAP_NATIVE_EVIDENCE_DIR" ]]
+    # Retain the actual public worker exercised below for exact artifact delivery.
+    cp "$fixture/inventory" "$OSMAP_NATIVE_EVIDENCE_DIR/inventory-worker"
+    sha256 "$OSMAP_NATIVE_EVIDENCE_DIR/inventory-worker"
+    if [[ ${OSMAP_S07_PERSONAL:-no} = yes ]]; then
+        cp "$fixture/crypto" "$OSMAP_NATIVE_EVIDENCE_DIR/crypto-worker"
+        cp "$fixture/crypto_engine" "$OSMAP_NATIVE_EVIDENCE_DIR/crypto-engine"
+        sha256 "$OSMAP_NATIVE_EVIDENCE_DIR/crypto-worker" "$OSMAP_NATIVE_EVIDENCE_DIR/crypto-engine"
+    fi
+fi
+
+gpg_fixture() {
+    key_home=$1
+    shift
+    /usr/local/bin/gpg --no-options --homedir "$key_home" --batch \
+        --pinentry-mode loopback --passphrase-fd 0 "$@"
+}
+for account in alice bob hidden; do
+    stage=disposable_key_$account
+    home_dir=$fixture/$account
+    mkdir "$home_dir"
+    print '' | gpg_fixture "$home_dir" --quick-generate-key \
+        "Synthetic $account <$account@example.test>" ed25519 cert,sign 0 \
+        >>"$fixture/commands.log" 2>&1
+    gpg_fixture "$home_dir" --with-colons --list-keys </dev/null \
+        >"$fixture/$account.list" 2>>"$fixture/commands.log"
+    fingerprint=$(awk -F: '$1 == "fpr" {print $10; exit}' "$fixture/$account.list")
+    [[ ${#fingerprint} -eq 40 && "$fingerprint" != *[!A-F0-9]* ]]
+    print '' | gpg_fixture "$home_dir" --quick-add-key "$fingerprint" cv25519 encrypt 0 \
+        >>"$fixture/commands.log" 2>&1
+    if [[ ${OSMAP_S07_PERSONAL:-no} = yes && "$account" = bob ]]; then
+        for address in bob.alias@example.test revoked@example.test; do
+            print '' | gpg_fixture "$home_dir" --quick-add-uid "$fingerprint" "$address" \
+                >>"$fixture/commands.log" 2>&1
+        done
+        print '' | gpg_fixture "$home_dir" --quick-revoke-uid "$fingerprint" revoked@example.test \
+            >>"$fixture/commands.log" 2>&1
+    fi
+    print -r -- "$fingerprint" >"$fixture/$account.fingerprint"
+    gpg_fixture "$home_dir" --export "$fingerprint" </dev/null \
+        >"$fixture/$account.public" 2>>"$fixture/commands.log"
+done
+stage=disposable_public_exchange
+/usr/local/bin/gpg --no-options --homedir "$fixture/alice" --batch --import \
+    "$fixture/hidden.public" >>"$fixture/commands.log" 2>&1
+/usr/local/bin/gpg --no-options --homedir "$fixture/alice" --batch --import \
+    "$fixture/bob.public" >>"$fixture/commands.log" 2>&1
+/usr/local/bin/gpg --no-options --homedir "$fixture/bob" --batch --import \
+    "$fixture/alice.public" >>"$fixture/commands.log" 2>&1
+
+export OSMAP_CRYPTO_NATIVE_WORKER=$fixture/crypto
+export OSMAP_CRYPTO_NATIVE_ENGINE=$fixture/crypto_engine
+export OSMAP_CRYPTO_NATIVE_INVENTORY_WORKER=$fixture/inventory
+export OSMAP_CRYPTO_NATIVE_ALICE_HOME=$fixture/alice
+export OSMAP_CRYPTO_NATIVE_BOB_HOME=$fixture/bob
+export OSMAP_CRYPTO_NATIVE_HIDDEN_HOME=$fixture/hidden
+export OSMAP_CRYPTO_NATIVE_HIDDEN_FP=$(cat "$fixture/hidden.fingerprint")
+export OSMAP_CRYPTO_NATIVE_ALICE_FP=$(cat "$fixture/alice.fingerprint")
+export OSMAP_CRYPTO_NATIVE_BOB_FP=$(cat "$fixture/bob.fingerprint")
+
+if [[ ${OSMAP_S07_PERSONAL:-no} = yes ]]; then
+    stage=disposable_protected_personal_key
+    print '' | gpg_fixture "$fixture/alice" --armor --export-secret-keys "$OSMAP_CRYPTO_NATIVE_ALICE_FP" \
+        >"$fixture/personal-other.asc" 2>>"$fixture/commands.log"
+    mkdir "$fixture/personal-origin" "$fixture/personal-target"
+    print -r -- 'synthetic-personal-key-passphrase' | gpg_fixture "$fixture/personal-origin" \
+        --quick-generate-key 'Synthetic personal <alice@example.test>' ed25519 cert,sign 0 \
+        >>"$fixture/commands.log" 2>&1
+    gpg_fixture "$fixture/personal-origin" --with-colons --list-keys </dev/null \
+        >"$fixture/personal.list" 2>>"$fixture/commands.log"
+    personal_fp=$(awk -F: '$1 == "fpr" {print $10; exit}' "$fixture/personal.list")
+    [[ ${#personal_fp} -eq 40 && "$personal_fp" != *[!A-F0-9]* ]]
+    print -r -- 'synthetic-personal-key-passphrase' | gpg_fixture "$fixture/personal-origin" \
+        --quick-add-key "$personal_fp" cv25519 encrypt 0 >>"$fixture/commands.log" 2>&1
+    print -r -- 'synthetic-personal-key-passphrase' | gpg_fixture "$fixture/personal-origin" \
+        --armor --export-secret-keys "$personal_fp" >"$fixture/personal.asc" 2>>"$fixture/commands.log"
+    gpg_fixture "$fixture/personal-origin" --export "$personal_fp" </dev/null \
+        >"$fixture/personal.public" 2>>"$fixture/commands.log"
+    /usr/local/bin/gpg --no-options --homedir "$fixture/personal-target" --batch \
+        --import "$fixture/personal.public" >>"$fixture/commands.log" 2>&1
+    export OSMAP_CRYPTO_NATIVE_PERSONAL_HOME=$fixture/personal-target
+    export OSMAP_CRYPTO_NATIVE_PERSONAL_CERTIFICATE=$fixture/personal.asc
+    export OSMAP_CRYPTO_NATIVE_PERSONAL_FP=$personal_fp
+fi
+
+run_native() {
+    stage=$1
+    "$test_binary" --list --exact "$2" >"$fixture/listing" 2>>"$fixture/commands.log"
+    # Refuse a zero-test selection before interpreting libtest exit status.
+    /usr/bin/grep -Fx "$2: test" "$fixture/listing" >/dev/null
+    if [[ "$stage" = SAME_SERVICE_AGENT_RECOVERY || "$stage" = PERSONAL_* ]]; then
+        "$test_binary" --exact "$2" --ignored --nocapture >"$fixture/$stage.log" 2>&1
+    else
+        "$test_binary" --exact "$2" --ignored >"$fixture/$stage.log" 2>&1
+    fi
+    /usr/bin/grep -Eq '^test result: ok\. 1 passed; 0 failed;' "$fixture/$stage.log"
+    if [[ -n ${OSMAP_NATIVE_EVIDENCE_DIR:-} ]]; then
+        [[ -d "$OSMAP_NATIVE_EVIDENCE_DIR" && ! -L "$OSMAP_NATIVE_EVIDENCE_DIR" ]]
+        cp "$fixture/$stage.log" "$OSMAP_NATIVE_EVIDENCE_DIR/$stage.log"
+        sha256 "$OSMAP_NATIVE_EVIDENCE_DIR/$stage.log"
+    fi
+    print "$stage=PASS"
+    /usr/bin/grep '^test result:' "$fixture/$stage.log"
+}
+if [[ ${OSMAP_S05_LIFECYCLE:-no} = yes ]]; then
+    export OSMAP_CRYPTO_NATIVE_UNLOCK_SOURCE=$source_root/maint/openpgp-runtime/deployment_unlock.py
+    export OSMAP_CRYPTO_NATIVE_UNLOCK_SOURCE_SHA256=$(sha256 -q "$OSMAP_CRYPTO_NATIVE_UNLOCK_SOURCE")
+    # The shared worker runner also owns public-admin child cleanup. This
+    # existing transaction restores its disposable correspondent certificate.
+    run_native PUBLIC_ADMIN_SHARED_RUNNER \
+        openpgp_public_admin::tests::native_crypto_public_admin_store_transaction
+fi
+run_native AUTHENTICATED_RUST_ROUNDTRIP \
+    openpgp_crypto_runtime::tests::native_crypto_authenticated_service_client
+if [[ ${OSMAP_S07_PERSONAL:-no} = yes ]]; then
+    run_native PERSONAL_AGENT_START \
+        openpgp_crypto_runtime::personal::tests::native_personal_agent_two_cycle_diagnostic
+    run_native PERSONAL_PROTECTED_LIFECYCLE \
+        openpgp_crypto_runtime::personal::tests::native_personal_protected_import_unlock_lock_roundtrip
+    run_native PERSONAL_HTTP_RUNTIME_JOURNEY \
+        http::http_gateway::http_gateway_keys::tests::native_runtime_key_management_journey
+fi
+if [[ ${OSMAP_S05_LIFECYCLE:-no} = yes ]]; then
+    run_native SAME_SERVICE_AGENT_RECOVERY \
+        openpgp_crypto_runtime::lifecycle_tests::native_same_service_recovers_stale_private_agent_without_disrupting_public_encrypt
+    /usr/bin/grep '^same_service_initial_sign=' "$fixture/$stage.log"
+fi
+run_native OUTBOUND_SIGN_ENCRYPT_BCC \
+    protected_submission::native_tests::native_crypto_outbound_submission_roundtrip
+# The gateway case deletes disposable Alice secret keys to prove public-only
+# encryption. Keep that destructive fixture operation after private-key tests.
+run_native PRODUCTION_GATEWAY_ROUNDTRIP \
+    http::http_gateway::http_gateway_mail::tests::protected_send_native::native_crypto_gateway_protected_send_roundtrip
+complete=yes
+print 'S05_01_NATIVE_FUNCTIONAL=PASS'

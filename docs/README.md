@@ -1,6 +1,127 @@
 # Documentation
 
+- `UX_PLAN_AMENDMENT_R5.md` — [approved S09/S10 privacy boundary](UX_PLAN_AMENDMENT_R5.md): operator approved the exact historical `UX_PLAN_AMENDMENT_R5_PROPOSED.md` [proposal](UX_PLAN_AMENDMENT_R5_PROPOSED.md) on November 12. S09 UI/UAT closure is separate from ten PAGE-18 security controls retained as S10 and epic/release blockers.
+- `OSMAP_CHECKOUT_RECONCILIATION_20261109.md` — [2026-11-09 checkout reconciliation](OSMAP_CHECKOUT_RECONCILIATION_20261109.md): preserved superseded S05 deltas and account-service startup recovery; ongoing S08 work excluded.
+
+## S08 acceptance and extensions
+
+- `UX_SLICE_S08_07.md` — [S08-07: Junk in Archive / Bin](UX_SLICE_S08_07.md): third view requested; implementation and qualification in progress, owner UAT pending.
+- `UX_SLICE_S08_06.md` — [S08-06: Presentation style](UX_SLICE_S08_06.md): **corrected Mailboxes page installed; owner re-review pending**. The duplicated horizontal shortcut bar is removed; left navigation and dashboard panels remain. Focused/browser/native/installed checks pass within scope. Prior Icons/Text labels evidence and failures remain recorded.
+- `design/s08-06-approved-20261110/README.md` — [approved S08-06 desktop and touch references](design/s08-06-approved-20261110/README.md): synthetic mockups, provenance and checksums; design approval only.
+- `UX_SLICE_S08_05.md` — [S08-05: logo continuity](UX_SLICE_S08_05.md): **PASS / ACCEPTED / CLOSED** on November 10 after the owner reviewed all OSMAP pages; existing engineering evidence reused.
+- `UX_SLICE_S08_01.md` — [S08-01: Documents and shared storage](UX_SLICE_S08_01.md): accepted account-generic mail storage reporting; Documents was removed from scope.
+- `UX_SLICE_S08_03.md` — [S08-03: Scheduled send and snooze](UX_SLICE_S08_03.md): scheduled delivery, Snooze and Outbox; owner accepted whole S08 on November 8.
+- `UX_SLICE_S08_04.md` — [S08-04: Factual notifications](UX_SLICE_S08_04.md): notification inbox/preferences and controls accepted by the owner; original S08 closed.
+
+## S07 outbound protection qualification
+
+- `UX_SLICE_S07_01.md` — [S07-01: intent and policy](UX_SLICE_S07_01.md)
+- `UX_SLICE_S07_02.md` — [S07-02: PGP/MIME signing](UX_SLICE_S07_02.md)
+- `UX_SLICE_S07_03.md` — [S07-03: encryption, self and Bcc](UX_SLICE_S07_03.md)
+- `UX_SLICE_S07_04.md` — [S07-04: composed send and Sent recovery](UX_SLICE_S07_04.md)
+
+- `UX_SLICE_S06_01.md` — [S06-01 stored protected MIME integrity](UX_SLICE_S06_01.md): exact signed bytes, supported transport and safe refusal.
+- `UX_SLICE_S06_02.md` — [S06-02 signature and identity results](UX_SLICE_S06_02.md): real verification, missing signing keys and separate sender identity.
+- `UX_SLICE_S06_03.md` — [S06-03 transient decryption](UX_SLICE_S06_03.md): bounded isolated processing and accurate refusal states.
+- `UX_SLICE_S06_04.md` — [S06-04 reader, source and downloads](UX_SLICE_S06_04.md): consolidated native/installed results, retained failures and pending owner protected-message UAT.
+
+- `UX_FOLLOWUP_F3_ACCOUNT_STATUS.md` — [F3 account-relative Welcome status correction](UX_FOLLOWUP_F3_ACCOUNT_STATUS.md):
+  current-user observations and explicit unmeasured service scope; bounded repair accepted by the owner on2026-11-02.
+
+- `UX_SLICE_S05_04.md` — [S05-04 native isolation qualification](UX_SLICE_S05_04.md): approved infrastructure T01–T09, native evidence and restore boundaries.
+- `UX_SLICE_S05_03.md` — [S05-03 existing runtime lifecycle and recovery](UX_SLICE_S05_03.md):
+  owned cancellation/cleanup, helper shutdown, native recovery and matching installed proof;
+  owner `S05-03 T09 = PASS` closes T01–T09; later-slice and production acceptance remain separate.
+
+- `UX_SLICE_S05_02.md` — [S05-02 practical key and email-policy management](UX_SLICE_S05_02.md):
+  visible imported identities/policies, ASC-derived emails and Compose recipient selection;
+  [installed integration and remaining owner check](UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01).
+
+- `UX_SLICE_S05_01.md` — [S05-01 existing Rust crypto-helper path](UX_SLICE_S05_01.md):
+  T01–T09, bounded source/native verification and preservation of S04 acceptance.
+
+- `UX_SLICE_S04_04.md` — [S04-04 governed account recovery](UX_SLICE_S04_04.md): ordered work packages,
+  T01–T09, source implementation/evidence and remaining native/human qualification.
+
+- `UX_S04_02_CONFINEMENT_LOCALIZATION_20261024.md` — [Serve confinement localization](UX_S04_02_CONFINEMENT_LOCALIZATION_20261024.md); differentiated source diagnostics; historical cause unknown; native qualification pending.
+
+## S04-01 complete (R4 narrowed scope) — 2026-10-17
+
+Operator explicitly reported `S04_01_UAT=PASS` after agent-owned engineering,
+matching installed QA and independent audit PASS. Effective46 controls close
+(43 approved result rows accepted;3 immutable legacy rows retain archival JSON
+bytes, with their effective closure recorded here and in the active work order).
+All403 obligations,110 legacy records and48 parent IDs remain preserved.
+Eleven required controls in nine follow-ups remain open and block Sprint S04/epic.
+S04-02 password change, TOTP management and recovery are not accepted by this result.
+
+Delivered source `0eacfd9f5e49177c9ffa3b16e8454409fb5cf632` is Shopkeeper signed;
+mandatory gate1770libraryPASS/0failed/48explicitnativeignores plus existing
+securitychecks PASS. Actual obsd1 app
+`65391473cb062137b52ff2d5cad0614fb50be256cde613580d363f7127b47f20`
+was built from455matchinginputs and installed in39.306s with onlyServe restarted,
+configuration/helper/key-agent/retention/unrelated-service preservation. One
+actual SecurityGET proves two retained sign-ins and one revocation plus explicit
+PasswordUnavailable, with exactowned cleanup. Earlier installed19HTTPSettings/
+session proof and native200percent font result are reused; no extra QA campaign.
+
+Independent actual closeout review15509ccb is GO. Human acceptance is the three
+submitted GeneralReset/timezone, Appearancepreview/save/reload and Sessions/
+availability usability checks, never a fabricated human46case/security rerun.
+Exact operator report is retained in S04_01_UAT_RESULT_20261017.json under the
+stable Settings/session evidence root. Prior failed gates, wrong zoom-pref and
+root pre-action execution-control deviation remain retained; no retroactive PASS.
+No new service, password, factor, provider email or synchronization is authorized
+by this closeout. The sections below preserve historical intermediate states.
+
+
+## Current bounded authorization — 2026-10-17
+
+S04-01 Settings/sessions only has resumed against its
+[single outcome/action/expected-result/actual-evidence checklist](UX_SLICE_S04_01.md)
+(`UX_SLICE_S04_01.md`).
+The operator-requested [`UX_PLAN_AMENDMENT_R4_PROPOSED.md`](UX_PLAN_AMENDMENT_R4_PROPOSED.md)
+proposes an actual narrowed S04-01 gate plus required epic follow-ups for review
+only; its historical bytes remain preserved. The operator has now approved that
+exact proposal; [`UX_PLAN_AMENDMENT_R4.md`](UX_PLAN_AMENDMENT_R4.md) records the
+accepted scope and activation conditions. Scope approval passes no control.
+The first two repairs pass focused source/browser/OpenBSD checks; no installed
+or whole-slice acceptance is claimed. Other slices remain stopped. The current
+ledger carries the exact work order and preserved dependencies.
+
+## Historical operator stop — 2026-10-17
+
+Development, live/native qualification and deployment are stopped by explicit
+operator direction. Only documentation preservation, signed repository commits
+and synchronization of `feat/ux-completion-20260929` are currently authorized.
+S04-02 password change and S04 remain incomplete; the installed password-change
+control remains disabled. Historical work orders do not authorize resumption.
+See [the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md) and
+[Current Project Status](CURRENT_PROJECT_STATUS.md) for current results and limits.
+
 This directory holds the public-safe documentation set for OSMAP.
+
+Historical operational checkpoint, 2026-10-14: the ordinary-mail repair is signed,
+synchronized and installed; controlled original/reply/forward delivery has
+authoritative Inbox/Sent MIME evidence. `CURRENT_PROJECT_STATUS.md` and the
+latest `UX_EXECUTION_LEDGER.md` distinguish that bounded result from pending
+whole-baseline, OpenPGP-provider and original sprint acceptance.
+
+October15 S08-02 engineering delivery: signed sourcec4e318bf and installed
+application324b1cb9 have independent folder/label/menu delivery review. The
+distinct current populated Bin/Restore and final hierarchy/badges/owned cleanup
+journey passes13 HTTP outcomes; original timeouts are preserved. A minimal
+nonmutating human usability check and controlled attachment download now PASS.
+Independent review permits S08-02 functional ACCEPTED; S04-02 authoritative
+password change remains incomplete and is now stopped. S09 visual/accessibility, broader S08 and the full
+epic remain open.
+
+The 2026-09-29/30 UX engineering stream has completed intake and implemented
+the S01 appearance and shared-shell work locally. `UX_EXECUTION_LEDGER.md`
+records signed checkpoints, synthetic browser/persistence evidence, remaining
+human acceptance and the separate native-host/deployment boundary. The frozen
+epic remains the complete scope; current source progress does not imply that
+all account, mail, ancillary or cryptographic functions are delivered.
 
 `docs/` is the source-of-truth location for project, architecture, security,
 operational, and implementation documents unless a file needs to live
@@ -56,12 +177,36 @@ The documents in this folder are written for two audiences:
 
 Current public documentation map:
 
+- `UX_STOPPED_HANDOFF_20261017.md` — operator stop, latest outcomes, retained drafts and synchronization scope
+
 - `README.md`
 - `CURRENT_PROJECT_STATUS.md`
 - `UX_FULL_FUNCTIONAL_EPIC.md`
 - `UX_FULL_FUNCTIONAL_SLICES.md`
 - `UX_AGENT_EXECUTION_CONTRACT.md`
 - `UX_EXECUTION_LEDGER.md`
+- `UX_SLICE_S04_02.md` — own-password design and verification specification; accepted local-development result is recorded in the S04-02 T09 report
+- [S04-03 recovery contact lifecycle](UX_SLICE_S04_03.md) (`UX_SLICE_S04_03.md`) — accepted local-development lifecycle, with installed engineering qualification, preserved failures and external-delivery UAT
+- [S04-03 T08 owner acceptance](UX_S04_03_T08_ACCEPTANCE_20261027.md) (`UX_S04_03_T08_ACCEPTANCE_20261027.md`) — owner-observed external receipt, consumed one-use verification, authoritative verified state and bounded acceptance decision
+- [Local development OpenPGP restoration](UX_OPENPGP_DEVELOPMENT_RESTORATION_20261026.md) (`UX_OPENPGP_DEVELOPMENT_RESTORATION_20261026.md`) — preserved helper connections and account bindings after the local credential cutover; native encryption qualification and delivery limits.
+- `UX_S04_02_SINGLE_HOST_EXECUTION.md` — single-host account-service execution correction; native qualification, installed QA and UAT remain open
+- `UX_S04_02_TIMING_RECONCILIATION_20261023.md` — bounded native journey timing, unchanged password deadline and separately bound test/service artifacts
+- `UX_S04_02_STOCK_WORKER_ARGV_20261024.md` — Rust metadata denial findings, first-failure preservation and prepared, unauthorized one-shot R1/R2 validation
+- `UX_S04_PYTHON_REVIEW_20261023.md` — full Sprint S04 Python review, corrected execution/test defects and local validation; no new native attempt or T03 qualification
+- `UX_FUNCTIONAL_BASELINE.md` — approved preservation and installed ordinary-mail verification work order; results and repairs remain in the execution ledger
+- `UX_MAIL_DELIVERY_REFOCUS_20261006.md` — operator-approved ordinary and protected Send recovery priority
+- `UX_FOLDER_RETAINED_RECONCILIATION.md` — engineering-owned bounded diagnosis and safe retained disposition for unconfirmed folder changes; no automatic replay or inferred child settlement
+- `ARCHIVE_EVENT_METADATA.md` — persisted known Archive action dates, destination identity and independent metadata uncertainty
+- `AGENT_DEVELOPMENT_FRAMEWORK.md` — portable six-role framework for complete user journeys, independent review and actionable UAT
+- `OSMAP_AGENT_FRAMEWORK_ADOPTION.md` — application to existing OSMAP records and unresolved acceptance
+- `UX_S00_INTAKE.md`
+- `UX_DECISIONS.md`
+- `UX_PLAN_AMENDMENT_R2.md` — final approved 25-image / 27-page reference correction
+- `UX_PLAN_AMENDMENT_R3.md` — approved end-to-end agent delivery authority, technical dependencies, minimal human acceptance and Folders navigation overlay; preserves R2 references
+- `design/osmap-ux-final-approved-20260919/` — byte-preserved approved bundle
+- `design/osmap-ux-final-approved-20260919/APPROVAL_LOCK_FINAL.md`
+- `design/osmap-ux-final-approved-20260919/README.md`
+- `UX_S00_ACCEPTANCE.md`
 - `TOTP_LIFECYCLE_SPRINT.md`
 - `TOTP_LIFECYCLE_OBSD1_EVIDENCE.md`
 - `EMERGENCY_OBSD1_HOST_ALIAS_2026_09_14.md`
@@ -225,6 +370,7 @@ Current public documentation map:
 
 - `V9_RELEASE_CANDIDATE_CLOSEOUT.md`
 - `REQUEST_WORKER_BUDGET_MODEL.md`
+- `MAILBOX_PERMANENT_DELETE.md`
 - `MAIL_HOST_BINARY_DEPLOYMENT_SOP.md`
 - `MAIL_HOST_RUNTIME_GROUP_PROVISIONING_SOP.md`
 - `MAIL_HOST_SERVICE_ARTIFACTS_SOP.md`
@@ -284,6 +430,12 @@ In practice, the repository should follow this policy:
 - add new narrative or design documents under `docs/` by default unless there
   is a clear platform-specific reason not to
 
+
+Current Folders work is recorded in the execution ledger and current project
+status. Matching installed Create, complete-email Move, Restore/Delete and Labels
+journeys have finite functional proof and independent delivery review. Partial-
+tree recovery safety and full S08 acceptance remain open; the original Bin HTTP
+timeout is retained separately from its reconciled outcome and later passes.
 
 ## Current Status Authority
 
@@ -429,3 +581,7 @@ V7 production availability was previously reopened pending real-login, real-mail
 - `V14_SLICE_7_COMPOSE_OPENPGP_CONTROLS.md`
 - `V14_SLICE_8_ACCOUNT_SECURITY_OPENPGP_CONTROLS.md`
 - `V14_SLICE_9_NO_JAVASCRIPT_LOW_SBOM_GATES.md`
+
+- [S04-02 credential transaction and epoch/session consistency, 2026-10-25](UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md) (`UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md`) — ordinary-service failure loop and scoped consistency evidence.
+- [S04-02 T09 usability acceptance](UX_S04_02_T09_ACCEPTANCE_20261025.md) (`UX_S04_02_T09_ACCEPTANCE_20261025.md`) — T01–T08/all-20 engineering closeout, current ordinary installation and concise owner review; human acceptance remains separate.
+- [S04-02 authority incident and local UX development](UX_S04_02_LOCAL_DEVELOPMENT_20261025.md) (`UX_S04_02_LOCAL_DEVELOPMENT_20261025.md`) — failed real-account readiness, database authority reconciliation, isolated local replica and writable development qualification.

@@ -1,5 +1,37 @@
 # Security Model
 
+## Current S04-02 security boundary — 2026-10-19
+
+The selected stock password adapter preserves same-account browser
+reauthorization, durable epoch/pending state, exact conditional SQL update and
+account-bound authenticated results. Its completion contract requires revocation
+of all OSMAP browser sessions for the changed account, authoritative old-password
+rejection/new-password acceptance and preservation of other accounts. Already
+authenticated external IMAP/SMTP connections may remain; browser-session
+revocation is not a claim of forced third-party mail-session termination.
+
+The fixed stock-auth child drops to the verified non-root Dovecot identity.
+Admission binds the active SQL passdb/configuration, writer route, original
+mail master and current socket/worker custody. A read-only observation of
+`auth_cache_size=0`, bound to protected configuration/executable continuity,
+provides the selected zero-cache capability. No performed flush or flush count
+is asserted. The selected server does not activate the retired plugin, proxy,
+global mail-ingress fence or public service/configuration mutation path.
+
+These controls remain subject to matching native and installed qualification.
+Stock journey46 failed at helper startup before HTTP/ordered backend events;
+its remote helper disposition was unconfirmed. Native qualification flags remain
+false and the live form stays disabled. Source review, successful compilation
+or separate owned cleanup cannot establish a password-change, WSTG, release or
+UAT PASS. No further functional retry or public mail lifecycle action is admitted
+by this update.
+
+The October 17 stop remains a historical outcome in
+[the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md). Explicit later
+operator instructions resumed S04-02; the current assignment and retained results
+are in [the execution ledger](UX_EXECUTION_LEDGER.md) and
+[Current Project Status](CURRENT_PROJECT_STATUS.md).
+
 ## Status
 
 This document is the Phase 3 security and trust-model baseline for OSMAP.

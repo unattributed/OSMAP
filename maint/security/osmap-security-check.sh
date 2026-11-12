@@ -11,7 +11,61 @@ cd "$repo_root"
 : "${CARGO_TARGET_DIR:=$repo_root/target}"
 
 mkdir -p "$TMPDIR" "$CARGO_HOME" "$CARGO_TARGET_DIR"
+# The default directory is owned by this gate and is the parent for tests whose
+# product contract requires private ancestry. A process umask does not repair a
+# directory retained from an earlier run, so normalize this exact default only;
+# never chmod a caller-supplied TMPDIR such as /tmp.
+if [ "$TMPDIR" = "/tmp/osmap-tmp" ]; then
+	chmod 700 "$TMPDIR"
+fi
 export TMPDIR CARGO_HOME CARGO_TARGET_DIR
+
+# The ordinary source gate validates the immutable acceptance mapping and the
+# validator itself. Mutable work-order prose/history is reviewed at the matching
+# delivery boundary; it is not a prerequisite for every source commit.
+python3 -B maint/ux/test_validate_acceptance.py TraceabilityTests ExecutionContractTests
+
+echo "==> validating release-independent OpenBSD policy"
+if numbered_openbsd_hits=$(git grep -nEi \
+	'(OpenBSD[[:space:]_-]*[0-9]+\.[0-9]+|openbsd[0-9]{2}|openbsd[-_][0-9]{2})' -- \
+	'*.rs' '*.py' '*.sh' '*.ksh' '*.env' '*.env.example' 'Makefile' 2>/dev/null); then
+	echo "error: active code contains a release-numbered OpenBSD requirement or asset"
+	printf '%s\n' "$numbered_openbsd_hits"
+	exit 1
+fi
+if openbsd_release_gate_hits=$(git grep -nE \
+	'(info\.release|release\.to_bytes|u\.release\.(count|split)|fullmatch\([^)]*(uname\(\)\.)?release|uname\(\)\.release[[:space:]]*(==|!=|<|>))' -- \
+	'*.rs' '*.py' '*.sh' '*.ksh' ':!maint/security/osmap-security-check.sh' 2>/dev/null); then
+	echo "error: active code uses the OpenBSD release string as an admission predicate"
+	printf '%s\n' "$openbsd_release_gate_hits"
+	exit 1
+fi
+
+if [ "${OSMAP_SECURITY_PROFILE:-developer}" = "commit" ]; then
+	echo "==> cargo check --lib"
+	cargo check --lib
+	echo "==> checking staged patch whitespace"
+	git diff --check --cached
+	exit 0
+fi
+
+# Portable regressions exercise the maintained carrier's real local producers
+# and consumers. Private native compiler/receipt integration remains a separate
+# evidence check; normal source delivery must not depend on retained operator files.
+echo "==> Sprint S04 Python carrier regressions"
+python3 -B -m unittest \
+	maint.ux.s04_02_startup_candidate.test_candidate \
+	maint.ux.s04_02_startup_candidate.test_current_source.BuildTransportCleanupTests \
+	maint.ux.s04_02_startup_candidate.test_current_source.LibtestBuildBindingTests \
+	maint.ux.s04_02_startup_candidate.test_mail_witness \
+	maint.ux.s04_02_startup_candidate.test_mutation_result \
+	maint.ux.s04_02_startup_candidate.test_native_diagnostics \
+	maint.ux.s04_02_startup_candidate.test_native_evidence \
+	maint.ux.s04_02_startup_candidate.test_native_frontend \
+	maint.ux.s04_02_startup_candidate.test_password_journey \
+	maint.ux.s04_02_startup_candidate.test_startup_probe_cleanup
+python3 -B maint/ux/s04_02_startup_candidate/test_interpreter_selection.py
+python3 -B maint/ux/test_s04_02_observe_current.py
 
 version_lt() {
 	left=$1
@@ -118,9 +172,23 @@ python3 maint/security/test-osmap-totp-rotation.py
 
 echo "==> validating governed TOTP recovery approvals and transitions"
 python3 maint/security/test-osmap-totp-recovery.py
+python3 maint/security/test-osmap-account-recovery-coordinator.py
 
 echo "==> validating native lifecycle qualification boundaries"
 python3 maint/security/test-osmap-totp-native-check.py
+
+echo "==> validating account mutation and epoch regressions"
+python3 -B -m unittest discover -s maint/account-runtime -p 'test_*.py'
+
+echo "==> validating mail backend regressions"
+python3 -B -m unittest discover -s maint/mail-backend -p 'test_*.py'
+
+echo "Running abandoned OSMAP service socket recovery regressions"
+python3 -B maint/test_service_socket_recovery.py
+
+echo "==> validating OpenPGP operator tool guards and output handling"
+OSMAP_UNLOCK_NATIVE=0 python3 -B -m unittest discover -s maint/openpgp-runtime -p deployment_unlock_test.py
+python3 -B -m unittest discover -s maint/openpgp-runtime -p deployment_prepare_test.py
 
 echo "==> validating V7 boundary hardening invariants"
 sh maint/security/osmap-v7-boundary-hardening-gate.sh
@@ -159,7 +227,9 @@ if [ -n "$disallowed_unsafe" ]; then
 fi
 
 echo "==> scanning for shell-based command execution"
-shell_hits=$(grep -RIn '/bin/sh\|sh -c\|cmd /c\|powershell' src 2>/dev/null || true)
+# The preceding mandatory CWE guard verifies each excluded test registration,
+# including every cfg/include link for the native scheduler fixture children.
+shell_hits=$(grep -RIn '/bin/sh\|sh -c\|cmd /c\|powershell' src 2>/dev/null | grep -v -e '^src/openpgp_public_admin_tests.rs:' -e '^src/openpgp_public_admin_runtime_tests.rs:' -e '^src/http/protected_send_gateway_native_tests.rs:' -e '^src/http_gateway_keys_tests.rs:' -e '^src/http_runtime_scheduled_positive_native_tests.rs:' || true)
 if [ -n "$shell_hits" ]; then
 	echo "error: found shell-based command execution patterns in src/"
 	printf '%s\n' "$shell_hits"
@@ -168,7 +238,7 @@ fi
 
 echo "==> scanning for unexpected direct Command::new call sites"
 command_hits=$(grep -RIn 'Command::new' src 2>/dev/null || true)
-unexpected_command_hits=$(printf '%s\n' "$command_hits" | grep -v 'src/auth.rs:' | sed '/^$/d' || true)
+unexpected_command_hits=$(printf '%s\n' "$command_hits" | grep -v 'src/auth.rs:' | grep -v -e '^src/openpgp_public_admin_tests.rs:' -e '^src/http/protected_send_gateway_native_tests.rs:' -e '^src/http_gateway_keys_tests.rs:' -e '^src/http/protected_send_gateway_scheduled_native_tests.rs:' | sed '/^$/d' || true)
 if [ -n "$unexpected_command_hits" ]; then
 	echo "error: found unreviewed direct Command::new call sites outside src/auth.rs"
 	printf '%s\n' "$unexpected_command_hits"

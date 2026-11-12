@@ -186,6 +186,9 @@ impl MessageListRequest {
 /// A single summary row in a message list.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageSummary {
+    /// Bounded To header for display; never envelope or delivery authority.
+    pub to: Option<String>,
+    pub metadata: Option<crate::message_metadata::MessageMetadata>,
     pub mailbox_name: String,
     pub uid: u64,
     pub flags: Vec<String>,
@@ -305,7 +308,11 @@ pub fn sort_message_summaries(messages: &mut [MessageSummary], sort: Option<Mess
         return;
     };
 
-    messages.sort_by(|left, right| compare_message_summary(left, right, sort));
+    messages.sort_by(|left, right| {
+        compare_message_summary(left, right, sort)
+            .then_with(|| left.mailbox_name.cmp(&right.mailbox_name))
+            .then_with(|| right.uid.cmp(&left.uid))
+    });
 }
 
 pub(crate) fn validate_message_search_query(
@@ -383,6 +390,60 @@ impl MessageSearchRequest {
     }
 }
 
+/// Validated ordered visible-mailbox scope for one native search invocation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageSearchBatchRequest {
+    pub mailbox_names: Vec<String>,
+    pub query: String,
+    pub field: MessageSearchField,
+}
+
+impl MessageSearchBatchRequest {
+    pub fn new(
+        policy: MessageSearchPolicy,
+        mailbox_names: Vec<String>,
+        query: impl Into<String>,
+        field: MessageSearchField,
+    ) -> Result<Self, MailboxBackendError> {
+        if mailbox_names.is_empty() || mailbox_names.len() > DEFAULT_MAX_MAILBOXES {
+            return Err(MailboxBackendError {
+                backend: "message-search-parser",
+                reason: "invalid batch mailbox count".into(),
+            });
+        }
+        let mut unique = std::collections::BTreeSet::new();
+        for name in &mailbox_names {
+            MailboxEntry::new(
+                MailboxListingPolicy {
+                    mailbox_name_max_len: policy.mailbox_name_max_len,
+                    max_mailboxes: DEFAULT_MAX_MAILBOXES,
+                },
+                name.clone(),
+            )?;
+            if !unique.insert(name) {
+                return Err(MailboxBackendError {
+                    backend: "message-search-parser",
+                    reason: "duplicate batch mailbox".into(),
+                });
+            }
+        }
+        Ok(Self {
+            mailbox_names,
+            query: validate_message_search_query(policy, query)?,
+            field,
+        })
+    }
+    pub fn validate(&self, policy: MessageSearchPolicy) -> Result<(), MailboxBackendError> {
+        Self::new(
+            policy,
+            self.mailbox_names.clone(),
+            self.query.clone(),
+            self.field,
+        )
+        .map(|_| ())
+    }
+}
+
 /// Bounded search fields accepted from browser query parameters.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MessageSearchField {
@@ -429,6 +490,7 @@ impl MessageSearchField {
 /// A single summary row returned from a mailbox-scoped search.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageSearchResult {
+    pub metadata: Option<crate::message_metadata::MessageMetadata>,
     pub mailbox_name: String,
     pub uid: u64,
     pub flags: Vec<String>,
@@ -443,7 +505,11 @@ pub fn sort_message_search_results(results: &mut [MessageSearchResult], sort: Op
         return;
     };
 
-    results.sort_by(|left, right| compare_message_search_result(left, right, sort));
+    results.sort_by(|left, right| {
+        compare_message_search_result(left, right, sort)
+            .then_with(|| left.mailbox_name.cmp(&right.mailbox_name))
+            .then_with(|| right.uid.cmp(&left.uid))
+    });
 }
 
 fn compare_message_summary(
@@ -551,51 +617,75 @@ fn apply_sort_direction(ordering: Ordering, direction: MessageSortDirection) -> 
     }
 }
 
-fn parse_received_timestamp(value: &str) -> Option<i64> {
-    let mut fields = value.split_whitespace();
-    let date = fields.next()?;
-    let time = fields.next()?;
-    let offset = fields.next().unwrap_or("+0000");
-
-    let mut date_parts = date.split('-');
-    let year = date_parts.next()?.parse::<i64>().ok()?;
-    let month = date_parts.next()?.parse::<u32>().ok()?;
-    let day = date_parts.next()?.parse::<u32>().ok()?;
-    if date_parts.next().is_some() || !valid_month_day(year, month, day) {
-        return None;
-    }
-
-    let mut time_parts = time.split(':');
-    let hour = time_parts.next()?.parse::<i64>().ok()?;
-    let minute = time_parts.next()?.parse::<i64>().ok()?;
-    let second = time_parts.next()?.parse::<i64>().ok()?;
-    if time_parts.next().is_some()
-        || !(0..=23).contains(&hour)
-        || !(0..=59).contains(&minute)
-        || !(0..=60).contains(&second)
+/// Strict ASCII UTC calendar day, bounded to the four-digit civil year range.
+pub(crate) fn parse_calendar_date(value: &str) -> Option<i64> {
+    let b = value.as_bytes();
+    if b.len() != 10
+        || b[4] != b'-'
+        || b[7] != b'-'
+        || !b
+            .iter()
+            .enumerate()
+            .all(|(i, b)| i == 4 || i == 7 || b.is_ascii_digit())
     {
         return None;
     }
+    let year = value[..4].parse::<i64>().ok()?;
+    let month = value[5..7].parse::<u32>().ok()?;
+    let day = value[8..].parse::<u32>().ok()?;
+    if year == 0 || !valid_month_day(year, month, day) {
+        return None;
+    }
+    Some(days_from_civil(year, month, day) * 86_400)
+}
 
-    let offset_seconds = parse_timezone_offset_seconds(offset)?;
-    let day_seconds = hour * 3600 + minute * 60 + second;
-
-    Some(days_from_civil(year, month, day) * 86_400 + day_seconds - offset_seconds)
+/// Dovecot received time; missing offset retains the existing UTC convention.
+pub(crate) fn parse_received_timestamp(value: &str) -> Option<i64> {
+    let b = value.as_bytes();
+    if !matches!(b.len(), 19 | 25)
+        || !value.is_ascii()
+        || b[10] != b' '
+        || b[13] != b':'
+        || b[16] != b':'
+    {
+        return None;
+    }
+    let day = parse_calendar_date(&value[..10])?;
+    if !b[11..19]
+        .iter()
+        .enumerate()
+        .all(|(i, b)| i == 2 || i == 5 || b.is_ascii_digit())
+    {
+        return None;
+    }
+    let hour = value[11..13].parse::<i64>().ok()?;
+    let minute = value[14..16].parse::<i64>().ok()?;
+    let second = value[17..19].parse::<i64>().ok()?;
+    if hour > 23 || minute > 59 || second > 59 {
+        return None;
+    }
+    let offset = if b.len() == 25 {
+        if b[19] != b' ' {
+            return None;
+        }
+        parse_timezone_offset_seconds(&value[20..])?
+    } else {
+        0
+    };
+    Some(day + hour * 3600 + minute * 60 + second - offset)
 }
 
 fn parse_timezone_offset_seconds(value: &str) -> Option<i64> {
-    let bytes = value.as_bytes();
-    if bytes.len() != 5 || (bytes[0] != b'+' && bytes[0] != b'-') {
+    let b = value.as_bytes();
+    if b.len() != 5 || !matches!(b[0], b'+' | b'-') || !b[1..].iter().all(u8::is_ascii_digit) {
         return None;
     }
-    let sign = if bytes[0] == b'+' { 1 } else { -1 };
     let hours = value[1..3].parse::<i64>().ok()?;
     let minutes = value[3..5].parse::<i64>().ok()?;
-    if !(0..=23).contains(&hours) || !(0..=59).contains(&minutes) {
+    if hours > 23 || minutes > 59 {
         return None;
     }
-
-    Some(sign * (hours * 3600 + minutes * 60))
+    Some((if b[0] == b'+' { 1 } else { -1 }) * (hours * 3600 + minutes * 60))
 }
 
 fn valid_month_day(year: i64, month: u32, day: u32) -> bool {
@@ -680,6 +770,7 @@ pub struct MessageMoveRequest {
     pub source_mailbox_name: String,
     pub destination_mailbox_name: String,
     pub uid: u64,
+    pub version: crate::message_metadata::MessageVersion,
 }
 
 /// Conservative maximum raw RFC 5322 message size accepted for one append.
@@ -691,11 +782,21 @@ pub const DEFAULT_MESSAGE_APPEND_MAX_BYTES: usize = 48 * 1024 * 1024;
 /// A bounded request to append one complete message to an existing mailbox.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageAppendRequest {
+    /// Absent preserves legacy save behavior; explicit target must be rechecked by helper.
+    pub destination_mailbox_guid: Option<String>,
     pub mailbox_name: String,
     pub message: Vec<u8>,
 }
 
 impl MessageAppendRequest {
+    pub fn with_destination_mailbox_guid(
+        mut self,
+        guid: &str,
+    ) -> Result<Self, MailboxBackendError> {
+        crate::mailbox_status::MailboxStatus::new(&self.mailbox_name, guid, 0, 0)?;
+        self.destination_mailbox_guid = Some(guid.into());
+        Ok(self)
+    }
     /// Validates the destination mailbox and raw message size.
     pub fn new(
         mailbox_name: impl Into<String>,
@@ -720,6 +821,7 @@ impl MessageAppendRequest {
         }
 
         Ok(Self {
+            destination_mailbox_guid: None,
             mailbox_name,
             message,
         })
@@ -734,6 +836,7 @@ impl MessageMoveRequest {
         source_mailbox_name: impl Into<String>,
         destination_mailbox_name: impl Into<String>,
         uid: u64,
+        version: crate::message_metadata::MessageVersion,
     ) -> Result<Self, MailboxBackendError> {
         let mailbox_policy = MailboxListingPolicy {
             mailbox_name_max_len: policy.mailbox_name_max_len,
@@ -751,17 +854,23 @@ impl MessageMoveRequest {
             });
         }
 
-        if uid == 0 {
+        if uid == 0 || uid > u64::from(u32::MAX) {
             return Err(MailboxBackendError {
                 backend: "message-move-parser",
-                reason: "uid must be greater than zero".to_string(),
+                reason: "uid is outside its bound".to_string(),
             });
         }
+
+        let version = crate::message_metadata::MessageVersion::new(
+            version.mailbox_guid,
+            version.message_guid,
+        )?;
 
         Ok(Self {
             source_mailbox_name,
             destination_mailbox_name,
             uid,
+            version,
         })
     }
 }
@@ -769,6 +878,7 @@ impl MessageMoveRequest {
 /// A bounded per-message payload for the first message-view slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageView {
+    pub metadata: Option<crate::message_metadata::MessageMetadata>,
     pub mailbox_name: String,
     pub uid: u64,
     pub flags: Vec<String>,
@@ -850,7 +960,7 @@ pub enum MessageViewDecision {
     Retrieved {
         canonical_username: String,
         session_id: String,
-        message: MessageView,
+        message: Box<MessageView>,
     },
 }
 
@@ -928,6 +1038,83 @@ pub struct MailboxBackendError {
 
 /// A backend capable of listing mailboxes for a canonical user.
 pub trait MailboxBackend {
+    fn rename_folder_attempt(
+        &self,
+        request: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::NativeAttempt {
+        crate::folder_rename::NativeAttempt::unsettled(self.rename_folder(request))
+    }
+    fn recover_folder_subtree(
+        &self,
+        _: &crate::folder_rename::RecoveryPermit<'_>,
+    ) -> crate::folder_rename::NativeRecoveryAttempt {
+        crate::folder_rename::NativeRecoveryAttempt {
+            attempt: crate::folder_rename::NativeAttempt::unsettled(
+                crate::folder_rename::Outcome::Refused(crate::folder_create::Refusal::Unavailable),
+            ),
+            complete: false,
+        }
+    }
+    fn folder_rename_completion(
+        &self,
+        _: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Completion {
+        crate::folder_rename::Completion::Unconfirmed
+    }
+    fn delete_folder(
+        &self,
+        _: &crate::folder_delete::DeleteFolderRequest,
+    ) -> crate::folder_delete::Outcome {
+        crate::folder_delete::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    }
+    fn folder_delete_completion(
+        &self,
+        _: &crate::folder_delete::DeleteFolderRequest,
+    ) -> crate::folder_delete::Completion {
+        crate::folder_delete::Completion::Unconfirmed
+    }
+    fn rename_folder(
+        &self,
+        _: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Outcome {
+        crate::folder_rename::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    }
+    fn create_folder(
+        &self,
+        _: &crate::folder_create::CreateFolderRequest,
+    ) -> crate::folder_create::Outcome {
+        crate::folder_create::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    }
+    fn folder_metadata(
+        &self,
+        account: &str,
+    ) -> Result<crate::folder_metadata::FolderSnapshot, MailboxBackendError> {
+        let _ = account;
+        Err(crate::folder_metadata_backend::unavailable())
+    }
+
+    fn folder_facts(
+        &self,
+        account: &str,
+        names: &[String],
+    ) -> Result<crate::mailbox_status::FolderFacts, MailboxBackendError> {
+        crate::mailbox_status::validate_fact_names(account, names)?;
+        let snapshot = self.folder_metadata(account)?;
+        let statuses = names
+            .iter()
+            .map(|name| self.mailbox_status(account, name))
+            .collect::<Result<Vec<_>, _>>()?;
+        crate::mailbox_status::FolderFacts::new(account, names, snapshot, statuses)
+    }
+
+    fn mailbox_status(
+        &self,
+        _canonical_username: &str,
+        _mailbox: &str,
+    ) -> Result<crate::mailbox_status::MailboxStatus, MailboxBackendError> {
+        Err(crate::mailbox_status::unavailable())
+    }
+
     fn list_mailboxes(
         &self,
         canonical_username: &str,
@@ -954,6 +1141,17 @@ pub trait MessageViewBackend {
 
 /// A backend capable of searching for messages within one mailbox.
 pub trait MessageSearchBackend {
+    /// Searches one authenticated, explicitly enumerated scope without fanout.
+    fn search_messages_batch(
+        &self,
+        _canonical_username: &str,
+        _request: &MessageSearchBatchRequest,
+    ) -> Result<Vec<MessageSearchResult>, MailboxBackendError> {
+        Err(MailboxBackendError {
+            backend: "message-search-backend",
+            reason: "batch search unavailable".into(),
+        })
+    }
     fn search_messages(
         &self,
         canonical_username: &str,

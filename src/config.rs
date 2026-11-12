@@ -32,6 +32,16 @@ pub const DEFAULT_AUTH_BACKEND_TIMEOUT_SECONDS: u64 = 20;
 /// output because it excludes secret-bearing fields.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppConfig {
+    pub account_runtime: Option<AccountRuntimeConfig>,
+    /// Explicit development delivery eligibility, not proof of MTA locality.
+    /// Absence keeps recovery-contact management unavailable.
+    pub recovery_contact_local_domain: Option<String>,
+    /// Explicitly permits recovery-contact delivery beyond the configured
+    /// local domain. The conservative default remains local-only.
+    pub recovery_contact_external_delivery: bool,
+    pub openpgp_inventory: Option<OpenPgpInventoryConfig>,
+    pub openpgp_crypto: Option<OpenPgpCryptoConfig>,
+    pub openpgp_public_admin: Option<OpenPgpAdminConfig>,
     pub run_mode: AppRunMode,
     pub environment: RuntimeEnvironment,
     pub listen_addr: String,
@@ -41,6 +51,11 @@ pub struct AppConfig {
     pub doveadm_userdb_socket_path: Option<PathBuf>,
     pub mailbox_helper_socket_path: Option<PathBuf>,
     pub mailbox_helper_grant_key_path: Option<PathBuf>,
+    /// Expected local helper or relay principal; absence grants no delete client.
+    pub mailbox_helper_peer_uid: Option<u32>,
+    /// Helper-only read authority. Missing policy never permits permanent delete.
+    pub mailbox_retention_policy_path: Option<PathBuf>,
+    pub sender_authority_path: Option<PathBuf>,
     pub state_root: PathBuf,
     pub log_level: LogLevel,
     pub log_format: LogFormat,
@@ -233,6 +248,381 @@ impl OpenbsdConfinementMode {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OpenPgpInventoryConfig {
+    pub socket: PathBuf,
+    pub key_file: PathBuf,
+    pub helper_uid: u32,
+}
+
+/// Complete private account-service configuration; absence retains legacy mode.
+#[derive(Clone, PartialEq, Eq)]
+pub struct AccountRuntimeConfig {
+    /// Exact canonical identity for a bounded rollout; None preserves global mode.
+    pub rollout_account: Option<String>,
+    pub admission_socket: PathBuf,
+    pub admission_key_file: PathBuf,
+    pub admission_helper_uid: u32,
+    pub mutation_socket: PathBuf,
+    pub mutation_key_file: PathBuf,
+    pub session_proof_key_file: PathBuf,
+    pub mutation_helper_uid: u32,
+}
+/// Fixed local sockets created by the authoritative Rust account service.
+/// Never substitute a cross-host SSH relay socket in production.
+pub(crate) const LOCAL_ACCOUNT_ADMISSION_SOCKET: &str =
+    "/var/run/osmap-account-admission/admission.sock";
+pub(crate) const LOCAL_ACCOUNT_MUTATION_SOCKET: &str =
+    "/var/run/osmap-account-mutation/mutation.sock";
+
+impl std::fmt::Debug for AccountRuntimeConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("AccountRuntimeConfig(<private configuration>)")
+    }
+}
+/// Production account operations always target the native services on this
+/// OpenBSD host. A local SSH relay's Unix socket is still a relay and cannot
+/// substitute for the authoritative native socket. Development fixtures may
+/// use other bounded local Unix socket paths.
+fn validate_single_host_account_runtime(
+    environment: RuntimeEnvironment,
+    account_runtime: Option<&AccountRuntimeConfig>,
+    auth_socket: Option<&Path>,
+    mailbox_socket: Option<&Path>,
+) -> Result<(), BootstrapError> {
+    if environment != RuntimeEnvironment::Production {
+        return Ok(());
+    }
+    let Some(config) = account_runtime else {
+        return Ok(());
+    };
+    // These exact installed bridge endpoints reach the remote mail authority.
+    // Native account authentication/writes use this host's Dovecot and SQL;
+    // retaining bridge paths in the environment does not preserve that route.
+    // Other Unix pathnames alone establish no local/remote authority claim.
+    for (field, actual, remote_bridge) in [
+        (
+            "OSMAP_DOVEADM_AUTH_SOCKET_PATH",
+            auth_socket,
+            "/var/lib/osmap-bridge/run/auth.sock",
+        ),
+        (
+            "OSMAP_MAILBOX_HELPER_SOCKET_PATH",
+            mailbox_socket,
+            "/var/lib/osmap-bridge/run/mailbox.sock",
+        ),
+    ] {
+        if actual == Some(Path::new(remote_bridge)) {
+            return Err(BootstrapError::InvalidConfig {
+                field,
+                reason: "remote mail bridge cannot be combined with native local account authority"
+                    .into(),
+            });
+        }
+    }
+    for (field, actual, expected) in [
+        (
+            "OSMAP_ACCOUNT_ADMISSION_SOCKET",
+            config.admission_socket.as_path(),
+            Path::new(LOCAL_ACCOUNT_ADMISSION_SOCKET),
+        ),
+        (
+            "OSMAP_ACCOUNT_MUTATION_SOCKET",
+            config.mutation_socket.as_path(),
+            Path::new(LOCAL_ACCOUNT_MUTATION_SOCKET),
+        ),
+    ] {
+        if actual != expected {
+            return Err(BootstrapError::InvalidConfig {
+                field,
+                reason: "production account services require native local Unix sockets; relay endpoints are unsupported".into(),
+            });
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn parse_account_runtime(
+    env: &BTreeMap<String, String>,
+) -> Result<Option<AccountRuntimeConfig>, BootstrapError> {
+    const FIELDS: [&str; 7] = [
+        "OSMAP_ACCOUNT_ADMISSION_SOCKET",
+        "OSMAP_ACCOUNT_ADMISSION_KEY_FILE",
+        "OSMAP_ACCOUNT_ADMISSION_HELPER_UID",
+        "OSMAP_ACCOUNT_MUTATION_SOCKET",
+        "OSMAP_ACCOUNT_MUTATION_KEY_FILE",
+        "OSMAP_ACCOUNT_MUTATION_SESSION_PROOF_KEY_FILE",
+        "OSMAP_ACCOUNT_MUTATION_HELPER_UID",
+    ];
+    let error = || {
+        BootstrapError::InvalidConfig { field: "OSMAP_ACCOUNT_ADMISSION_SOCKET", reason: "complete distinct admission/mutation endpoints, purpose keys, session proof and explicit decimal peer UIDs are required together".into() }
+    };
+    let rollout_account = env
+        .get("OSMAP_ACCOUNT_ROLLOUT_ACCOUNT")
+        .map(|account| {
+            crate::account_admission::valid_account(account).map_err(|_| {
+                BootstrapError::InvalidConfig {
+                    field: "OSMAP_ACCOUNT_ROLLOUT_ACCOUNT",
+                    reason: "one exact canonical account is required".into(),
+                }
+            })?;
+            Ok::<_, BootstrapError>(account.clone())
+        })
+        .transpose()?;
+    if FIELDS.iter().all(|field| !env.contains_key(*field)) && rollout_account.is_none() {
+        return Ok(None);
+    }
+    if FIELDS.iter().any(|field| !env.contains_key(*field)) {
+        return Err(error());
+    }
+    let path = |field| parse_optional_absolute_optional_path(env, field)?.ok_or_else(error);
+    let uid = |field: &str| -> Result<u32, BootstrapError> {
+        let text = env.get(field).ok_or_else(error)?;
+        let value = text.parse::<u32>().map_err(|_| error())?;
+        if value.to_string() != *text {
+            return Err(error());
+        }
+        Ok(value)
+    };
+    let value = AccountRuntimeConfig {
+        rollout_account,
+        admission_socket: path(FIELDS[0])?,
+        admission_key_file: path(FIELDS[1])?,
+        admission_helper_uid: uid(FIELDS[2])?,
+        mutation_socket: path(FIELDS[3])?,
+        mutation_key_file: path(FIELDS[4])?,
+        session_proof_key_file: path(FIELDS[5])?,
+        mutation_helper_uid: uid(FIELDS[6])?,
+    };
+    if value.admission_socket == value.mutation_socket
+        || value.admission_key_file == value.mutation_key_file
+        || value.admission_key_file == value.session_proof_key_file
+        || value.mutation_key_file == value.session_proof_key_file
+    {
+        return Err(error());
+    }
+    Ok(Some(value))
+}
+fn parse_openpgp_inventory(
+    env: &BTreeMap<String, String>,
+) -> Result<Option<OpenPgpInventoryConfig>, BootstrapError> {
+    let socket = parse_optional_absolute_optional_path(env, "OSMAP_OPENPGP_INVENTORY_SOCKET")?;
+    let key_file = parse_optional_absolute_optional_path(env, "OSMAP_OPENPGP_INVENTORY_KEY_FILE")?;
+    let uid = env.get("OSMAP_OPENPGP_INVENTORY_HELPER_UID");
+    let error = || BootstrapError::InvalidConfig {
+        field: "OSMAP_OPENPGP_INVENTORY_HELPER_UID",
+        reason:
+            "inventory socket, key file and explicit decimal helper UID must be configured together"
+                .into(),
+    };
+    match (socket, key_file, uid) {
+        (None, None, None) => Ok(None),
+        (Some(socket), Some(key_file), Some(uid))
+            if !uid.is_empty() && uid.len() <= 10 && uid.bytes().all(|b| b.is_ascii_digit()) =>
+        {
+            Ok(Some(OpenPgpInventoryConfig {
+                socket,
+                key_file,
+                helper_uid: uid.parse().map_err(|_| error())?,
+            }))
+        }
+        _ => Err(error()),
+    }
+}
+/// Crypto and public inventory share the same bounded local client settings.
+/// Account homes, fingerprints and key custody stay in helper configuration.
+pub type OpenPgpCryptoConfig = OpenPgpInventoryConfig;
+pub type OpenPgpAdminConfig = OpenPgpInventoryConfig;
+fn parse_openpgp_crypto(
+    env: &BTreeMap<String, String>,
+) -> Result<Option<OpenPgpCryptoConfig>, BootstrapError> {
+    let socket = parse_optional_absolute_optional_path(env, "OSMAP_OPENPGP_CRYPTO_SOCKET")?;
+    let key_file = parse_optional_absolute_optional_path(env, "OSMAP_OPENPGP_CRYPTO_KEY_FILE")?;
+    let uid = env.get("OSMAP_OPENPGP_CRYPTO_HELPER_UID");
+    let error = || BootstrapError::InvalidConfig {
+        field: "OSMAP_OPENPGP_CRYPTO_HELPER_UID",
+        reason:
+            "crypto socket, key file and explicit decimal helper UID must be configured together"
+                .into(),
+    };
+    match (socket, key_file, uid) {
+        (None, None, None) => Ok(None),
+        (Some(socket), Some(key_file), Some(uid))
+            if !uid.is_empty() && uid.len() <= 10 && uid.bytes().all(|b| b.is_ascii_digit()) =>
+        {
+            Ok(Some(OpenPgpCryptoConfig {
+                socket,
+                key_file,
+                helper_uid: uid.parse().map_err(|_| error())?,
+            }))
+        }
+        _ => Err(error()),
+    }
+}
+fn parse_openpgp_public_admin(
+    env: &BTreeMap<String, String>,
+) -> Result<Option<OpenPgpAdminConfig>, BootstrapError> {
+    let socket = parse_optional_absolute_optional_path(env, "OSMAP_OPENPGP_PUBLIC_ADMIN_SOCKET")?;
+    let key_file =
+        parse_optional_absolute_optional_path(env, "OSMAP_OPENPGP_PUBLIC_ADMIN_KEY_FILE")?;
+    let uid = env.get("OSMAP_OPENPGP_PUBLIC_ADMIN_HELPER_UID");
+    let error = || {
+        BootstrapError::InvalidConfig {
+        field: "OSMAP_OPENPGP_PUBLIC_ADMIN_HELPER_UID",
+        reason: "public administration socket, key file and explicit decimal helper UID must be configured together".into(),
+    }
+    };
+    match (socket, key_file, uid) {
+        (None, None, None) => Ok(None),
+        (Some(socket), Some(key_file), Some(uid))
+            if !uid.is_empty() && uid.len() <= 10 && uid.bytes().all(|b| b.is_ascii_digit()) =>
+        {
+            Ok(Some(OpenPgpAdminConfig {
+                socket,
+                key_file,
+                helper_uid: uid.parse().map_err(|_| error())?,
+            }))
+        }
+        _ => Err(error()),
+    }
+}
+fn parse_recovery_contact_local_domain(
+    env: &BTreeMap<String, String>,
+) -> Result<Option<String>, BootstrapError> {
+    let Some(value) = env.get("OSMAP_RECOVERY_CONTACT_LOCAL_DOMAIN") else {
+        return Ok(None);
+    };
+    let invalid = || BootstrapError::InvalidConfig {
+        field: "OSMAP_RECOVERY_CONTACT_LOCAL_DOMAIN",
+        reason: "use one bounded DNS hostname without a port, address or path".into(),
+    };
+    if value.len() > 253
+        || !value.is_ascii()
+        || !value.contains('.')
+        || value.parse::<std::net::IpAddr>().is_ok()
+        || value.split('.').any(|label| {
+            label.is_empty()
+                || label.len() > 63
+                || !label.as_bytes()[0].is_ascii_alphanumeric()
+                || !label.as_bytes()[label.len() - 1].is_ascii_alphanumeric()
+                || !label
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b == b'-')
+        })
+    {
+        return Err(invalid());
+    }
+    Ok(Some(value.to_ascii_lowercase()))
+}
+
+fn parse_recovery_contact_external_delivery(
+    env: &BTreeMap<String, String>,
+) -> Result<bool, BootstrapError> {
+    match env
+        .get("OSMAP_RECOVERY_CONTACT_EXTERNAL_DELIVERY")
+        .map(String::as_str)
+    {
+        None | Some("disabled") => Ok(false),
+        Some("enabled") => Ok(true),
+        Some(_) => Err(BootstrapError::InvalidConfig {
+            field: "OSMAP_RECOVERY_CONTACT_EXTERNAL_DELIVERY",
+            reason: "use exactly enabled or disabled".into(),
+        }),
+    }
+}
+
+#[cfg(test)]
+mod recovery_domain_tests {
+    use super::*;
+
+    #[test]
+    fn recovery_delivery_defaults_off_and_accepts_only_bounded_dns_domain() {
+        assert_eq!(
+            AppConfig::from_env_map(&BTreeMap::new())
+                .unwrap()
+                .recovery_contact_local_domain,
+            None
+        );
+        let map = |value: &str| {
+            BTreeMap::from([("OSMAP_RECOVERY_CONTACT_LOCAL_DOMAIN".into(), value.into())])
+        };
+        assert_eq!(
+            AppConfig::from_env_map(&map("OBSD1.example.test"))
+                .unwrap()
+                .recovery_contact_local_domain
+                .as_deref(),
+            Some("obsd1.example.test")
+        );
+        for invalid in [
+            "",
+            "localhost",
+            "127.0.0.1",
+            "::1",
+            "obsd1.example.test:25",
+            " example.test",
+            "example.test ",
+            "/tmp/example.test",
+            "x..test",
+            "-bad.example",
+            "bad-.example",
+            "*.example.test",
+            "é.example.test",
+            "example.test.",
+            "a@b.test",
+        ] {
+            assert!(
+                matches!(
+                    AppConfig::from_env_map(&map(invalid)),
+                    Err(BootstrapError::InvalidConfig {
+                        field: "OSMAP_RECOVERY_CONTACT_LOCAL_DOMAIN",
+                        ..
+                    })
+                ),
+                "{invalid:?}"
+            );
+        }
+        assert!(
+            parse_recovery_contact_local_domain(&map(&format!("{}.test", "x".repeat(64)))).is_err()
+        );
+        assert!(parse_recovery_contact_local_domain(&map(&format!(
+            "{}.{}.{}.test",
+            "x".repeat(63),
+            "x".repeat(63),
+            "x".repeat(63)
+        )))
+        .is_ok());
+
+        assert!(
+            !AppConfig::from_env_map(&BTreeMap::new())
+                .unwrap()
+                .recovery_contact_external_delivery
+        );
+        for value in ["enabled", "disabled"] {
+            let config = AppConfig::from_env_map(&BTreeMap::from([(
+                "OSMAP_RECOVERY_CONTACT_EXTERNAL_DELIVERY".into(),
+                value.into(),
+            )]))
+            .unwrap();
+            assert_eq!(
+                config.recovery_contact_external_delivery,
+                value == "enabled"
+            );
+        }
+        for invalid in ["", "true", "false", "ENABLED", " enabled"] {
+            assert!(matches!(
+                AppConfig::from_env_map(&BTreeMap::from([(
+                    "OSMAP_RECOVERY_CONTACT_EXTERNAL_DELIVERY".into(),
+                    invalid.into(),
+                )])),
+                Err(BootstrapError::InvalidConfig {
+                    field: "OSMAP_RECOVERY_CONTACT_EXTERNAL_DELIVERY",
+                    ..
+                })
+            ));
+        }
+    }
+}
+
 impl AppConfig {
     /// Loads configuration from the current process environment.
     pub fn from_process_env() -> Result<Self, BootstrapError> {
@@ -348,6 +738,21 @@ impl AppConfig {
             parse_optional_absolute_optional_path(env_map, "OSMAP_DOVEADM_USERDB_SOCKET_PATH")?;
         let mailbox_helper_grant_key_path =
             parse_optional_absolute_optional_path(env_map, "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH")?;
+        let mailbox_helper_peer_uid = parse_optional_u32(env_map, "OSMAP_MAILBOX_HELPER_PEER_UID")?;
+        let sender_authority_path =
+            parse_optional_absolute_optional_path(env_map, "OSMAP_SENDER_AUTHORITY_PATH")?;
+        if sender_authority_path.as_ref().is_some_and(|path| {
+            path.as_os_str().as_encoded_bytes().len() > 4096
+                || path
+                    .as_os_str()
+                    .as_encoded_bytes()
+                    .iter()
+                    .any(|v| v.is_ascii_control())
+        }) {
+            return Err(BootstrapError::InvalidConfig{field:"OSMAP_SENDER_AUTHORITY_PATH",reason:"sender inventory path must be a bounded absolute path without control characters".into()});
+        }
+        let mailbox_retention_policy_path =
+            parse_optional_absolute_optional_path(env_map, "OSMAP_MAILBOX_RETENTION_POLICY_PATH")?;
 
         validate_non_empty("OSMAP_RUN_MODE", &run_mode_value)?;
         validate_non_empty("OSMAP_ENV", &environment_value)?;
@@ -670,7 +1075,20 @@ impl AppConfig {
             mailbox_helper_grant_key_path.as_deref(),
         )?;
 
+        let account_runtime = parse_account_runtime(env_map)?;
+        validate_single_host_account_runtime(
+            environment,
+            account_runtime.as_ref(),
+            doveadm_auth_socket_path.as_deref(),
+            mailbox_helper_socket_path.as_deref(),
+        )?;
         Ok(Self {
+            account_runtime,
+            recovery_contact_local_domain: parse_recovery_contact_local_domain(env_map)?,
+            recovery_contact_external_delivery: parse_recovery_contact_external_delivery(env_map)?,
+            openpgp_inventory: parse_openpgp_inventory(env_map)?,
+            openpgp_crypto: parse_openpgp_crypto(env_map)?,
+            openpgp_public_admin: parse_openpgp_public_admin(env_map)?,
             run_mode,
             environment,
             listen_addr,
@@ -680,6 +1098,9 @@ impl AppConfig {
             doveadm_userdb_socket_path,
             mailbox_helper_socket_path,
             mailbox_helper_grant_key_path,
+            mailbox_helper_peer_uid,
+            mailbox_retention_policy_path,
+            sender_authority_path,
             log_level,
             log_format,
             state_root,
@@ -1001,6 +1422,314 @@ fn is_loopback_listener(listen_addr: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn production_native_account_runtime_refuses_known_remote_mail_bridges() {
+        let local = BTreeMap::<String, String>::from([
+            ("OSMAP_ENV".into(), "production".into()),
+            ("OSMAP_RUN_MODE".into(), "serve".into()),
+            (
+                "OSMAP_DOVEADM_AUTH_SOCKET_PATH".into(),
+                "/var/run/osmap-auth".into(),
+            ),
+            (
+                "OSMAP_MAILBOX_HELPER_SOCKET_PATH".into(),
+                "/var/lib/osmap/run/mailbox-helper.sock".into(),
+            ),
+            (
+                "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH".into(),
+                "/var/lib/osmap/secrets/mailbox-helper-grant.key".into(),
+            ),
+            (
+                "OSMAP_ACCOUNT_ADMISSION_SOCKET".into(),
+                LOCAL_ACCOUNT_ADMISSION_SOCKET.into(),
+            ),
+            (
+                "OSMAP_ACCOUNT_ADMISSION_KEY_FILE".into(),
+                "/private/admission.key".into(),
+            ),
+            ("OSMAP_ACCOUNT_ADMISSION_HELPER_UID".into(), "0".into()),
+            (
+                "OSMAP_ACCOUNT_MUTATION_SOCKET".into(),
+                LOCAL_ACCOUNT_MUTATION_SOCKET.into(),
+            ),
+            (
+                "OSMAP_ACCOUNT_MUTATION_KEY_FILE".into(),
+                "/private/mutation.key".into(),
+            ),
+            (
+                "OSMAP_ACCOUNT_MUTATION_SESSION_PROOF_KEY_FILE".into(),
+                "/private/session-proof.key".into(),
+            ),
+            ("OSMAP_ACCOUNT_MUTATION_HELPER_UID".into(), "0".into()),
+        ]);
+        assert!(AppConfig::from_env_map(&local).is_ok());
+        let mut staging = local.clone();
+        staging.insert("OSMAP_ENV".into(), "staging".into());
+        assert!(AppConfig::from_env_map(&staging).is_ok());
+        // An unfamiliar Unix pathname is not itself evidence of a relay.
+        let mut unfamiliar = local.clone();
+        unfamiliar.insert(
+            "OSMAP_DOVEADM_AUTH_SOCKET_PATH".into(),
+            "/private/other-auth.sock".into(),
+        );
+        assert!(AppConfig::from_env_map(&unfamiliar).is_ok());
+        let remote = [
+            (
+                "OSMAP_DOVEADM_AUTH_SOCKET_PATH",
+                "/var/lib/osmap-bridge/run/auth.sock",
+            ),
+            (
+                "OSMAP_MAILBOX_HELPER_SOCKET_PATH",
+                "/var/lib/osmap-bridge/run/mailbox.sock",
+            ),
+        ];
+        // Each known bridge is enough to expose the mixed authority. Reject
+        // both startup modes, including an account-scoped native rollout.
+        for mode in ["bootstrap", "serve"] {
+            for (field, path) in remote {
+                for rollout in [None, Some("alice@example.test")] {
+                    let mut mixed = local.clone();
+                    mixed.insert("OSMAP_RUN_MODE".into(), mode.into());
+                    mixed.insert(field.into(), path.into());
+                    if let Some(account) = rollout {
+                        mixed.insert("OSMAP_ACCOUNT_ROLLOUT_ACCOUNT".into(), account.into());
+                    }
+                    assert_eq!(
+                        AppConfig::from_env_map(&mixed).unwrap_err(),
+                        BootstrapError::InvalidConfig {
+                            field,
+                            reason: "remote mail bridge cannot be combined with native local account authority".into(),
+                        }
+                    );
+                }
+            }
+        }
+        let mut bridged = local;
+        for (field, path) in remote {
+            bridged.insert(field.into(), path.into());
+        }
+        assert!(AppConfig::from_env_map(&bridged).is_err());
+        // The preserved ordinary remote-auth/mailbox profile remains valid.
+        bridged.retain(|field, _| !field.starts_with("OSMAP_ACCOUNT_"));
+        let config = AppConfig::from_env_map(&bridged).unwrap();
+        assert!(config.account_runtime.is_none());
+        assert_eq!(
+            config.doveadm_auth_socket_path.as_deref(),
+            Some(Path::new(remote[0].1))
+        );
+        assert_eq!(
+            config.mailbox_helper_socket_path.as_deref(),
+            Some(Path::new(remote[1].1))
+        );
+    }
+
+    #[test]
+    fn production_account_runtime_requires_native_single_host_endpoints() {
+        let mut env = BTreeMap::<String, String>::from([
+            ("OSMAP_ENV".into(), "production".into()),
+            (
+                "OSMAP_ACCOUNT_ADMISSION_SOCKET".into(),
+                LOCAL_ACCOUNT_ADMISSION_SOCKET.into(),
+            ),
+            (
+                "OSMAP_ACCOUNT_ADMISSION_KEY_FILE".into(),
+                "/private/admission.key".into(),
+            ),
+            ("OSMAP_ACCOUNT_ADMISSION_HELPER_UID".into(), "0".into()),
+            (
+                "OSMAP_ACCOUNT_MUTATION_SOCKET".into(),
+                LOCAL_ACCOUNT_MUTATION_SOCKET.into(),
+            ),
+            (
+                "OSMAP_ACCOUNT_MUTATION_KEY_FILE".into(),
+                "/private/mutation.key".into(),
+            ),
+            (
+                "OSMAP_ACCOUNT_MUTATION_SESSION_PROOF_KEY_FILE".into(),
+                "/private/session-proof.key".into(),
+            ),
+            ("OSMAP_ACCOUNT_MUTATION_HELPER_UID".into(), "0".into()),
+        ]);
+        let native = AppConfig::from_env_map(&env).unwrap();
+        assert!(native.account_runtime.is_some());
+
+        // A local relay socket is not an authoritative local account service.
+        env.insert(
+            "OSMAP_ACCOUNT_ADMISSION_SOCKET".into(),
+            "/var/lib/osmap-bridge/run/admission.sock".into(),
+        );
+        assert!(matches!(
+            AppConfig::from_env_map(&env),
+            Err(BootstrapError::InvalidConfig {
+                field: "OSMAP_ACCOUNT_ADMISSION_SOCKET",
+                ..
+            })
+        ));
+        env.insert(
+            "OSMAP_ACCOUNT_ADMISSION_SOCKET".into(),
+            LOCAL_ACCOUNT_ADMISSION_SOCKET.into(),
+        );
+        env.insert(
+            "OSMAP_ACCOUNT_MUTATION_SOCKET".into(),
+            "/var/lib/osmap-bridge/run/mutation.sock".into(),
+        );
+        assert!(matches!(
+            AppConfig::from_env_map(&env),
+            Err(BootstrapError::InvalidConfig {
+                field: "OSMAP_ACCOUNT_MUTATION_SOCKET",
+                ..
+            })
+        ));
+
+        // Nonproduction disposable fixtures remain possible without granting
+        // any actual native qualification or changing service state.
+        env.insert("OSMAP_ENV".into(), "development".into());
+        assert!(AppConfig::from_env_map(&env).is_ok());
+        assert!(AppConfig::from_env_map(&BTreeMap::from([(
+            "OSMAP_ENV".into(),
+            "production".into()
+        )]))
+        .unwrap()
+        .account_runtime
+        .is_none());
+    }
+
+    #[test]
+    fn account_runtime_config_requires_complete_explicit_distinct_authority() {
+        let fields = [
+            ("OSMAP_ACCOUNT_ADMISSION_SOCKET", "/private/admission.sock"),
+            ("OSMAP_ACCOUNT_ADMISSION_KEY_FILE", "/private/admission.key"),
+            ("OSMAP_ACCOUNT_ADMISSION_HELPER_UID", "1003"),
+            ("OSMAP_ACCOUNT_MUTATION_SOCKET", "/private/mutation.sock"),
+            ("OSMAP_ACCOUNT_MUTATION_KEY_FILE", "/private/mutation.key"),
+            (
+                "OSMAP_ACCOUNT_MUTATION_SESSION_PROOF_KEY_FILE",
+                "/private/proof.key",
+            ),
+            ("OSMAP_ACCOUNT_MUTATION_HELPER_UID", "1004"),
+        ];
+        assert!(AppConfig::from_env_map(&BTreeMap::new())
+            .unwrap()
+            .account_runtime
+            .is_none());
+        let values = fields
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect::<BTreeMap<_, _>>();
+        let config = AppConfig::from_env_map(&values).unwrap();
+        assert!(config.account_runtime.is_some());
+        assert_eq!(
+            config.account_runtime.as_ref().unwrap().rollout_account,
+            None
+        );
+        assert_eq!(
+            format!("{:?}", config.account_runtime.unwrap()),
+            "AccountRuntimeConfig(<private configuration>)"
+        );
+        for (field, _) in fields {
+            let mut incomplete = values.clone();
+            incomplete.remove(field);
+            assert!(AppConfig::from_env_map(&incomplete).is_err(), "{field}");
+        }
+        for (field, value) in [
+            (fields[0].0, "relative"),
+            (fields[1].0, ""),
+            (fields[2].0, "+1"),
+            (fields[2].0, "4294967296"),
+            (fields[6].0, "-1"),
+            (fields[6].0, "01"),
+            (fields[3].0, fields[0].1),
+            (fields[4].0, fields[1].1),
+            (fields[5].0, fields[4].1),
+        ] {
+            let mut changed = values.clone();
+            changed.insert(field.into(), value.into());
+            assert!(AppConfig::from_env_map(&changed).is_err(), "{field}");
+        }
+        let selector = "OSMAP_ACCOUNT_ROLLOUT_ACCOUNT";
+        let mut scoped = values.clone();
+        scoped.insert(selector.into(), "alice@example.test".into());
+        assert_eq!(
+            AppConfig::from_env_map(&scoped)
+                .unwrap()
+                .account_runtime
+                .unwrap()
+                .rollout_account
+                .as_deref(),
+            Some("alice@example.test")
+        );
+        assert!(AppConfig::from_env_map(&BTreeMap::from([(
+            selector.into(),
+            "alice@example.test".into(),
+        )]))
+        .is_err());
+        for bad in [
+            "",
+            " alice@example.test",
+            "alice@example.test ",
+            "*",
+            "alice",
+            "alice@example.test,bob@example.test",
+        ] {
+            scoped.insert(selector.into(), bad.into());
+            assert!(AppConfig::from_env_map(&scoped).is_err(), "{bad}");
+        }
+    }
+    #[test]
+    fn sender_identity_authority_config_is_optional_absolute_and_not_alias_provisioning() {
+        let mut values = BTreeMap::new();
+        assert_eq!(
+            AppConfig::from_env_map(&values)
+                .unwrap()
+                .sender_authority_path,
+            None
+        );
+        values.insert(
+            "OSMAP_SENDER_AUTHORITY_PATH".into(),
+            "/etc/osmap/sender-authority.json".into(),
+        );
+        assert_eq!(
+            AppConfig::from_env_map(&values)
+                .unwrap()
+                .sender_authority_path
+                .as_deref(),
+            Some(Path::new("/etc/osmap/sender-authority.json"))
+        );
+        for bad in ["", "relative/inventory.json", "/bad\0path"] {
+            values.insert("OSMAP_SENDER_AUTHORITY_PATH".into(), bad.into());
+            assert!(AppConfig::from_env_map(&values).is_err());
+        }
+    }
+
+    #[test]
+    fn permanent_delete_config_is_optional_explicit_and_rejects_invalid_authority() {
+        let mut values = BTreeMap::from([
+            ("OSMAP_MAILBOX_HELPER_PEER_UID".into(), "2000".into()),
+            (
+                "OSMAP_MAILBOX_RETENTION_POLICY_PATH".into(),
+                "/var/db/osmap-retention/policy.json".into(),
+            ),
+        ]);
+        let config = AppConfig::from_env_map(&values).unwrap();
+        assert_eq!(config.mailbox_helper_peer_uid, Some(2000));
+        assert_eq!(
+            config.mailbox_retention_policy_path.as_deref(),
+            Some(std::path::Path::new("/var/db/osmap-retention/policy.json"))
+        );
+        for bad in ["", "0", "-1", "4294967296", "not-a-uid"] {
+            values.insert("OSMAP_MAILBOX_HELPER_PEER_UID".into(), bad.into());
+            assert!(AppConfig::from_env_map(&values).is_err());
+        }
+        values.insert("OSMAP_MAILBOX_HELPER_PEER_UID".into(), "2000".into());
+        for bad in ["", "relative/policy.json"] {
+            values.insert("OSMAP_MAILBOX_RETENTION_POLICY_PATH".into(), bad.into());
+            assert!(AppConfig::from_env_map(&values).is_err());
+        }
+        values.clear();
+        let absent = AppConfig::from_env_map(&values).unwrap();
+        assert_eq!(absent.mailbox_helper_peer_uid, None);
+        assert_eq!(absent.mailbox_retention_policy_path, None);
+    }
 
     #[test]
     fn uses_conservative_defaults_when_environment_is_empty() {
@@ -1024,6 +1753,8 @@ mod tests {
         assert_eq!(config.doveadm_userdb_socket_path, None);
         assert_eq!(config.mailbox_helper_socket_path, None);
         assert_eq!(config.mailbox_helper_grant_key_path, None);
+        assert_eq!(config.mailbox_helper_peer_uid, None);
+        assert_eq!(config.mailbox_retention_policy_path, None);
         assert_eq!(config.state_root, std::path::Path::new("/var/lib/osmap"));
         assert_eq!(
             config.state_layout.runtime_dir,
@@ -1958,5 +2689,102 @@ mod tests {
                 expected: "disabled, log-only, or enforce",
             }
         );
+    }
+}
+
+#[cfg(test)]
+mod inventory_config_tests {
+    use super::*;
+    #[test]
+    fn inventory_config_is_explicit_optional_and_bounded() {
+        let empty = BTreeMap::new();
+        assert!(AppConfig::from_env_map(&empty)
+            .unwrap()
+            .openpgp_inventory
+            .is_none());
+        let good = BTreeMap::from([
+            (
+                "OSMAP_OPENPGP_INVENTORY_SOCKET".into(),
+                "/run/osmap/public.sock".into(),
+            ),
+            (
+                "OSMAP_OPENPGP_INVENTORY_KEY_FILE".into(),
+                "/etc/osmap/public.key".into(),
+            ),
+            ("OSMAP_OPENPGP_INVENTORY_HELPER_UID".into(), "1002".into()),
+        ]);
+        assert_eq!(
+            AppConfig::from_env_map(&good)
+                .unwrap()
+                .openpgp_inventory
+                .unwrap()
+                .helper_uid,
+            1002
+        );
+        for key in good.keys() {
+            let mut bad = good.clone();
+            bad.remove(key);
+            assert!(AppConfig::from_env_map(&bad).is_err());
+        }
+        for (key, value) in [
+            ("OSMAP_OPENPGP_INVENTORY_SOCKET", "relative"),
+            ("OSMAP_OPENPGP_INVENTORY_KEY_FILE", "relative"),
+            ("OSMAP_OPENPGP_INVENTORY_HELPER_UID", ""),
+            ("OSMAP_OPENPGP_INVENTORY_HELPER_UID", "-1"),
+            ("OSMAP_OPENPGP_INVENTORY_HELPER_UID", "4294967296"),
+            ("OSMAP_OPENPGP_INVENTORY_HELPER_UID", "+1"),
+        ] {
+            let mut bad = good.clone();
+            bad.insert(key.into(), value.into());
+            assert!(AppConfig::from_env_map(&bad).is_err());
+        }
+    }
+
+    #[test]
+    fn public_admin_config_requires_a_complete_local_helper_binding() {
+        let empty = BTreeMap::new();
+        assert!(AppConfig::from_env_map(&empty)
+            .unwrap()
+            .openpgp_public_admin
+            .is_none());
+        let good = BTreeMap::from([
+            (
+                "OSMAP_OPENPGP_PUBLIC_ADMIN_SOCKET".into(),
+                "/run/osmap/public-admin.sock".into(),
+            ),
+            (
+                "OSMAP_OPENPGP_PUBLIC_ADMIN_KEY_FILE".into(),
+                "/etc/osmap/public-admin.key".into(),
+            ),
+            (
+                "OSMAP_OPENPGP_PUBLIC_ADMIN_HELPER_UID".into(),
+                "1002".into(),
+            ),
+        ]);
+        assert_eq!(
+            AppConfig::from_env_map(&good)
+                .unwrap()
+                .openpgp_public_admin
+                .unwrap()
+                .helper_uid,
+            1002
+        );
+        for key in good.keys() {
+            let mut bad = good.clone();
+            bad.remove(key);
+            assert!(AppConfig::from_env_map(&bad).is_err());
+        }
+        for (key, value) in [
+            ("OSMAP_OPENPGP_PUBLIC_ADMIN_SOCKET", "relative"),
+            ("OSMAP_OPENPGP_PUBLIC_ADMIN_KEY_FILE", "relative"),
+            ("OSMAP_OPENPGP_PUBLIC_ADMIN_HELPER_UID", ""),
+            ("OSMAP_OPENPGP_PUBLIC_ADMIN_HELPER_UID", "-1"),
+            ("OSMAP_OPENPGP_PUBLIC_ADMIN_HELPER_UID", "4294967296"),
+            ("OSMAP_OPENPGP_PUBLIC_ADMIN_HELPER_UID", "+1"),
+        ] {
+            let mut bad = good.clone();
+            bad.insert(key.into(), value.into());
+            assert!(AppConfig::from_env_map(&bad).is_err());
+        }
     }
 }

@@ -1,0 +1,6709 @@
+{
+  "compiled_module_directory_token_count": 1,
+  "controls": [
+    "fixed_authoritative_native_host_ABI",
+    "exact_staged_public_source_parity_before",
+    "fixed_public_executable_loader_custody_and_source_presence",
+    "bounded_nonexecuting_ELF_needed_interpreter_inventory",
+    "compiled_module_directory_token_and_root_custody",
+    "bounded_root_owned_public_module_inventory",
+    "bounded_source_root_dependency_closure_and_unknown_search_records",
+    "exact_existing_null_character_device_custody",
+    "public_metadata_only_zero_target_program_or_operator_config_dispatch",
+    "all_observed_public_nodes_rechecked_same_budget",
+    "exact_staged_public_source_parity_after"
+  ],
+  "count": 11,
+  "dependency_edges": [
+    {
+      "candidates": [
+        "/usr/lib/libz.so.7.2"
+      ],
+      "from": "/usr/local/bin/doveadm",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libz.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libbz2.so.10.4"
+      ],
+      "from": "/usr/local/bin/doveadm",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libbz2.so.10.4"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/liblzma.so.2.4"
+      ],
+      "from": "/usr/local/bin/doveadm",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "liblzma.so.2.4"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/liblz4.so.3.3"
+      ],
+      "from": "/usr/local/bin/doveadm",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "liblz4.so.3.3"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libzstd.so.7.0"
+      ],
+      "from": "/usr/local/bin/doveadm",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libzstd.so.7.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot-storage.so.4.1"
+      ],
+      "from": "/usr/local/bin/doveadm",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot-storage.so.4.1"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot.so.5.0"
+      ],
+      "from": "/usr/local/bin/doveadm",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot.so.5.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libsodium.so.11.1"
+      ],
+      "from": "/usr/local/bin/doveadm",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libsodium.so.11.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libc.so.103.0"
+      ],
+      "from": "/usr/local/bin/doveadm",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libc.so.103.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libreadline.so.6.0"
+      ],
+      "from": "/usr/local/bin/mariadb",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libreadline.so.6.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libcurses.so.16.0"
+      ],
+      "from": "/usr/local/bin/mariadb",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libcurses.so.16.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libssl.so.60.2"
+      ],
+      "from": "/usr/local/bin/mariadb",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libssl.so.60.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libcrypto.so.57.2"
+      ],
+      "from": "/usr/local/bin/mariadb",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libcrypto.so.57.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libz.so.7.2"
+      ],
+      "from": "/usr/local/bin/mariadb",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libz.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libm.so.10.1"
+      ],
+      "from": "/usr/local/bin/mariadb",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libm.so.10.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libexecinfo.so.4.0"
+      ],
+      "from": "/usr/local/bin/mariadb",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libexecinfo.so.4.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libc++.so.12.0"
+      ],
+      "from": "/usr/local/bin/mariadb",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libc++.so.12.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libc++abi.so.9.0"
+      ],
+      "from": "/usr/local/bin/mariadb",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libc++abi.so.9.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/bin/mariadb",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libc.so.103.0"
+      ],
+      "from": "/usr/local/bin/mariadb",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libc.so.103.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libpython3.13.so.0.0"
+      ],
+      "from": "/usr/local/bin/python3.13",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpython3.13.so.0.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libintl.so.8.2"
+      ],
+      "from": "/usr/local/bin/python3.13",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libintl.so.8.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/bin/python3.13",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libutil.so.21.0"
+      ],
+      "from": "/usr/local/bin/python3.13",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libutil.so.21.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libm.so.10.1"
+      ],
+      "from": "/usr/local/bin/python3.13",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libm.so.10.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libc.so.103.0"
+      ],
+      "from": "/usr/local/bin/python3.13",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libc.so.103.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/lib01_acl_plugin.so"
+      ],
+      "from": "/usr/local/lib/dovecot/lib02_imap_acl_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "lib01_acl_plugin.so"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/lib10_mail_crypt_plugin.so"
+      ],
+      "from": "/usr/local/lib/dovecot/lib05_mail_crypt_acl_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "lib10_mail_crypt_plugin.so"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot.so.5.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib05_mail_crypt_acl_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot.so.5.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libiconv.so.7.2"
+      ],
+      "from": "/usr/local/lib/dovecot/lib05_mail_crypt_acl_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libiconv.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot.so.5.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib10_mail_crypt_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot.so.5.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libiconv.so.7.2"
+      ],
+      "from": "/usr/local/lib/dovecot/lib10_mail_crypt_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libiconv.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/lib10_quota_plugin.so"
+      ],
+      "from": "/usr/local/lib/dovecot/lib11_imap_quota_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "lib10_quota_plugin.so"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/lib10_quota_plugin.so"
+      ],
+      "from": "/usr/local/lib/dovecot/lib11_trash_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "lib10_quota_plugin.so"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libstemmer.so.0.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib20_fts_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libstemmer.so.0.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libexttextcat-2.0.so.0.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib20_fts_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libexttextcat-2.0.so.0.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libicui18n.so.23.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib20_fts_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libicui18n.so.23.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libicuuc.so.23.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib20_fts_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libicuuc.so.23.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libicudata.so.23.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib20_fts_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libicudata.so.23.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/lib15_notify_plugin.so"
+      ],
+      "from": "/usr/local/lib/dovecot/lib20_mail_log_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "lib15_notify_plugin.so"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/lib15_notify_plugin.so"
+      ],
+      "from": "/usr/local/lib/dovecot/lib20_push_notification_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "lib15_notify_plugin.so"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/lib15_notify_plugin.so"
+      ],
+      "from": "/usr/local/lib/dovecot/lib20_replication_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "lib15_notify_plugin.so"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libz.so.7.2"
+      ],
+      "from": "/usr/local/lib/dovecot/lib20_zlib_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libz.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libbz2.so.10.4"
+      ],
+      "from": "/usr/local/lib/dovecot/lib20_zlib_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libbz2.so.10.4"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/liblzma.so.2.4"
+      ],
+      "from": "/usr/local/lib/dovecot/lib20_zlib_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "liblzma.so.2.4"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/lib/dovecot/lib20_zlib_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/liblz4.so.3.3"
+      ],
+      "from": "/usr/local/lib/dovecot/lib20_zlib_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "liblz4.so.3.3"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libzstd.so.7.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib20_zlib_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libzstd.so.7.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/lib20_fts_plugin.so"
+      ],
+      "from": "/usr/local/lib/dovecot/lib21_fts_solr_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "lib20_fts_plugin.so"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libstemmer.so.0.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib21_fts_solr_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libstemmer.so.0.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libexttextcat-2.0.so.0.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib21_fts_solr_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libexttextcat-2.0.so.0.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libicui18n.so.23.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib21_fts_solr_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libicui18n.so.23.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libicuuc.so.23.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib21_fts_solr_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libicuuc.so.23.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libicudata.so.23.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib21_fts_solr_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libicudata.so.23.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libexpat.so.17.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib21_fts_solr_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libexpat.so.17.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/lib20_fts_plugin.so"
+      ],
+      "from": "/usr/local/lib/dovecot/lib21_fts_squat_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "lib20_fts_plugin.so"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libstemmer.so.0.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib21_fts_squat_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libstemmer.so.0.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libexttextcat-2.0.so.0.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib21_fts_squat_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libexttextcat-2.0.so.0.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libicui18n.so.23.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib21_fts_squat_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libicui18n.so.23.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libicuuc.so.23.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib21_fts_squat_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libicuuc.so.23.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libicudata.so.23.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib21_fts_squat_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libicudata.so.23.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libz.so.7.2"
+      ],
+      "from": "/usr/local/lib/dovecot/lib30_imap_zlib_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libz.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libbz2.so.10.4"
+      ],
+      "from": "/usr/local/lib/dovecot/lib30_imap_zlib_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libbz2.so.10.4"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/liblzma.so.2.4"
+      ],
+      "from": "/usr/local/lib/dovecot/lib30_imap_zlib_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "liblzma.so.2.4"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/lib/dovecot/lib30_imap_zlib_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/liblz4.so.3.3"
+      ],
+      "from": "/usr/local/lib/dovecot/lib30_imap_zlib_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "liblz4.so.3.3"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libzstd.so.7.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib30_imap_zlib_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libzstd.so.7.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot-sieve.so.4.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib90_sieve_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot-sieve.so.4.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot-storage.so.4.1"
+      ],
+      "from": "/usr/local/lib/dovecot/lib90_sieve_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot-storage.so.4.1"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot.so.5.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib90_sieve_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot.so.5.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot-sieve.so.4.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib95_imap_filter_sieve_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot-sieve.so.4.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot-storage.so.4.1"
+      ],
+      "from": "/usr/local/lib/dovecot/lib95_imap_filter_sieve_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot-storage.so.4.1"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot.so.5.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib95_imap_filter_sieve_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot.so.5.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/lib90_old_stats_plugin.so"
+      ],
+      "from": "/usr/local/lib/dovecot/lib95_imap_old_stats_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "lib90_old_stats_plugin.so"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot-sieve.so.4.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib95_imap_sieve_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot-sieve.so.4.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot-storage.so.4.1"
+      ],
+      "from": "/usr/local/lib/dovecot/lib95_imap_sieve_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot-storage.so.4.1"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot.so.5.0"
+      ],
+      "from": "/usr/local/lib/dovecot/lib95_imap_sieve_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot.so.5.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libssl_iostream_openssl.so"
+      ],
+      "from": "/usr/local/lib/dovecot/libdcrypt_openssl.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libssl_iostream_openssl.so"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libssl.so.60.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libdcrypt_openssl.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libssl.so.60.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libcrypto.so.57.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libdcrypt_openssl.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libcrypto.so.57.2"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libmariadb.so.31.0"
+      ],
+      "from": "/usr/local/lib/dovecot/libdriver_mysql.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libmariadb.so.31.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libz.so.7.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libdriver_mysql.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libz.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libm.so.10.1"
+      ],
+      "from": "/usr/local/lib/dovecot/libdriver_mysql.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libm.so.10.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libssl.so.60.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libdriver_mysql.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libssl.so.60.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libcrypto.so.57.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libdriver_mysql.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libcrypto.so.57.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/lib/dovecot/libdriver_mysql.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libsqlite3.so.37.37"
+      ],
+      "from": "/usr/local/lib/dovecot/libdriver_sqlite.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libsqlite3.so.37.37"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/lib/dovecot/libdriver_sqlite.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libm.so.10.1"
+      ],
+      "from": "/usr/local/lib/dovecot/libdriver_sqlite.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libm.so.10.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libz.so.7.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libdriver_sqlite.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libz.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot-compression.so.1.1"
+      ],
+      "from": "/usr/local/lib/dovecot/libfs_compress.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot-compression.so.1.1"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot.so.5.0"
+      ],
+      "from": "/usr/local/lib/dovecot/libfs_compress.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot.so.5.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libiconv.so.7.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libfs_compress.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libiconv.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libz.so.7.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libfs_compress.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libz.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libbz2.so.10.4"
+      ],
+      "from": "/usr/local/lib/dovecot/libfs_compress.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libbz2.so.10.4"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/liblzma.so.2.4"
+      ],
+      "from": "/usr/local/lib/dovecot/libfs_compress.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "liblzma.so.2.4"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/lib/dovecot/libfs_compress.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/liblz4.so.3.3"
+      ],
+      "from": "/usr/local/lib/dovecot/libfs_compress.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "liblz4.so.3.3"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libzstd.so.7.0"
+      ],
+      "from": "/usr/local/lib/dovecot/libfs_compress.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libzstd.so.7.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot.so.5.0"
+      ],
+      "from": "/usr/local/lib/dovecot/libfs_crypt.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot.so.5.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libiconv.so.7.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libfs_crypt.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libiconv.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot.so.5.0"
+      ],
+      "from": "/usr/local/lib/dovecot/libfs_mail_crypt.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot.so.5.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libiconv.so.7.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libfs_mail_crypt.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libiconv.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libssl.so.60.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libssl_iostream_openssl.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libssl.so.60.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libcrypto.so.57.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libssl_iostream_openssl.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libcrypto.so.57.2"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot-sieve.so.4.0"
+      ],
+      "from": "/usr/local/lib/dovecot/doveadm/lib10_doveadm_sieve_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot-sieve.so.4.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot-storage.so.4.1"
+      ],
+      "from": "/usr/local/lib/dovecot/doveadm/lib10_doveadm_sieve_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot-storage.so.4.1"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot.so.5.0"
+      ],
+      "from": "/usr/local/lib/dovecot/doveadm/lib10_doveadm_sieve_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot.so.5.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot.so.5.0"
+      ],
+      "from": "/usr/local/lib/dovecot/doveadm/libdoveadm_mail_crypt_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot.so.5.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libiconv.so.7.2"
+      ],
+      "from": "/usr/local/lib/dovecot/doveadm/libdoveadm_mail_crypt_plugin.so",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libiconv.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/lib/liblzma.so.2.4",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/lib/libzstd.so.7.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot.so.5.0"
+      ],
+      "from": "/usr/local/lib/dovecot/libdovecot-storage.so.4.1",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot.so.5.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libiconv.so.7.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libdovecot.so.5.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libiconv.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/lib/libsodium.so.11.1",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libcurses.so.16.0"
+      ],
+      "from": "/usr/lib/libreadline.so.6.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libcurses.so.16.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libcrypto.so.57.2"
+      ],
+      "from": "/usr/lib/libssl.so.60.2",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libcrypto.so.57.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libc++abi.so.9.0"
+      ],
+      "from": "/usr/lib/libc++.so.12.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libc++abi.so.9.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libintl.so.8.2"
+      ],
+      "from": "/usr/local/lib/libpython3.13.so.0.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libintl.so.8.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/lib/libpython3.13.so.0.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libutil.so.21.0"
+      ],
+      "from": "/usr/local/lib/libpython3.13.so.0.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libutil.so.21.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libm.so.10.1"
+      ],
+      "from": "/usr/local/lib/libpython3.13.so.0.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libm.so.10.1"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libiconv.so.7.2"
+      ],
+      "from": "/usr/local/lib/libintl.so.8.2",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libiconv.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libicuuc.so.23.0"
+      ],
+      "from": "/usr/local/lib/libicui18n.so.23.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libicuuc.so.23.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libicudata.so.23.0"
+      ],
+      "from": "/usr/local/lib/libicui18n.so.23.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libicudata.so.23.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/lib/libicui18n.so.23.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libm.so.10.1"
+      ],
+      "from": "/usr/local/lib/libicui18n.so.23.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libm.so.10.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libc++.so.12.0"
+      ],
+      "from": "/usr/local/lib/libicui18n.so.23.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libc++.so.12.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libc++abi.so.9.0"
+      ],
+      "from": "/usr/local/lib/libicui18n.so.23.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libc++abi.so.9.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libicudata.so.23.0"
+      ],
+      "from": "/usr/local/lib/libicuuc.so.23.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libicudata.so.23.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/lib/libicuuc.so.23.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libm.so.10.1"
+      ],
+      "from": "/usr/local/lib/libicuuc.so.23.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libm.so.10.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libc++.so.12.0"
+      ],
+      "from": "/usr/local/lib/libicuuc.so.23.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libc++.so.12.0"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libc++abi.so.9.0"
+      ],
+      "from": "/usr/local/lib/libicuuc.so.23.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libc++abi.so.9.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot-storage.so.4.1"
+      ],
+      "from": "/usr/local/lib/dovecot/libdovecot-sieve.so.4.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot-storage.so.4.1"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot.so.5.0"
+      ],
+      "from": "/usr/local/lib/dovecot/libdovecot-sieve.so.4.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot.so.5.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libiconv.so.7.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libdovecot-sieve.so.4.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libiconv.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libz.so.7.2"
+      ],
+      "from": "/usr/local/lib/libmariadb.so.31.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libz.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libm.so.10.1"
+      ],
+      "from": "/usr/local/lib/libmariadb.so.31.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libm.so.10.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libssl.so.60.2"
+      ],
+      "from": "/usr/local/lib/libmariadb.so.31.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libssl.so.60.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libcrypto.so.57.2"
+      ],
+      "from": "/usr/local/lib/libmariadb.so.31.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libcrypto.so.57.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/lib/libmariadb.so.31.0",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libpthread.so.28.1"
+      ],
+      "from": "/usr/local/lib/libsqlite3.so.37.37",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libpthread.so.28.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libm.so.10.1"
+      ],
+      "from": "/usr/local/lib/libsqlite3.so.37.37",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libm.so.10.1"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libz.so.7.2"
+      ],
+      "from": "/usr/local/lib/libsqlite3.so.37.37",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libz.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/lib/libz.so.7.2"
+      ],
+      "from": "/usr/local/lib/dovecot/libdovecot-compression.so.1.1",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libz.so.7.2"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libbz2.so.10.4"
+      ],
+      "from": "/usr/local/lib/dovecot/libdovecot-compression.so.1.1",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libbz2.so.10.4"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/liblzma.so.2.4"
+      ],
+      "from": "/usr/local/lib/dovecot/libdovecot-compression.so.1.1",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "liblzma.so.2.4"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/liblz4.so.3.3"
+      ],
+      "from": "/usr/local/lib/dovecot/libdovecot-compression.so.1.1",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "liblz4.so.3.3"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/libzstd.so.7.0"
+      ],
+      "from": "/usr/local/lib/dovecot/libdovecot-compression.so.1.1",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libzstd.so.7.0"
+    },
+    {
+      "candidates": [
+        "/usr/local/lib/dovecot/libdovecot.so.5.0"
+      ],
+      "from": "/usr/local/lib/dovecot/libdovecot-compression.so.1.1",
+      "resolution": "ONE_SOURCE_ROOT_CANDIDATE",
+      "soname": "libdovecot.so.5.0"
+    }
+  ],
+  "elapsed_seconds": 2.097,
+  "engine_alias": {
+    "ancestry": [
+      [
+        "/usr/local/bin",
+        1027,
+        129600,
+        0,
+        0,
+        16877
+      ],
+      [
+        "/usr/local",
+        1027,
+        2,
+        0,
+        0,
+        16877
+      ],
+      [
+        "/usr",
+        1024,
+        51840,
+        0,
+        0,
+        16877
+      ],
+      [
+        "/",
+        1024,
+        2,
+        0,
+        0,
+        16877
+      ]
+    ],
+    "metadata": {
+      "bytes": 10,
+      "ctime_ns": 1791266413045849564,
+      "device": 1027,
+      "gid": 0,
+      "inode": 129649,
+      "links": 1,
+      "mode": 41453,
+      "mtime_ns": 1791266413045849564,
+      "uid": 0
+    },
+    "path": "/usr/local/bin/python3",
+    "target": "python3.13"
+  },
+  "inventory_children_started": 0,
+  "missing_fixed_public_sources": [
+    "/usr/local/libexec/osmap/account-runtime/account_mutation_entry.py"
+  ],
+  "module_directories": [
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "metadata": {
+        "bytes": 2048,
+        "ctime_ns": 1789320407413824770,
+        "device": 1027,
+        "gid": 0,
+        "inode": 649458,
+        "links": 8,
+        "mode": 16877,
+        "mtime_ns": 1789320407413824770,
+        "uid": 0
+      },
+      "module_names": [
+        "lib01_acl_plugin.so",
+        "lib02_imap_acl_plugin.so",
+        "lib02_lazy_expunge_plugin.so",
+        "lib05_mail_crypt_acl_plugin.so",
+        "lib05_pop3_migration_plugin.so",
+        "lib10_last_login_plugin.so",
+        "lib10_mail_crypt_plugin.so",
+        "lib10_quota_plugin.so",
+        "lib11_imap_quota_plugin.so",
+        "lib11_trash_plugin.so",
+        "lib15_notify_plugin.so",
+        "lib20_charset_alias_plugin.so",
+        "lib20_fts_plugin.so",
+        "lib20_listescape_plugin.so",
+        "lib20_mail_log_plugin.so",
+        "lib20_mailbox_alias_plugin.so",
+        "lib20_notify_status_plugin.so",
+        "lib20_push_notification_plugin.so",
+        "lib20_quota_clone_plugin.so",
+        "lib20_replication_plugin.so",
+        "lib20_var_expand_crypt.so",
+        "lib20_virtual_plugin.so",
+        "lib20_zlib_plugin.so",
+        "lib21_fts_solr_plugin.so",
+        "lib21_fts_squat_plugin.so",
+        "lib30_imap_zlib_plugin.so",
+        "lib90_old_stats_plugin.so",
+        "lib90_sieve_plugin.so",
+        "lib95_imap_filter_sieve_plugin.so",
+        "lib95_imap_old_stats_plugin.so",
+        "lib95_imap_sieve_plugin.so",
+        "lib99_welcome_plugin.so",
+        "libdcrypt_openssl.so",
+        "libdriver_mysql.so",
+        "libdriver_sqlite.so",
+        "libfs_compress.so",
+        "libfs_crypt.so",
+        "libfs_mail_crypt.so",
+        "libssl_iostream_openssl.so"
+      ],
+      "path": "/usr/local/lib/dovecot"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "metadata": {
+        "bytes": 512,
+        "ctime_ns": 1789320407403846305,
+        "device": 1027,
+        "gid": 0,
+        "inode": 649461,
+        "links": 2,
+        "mode": 16877,
+        "mtime_ns": 1789320407403846305,
+        "uid": 0
+      },
+      "module_names": [
+        "lib10_doveadm_acl_plugin.so",
+        "lib10_doveadm_quota_plugin.so",
+        "lib10_doveadm_sieve_plugin.so",
+        "lib20_doveadm_fts_plugin.so",
+        "libdoveadm_mail_crypt_plugin.so"
+      ],
+      "path": "/usr/local/lib/dovecot/doveadm"
+    }
+  ],
+  "namespace_disposition": "NOT_CREATED",
+  "native_factory_enabled": false,
+  "null_device": {
+    "ancestry": [
+      [
+        "/dev",
+        1024,
+        207360,
+        0,
+        0,
+        16877
+      ],
+      [
+        "/",
+        1024,
+        2,
+        0,
+        0,
+        16877
+      ]
+    ],
+    "metadata": {
+      "bytes": 0,
+      "ctime_ns": 1791275821875822050,
+      "device": 1024,
+      "gid": 0,
+      "inode": 215899,
+      "links": 1,
+      "mode": 8630,
+      "mtime_ns": 1791275821875822050,
+      "uid": 0
+    },
+    "path": "/dev/null",
+    "rdev": 514
+  },
+  "operator_config_reads": 0,
+  "production_SQL_auth_mail_calls": 0,
+  "production_kernel_profile_qualified": false,
+  "provider_mail_calls": 0,
+  "public_nodes": [
+    {
+      "ancestry": [
+        [
+          "/var/run",
+          1024,
+          233316,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/var",
+          1024,
+          233281,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "metadata": {
+        "bytes": 17257,
+        "ctime_ns": 1791266414135822800,
+        "device": 1024,
+        "gid": 0,
+        "inode": 237369,
+        "links": 1,
+        "mode": 33060,
+        "mtime_ns": 1791266414135822800,
+        "uid": 0
+      },
+      "path": "/var/run/ld.so.hints",
+      "public_shared_library": false,
+      "sha256": "b1c6cdab2ab2f9af8be4f1aa65515368aa9e905b47d01a83eeef84f1046b6f34"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/bin",
+          1027,
+          129600,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": "/usr/libexec/ld.so",
+        "needed": [
+          "libz.so.7.2",
+          "libbz2.so.10.4",
+          "liblzma.so.2.4",
+          "liblz4.so.3.3",
+          "libzstd.so.7.0",
+          "libdovecot-storage.so.4.1",
+          "libdovecot.so.5.0",
+          "libsodium.so.11.1",
+          "libc.so.103.0"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 850680,
+        "ctime_ns": 1789320404223846544,
+        "device": 1027,
+        "gid": 7,
+        "inode": 129693,
+        "links": 1,
+        "mode": 33261,
+        "mtime_ns": 1777073787000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/bin/doveadm",
+      "public_shared_library": false,
+      "sha256": "d1536e02bd5804b0f5c0caf5a70ac5308a2bdc2302110c0294e850872c6bf474"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/bin",
+          1027,
+          129600,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": "/usr/libexec/ld.so",
+        "needed": [
+          "libreadline.so.6.0",
+          "libcurses.so.16.0",
+          "libssl.so.60.2",
+          "libcrypto.so.57.2",
+          "libz.so.7.2",
+          "libm.so.10.1",
+          "libexecinfo.so.4.0",
+          "libc++.so.12.0",
+          "libc++abi.so.9.0",
+          "libpthread.so.28.1",
+          "libc.so.103.0"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 5611440,
+        "ctime_ns": 1789320406433818444,
+        "device": 1027,
+        "gid": 7,
+        "inode": 129696,
+        "links": 1,
+        "mode": 33261,
+        "mtime_ns": 1781345592000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/bin/mariadb",
+      "public_shared_library": false,
+      "sha256": "ce584766109d1004ab0ab5fcc5a6635c297e6bde919b52154ca4b5add60e1559"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/bin",
+          1027,
+          129600,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": "/usr/libexec/ld.so",
+        "needed": [
+          "libpython3.13.so.0.0",
+          "libintl.so.8.2",
+          "libpthread.so.28.1",
+          "libutil.so.21.0",
+          "libm.so.10.1",
+          "libc.so.103.0"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 6936,
+        "ctime_ns": 1791266413045849564,
+        "device": 1027,
+        "gid": 7,
+        "inode": 129908,
+        "links": 1,
+        "mode": 33261,
+        "mtime_ns": 1790839169000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/bin/python3.13",
+      "public_shared_library": false,
+      "sha256": "9265c9bbeea9505b503d685471a4749c73fc99583f9bc3555a41658702416517"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/libexec",
+          1024,
+          51885,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 340560,
+        "ctime_ns": 1790865177009242170,
+        "device": 1024,
+        "gid": 7,
+        "inode": 51855,
+        "links": 1,
+        "mode": 33060,
+        "mtime_ns": 1790865177009242170,
+        "uid": 0
+      },
+      "path": "/usr/libexec/ld.so",
+      "public_shared_library": false,
+      "sha256": "47f611e19b50af65f73a4fcb655f73d23710a061e5dd7ab87bd26a7af1c84038"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 123272,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649476,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073788000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib01_acl_plugin.so",
+      "public_shared_library": true,
+      "sha256": "ce8f2ecd2bc75bc05f44ffedf25002876aeacd9791c682504bbed155ee82149d"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "lib01_acl_plugin.so"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 30648,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649477,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073788000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib02_imap_acl_plugin.so",
+      "public_shared_library": true,
+      "sha256": "6c3167c07e3c734ba4dbbc62d945594a5b6e9fd6052b54c66588f6cca1b61f55"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 28728,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649478,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073789000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib02_lazy_expunge_plugin.so",
+      "public_shared_library": true,
+      "sha256": "c524f5c807451a00f707cfb3b9047e6f42229441eb6b2d97f0b43a901c7a2fe1"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "lib10_mail_crypt_plugin.so",
+          "libdovecot.so.5.0",
+          "libiconv.so.7.2"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 19320,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649463,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073789000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib05_mail_crypt_acl_plugin.so",
+      "public_shared_library": true,
+      "sha256": "8d391d75ab0d77b2f8dec9ba9d6b2d68d1c7df31bc194975bd4b7b06e7bed296"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 36248,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649479,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073789000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib05_pop3_migration_plugin.so",
+      "public_shared_library": true,
+      "sha256": "3a53f09382cec4c810862b68a44f8855910f827f6ae1b2f7986835e47c978557"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 12392,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649480,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073789000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib10_last_login_plugin.so",
+      "public_shared_library": true,
+      "sha256": "4e73598f6610868c4bb846fe1bcf776821f856bbb5befef2f79572a3267642c0"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libdovecot.so.5.0",
+          "libiconv.so.7.2"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 56120,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649464,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073789000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib10_mail_crypt_plugin.so",
+      "public_shared_library": true,
+      "sha256": "b90ea3f26d4530336466da59c051d251c777f0cedbc26b5c681468d740f5e1b2"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 131944,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649481,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073789000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib10_quota_plugin.so",
+      "public_shared_library": true,
+      "sha256": "35b71962a5ff8bf13b64c89dc39946fa9d48a928142d09e4c3d6c2b0e5795086"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "lib10_quota_plugin.so"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 16448,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649482,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073790000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib11_imap_quota_plugin.so",
+      "public_shared_library": true,
+      "sha256": "be99a2c7c2de37d5bf4701ce191a9c72ca1235b39500ffe6f9f5b61de06ebbc4"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "lib10_quota_plugin.so"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 19480,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649483,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073790000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib11_trash_plugin.so",
+      "public_shared_library": true,
+      "sha256": "a29d20e6df09047690e173d717a95eb24a0a0a465730bdc331acc8c7d95f278e"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 23024,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649484,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073790000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib15_notify_plugin.so",
+      "public_shared_library": true,
+      "sha256": "84f3b5c88889ad5996448efe5e11117b31b42fa5d022fb14e23f427049c6d3da"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 13424,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649485,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073790000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib20_charset_alias_plugin.so",
+      "public_shared_library": true,
+      "sha256": "b4a748402fb3b2c84a60af08695a33bc31409786edb1c78c0bbbfcfef0ca59ce"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libstemmer.so.0.0",
+          "libexttextcat-2.0.so.0.0",
+          "libicui18n.so.23.0",
+          "libicuuc.so.23.0",
+          "libicudata.so.23.0"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 313816,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649486,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073790000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib20_fts_plugin.so",
+      "public_shared_library": true,
+      "sha256": "d3613f096bc60e518ffc508b08d7f7ea592e2d3679d0bba011d4d09940321a32"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 7208,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649487,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073791000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib20_listescape_plugin.so",
+      "public_shared_library": true,
+      "sha256": "5d58d5f03a1c636d0445b8ac04c4664846d0db88b0d26aa1a191f74beeec34a2"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "lib15_notify_plugin.so"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 20512,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649488,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073791000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib20_mail_log_plugin.so",
+      "public_shared_library": true,
+      "sha256": "4b34cac7798a9b893759e8208c7b9121b4f4f519447e89385d26e0e5d6e197cd"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 18024,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649489,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073791000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib20_mailbox_alias_plugin.so",
+      "public_shared_library": true,
+      "sha256": "a3174491a96fad126d51fe23860bfc04dbb0e6620662e3cdda493535508fcb9b"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 21864,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649490,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073791000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib20_notify_status_plugin.so",
+      "public_shared_library": true,
+      "sha256": "69af9d2ad572ee5f315ea8db98b6747cd2bba9f9efc26357687db452e2ca9065"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "lib15_notify_plugin.so"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 73656,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649491,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073791000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib20_push_notification_plugin.so",
+      "public_shared_library": true,
+      "sha256": "cc60557addba4896c44dcca54e6582e0a2c37b119958e694d659e1496aaf94ed"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 16744,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649492,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073791000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib20_quota_clone_plugin.so",
+      "public_shared_library": true,
+      "sha256": "34dd8b0c209c243710c9f00a2248dff3d1b5b6bdb26fc96f1cfa0d7688e37999"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "lib15_notify_plugin.so"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 19488,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649493,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073792000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib20_replication_plugin.so",
+      "public_shared_library": true,
+      "sha256": "7e98cac6a3ce3deda2ce17822360c910da1b573ddf9026d23718e7934efd9a83"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 15880,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649512,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073792000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib20_var_expand_crypt.so",
+      "public_shared_library": true,
+      "sha256": "5a420d27eae722fef9f882cda7bb75de6ba014e8ef0728482a6bf6573571789b"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 113760,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649494,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073792000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib20_virtual_plugin.so",
+      "public_shared_library": true,
+      "sha256": "183400bc46aab17bb4a02595c17f1b5b7b04730b83f27bc5d048f94e8777ca0f"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libz.so.7.2",
+          "libbz2.so.10.4",
+          "liblzma.so.2.4",
+          "libpthread.so.28.1",
+          "liblz4.so.3.3",
+          "libzstd.so.7.0"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 79480,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649495,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073792000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib20_zlib_plugin.so",
+      "public_shared_library": true,
+      "sha256": "4935904de2a24c6a2239d336431d152bebd6becf074a80ac8f3cac90a88130c3"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "lib20_fts_plugin.so",
+          "libstemmer.so.0.0",
+          "libexttextcat-2.0.so.0.0",
+          "libicui18n.so.23.0",
+          "libicuuc.so.23.0",
+          "libicudata.so.23.0",
+          "libexpat.so.17.0"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 61656,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649496,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073792000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib21_fts_solr_plugin.so",
+      "public_shared_library": true,
+      "sha256": "1253ab565d4a5a9bc56c140cbb067c07cc419f952eacc8a03a4298f00d5fa4fc"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "lib20_fts_plugin.so",
+          "libstemmer.so.0.0",
+          "libexttextcat-2.0.so.0.0",
+          "libicui18n.so.23.0",
+          "libicuuc.so.23.0",
+          "libicudata.so.23.0"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 80560,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649497,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073793000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib21_fts_squat_plugin.so",
+      "public_shared_library": true,
+      "sha256": "89d014fac68e5c666185cc5bd670deabfbb90b4648fb56deb0bc79b688609868"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libz.so.7.2",
+          "libbz2.so.10.4",
+          "liblzma.so.2.4",
+          "libpthread.so.28.1",
+          "liblz4.so.3.3",
+          "libzstd.so.7.0"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 73368,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649498,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073793000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib30_imap_zlib_plugin.so",
+      "public_shared_library": true,
+      "sha256": "86bc3480d66b950f498c27fe53166a6f42cb5f8e1d4af05c7dd60753f2e631f7"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 36248,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649499,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073793000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib90_old_stats_plugin.so",
+      "public_shared_library": true,
+      "sha256": "bc26a7e421110a1374f5db8d274895232ffc998e4ed82b4f9a27319d763c3bef"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libdovecot-sieve.so.4.0",
+          "libdovecot-storage.so.4.1",
+          "libdovecot.so.5.0"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 33752,
+        "ctime_ns": 1789320407493804764,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649529,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777122269000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib90_sieve_plugin.so",
+      "public_shared_library": true,
+      "sha256": "7456d961585e8bf84783bb9bf124ed3dd21c61b607cbc84b8df8e2a58662b4fc"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libdovecot-sieve.so.4.0",
+          "libdovecot-storage.so.4.1",
+          "libdovecot.so.5.0"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 57792,
+        "ctime_ns": 1789320407493804764,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649530,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777122269000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib95_imap_filter_sieve_plugin.so",
+      "public_shared_library": true,
+      "sha256": "bdc8596b6069926e8d1e303742534e5e45587b97178f4ab8f2a4a48b7cccc4e5"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "lib90_old_stats_plugin.so"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 12696,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649500,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073793000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib95_imap_old_stats_plugin.so",
+      "public_shared_library": true,
+      "sha256": "4c89fb7e09060ed204f7a61cbe1ce28cbbb6d2f4d2e0c27ea9a3392d0a260f2b"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libdovecot-sieve.so.4.0",
+          "libdovecot-storage.so.4.1",
+          "libdovecot.so.5.0"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 69848,
+        "ctime_ns": 1789320407493804764,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649531,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777122270000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib95_imap_sieve_plugin.so",
+      "public_shared_library": true,
+      "sha256": "3ca373e400d0baca5c39ccea848cb1d48d887c88de41e15e36ca6a0ab3bdcebd"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 12320,
+        "ctime_ns": 1789320404273817249,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649501,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073793000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/lib99_welcome_plugin.so",
+      "public_shared_library": true,
+      "sha256": "b2f9176bd6faa1f68ff35cca04f4686e59d979da7d7d25b68f75ae10145f66b6"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libssl_iostream_openssl.so",
+          "libssl.so.60.2",
+          "libcrypto.so.57.2"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 89992,
+        "ctime_ns": 1789320404273817249,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649510,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073793000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/libdcrypt_openssl.so",
+      "public_shared_library": true,
+      "sha256": "28c42e2c7b7ff21845fb8e14cddfba2472f1215b7ccafd570ac241ea21672126"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libmariadb.so.31.0",
+          "libz.so.7.2",
+          "libm.so.10.1",
+          "libssl.so.60.2",
+          "libcrypto.so.57.2",
+          "libpthread.so.28.1"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 31688,
+        "ctime_ns": 1789320406593805853,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649524,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073805000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/libdriver_mysql.so",
+      "public_shared_library": true,
+      "sha256": "9496a98c24a8199b0973ee670717e85733436e96664d78357b6759bfb18127d9"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libsqlite3.so.37.37",
+          "libpthread.so.28.1",
+          "libm.so.10.1",
+          "libz.so.7.2"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 24488,
+        "ctime_ns": 1789320404273817249,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649507,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073796000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/libdriver_sqlite.so",
+      "public_shared_library": true,
+      "sha256": "d1df08a8a9b6666e7b61add11198cd2f5aa885a6afbcc07f9136c7257b9ecd03"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libdovecot-compression.so.1.1",
+          "libdovecot.so.5.0",
+          "libiconv.so.7.2",
+          "libz.so.7.2",
+          "libbz2.so.10.4",
+          "liblzma.so.2.4",
+          "libpthread.so.28.1",
+          "liblz4.so.3.3",
+          "libzstd.so.7.0"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 18000,
+        "ctime_ns": 1789320404273817249,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649467,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073796000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/libfs_compress.so",
+      "public_shared_library": true,
+      "sha256": "d7cbbb2771e4fc61a21eb1c460c5558f4284205581b0a5e93d26b0fb6afd72ee"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libdovecot.so.5.0",
+          "libiconv.so.7.2"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 31160,
+        "ctime_ns": 1789320404273817249,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649468,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073796000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/libfs_crypt.so",
+      "public_shared_library": true,
+      "sha256": "4d13603d0d48b7af0bc0d1447235b82a070f6975d0f1a64dd8e33675ab66f1bc"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libdovecot.so.5.0",
+          "libiconv.so.7.2"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 30536,
+        "ctime_ns": 1789320404273817249,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649469,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073797000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/libfs_mail_crypt.so",
+      "public_shared_library": true,
+      "sha256": "9b2defb94c8777e74c0664ac51d23649058bb88de434c0fb0ba7dfb9c177ad2a"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libssl.so.60.2",
+          "libcrypto.so.57.2"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 74096,
+        "ctime_ns": 1789320404273817249,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649508,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073797000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/libssl_iostream_openssl.so",
+      "public_shared_library": true,
+      "sha256": "723cdaeec187d1cdc6e3845908a21c120b577e6d8c8b02e7dc6624c1008a690b"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot/doveadm",
+          1027,
+          649461,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 34816,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649473,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073787000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/doveadm/lib10_doveadm_acl_plugin.so",
+      "public_shared_library": true,
+      "sha256": "fb9c63ad597c01b59c20aa20c2ed7087048bda5579a1a34f3ddbe315bc6c1cd5"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot/doveadm",
+          1027,
+          649461,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 12544,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649474,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073788000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/doveadm/lib10_doveadm_quota_plugin.so",
+      "public_shared_library": true,
+      "sha256": "e530f7f68bf3c78b1e658cf27510e3ba2a33ae3b619b8f43d4c0ce8f2ca15491"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot/doveadm",
+          1027,
+          649461,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libdovecot-sieve.so.4.0",
+          "libdovecot-storage.so.4.1",
+          "libdovecot.so.5.0"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 51816,
+        "ctime_ns": 1789320407483807340,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649528,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777122269000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/doveadm/lib10_doveadm_sieve_plugin.so",
+      "public_shared_library": true,
+      "sha256": "d4290137ab76534c99ec27d5f8f6e48a1da4a5fffde0e72866904b02cfca9e52"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot/doveadm",
+          1027,
+          649461,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 30312,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649475,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073788000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/doveadm/lib20_doveadm_fts_plugin.so",
+      "public_shared_library": true,
+      "sha256": "74cf45284f7a5ff57915d1b4aeac99aad79b1edf373e03a9fe321ad53e20c6b9"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot/doveadm",
+          1027,
+          649461,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libdovecot.so.5.0",
+          "libiconv.so.7.2"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 35768,
+        "ctime_ns": 1789320404263872706,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649462,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073788000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/doveadm/libdoveadm_mail_crypt_plugin.so",
+      "public_shared_library": true,
+      "sha256": "7c159eea7376bf7f11345d92c0c66f0dc80582e05c8cf5e3d2b16e4ae5d54412"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/lib",
+          1024,
+          51841,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 301416,
+        "ctime_ns": 1788488609642755338,
+        "device": 1024,
+        "gid": 7,
+        "inode": 51877,
+        "links": 1,
+        "mode": 33060,
+        "mtime_ns": 1778093099024309730,
+        "uid": 0
+      },
+      "path": "/usr/lib/libz.so.7.2",
+      "public_shared_library": true,
+      "sha256": "628baf292e98b6e0f30d26cc5862847521f8713348244efb1ddd08e8b008e76f"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 91448,
+        "ctime_ns": 1789319250525848839,
+        "device": 1027,
+        "gid": 7,
+        "inode": 622116,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777059432000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/libbz2.so.10.4",
+      "public_shared_library": true,
+      "sha256": "7613cc32a091beb9c8247b3196ab6363c607f92afece5c5d978c5eb2ecd21113"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libpthread.so.28.1"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 241000,
+        "ctime_ns": 1790191446338907334,
+        "device": 1027,
+        "gid": 7,
+        "inode": 623040,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1790100895000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/liblzma.so.2.4",
+      "public_shared_library": true,
+      "sha256": "09cb2b4d617d4f918b2f26c0a47135b1bfe8ef9ad7d307b9962b477ba4f7598c"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 210600,
+        "ctime_ns": 1789319764393800531,
+        "device": 1027,
+        "gid": 7,
+        "inode": 623045,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777061277000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/liblz4.so.3.3",
+      "public_shared_library": true,
+      "sha256": "8b0056ce6af386fcc1fa4a7c6c99c381a4416b65e4a6832e1537b030a45cdfbb"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libpthread.so.28.1"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 910560,
+        "ctime_ns": 1789319764783801315,
+        "device": 1027,
+        "gid": 7,
+        "inode": 623048,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777061726000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/libzstd.so.7.0",
+      "public_shared_library": true,
+      "sha256": "03cd99a96e745d1d9bd13fbbdc83e849b8f3343b02389bda25b91071fadeaad1"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libdovecot.so.5.0"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 1808312,
+        "ctime_ns": 1789320404273817249,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649506,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073795000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/libdovecot-storage.so.4.1",
+      "public_shared_library": true,
+      "sha256": "70b9564549ee6d13ff81e041252a88a6ad14520d2237dcd6ef8fe89c0ac8ab17"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libiconv.so.7.2"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 2305368,
+        "ctime_ns": 1789320404273817249,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649466,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073796000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/libdovecot.so.5.0",
+      "public_shared_library": true,
+      "sha256": "bd8dbc288ab9a8923d23158e0660042da166c7a9eaa8ac1965132bfea71bf7f5"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libpthread.so.28.1"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 756304,
+        "ctime_ns": 1789320401573841141,
+        "device": 1027,
+        "gid": 7,
+        "inode": 623075,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777060478000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/libsodium.so.11.1",
+      "public_shared_library": true,
+      "sha256": "0e7ae6133ecaa81c1def4e48e2b09f4e489f0c87c46d0bbacb7e1e2801b2c75b"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/lib",
+          1024,
+          51841,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 4062696,
+        "ctime_ns": 1790865178039241635,
+        "device": 1024,
+        "gid": 7,
+        "inode": 51955,
+        "links": 1,
+        "mode": 33060,
+        "mtime_ns": 1790865178039241635,
+        "uid": 0
+      },
+      "path": "/usr/lib/libc.so.103.0",
+      "public_shared_library": true,
+      "sha256": "8919957bc3fec48129b32c922b7391730400977b053fb7c56cad4d5f6b06ffbc"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/lib",
+          1024,
+          51841,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libcurses.so.16.0"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 605392,
+        "ctime_ns": 1788488609602753269,
+        "device": 1024,
+        "gid": 7,
+        "inode": 51869,
+        "links": 1,
+        "mode": 33060,
+        "mtime_ns": 1778093151684309934,
+        "uid": 0
+      },
+      "path": "/usr/lib/libreadline.so.6.0",
+      "public_shared_library": true,
+      "sha256": "7aefa6c0b6918ff6b3fb68b51e436c29549778a4b05b70e92faf4e9ef468e40c"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/lib",
+          1024,
+          51841,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 1858696,
+        "ctime_ns": 1788488609632755328,
+        "device": 1024,
+        "gid": 7,
+        "inode": 51850,
+        "links": 5,
+        "mode": 33060,
+        "mtime_ns": 1778093095844310770,
+        "uid": 0
+      },
+      "path": "/usr/lib/libcurses.so.16.0",
+      "public_shared_library": true,
+      "sha256": "563293c1a7eba2b883298baf1901ee5eddb4ec1e7476c0439e91815515db9310"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/lib",
+          1024,
+          51841,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libcrypto.so.57.2"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 1679536,
+        "ctime_ns": 1790836756068902238,
+        "device": 1024,
+        "gid": 7,
+        "inode": 52009,
+        "links": 1,
+        "mode": 33060,
+        "mtime_ns": 1790494295193340563,
+        "uid": 0
+      },
+      "path": "/usr/lib/libssl.so.60.2",
+      "public_shared_library": true,
+      "sha256": "aa66e677f3f2711ba9f48fa96139d02b6ccdaf475ef59160f3497b774eeccec9"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/lib",
+          1024,
+          51841,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 7507192,
+        "ctime_ns": 1790865178809242303,
+        "device": 1024,
+        "gid": 7,
+        "inode": 51959,
+        "links": 1,
+        "mode": 33060,
+        "mtime_ns": 1790865178809242303,
+        "uid": 0
+      },
+      "path": "/usr/lib/libcrypto.so.57.2",
+      "public_shared_library": true,
+      "sha256": "2f9ac0ad147911a0234c3a031ecd6dd96211818c85821893e9a24b4eca700fe8"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/lib",
+          1024,
+          51841,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 595080,
+        "ctime_ns": 1788488609532773239,
+        "device": 1024,
+        "gid": 7,
+        "inode": 51861,
+        "links": 1,
+        "mode": 33060,
+        "mtime_ns": 1778093097104313202,
+        "uid": 0
+      },
+      "path": "/usr/lib/libm.so.10.1",
+      "public_shared_library": true,
+      "sha256": "fa7ea3f0eb694966aa9ca4fc8fd06b4d9caf8d617c402f251607b9991a93c850"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/lib",
+          1024,
+          51841,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 165168,
+        "ctime_ns": 1788488609482759848,
+        "device": 1024,
+        "gid": 7,
+        "inode": 51854,
+        "links": 1,
+        "mode": 33060,
+        "mtime_ns": 1778093151594309643,
+        "uid": 0
+      },
+      "path": "/usr/lib/libexecinfo.so.4.0",
+      "public_shared_library": true,
+      "sha256": "f21c3c9e64c5c224de28cdc4789b1e415f084e8a42042e7470646d861ce895bc"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/lib",
+          1024,
+          51841,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libc++abi.so.9.0"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 7171640,
+        "ctime_ns": 1788488609252786648,
+        "device": 1024,
+        "gid": 7,
+        "inode": 51844,
+        "links": 1,
+        "mode": 33060,
+        "mtime_ns": 1778093152094310637,
+        "uid": 0
+      },
+      "path": "/usr/lib/libc++.so.12.0",
+      "public_shared_library": true,
+      "sha256": "9eeac2b68c629bd5eb54c969a77c9cff581d65612f307c27234e2de85897fddb"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/lib",
+          1024,
+          51841,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 1498024,
+        "ctime_ns": 1788488609272758998,
+        "device": 1024,
+        "gid": 7,
+        "inode": 51845,
+        "links": 1,
+        "mode": 33060,
+        "mtime_ns": 1778093151774309896,
+        "uid": 0
+      },
+      "path": "/usr/lib/libc++abi.so.9.0",
+      "public_shared_library": true,
+      "sha256": "1531d4faeb9d11d36161e577973bcf5e3a0950dbf193694d5bf0dcd89e0c8358"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/lib",
+          1024,
+          51841,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 129408,
+        "ctime_ns": 1788488609592755768,
+        "device": 1024,
+        "gid": 7,
+        "inode": 51867,
+        "links": 1,
+        "mode": 33060,
+        "mtime_ns": 1778093097724311704,
+        "uid": 0
+      },
+      "path": "/usr/lib/libpthread.so.28.1",
+      "public_shared_library": true,
+      "sha256": "28c1d73b08d065b2d9d18e333a67baa2768e657ebe5192260f1123355a50b289"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libintl.so.8.2",
+          "libpthread.so.28.1",
+          "libutil.so.21.0",
+          "libm.so.10.1"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 6988768,
+        "ctime_ns": 1791266413065822690,
+        "device": 1027,
+        "gid": 7,
+        "inode": 622117,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1790839174000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/libpython3.13.so.0.0",
+      "public_shared_library": true,
+      "sha256": "94d36a1d5e8f553b0435ff14d8b5244940019af97d9f80143a4b1d1b34f599f1"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libiconv.so.7.2"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 225560,
+        "ctime_ns": 1789319250485841639,
+        "device": 1027,
+        "gid": 7,
+        "inode": 622104,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777060796000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/libintl.so.8.2",
+      "public_shared_library": true,
+      "sha256": "cac03d904af5558a3966778cd3e798201aa46a25b5c5309e66619cbe7b03f893"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/lib",
+          1024,
+          51841,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 280256,
+        "ctime_ns": 1790836761668901934,
+        "device": 1024,
+        "gid": 7,
+        "inode": 52015,
+        "links": 1,
+        "mode": 33060,
+        "mtime_ns": 1790580669479955730,
+        "uid": 0
+      },
+      "path": "/usr/lib/libutil.so.21.0",
+      "public_shared_library": true,
+      "sha256": "a97c209cb496496dda6971a426b218baabb6c977924498e249375efc1d124ce8"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 1201680,
+        "ctime_ns": 1789319250465849379,
+        "device": 1027,
+        "gid": 7,
+        "inode": 622101,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777059516000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/libiconv.so.7.2",
+      "public_shared_library": true,
+      "sha256": "722157702cfea37316bff0220eec9beb923264382a4f1efcee0d9f0cddec648a"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 1208448,
+        "ctime_ns": 1789320402523848943,
+        "device": 1027,
+        "gid": 7,
+        "inode": 623081,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777061296000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/libstemmer.so.0.0",
+      "public_shared_library": true,
+      "sha256": "203e23bf13f2c0606a790e8e4b5630f99338f312455f2f325dba045b09f171fe"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 23744,
+        "ctime_ns": 1789320402293817283,
+        "device": 1027,
+        "gid": 7,
+        "inode": 623078,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777061354000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/libexttextcat-2.0.so.0.0",
+      "public_shared_library": true,
+      "sha256": "136f3ce31fd301497d227e775984b9dd9f31534332f6d4e37081853b0c9856a5"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libicuuc.so.23.0",
+          "libicudata.so.23.0",
+          "libpthread.so.28.1",
+          "libm.so.10.1",
+          "libc++.so.12.0",
+          "libc++abi.so.9.0"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 5104016,
+        "ctime_ns": 1789320401283837151,
+        "device": 1027,
+        "gid": 7,
+        "inode": 623061,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777061484000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/libicui18n.so.23.0",
+      "public_shared_library": true,
+      "sha256": "9c3954ecb4da52af752cd7c1df26051c1ad5a475f993cc5b760867b552ded56b"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libicudata.so.23.0",
+          "libpthread.so.28.1",
+          "libm.so.10.1",
+          "libc++.so.12.0",
+          "libc++abi.so.9.0"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 2832512,
+        "ctime_ns": 1789320401283837151,
+        "device": 1027,
+        "gid": 7,
+        "inode": 623069,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777061486000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/libicuuc.so.23.0",
+      "public_shared_library": true,
+      "sha256": "8a063957e07987b940b5eaa8b14186575efa546b97c062b839ceb243d4a47cd6"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 2184,
+        "ctime_ns": 1789320401263865367,
+        "device": 1027,
+        "gid": 7,
+        "inode": 623059,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777061483000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/libicudata.so.23.0",
+      "public_shared_library": true,
+      "sha256": "a87f392d8eaba3d2b3dc15fdc7a4a346a3f8ade8614efbc907b3d28adce140f5"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/lib",
+          1024,
+          51841,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 582016,
+        "ctime_ns": 1789320369483821533,
+        "device": 1024,
+        "gid": 7,
+        "inode": 51849,
+        "links": 1,
+        "mode": 33060,
+        "mtime_ns": 1789055792564473154,
+        "uid": 0
+      },
+      "path": "/usr/lib/libexpat.so.17.0",
+      "public_shared_library": true,
+      "sha256": "2de93907fd7000116f26a384997cc22da16cc15853ca3edd125c04c9125ce202"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libdovecot-storage.so.4.1",
+          "libdovecot.so.5.0",
+          "libiconv.so.7.2"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 1020864,
+        "ctime_ns": 1789320407493804764,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649527,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777122270000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/libdovecot-sieve.so.4.0",
+      "public_shared_library": true,
+      "sha256": "bbbfe0ea8a0ba428b567679d28caa295817ac38ca65c2aef6ead74bb0ddbf9f1"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/mysql",
+          1027,
+          649517,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libz.so.7.2",
+          "libm.so.10.1",
+          "libssl.so.60.2",
+          "libcrypto.so.57.2",
+          "libpthread.so.28.1"
+        ],
+        "search_paths": [],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "library_alias": {
+        "ancestry": [
+          [
+            "/usr/local/lib",
+            1027,
+            622080,
+            0,
+            0,
+            16877
+          ],
+          [
+            "/usr/local",
+            1027,
+            2,
+            0,
+            0,
+            16877
+          ],
+          [
+            "/usr",
+            1024,
+            51840,
+            0,
+            0,
+            16877
+          ],
+          [
+            "/",
+            1024,
+            2,
+            0,
+            0,
+            16877
+          ]
+        ],
+        "metadata": {
+          "bytes": 24,
+          "ctime_ns": 1789320406433818444,
+          "device": 1027,
+          "gid": 0,
+          "inode": 623084,
+          "links": 1,
+          "mode": 41453,
+          "mtime_ns": 1789320406433818444,
+          "uid": 0
+        },
+        "path": "/usr/local/lib/libmariadb.so.31.0",
+        "target": "mysql/libmariadb.so.31.0"
+      },
+      "metadata": {
+        "bytes": 459032,
+        "ctime_ns": 1789320406433818444,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649518,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1781345385000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/libmariadb.so.31.0",
+      "public_shared_library": true,
+      "sha256": "2d7a3a1e192118c9f8e2e15d5bb4ee5fe4869809e041ce7934f5aa4bf2008bda",
+      "target_path": "/usr/local/lib/mysql/libmariadb.so.31.0"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libpthread.so.28.1",
+          "libm.so.10.1",
+          "libz.so.7.2"
+        ],
+        "search_paths": [
+          "/usr/local/lib"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 2083640,
+        "ctime_ns": 1789319250425849159,
+        "device": 1027,
+        "gid": 7,
+        "inode": 622096,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777059712000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/libsqlite3.so.37.37",
+      "public_shared_library": true,
+      "sha256": "09fe705cb80f5d34230ea06e82e5699fa1626811b7110ff20a3b60639653d752"
+    },
+    {
+      "ancestry": [
+        [
+          "/usr/local/lib/dovecot",
+          1027,
+          649458,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local/lib",
+          1027,
+          622080,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr/local",
+          1027,
+          2,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/usr",
+          1024,
+          51840,
+          0,
+          0,
+          16877
+        ],
+        [
+          "/",
+          1024,
+          2,
+          0,
+          0,
+          16877
+        ]
+      ],
+      "elf": {
+        "interpreter": null,
+        "needed": [
+          "libz.so.7.2",
+          "libbz2.so.10.4",
+          "liblzma.so.2.4",
+          "liblz4.so.3.3",
+          "libzstd.so.7.0",
+          "libdovecot.so.5.0"
+        ],
+        "search_paths": [
+          "/usr/local/lib/dovecot"
+        ],
+        "static": false,
+        "unknown_search_paths": []
+      },
+      "metadata": {
+        "bytes": 67080,
+        "ctime_ns": 1789320404273817249,
+        "device": 1027,
+        "gid": 7,
+        "inode": 649502,
+        "links": 1,
+        "mode": 33188,
+        "mtime_ns": 1777073794000000000,
+        "uid": 0
+      },
+      "path": "/usr/local/lib/dovecot/libdovecot-compression.so.1.1",
+      "public_shared_library": true,
+      "sha256": "483401458ec39e89deb5a2079bf9e6cd88c2d32ce1a6ef707e0b12dd98bf4e6f"
+    }
+  ],
+  "qualification": "BOUNDED_PUBLIC_METADATA_ONLY_NO_PRODUCTION_KERNEL_GRAPH_MINTED",
+  "source_roots": [
+    "/usr/lib",
+    "/usr/local/lib",
+    "/usr/local/lib/dovecot"
+  ],
+  "status": "PASS",
+  "target_programs_dispatched": 0,
+  "total_public_bytes_per_pass": [
+    62919449,
+    62919449
+  ],
+  "unknown_search_directories": [],
+  "unqualified_search_mechanisms": [
+    "OpenBSD ld.so hints directory/search-order semantics not decoded",
+    "dlopen-loaded non-doveadm module directories not established"
+  ]
+}

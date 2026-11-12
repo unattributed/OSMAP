@@ -1,0 +1,55 @@
+{
+  "schema": "osmap-s04-02-current-observer-independent-review-v1",
+  "reviewed_at": "2026-10-23T09:40:18Z",
+  "reviewer": "/root/delivery_controller",
+  "decision": "CLEAR",
+  "scope": "Offline independent review of the frozen corrected current-observer capture boundary and its focused local table test only. No host contact, dispatch, build, installation, functional journey, public-service operation, repository history operation, or remote mutation was performed or authorized by this review.",
+  "reviewed_artifacts": {
+    "maint/ux/s04_02_observe_current.py": "941643684dc1e66cbbb565ee1eb8f2b83aff9038762bd3b08f3b2d4813795b9d",
+    "maint/ux/test_s04_02_observe_current.py": "59514757453c93679fe68d459874c00fcd79b219799c7acef9c371919163552a",
+    "historical_current137_observer": "03d529fdf77292b4c994e8a7dd315e543bae361daf5b7c7d3d11442099452503"
+  },
+  "embedded_source_reconciliation": {
+    "backend_source_byte_equal_to_historical": true,
+    "backend_source_sha256": "245b08e62f9b588b1ab8ee2ccbaed829b4376adb5caac255993ade250edfc1cf",
+    "backend_source_bytes": 11496,
+    "config_source_byte_equal_to_historical": true,
+    "config_source_sha256": "d6b0a304b3cba6394c2a2f5c212ac47db1ba60fa055abb7a574df2c18785478c",
+    "config_source_bytes": 7255
+  },
+  "findings": [],
+  "review_results": {
+    "observer_identity": "CLEAR: capture selects a closed backend/config contract and every refusal receipt retains the selected observer identity.",
+    "exit_status": "CLEAR: integer SystemExit status is retained exactly; a non-integer SystemExit is normalized to process-failure status 1; missing termination is a distinct refusal.",
+    "structured_failure_evidence": "CLEAR: a schema-valid nonzero observer result is retained in a bounded sanitized receipt with result, reported failure, and reported cleanup status, but is always refused before downstream work.",
+    "cleanup": "CLEAR: backend cleanup_confirmed must be literal true for admission and is retained when reported; false is refused. The config observer has no cleanup claim, and the wrapper preserves that distinction as null rather than inventing one.",
+    "fail_closed_categories": "CLEAR: source-hash mismatch, output overflow, missing exit, missing output, malformed or duplicate/non-finite JSON, invalid or open schema, unsafe effect claims, nonzero exit, unconfirmed cleanup, and unaccepted result all refuse.",
+    "optimization_safety": "CLEAR: the wrapper and focused test contain no Python Assert AST nodes; the source-pin and admission checks are explicit and remain active with -O.",
+    "downstream_gate": "CLEAR: backend capture must admit before config capture, and both must admit before namespace, role, parent, or aggregate prerequisite work. ObserverRefused emits REFUSED and returns 1.",
+    "capture_and_secret_boundary": "CLEAR: captured stdout is UTF-8 counted and capped at 16384 bytes; exception text and unparsed raw output are not retained; only exception class is retained for unexpected failures; closed schemas and literal-false effect flags constrain accepted structured evidence. The unchanged fixed observers retain no raw query or configuration contents.",
+    "dispatcher_envelope": "CLEAR for the reviewed fixed-source path: the 16384-byte inner cap leaves margin under the existing 49152-byte dispatcher stdout cap after the refusal result is nested. A synthetic near-cap valid nonzero backend result produced 16375 inner bytes, a 32652-byte receipt, and a 32841-byte complete outer refusal line. The focused test also checks its structured nonzero receipt remains below 49152 bytes."
+  },
+  "local_verification": {
+    "command": "python3 -B maint/ux/test_s04_02_observe_current.py",
+    "result": "PASS",
+    "normal_reported_cases": 8,
+    "optimized_reported_cases": 8,
+    "failed_admission_advanced": false,
+    "additional_optimized_invocation": "python3 -B -O maint/ux/test_s04_02_observe_current.py: PASS",
+    "covered_refusals": [
+      "NONZERO_EXIT",
+      "MALFORMED_STRUCTURED_OUTPUT",
+      "MISSING_STRUCTURED_OUTPUT",
+      "UNEXPECTED_EXCEPTION",
+      "CLEANUP_UNCONFIRMED",
+      "OUTPUT_BOUND_EXCEEDED",
+      "UNSAFE_RESULT_CLAIM"
+    ],
+    "git_diff_check": "PASS"
+  },
+  "limitations": [
+    "This is source, hash, and focused local control-flow evidence. It does not execute either embedded observer on OpenBSD and does not establish current obsd1 prerequisites, configuration state, cleanup state, or installed behavior.",
+    "CLEAR is limited to the two reviewed hashes. Any content change, including a cap, schema, source pin, receipt, or test change, requires renewed independent review.",
+    "This review supplies no retry, lease, work-order, host-contact, build, journey, deployment, or production authority. Any future dispatch remains subject to fresh explicit operator authority and the applicable ledger, validator, recipe, timing, and independent-review gates."
+  ]
+}

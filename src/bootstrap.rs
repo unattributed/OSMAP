@@ -294,6 +294,12 @@ mod tests {
     #[test]
     fn startup_report_is_operator_readable() {
         let config = AppConfig {
+            recovery_contact_local_domain: None,
+            recovery_contact_external_delivery: false,
+            account_runtime: None,
+            openpgp_inventory: None,
+            openpgp_crypto: None,
+            openpgp_public_admin: None,
             run_mode: AppRunMode::Bootstrap,
             environment: RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),
@@ -307,6 +313,9 @@ mod tests {
             mailbox_helper_grant_key_path: Some(PathBuf::from(
                 "/var/lib/osmap/secrets/mailbox-helper-grant.key",
             )),
+            mailbox_helper_peer_uid: None,
+            mailbox_retention_policy_path: None,
+            sender_authority_path: None,
             openbsd_confinement_mode: crate::config::OpenbsdConfinementMode::Disabled,
             state_root: PathBuf::from("/var/lib/osmap"),
             log_level: LogLevel::Info,

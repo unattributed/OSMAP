@@ -1,0 +1,197 @@
+//! Native Settings presentation, separate from browser route handlers.
+use super::*;
+#[path = "settings_openpgp_ui.rs"]
+mod settings_openpgp_ui;
+pub(crate) use settings_openpgp_ui::render_openpgp_settings;
+#[path = "settings_notifications_ui.rs"]
+mod settings_notifications_ui;
+pub(crate) use settings_notifications_ui::render_notifications_page;
+#[path = "settings_identity_ui.rs"]
+mod settings_identity_ui;
+pub(crate) use settings_identity_ui::{
+    render_identity_page, render_identity_page_with_signature, IdentityPageModel,
+};
+#[path = "settings_password_ui.rs"]
+mod settings_password_ui;
+#[path = "settings_recovery_ui.rs"]
+mod settings_recovery_ui;
+pub(crate) use settings_recovery_ui::{recovery_contact_summary, render_recovery_contact_page};
+#[path = "settings_security_ui.rs"]
+mod settings_security_ui;
+pub(crate) use settings_password_ui::render_password_page;
+use settings_security_ui::public_account_key_summary;
+#[cfg(test)]
+pub(crate) use settings_security_ui::render_security_page;
+pub(crate) use settings_security_ui::render_security_page_with_recovery;
+#[path = "settings_privacy_ui.rs"]
+mod settings_privacy_ui;
+pub(crate) use settings_privacy_ui::render_privacy_page;
+#[path = "settings_copies_ui.rs"]
+mod settings_copies_ui;
+pub(crate) use settings_copies_ui::{
+    render_copies_page_with_state, render_folders_page_with_state, CopiesPageState,
+};
+
+#[path = "settings_general_ui.rs"]
+mod settings_general_ui;
+pub(crate) use settings_general_ui::{
+    render_general_page_with_mark_read, GeneralPageState, GeneralSecurityState,
+};
+#[path = "settings_reading_ui.rs"]
+mod settings_reading_ui;
+pub(crate) use settings_reading_ui::{render_reading_page_with_state, ReadingFoldersState};
+#[path = "settings_composition_ui.rs"]
+mod settings_composition_ui;
+pub(crate) use settings_composition_ui::render_composition_page_with_signature;
+
+pub(crate) fn render_appearance_page(
+    model: &SettingsPageModel<'_>,
+    preferences: &crate::appearance::AppearanceSettings,
+) -> TrustedHtml {
+    let mut themes = String::new();
+    for (value, label, icon, hint) in [
+        ("light", "Light", "☼", "Light colours"),
+        ("dark", "Dark", "☾", "Dark colours"),
+        ("system", "System", "◫", "Match device"),
+    ] {
+        themes.push_str(&format!(concat!(
+            "<label class=\"settings-theme settings-theme-{value}\"><input class=\"sr-only\" type=\"radio\" name=\"appearance\" value=\"{value}\" aria-label=\"{label}\"{checked}>",
+            "<span class=\"settings-theme-icon\" aria-hidden=\"true\">{icon}</span><strong>{label}</strong>",
+            "<span class=\"settings-theme-selected\" aria-hidden=\"true\">Selected</span><span class=\"settings-theme-hint\" aria-hidden=\"true\">{hint}</span></label>"
+        ), value=value, label=label, icon=icon, hint=hint,
+            checked = if preferences.theme.as_str() == value { " checked" } else { "" }));
+    }
+    let density = select_options(
+        preferences.density.as_str(),
+        &[("comfortable", "Comfortable"), ("compact", "Compact")],
+    );
+    let font = select_options(
+        preferences.font_size.as_str(),
+        &[("small", "Small"), ("medium", "Medium"), ("large", "Large")],
+    );
+    let layout = select_options(
+        preferences.reader_layout.as_str(),
+        &[
+            ("split", "Split list + reader"),
+            ("stacked", "Stacked list + reader"),
+        ],
+    );
+    let presentation_style = select_options(
+        preferences.presentation_style.as_str(),
+        &[("text_labels", "Text labels"), ("icons", "Icons")],
+    );
+    let success = model
+        .success_message
+        .map(|value| {
+            format!(
+                "<div class=\"notice notice-success\" role=\"status\">{}</div>",
+                escape_html(value)
+            )
+        })
+        .unwrap_or_default();
+    let error = model
+        .error_message
+        .map(|value| {
+            format!(
+                "<div class=\"notice notice-error\" role=\"alert\">{}</div>",
+                escape_html(value)
+            )
+        })
+        .unwrap_or_default();
+    TrustedHtml::from_template(format!(concat!(
+        "{header}<main id=\"main-content\" class=\"page-shell settings-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Settings</h1><p>Control theme, density, typography and reader layout.</p></div>{success}{error}",
+        "<div class=\"settings-layout\">{navigation}<section class=\"settings-content\" aria-labelledby=\"settings-appearance-title\"><h2 id=\"settings-appearance-title\">Appearance</h2>",
+        "<form class=\"settings-display-form\" method=\"post\" action=\"/settings/display\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\">",
+        "<fieldset class=\"settings-themes\"><legend class=\"sr-only\">Theme</legend>{themes}</fieldset><div class=\"settings-appearance-grid\"><div class=\"settings-display-fields\">",
+        "<div class=\"settings-field\"><label for=\"settings-density\">Density</label><select id=\"settings-density\" name=\"density\">{density}</select></div>",
+        "<div class=\"settings-field\"><label for=\"settings-font-size\">Font size</label><select id=\"settings-font-size\" name=\"font_size\">{font}</select></div>",
+        "<div class=\"settings-field\"><label for=\"settings-reader-layout\">Reader layout</label><select id=\"settings-reader-layout\" name=\"reader_layout\">{layout}</select></div>",
+        "<div class=\"settings-field\"><label for=\"settings-presentation-style\">Presentation style</label><select id=\"settings-presentation-style\" name=\"presentation_style\">{presentation_style}</select><p class=\"settings-field-help\">Use Icons for compact desktop actions, with names on hover or keyboard focus. Touch devices keep visible labels.</p></div>",
+        "<div class=\"settings-field settings-toggle-field\"><label for=\"settings-show-avatars\">Show avatars</label><input class=\"settings-switch\" id=\"settings-show-avatars\" type=\"checkbox\" role=\"switch\" name=\"show_avatars\" value=\"1\"{avatars_checked}></div>",
+        "<div class=\"settings-field settings-toggle-field\"><label for=\"settings-message-preview\">Message preview</label><input class=\"settings-switch\" id=\"settings-message-preview\" type=\"checkbox\" role=\"switch\" name=\"message_preview\" value=\"1\"{preview_checked}></div></div>",
+        "<section class=\"settings-preview\" aria-labelledby=\"settings-preview-title\" data-preview-theme=\"{theme}\" data-preview-density=\"{saved_density}\" data-preview-font=\"{saved_font}\" data-preview-avatars=\"{avatars}\" data-preview-snippet=\"{snippet}\" data-preview-layout=\"{saved_layout}\"><h3 id=\"settings-preview-title\">Selected preview</h3><p class=\"settings-preview-help\">Preview follows your selections. Mailbox settings change only after Save changes.</p><div class=\"settings-preview-layout\">",
+        "<div class=\"settings-preview-message\"><span class=\"settings-preview-avatar\" aria-hidden=\"true\">S</span><div><strong>Sample message</strong><span class=\"settings-preview-snippet\">A short example of a message preview.</span></div></div>",
+        "<div class=\"settings-preview-reader\"><p>Sample reader content.</p><p class=\"settings-preview-layout-note\"><span class=\"settings-preview-split\">Split list + reader</span><span class=\"settings-preview-stacked\">Stacked list + reader</span></p></div></div><p class=\"settings-preview-saved\">Saved: {theme}, {saved_density}, {saved_font}, {layout_label}; avatars {avatars}, message preview {snippet}.</p></section></div>",
+        "<div class=\"settings-save-row\"><button class=\"primary-button\" type=\"submit\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save changes</span></button></div></form></section></div></main>"
+    ), header=app_header(model.canonical_username, model.csrf_token, "settings-appearance"),
+        success=success, error=error, themes=themes, density=density, font=font, layout=layout, presentation_style=presentation_style,
+        navigation=settings_navigation("appearance"), csrf=escape_html(model.csrf_token),
+        avatars_checked=if preferences.show_avatars { " checked" } else { "" }, preview_checked=if preferences.message_preview { " checked" } else { "" },
+        theme=preferences.theme.as_str(), saved_density=preferences.density.as_str(), saved_font=preferences.font_size.as_str(),
+        avatars=preferences.show_avatars, snippet=preferences.message_preview, saved_layout=preferences.reader_layout.as_str(),
+        layout_label=if preferences.reader_layout.as_str()=="split" { "Split list + reader" } else { "Stacked list + reader" }))
+}
+
+fn select_options(selected: &str, options: &[(&str, &str)]) -> String {
+    options
+        .iter()
+        .map(|(value, label)| {
+            format!(
+                "<option value=\"{}\"{}>{}</option>",
+                escape_html(value),
+                if selected == *value { " selected" } else { "" },
+                escape_html(label)
+            )
+        })
+        .collect()
+}
+
+fn settings_navigation(current_section: &str) -> String {
+    let mut result =
+        String::from("<nav class=\"settings-navigation\" aria-label=\"Settings sections\"><ul>");
+    let mut unavailable = false;
+    for (label, section) in [
+        ("General", Some("general")),
+        ("Appearance", Some("appearance")),
+        ("Identity", Some("identity")),
+        ("Reading & Mailbox", Some("reading")),
+        ("Composition", Some("composition")),
+        ("Copies & Folders", Some("copies")),
+        ("Notifications", Some("notifications")),
+        ("Privacy & Security", Some("privacy")),
+        ("OpenPGP", Some("openpgp")),
+        ("Authentication & Recovery", Some("authentication")),
+    ] {
+        if label == "OpenPGP" && current_section == "security" {
+            result.push_str(&format!(
+                "<li><a href=\"/settings?section=security\" aria-current=\"page\">{}</a></li>",
+                presentation_label("Security", "shield")
+            ));
+        }
+        if let Some(section) = section {
+            result.push_str(&format!(
+                "<li><a href=\"/settings?section={section}\"{}>{}</a></li>",
+                if section == current_section {
+                    " aria-current=page"
+                } else {
+                    ""
+                },
+                presentation_label(
+                    label,
+                    match section {
+                        "general" => "settings",
+                        "appearance" => "eye",
+                        "identity" => "people",
+                        "reading" => "inbox",
+                        "composition" => "compose",
+                        "copies" => "folders",
+                        "notifications" => "notifications",
+                        "privacy" => "shield",
+                        "openpgp" => "key",
+                        "authentication" => "shield",
+                        _ => "",
+                    }
+                )
+            ));
+        } else {
+            unavailable = true;
+            result.push_str(&format!("<li><span class=\"settings-section-unavailable\" aria-disabled=\"true\" aria-describedby=\"settings-unavailable-note\">{}</span></li>", escape_html(label)));
+        }
+    }
+    result.push_str("</ul>");
+    if unavailable {
+        result.push_str("<p class=\"settings-navigation-note\" id=\"settings-unavailable-note\">Additional sections are unavailable.</p>");
+    }
+    result.push_str("</nav>");
+    result
+}

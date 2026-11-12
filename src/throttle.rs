@@ -165,6 +165,8 @@ impl LoginThrottleBucketKind {
 pub enum SubmissionThrottleBucketKind {
     CanonicalUserAndRemoteAddr,
     RemoteAddrOnly,
+    CanonicalUserOnly,
+    SchedulerGlobal,
 }
 
 impl SubmissionThrottleBucketKind {
@@ -172,13 +174,17 @@ impl SubmissionThrottleBucketKind {
         match self {
             Self::CanonicalUserAndRemoteAddr => "canonical_user_and_remote_addr",
             Self::RemoteAddrOnly => "remote_addr_only",
+            Self::CanonicalUserOnly => "canonical_user_only",
+            Self::SchedulerGlobal => "scheduler_global",
         }
     }
 
     fn max_submissions(self, policy: SubmissionThrottlePolicy) -> u64 {
         match self {
-            Self::CanonicalUserAndRemoteAddr => policy.canonical_user_max_submissions,
-            Self::RemoteAddrOnly => policy.remote_addr_max_submissions,
+            Self::CanonicalUserAndRemoteAddr | Self::CanonicalUserOnly => {
+                policy.canonical_user_max_submissions
+            }
+            Self::RemoteAddrOnly | Self::SchedulerGlobal => policy.remote_addr_max_submissions,
         }
     }
 }
@@ -306,6 +312,29 @@ pub struct SubmissionThrottleKey {
 }
 
 impl SubmissionThrottleKey {
+    fn scheduled_bucket(canonical_username: &str, global: bool) -> Self {
+        let canonical_username =
+            normalize_component(canonical_username, DEFAULT_USERNAME_MAX_LEN, true);
+        let bucket_kind = if global {
+            SubmissionThrottleBucketKind::SchedulerGlobal
+        } else {
+            SubmissionThrottleBucketKind::CanonicalUserOnly
+        };
+        let mut digest = Sha256::new();
+        digest.update(b"osmap-submission-throttle-v1\0");
+        digest.update(bucket_kind.as_str().as_bytes());
+        digest.update([0]);
+        if !global {
+            digest.update(canonical_username.as_bytes());
+        }
+        Self {
+            key_id: hex_lower(&digest.finalize()),
+            bucket_kind,
+            canonical_username,
+            remote_addr: String::new(),
+        }
+    }
+
     /// Builds the stable canonical-user-plus-remote bucket key.
     pub fn for_canonical_user_and_remote_addr(canonical_username: &str, remote_addr: &str) -> Self {
         let canonical_username =
@@ -913,33 +942,121 @@ where
     }
 }
 
+#[derive(Clone, Copy)]
+enum SubmissionThrottleAudit<'a> {
+    Browser(&'a AuthenticationContext),
+    Scheduled(&'a str),
+}
+impl SubmissionThrottleAudit<'_> {
+    fn scheduled(
+        job_id: &str,
+        action: &'static str,
+        message: &'static str,
+        key: &SubmissionThrottleKey,
+        count: u64,
+    ) -> LogEvent {
+        LogEvent::new(LogLevel::Warn, EventCategory::Submission, action, message)
+            .with_field("public_reason", TOO_MANY_SUBMISSIONS_PUBLIC_REASON)
+            .with_field("canonical_username", &key.canonical_username)
+            .with_field("bucket_kind", key.bucket_kind.as_str())
+            .with_field("submission_count", count.to_string())
+            .with_field("submission_origin", "scheduled")
+            .with_field("scheduled_job_ref", job_id)
+    }
+    fn throttled(self, key: &SubmissionThrottleKey, count: u64, retry: u64) -> LogEvent {
+        match self {
+            Self::Browser(context) => build_submission_throttled_event(context, key, count, retry),
+            Self::Scheduled(job_id) => Self::scheduled(
+                job_id,
+                "submission_throttled",
+                "outbound submission rejected by throttle policy",
+                key,
+                count,
+            )
+            .with_field("retry_after_seconds", retry.to_string()),
+        }
+    }
+    fn engaged(self, key: &SubmissionThrottleKey, count: u64, lockout: u64) -> LogEvent {
+        match self {
+            Self::Browser(context) => {
+                build_submission_lockout_engaged_event(context, key, count, lockout)
+            }
+            Self::Scheduled(job_id) => Self::scheduled(
+                job_id,
+                "submission_throttle_engaged",
+                "submission throttle lockout engaged",
+                key,
+                count,
+            )
+            .with_field("lockout_seconds", lockout.to_string()),
+        }
+    }
+}
 impl<S, T> SubmissionThrottleService<S, T>
 where
     S: LoginThrottleStore,
     T: TimeProvider,
 {
-    /// Checks whether the current outbound submission may proceed.
+    fn browser_keys(context: &AuthenticationContext, account: &str) -> [SubmissionThrottleKey; 3] {
+        // Preserve both historical keys, adding one real cross-origin account cap.
+        let mut account_key = SubmissionThrottleKey::scheduled_bucket(account, false);
+        account_key.remote_addr =
+            normalize_component(&context.remote_addr, DEFAULT_REMOTE_ADDR_MAX_LEN, false);
+        [
+            SubmissionThrottleKey::for_canonical_user_and_remote_addr(
+                account,
+                &context.remote_addr,
+            ),
+            SubmissionThrottleKey::for_remote_addr(account, &context.remote_addr),
+            account_key,
+        ]
+    }
+    fn scheduled_keys(
+        account: &str,
+        job_id: &str,
+    ) -> Result<[SubmissionThrottleKey; 2], LoginThrottleError> {
+        if !crate::identity::CanonicalUsername::parse(account).is_ok_and(|v| v.as_str() == account)
+            || job_id.len() != 32
+            || !job_id
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        {
+            return Err(LoginThrottleError::StoreFailure {
+                reason: "invalid scheduled submission authority".into(),
+            });
+        }
+        Ok([
+            SubmissionThrottleKey::scheduled_bucket(account, false),
+            SubmissionThrottleKey::scheduled_bucket(account, true),
+        ])
+    }
     pub fn check(
         &self,
         context: &AuthenticationContext,
-        canonical_username: &str,
+        account: &str,
     ) -> Result<SubmissionThrottleCheck, LoginThrottleError> {
-        self.store
-            .with_exclusive_lock(|| self.check_unlocked(context, canonical_username))
+        self.store.with_exclusive_lock(|| {
+            self.check_keys_unlocked(
+                SubmissionThrottleAudit::Browser(context),
+                &Self::browser_keys(context, account),
+            )
+        })
     }
-
-    fn check_unlocked(
+    pub(crate) fn check_scheduled(
         &self,
-        context: &AuthenticationContext,
-        canonical_username: &str,
+        account: &str,
+        job_id: &str,
     ) -> Result<SubmissionThrottleCheck, LoginThrottleError> {
-        let keys = [
-            SubmissionThrottleKey::for_canonical_user_and_remote_addr(
-                canonical_username,
-                &context.remote_addr,
-            ),
-            SubmissionThrottleKey::for_remote_addr(canonical_username, &context.remote_addr),
-        ];
+        let keys = Self::scheduled_keys(account, job_id)?;
+        self.store.with_exclusive_lock(|| {
+            self.check_keys_unlocked(SubmissionThrottleAudit::Scheduled(job_id), &keys)
+        })
+    }
+    fn check_keys_unlocked(
+        &self,
+        origin: SubmissionThrottleAudit<'_>,
+        keys: &[SubmissionThrottleKey],
+    ) -> Result<SubmissionThrottleCheck, LoginThrottleError> {
         let now = self.time_provider.unix_timestamp();
         let mut retry_after_seconds = None;
         let mut audit_events = Vec::new();
@@ -956,12 +1073,7 @@ where
                         .map(|current: u64| current.max(current_retry_after))
                         .unwrap_or(current_retry_after),
                 );
-                audit_events.push(build_submission_throttled_event(
-                    context,
-                    &key,
-                    record.failure_count,
-                    current_retry_after,
-                ));
+                audit_events.push(origin.throttled(key, record.failure_count, current_retry_after));
             }
         }
 
@@ -979,29 +1091,33 @@ where
             })
         }
     }
-
-    /// Records one accepted outbound submission for the current session owner.
     pub fn record_submission(
         &self,
         context: &AuthenticationContext,
-        canonical_username: &str,
+        account: &str,
     ) -> Result<SubmissionThrottleRecord, LoginThrottleError> {
-        self.store
-            .with_exclusive_lock(|| self.record_submission_unlocked(context, canonical_username))
+        self.store.with_exclusive_lock(|| {
+            self.record_keys_unlocked(
+                SubmissionThrottleAudit::Browser(context),
+                &Self::browser_keys(context, account),
+            )
+        })
     }
-
-    fn record_submission_unlocked(
+    pub(crate) fn record_scheduled_submission(
         &self,
-        context: &AuthenticationContext,
-        canonical_username: &str,
+        account: &str,
+        job_id: &str,
     ) -> Result<SubmissionThrottleRecord, LoginThrottleError> {
-        let keys = [
-            SubmissionThrottleKey::for_canonical_user_and_remote_addr(
-                canonical_username,
-                &context.remote_addr,
-            ),
-            SubmissionThrottleKey::for_remote_addr(canonical_username, &context.remote_addr),
-        ];
+        let keys = Self::scheduled_keys(account, job_id)?;
+        self.store.with_exclusive_lock(|| {
+            self.record_keys_unlocked(SubmissionThrottleAudit::Scheduled(job_id), &keys)
+        })
+    }
+    fn record_keys_unlocked(
+        &self,
+        origin: SubmissionThrottleAudit<'_>,
+        keys: &[SubmissionThrottleKey],
+    ) -> Result<SubmissionThrottleRecord, LoginThrottleError> {
         let now = self.time_provider.unix_timestamp();
         let mut lockout_engaged = false;
         let mut audit_events = Vec::new();
@@ -1030,9 +1146,8 @@ where
             if record.failure_count >= key.bucket_kind.max_submissions(self.policy) {
                 lockout_engaged = true;
                 record.locked_until = Some(now.saturating_add(self.policy.lockout_seconds));
-                audit_events.push(build_submission_lockout_engaged_event(
-                    context,
-                    &key,
+                audit_events.push(origin.engaged(
+                    key,
                     record.failure_count,
                     self.policy.lockout_seconds,
                 ));
@@ -1053,6 +1168,26 @@ where
     S: LoginThrottleStore,
     T: TimeProvider,
 {
+    /// Atomically reserves a mailbox mutation attempt before any external write.
+    /// A store error refuses the operation; the attempt remains counted if a
+    /// later backend fails or its result is uncertain.
+    pub fn reserve_mail_action(
+        &self,
+        context: &AuthenticationContext,
+        canonical_username: &str,
+    ) -> Result<MessageMoveThrottleCheck, LoginThrottleError> {
+        self.store.with_exclusive_lock(|| {
+            let mut check = self.check_unlocked(context, canonical_username)?;
+            if matches!(check.decision, MessageMoveThrottleDecision::Allowed) {
+                check.audit_events.extend(
+                    self.record_move_unlocked(context, canonical_username)?
+                        .audit_events,
+                );
+            }
+            Ok(check)
+        })
+    }
+
     /// Checks whether one authenticated message-move request may proceed.
     pub fn check(
         &self,
@@ -1440,6 +1575,9 @@ fn parse_u64_field(field: &'static str, value: &str) -> Result<u64, LoginThrottl
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod scheduled_tests {
+        include!("throttle_scheduled_tests.rs");
+    }
     use crate::auth::AuthenticationPolicy;
     use std::collections::BTreeMap;
     use std::path::PathBuf;
@@ -2095,6 +2233,42 @@ mod tests {
                 .action,
             "message_move_throttled"
         );
+    }
+
+    #[test]
+    fn concurrent_mail_action_reservations_cannot_exceed_the_shared_limit() {
+        let dir = temp_dir("osmap-mail-action-reservations");
+        let start = std::sync::Arc::new(std::sync::Barrier::new(12));
+        let handles: Vec<_> = (0..12)
+            .map(|_| {
+                let dir = dir.clone();
+                let start = start.clone();
+                std::thread::spawn(move || {
+                    let service = MessageMoveThrottleService::new(
+                        FileLoginThrottleStore::new(dir),
+                        FixedTimeProvider::new(200),
+                        MessageMoveThrottlePolicy {
+                            canonical_user_max_moves: 3,
+                            remote_addr_max_moves: 10,
+                            move_window_seconds: 300,
+                            lockout_seconds: 60,
+                        },
+                    );
+                    start.wait();
+                    service
+                        .reserve_mail_action(&test_context(), "alice@example.com")
+                        .expect("reservation")
+                        .decision
+                })
+            })
+            .collect();
+        let allowed = handles
+            .into_iter()
+            .map(|handle| handle.join().expect("worker"))
+            .filter(|decision| matches!(decision, MessageMoveThrottleDecision::Allowed))
+            .count();
+        assert_eq!(allowed, 3);
+        fs::remove_dir_all(dir).expect("remove fixture");
     }
 
     #[test]

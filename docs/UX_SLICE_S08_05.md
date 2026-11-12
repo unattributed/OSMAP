@@ -1,0 +1,153 @@
+# S08-05 — Logo continuity
+
+## Owner acceptance — 2026-11-10
+
+**S08-05 = PASS / ACCEPTED / CLOSED.** The owner states:
+
+> I have reviewed all OSMAP pages and APPROVE PASS this slice as complete
+
+This accepts logo continuity across the owner-reviewed OSMAP pages, installed
+as Web SHA256 `f6768bb2caa050eb46e05536b47e67008bc62d2de0a265bc5c88cac96516c7a3`,
+with signed implementation `ca64ec1b16b2b7a19d66a0b71ea523b7918a6872` and
+verified signed delivery `e67a298d48d17e74b245b6dad64149b354efbf0f`.
+Prior engineering, native, browser, installed and independent-review evidence is
+reused. The owner reports all-pages review; no particular browser, viewport or
+sequence of individual actions is inferred. No further S08-05 UAT is pending.
+
+This closeout changes documentation only. No deployment or repeated product
+test is needed. Prior failed/unqualified observations and the two preexisting
+V14 scaffold-consumer failures remain recorded; no full-V14 or release PASS is
+claimed. Original S08 remains accepted. S08-06 and S08-07 stay queued, and the
+separately retained S01-02 parent obligations are not reaccepted by this closeout.
+Normal signed preservation of this acceptance record is a separate delivery.
+
+## Current outcome — 2026-11-10
+
+Use the existing login shield/keyhole logo on every page with the shared OSMAP
+header. The owner clarified that this is a simple logo-continuity correction.
+Keep existing wording, navigation, authentication and page behaviour. Adjust
+only the logo sizing needed by the existing header. No new module, dependency,
+backend operation or page redesign is required.
+
+Original S08 remains owner-accepted and closed. S08-06 icon display mode and
+S08-07 Junk remain separate queued extensions before S09. Documents remains
+removed. The November 9 wider branding plan and partial edit are retained under
+`/home/foo/Downloads/osmap-ux-s08/s08-05/`; they are historical inputs, not
+requirements to change the tagline or run a new page-by-page test campaign.
+
+## Work and checks
+
+Reuse one trusted static SVG in the login renderer and shared authenticated
+header, covering welcome and ordinary pages. Existing branded Settings, reader,
+source/error, folder, notification, Snooze and Outbox renderers use that header.
+Unbranded responses do not gain a new header.
+
+Use one focused regression comparing the actual logo in login, welcome and
+ordinary headers while preserving the home link and existing copy. Check the
+existing synthetic page renderer and a desktop/narrow browser view, including
+light/dark appearance. Run the normal delivery hooks and affected UI gates.
+Qualify the matching OpenBSD Web build and Web-only installation with the
+existing rollback, loaded-binary and preservation checks. Then offer a short
+owner visual check; owner acceptance is separate.
+
+Root owns source, Git, host integration and writing. The dedicated
+`/root/s08_scrum` coordinates; `/root/s08_delivery_review` supplies independent
+QA/security/delivery review. Preserve failures and unknown historical cost.
+Two failures at the same boundary stop retries for combined reassessment.
+Reuse existing tooling and evidence; no new test framework or Python tooling.
+
+Current status: ACCEPTED / CLOSED after the owner's all-pages review above.
+Engineering and publication history below preserves the earlier source-freeze
+state; later verified delivery and owner acceptance supersede its pending flags.
+
+## Engineering result — 2026-11-10
+
+The exact retained login SVG is now reused by the existing shared header.
+Welcome and ordinary-page wording, home/logout links and page behaviour remain
+unchanged. No UI module, backend operation, dependency or service was added.
+
+Focused renderer parity:1PASS; existing synthetic-route baseline:1PASS; exact
+hostile SVG consumer:1PASS, including duplicate/altered/message-contained logo
+refusals. Actual synthetic Edge checks pass for12 routes and8 desktop/narrow
+light/dark layouts. Matching OpenBSD renderer:1PASS; Web candidate build PASS.
+Web-only installation loads SHA256
+`f6768bb2caa050eb46e05536b47e67008bc62d2de0a265bc5c88cac96516c7a3`.
+Loaded-executable/readiness checks pass, including read-only epoch1PASS and
+anonymous live HTTPS login using the exact shared logo. Configuration, owner
+messages/epoch, helper/account/GPG and public-mail PIDs are preserved at install.
+All528 compiler inputs still match the frozen native candidate.
+
+Preflight found the account service already stopped; its earlier stop cause is
+UNKNOWN. One independently reviewed bounded start restored that existing OSMAP
+service without configuration/account/public-mail changes. No login password or
+TOTP was submitted. Private logs remain on the host; only fixed outcomes and
+stream accounting are retained here.
+
+Independent source, hostile-consumer, browser/native/installation/readiness and
+scope review gives GO for this logo-only delivery. Ordinary signed commit/push
+hooks and fresh origin equality remain pending at this source freeze. Their
+actual result will establish publication through Git history and the retained
+delivery receipt; owner visual acceptance remains PENDING.
+
+### Preserved failed or unqualified observations
+
+- Two early hostile selectors selected zero tests: NOT_QUALIFIED, not PASS.
+  Independent reassessment bound the exact name from the real test inventory;
+  the corrected exact invocation passes1/0.
+- Native first dispatch refused script mode0644 before extraction/compilation.
+  Fresh stat and absent extraction verify this cause. Its captured stream is
+  empty because the preflight test had no diagnostic output. Exact newly owned
+  script custody was corrected to0600; the next bounded build passes.
+- First V10 run refused derived inventory drift. Unchanged generators refreshed
+  current count13114 and hashes; refined high0/medium3 remains unchanged.
+- Added-slice catalogue/empty requirement declarations refused. Independent
+  reassessment uses actual parent S01-02/UX01-006 for traceability while retaining
+  all27 original parent obligations separately PENDING. Logo evidence does not
+  close or reaccept that parent. No validator or frozen plan was changed.
+- Aggregate V14 remains FAIL on two preexisting reader/OpenPGP scaffold literal
+  checks. Baseline source already replaced those future/UI-only claims with
+  actual protected rendering. The logo's affected foundation/auth-shell/list
+  checks pass; the remaining inspected compose/account-controls/no-JS/
+  accessibility/final-closeout checks also pass separately. No aggregate V14 or
+  production-release PASS is claimed, and unrelated gate rewrites are deferred.
+
+Evidence: `/home/foo/Downloads/osmap-ux-s08/s08-05/`. Historical wider plan and
+partial header diff are also losslessly preserved with readback hashes under
+`docs/reconciliation/20261110/`. The separate source worktree is untouched.
+Native candidate/source and exact old-binary rollback remain privately retained;
+no uncertain resources were removed. Historical cumulative effort is UNKNOWN.
+
+Historical owner-check invitation: inspect the matching logo across pages and
+layouts. The owner's subsequent all-pages review and explicit PASS above now
+close S08-05; no further owner check is pending.
+
+Signing history: the first normal commit hook passed, then cache-only Shopkeeper
+signing refused with fixed `No pinentry`; no commit was created. The owner
+subsequently confirmed the normal local GPG warm-up succeeded. The next signed
+commit uses that existing agent cache; no passphrase is read or retained here.
+
+The standalone normal developer security-check completed with exit0 after the
+signing-cache refusal:2351 Rust library PASS/0FAIL/90explicit ignores, strict
+Clippy, formatting and all remaining normal checks. Reported local nginx and
+credential/native coverage skips remain unclaimed. The mandatory commit/push
+hooks remain enabled; this result does not bypass them or pass aggregate V14.
+
+## Preserved publication transport failure
+
+Signed implementation `ca64ec1b16b2b7a19d66a0b71ea523b7918a6872` verifies
+with the required Shopkeeper key. Its unchanged normal pre-push security hook
+completed:2351 Rust PASS/0FAIL/90explicit ignores and all normal checks.
+The push itself failed with exit141. During that long hook the SSH client
+reported the remote host closed the GitHub connection. Fresh fetch still showed
+origin at4389ae0 and local ahead1; no publication is claimed for that attempt.
+The specific remote-close cause is UNKNOWN because server diagnostics are not
+available. SSH application keepalives were disabled; idle expiry is a hypothesis,
+not an established cause. Elapsed duration of this attempt is UNMEASURED.
+
+Independent reassessment approves one changed ordinary retry with BatchMode,
+ServerAliveInterval15 and ServerAliveCountMax6, preserving the exact normal
+hook, source and signature requirements. This is a bounded transport mitigation,
+not a proven causal repair. Stop/reassess on another failure. Retain the failed
+push and establish final publication only by fresh exact SHA equality and0/0.
+No new host installation or product test is needed for this evidence-only
+checkpoint; all528 compiled inputs remain unchanged.

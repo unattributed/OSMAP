@@ -158,7 +158,7 @@ where
                 decision: MessageViewDecision::Retrieved {
                     canonical_username: canonical_username.clone(),
                     session_id: session_id.clone(),
-                    message: message.clone(),
+                    message: Box::new(message.clone()),
                 },
                 audit_event: LogEvent::new(
                     LogLevel::Info,
@@ -241,7 +241,6 @@ where
                 .with_field("canonical_username", canonical_username)
                 .with_field("session_ref", audit_session_ref(&session_id))
                 .with_field("mailbox_name", request.mailbox_name.clone())
-                .with_field("query", request.query.clone())
                 .with_field("result_count", results.len().to_string())
                 .with_field("request_id", context.request_id.clone())
                 .with_field("remote_addr", context.remote_addr.clone())
@@ -256,7 +255,6 @@ where
                     &validated_session.record.canonical_username,
                     &validated_session.record.session_id,
                     &request.mailbox_name,
-                    &request.query,
                     &error,
                 ),
             },
@@ -439,7 +437,6 @@ fn build_message_search_failure_event(
     canonical_username: &str,
     session_id: &str,
     mailbox_name: &str,
-    query: &str,
     error: &MailboxBackendError,
 ) -> LogEvent {
     let audit_reason = if error.backend == "message-search-parser" {
@@ -457,14 +454,12 @@ fn build_message_search_failure_event(
     .with_field("canonical_username", canonical_username.to_string())
     .with_field("session_ref", audit_session_ref(session_id))
     .with_field("mailbox_name", mailbox_name.to_string())
-    .with_field("query", query.to_string())
     .with_field(
         "public_reason",
         MailboxPublicFailureReason::TemporarilyUnavailable.as_str(),
     )
     .with_field("audit_reason", audit_reason.as_str())
     .with_field("backend", error.backend)
-    .with_field("backend_reason", error.reason.clone())
     .with_field("request_id", context.request_id.clone())
     .with_field("remote_addr", context.remote_addr.clone())
     .with_field("user_agent", context.user_agent.clone())

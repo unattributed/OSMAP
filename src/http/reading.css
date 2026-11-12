@@ -1,0 +1,47 @@
+/* PAGE-14. Include after settings.css and general.css. */
+body[data-reading-source=false] .reader-source-shortcut { display: none; }
+body[data-reading-attachment-details=false] .reader-file-details { display: none; }
+.settings-reading-page .settings-layout { align-items: start; }
+.settings-reading-page .settings-navigation { min-height: 24.25rem; }
+.settings-reading-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .9rem; min-width: 0; align-items: start; }
+.reading-card-column { min-width: 0; }
+.settings-reading-page .general-card { min-height: 17.5rem; box-shadow: none; }
+.settings-reading-page .general-card h2 { margin-bottom: 1.1rem; }
+.settings-reading-page .general-field { margin-bottom: .65rem; min-height: 2.3rem; }
+.settings-reading-page .general-field:last-child { margin-bottom: 0; }
+.settings-reading-page .general-card > form { margin-bottom: .65rem; }
+.settings-reading-page .general-field input:not(.settings-switch),
+.settings-reading-page .general-field select { min-height: 2.3rem; }
+.settings-reading-page .reading-toggle-field { min-height: 1.6rem; }
+.settings-reading-page .settings-switch { justify-self: start; }
+.settings-reading-page .reading-policy { min-height: 1.6rem; font-size: .875rem; }
+.settings-reading-page .general-enforced { padding: .2rem .5rem; }
+.reading-card-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; margin-top: .8rem; gap: .5rem; }
+.reading-card-actions button { width: auto; max-width: 100%; min-height: 2.2rem; padding: .45rem .65rem; font-size: .8rem; }
+.reading-card-actions button:disabled { color: var(--muted); background: var(--panel-soft); border-color: var(--line); cursor: not-allowed; opacity: 1; }
+.reading-help { margin: .6rem 0 0; color: var(--muted); font-size: .75rem; line-height: 1.5; overflow-wrap: anywhere; }
+.reading-help summary { cursor: pointer; }
+.reading-help p { margin: .4rem 0; }
+.settings-reading-page input:focus-visible,
+.settings-reading-page select:focus-visible,
+.settings-reading-page button:focus-visible,
+.settings-reading-page summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+@media(max-width:85rem) { .settings-reading-grid { grid-template-columns: minmax(0,1fr); } }
+@media(max-width:60rem) { .settings-reading-page .general-card { min-height: 0; } }
+@media(max-width:40rem) {
+  .settings-reading-page .settings-navigation { min-height: 0; }
+  .settings-reading-page .reading-toggle-field,
+  .settings-reading-page .reading-policy { grid-template-columns: minmax(0,1fr) auto; }
+  .settings-reading-page .general-field { margin-bottom: .85rem; }
+  .reading-card-actions { justify-content: flex-start; }
+}
+@media(forced-colors:active) {
+  .settings-reading-page .general-enforced { background: Canvas; color: CanvasText; border-color: CanvasText; }
+  .reading-card-actions button { background: ButtonFace; color: ButtonText; border-color: ButtonText; }
+  .reading-card-actions button:disabled { background: Canvas; color: GrayText; border-color: GrayText; }
+  .settings-reading-page input:focus-visible,
+  .settings-reading-page select:focus-visible,
+  .settings-reading-page button:focus-visible,
+  .settings-reading-page summary:focus-visible { outline-color: Highlight; }
+  /* settings.css restores native checkboxes and hides the drawn switch thumb. */
+}

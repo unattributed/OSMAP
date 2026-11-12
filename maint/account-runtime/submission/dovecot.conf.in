@@ -1,0 +1,68 @@
+# S04-02 fixed dedicated frontend. Source template, not installed configuration.
+# Root renders only already-observed TLS values/private policy key. Every token
+# must be resolved before syntax checking; no private material belongs in Git.
+protocols = submission
+base_dir = /var/run/osmap-account-submission
+state_dir = /var/db/osmap-account-submission
+listen = 127.0.0.1,10.44.0.1
+ssl = required
+ssl_cert = @EXISTING_SSL_CERT_VALUE@
+ssl_key = @EXISTING_SSL_KEY_VALUE@
+ssl_min_protocol = TLSv1.2
+default_internal_user = _dovecot
+default_internal_group = _dovecot
+default_login_user = _osmapsubmit
+auth_mechanisms = plain login
+auth_username_format = %u
+auth_master_user_separator =
+auth_cache_size = 0
+auth_verbose = no
+auth_debug = no
+auth_debug_passwords = no
+auth_verbose_passwords = no
+verbose_proctitle = no
+stats_writer_socket_path =
+auth_policy_server_url = http://127.0.0.1:10058/epoch/
+auth_policy_server_api_header = @EXISTING_POLICY_API_HEADER@
+auth_policy_hash_nonce = osmap-account-submission-epoch-v1
+auth_policy_request_attributes = login=%{requested_username} protocol=%s session_id=%{session} phase=%{passdb:osmap_epoch_phase}
+# Stock auth-policy.c appends tls as a Boolean; do not duplicate that attribute.
+auth_policy_check_before_auth = yes
+auth_policy_check_after_auth = yes
+auth_policy_report_after_auth = no
+auth_policy_reject_on_fail = yes
+auth_policy_log_only = no
+auth_policy_server_timeout_msecs = 500
+passdb {
+  driver = sql
+  args = /etc/osmap/account-submission/dovecot-sql.conf.ext
+}
+service submission-login {
+  process_limit = 1
+  process_min_avail = 1
+  service_count = 0
+  client_limit = 1024
+  user = _osmapsubmit
+  inet_listener submission {
+    address = 127.0.0.1,10.44.0.1
+    port = 587
+  }
+  inet_listener submissions {
+    address = 127.0.0.1,10.44.0.1
+    port = 465
+    ssl = yes
+  }
+}
+service ipc {
+  process_limit = 1
+  service_count = 0
+  unix_listener login/ipc-proxy {
+    mode = 0600
+    user = _osmapsubmit
+  }
+  unix_listener login/ipc-client {
+    mode = 0660
+    user = root
+    group = _osmapcontrol
+  }
+}

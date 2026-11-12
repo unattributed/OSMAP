@@ -45,6 +45,653 @@ pub const DEFAULT_EXTERNAL_COMMAND_OUTPUT_MAX_BYTES: usize = 4 * 1024 * 1024;
 /// Minimal bounded environment supplied to external commands.
 const SAFE_COMMAND_PATH: &str = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin";
 
+/// Password helper's two fixed utility invocations. This is not a web command
+/// interface; SQL text and password input are supplied through private stdin.
+#[cfg(unix)]
+pub(crate) fn password_backend_command(program: &str, args: &[String]) -> io::Result<Command> {
+    use crate::account_password_backend::{HASH_ARGS, HASH_PROGRAM, SQL_ARGS, SQL_PROGRAM};
+    let hash = program == HASH_PROGRAM
+        && args
+            .iter()
+            .map(String::as_str)
+            .eq(HASH_ARGS.iter().copied());
+    let sql =
+        program == SQL_PROGRAM && args.iter().map(String::as_str).eq(SQL_ARGS.iter().copied());
+    let mail = program == HASH_PROGRAM
+        && (crate::account_password_mail::fixed_args(args)
+            || crate::account_password_mail::fixed_control_args(args)
+            || crate::account_password_mail::fixed_stock_args(args, true));
+    if !hash && !sql && !mail {
+        return Err(io::ErrorKind::PermissionDenied.into());
+    }
+    if std::env::current_dir()? != std::path::Path::new("/") {
+        return Err(io::ErrorKind::PermissionDenied.into());
+    }
+    let mut command = Command::new(if sql { SQL_PROGRAM } else { HASH_PROGRAM });
+    command
+        .args(args)
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C");
+    if hash || mail {
+        command
+            .env("CONFIG_FILE", "/dev/null")
+            .env("STATS_WRITER_SOCKET_PATH", "");
+    }
+    Ok(command)
+}
+
+/// Fixed password-service metadata builders share the nonblocking owned-child
+/// runner; this constructor never supplies a shell or caller-selected options.
+#[cfg(unix)]
+pub(crate) fn password_metadata_command(program: &str, args: &[String]) -> io::Result<Command> {
+    if program == crate::account_password_mail::PROGRAM
+        || !crate::account_password_process::fixed_metadata_args(program, args)
+    {
+        return Err(io::ErrorKind::PermissionDenied.into());
+    }
+    if std::env::current_dir()? != std::path::Path::new("/") {
+        return Err(io::ErrorKind::PermissionDenied.into());
+    }
+    let mut command = match program {
+        "/bin/ps" => Command::new("/bin/ps"),
+        "/usr/bin/fstat" => Command::new("/usr/bin/fstat"),
+        "/usr/local/sbin/postconf" => Command::new("/usr/local/sbin/postconf"),
+        "/usr/local/bin/doveconf" => Command::new("/usr/local/bin/doveconf"),
+        "/sbin/pfctl" => Command::new("/sbin/pfctl"),
+        _ => return Err(io::ErrorKind::PermissionDenied.into()),
+    };
+    command
+        .args(args)
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C");
+    Ok(command)
+}
+#[cfg(unix)]
+#[allow(dead_code)] // Retained private FSTAT worker builder; stock starts no observer.
+pub(crate) fn password_fstat_worker_command() -> io::Result<Command> {
+    if std::env::current_dir()? != std::path::Path::new("/") {
+        return Err(io::ErrorKind::PermissionDenied.into());
+    }
+    let mut command = Command::new("/usr/local/libexec/osmap/account-passwd");
+    command
+        .arg(crate::account_password_fstat::WORKER_ARGUMENT)
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C");
+    Ok(command)
+}
+#[cfg(all(unix, test))]
+pub(crate) fn password_fstat_echo_fixture() -> Command {
+    let mut command = Command::new("/bin/cat");
+    command
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C");
+    command
+}
+
+/// Run the fixed command-shape test with the service's pre-seal root cwd.
+/// This avoids changing the parallel test process cwd or adding a post-seal
+/// child chdir, which would require forbidden ancestor pathname authority.
+#[cfg(all(unix, test))]
+pub(crate) fn password_command_shape_fixture() -> io::Result<Command> {
+    let mut command = Command::new(std::env::current_exe()?);
+    command
+        .args([
+            "--exact",
+            "account_password_process::tests::fixed_commands_have_hash_only_isolation_and_no_caller_program",
+        ])
+        .current_dir("/");
+    Ok(command)
+}
+
+#[cfg(all(unix, test))]
+pub(crate) use tests::{password_metadata_spawn_denied_fixture, password_process_fixture_command};
+
+/// Construct only the operator-mapped public inventory worker invocation.
+/// Its caller validates both paths; browser requests cannot supply either path.
+#[cfg(unix)]
+pub(crate) fn public_inventory_command(
+    worker: &std::path::Path,
+    home: &std::path::Path,
+) -> Command {
+    let mut command = Command::new(worker);
+    command
+        .arg(home)
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C")
+        .env("GNUPGHOME", home)
+        .current_dir(home);
+    command
+}
+
+/// Fixed account-admission worker; no browser field becomes argv/environment.
+#[cfg(unix)]
+pub(crate) fn installed_dependencies_command(
+    program: &std::path::Path,
+) -> std::io::Result<Command> {
+    // Only the fixed trusted programs admitted by the OpenBSD resolver may
+    // reach the platform loader's inspection interface.
+    if !crate::openbsd::dependency_program_allowed(program) {
+        return Err(std::io::ErrorKind::PermissionDenied.into());
+    }
+    if program == std::path::Path::new("/usr/local/sbin/postdrop") {
+        // ldd versions which set execpromises cannot exec a setgid target.
+        // Validate the actual native dynamic-loader entry before selecting
+        // its trace-only interface; a static binary must never reach exec.
+        crate::openbsd::validate_postdrop_trace_program()?;
+        return Ok(fixed_postdrop_trace_command());
+    }
+    let mut command = Command::new("/usr/bin/ldd");
+    command
+        .arg(program)
+        .env_clear()
+        .env("LC_ALL", "C")
+        .env("PATH", SAFE_COMMAND_PATH)
+        .current_dir("/");
+    // Standalone modules lack the executable's Dovecot search context. Keep
+    // this fixed protected directory scoped to admitted module traces only;
+    // executable inspection retains its original environment.
+    if matches!(
+        program.parent().and_then(std::path::Path::to_str),
+        Some("/usr/local/lib/dovecot" | "/usr/local/lib/dovecot/doveadm")
+    ) {
+        command.env("LD_LIBRARY_PATH", "/usr/local/lib/dovecot");
+    }
+    Ok(command)
+}
+
+#[cfg(unix)]
+fn fixed_postdrop_trace_command() -> Command {
+    let mut command = Command::new("/usr/local/sbin/postdrop");
+    command
+        .env_clear()
+        .env("LC_ALL", "C")
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LD_TRACE_LOADED_OBJECTS", "true")
+        .current_dir("/");
+    command
+}
+
+/// Fixed account-admission worker; no browser field becomes argv/environment.
+#[cfg(all(unix, test))]
+pub(crate) fn account_admission_command() -> Command {
+    let mut command = fixed_account_admission_command();
+    command.current_dir("/");
+    command
+}
+
+/// Admission's confined parent has already established and rechecked `/`.
+/// Do not issue a pre-exec chdir requiring recursive read authority for `/`.
+#[cfg(unix)]
+pub(crate) fn account_admission_inherited_root_command(
+    program: &std::path::Path,
+) -> std::io::Result<Command> {
+    if std::env::current_dir()? != std::path::Path::new("/")
+        || program.parent() != Some(std::path::Path::new("/usr/local/bin"))
+        || !program.file_name().is_some_and(|name| {
+            crate::account_admission_runtime::python_target_name(std::path::Path::new(name))
+        })
+    {
+        return Err(std::io::ErrorKind::PermissionDenied.into());
+    }
+    let mut command = Command::new(program);
+    configure_account_admission(&mut command);
+    Ok(command)
+}
+#[cfg(all(test, unix))]
+fn fixed_account_admission_command() -> Command {
+    let mut command = Command::new("/usr/local/bin/python3");
+    configure_account_admission(&mut command);
+    command
+}
+#[cfg(unix)]
+fn configure_account_admission(command: &mut Command) {
+    command
+        .args([
+            "-I",
+            "/usr/local/libexec/osmap/account-runtime/account_admission_worker.py",
+        ])
+        .env_clear()
+        .env("PATH", "/usr/local/bin:/usr/bin:/bin")
+        .env("LC_ALL", "C");
+}
+
+#[cfg(all(test, unix))]
+pub(crate) fn admission_root_cwd_fixture_command() -> std::io::Result<Command> {
+    let mut command = Command::new(std::env::current_exe()?);
+    command.env("OSMAP_TEST_ADMISSION_ROOT_CWD_CHILD", "1").args([
+        "--exact",
+        "account_admission_runtime::tests::inherited_worker_cwd_refuses_changed_root_in_disposable_process",
+    ]);
+    Ok(command)
+}
+
+#[cfg(all(test, target_os = "openbsd"))]
+pub(crate) fn admission_parent_native_fixture_command(
+    root: &std::path::Path,
+    outside: &std::path::Path,
+) -> std::io::Result<Command> {
+    let mut command = Command::new(std::env::current_exe()?);
+    command.env("OSMAP_TEST_ADMISSION_PARENT_NATIVE_CHILD", root)
+        .env("OSMAP_TEST_ADMISSION_PARENT_NATIVE_OUTSIDE", outside).args([
+            "--exact",
+            "account_admission_runtime::tests::native_parent_confinement_preserves_metadata_spawn_and_owned_unlink",
+            "--ignored", "--nocapture",
+        ]);
+    Ok(command)
+}
+
+#[cfg(all(test, target_os = "openbsd"))]
+pub(crate) fn admission_parent_interpreter_fixture_command() -> std::io::Result<Command> {
+    let program = crate::account_admission_runtime::installed_python_program()
+        .map_err(std::io::Error::other)?;
+    let fixed = account_admission_inherited_root_command(&program)?;
+    let mut command = Command::new(fixed.get_program());
+    command
+        .args([
+            "-I",
+            "-c",
+            "import os; assert os.getcwd() == '/'; print('inherited_root_exec=PASS')",
+        ])
+        .env_clear()
+        .env("PATH", "/usr/local/bin:/usr/bin:/bin")
+        .env("LC_ALL", "C");
+    Ok(command)
+}
+
+/// Only the reviewed full-factory root stage selects this exact test wrapper;
+/// no request account, option or arbitrary program/path enters the command.
+#[cfg(all(test, unix))]
+pub(crate) fn full_factory_admission_fixture_command(
+    stage: &std::path::Path,
+) -> std::io::Result<Command> {
+    let fixed_stage = stage.parent() == Some(std::path::Path::new("/var/run"))
+        && stage
+            .file_name()
+            .and_then(|v| v.to_str())
+            .is_some_and(|name| {
+                name.strip_prefix("osmap-primary-root-")
+                    .is_some_and(|suffix| {
+                        suffix.len() == 16
+                            && suffix
+                                .bytes()
+                                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                    })
+            });
+    if !fixed_stage {
+        return Err(std::io::Error::from(std::io::ErrorKind::PermissionDenied));
+    }
+    let program = crate::account_admission_runtime::installed_python_program()
+        .map_err(std::io::Error::other)?;
+    let mut command = Command::new(program);
+    command
+        .arg("-I")
+        .arg(stage.join("native_factory_admission_worker.py"))
+        .env_clear()
+        .env("PATH", "/usr/bin:/bin:/usr/local/bin")
+        .env("LC_ALL", "C")
+        .env("TZ", "UTC");
+    Ok(command)
+}
+
+/// Fixed synthetic stale-denial protocol fixture, compiled only for unit tests.
+/// Callers cannot select an executable, script, argument, or filesystem path.
+#[cfg(test)]
+pub(crate) fn admission_stale_denial_fixture_command() -> Command {
+    let python = if cfg!(target_os = "openbsd") {
+        "/usr/local/bin/python3"
+    } else {
+        "/usr/bin/python3"
+    };
+    let mut command = Command::new(python);
+    command
+        .args([
+            "-I",
+            "-B",
+            "-c",
+            "import json,sys;f=json.load(sys.stdin);assert f['operation']=='admit';r=dict(schema='osmap-account-admission-worker-v1',account=f['account'],status='rejected' if f['epoch']==0 else 'active',epoch=None if f['epoch']==0 else 1);r.update(changed_at='20261016140432') if f['epoch']==1 else None;print(json.dumps(r))",
+        ])
+        .env_clear()
+        .env("LC_ALL", "C")
+        .current_dir("/");
+    command
+}
+
+/// Construct the fixed synthetic stored-session fixture process. No browser
+/// field, account value, or caller-selected program enters its command line.
+#[cfg(all(test, unix))]
+pub(crate) fn stored_issuer_fixture_command(worker_root: &std::path::Path) -> Command {
+    let python = if cfg!(target_os = "openbsd") {
+        "/usr/local/bin/python3"
+    } else {
+        "/usr/bin/python3"
+    };
+    let script = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("maint/account-runtime/runtime_native_stored_issuer_fixture.py");
+    let mut command = Command::new(python);
+    command
+        .arg("-B")
+        .arg(script)
+        .env_clear()
+        .env("LC_ALL", "C")
+        .env("OSMAP_TEST_REAL_WORKER_WITNESS_ROOT", worker_root)
+        .current_dir("/");
+    command
+}
+
+/// Fixed public-only codec fixture, compiled exclusively for unit tests.
+/// No environment, shell, browser field or credential selects the executable.
+#[cfg(all(test, unix))]
+pub(crate) fn mutation_compatibility_fixture(
+    input: &[u8],
+) -> Result<Vec<u8>, crate::openpgp_crypto::Error> {
+    assert!(input.len() <= 16384);
+    let engine = if cfg!(target_os = "openbsd") {
+        "/usr/local/bin/python3"
+    } else {
+        "/usr/bin/python3"
+    };
+    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("maint/account-runtime/account_mutation_compatibility_fixture.py");
+    let mut command = Command::new(engine);
+    command
+        .arg("-B")
+        .arg(fixture)
+        .env_clear()
+        .env("LC_ALL", "C")
+        .current_dir("/");
+    let output = crate::openpgp_crypto_process::run_public_admin(
+        command,
+        input,
+        std::time::Instant::now() + std::time::Duration::from_secs(10),
+    )?;
+    assert!(output.len() <= 16384);
+    Ok(output)
+}
+
+/// Fixed public-only issuer-continuity fixture, compiled for unit tests only.
+#[cfg(all(test, unix))]
+pub(crate) fn mutation_continuity_fixture(
+    input: &[u8],
+) -> Result<Vec<u8>, crate::openpgp_crypto::Error> {
+    assert!(input.len() <= 32768);
+    let engine = if cfg!(target_os = "openbsd") {
+        "/usr/local/bin/python3"
+    } else {
+        "/usr/bin/python3"
+    };
+    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("maint/account-runtime/account_mutation_continuity_fixture.py");
+    let mut command = Command::new(engine);
+    command
+        .arg("-B")
+        .arg(fixture)
+        .env_clear()
+        .env("LC_ALL", "C")
+        .current_dir("/");
+    let output = crate::openpgp_crypto_process::run_public_admin(
+        command,
+        input,
+        std::time::Instant::now() + std::time::Duration::from_secs(10),
+    )?;
+    assert!(output.len() <= 32768);
+    Ok(output)
+}
+
+#[cfg(all(test, unix))]
+pub(crate) fn mutation_budget_fixture(
+    input: &[u8],
+) -> Result<Vec<u8>, crate::openpgp_crypto::Error> {
+    assert!(input.len() <= 32768);
+    let engine = if cfg!(target_os = "openbsd") {
+        "/usr/local/bin/python3"
+    } else {
+        "/usr/bin/python3"
+    };
+    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("maint/account-runtime/account_mutation_budget_fixture.py");
+    let mut command = Command::new(engine);
+    command
+        .arg("-B")
+        .arg(fixture)
+        .env_clear()
+        .env("LC_ALL", "C")
+        .current_dir("/");
+    let output = crate::openpgp_crypto_process::run_public_admin(
+        command,
+        input,
+        std::time::Instant::now() + std::time::Duration::from_secs(10),
+    )?;
+    assert!(output.len() <= 32768);
+    Ok(output)
+}
+#[cfg(all(test, unix))]
+pub(crate) fn guarded_mutation_fixture(
+    input: &[u8],
+) -> Result<Vec<u8>, crate::openpgp_crypto::Error> {
+    assert!(input.len() <= 32768);
+    let engine = if cfg!(target_os = "openbsd") {
+        "/usr/local/bin/python3"
+    } else {
+        "/usr/bin/python3"
+    };
+    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("maint/account-runtime/account_guarded_mutation_fixture.py");
+    let mut command = Command::new(engine);
+    command
+        .arg("-B")
+        .arg(fixture)
+        .env_clear()
+        .env("LC_ALL", "C")
+        .current_dir("/");
+    crate::openpgp_crypto_process::run_public_admin(
+        command,
+        input,
+        std::time::Instant::now() + std::time::Duration::from_secs(10),
+    )
+}
+#[cfg(all(test, unix))]
+pub(crate) fn mutation_sleeper_fixture() -> Command {
+    let program = if cfg!(target_os = "openbsd") {
+        "/bin/sleep"
+    } else {
+        "/usr/bin/sleep"
+    };
+    let mut command = Command::new(program);
+    command
+        .arg("5")
+        .env_clear()
+        .env("LC_ALL", "C")
+        .current_dir("/");
+    command
+}
+
+#[cfg(all(test, unix))]
+pub(crate) fn mutation_immediate_fixture() -> Command {
+    let program = if cfg!(target_os = "openbsd") {
+        "/bin/sleep"
+    } else {
+        "/usr/bin/sleep"
+    };
+    let mut command = Command::new(program);
+    command
+        .arg("0")
+        .env_clear()
+        .env("LC_ALL", "C")
+        .current_dir("/");
+    command
+}
+
+#[cfg(all(test, unix))]
+pub(crate) fn inventory_fixture_command(mode: &str) -> Command {
+    let mut command = Command::new(std::env::current_exe().unwrap());
+    command
+        .args([
+            "--exact",
+            "openpgp_inventory_process::tests::worker_fixture",
+            "--ignored",
+            "--nocapture",
+        ])
+        .env("OSMAP_INVENTORY_PROCESS_FIXTURE", mode);
+    command
+}
+
+/// Fixed programs for the isolated native principal libtests only.
+#[cfg(all(test, unix))]
+pub(crate) enum PrincipalFixtureProgram<'a> {
+    Gpg,
+    Gpgconf,
+    GpgConnectAgent,
+    Libtest(&'a std::path::Path),
+    CryptoHelper(&'a std::path::Path),
+    InventoryHelper(&'a std::path::Path),
+    AdminHelper(&'a std::path::Path),
+    Probe(&'a std::path::Path),
+}
+#[cfg(all(test, unix))]
+pub(crate) fn principal_fixture_command(
+    program: PrincipalFixtureProgram<'_>,
+) -> std::io::Result<Command> {
+    use std::path::Path;
+    let (path, expected) = match program {
+        PrincipalFixtureProgram::Gpg => (Path::new("/usr/local/bin/gpg"), None),
+        PrincipalFixtureProgram::Gpgconf => (Path::new("/usr/local/bin/gpgconf"), None),
+        PrincipalFixtureProgram::GpgConnectAgent => {
+            (Path::new("/usr/local/bin/gpg-connect-agent"), None)
+        }
+        PrincipalFixtureProgram::Libtest(path) => (path, Some("libtest")),
+        PrincipalFixtureProgram::CryptoHelper(path) => (path, Some("crypto-helper")),
+        PrincipalFixtureProgram::InventoryHelper(path) => (path, Some("inventory-helper")),
+        PrincipalFixtureProgram::AdminHelper(path) => (path, Some("admin-helper")),
+        PrincipalFixtureProgram::Probe(path) => {
+            let name = path.file_name().and_then(|name| name.to_str());
+            if !matches!(
+                name,
+                Some("crypto-probe" | "inventory-probe" | "confinement-probe")
+            ) {
+                return Err(std::io::ErrorKind::PermissionDenied.into());
+            }
+            (path, None)
+        }
+    };
+    if !path.is_absolute()
+        || expected.is_some_and(|name| path.file_name() != Some(std::ffi::OsStr::new(name)))
+    {
+        return Err(std::io::ErrorKind::PermissionDenied.into());
+    }
+    let mut command = Command::new(path);
+    command
+        .env_clear()
+        .env("LC_ALL", "C")
+        .env("PATH", SAFE_COMMAND_PATH)
+        .current_dir("/");
+    Ok(command)
+}
+
+/// Only operator-validated worker, engine and account home paths enter here.
+/// Operation bytes are sent over stdin, never in command arguments.
+#[cfg(unix)]
+pub(crate) fn crypto_worker_command(
+    worker: &std::path::Path,
+    engine: &std::path::Path,
+    home: &std::path::Path,
+) -> Command {
+    let mut command = Command::new(worker);
+    command
+        .arg(home)
+        .arg(engine)
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C")
+        .env("GNUPGHOME", home)
+        .current_dir(home);
+    command
+}
+#[cfg(unix)]
+pub(crate) fn personal_crypto_worker_command(
+    worker: &std::path::Path,
+    engine: &std::path::Path,
+    home: &std::path::Path,
+) -> Command {
+    let mut command = crypto_worker_command(worker, engine, home);
+    command
+        .arg("--personal")
+        .env("OSMAP_PERSONAL_PINENTRY", "loopback");
+    command
+}
+#[cfg(unix)]
+pub(crate) enum PersonalAgentCommand {
+    Start,
+    Stop,
+    Pid,
+}
+#[cfg(unix)]
+pub(crate) fn personal_agent_command(
+    home: &std::path::Path,
+    action: PersonalAgentCommand,
+) -> Command {
+    let mut command = Command::new(match action {
+        PersonalAgentCommand::Start => "/usr/local/bin/gpg-agent",
+        PersonalAgentCommand::Stop => "/usr/local/bin/gpgconf",
+        PersonalAgentCommand::Pid => "/usr/local/bin/gpg-connect-agent",
+    });
+    command
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C")
+        .env("GNUPGHOME", home)
+        .env("HOME", home)
+        .current_dir(home);
+    match action {
+        PersonalAgentCommand::Start => {
+            command.args(["--no-options", "--homedir"]).arg(home).args([
+                "--pinentry-program",
+                "/usr/bin/false",
+                "--allow-loopback-pinentry",
+                "--no-allow-external-cache",
+                "--default-cache-ttl",
+                "28800",
+                "--max-cache-ttl",
+                "28800",
+                "--log-file",
+                "/dev/null",
+                "--daemon",
+            ]);
+        }
+        PersonalAgentCommand::Stop => {
+            command
+                .arg("--homedir")
+                .arg(home)
+                .args(["--kill", "gpg-agent"]);
+        }
+        PersonalAgentCommand::Pid => {
+            command
+                .arg("--homedir")
+                .arg(home)
+                .args(["--no-autostart", "GETINFO pid", "/bye"]);
+        }
+    }
+    command
+}
+
+#[cfg(all(test, unix))]
+pub(crate) fn crypto_fixture_command(mode: &str) -> Command {
+    let mut command = Command::new(std::env::current_exe().unwrap());
+    command
+        .args([
+            "--exact",
+            "openpgp_crypto_process::tests::worker_fixture",
+            "--ignored",
+            "--nocapture",
+        ])
+        .env("OSMAP_CRYPTO_PROCESS_FIXTURE", mode);
+    command
+}
+
 /// Defines the bounds and mandatory second-factor policy for browser auth.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AuthenticationPolicy {
@@ -166,9 +813,17 @@ impl AuthenticationContext {
 }
 
 /// Carries a bounded second-factor code after validation.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct SecondFactorInput {
     code: String,
+}
+
+impl std::fmt::Debug for SecondFactorInput {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SecondFactorInput")
+            .field("code", &"[REDACTED]")
+            .finish()
+    }
 }
 
 impl SecondFactorInput {
@@ -522,6 +1177,14 @@ pub struct CommandExecutionError {
     pub reason: String,
 }
 
+/// Process-lifecycle result for the fixed folder mutation path. This is never
+/// serialized or supplied by a request. Generic adapter errors stay uncertain.
+#[derive(Debug)]
+pub struct FolderCommandAttempt {
+    pub(crate) result: Result<CommandExecution, CommandExecutionError>,
+    pub(crate) settled: bool,
+}
+
 /// Runs an external command with supplied standard input.
 pub trait CommandExecutor {
     fn run_with_stdin_bytes(
@@ -550,6 +1213,27 @@ pub trait CommandExecutor {
         _output_max_bytes: usize,
     ) -> Result<CommandExecution, CommandExecutionError> {
         self.run_with_stdin_bytes_timeout(program, args, stdin_data, timeout)
+    }
+
+    fn run_folder_mutation(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &[u8],
+        timeout: Duration,
+        output_max_bytes: usize,
+    ) -> FolderCommandAttempt {
+        let result = self.run_with_stdin_bytes_timeout_and_output_limit(
+            program,
+            args,
+            stdin_data,
+            timeout,
+            output_max_bytes,
+        );
+        FolderCommandAttempt {
+            settled: result.is_ok(),
+            result,
+        }
     }
 
     fn run_with_stdin(
@@ -615,41 +1299,84 @@ impl CommandExecutor for SystemCommandExecutor {
         timeout: Duration,
         output_max_bytes: usize,
     ) -> Result<CommandExecution, CommandExecutionError> {
-        let mut child = Command::new(program)
-            .args(args)
-            .env_clear()
-            .env("PATH", SAFE_COMMAND_PATH)
-            .env("LC_ALL", "C")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|error| CommandExecutionError {
-                reason: format!("failed to spawn command: {error}"),
-            })?;
-
-        let stdin = child.stdin.take().ok_or_else(|| CommandExecutionError {
-            reason: "failed to open command stdin".to_string(),
-        })?;
-        let stdout = child.stdout.take().ok_or_else(|| CommandExecutionError {
-            reason: "failed to open command stdout".to_string(),
-        })?;
-        let stderr = child.stderr.take().ok_or_else(|| CommandExecutionError {
-            reason: "failed to open command stderr".to_string(),
-        })?;
-        let stdin_data = stdin_data.to_vec();
-        let (stdin_tx, stdin_rx) = mpsc::channel();
-        thread::spawn(move || {
-            let result = write_command_stdin(stdin, &stdin_data)
-                .map_err(|error| format!("failed to write command stdin: {error}"));
-            let _ = stdin_tx.send(result);
-        });
-
-        let stdout_handle = spawn_bounded_output_reader(stdout, output_max_bytes, "stdout");
-        let stderr_handle = spawn_bounded_output_reader(stderr, output_max_bytes, "stderr");
-
-        wait_for_command_with_timeout(child, stdin_rx, stdout_handle, stderr_handle, timeout)
+        self.run_folder_mutation(program, args, stdin_data, timeout, output_max_bytes)
+            .result
     }
+
+    fn run_folder_mutation(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &[u8],
+        timeout: Duration,
+        output_max_bytes: usize,
+    ) -> FolderCommandAttempt {
+        let mut settled = true; // no child exists until spawn succeeds
+        let result = run_system_command(
+            program,
+            args,
+            stdin_data,
+            timeout,
+            output_max_bytes,
+            &mut settled,
+        );
+        FolderCommandAttempt { result, settled }
+    }
+}
+
+fn run_system_command(
+    program: &str,
+    args: &[String],
+    stdin_data: &[u8],
+    timeout: Duration,
+    output_max_bytes: usize,
+    settled: &mut bool,
+) -> Result<CommandExecution, CommandExecutionError> {
+    let mut child = Command::new(program)
+        .args(args)
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C")
+        // doveadm emits timezone-less dates. Normalize at the native producer;
+        // the authenticated account offset is applied only by presentation.
+        .env("TZ", "UTC")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| CommandExecutionError {
+            reason: format!("failed to spawn command: {error}"),
+        })?;
+    *settled = false;
+
+    let stdin = child.stdin.take().ok_or_else(|| CommandExecutionError {
+        reason: "failed to open command stdin".to_string(),
+    })?;
+    let stdout = child.stdout.take().ok_or_else(|| CommandExecutionError {
+        reason: "failed to open command stdout".to_string(),
+    })?;
+    let stderr = child.stderr.take().ok_or_else(|| CommandExecutionError {
+        reason: "failed to open command stderr".to_string(),
+    })?;
+    let stdin_data = stdin_data.to_vec();
+    let (stdin_tx, stdin_rx) = mpsc::channel();
+    thread::spawn(move || {
+        let result = write_command_stdin(stdin, &stdin_data)
+            .map_err(|error| format!("failed to write command stdin: {error}"));
+        let _ = stdin_tx.send(result);
+    });
+
+    let stdout_handle = spawn_bounded_output_reader(stdout, output_max_bytes, "stdout");
+    let stderr_handle = spawn_bounded_output_reader(stderr, output_max_bytes, "stderr");
+
+    wait_for_command_with_timeout(
+        child,
+        stdin_rx,
+        stdout_handle,
+        stderr_handle,
+        timeout,
+        settled,
+    )
 }
 
 fn write_command_stdin(mut stdin: std::process::ChildStdin, stdin_data: &[u8]) -> io::Result<()> {
@@ -664,6 +1391,7 @@ fn wait_for_command_with_timeout(
     stdout_handle: thread::JoinHandle<Result<Vec<u8>, CommandExecutionError>>,
     stderr_handle: thread::JoinHandle<Result<Vec<u8>, CommandExecutionError>>,
     timeout: Duration,
+    settled: &mut bool,
 ) -> Result<CommandExecution, CommandExecutionError> {
     let deadline = Instant::now() + timeout;
     let mut stdin_result: Option<Result<(), String>> = None;
@@ -685,9 +1413,10 @@ fn wait_for_command_with_timeout(
             Some(_) => break,
             None if Instant::now() >= deadline => {
                 let _ = child.kill();
-                let _ = child.wait();
-                let _ = stdout_handle.join();
-                let _ = stderr_handle.join();
+                let reaped = child.wait().is_ok();
+                let stdout_joined = stdout_handle.join().is_ok();
+                let stderr_joined = stderr_handle.join().is_ok();
+                *settled = reaped && stdout_joined && stderr_joined;
                 return Err(CommandExecutionError {
                     reason: format!("command timed out after {} seconds", timeout.as_secs()),
                 });
@@ -700,19 +1429,25 @@ fn wait_for_command_with_timeout(
         reason: format!("failed waiting for command status: {error}"),
     })?;
 
-    match stdin_result.unwrap_or_else(|| {
+    let input_result = stdin_result.unwrap_or_else(|| {
         stdin_rx
             .recv()
             .unwrap_or_else(|_| Err("stdin writer stopped unexpectedly".to_string()))
-    }) {
+    });
+    // Inspect both readers after a measured reap even if one reports an I/O
+    // refusal. This preserves the lifecycle witness without accepting output.
+    let stdout = join_output_reader(stdout_handle, "stdout");
+    let stderr = join_output_reader(stderr_handle, "stderr");
+    *settled = true;
+    match input_result {
         Ok(()) => {}
         Err(reason) => {
             return Err(CommandExecutionError { reason });
         }
     }
 
-    let stdout = join_output_reader(stdout_handle, "stdout")?;
-    let stderr = join_output_reader(stderr_handle, "stderr")?;
+    let stdout = stdout?;
+    let stderr = stderr?;
 
     Ok(CommandExecution {
         status_code: status_code_or_signal(status),
@@ -1166,10 +1901,9 @@ fn parse_doveadm_auth_test_output(
 
     Err(PrimaryAuthBackendError {
         backend: "doveadm-auth-test",
-        reason: format!(
-            "unexpected doveadm result status={} output={:?}",
-            execution.status_code, combined_output
-        ),
+        // Backend text is untrusted and can contain private auth diagnostics.
+        // Audit only the numeric status, never stdout or stderr bytes.
+        reason: format!("unexpected doveadm result status={}", execution.status_code),
     })
 }
 
@@ -1183,12 +1917,199 @@ fn extract_doveadm_user_field(output: &str) -> Option<String> {
     })
 }
 
+/// Fixed actual-worker fixture, unit tests only; all credentials are public.
+#[cfg(all(test, unix))]
+pub(crate) fn mutation_real_worker_fixture_command(witness: &std::path::Path) -> Command {
+    let engine = if cfg!(target_os = "openbsd") {
+        "/usr/local/bin/python3"
+    } else {
+        "/usr/bin/python3"
+    };
+    let script = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("maint/account-runtime/runtime_real_worker_fixture.py");
+    let mut command = Command::new(engine);
+    command
+        .arg("-B")
+        .arg(script)
+        .env_clear()
+        .env("LC_ALL", "C")
+        .env("OSMAP_TEST_REAL_WORKER_WITNESS_ROOT", witness)
+        .current_dir("/");
+    command
+}
+
+/// Fixed T04 actors only; the reviewed native boundary preserves the control
+/// descriptor and applies the observed nonroot identity without a shell.
+#[cfg(all(test, unix))]
+pub(crate) fn native_t04_fixture_command(role: u8) -> Result<Command, &'static str> {
+    let selector = match role {
+        0 => "account_password_server::diagnostic_tests::native_stock_installed_concurrent_mutation_service_entrypoint",
+        1 => "http::tests::password_tests::genuine_http_pilot::native_installed_concurrent_issuance_entrypoint",
+        2 => "account_password_server::transaction_tests::native_installed_concurrent_replay_transaction",
+        _ => return Err("T04_FIXED_ACTOR_ROLE"),
+    };
+    let mut command = Command::new("/var/run/osmap-installed-t04-web-20261025-01/native-service");
+    command
+        .args([
+            "--exact",
+            selector,
+            "--ignored",
+            "--nocapture",
+            "--test-threads=1",
+        ])
+        .env_clear()
+        .env("PATH", "/usr/bin:/bin:/usr/local/bin")
+        .env("LC_ALL", "C")
+        .env("TZ", "UTC")
+        .current_dir("/");
+    if role == 0 {
+        command.env("OSMAP_TEST_NATIVE_MUTATION_GATE_FD", "3");
+    }
+    if role == 1 {
+        command.env("OSMAP_TEST_HTTP_PILOT_FD", "3");
+    }
+    crate::openbsd::fixture_t04_child_profile(&mut command, role);
+    Ok(command)
+}
+
+/// Fixed native Serve actor; callers supply only the owned fixture root and port.
+#[cfg(all(test, unix, target_os = "openbsd"))]
+pub(crate) fn scheduled_serve_fixture_command() -> io::Result<Command> {
+    let mut command = Command::new(std::env::current_exe()?);
+    command.args(["--exact", "http::http_runtime::scheduled_native_tests::native_confined_serve_scheduled_worker_refuses_unavailable_account", "--ignored", "--nocapture", "--test-threads=1"])
+        .env_clear().env("PATH", "/usr/bin:/bin:/usr/local/bin")
+        .env("LC_ALL", "C").env("TZ", "UTC").current_dir("/");
+    Ok(command)
+}
+
 #[cfg(test)]
 mod tests {
+    /// Fixed directory target refuses through the actual Unix spawn boundary.
+    #[cfg(unix)]
+    pub(crate) fn password_metadata_spawn_denied_fixture() -> Command {
+        let mut command = Command::new("/");
+        command.env_clear().env("LC_ALL", "C");
+        command
+    }
+
+    #[cfg(unix)]
+    pub(crate) fn password_process_fixture_command(mode: &str) -> Command {
+        let script = match mode {
+            "blocked" => "import time; time.sleep(2)",
+            "early_eof" => "import os,time; os.close(1); os.close(2); time.sleep(0.05); os._exit(7)",
+            "result" => "import os; os.write(1,b'fixed-result\\n'); os.write(2,b'fixed-error\\n'); os._exit(7)",
+            _ => panic!("unknown fixed password-process fixture"),
+        };
+        let engine = if cfg!(target_os = "openbsd") {
+            "/usr/local/bin/python3"
+        } else {
+            "/usr/bin/python3"
+        };
+        let mut command = Command::new(engine);
+        command.args(["-I", "-c", script]);
+        command.env_clear().env("LC_ALL", "C");
+        command
+    }
+
     use super::*;
     use crate::config::LogFormat;
     use crate::logging::Logger;
     use std::rc::Rc;
+
+    #[cfg(unix)]
+    #[test]
+    fn installed_dependency_factory_scopes_fixed_dovecot_module_context() {
+        use std::collections::BTreeMap;
+        use std::ffi::OsString;
+        use std::path::Path;
+
+        let base: BTreeMap<OsString, Option<OsString>> = BTreeMap::from([
+            ("LC_ALL".into(), Some("C".into())),
+            ("PATH".into(), Some(SAFE_COMMAND_PATH.into())),
+        ]);
+        for (program, module) in [
+            ("/usr/bin/fstat", false),
+            ("/usr/local/bin/doveadm", false),
+            ("/usr/local/bin/doveconf", false),
+            ("/usr/local/bin/mariadb", false),
+            ("/usr/sbin/sendmail", false),
+            ("/usr/sbin/mailwrapper", false),
+            ("/usr/local/sbin/sendmail", false),
+            ("/usr/local/lib/dovecot/libdovecot-sieve.so.4.0", true),
+            ("/usr/local/lib/dovecot/doveadm/lib10_quota_plugin.so", true),
+        ] {
+            let command = installed_dependencies_command(Path::new(program)).unwrap();
+            assert_eq!(command.get_program(), "/usr/bin/ldd");
+            assert_eq!(
+                command.get_args().collect::<Vec<_>>(),
+                vec![Path::new(program)]
+            );
+            assert_eq!(command.get_current_dir(), Some(Path::new("/")));
+            let mut expected = base.clone();
+            if module {
+                expected.insert(
+                    "LD_LIBRARY_PATH".into(),
+                    Some("/usr/local/lib/dovecot".into()),
+                );
+            }
+            let actual = command
+                .get_envs()
+                .map(|(name, value)| (name.to_os_string(), value.map(OsString::from)))
+                .collect::<BTreeMap<_, _>>();
+            assert_eq!(actual, expected, "{program}");
+        }
+        for program in [
+            "/tmp/libdovecot-sieve.so.4.0",
+            "/usr/local/lib/libdovecot-sieve.so.4.0",
+            "/usr/local/lib/dovecot/private/libevil.so",
+            "/usr/local/lib/dovecot/../libevil.so",
+            "/usr/local/lib/dovecot/libevil.so.bad",
+            "/usr/local/lib/dovecot/libevil;name.so",
+            "/usr/local/lib/dovecot/doveadm/libevil.so.1.bad",
+        ] {
+            assert_eq!(
+                installed_dependencies_command(Path::new(program))
+                    .unwrap_err()
+                    .kind(),
+                std::io::ErrorKind::PermissionDenied,
+                "{program}"
+            );
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn installed_postdrop_trace_factory_has_no_operands_or_inherited_search_paths() {
+        use std::collections::BTreeMap;
+        use std::ffi::OsString;
+        use std::path::Path;
+        let command = fixed_postdrop_trace_command();
+        assert_eq!(command.get_program(), "/usr/local/sbin/postdrop");
+        assert_eq!(command.get_args().len(), 0);
+        assert_eq!(command.get_current_dir(), Some(Path::new("/")));
+        assert_eq!(
+            command
+                .get_envs()
+                .map(|(key, value)| (key.to_os_string(), value.map(OsString::from)))
+                .collect::<BTreeMap<_, _>>(),
+            BTreeMap::from([
+                ("LC_ALL".into(), Some("C".into())),
+                ("PATH".into(), Some(SAFE_COMMAND_PATH.into())),
+                ("LD_TRACE_LOADED_OBJECTS".into(), Some("true".into())),
+            ])
+        );
+    }
+
+    #[cfg(all(unix, not(target_os = "openbsd")))]
+    #[test]
+    fn installed_postdrop_trace_refuses_other_unix_before_reading_target() {
+        assert_eq!(
+            installed_dependencies_command(std::path::Path::new("/usr/local/sbin/postdrop"))
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::Unsupported
+        );
+    }
 
     struct AcceptingBackend;
 
@@ -1335,6 +2256,27 @@ mod tests {
 
         assert!(debug_output.contains("<redacted>"));
         assert!(!debug_output.contains("correct horse battery staple"));
+    }
+
+    #[test]
+    fn redacts_second_factor_in_debug_output() {
+        let input = SecondFactorInput::new(AuthenticationPolicy::default(), "123456").unwrap();
+        let debug_output = format!("{input:?}");
+        assert!(debug_output.contains("REDACTED"));
+        assert!(!debug_output.contains("123456"));
+    }
+
+    #[test]
+    fn unexpected_doveadm_output_is_not_copied_into_audit_reason() {
+        let execution = CommandExecution {
+            status_code: 75,
+            stdout: "private-auth-field-marker".into(),
+            stderr: "private-diagnostic-marker".into(),
+        };
+        let error = parse_doveadm_auth_test_output("alice@example.com", &execution).unwrap_err();
+        assert_eq!(error.reason, "unexpected doveadm result status=75");
+        assert!(!error.reason.contains("private-auth-field-marker"));
+        assert!(!error.reason.contains("private-diagnostic-marker"));
     }
 
     #[test]
@@ -1636,6 +2578,24 @@ mod tests {
 
     #[test]
     #[cfg(unix)]
+    fn system_command_executor_normalizes_native_dates_to_utc() {
+        let output = SystemCommandExecutor
+            .run_with_stdin_bytes_timeout("/usr/bin/env", &[], b"", Duration::from_secs(2))
+            .expect("fixed native command environment");
+        assert_eq!(output.status_code, 0);
+        let mut lines: Vec<_> = output.stdout.lines().collect();
+        lines.sort_unstable();
+        let mut expected = vec![
+            "LC_ALL=C".to_string(),
+            format!("PATH={SAFE_COMMAND_PATH}"),
+            "TZ=UTC".to_string(),
+        ];
+        expected.sort_unstable();
+        assert_eq!(lines, expected);
+    }
+
+    #[test]
+    #[cfg(unix)]
     fn system_command_executor_times_out_slow_command() {
         if !PathBuf::from("/bin/sleep").exists() {
             return;
@@ -1656,6 +2616,37 @@ mod tests {
             started_at.elapsed() < Duration::from_secs(2),
             "timeout should return before the command's requested sleep completes"
         );
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn folder_command_attempt_retains_actual_reap_without_accepting_timeout_or_output() {
+        let attempt = SystemCommandExecutor.run_folder_mutation(
+            "/bin/sleep",
+            &["2".into()],
+            b"",
+            Duration::from_millis(100),
+            64,
+        );
+        assert!(attempt.settled);
+        assert!(attempt
+            .result
+            .unwrap_err()
+            .reason
+            .contains("command timed out"));
+        let attempt = SystemCommandExecutor.run_folder_mutation(
+            "/usr/bin/printf",
+            &["123456789".into()],
+            b"",
+            Duration::from_secs(1),
+            4,
+        );
+        assert!(attempt.settled);
+        assert!(attempt
+            .result
+            .unwrap_err()
+            .reason
+            .contains("stdout exceeded"));
     }
 
     #[test]

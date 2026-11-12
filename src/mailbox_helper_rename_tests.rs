@@ -1,0 +1,542 @@
+use super::*;
+
+#[test]
+fn folder_subtree_recovery_grant_binds_original_action_and_new_single_use_nonce() {
+    let original = crate::folder_rename::RenameFolderRequest::new("alice@fixture.test", "INBOX.Alpha", &"a".repeat(32), &"b".repeat(32), "Beta").unwrap();
+    let mut wire = serde_json::to_value(original).unwrap();
+    wire["descendants"] = serde_json::json!([{"suffix":".Child","guid":"e".repeat(32)}]);
+    let original: crate::folder_rename::RenameFolderRequest = serde_json::from_value(wire).unwrap();
+    let step = "1".repeat(32);
+    let request = original.for_recovery(&step).unwrap();
+    assert_eq!(request.recovery_original().unwrap(), original);
+    let mut action = MailboxHelperRequest::FolderRename { request: request.clone(), grant: MailboxHelperGrant::unsigned() };
+    issue_request_grant_with_nonce(&mut action, &test_helper_grant_key(), 100, &step).unwrap();
+    assert_eq!(parse_request(&encode_request(&action)).unwrap(), action);
+    verify_request_grant(&action, &test_helper_grant_key(), 101).unwrap();
+    for (field, value) in [("recovery_original_action", "2".repeat(32)), ("action_nonce", "3".repeat(32)), ("source_guid", "f".repeat(32))] {
+        let mut changed = action.clone();
+        if let MailboxHelperRequest::FolderRename { request, .. } = &mut changed {
+            let mut fields = serde_json::to_value(&*request).unwrap(); fields[field] = value.into();
+            *request = serde_json::from_value(fields).unwrap();
+        }
+        assert!(verify_request_grant(&changed, &test_helper_grant_key(), 101).is_err(), "{field}");
+    }
+}
+
+#[test]
+fn folder_subtree_grant_binds_every_suffix_guid_and_preserves_legacy_leaf_payload() {
+    let legacy = crate::folder_rename::RenameFolderRequest::new("alice@fixture.test", "INBOX.Alpha", &"a".repeat(32), &"b".repeat(32), "Beta").unwrap();
+    let wire = serde_json::to_value(&legacy).unwrap();
+    assert!(wire.get("descendants").is_none());
+    let mut bound = wire;
+    bound["descendants"] = serde_json::json!([{"suffix":".Child","guid":"e".repeat(32)}, {"suffix":".Child.Grand","guid":"f".repeat(32)}]);
+    let request: crate::folder_rename::RenameFolderRequest = serde_json::from_value(bound).unwrap();
+    request.validate().unwrap();
+    let nonce = request.action_nonce().to_owned();
+    let mut action = MailboxHelperRequest::FolderRename { request, grant: MailboxHelperGrant::unsigned() };
+    issue_request_grant_with_nonce(&mut action, &test_helper_grant_key(), 100, &nonce).unwrap();
+    assert!(verify_request_grant(&action, &test_helper_grant_key(), 101).is_ok());
+    for change in [serde_json::json!([{"suffix":".Other","guid":"e".repeat(32)}]), serde_json::json!([{"suffix":".Child","guid":"9".repeat(32)}]), serde_json::json!([])] {
+        let mut changed = action.clone();
+        if let MailboxHelperRequest::FolderRename { request, .. } = &mut changed {
+            let mut wire = serde_json::to_value(&*request).unwrap();
+            wire["descendants"] = change;
+            *request = serde_json::from_value(wire).unwrap();
+        }
+        assert!(verify_request_grant(&changed, &test_helper_grant_key(), 101).is_err());
+    }
+}
+pub(super) fn rename_through_helper<B: MailboxBackend + Send + 'static>(
+    root: &Path,
+    backend: B,
+    request: &crate::folder_rename::RenameFolderRequest,
+    peer: u32,
+) -> crate::folder_rename::Outcome {
+    with_rename_helper(root, backend, peer, |client| client.rename_folder(request))
+}
+pub(super) fn with_rename_helper<B: MailboxBackend + Send + 'static, T>(
+    root: &Path,
+    backend: B,
+    peer: u32,
+    call: impl FnOnce(MailboxHelperMailboxListBackend) -> T,
+) -> T {
+    let socket = root.join("status.sock");
+    let key_path = root.join("fixture-grant.key");
+    let socket_for_thread = socket.clone();
+    let trusted_peer_uid = fs::symlink_metadata(&key_path).unwrap().uid();
+    let completion_dir = root.join("completion");
+    let server = thread::spawn(move || {
+        let unused = StaticHelperBackend {
+            mailbox_result: Arc::new(Ok(Vec::new())),
+            message_list_result: Arc::new(Ok(Vec::new())),
+            message_search_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Err(MailboxBackendError {
+                backend: "fixture-unused",
+                reason: "unused".into(),
+            })),
+            message_move_result: Arc::new(Ok(())),
+        };
+        let listener = UnixListener::bind(socket_for_thread).expect("isolated socket");
+        listener
+            .set_nonblocking(true)
+            .expect("bounded fixture accept");
+        let deadline = std::time::Instant::now() + Duration::from_secs(3);
+        let (mut stream, _) = loop {
+            match listener.accept() {
+                Ok(value) => break value,
+                Err(error)
+                    if error.kind() == std::io::ErrorKind::WouldBlock
+                        && std::time::Instant::now() < deadline =>
+                {
+                    thread::sleep(Duration::from_millis(5))
+                }
+                Err(error) => panic!("fixture accept failed: {error}"),
+            }
+        };
+        handle_helper_client_with_documents_and_rename(
+            HelperBackends {
+                mailbox_backend: &backend,
+                message_list_backend: &unused,
+                message_search_backend: &unused,
+                message_view_backend: &unused,
+                message_move_backend: &unused,
+                message_append_backend: &unused,
+                message_flag_backend: &unused,
+            },
+            None,
+            None,
+            &Logger::new(crate::config::LogFormat::Text, LogLevel::Info),
+            &mut stream,
+            MailboxHelperPolicy::default(),
+            HelperRequestAuthority {
+                trusted_caller_policy: MailboxHelperTrustedCallerPolicy {
+                    trusted_peer_uid,
+                    grant_key: test_helper_grant_key(),
+                },
+                replay_cache: &Mutex::new(BTreeMap::new()),
+                rename_completion_dir: Some(&completion_dir),
+            },
+        );
+    });
+    wait_for_socket(&socket);
+    let result = call(
+        MailboxHelperMailboxListBackend::new(&socket, &key_path, MailboxHelperPolicy::default())
+            .with_helper_uid(Some(peer)),
+    );
+    server.join().expect("local helper thread");
+    fs::remove_file(socket).expect("remove fixture socket");
+    result
+}
+struct RenameBackend(Arc<std::sync::atomic::AtomicUsize>);
+impl MailboxBackend for RenameBackend {
+    fn list_mailboxes(&self, _: &str) -> Result<Vec<MailboxEntry>, MailboxBackendError> {
+        Ok(vec![])
+    }
+    fn rename_folder(
+        &self,
+        request: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Outcome {
+        assert_eq!(request.account(), "alice@fixture.test");
+        assert_eq!(request.source(), "INBOX.Alpha");
+        assert_eq!(request.destination(), "INBOX.Beta");
+        self.0.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        crate::folder_rename::Outcome::Renamed
+    }
+}
+#[test]
+fn folder_rename_signed_helper_peer_and_nonce() {
+    let root = temp_socket_path("folder-rename-socket").with_extension("root");
+    fs::create_dir(&root).unwrap();
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    let key = root.join("fixture-grant.key");
+    fs::write(&key, test_helper_grant_key()).unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    let value = crate::folder_rename::RenameFolderRequest::new(
+        "alice@fixture.test",
+        "INBOX.Alpha",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        "Beta",
+    )
+    .unwrap();
+    let writes = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    assert_eq!(
+        rename_through_helper(
+            &root,
+            RenameBackend(writes.clone()),
+            &value,
+            test_runtime_uid()
+        ),
+        crate::folder_rename::Outcome::Renamed
+    );
+    assert_eq!(writes.load(std::sync::atomic::Ordering::SeqCst), 1);
+    assert_eq!(
+        rename_through_helper(
+            &root,
+            RenameBackend(writes.clone()),
+            &value,
+            test_runtime_uid().wrapping_add(1)
+        ),
+        crate::folder_rename::Outcome::Unknown
+    );
+    assert_eq!(writes.load(std::sync::atomic::Ordering::SeqCst), 1);
+    fs::remove_dir_all(root).unwrap();
+}
+#[test]
+fn folder_move_grant_binds_destination_and_both_parent_identities() {
+    let value = crate::folder_rename::RenameFolderRequest::for_move("alice@fixture.test", "INBOX.Alpha", &"a".repeat(32), &"b".repeat(32), "INBOX.Target", &"d".repeat(32)).unwrap();
+    let mut request = MailboxHelperRequest::FolderRename { request: value.clone(), grant: MailboxHelperGrant::unsigned() };
+    issue_request_grant_with_nonce(&mut request, &test_helper_grant_key(), 100, value.action_nonce()).unwrap();
+    assert_eq!(parse_request(&encode_request(&request)).unwrap(), request);
+    verify_request_grant(&request, &test_helper_grant_key(), 101).unwrap();
+    for (name, replacement) in [("destination_parent", "INBOX.Other".to_owned()), ("source_parent_guid", "e".repeat(32)), ("parent_guid", "f".repeat(32))] {
+        let mut changed = request.clone();
+        if let MailboxHelperRequest::FolderRename { request, .. } = &mut changed {
+            let mut fields = serde_json::to_value(&*request).unwrap();
+            fields[name] = replacement.into();
+            *request = serde_json::from_value(fields).unwrap();
+        }
+        assert!(verify_request_grant(&changed, &test_helper_grant_key(), 101).is_err());
+    }
+}
+#[test]
+fn folder_disposition_grant_binds_exact_purpose_bin_revision_receipt_and_restore() {
+    let value = crate::folder_disposition::Receipt::bin_request(
+        "alice@fixture.test",
+        "INBOX.Alpha",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        &crate::bin_folder::BinPreference::default(),
+        &"d".repeat(32),
+    )
+    .unwrap();
+    let mut action = MailboxHelperRequest::FolderRename {
+        request: value.clone(),
+        grant: MailboxHelperGrant::unsigned(),
+    };
+    issue_request_grant_with_nonce(
+        &mut action,
+        &test_helper_grant_key(),
+        100,
+        value.action_nonce(),
+    )
+    .unwrap();
+    let wire = encode_request(&action);
+    assert!(wire.len() <= 4096);
+    assert_eq!(parse_request(&wire).unwrap(), action);
+    verify_request_grant(&action, &test_helper_grant_key(), 101).unwrap();
+    for (field, changed) in [
+        ("bin_revision", serde_json::json!(1)),
+        ("bin_guid", serde_json::json!("e".repeat(32))),
+        ("receipt_id", serde_json::json!("f".repeat(32))),
+        ("original_action", serde_json::json!("9".repeat(32))),
+    ] {
+        let mut changed_action = action.clone();
+        if let MailboxHelperRequest::FolderRename { request, .. } = &mut changed_action {
+            let mut fields = serde_json::to_value(&*request).unwrap();
+            fields["disposition"]["Bin"][field] = changed;
+            *request = serde_json::from_value(fields).unwrap();
+        }
+        assert!(verify_request_grant(&changed_action, &test_helper_grant_key(), 101).is_err());
+    }
+    let receipt = crate::folder_disposition::Receipt {
+        id: value.action_nonce().into(),
+        source: value.source().into(),
+        parent_guid: value.source_parent_guid().into(),
+        folder_guid: value.source_guid().into(),
+        bin: "Trash".into(),
+        bin_guid: "d".repeat(32),
+        bin_revision: 0,
+        original_action: value.action_nonce().into(),
+        restore_action: None,
+        state: crate::folder_disposition::State::Binned,
+        descendants: Vec::new(),
+    };
+    let restore = receipt.restore_request("alice@fixture.test").unwrap();
+    let mut restore_action = MailboxHelperRequest::FolderRename {
+        request: restore.clone(),
+        grant: MailboxHelperGrant::unsigned(),
+    };
+    issue_request_grant_with_nonce(
+        &mut restore_action,
+        &test_helper_grant_key(),
+        100,
+        restore.action_nonce(),
+    )
+    .unwrap();
+    assert_eq!(
+        parse_request(&encode_request(&restore_action)).unwrap(),
+        restore_action
+    );
+    verify_request_grant(&restore_action, &test_helper_grant_key(), 101).unwrap();
+}
+#[test]
+fn folder_rename_grant_exact_account_identity_action_and_closed_fields() {
+    let value = crate::folder_rename::RenameFolderRequest::new(
+        "alice@fixture.test",
+        "INBOX.Alpha",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        "Beta",
+    )
+    .unwrap();
+    let mut request = MailboxHelperRequest::FolderRename {
+        request: value.clone(),
+        grant: MailboxHelperGrant::unsigned(),
+    };
+    issue_request_grant_with_nonce(
+        &mut request,
+        &test_helper_grant_key(),
+        100,
+        value.action_nonce(),
+    )
+    .unwrap();
+    let wire = encode_request(&request);
+    assert_eq!(parse_request(&wire).unwrap(), request);
+    verify_request_grant(&request, &test_helper_grant_key(), 101).unwrap();
+    for (account, source, guid, parent, leaf) in [
+        ("bob@fixture.test", "INBOX.Alpha", "a", "b", "Beta"),
+        ("alice@fixture.test", "INBOX.Other", "a", "b", "Beta"),
+        ("alice@fixture.test", "INBOX.Alpha", "c", "b", "Beta"),
+        ("alice@fixture.test", "INBOX.Alpha", "a", "c", "Beta"),
+        ("alice@fixture.test", "INBOX.Alpha", "a", "b", "Other"),
+    ] {
+        let mut changed = request.clone();
+        if let MailboxHelperRequest::FolderRename {
+            request: ref mut r, ..
+        } = changed
+        {
+            let mut fields = serde_json::to_value(&*r).unwrap();
+            fields["account"] = account.into();
+            fields["source"] = source.into();
+            fields["source_guid"] = guid.repeat(32).into();
+            fields["parent_guid"] = parent.repeat(32).into();
+            fields["leaf"] = leaf.into();
+            *r = serde_json::from_value(fields).unwrap();
+        }
+        assert!(verify_request_grant(&changed, &test_helper_grant_key(), 101).is_err());
+    }
+    let mut changed = request.clone();
+    if let MailboxHelperRequest::FolderRename { grant, .. } = &mut changed {
+        grant.nonce = test_grant_nonce(13);
+    }
+    assert!(verify_request_grant(&changed, &test_helper_grant_key(), 101).is_err());
+    assert!(parse_request(&(wire.clone() + "command_b64=QQ==\n")).is_err());
+    assert!(parse_request(&(wire.clone() + "operation=folder_create\n")).is_err());
+    let parse = |wire: &str| {
+        parse_response(
+            MailboxListingPolicy::default(),
+            MessageListPolicy::default(),
+            MessageSearchPolicy::default(),
+            MessageViewPolicy::default(),
+            wire,
+        )
+    };
+    let response = MailboxHelperResponse::FolderRenameOk {
+        request: Box::new(value.clone()),
+        outcome: crate::folder_rename::Outcome::Renamed,
+        nonce: test_grant_nonce(12),
+    };
+    assert_eq!(parse(&encode_response(&response)).unwrap(), response);
+    assert!(parse(&(encode_response(&response) + "extra=x\n")).is_err());
+    let foreign = crate::folder_rename::RenameFolderRequest::new(
+        "bob@fixture.test",
+        "INBOX.Alpha",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        "Beta",
+    )
+    .unwrap();
+    assert!(!value.accepts_response(&foreign));
+}
+
+#[test]
+fn folder_rename_grant_replay_and_action_denied() {
+    let value = crate::folder_rename::RenameFolderRequest::new(
+        "alice@fixture.test",
+        "INBOX.Alpha",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        "Beta",
+    )
+    .unwrap();
+    let mut request = MailboxHelperRequest::FolderRename {
+        request: value.clone(),
+        grant: MailboxHelperGrant::unsigned(),
+    };
+    issue_request_grant_with_nonce(
+        &mut request,
+        &test_helper_grant_key(),
+        current_unix_time_secs().unwrap(),
+        value.action_nonce(),
+    )
+    .unwrap();
+    let cache = Mutex::new(BTreeMap::new());
+    verify_helper_request_authority(&request, &test_helper_grant_key(), &cache).unwrap();
+    assert!(verify_helper_request_authority(&request, &test_helper_grant_key(), &cache).is_err());
+    let action = MailboxHelperRequest::FolderCreate {
+        request: crate::folder_create::CreateFolderRequest::new(
+            "alice@fixture.test",
+            "INBOX",
+            &"b".repeat(32),
+            "Beta",
+        )
+        .unwrap(),
+        grant: super::super::mailbox_helper_protocol::request_grant(&request).clone(),
+    };
+    assert!(verify_request_grant(
+        &action,
+        &test_helper_grant_key(),
+        current_unix_time_secs().unwrap()
+    )
+    .is_err());
+}
+
+#[test]
+fn folder_rename_settled_refusal_original_nonce_replay_and_uncertainty() {
+    use crate::folder_rename::{Completion, Outcome, RenameFolderRequest};
+    struct Refused(Arc<std::sync::atomic::AtomicUsize>);
+    impl MailboxBackend for Refused {
+        fn list_mailboxes(&self, _: &str) -> Result<Vec<MailboxEntry>, MailboxBackendError> {
+            Ok(vec![])
+        }
+        fn rename_folder(&self, _: &RenameFolderRequest) -> Outcome {
+            self.0.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            Outcome::Refused(crate::folder_create::Refusal::Stale)
+        }
+    }
+    let root = temp_socket_path("rename-completion").with_extension("root");
+    fs::create_dir(&root).unwrap();
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    let key = root.join("fixture-grant.key");
+    fs::write(&key, test_helper_grant_key()).unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    let request = RenameFolderRequest::new(
+        "alice@fixture.test",
+        "INBOX.Alpha",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        "Beta",
+    )
+    .unwrap();
+    let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    // Send the genuine signed request, then close without reading the response.
+    // The backend's refusal is persisted before the failed socket reply.
+    with_rename_helper(&root, Refused(calls.clone()), test_runtime_uid(), |_| {
+        let mut action = MailboxHelperRequest::FolderRename {
+            request: request.clone(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let bytes =
+            super::super::mailbox_helper_client::encode_authorized_request(&key, &mut action)
+                .unwrap();
+        let mut stream = UnixStream::connect(root.join("status.sock")).unwrap();
+        stream.write_all(&bytes).unwrap();
+        stream.shutdown(Shutdown::Both).unwrap();
+    });
+    let read = |value: &RenameFolderRequest, peer| {
+        with_rename_helper(&root, Refused(calls.clone()), peer, |client| {
+            client.folder_rename_completion(value)
+        })
+    };
+    assert_eq!(read(&request, test_runtime_uid()), Completion::NoMutation);
+    assert_eq!(
+        read(&request, test_runtime_uid().wrapping_add(1)),
+        Completion::Unconfirmed
+    );
+    let changed = RenameFolderRequest::new(
+        request.account(),
+        request.source(),
+        request.source_guid(),
+        request.parent_guid(),
+        request.leaf(),
+    )
+    .unwrap();
+    assert_ne!(request.action_nonce(), changed.action_nonce());
+    assert_eq!(read(&changed, test_runtime_uid()), Completion::Unconfirmed);
+    let foreign = RenameFolderRequest::new(
+        "bob@fixture.test",
+        request.source(),
+        request.source_guid(),
+        request.parent_guid(),
+        request.leaf(),
+    )
+    .unwrap();
+    assert_eq!(read(&foreign, test_runtime_uid()), Completion::Unconfirmed);
+    // Even after grant replay cache restart, the same original nonce cannot redispatch.
+    assert_eq!(
+        rename_through_helper(&root, Refused(calls.clone()), &request, test_runtime_uid()),
+        Outcome::Refused(crate::folder_create::Refusal::Stale)
+    );
+    assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+    let file = crate::private_account_file::PrivateAccountFile::new(
+        root.join("completion"),
+        "osmap-folder-rename-helper-v1",
+        4096,
+    )
+    .lock(request.account())
+    .unwrap();
+    let record = |outcome| {
+        serde_json::to_vec(&serde_json::json!({"version":1,"request":request,"outcome":outcome}))
+            .unwrap()
+    };
+    file.write(&record(serde_json::Value::Null)).unwrap();
+    assert_eq!(
+        super::super::mailbox_helper_rename::completion(&root.join("completion"), &request),
+        Completion::Unconfirmed
+    );
+    drop(file);
+    assert_eq!(read(&request, test_runtime_uid()), Completion::Unconfirmed);
+    assert_eq!(
+        rename_through_helper(&root, Refused(calls.clone()), &request, test_runtime_uid()),
+        Outcome::Unknown
+    );
+    assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+    let file = crate::private_account_file::PrivateAccountFile::new(
+        root.join("completion"),
+        "osmap-folder-rename-helper-v1",
+        4096,
+    )
+    .lock(request.account())
+    .unwrap();
+    file.write(&record(serde_json::json!(Outcome::Unknown)))
+        .unwrap();
+    drop(file);
+    assert_eq!(read(&request, test_runtime_uid()), Completion::Unconfirmed);
+    let file = crate::private_account_file::PrivateAccountFile::new(
+        root.join("completion"),
+        "osmap-folder-rename-helper-v1",
+        4096,
+    )
+    .lock(request.account())
+    .unwrap();
+    file.write(b"{broken").unwrap();
+    drop(file);
+    assert_eq!(read(&request, test_runtime_uid()), Completion::Unconfirmed);
+    assert_eq!(
+        rename_through_helper(&root, Refused(calls.clone()), &request, test_runtime_uid()),
+        Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    );
+    assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+    fs::remove_dir_all(root).unwrap();
+}
+
+struct DeleteBackend(Arc<std::sync::atomic::AtomicUsize>);
+impl MailboxBackend for DeleteBackend {
+    fn list_mailboxes(&self,_:&str)->Result<Vec<MailboxEntry>,MailboxBackendError>{Ok(vec![])}
+    fn delete_folder(&self,r:&crate::folder_delete::DeleteFolderRequest)->crate::folder_delete::Outcome{assert_eq!(r.account(),"alice@fixture.test");self.0.fetch_add(1,std::sync::atomic::Ordering::SeqCst);crate::folder_delete::Outcome::Deleted}
+}
+#[test]
+fn folder_delete_signed_original_witness_peer_and_request_binding(){
+    use crate::folder_delete::{DeleteFolderRequest,Outcome,Completion};
+    let root=temp_socket_path("folder-delete").with_extension("root");fs::create_dir(&root).unwrap();fs::set_permissions(&root,fs::Permissions::from_mode(0o700)).unwrap();let key=root.join("fixture-grant.key");fs::write(&key,test_helper_grant_key()).unwrap();fs::set_permissions(&key,fs::Permissions::from_mode(0o600)).unwrap();
+    let r=DeleteFolderRequest::new("alice@fixture.test","INBOX.Alpha",&"a".repeat(32),&"b".repeat(32)).unwrap();let mut action=MailboxHelperRequest::FolderDelete{request:r.clone(),grant:MailboxHelperGrant::unsigned()};issue_request_grant_with_nonce(&mut action,&test_helper_grant_key(),100,r.action_nonce()).unwrap();assert_eq!(parse_request(&encode_request(&action)).unwrap(),action);verify_request_grant(&action,&test_helper_grant_key(),101).unwrap();
+    let mut changed=action.clone();if let MailboxHelperRequest::FolderDelete{request,..}=&mut changed{let mut fields=serde_json::to_value(&*request).unwrap();fields["source_guid"]="c".repeat(32).into();*request=serde_json::from_value(fields).unwrap();}assert!(verify_request_grant(&changed,&test_helper_grant_key(),101).is_err());
+    let calls=Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    for _ in 0..2{assert_eq!(with_rename_helper(&root,DeleteBackend(calls.clone()),test_runtime_uid(),|c|c.delete_folder(&r)),Outcome::Deleted);}
+    assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst),1);
+    assert_eq!(with_rename_helper(&root,DeleteBackend(calls.clone()),test_runtime_uid(),|c|c.folder_delete_completion(&r)),Completion::Deleted);
+    assert_eq!(with_rename_helper(&root,DeleteBackend(calls.clone()),test_runtime_uid().wrapping_add(1),|c|c.delete_folder(&r)),Outcome::Unknown);assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst),1);
+    let other=DeleteFolderRequest::new(r.account(),r.source(),r.source_guid(),r.parent_guid()).unwrap();assert_eq!(with_rename_helper(&root,DeleteBackend(calls.clone()),test_runtime_uid(),|c|c.folder_delete_completion(&other)),Completion::Unconfirmed);
+    fs::remove_dir_all(root).unwrap();
+}

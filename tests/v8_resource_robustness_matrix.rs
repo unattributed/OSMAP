@@ -33,6 +33,7 @@ fn test_context() -> AuthenticationContext {
 fn validated_session_fixture() -> ValidatedSession {
     ValidatedSession {
         record: SessionRecord {
+            account_epoch: None,
             session_id: SESSION_ID.to_string(),
             csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
                 .to_string(),
@@ -60,6 +61,7 @@ fn message_view_from_fixture(raw_message: &str) -> MessageView {
         .split_once("\n\n")
         .expect("fixture should contain a header/body separator");
     MessageView {
+        metadata: None,
         mailbox_name: "INBOX".to_string(),
         uid: 909,
         flags: vec!["\\Seen".to_string()],
@@ -86,6 +88,8 @@ fn synthetic_summaries(count: u64) -> Vec<MessageSummary> {
     (1..=count)
         .rev()
         .map(|uid| MessageSummary {
+            to: None,
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid,
             flags: if uid % 2 == 0 {
@@ -104,6 +108,7 @@ fn synthetic_summaries(count: u64) -> Vec<MessageSummary> {
 fn synthetic_search_results(count: u64) -> Vec<MessageSearchResult> {
     (1..=count)
         .map(|uid| MessageSearchResult {
+            metadata: None,
             mailbox_name: if uid % 2 == 0 {
                 "INBOX".to_string()
             } else {
@@ -176,7 +181,15 @@ fn v8_resource_robustness_matrix_rejects_bounded_invalid_inputs() {
     );
 
     assert!(
-        MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "INBOX", 42).is_err(),
+        MessageMoveRequest::new(
+            MessageMovePolicy::default(),
+            "INBOX",
+            "INBOX",
+            42,
+            osmap::message_metadata::MessageVersion::new("a".repeat(32), "fixture-42".into())
+                .unwrap()
+        )
+        .is_err(),
         "same-mailbox move requests must be rejected"
     );
 }

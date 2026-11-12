@@ -1,0 +1,123 @@
+{
+  "acceptance_checks": {
+    "bounded_capture": "16384 private prefix bytes per stream;512-byte streaming line prefixes;both pipes continuously drained by selector worker;counts/hash/EOF/truncation persist;8MiB per-stream flood and late diagnostic pass.",
+    "delivery": "Ordinary security gate includes new tests;Shopkeeper signature,normal push gates and remote parity remain root-owned and not claimed by this review.",
+    "ownership": "Existing custody/peer/source checks remain;pre-custody signals use only unreaped direct handle;post-custody group checks and reaped-PID refusal remain.",
+    "persistence": "Guardian before-stop and final artifacts are distinct exclusive0600 files with fsync/readback;actor uses existing atomic protected recovery receipt before owned disposal.",
+    "real_producers": "Existing Rust fixed expect literals are tested against actual source; real disposable subprocesses exercise stream producers and actual guardian main with explicit local OS/fixture adapters.",
+    "secrets": "No raw native/guardian output, exception strings or arbitrary fields exported;synthetic secrets and rehashed unsupported claims rejected.",
+    "stage_cleanup": "Existing exact-leaf inert-stage cleanup refuses new unaccounted diagnostic leaves;safe stage retention remains explicit.",
+    "uncertainty": "Durable submission intent survives missing driver;submitted/uncertain outcomes retain resource/session state;no rollback/retry or false no-write."
+  },
+  "decision": "CLEAR",
+  "example": {
+    "authoritative_state_certainty": "CONFIRMED_NO_WRITE",
+    "child_exit": 101,
+    "child_reaped": true,
+    "cleanup_confirmed": true,
+    "file": "independent-pre-ready-example-final.json",
+    "functional_result": "FAIL",
+    "guardian_exit": 1,
+    "guardian_reaped": true,
+    "original_failure": {
+      "cause": "native_admission_client",
+      "code": "control_eof",
+      "component": "native_http_child",
+      "operation": "ready_read",
+      "stage": "bootstrap_sent"
+    },
+    "sha256": "3420ef47278fe2707b3ec7c2d8d2d6c57b0da9db4e94bf4af6cbf4314a587aec",
+    "stderr_bytes": 139,
+    "unknown_cause_reason": null
+  },
+  "executable_validation": {
+    "additional_independent_executions": [
+      "real guardian exit17 before custody with synthetic secret exclusion",
+      "persistence callback failure with actual producer stop/reap and uncertain retention",
+      "real guardian normal READY/report through actual Frontend.finish_http",
+      "current frozen complete failing subprocess to guardian/frontend/actor/frame/final-consumer panic example"
+    ],
+    "compatibility_regression_tests": 20,
+    "failure_history": "Preserved independent-password-regression.log (five stale test object errors) and independent-frozen-focused.log (three stale receipt-envelope errors during schema tightening). Corrected affected suites independently passed; original failures are not relabelled as passing runs.",
+    "focused_unique_tests": 33,
+    "logs": [
+      {
+        "file": "independent-frozen-focused.log",
+        "sha256": "8bccac3a0b22be87b786af21588ddf2248ecac5c58354989fce99be7529bb91c"
+      },
+      {
+        "file": "independent-evidence-corrected.log",
+        "sha256": "48734de13341e1a3f2f72c21cc7c828c9a44da29d274304f900c3c6d032ffbe3"
+      },
+      {
+        "file": "independent-password-regression-corrected.log",
+        "sha256": "ee0fda4e79c51fa666db23f6db5df1ec65bb8e2c0093aedd4ad79a537c04fe30"
+      }
+    ],
+    "negative_tests": 29,
+    "positive_test_definition": [
+      "normal guardian READY/report protocol",
+      "continuous pre-READY collection",
+      "actual protected receipt publish/readback integrity",
+      "successful actor/frame/final-consumer journey"
+    ],
+    "positive_tests": 4
+  },
+  "gate_reconciliation_review": {
+    "correction": "Exactly two claims JSON digest values synchronized to existing current register summary hashes; complete parsed object comparison proves all other fields unchanged.",
+    "counts_flags_classifications_unchanged": true,
+    "decision": "CLEAR",
+    "documentation_review": "CURRENT_PROJECT_STATUS and DECISION_LOG correctly distinguish source correction/local process proof from native operation,qualification,UAT and historical cause.",
+    "no_audit_or_source_rebuild_by_reviewer": true,
+    "problem": "Full acceptance chain passed security-check then V10 refused stale claims references to unchanged committed inventory registers.",
+    "refined_inventory_sha256": "23a33e46e1568efbd53227f1ea8e2e36183b7928ef7afe7a4752c5cf536710c1",
+    "register_provenance_commit": "dc9e791f202a1398af678e83f1cebd93bb18ef67",
+    "registers_equal_HEAD": true,
+    "remaining_gate_result": "Integration owner running separate V10/V11/V12/V13 completion; no broad unchanged security rerun needed for this two-digest metadata correction.",
+    "retained_gate_failure_log_sha256": "53d9decd87d9930d9ee77e340dc4a58223d9eef35a7f63648d3ddd102f70e1a7",
+    "reviewed_at": "2026-10-24T04:13:19.684741+00:00",
+    "rust_inventory_sha256": "7d60b8d02a8809fbbe7aafa557e44a0d087a6f21652a5db711ad3d94b47aff9f"
+  },
+  "limitations": [
+    "Local subprocess adapters do not qualify OpenBSD runtime confinement,installed product workflow or Milestone3.",
+    "Execution158 unique native cause remains UNKNOWN;historical evidence is unchanged.",
+    "Unrecognized arbitrary output is never exported or durably retained as raw bytes;the record explicitly reports CAUSE_UNKNOWN and missing observation.",
+    "Diagnostic staging leaves remain retained until separately reconciled exact-owned disposition;no new cleanup authority is inferred.",
+    "Disk/write failure or abrupt guardian death may leave explicit partial or unavailable capture;the implementation reports deficiency and does not invent a cause.",
+    "Final mandatory delivery gates and signed remote preservation are separate integration-owner results."
+  ],
+  "open_findings": [],
+  "resolved_findings": [
+    "Source-owned allowlists replace token-shape exception export.",
+    "Earliest frontend READY refusal remains original; later guardian shutdown failure remains secondary.",
+    "Native cause requires matching actual capture, observed bytes and expected binary/source bindings.",
+    "Capture deadline is persistent collector state.",
+    "Guardian birth/reap/status claims require a consistent producing process.",
+    "Unknown native causes explicitly distinguish no output, unrecognized output and capture unavailable.",
+    "Evidence-write failure cannot authorize disposal; born request producers still receive bounded stop.",
+    "Existing constructor-bypassing test fixtures now initialize actual diagnostic state."
+  ],
+  "reviewed_at": "2026-10-24T04:08:26.814756+00:00",
+  "reviewer": "/root/delivery_reviewer",
+  "schema": "osmap-issue79-independent-review-v1",
+  "scope": "Local source and executable diagnostic-pipeline review; no host execution, fixture provisioning, password mutation, Rust rebuild, native qualification or Git delivery performed by reviewer",
+  "sources": {
+    "AGENTS.md": "138a427c27357fe7fb12e277e95e12634028cc5dc6c5a7bcaaaa7d51c8dc5237",
+    "docs/CURRENT_PROJECT_STATUS.md": "a623629a563dabf7efba94740cbe1a30b465a0620166f16199e2d1530a81b0af",
+    "docs/DECISION_LOG.md": "b576d66402f522cadb512040a75fd6dfd3d5d4681ffcd98500d746ba2418f66e",
+    "docs/UX_S04_02_SINGLE_HOST_EXECUTION.md": "13aa7e8accb779daf0a44b066ded627ea5bd27443bbe31efa20e7565992b9438",
+    "maint/security/osmap-security-check.sh": "81a2c7cb5a1a0247c5244a7a6ccaa32eb3f4f6d3c7f7ebc8d949c6c32d68d7a2",
+    "maint/security/v10-claims-boundary.json": "9ac843a5b010032d8028cdf3255c67bcf249a48d23cace4523c80b6c8e72e4ee",
+    "maint/ux/s04_02_startup_candidate/consume_startup.py": "8a1e70efeb954580e0da9d23731f1cf82c2f678399c3c321002c66a8718a4a5d",
+    "maint/ux/s04_02_startup_candidate/remote_wrapper.py": "dc230868ee942125b9b692876f1be70e96ff84fc14b5303011f249004fa20ea9",
+    "maint/ux/s04_02_startup_candidate/sources/backend/local_frontend.py": "c3326ac0a1c2c9e246bbb4cb95c77ba0c3c42ae0ab10a6bf50bf61d111e71289",
+    "maint/ux/s04_02_startup_candidate/sources/backend/local_journey.py": "8b8beb7dac5f7be7ef4dc964b4115dbcdda0bf1748550be158bd5c5618f8dd61",
+    "maint/ux/s04_02_startup_candidate/sources/frontend/native_http_web_guardian.py": "a9e7c565affffb12a4de0623f22b6171947ab33941dab163eaaa9425d7966ee4",
+    "maint/ux/s04_02_startup_candidate/stage_root.py": "6a9dd96b11cd189a6b529e3be29bcca458aa93fa4b871634af8a1cddb6b10d9d",
+    "maint/ux/s04_02_startup_candidate/test_mutation_result.py": "69509ec6ddf2fa0323d5323400bb747ccc48133a218cc6233e895a23edd48882",
+    "maint/ux/s04_02_startup_candidate/test_native_diagnostics.py": "d3f071dd146fc2ae1bfae573c64e9faeb43160313bb25a6cdab781c5794f5e6c",
+    "maint/ux/s04_02_startup_candidate/test_native_evidence.py": "6f46248cfaf10e003f64ca80d51287b762df54043e4c3f3b5d5b5e5295e0ebf2",
+    "maint/ux/s04_02_startup_candidate/test_native_frontend.py": "f232841dbdf2c810201bd2c6bb27786af9ca357f5aab3b379d2dd1cf7036bf7b",
+    "maint/ux/s04_02_startup_candidate/test_password_journey.py": "6933943cb9391c0e2ffb43d14ce328d91daae219e3a77244f345479bfbd6d3d2"
+  }
+}

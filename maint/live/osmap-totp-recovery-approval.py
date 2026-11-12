@@ -14,6 +14,7 @@ import time
 SHOPKEEPER = "F55E404E91A0753701F91B01A7228D3FB5084B34"
 SCHEMA = "osmap-totp-recovery-approval-v1"
 REHEARSAL_SCHEMA = "osmap-totp-controlled-rehearsal-v1"
+COORDINATOR_SCHEMA = "osmap-account-recovery-identity-v1"
 REHEARSAL_TARGET = ("osmap-helper-validation@blackbagsecurity.com",
                     "192.168.1.44", "obsd1.blackbagsecurity.com")
 MAX_BYTES = 16384
@@ -120,10 +121,65 @@ def verify_approval(path, signature_path, account, host, hostname, digest, rehea
     return approval, hashlib.sha256(data).hexdigest()
 
 
+def validate_coordinator_payload(data, account, host, hostname, digest, epoch, now,
+                                 rehearsal=False):
+    """Identity admission only; no claimed containment or session effects."""
+    try:
+        approval = json.loads(data, object_pairs_hook=unique_object)
+    except (ValueError, UnicodeError, RecursionError):
+        raise ApprovalError("invalid coordinator identity decision") from None
+    fields = {"schema", "account", "ssh_host", "expected_hostname",
+              "previous_factor_sha256", "expected_epoch", "request_id",
+              "issued_at", "expires_at", "identity_method", "identity_case"}
+    if not isinstance(approval, dict) or set(approval) != fields:
+        raise ApprovalError("unexpected coordinator identity fields")
+    if rehearsal and (account, host, hostname) != REHEARSAL_TARGET:
+        raise ApprovalError("controlled custody requires reserved target")
+    expected = {"schema": COORDINATOR_SCHEMA, "account": account,
+                "ssh_host": host, "expected_hostname": hostname,
+                "previous_factor_sha256": digest, "expected_epoch": epoch}
+    if (type(epoch) is not int or not 0 <= epoch < 2**53
+            or type(approval["expected_epoch"]) is not int
+            or any(approval[key] != value for key, value in expected.items())
+            or not re.fullmatch(r"[0-9a-f]{64}", digest)):
+        raise ApprovalError("coordinator decision does not match current state")
+    for key in ("request_id", "identity_case"):
+        if (not isinstance(approval[key], str)
+                or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", approval[key])):
+            raise ApprovalError("invalid opaque identity reference")
+    methods = ("controlled_test_custody",) if rehearsal else ("in_person", "established_out_of_band")
+    if approval["identity_method"] not in methods:
+        raise ApprovalError("independent human identity decision required")
+    issued, expires = approval["issued_at"], approval["expires_at"]
+    if (type(issued) is not int or type(expires) is not int
+            or not 0 <= issued <= now < expires or not 0 < expires - issued <= 900):
+        raise ApprovalError("identity decision expired or future dated")
+    return approval
+
+
+def verify_coordinator_approval(path, signature_path, account, host, hostname,
+                                digest, epoch, rehearsal=False):
+    data, signature = read_private_file(path), read_private_file(signature_path)
+    verify_signature(data, signature)
+    approval = validate_coordinator_payload(data, account, host, hostname, digest,
+                                             epoch, int(time.time()), rehearsal)
+    return {
+        "schema": "osmap-account-recovery-v1", "account": account,
+        "case_id": approval["request_id"], "expected_epoch": epoch,
+        "previous_factor_sha256": digest,
+        "approval_sha256": hashlib.sha256(data).hexdigest(),
+        "identity_method": approval["identity_method"],
+        "identity_case": approval["identity_case"],
+        "issued_at": approval["issued_at"], "expires_at": approval["expires_at"],
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--template", action="store_true")
     parser.add_argument("--controlled-rehearsal", action="store_true")
+    parser.add_argument("--coordinator", action="store_true")
+    parser.add_argument("--epoch", type=int)
     parser.add_argument("--approval")
     parser.add_argument("--signature")
     parser.add_argument("--account", required=True)
@@ -133,6 +189,34 @@ def main():
     args = parser.parse_args()
     if args.controlled_rehearsal and (args.account, args.host, args.expected_hostname) != REHEARSAL_TARGET:
         parser.error("controlled rehearsal requires the exact reserved obsd1 target")
+    if args.coordinator:
+        if args.epoch is None or not 0 <= args.epoch < 2**53:
+            parser.error("coordinator mode requires a bounded current epoch")
+        if args.template:
+            if args.approval or args.signature:
+                parser.error("template mode cannot verify an approval")
+            now = int(time.time())
+            print(json.dumps({
+                "schema": COORDINATOR_SCHEMA, "account": args.account,
+                "ssh_host": args.host, "expected_hostname": args.expected_hostname,
+                "previous_factor_sha256": args.digest, "expected_epoch": args.epoch,
+                "request_id": "", "issued_at": now, "expires_at": now + 900,
+                "identity_method": "REQUIRES_OPERATOR_VERIFICATION", "identity_case": "",
+            }, indent=2))
+            return 0
+        if not args.approval or not args.signature:
+            parser.error("coordinator verification requires approval and signature")
+        try:
+            native = verify_coordinator_approval(args.approval, args.signature,
+                args.account, args.host, args.expected_hostname, args.digest,
+                args.epoch, args.controlled_rehearsal)
+        except (ApprovalError, OSError, subprocess.SubprocessError):
+            print("COORDINATOR_IDENTITY=REFUSED")
+            return 1
+        print(json.dumps(native, separators=(",", ":")))
+        return 0
+    if args.epoch is not None:
+        parser.error("epoch is only valid in coordinator mode")
     if args.template:
         if args.approval or args.signature:
             parser.error("template mode cannot verify an approval")

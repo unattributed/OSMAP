@@ -576,7 +576,7 @@ fn assert_forced_download_route(
 }
 
 fn message_body_panel(route_html: &str) -> &str {
-    let marker = "<section class=\"body-panel\"><h2>Body</h2>";
+    let marker = "<section class=\"body-panel\"><h2 class=\"sr-only\">Body</h2>";
     let start = route_html
         .find(marker)
         .expect("route-backed message page should contain the body panel")
@@ -639,7 +639,7 @@ fn assert_message_body_dom_is_inert(body_panel: &str) {
 }
 
 fn observe_browser_boundary(route_html: &str) -> BrowserBoundaryObservations {
-    let lower = route_html.to_ascii_lowercase();
+    let lower = remove_inert_shell_vectors(route_html).to_ascii_lowercase();
     BrowserBoundaryObservations {
         auto_fetch_surfaces: count_patterns(
             &lower,
@@ -689,6 +689,153 @@ fn observe_browser_boundary(route_html: &str) -> BrowserBoundaryObservations {
     }
 }
 
+/// Only application-owned geometry before the main landmark is exempt from
+/// the whole-page SVG counter. Message SVG remains forbidden, including an
+/// element that copies the shell class/attributes. No href, style, events,
+/// external resources, animation, nested elements or foreign content qualify.
+const TRUSTED_HEADER_LOGO: &str = "<svg class=\"login-shield\" aria-hidden=\"true\" viewBox=\"0 0 64 72\" role=\"img\"><path d=\"M32 4 56 13v18c0 17-9 29-24 37C17 60 8 48 8 31V13L32 4Z\" fill=\"#eaf2ff\" stroke=\"#9db9ee\" stroke-width=\"2\"/><path d=\"M32 10 49 17v14c0 12-6 22-17 29C21 53 15 43 15 31V17l17-7Z\" fill=\"#2f66d8\"/><circle cx=\"32\" cy=\"31\" r=\"7\" fill=\"#fff\"/><path d=\"M29 37h6l2 14H27l2-14Z\" fill=\"#fff\"/></svg>";
+
+fn remove_inert_shell_vectors(html: &str) -> String {
+    const OPEN: &str = "<svg class=\"shell-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\">";
+    let Some((shell, main)) = html.split_once("<main id=\"main-content\"") else {
+        return html.to_string();
+    };
+    // Only one exact retained logo before message content is application-owned.
+    let shell = shell.replacen(TRUSTED_HEADER_LOGO, "", 1);
+    let mut output = String::new();
+    let mut remainder = shell.as_str();
+    let mut count = 0;
+    while let Some((before, tail)) = remainder.split_once(OPEN) {
+        let Some((geometry, after)) = tail.split_once("</svg>") else {
+            break;
+        };
+        if !inert_vector_geometry(geometry) || count >= 19 {
+            break;
+        }
+        output.push_str(before);
+        remainder = after;
+        count += 1;
+    }
+    output.push_str(remainder);
+    output.push_str("<main id=\"main-content\"");
+    output.push_str(main);
+    output
+}
+
+fn inert_vector_geometry(mut input: &str) -> bool {
+    let mut elements = 0;
+    while !input.is_empty() {
+        let Some((element, remaining)) = input.split_once("/>") else {
+            return false;
+        };
+        let Some((tag, mut attributes)) = element.split_once(' ') else {
+            return false;
+        };
+        let allowed: &[&str] = match tag {
+            "<path" => &["d"],
+            "<circle" => &["cx", "cy", "r"],
+            "<rect" => &["x", "y", "width", "height", "rx"],
+            _ => return false,
+        };
+        let mut seen = Vec::new();
+        while !attributes.is_empty() {
+            let Some((name, value_and_rest)) = attributes.split_once("=\"") else {
+                return false;
+            };
+            let Some((value, rest)) = value_and_rest.split_once('"') else {
+                return false;
+            };
+            if !allowed.contains(&name)
+                || seen.contains(&name)
+                || value.is_empty()
+                || !value.chars().all(|c| {
+                    c.is_ascii_digit()
+                        || " .,-+".contains(c)
+                        || name == "d" && "MmZzLlHhVvCcSsQqTtAa".contains(c)
+                })
+            {
+                return false;
+            }
+            seen.push(name);
+            attributes = rest.trim_start_matches(' ');
+        }
+        if seen.is_empty() || elements >= 8 {
+            return false;
+        }
+        input = remaining;
+        elements += 1;
+    }
+    elements > 0
+}
+
+#[test]
+fn shell_vector_exception_is_geometry_only_and_never_applies_to_message_content() {
+    assert!(inert_vector_geometry(
+        "<path d=\"M3 3h18v18H3z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>"
+    ));
+    for content in [
+        "<path d=\"M3 3\" onload=\"event()\"/>",
+        "<path d=\"M3 3\" style=\"fill:url(https://example.invalid)\"/>",
+        "<use href=\"https://example.invalid/icon.svg\"/>",
+        "<image src=\"https://example.invalid/image.png\"/>",
+        "<foreignObject><p>foreign</p></foreignObject>",
+        "<animate attributeName=\"x\"/>",
+        "<path d=\"M3 3\" d=\"M4 4\"/>",
+        "<path d=\"invalid\"/>",
+    ] {
+        assert!(!inert_vector_geometry(content), "{content}");
+    }
+    let branded_page = |header: &str, body: &str| {
+        format!("<header>{header}</header><main id=\"main-content\">{body}</main>")
+    };
+    assert_eq!(
+        observe_browser_boundary(&branded_page(TRUSTED_HEADER_LOGO, "")).auto_fetch_surfaces,
+        0
+    );
+    assert_eq!(
+        observe_browser_boundary(&branded_page(&TRUSTED_HEADER_LOGO.repeat(2), ""))
+            .auto_fetch_surfaces,
+        1
+    );
+    assert_eq!(
+        observe_browser_boundary(&branded_page("", TRUSTED_HEADER_LOGO)).auto_fetch_surfaces,
+        1
+    );
+    let altered_logo = TRUSTED_HEADER_LOGO.replace("#2f66d8", "#000000");
+    assert_eq!(
+        observe_browser_boundary(&branded_page(&altered_logo, "")).auto_fetch_surfaces,
+        1
+    );
+    let icon = "<svg class=\"shell-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 3h18\"/></svg>";
+    // The application shell includes Contacts, Labels and Outbox in its navigation.
+    // Keep a finite geometry-only budget; an additional SVG remains observable.
+    let shell_page = |count| {
+        format!(
+            "<header>{}</header><main id=\"main-content\"></main>",
+            icon.repeat(count)
+        )
+    };
+    assert_eq!(
+        observe_browser_boundary(&shell_page(19)).auto_fetch_surfaces,
+        0
+    );
+    assert_eq!(
+        observe_browser_boundary(&shell_page(20)).auto_fetch_surfaces,
+        1
+    );
+    let page = format!("<header>{icon}</header><main id=\"main-content\">{icon}</main>");
+    let observations = observe_browser_boundary(&page);
+    assert_eq!(
+        observations.auto_fetch_surfaces, 1,
+        "message SVG is never exempt"
+    );
+    let altered = page.replace(
+        "<path d=\"M3 3h18\"/>",
+        "<image href=\"https://example.invalid/x\"/>",
+    );
+    assert_eq!(observe_browser_boundary(&altered).auto_fetch_surfaces, 2);
+}
+
 fn count_patterns(haystack: &str, needles: &[&str]) -> usize {
     needles
         .iter()
@@ -727,6 +874,7 @@ fn test_context() -> AuthenticationContext {
 fn validated_session_fixture() -> ValidatedSession {
     ValidatedSession {
         record: SessionRecord {
+            account_epoch: None,
             session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                 .to_string(),
             csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
@@ -759,6 +907,7 @@ fn message_view_from_fixture(raw_message: &str) -> MessageView {
 
 fn message_view(header_block: &str, body_text: &str) -> MessageView {
     MessageView {
+        metadata: None,
         mailbox_name: "INBOX".to_string(),
         uid: 9901,
         flags: vec!["\\Seen".to_string()],

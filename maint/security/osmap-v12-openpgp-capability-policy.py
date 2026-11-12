@@ -84,14 +84,9 @@ def decide(state):
 
 
 def http_openpgp_references():
-    refs = []
-    if not HTTP_DIR.exists():
-        return refs
-    for path in sorted(HTTP_DIR.rglob("*.rs")):
-        text = path.read_text(encoding="utf-8")
-        if "openpgp" in text.lower() or "OpenPgp" in text:
-            refs.append(str(path.relative_to(ROOT)))
-    return refs
+    from openpgp_http_boundary import http_openpgp_references as check, self_test
+    self_test()
+    return check(HTTP_DIR, ROOT)
 
 
 def validate():

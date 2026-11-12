@@ -276,6 +276,7 @@ submit_login() {
   {
     printf 'POST /login HTTP/1.1\r\n'
     printf 'Host: localhost\r\n'
+    printf 'Origin: http://localhost\r\n'
     printf 'Content-Type: application/x-www-form-urlencoded\r\n'
     printf 'Content-Length: %s\r\n' "$(printf '%s' "${body}" | wc -c | awk '{print $1}')"
     printf 'Connection: close\r\n'

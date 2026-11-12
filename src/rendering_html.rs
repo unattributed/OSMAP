@@ -301,6 +301,9 @@ mod tests {
                 "</head>",
                 "<p style=\"background-image:url('https://evil.example/bg.png')\" ",
                 "onclick=\"alert(1)\">Visible text</p>",
+                // RUSTSEC-2021-0157: preserve OSMAP's refusal of the entire
+                // CSS attribute even when cid URL quoting contains CSS syntax.
+                r#"<div style='background:url("cid:\");EVIL_CSS_HERE;background:url(\"cid:")'>CSS fixture</div>"#,
                 "<form action=\"https://evil.example/post\"><input name=\"secret\" value=\"x\"></form>",
                 "<img src=\"https://evil.example/tracker.png\">",
                 "<svg><a href=\"https://evil.example/svg\">svg text</a></svg>",
@@ -337,6 +340,8 @@ mod tests {
         assert!(!sanitized.body_html.contains("http-equiv"));
         assert!(!sanitized.body_html.contains("@import"));
         assert!(!sanitized.body_html.contains("background-image"));
+        assert!(!sanitized.body_html.contains("EVIL_CSS_HERE"));
+        assert!(!sanitized.body_html.contains("cid:"));
         assert!(!sanitized.body_html.contains("evil.example"));
         assert!(!sanitized.body_html.contains("svg text"));
         assert!(!sanitized.body_html.contains("math text"));
@@ -380,6 +385,10 @@ mod tests {
                 "<set attributeName=\"href\" to=\"javascript:alert('SET_XSS')\"></set>",
                 "<animate attributeName=\"href\" values=\"https://safe.invalid;",
                 "javascript:alert('ANIMATE_XSS')\"></animate>",
+                // RUSTSEC-2021-0158 covers these additional SVG animations.
+                "<animateMotion attributeName=\"href\" to=\"javascript:alert('MOTION_XSS')\"></animateMotion>",
+                "<animateTransform attributeName=\"href\" to=\"javascript:alert('TRANSFORM_XSS')\"></animateTransform>",
+                "<animateColor attributeName=\"href\" to=\"javascript:alert('COLOR_XSS')\"></animateColor>",
                 "<text y=\"30\">click</text></a></svg>"
             ),
             None,
@@ -396,6 +405,9 @@ mod tests {
         assert!(!sanitized.body_html.contains("javascript:"));
         assert!(!sanitized.body_html.contains("SET_XSS"));
         assert!(!sanitized.body_html.contains("ANIMATE_XSS"));
+        assert!(!sanitized.body_html.contains("MOTION_XSS"));
+        assert!(!sanitized.body_html.contains("TRANSFORM_XSS"));
+        assert!(!sanitized.body_html.contains("COLOR_XSS"));
     }
 
     #[test]

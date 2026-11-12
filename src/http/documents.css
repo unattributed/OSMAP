@@ -1,0 +1,25 @@
+.document-list {
+  list-style: none;
+  margin: 1rem 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .75rem;
+}
+.document-grid .document-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+}
+.document-list li {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: .55rem;
+  padding: .9rem;
+  background: var(--panel-soft);
+}
+.document-list li strong,
+.document-list li span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.document-list details { margin-top: .5rem; }
+.document-list form { margin: .5rem 0; }

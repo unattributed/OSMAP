@@ -1,7 +1,689 @@
 use super::*;
 
 /// A runtime-facing gateway for browser operations.
+/// Verified exact attempted content and finite retention; no editable draft id.
+pub struct BrowserSendRecoverySnapshot {
+    pub request: Box<ComposeRequest>,
+    pub created_at: u64,
+    pub expires_at: u64,
+}
+
+pub enum BrowserSendRecoveryDecision {
+    Available(BrowserSendRecoverySnapshot),
+    Missing,
+    Expired,
+    Unconfirmed,
+    Unavailable,
+}
+
 pub trait BrowserGateway {
+    fn access_view(
+        &self,
+        _context: &AuthenticationContext,
+        _authority: crate::browser_access::AccessAuthority<'_>,
+        _csrf: &str,
+    ) -> Result<crate::browser_access::AccessView, crate::browser_access::AccessError> {
+        Err(crate::browser_access::AccessError::Unavailable)
+    }
+    fn access_action(
+        &self,
+        _context: &AuthenticationContext,
+        _authority: crate::browser_access::AccessAuthority<'_>,
+        _csrf: &str,
+        _action: crate::browser_access::AccessAction<'_>,
+        _deadline: std::time::Instant,
+    ) -> Result<crate::browser_access::AccessOutcome, crate::browser_access::AccessError> {
+        Err(crate::browser_access::AccessError::Unavailable)
+    }
+    fn authenticator(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::authenticator::Snapshot, crate::authenticator::Error> {
+        Err(crate::authenticator::Error::Unavailable)
+    }
+    fn request_account_recovery(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+    ) -> Result<crate::authenticator::RequestRecord, crate::authenticator::Error> {
+        Err(crate::authenticator::Error::Unavailable)
+    }
+    fn recovery_contact(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<
+        crate::recovery_contact::RecoveryContactSnapshot,
+        crate::recovery_contact::RecoveryContactError,
+    > {
+        Err(crate::recovery_contact::RecoveryContactError::Unavailable)
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn recovery_contact_action(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _token: &SessionToken,
+        _revision: u64,
+        _action: crate::recovery_contact::RecoveryContactAction,
+        _current_password: &str,
+        _totp_code: &str,
+        _deadline: std::time::Instant,
+    ) -> Result<
+        crate::recovery_contact::RecoveryContactResult,
+        crate::recovery_contact::RecoveryContactError,
+    > {
+        Err(crate::recovery_contact::RecoveryContactError::Unavailable)
+    }
+    /// Derived from the paired qualified runtime; absence never enables a form.
+    fn password_change_available(&self, _session: &ValidatedSession) -> bool {
+        false
+    }
+    /// Authoritative own-write time for this authenticated active session epoch.
+    /// Missing historical data or unavailable authority remains Unknown.
+    fn password_changed_at(&self, _session: &ValidatedSession) -> Option<String> {
+        None
+    }
+    /// A separate result-only capability is prepared before a credential dispatch.
+    /// It never admits a session or authorizes account operations.
+    fn begin_password_result(
+        &self,
+        _session: &ValidatedSession,
+        _existing: Option<&str>,
+    ) -> Result<Option<String>, BrowserPasswordResultError> {
+        Ok(None)
+    }
+    fn finish_password_result(
+        &self,
+        _session: &ValidatedSession,
+        _capability: &str,
+        _outcome: &BrowserPasswordOutcome,
+    ) -> bool {
+        false
+    }
+    fn password_result(&self, _capability: &str) -> Option<BrowserPasswordResult> {
+        None
+    }
+    fn change_own_password(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _token: &SessionToken,
+        _request: crate::password_change::Request<'_>,
+        _deadline: std::time::Instant,
+    ) -> BrowserPasswordOutcome {
+        BrowserPasswordOutcome {
+            changed_at: None,
+            decision: BrowserPasswordDecision::PrewriteRefused(
+                crate::password_change::Error::Unavailable,
+            ),
+            audit_events: Vec::new(),
+        }
+    }
+    fn mail_storage_report(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Option<crate::documents::MailStorageReport> {
+        None
+    }
+    fn documents_quota_status(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Option<crate::documents::QuotaStatus> {
+        None
+    }
+    fn documents_quota_ready(&self, _session: &ValidatedSession) -> bool {
+        false
+    }
+    fn create_document_folder(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _name: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn move_document_to_folder(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _document_id: &str,
+        _folder_id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn load_documents(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn upload_document(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _name: &str,
+        _media_type: &str,
+        _bytes: &[u8],
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn download_document(
+        &self,
+        _session: &ValidatedSession,
+        _id: &str,
+    ) -> Result<(String, Vec<u8>), crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn bin_document(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn restore_document(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn delete_document(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn reconcile_document(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn retention_status(
+        &self,
+        _session: &ValidatedSession,
+        _mailbox: &str,
+    ) -> crate::mailbox::RetentionDecision {
+        crate::mailbox::RetentionDecision::Unavailable
+    }
+    fn delete_message(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _request: &crate::mailbox::MessageDeleteRequest,
+    ) -> BrowserMessageDeleteOutcome {
+        BrowserMessageDeleteOutcome {
+            result: Err(crate::mailbox::MessageDeleteError::Unavailable),
+            retry_after_seconds: None,
+            audit_events: Vec::new(),
+        }
+    }
+    fn key_management(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> crate::key_management::StateOutcome {
+        crate::key_management::StateOutcome {
+            state: crate::key_management::State::unavailable(&session.record.canonical_username),
+            audit_events: vec![],
+        }
+    }
+    fn personal_key_state(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Option<crate::openpgp_personal::PersonalState> {
+        None
+    }
+    fn remember_personal_key(&self, _session: &ValidatedSession, _token: &[u8]) -> Option<u64> {
+        None
+    }
+    fn resume_personal_key(&self, _session: &ValidatedSession, _token: &[u8]) -> bool {
+        false
+    }
+    fn lock_personal_key(&self, _session: &ValidatedSession) -> bool {
+        false
+    }
+    fn forget_remembered_key(&self, _account: &str, _token: &[u8]) -> bool {
+        false
+    }
+    fn change_keys(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _token: &SessionToken,
+        _request: crate::key_management::MutationRequest<'_>,
+    ) -> crate::key_management::MutationOutcome {
+        crate::key_management::MutationOutcome {
+            result: Err(crate::key_management::Error::Unavailable),
+            audit_events: vec![],
+        }
+    }
+    fn load_bin_preference(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::bin_folder::BinPreference, crate::bin_folder::Error> {
+        Err(crate::bin_folder::Error::Unavailable)
+    }
+    fn update_bin_preference(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _mailbox_name: &str,
+    ) -> Result<crate::bin_folder::BinPreference, crate::bin_folder::Error> {
+        Err(crate::bin_folder::Error::Unavailable)
+    }
+
+    fn load_after_archive(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::after_archive::Preference, crate::after_archive::Error> {
+        Err(crate::after_archive::Error::Unavailable)
+    }
+    fn save_after_archive(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _choice: crate::after_archive::Choice,
+    ) -> Result<crate::after_archive::Preference, crate::after_archive::Error> {
+        Err(crate::after_archive::Error::Unavailable)
+    }
+
+    fn load_mark_read_policy(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
+        Err(crate::mark_read::Error::Unavailable)
+    }
+    fn load_timezone(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::timezone::Preference, crate::timezone::Error> {
+        Err(crate::timezone::Error::Unavailable)
+    }
+    fn save_timezone(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _offset: crate::timezone::FixedOffset,
+    ) -> Result<crate::timezone::Preference, crate::timezone::Error> {
+        Err(crate::timezone::Error::Unavailable)
+    }
+    fn load_draft_location_preference(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::draft_location::Preference, crate::draft_location::Error> {
+        let _ = session;
+        Err(crate::draft_location::Error::Unavailable)
+    }
+    fn draft_location_ready(
+        &self,
+        session: &ValidatedSession,
+        location: crate::draft_location::Location,
+    ) -> bool {
+        let _ = (session, location);
+        false
+    }
+    fn save_draft_location_preference(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        location: crate::draft_location::Location,
+    ) -> Result<crate::draft_location::Preference, crate::draft_location::Error> {
+        let _ = (session, revision, location);
+        Err(crate::draft_location::Error::Unavailable)
+    }
+    fn qualify_draft_location(
+        &self,
+        session: &ValidatedSession,
+        location: crate::draft_location::Location,
+    ) -> Result<(), crate::draft_location::Error> {
+        let _ = (session, location);
+        Err(crate::draft_location::Error::Unavailable)
+    }
+    fn load_sent_location_preference(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::sent_location::Preference, crate::sent_location::Error> {
+        let _ = session;
+        Err(crate::sent_location::Error::Unavailable)
+    }
+    fn save_sent_location_preference(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        name: &str,
+        guid: &str,
+    ) -> Result<crate::sent_location::Preference, crate::sent_location::Error> {
+        let _ = (session, revision, name, guid);
+        Err(crate::sent_location::Error::Unavailable)
+    }
+    fn load_sent_copy_preference(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::sent_copy::Preference, crate::sent_copy::Error> {
+        Err(crate::sent_copy::Error::Unavailable)
+    }
+    fn save_sent_copy_preference(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _save_sent: bool,
+    ) -> Result<crate::sent_copy::Preference, crate::sent_copy::Error> {
+        Err(crate::sent_copy::Error::Unavailable)
+    }
+    fn save_mark_read_policy(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _policy: crate::mark_read::Policy,
+    ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
+        Err(crate::mark_read::Error::Unavailable)
+    }
+
+    fn load_autosave(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::autosave::Preference, crate::autosave::Error> {
+        Err(crate::autosave::Error::Unavailable)
+    }
+    fn save_autosave(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _enabled: bool,
+        _interval: u16,
+    ) -> Result<crate::autosave::Preference, crate::autosave::Error> {
+        Err(crate::autosave::Error::Unavailable)
+    }
+
+    fn load_signature(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::signature::SignatureRecord, crate::signature::SignatureError> {
+        Err(crate::signature::SignatureError::Unavailable)
+    }
+    fn change_signature(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _change: crate::signature::SignatureChange<'_>,
+    ) -> Result<crate::signature::SignatureRecord, crate::signature::SignatureError> {
+        Err(crate::signature::SignatureError::Unavailable)
+    }
+
+    fn snooze_clock(&self) -> u64 {
+        crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider)
+    }
+    fn scheduled_clock(&self) -> u64 {
+        crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider)
+    }
+    fn scheduled_list(
+        &self,
+        _: &ValidatedSession,
+    ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+        Err(crate::scheduled_send::Error::Unavailable)
+    }
+    fn outbox_attempts(
+        &self,
+        _: &ValidatedSession,
+    ) -> Result<Vec<crate::send_recovery::OutboxAttempt>, crate::scheduled_send::Error> {
+        Err(crate::scheduled_send::Error::Unavailable)
+    }
+    fn scheduled_payload(
+        &self,
+        _: &ValidatedSession,
+        _: &str,
+    ) -> Result<crate::send::ComposeRequest, crate::scheduled_send::Error> {
+        Err(crate::scheduled_send::Error::Unavailable)
+    }
+    fn scheduled_from_draft(
+        &self,
+        _: &ValidatedSession,
+        _: &str,
+        _: u64,
+        _: u64,
+    ) -> Result<String, crate::scheduled_send::Error> {
+        Err(crate::scheduled_send::Error::Unavailable)
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn scheduled_edit(
+        &self,
+        _: &ValidatedSession,
+        _: &str,
+        _: u64,
+        _: u64,
+        _: &str,
+        _: &str,
+        _: &str,
+        _: &str,
+        _: &str,
+    ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+        Err(crate::scheduled_send::Error::Unavailable)
+    }
+    fn scheduled_change(
+        &self,
+        _: &ValidatedSession,
+        _: &str,
+        _: u64,
+        _: &str,
+        _: Option<u64>,
+    ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+        Err(crate::scheduled_send::Error::Unavailable)
+    }
+    fn snooze_load(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::snooze::SnoozeRecord, crate::snooze::SnoozeError> {
+        Err(crate::snooze::SnoozeError::Unavailable)
+    }
+    fn snooze_change(
+        &self,
+        _session: &ValidatedSession,
+        _identity: &crate::snooze::MessageIdentity,
+        _revision: u64,
+        _until: Option<u64>,
+    ) -> Result<crate::snooze::SnoozeRecord, crate::snooze::SnoozeError> {
+        Err(crate::snooze::SnoozeError::Unavailable)
+    }
+    fn snooze_project(
+        &self,
+        _session: &ValidatedSession,
+        _owner: &str,
+        _folder: &str,
+        _rows: &[MessageSummary],
+    ) -> crate::snooze::SnoozeProjection {
+        crate::snooze::SnoozeProjection {
+            hidden: vec![],
+            revision: None,
+            unavailable: Some(crate::snooze::SnoozeError::Unavailable),
+        }
+    }
+
+    /// Authenticated read-only exact snapshot; never grants a mutation or retry.
+    fn read_send_recovery(
+        &self,
+        _session: &ValidatedSession,
+        _intent: &str,
+    ) -> BrowserSendRecoveryDecision {
+        BrowserSendRecoveryDecision::Unavailable
+    }
+
+    fn send_clock(&self) -> u64 {
+        crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider)
+    }
+    fn send_receipt(
+        &self,
+        session: &ValidatedSession,
+        intent: &str,
+    ) -> Result<Option<BrowserSendDecision>, String>;
+    fn cleanup_sent_draft(
+        &self,
+        session: &ValidatedSession,
+        id: &str,
+        revision: u64,
+        intent: &str,
+    ) -> Result<bool, String>;
+
+    fn archive_events_available(&self) -> bool {
+        false
+    }
+    fn archive_event_clock(&self) -> u64 {
+        crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider)
+    }
+    fn load_archive_events(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::archive_event::Snapshot, crate::archive_event::Error> {
+        Err(crate::archive_event::Error::Unavailable)
+    }
+    fn record_archive_event(
+        &self,
+        _session: &ValidatedSession,
+        _confirmation: &crate::archive_event::ConfirmedArchive,
+        _confirmed_at: u64,
+    ) -> Result<crate::archive_event::Snapshot, crate::archive_event::Error> {
+        Err(crate::archive_event::Error::Unavailable)
+    }
+
+    fn labels_available(&self) -> bool {
+        false
+    }
+    fn load_labels(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        Err(crate::labels::LabelError::Unavailable)
+    }
+    fn change_labels(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _change: crate::labels::LabelChange<'_>,
+    ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        Err(crate::labels::LabelError::Unavailable)
+    }
+    fn reconcile_labels(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _source: &crate::labels::MessageIdentity,
+        _destination: &crate::labels::MessageIdentity,
+    ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        Err(crate::labels::LabelError::Unavailable)
+    }
+    fn load_contacts(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::contacts::ContactBook, crate::contacts::ContactError>;
+    fn change_contact(
+        &self,
+        session: &ValidatedSession,
+        expected_revision: u64,
+        change: crate::contacts::ContactChange,
+    ) -> Result<crate::contacts::ContactBook, crate::contacts::ContactError>;
+
+    fn set_message_flag(
+        &self,
+        _context: &AuthenticationContext,
+        _validated_session: &ValidatedSession,
+        _request: &crate::mailbox::MessageFlagRequest,
+    ) -> BrowserMessageFlagOutcome {
+        BrowserMessageFlagOutcome {
+            result: Err(BrowserMessageFlagFailure::Unavailable),
+            audit_events: Vec::new(),
+        }
+    }
+
+    fn load_notification_preference(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::notification_preferences::Preference, crate::notification_preferences::Error>
+    {
+        Err(crate::notification_preferences::Error::Unavailable)
+    }
+    fn save_notification_preference(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _digest: crate::notification_preferences::DigestMode,
+    ) -> Result<crate::notification_preferences::Preference, crate::notification_preferences::Error>
+    {
+        Err(crate::notification_preferences::Error::Unavailable)
+    }
+    fn save_notification_choices(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _digest: crate::notification_preferences::DigestMode,
+        _choices: crate::notification_preferences::Choice,
+    ) -> Result<crate::notification_preferences::Preference, crate::notification_preferences::Error>
+    {
+        Err(crate::notification_preferences::Error::Unavailable)
+    }
+    fn refresh_notification_sources(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+    ) -> Result<(), crate::notifications::NotificationError> {
+        Err(crate::notifications::NotificationError::Unavailable)
+    }
+    fn record_session_notification(
+        &self,
+        _account: &str,
+        _kind: crate::notifications::NotificationKind,
+    ) -> Result<(), crate::notifications::NotificationError> {
+        Err(crate::notifications::NotificationError::Unavailable)
+    }
+    fn notification_inbox(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        Err(crate::notifications::NotificationError::Unavailable)
+    }
+    fn set_notification_read(
+        &self,
+        _session: &ValidatedSession,
+        _id: &str,
+        _revision: u64,
+        _read: bool,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        Err(crate::notifications::NotificationError::Unavailable)
+    }
+    fn mark_all_notifications_read(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        Err(crate::notifications::NotificationError::Unavailable)
+    }
+    fn delete_all_notifications(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        Err(crate::notifications::NotificationError::Unavailable)
+    }
+    fn delete_notification(
+        &self,
+        _session: &ValidatedSession,
+        _id: &str,
+        _revision: u64,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        Err(crate::notifications::NotificationError::Unavailable)
+    }
+
     fn login(
         &self,
         context: &AuthenticationContext,
@@ -42,11 +724,198 @@ pub trait BrowserGateway {
         scope: BrowserSessionRevokeScope,
     ) -> BrowserSessionRevokeOutcome;
 
+    fn load_reading_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+    ) -> std::io::Result<crate::reading_preferences::ReadingPreferences> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "reading preferences unavailable",
+        ))
+    }
+
+    fn update_reading_start_page(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        start_page: crate::reading_preferences::StartPage,
+    ) -> std::io::Result<crate::reading_preferences::ReadingPreferences> {
+        let _ = (session, start_page);
+        Err(std::io::Error::other("reading preferences unavailable"))
+    }
+
+    fn update_reading_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _value: crate::reading_preferences::ReadingPreferences,
+    ) -> std::io::Result<()> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "reading preferences unavailable",
+        ))
+    }
+
+    fn sender_inventory(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::sender_authority::Snapshot, crate::sender_authority::Error> {
+        crate::sender_authority::Snapshot::canonical(&session.record.canonical_username)
+    }
+    fn sender_identity_settings(
+        &self,
+        _: &ValidatedSession,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        Err(crate::identity_preferences::IdentityPreferencesError::Unavailable)
+    }
+    fn update_sender_identity(
+        &self,
+        _: &ValidatedSession,
+        _: u64,
+        _: &crate::identity_preferences::SenderIdentityUpdate,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        Err(crate::identity_preferences::IdentityPreferencesError::Unavailable)
+    }
+    fn load_identity_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        {
+            let _ = session;
+            Err(crate::identity_preferences::IdentityPreferencesError::Unavailable)
+        }
+    }
+    fn update_identity_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        expected_revision: u64,
+        value: &crate::identity_preferences::IdentityPreferences,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        {
+            let _ = (session, expected_revision, value);
+            Err(crate::identity_preferences::IdentityPreferencesError::Unavailable)
+        }
+    }
+
+    fn load_composition_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+    ) -> std::io::Result<crate::composition_preferences::CompositionPreferences> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "composition preferences unavailable",
+        ))
+    }
+    fn update_composition_format(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _value: crate::compose_format::BodyFormat,
+    ) -> std::io::Result<()> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "composition preferences unavailable",
+        ))
+    }
+
+    fn update_composition_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _value: crate::composition_preferences::CompositionPreferencesUpdate,
+    ) -> std::io::Result<()> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "composition preferences unavailable",
+        ))
+    }
+
+    fn load_appearance(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> std::io::Result<AppearancePreference>;
+
+    fn update_appearance(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        appearance: AppearancePreference,
+    ) -> std::io::Result<()>;
+
+    fn load_display(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> std::io::Result<AppearanceSettings> {
+        self.load_appearance(context, validated_session)
+            .map(|theme| AppearanceSettings {
+                theme,
+                ..AppearanceSettings::default()
+            })
+    }
+
+    fn update_display(
+        &self,
+        _context: &AuthenticationContext,
+        _validated_session: &ValidatedSession,
+        _preferences: AppearanceSettings,
+    ) -> std::io::Result<()> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "display preferences unavailable",
+        ))
+    }
+
     fn load_settings(
         &self,
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
     ) -> BrowserSettingsOutcome;
+
+    fn update_content_setting(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _content: HtmlDisplayPreference,
+    ) -> BrowserSettingsUpdateOutcome {
+        BrowserSettingsUpdateOutcome {
+            decision: BrowserSettingsUpdateDecision::Denied {
+                public_reason: "temporarily_unavailable".into(),
+            },
+            audit_events: vec![],
+        }
+    }
+
+    fn update_archive_setting(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _archive: Option<&str>,
+    ) -> BrowserSettingsUpdateOutcome {
+        BrowserSettingsUpdateOutcome {
+            decision: BrowserSettingsUpdateDecision::Denied {
+                public_reason: "temporarily_unavailable".into(),
+            },
+            audit_events: vec![],
+        }
+    }
 
     fn update_settings(
         &self,
@@ -56,6 +925,145 @@ pub trait BrowserGateway {
         archive_mailbox_name: Option<&str>,
     ) -> BrowserSettingsUpdateOutcome;
 
+    fn pending_folder_delete(
+        &self,
+        _: &ValidatedSession,
+    ) -> Result<Option<crate::folder_delete::DeleteFolderRequest>, crate::folder_create::Refusal>
+    {
+        Err(crate::folder_create::Refusal::Unavailable)
+    }
+    fn check_folder_delete(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+    ) -> crate::folder_delete::CheckOutcome {
+        crate::folder_delete::CheckOutcome::Unavailable
+    }
+    fn delete_folder(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+        _: &crate::folder_delete::DeleteFolderRequest,
+    ) -> crate::folder_delete::Outcome {
+        crate::folder_delete::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    }
+    fn folder_disposition_receipts(
+        &self,
+        _: &ValidatedSession,
+    ) -> Result<Vec<crate::folder_disposition::Receipt>, crate::folder_create::Refusal> {
+        Err(crate::folder_create::Refusal::Unavailable)
+    }
+    fn prepare_folder_bin(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+        _: &str,
+    ) -> Result<crate::folder_rename::RenameFolderRequest, crate::folder_create::Refusal> {
+        Err(crate::folder_create::Refusal::Unavailable)
+    }
+    fn apply_folder_disposition(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+        _: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Outcome {
+        crate::folder_rename::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    }
+    fn check_folder_disposition(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+    ) -> crate::folder_rename::CheckOutcome {
+        crate::folder_rename::CheckOutcome::Unavailable
+    }
+    fn pending_folder_rename(
+        &self,
+        _: &ValidatedSession,
+    ) -> Result<Option<crate::folder_rename::RenameFolderRequest>, crate::folder_create::Refusal>
+    {
+        Err(crate::folder_create::Refusal::Unavailable)
+    }
+    fn check_folder_rename(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+    ) -> crate::folder_rename::CheckOutcome {
+        crate::folder_rename::CheckOutcome::Unavailable
+    }
+    fn recover_folder_rename(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+        _: &str,
+    ) -> crate::folder_rename::RecoveryOutcome {
+        crate::folder_rename::RecoveryOutcome::Unavailable
+    }
+    fn rename_folder(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+        _: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Outcome {
+        crate::folder_rename::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    }
+    fn create_folder(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+        _: &crate::folder_create::CreateFolderRequest,
+    ) -> BrowserFolderCreateOutcome {
+        BrowserFolderCreateOutcome {
+            outcome: crate::folder_create::Outcome::Refused(
+                crate::folder_create::Refusal::Unavailable,
+            ),
+            audit_events: vec![],
+        }
+    }
+    fn compose_protection(
+        &self,
+        _session: &ValidatedSession,
+        _to: &str,
+        _cc: &str,
+        _bcc: &str,
+        _intent: crate::send::ProtectionIntent,
+    ) -> Option<crate::http::ComposeProtectionView> {
+        None
+    }
+
+    fn public_key_inventory(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> BrowserPublicInventoryOutcome {
+        BrowserPublicInventoryOutcome {
+            canonical_username: session.record.canonical_username.clone(),
+            inventory: None,
+            audit_events: vec![],
+        }
+    }
+    fn folder_metadata(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> BrowserFolderMetadataOutcome {
+        BrowserFolderMetadataOutcome {
+            canonical_username: session.record.canonical_username.clone(),
+            snapshot: None,
+            audit_events: vec![],
+        }
+    }
+    fn mailbox_status(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        _folder: &str,
+    ) -> BrowserMailboxStatusOutcome {
+        BrowserMailboxStatusOutcome {
+            canonical_username: session.record.canonical_username.clone(),
+            status: None,
+            audit_events: vec![],
+        }
+    }
     fn list_mailboxes(
         &self,
         context: &AuthenticationContext,
@@ -95,13 +1103,68 @@ pub trait BrowserGateway {
         part_path: &str,
     ) -> BrowserAttachmentDownloadOutcome;
 
+    /// Decode a freshly fetched, already ownership-checked stored snapshot.
+    /// A runtime override processes protected content through its authenticated
+    /// crypto client; the default refuses protected envelopes.
+    fn download_stored_attachment(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        message: &MessageView,
+        part: &str,
+    ) -> BrowserAttachmentDownloadOutcome {
+        let result =
+            if super::http_gateway::http_gateway_protected::has_protection_envelope(message) {
+                None
+            } else {
+                Some(
+                    AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
+                        .download_for_validated_session(context, session, message, part),
+                )
+            };
+        let mut audit_events = vec![];
+        let decision = if let Some(outcome) = result {
+            audit_events.push(outcome.audit_event);
+            match outcome.decision {
+                AttachmentDownloadDecision::Downloaded {
+                    canonical_username,
+                    attachment,
+                    ..
+                } => BrowserAttachmentDownloadDecision::Downloaded {
+                    canonical_username,
+                    attachment,
+                },
+                AttachmentDownloadDecision::Denied { public_reason } => {
+                    BrowserAttachmentDownloadDecision::Denied {
+                        public_reason: public_reason.as_str().into(),
+                    }
+                }
+            }
+        } else {
+            BrowserAttachmentDownloadDecision::Denied {
+                public_reason: "temporarily_unavailable".into(),
+            }
+        };
+        BrowserAttachmentDownloadOutcome {
+            decision,
+            audit_events,
+        }
+    }
+
+    /// Read bounded stored text through the configured mailbox boundary.
+    /// Callers must check account, mailbox, UID and any expected version.
+    fn read_message_source(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &MessageViewRequest,
+    ) -> crate::mailbox::MessageViewOutcome;
+
     fn move_message(
         &self,
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
-        source_mailbox_name: &str,
-        uid: u64,
-        destination_mailbox_name: &str,
+        request: &MessageMoveRequest,
     ) -> BrowserMessageMoveOutcome;
 
     fn send_message(
@@ -136,31 +1199,81 @@ pub trait BrowserGateway {
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
         draft_id: &str,
+        expected_revision: u64,
     ) -> BrowserDraftDeleteOutcome;
+
+    fn set_draft_star(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        draft_id: &str,
+        expected_revision: u64,
+        starred: bool,
+    ) -> BrowserDraftSaveOutcome;
 }
 
 /// Draft save fields parsed by the browser route layer.
 #[derive(Debug, Clone, Copy)]
 pub struct BrowserDraftSaveRequest<'a> {
+    pub sender_id: Option<&'a str>,
+    pub protection: crate::send::ProtectionIntent,
+    pub send_intent: &'a str,
     pub draft_id: Option<&'a str>,
+    pub expected_revision: Option<u64>,
     pub recipients: &'a str,
     pub cc_recipients: &'a str,
     pub bcc_recipients: &'a str,
     pub subject: &'a str,
     pub body: &'a str,
+    pub body_format: crate::compose_format::BodyFormat,
     pub attachments: &'a [UploadedAttachment],
+    pub removed_attachment_indices: &'a [usize],
     pub source_attachments: Option<&'a DraftSourceAttachments>,
+    pub reply_thread: Option<&'a crate::reply_thread::ReplyThread>,
 }
 
 /// Send fields parsed by the browser route layer.
 #[derive(Debug, Clone, Copy)]
 pub struct BrowserSendRequest<'a> {
+    pub sender_id: Option<&'a str>,
+    pub protection: crate::send::ProtectionIntent,
+    pub send_intent: &'a str,
+    pub draft_id: Option<&'a str>,
+    pub draft_revision: Option<u64>,
     pub recipients: &'a str,
     pub cc_recipients: &'a str,
     pub bcc_recipients: &'a str,
     pub subject: &'a str,
     pub body: &'a str,
+    pub body_format: crate::compose_format::BodyFormat,
     pub attachments: &'a [UploadedAttachment],
+    pub reply_thread: Option<&'a crate::reply_thread::ReplyThread>,
+}
+
+/// Minimal result view; contains no account identity or session authority.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserPasswordResult {
+    pub confirmed: bool,
+    pub changed_at: Option<String>,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BrowserPasswordResultError {
+    Unavailable,
+}
+
+/// The result of a browser login attempt.
+pub struct BrowserPasswordOutcome {
+    pub decision: BrowserPasswordDecision,
+    /// Known performed-write time; an incomplete decision remains incomplete.
+    pub changed_at: Option<String>,
+    pub audit_events: Vec<LogEvent>,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BrowserPasswordDecision {
+    PrewriteRefused(crate::password_change::Error),
+    KnownRefused,
+    Changed,
+    Unconfirmed,
 }
 
 /// The result of a browser login attempt.
@@ -176,6 +1289,9 @@ pub enum BrowserLoginDecision {
     Authenticated {
         canonical_username: String,
         session_token: SessionToken,
+        appearance: AppearancePreference,
+        presentation: AppearanceSettings,
+        reading: crate::reading_preferences::ReadingPreferences,
     },
     Denied {
         public_reason: String,
@@ -247,6 +1363,31 @@ pub enum BrowserSessionListDecision {
     },
 }
 
+impl BrowserSessionListDecision {
+    /// Verified retained metadata for an authenticated account overview.
+    pub(crate) fn verified_sessions(&self, account: &str) -> Option<&[BrowserVisibleSession]> {
+        let Self::Listed {
+            canonical_username,
+            sessions,
+            ..
+        } = self
+        else {
+            return None;
+        };
+        if canonical_username != account || sessions.len() > 256 {
+            return None;
+        }
+        let mut seen = std::collections::BTreeSet::new();
+        if sessions
+            .iter()
+            .any(|session| !seen.insert(session.session_id.as_str()))
+        {
+            return None;
+        }
+        Some(sessions)
+    }
+}
+
 /// The result of a browser-driven session revocation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BrowserSessionRevokeOutcome {
@@ -258,6 +1399,7 @@ pub struct BrowserSessionRevokeOutcome {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserSessionRevokeDecision {
     Revoked {
+        newly_revoked: bool,
         revoked_session_id: String,
         revoked_current_session: bool,
     },
@@ -408,6 +1550,31 @@ pub enum BrowserAttachmentDownloadDecision {
     },
 }
 
+/// A permanent-delete outcome; a quota refusal is distinct from dispatched uncertainty.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserMessageDeleteOutcome {
+    pub result: Result<crate::mailbox::MessageDeleteResult, crate::mailbox::MessageDeleteError>,
+    pub retry_after_seconds: Option<u64>,
+    pub audit_events: Vec<LogEvent>,
+}
+
+/// The result of a browser message-move operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserMessageFlagOutcome {
+    pub result: Result<crate::mailbox::MessageFlagResult, BrowserMessageFlagFailure>,
+    pub audit_events: Vec<LogEvent>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserMessageFlagFailure {
+    Invalid,
+    Stale,
+    Busy,
+    RateLimited { retry_after_seconds: u64 },
+    Unavailable,
+    Unknown,
+}
+
 /// The result of a browser message-move operation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BrowserMessageMoveOutcome {
@@ -439,7 +1606,37 @@ pub struct BrowserSendOutcome {
 /// Send decisions visible to the browser layer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserSendDecision {
-    Submitted,
+    Scheduled {
+        job_id: String,
+        schedule_confirmed: bool,
+    },
+    RecoveryRefused {
+        capacity: bool,
+    },
+    DraftSaved {
+        draft_id: String,
+        save_confirmed: bool,
+    },
+    /// Accepted by the submission backend; this does not confirm delivery.
+    Submitted {
+        sent_copy_stored: bool,
+        receipt_persisted: bool,
+    },
+    /// SMTP acceptance with a captured explicit destination, not a delivery guarantee.
+    SubmittedTo {
+        mailbox_name: String,
+        copy_available: bool,
+        sent_copy_stored: bool,
+        receipt_persisted: bool,
+    },
+    /// Acceptance is known; no copy was requested by captured account choice.
+    SubmittedWithoutSentCopy {
+        receipt_persisted: bool,
+    },
+    /// Dispatch may have occurred; this outcome must not trigger a retry.
+    Unconfirmed {
+        public_reason: String,
+    },
     Denied {
         public_reason: String,
         retry_after_seconds: Option<u64>,
@@ -453,12 +1650,108 @@ pub struct BrowserDraftListOutcome {
     pub audit_events: Vec<LogEvent>,
 }
 
+/// Account/revision-bound list state; an absent/mismatched row must remain unknown.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserDraftState {
+    pub draft_id: String,
+    pub revision: u64,
+    pub state: BrowserDraftEditState,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserDraftEditState {
+    Editable,
+    Attempted { receipt_intent: String },
+    Scheduled { job_id: String },
+    Paused { receipt_intent: String },
+    Unknown,
+}
+/// Logical stored bytes use the same metadata + attachment basis as the shared quota.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserDraftStorageUsage {
+    Verified {
+        ordinary_count: usize,
+        ordinary_bytes: u64,
+        recovery_count: usize,
+        recovery_bytes: u64,
+        max_count: usize,
+        max_bytes: u64,
+    },
+    Unknown,
+}
+
+pub(crate) fn project_drafts(
+    guard: &crate::send_journal::AccountGuard,
+    drafts: &[DraftSummary],
+    recovery: Result<(usize, u64), crate::send_recovery::RecoveryError>,
+) -> (Vec<BrowserDraftState>, BrowserDraftStorageUsage) {
+    let policy = crate::draft::DraftPolicy::default();
+    let usage = match (
+        drafts
+            .iter()
+            .try_fold(0_u64, |total, row| total.checked_add(row.storage_bytes)),
+        recovery,
+    ) {
+        (Some(ordinary_bytes), Ok((recovery_count, recovery_bytes)))
+            if drafts
+                .len()
+                .checked_add(recovery_count)
+                .is_some_and(|n| n <= policy.max_drafts_per_user)
+                && ordinary_bytes
+                    .checked_add(recovery_bytes)
+                    .is_some_and(|n| n <= policy.storage_max_bytes) =>
+        {
+            BrowserDraftStorageUsage::Verified {
+                ordinary_count: drafts.len(),
+                ordinary_bytes,
+                recovery_count,
+                recovery_bytes,
+                max_count: policy.max_drafts_per_user,
+                max_bytes: policy.storage_max_bytes,
+            }
+        }
+        _ => BrowserDraftStorageUsage::Unknown,
+    };
+    let states = drafts
+        .iter()
+        .map(|draft| {
+            let state = match guard.draft_attempt(draft) {
+                Ok((_, None)) if usage != BrowserDraftStorageUsage::Unknown => {
+                    BrowserDraftEditState::Editable
+                }
+                Ok((
+                    receipt_intent,
+                    Some(crate::send_journal::AttemptOutcome::Accepted { .. }),
+                )) => BrowserDraftEditState::Attempted { receipt_intent },
+                Ok((
+                    _,
+                    Some(crate::send_journal::AttemptOutcome::Scheduled {
+                        job_id,
+                        schedule_confirmed: true,
+                    }),
+                )) => BrowserDraftEditState::Scheduled {
+                    job_id: job_id.iter().map(|byte| format!("{byte:02x}")).collect(),
+                },
+                Ok((receipt_intent, Some(_))) => BrowserDraftEditState::Paused { receipt_intent },
+                _ => BrowserDraftEditState::Unknown,
+            };
+            BrowserDraftState {
+                draft_id: draft.draft_id.clone(),
+                revision: draft.revision,
+                state,
+            }
+        })
+        .collect();
+    (states, usage)
+}
+
 /// Draft-list decisions visible to the browser layer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserDraftListDecision {
     Listed {
         canonical_username: String,
         drafts: Vec<DraftSummary>,
+        states: Vec<BrowserDraftState>,
+        usage: BrowserDraftStorageUsage,
     },
     Denied {
         public_reason: String,
@@ -496,6 +1789,7 @@ pub struct BrowserDraftSaveOutcome {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserDraftSaveDecision {
     Saved { draft_id: String },
+    Unconfirmed { draft_id: String },
     Denied { public_reason: String },
 }
 
@@ -512,4 +1806,30 @@ pub enum BrowserDraftDeleteDecision {
     Deleted,
     NotFound,
     Denied { public_reason: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserMailboxStatusOutcome {
+    pub canonical_username: String,
+    pub status: Option<crate::mailbox_status::MailboxStatus>,
+    pub audit_events: Vec<LogEvent>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserFolderMetadataOutcome {
+    pub canonical_username: String,
+    pub snapshot: Option<crate::folder_metadata::FolderSnapshot>,
+    pub audit_events: Vec<LogEvent>,
+}
+
+pub struct BrowserPublicInventoryOutcome {
+    pub canonical_username: String,
+    pub inventory: Option<crate::openpgp_inventory::Inventory>,
+    pub audit_events: Vec<LogEvent>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserFolderCreateOutcome {
+    pub outcome: crate::folder_create::Outcome,
+    pub audit_events: Vec<LogEvent>,
 }

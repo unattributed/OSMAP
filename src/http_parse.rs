@@ -121,12 +121,7 @@ pub(crate) fn read_http_request(
 
         if let (Some(end), Some(content_length)) = (header_end, content_length) {
             let expected_len = end + 4 + content_length;
-            if content_length
-                > allowed_request_body_bytes(
-                    parse_content_type_header_bytes(&buffer[..end]),
-                    policy,
-                )
-            {
+            if content_length > allowed_request_body_bytes_for_headers(&buffer[..end], policy) {
                 return Err(parse_error("http body exceeded maximum length"));
             }
             if buffer.len() >= expected_len {
@@ -163,12 +158,7 @@ pub fn parse_http_request_bytes(
     let header_block = std::str::from_utf8(&input[..header_end])
         .map_err(|_| parse_error("http headers were not valid utf-8"))?;
     let body = &input[header_end + 4..];
-    if body.len()
-        > allowed_request_body_bytes(
-            parse_content_type_header_bytes(&input[..header_end]),
-            policy,
-        )
-    {
+    if body.len() > allowed_request_body_bytes_for_headers(&input[..header_end], policy) {
         return Err(parse_error("http body exceeded maximum length"));
     }
 
@@ -214,6 +204,7 @@ pub fn parse_http_request_bytes(
     }
 
     Ok(HttpRequest {
+        notification_context: Default::default(),
         method,
         path,
         query_params,
@@ -282,19 +273,20 @@ pub(crate) fn compose_source_from_request(
         (Some(mode), Some(mailbox), Some(uid)) => {
             let intent = match mode {
                 "reply" => ComposeIntent::Reply,
+                "reply-all" => ComposeIntent::ReplyAll,
                 "forward" => ComposeIntent::Forward,
                 _ => {
-                    return Err("compose mode must be reply or forward".to_string());
+                    return Err("compose mode must be reply, reply-all or forward".to_string());
                 }
             };
-            let uid = uid
-                .parse::<u64>()
+            let parsed_uid = uid
+                .parse::<u32>()
                 .map_err(|_| "compose source uid must be a positive integer".to_string())?;
-            if uid == 0 {
-                return Err("compose source uid must be greater than zero".to_string());
+            if parsed_uid == 0 || parsed_uid.to_string() != uid {
+                return Err("compose source uid must be a canonical positive integer".to_string());
             }
 
-            Ok(Some((intent, mailbox, uid)))
+            Ok(Some((intent, mailbox, u64::from(parsed_uid))))
         }
         _ => Err("compose source requires mode, mailbox, and uid together".to_string()),
     }
@@ -480,6 +472,21 @@ fn parse_content_type_header_bytes(header_bytes: &[u8]) -> Option<&str> {
 }
 
 /// Returns the allowed request-body budget for the current content type.
+// Only the existing authenticated scheduled-message text editor needs a
+// bounded URL-encoded body larger than the ordinary small settings form.
+// Match the exact wire target; normal request/header parsing still follows.
+fn allowed_request_body_bytes_for_headers(headers: &[u8], policy: &HttpPolicy) -> usize {
+    let content_type = parse_content_type_header_bytes(headers);
+    if (headers.starts_with(b"POST /scheduled/edit HTTP/1.1\r\n")
+        || headers.starts_with(b"POST /scheduled/edit HTTP/1.0\r\n"))
+        && allows_urlencoded_request_body(content_type)
+    {
+        policy.max_upload_body_bytes.min(1024 * 1024)
+    } else {
+        allowed_request_body_bytes(content_type, policy)
+    }
+}
+
 fn allowed_request_body_bytes(content_type: Option<&str>, policy: &HttpPolicy) -> usize {
     match content_type {
         Some(value) if is_multipart_form_data(value) => policy.max_upload_body_bytes,
@@ -831,5 +838,27 @@ mod tests {
             parse_error_reason(rejected.as_bytes(), &policy),
             "http header value for x-test exceeded maximum length"
         );
+    }
+}
+
+#[cfg(test)]
+mod scheduled_body_limit_tests {
+    use super::*;
+    #[test]
+    fn scheduled_text_edit_has_a_narrow_bounded_large_form_allowance() {
+        let policy = HttpPolicy::default();
+        let wire = |method: &str, path: &str, size: usize| {
+            format!("{method} {path} HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {size}\r\n\r\n{}", "x".repeat(size))
+        };
+        assert!(parse_http_request(&wire("POST", "/scheduled/edit", 9000), &policy).is_ok());
+        assert!(parse_http_request(&wire("POST", "/login", 9000), &policy).is_err());
+        assert!(parse_http_request(&wire("POST", "/scheduled/create", 9000), &policy).is_err());
+        assert!(parse_http_request(&wire("POST", "/scheduled/edit?x=1", 9000), &policy).is_err());
+        assert!(
+            parse_http_request(&wire("POST", "/scheduled/edit", 1024 * 1024 + 1), &policy).is_err()
+        );
+        let mut bounded = policy;
+        bounded.max_upload_body_bytes = 1024;
+        assert!(parse_http_request(&wire("POST", "/scheduled/edit", 9000), &bounded).is_err());
     }
 }

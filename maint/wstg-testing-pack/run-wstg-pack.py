@@ -552,7 +552,10 @@ class Runner:
         store_body_evidence: bool = True,
     ) -> HttpEvidence:
         encoded = urllib.parse.urlencode(values)
-        merged_headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        merged_headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Origin": self.config.origin,
+        }
         if headers:
             merged_headers.update(headers)
         return self.request(
@@ -1057,6 +1060,7 @@ class Runner:
             REPO_ROOT / "src" / "http" / "routes_auth.rs",
             REPO_ROOT / "src" / "http" / "routes_compose.rs",
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_people.rs",
             REPO_ROOT / "maint" / "openbsd" / "mail.blackbagsecurity.com" / "nginx" / "sites-enabled" / "main-ssl.conf",
             REPO_ROOT / "maint" / "openbsd" / "mail.blackbagsecurity.com" / "nginx" / "templates" / "osmap-root.tmpl",
         ]
@@ -2134,13 +2138,24 @@ class Runner:
         }
         runtime_path = REPO_ROOT / "src" / "http_runtime.rs"
         runtime_text = runtime_path.read_text(encoding="utf-8", errors="replace")
-        runtime_keys = {
-            (method.upper(), path)
-            for method, path in re.findall(
-                r'\(HttpMethod::(Get|Post),\s*"([^"]+)"\)',
-                runtime_text,
+        runtime_keys = set()
+        for methods, path in re.findall(
+            r'\((HttpMethod::[^,\n]+),\s*"([^"]+)"\)', runtime_text
+        ):
+            if not re.fullmatch(
+                r'HttpMethod::(?:Get|Post)(?:\s*\|\s*HttpMethod::(?:Get|Post))*',
+                methods,
+            ):
+                findings["unsupported_runtime_method_pattern"] = methods
+                self.write_text_evidence(
+                    "browser_attack_surface_inventory.txt",
+                    "result=failed\nunsupported_runtime_method_pattern=true\n",
+                )
+                return False, findings
+            runtime_keys.update(
+                (method.upper(), path)
+                for method in re.findall(r'HttpMethod::(Get|Post)', methods)
             )
-        }
         missing_from_inventory = sorted(runtime_keys - inventory_keys)
         stale_inventory = sorted(inventory_keys - runtime_keys)
         if missing_from_inventory:
@@ -2212,6 +2227,7 @@ class Runner:
             REPO_ROOT / "src" / "http.rs",
             REPO_ROOT / "src" / "http" / "routes_auth.rs",
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_people.rs",
             REPO_ROOT / "src" / "http" / "routes_compose.rs",
             REPO_ROOT / "src" / "http" / "routes_draft.rs",
             REPO_ROOT / "src" / "http" / "routes_settings.rs",
@@ -2913,7 +2929,7 @@ class Runner:
                 "http_inpv04_login_json_content_type",
                 "POST",
                 "/login",
-                headers={"Content-Type": "application/json"},
+                headers={"Content-Type": "application/json", **same_origin_headers(self.config)},
                 body='{"username":"probe","password":"probe","totp_code":"000000"}',
             ),
             "http_inpv04_send_json_content_type": self.request(
@@ -2932,7 +2948,10 @@ class Runner:
                 "http_inpv04_duplicate_login_field",
                 "POST",
                 "/login",
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    **same_origin_headers(self.config),
+                },
                 body="username=probe&username=admin&password=probe&totp_code=000000",
             ),
             "http_inpv04_duplicate_send_field": self.request(
@@ -2954,6 +2973,12 @@ class Runner:
                 continue
             if 200 <= evidence.status < 400:
                 failures[label] = evidence.status
+        for label in (
+            "http_inpv04_login_json_content_type",
+            "http_inpv04_duplicate_login_field",
+        ):
+            if probes[label].status != 400:
+                failures[label] = probes[label].status
         if not static_ok:
             failures["static_boundary"] = "missing HTTP input tampering markers"
 
@@ -3310,6 +3335,7 @@ class Runner:
             REPO_ROOT / "src" / "http" / "routes_auth.rs",
             REPO_ROOT / "src" / "http" / "routes_compose.rs",
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_people.rs",
             REPO_ROOT / "docs" / "V3_HTTP_INPUT_TAMPERING_EVIDENCE.md",
         ]
         text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
@@ -3360,6 +3386,9 @@ class Runner:
     def write_webmail_input_validation_static_evidence(self) -> bool:
         files = [
             REPO_ROOT / "src" / "send.rs",
+            REPO_ROOT / "src" / "mail_address.rs",
+            REPO_ROOT / "src" / "reply_thread.rs",
+            REPO_ROOT / "src" / "http" / "routes_reply.rs",
             REPO_ROOT / "src" / "http_form.rs",
             REPO_ROOT / "src" / "attachment.rs",
             REPO_ROOT / "src" / "mailbox.rs",
@@ -3369,7 +3398,11 @@ class Runner:
         ]
         text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
         markers = [
-            "recipient contained control or whitespace characters",
+            "recipient contained control characters",
+            "recipient used unsupported or ambiguous mailbox syntax",
+            "invalid reply stored identity",
+            "invalid_or_duplicate_metadata_never_creates_injected_headers",
+            "envelope_recipients_are_unique_while_to_cc_intent_and_bcc_privacy_remain",
             "subject must not contain line breaks",
             "attachment filename contained control characters",
             "attachment filename must not contain path separators",
@@ -3384,12 +3417,15 @@ class Runner:
             "strips_scriptable_attributes_forms_remote_fetch_surfaces_and_comments",
             "OSMAP-WSTG-INPV-004",
         ]
-        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        missing = [str(path.relative_to(REPO_ROOT)) for path in files if not path.is_file()]
+        missing.extend(marker for marker in markers if marker.lower() not in text.lower())
         self.write_text_evidence(
             "webmail_input_validation_static.txt",
             summarize_static_files(files, missing)
             + "\nCovered boundaries:\n"
-            + "- recipient, display-name-shaped recipient, and subject header injection are rejected before submission\n"
+            + "- bounded bare/display-name recipients are parsed; ambiguous syntax and recipient/subject header injection are rejected before submission\n"
+            + "- reply headers derive from the authenticated stored original or an account-owned versioned draft; arbitrary client threading fields are refused\n"
+            + "- envelope recipients are deduplicated and visible To/Cc roles retained; Bcc remains envelope-only\n"
             + "- body text may contain ordinary line breaks but remains stdin data, not command arguments\n"
             + "- attachment filenames reject control characters and path separators\n"
             + "- unsafe attachment content types normalize to application/octet-stream\n"
@@ -3725,6 +3761,7 @@ class Runner:
         files = [
             REPO_ROOT / "src" / "http_runtime.rs",
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_people.rs",
             REPO_ROOT / "src" / "http_ui.rs",
             REPO_ROOT / "src" / "http.rs",
             REPO_ROOT / "docs" / "V3_ACCEPTANCE_CRITERIA.md",
@@ -4153,6 +4190,7 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
     def write_authorization_account_isolation_static_evidence(self) -> bool:
         files = [
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_people.rs",
             REPO_ROOT / "src" / "http" / "routes_compose.rs",
             REPO_ROOT / "src" / "http_gateway_mail.rs",
             REPO_ROOT / "src" / "http_gateway_draft.rs",
@@ -4786,6 +4824,7 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
             REPO_ROOT / "src" / "http" / "routes_compose.rs",
             REPO_ROOT / "src" / "http" / "routes_draft.rs",
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_people.rs",
             REPO_ROOT / "src" / "http" / "routes_settings.rs",
             REPO_ROOT / "docs" / "V3_FORM_ROUTE_STATE_TRANSITIONS.md",
         ]
@@ -4850,6 +4889,7 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
             REPO_ROOT / "src" / "http" / "routes_compose.rs",
             REPO_ROOT / "src" / "http" / "routes_draft.rs",
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_people.rs",
             REPO_ROOT / "src" / "http" / "routes_settings.rs",
             REPO_ROOT / "docs" / "V3_FORM_ROUTE_STATE_TRANSITIONS.md",
         ]

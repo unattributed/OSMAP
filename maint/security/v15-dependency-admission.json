@@ -1,12 +1,12 @@
 {
   "cargo_baseline": {
-    "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
-    "cargo_toml_sha256": "f8dc01188aa4815033c8405ffab5050a404972312dbbd7f99cae481b1938418f",
-    "locked_package_count": 82
+    "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+    "cargo_toml_sha256": "ee4a425aab038b596fda739e129c615a25f3873611f22d055d8986fc7168d5b8",
+    "locked_package_count": 83
   },
   "dependencies": [
     {
-      "decision": "accepted_existing_baseline",
+      "decision": "accepted_dependency_change",
       "default_feature_review": {
         "rationale": "Default features are enabled and explicitly recorded; any change requires a new admission decision.",
         "status": "accepted_existing_default_features"
@@ -27,40 +27,40 @@
         "status": "registry_and_lockfile_provenance"
       },
       "maintenance_status": {
-        "rationale": "The locked version is part of the accepted build and passes current RustSec, source, licence, and duplicate-version gates. Upstream activity must be reassessed when it changes.",
-        "status": "accepted_existing_baseline"
+        "rationale": "Compatible locked4.1.8 fixes RUSTSEC-2026-0373 case-insensitive CSS url function, official Oct16advisory. Cargo.toml ~4.1.7, features and all transitive versions unchanged. Exact source review and normal refreshed gate required.",
+        "status": "security_patch_reviewed"
       },
       "name": "ammonia",
       "openbsd_compatibility": {
-        "rationale": "Already in the accepted OSMAP build validated on the authoritative OpenBSD target. A new version or feature set requires renewed validation.",
-        "status": "validated_existing_runtime_baseline"
+        "rationale": "Actual0eacfd9 obsd1 source455pins/freshapplication build29.295s and installation39.306s PASS; installedapp65391473cb062137b52ff2d5cad0614fb50be256cde613580d363f7127b47f20. Lockedammonia4.1.8 fetched normally, sourceparity preserved. This establishes nativebuild/installation only; prior4.1.7 nine native sanitizer tests remain historical, not reattributed to4.1.8. Local1770library and normalsecuritygate pass. Receipt execution-787d1a8b222befc2/RESULT.json under S04settingscloseout bundle.",
+        "status": "matching_native_build_and_installation_passed"
       },
       "optional": false,
       "purpose": "Sanitise untrusted HTML email content to OSMAP's narrow browser-safe subset.",
       "removal_analysis": "Removal would require disabling HTML rendering or implementing and maintaining equivalent standards-aware sanitisation locally.",
       "replacement_analysis": "Replace only with a smaller, actively maintained HTML5-aware sanitizer that passes the complete hostile-content corpus.",
-      "requirement": "4.1.4",
+      "requirement": "~4.1.7",
       "sbom_effect": {
-        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
-        "status": "existing_baseline_no_delta"
+        "rationale": "This previously admitted dependency is unchanged. S04-04 adds only qrcodegen1.8.0: nine direct declarations/83 locked packages, no new transitives. Earlier native evidence remains scoped to its original artifact.",
+        "status": "unchanged_dependency_with_leaf_addition"
       },
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
-        "locked_package_count": 82,
+        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
       },
       "trust_boundary_justification": "Processes attacker-controlled message HTML immediately before server-rendered browser output.",
-      "trusted_computing_base_effect": "Existing accepted runtime trusted-computing-base component; this admission implementation adds governance only and no runtime delta.",
+      "trusted_computing_base_effect": "Updates the existing HTML sanitizer for upstream CSS URL escaping and SVG animation filtering vulnerabilities. OSMAP narrow allowlist and all runtime features remain unchanged.",
       "unsafe_code_assessment": {
-        "rationale": "No complete source-level unsafe audit of this existing upstream crate and transitive graph is claimed. New or changed dependencies require a fresh unsafe-code assessment.",
-        "status": "not_independently_source_audited_existing_baseline"
+        "rationale": "Exact4.1.7\u21924.1.8 local crate review finds one production CSS URL eq_ignore_ascii_case guard and one upstream regression; no new unsafe/API/dependency/feature. Independentc8fe8acf sourceCLEAR; not a complete transitive audit.",
+        "status": "changed_upstream_source_reviewed"
       },
       "vulnerability_review": {
-        "rationale": "The supply-chain gate runs cargo audit --deny warnings against the refreshed RustSec advisory database.",
-        "status": "enforced_by_rustsec_gate"
+        "rationale": "Normal refreshed RustSec gate refused4.1.7 RUSTSEC-2026-0373; advisory lists >=4.1.8,<4.2 as patched. Normal mandatory refreshed gate remains required; no advisoryignore.",
+        "status": "patched_rustsec_gate_required"
       }
     },
     {
@@ -99,14 +99,14 @@
       "replacement_analysis": "Replacement requires an equally direct, audited operating-system randomness interface with OpenBSD support.",
       "requirement": "0.2.16",
       "sbom_effect": {
-        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
-        "status": "existing_baseline_no_delta"
+        "rationale": "This previously admitted dependency is unchanged. S04-04 adds only qrcodegen1.8.0: nine direct declarations/83 locked packages, no new transitives. Earlier native evidence remains scoped to its original artifact.",
+        "status": "unchanged_dependency_with_leaf_addition"
       },
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
-        "locked_package_count": 82,
+        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
       },
@@ -157,14 +157,14 @@
       "replacement_analysis": "Replacement requires a maintained RustCrypto-compatible HMAC implementation with equivalent constant-time behaviour.",
       "requirement": "0.12.1",
       "sbom_effect": {
-        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
-        "status": "existing_baseline_no_delta"
+        "rationale": "This previously admitted dependency is unchanged. S04-04 adds only qrcodegen1.8.0: nine direct declarations/83 locked packages, no new transitives. Earlier native evidence remains scoped to its original artifact.",
+        "status": "unchanged_dependency_with_leaf_addition"
       },
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
-        "locked_package_count": 82,
+        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
       },
@@ -215,14 +215,14 @@
       "replacement_analysis": "Replacement requires equivalent audited OpenBSD bindings without expanding unsafe or platform-specific code.",
       "requirement": "0.2.177",
       "sbom_effect": {
-        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
-        "status": "existing_baseline_no_delta"
+        "rationale": "This previously admitted dependency is unchanged. S04-04 adds only qrcodegen1.8.0: nine direct declarations/83 locked packages, no new transitives. Earlier native evidence remains scoped to its original artifact.",
+        "status": "unchanged_dependency_with_leaf_addition"
       },
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
-        "locked_package_count": 82,
+        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
       },
@@ -235,6 +235,75 @@
       "vulnerability_review": {
         "rationale": "The supply-chain gate runs cargo audit --deny warnings against the refreshed RustSec advisory database.",
         "status": "enforced_by_rustsec_gate"
+      }
+    },
+    {
+      "decision": "accepted_new_dependency",
+      "default_feature_review": {
+        "rationale": "Cargo.toml pins =1.8.0 with default-features=false. Upstream has no default feature set; explicit declaration retained.",
+        "status": "default_features_disabled"
+      },
+      "default_features": false,
+      "feature_minimisation": {
+        "rationale": "No features requested; cached upstream manifest declares none, no dependencies, target dependencies or buildscript.",
+        "status": "no_upstream_features_or_dependencies"
+      },
+      "features": [],
+      "licence_compatibility": {
+        "rationale": "Cargo metadata and source header specify MIT, allowed by deny.toml. No exception; normal cargo-deny licence gate remains required.",
+        "status": "mit_source_and_policy_reviewed"
+      },
+      "locally_maintained_code_removed": "None. Avoids a local QR encoder; OSMAP retains its small numeric SVG renderer and input/authority checks.",
+      "maintainer_provenance": {
+        "rationale": "Cached package metadata and MIT source header identify Project Nayuki. Archive SHA matches Cargo.lock; every published file matches cached source. Not an independent maintainer identity audit.",
+        "status": "cached_registry_archive_and_source_parity_reviewed"
+      },
+      "maintenance_status": {
+        "rationale": "Exact cached1.8.0 source reviewed. No claim about current upstream release cadence or a fresh advisory scan; normal refreshed gates remain required.",
+        "status": "exact_source_reviewed_no_current_upstream_activity_claim"
+      },
+      "name": "qrcodegen",
+      "openbsd_compatibility": {
+        "rationale": "No native build or installed qualification claimed. Pure Rust standard-library source has no platform-specific code/buildscript. Local QR browser route compile/tests passed; native qualification pending.",
+        "status": "NOT_RUN"
+      },
+      "optional": false,
+      "purpose": "Encode bounded native-produced otpauth URIs into QR modules for local server-rendered SVG during registered-account recovery and authenticator replacement.",
+      "removal_analysis": "Removal would disable scannable browser setup or require maintaining a QR encoder locally. Manual setup key remains a separate UI option.",
+      "replacement_analysis": "Replacement must encode QR Model2 locally without network, filesystem, process execution, image decoder or extra runtime dependency; preserve bounded in-memory URI handling.",
+      "requirement": "=1.8.0",
+      "sbom_effect": {
+        "rationale": "Only qrcodegen1.8.0 added: eight to nine direct declarations,82 to83 locked packages; no new transitives or prior version/checksum changes.",
+        "status": "one_direct_leaf_dependency_added"
+      },
+      "scope": "dependencies",
+      "source": "crates.io",
+      "source_review": {
+        "crate_sha256": "4339fc7a1021c9c1621d87f5e3505f2805c8c105420ba2f2a4df86814590c142",
+        "generated_cargo_cache_marker_excluded": ".cargo-ok",
+        "historical_lock_comparison": "PASS; only qrcodegen leaf and osmap direct edge added",
+        "native": "NOT_RUN",
+        "prior_lock_sha256": "36fd2624ad14153fe92bd2c5a28ef656d9c66cf6d909b06ebb87542fe00785d2",
+        "prior_package_entries_unchanged": 82,
+        "production_source_lines": 1302,
+        "production_source_sha256": "a4546464799faaea27393dd60a24be08349618fb98333decbaf686d4c98ca410",
+        "published_archive_cached_source_parity": "PASS"
+      },
+      "transitive_dependency_inventory": {
+        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "locked_package_count": 83,
+        "rationale": "Upstream declares no dependencies. Adds only the direct leaf qrcodegen; prior locked package versions/checksums unchanged.",
+        "status": "bound_to_reviewed_lockfile"
+      },
+      "trust_boundary_justification": "Secret URI stays in server memory; output is a boolean matrix. Only application-generated bounded numeric coordinates enter SVG. No remote QR service receives material.",
+      "trusted_computing_base_effect": "Adds pure Rust QR encoding to secret-bearing presentation, not password/OTP verification, grant authority or native activation. Sole production file forbids unsafe code.",
+      "unsafe_code_assessment": {
+        "rationale": "Sole1302-line production src/lib.rs has forbid(unsafe_code). Source scan finds no unsafe blocks, FFI, filesystem, network, process or environment I/O. In-memory math/collections only. OSMAP uses encode_text fixed ECC with URI<=2048bytes, not arbitrary low-level encoding parameters.",
+        "status": "exact_cached_source_reviewed"
+      },
+      "vulnerability_review": {
+        "rationale": "Source admission is not an advisory scan. Normal refreshed cargo-audit/cargo-deny gates remain mandatory with no ignore or RustSec suppression.",
+        "status": "normal_refreshed_rustsec_gate_required"
       }
     },
     {
@@ -275,14 +344,14 @@
       "replacement_analysis": "Replacement requires an equally mature, auditable typed serialisation framework with smaller or equivalent TCB impact.",
       "requirement": "1.0.228",
       "sbom_effect": {
-        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
-        "status": "existing_baseline_no_delta"
+        "rationale": "This previously admitted dependency is unchanged. S04-04 adds only qrcodegen1.8.0: nine direct declarations/83 locked packages, no new transitives. Earlier native evidence remains scoped to its original artifact.",
+        "status": "unchanged_dependency_with_leaf_addition"
       },
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
-        "locked_package_count": 82,
+        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
       },
@@ -333,14 +402,14 @@
       "replacement_analysis": "Replacement requires an equally strict JSON implementation compatible with the existing serde model.",
       "requirement": "1.0.145",
       "sbom_effect": {
-        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
-        "status": "existing_baseline_no_delta"
+        "rationale": "This previously admitted dependency is unchanged. S04-04 adds only qrcodegen1.8.0: nine direct declarations/83 locked packages, no new transitives. Earlier native evidence remains scoped to its original artifact.",
+        "status": "unchanged_dependency_with_leaf_addition"
       },
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
-        "locked_package_count": 82,
+        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
       },
@@ -391,14 +460,14 @@
       "replacement_analysis": "Replacement is constrained by deployed authenticator interoperability; migration requires an explicit compatibility plan.",
       "requirement": "0.10.6",
       "sbom_effect": {
-        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
-        "status": "existing_baseline_no_delta"
+        "rationale": "This previously admitted dependency is unchanged. S04-04 adds only qrcodegen1.8.0: nine direct declarations/83 locked packages, no new transitives. Earlier native evidence remains scoped to its original artifact.",
+        "status": "unchanged_dependency_with_leaf_addition"
       },
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
-        "locked_package_count": 82,
+        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
       },
@@ -449,14 +518,14 @@
       "replacement_analysis": "Replacement requires a maintained cryptographic hash implementation with equivalent API and OpenBSD portability.",
       "requirement": "0.10.9",
       "sbom_effect": {
-        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
-        "status": "existing_baseline_no_delta"
+        "rationale": "This previously admitted dependency is unchanged. S04-04 adds only qrcodegen1.8.0: nine direct declarations/83 locked packages, no new transitives. Earlier native evidence remains scoped to its original artifact.",
+        "status": "unchanged_dependency_with_leaf_addition"
       },
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
-        "locked_package_count": 82,
+        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
       },
@@ -472,6 +541,11 @@
       }
     }
   ],
+  "manifest_target_review": {
+    "change": "Add the fixed read-only storage-quota binary target for S08-01. Cargo dependency declarations, features and Cargo.lock are unchanged; native FFS worker, confinement and HTTP composition qualify the new target separately.",
+    "dependency_graph_changed": false,
+    "reference": "docs/UX_SLICE_S08_01.md"
+  },
   "policy": {
     "admission_model": "risk_based",
     "change_triggers": [

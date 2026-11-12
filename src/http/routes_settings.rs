@@ -25,33 +25,399 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
-        let success_message =
-            if request.query_params.get("updated").map(String::as_str) == Some("1") {
-                Some("Settings were updated.")
+        let folders_page = request.path == "/folders";
+        if folders_page && request.query_params.keys().any(|key| key != "folder") {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Folder Selection",
+                    "<p>Select a folder from Folders.</p>",
+                ),
+                audit_events,
+            };
+        }
+        if request.query_params.contains_key("folder") && request.query_params.contains_key("q") {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Folder Selection",
+                    "<p>Select a folder from Copies &amp; Folders.</p>",
+                ),
+                audit_events,
+            };
+        }
+        if let Some(query) = request.query_params.get("q") {
+            if query.chars().count() > 128 || query.chars().any(char::is_control) {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Settings Search",
+                        "<p>Use at most 128 characters to search Settings.</p>",
+                    ),
+                    audit_events,
+                };
+            }
+            return HandledHttpResponse {
+                response: html_response(
+                    200,
+                    "OK",
+                    "Search Settings",
+                    crate::http_ui::render_settings_search_page(
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.csrf_token,
+                        query.trim(),
+                    ),
+                ),
+                audit_events,
+            };
+        }
+        let success_message = if ["appearance_updated", "updated"]
+            .iter()
+            .any(|key| request.query_params.get(*key).map(String::as_str) == Some("1"))
+        {
+            Some("Current saved settings are shown below. Review your values.")
+        } else {
+            None
+        };
+
+        let section = if folders_page {
+            "copies"
+        } else {
+            request
+                .query_params
+                .get("section")
+                .map(String::as_str)
+                .unwrap_or("general")
+        };
+        if !matches!(
+            section,
+            "general"
+                | "appearance"
+                | "reading"
+                | "composition"
+                | "copies"
+                | "privacy"
+                | "security"
+                | "authentication"
+                | "identity"
+                | "notifications"
+                | "openpgp"
+        ) {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Unknown Settings Section",
+                    "<p>Choose a section from Settings.</p>",
+                ),
+                audit_events,
+            };
+        }
+        if request.query_params.get("folder").is_some_and(|name| {
+            section != "copies"
+                || MailboxEntry::new(
+                    crate::mailbox::MailboxListingPolicy::default(),
+                    name.clone(),
+                )
+                .is_err()
+        }) {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Folder Selection",
+                    "<p>Select a folder from Copies &amp; Folders.</p>",
+                ),
+                audit_events,
+            };
+        }
+        if section == "openpgp" {
+            let inventory =
+                self.public_inventory_view(context, &validated_session, &mut audit_events);
+            let capability = self.gateway.compose_protection(
+                &validated_session,
+                "",
+                "",
+                "",
+                crate::send::ProtectionIntent::default(),
+            );
+            return HandledHttpResponse {
+                response: html_response(
+                    200,
+                    "OK",
+                    "OpenPGP Settings",
+                    crate::http_ui::render_openpgp_settings(
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.csrf_token,
+                        &inventory,
+                        capability.as_ref(),
+                    ),
+                ),
+                audit_events,
+            };
+        }
+
+        if section == "notifications" {
+            let preference = self
+                .gateway
+                .load_notification_preference(&validated_session);
+            // A confirmation URL is only a request to reload a revision. The
+            // message reflects this authenticated account's actual saved read,
+            // never proof that following an arbitrary URL performed a save.
+            let notification_notice = request.query_params.get("saved_revision").map(|value| {
+                let expected=value.parse::<u64>().ok().filter(|revision|*revision>0 && revision.to_string()==*value);
+                match (&preference, expected) {
+                    (Ok(saved),Some(expected)) if saved.revision==expected=>"Saved notification preferences reloaded. These are your current saved choices.",
+                    (Ok(_),Some(_))=>"The requested preference revision is no longer current. Your current saved notification choices are shown below.",
+                    (Ok(_),None)=>"The preference confirmation link was invalid. Your current saved notification choices are shown below.",
+                    (Err(_),_)=>"Saved notification preferences could not be reloaded. The result is unconfirmed; no automatic retry occurred.",
+                }
+            });
+            return HandledHttpResponse {
+                response: super::notification_delivery::response(
+                    if preference.is_ok() { 200 } else { 503 },
+                    if preference.is_ok() {
+                        "OK"
+                    } else {
+                        "Service Unavailable"
+                    },
+                    "Notification Settings",
+                    crate::http_ui::render_notifications_page(
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.csrf_token,
+                        preference.as_ref().ok(),
+                        notification_notice,
+                    ),
+                ),
+                audit_events,
+            };
+        }
+        if section == "identity" {
+            let signature = self.gateway.load_signature(&validated_session).ok();
+            let inventory = self
+                .gateway
+                .sender_inventory(&validated_session)
+                .ok()
+                .filter(|snapshot| snapshot.account == validated_session.record.canonical_username);
+            let loaded = self.gateway.sender_identity_settings(&validated_session);
+            return HandledHttpResponse {
+                response: match loaded {
+                    Ok(record) => html_response(200, "OK", "Identity Settings", crate::http_ui::render_identity_page_with_signature(&crate::http_ui::IdentityPageModel {
+                        canonical_username: &validated_session.record.canonical_username,
+                        csrf_token: &validated_session.record.csrf_token,
+                        revision: record.revision,
+                        display_name: record.preferences.display_name(),
+                        reply_to: record.preferences.reply_to().unwrap_or(""),
+                        error_message: None,
+                        available: true,
+                        sender_inventory: inventory.as_ref(),
+                        sender_record: Some(&record),
+                    },signature.as_ref())),
+                    Err(_) => html_response(503, "Service Unavailable", "Identity Settings Unavailable", crate::http_ui::render_identity_page_with_signature(&crate::http_ui::IdentityPageModel {
+                        canonical_username: &validated_session.record.canonical_username,
+                        csrf_token: &validated_session.record.csrf_token,
+                        revision: 0,
+                        display_name: "",
+                        reply_to: "",
+                        error_message: Some("Your saved identity preferences could not be loaded. No preference was changed. Reload this page before editing."),
+                        available: false,
+                        sender_inventory: None,
+                        sender_record: None,
+                    },signature.as_ref())),
+                },
+                audit_events,
+            };
+        }
+        if matches!(section, "security" | "authentication") {
+            let outcome = self.gateway.list_sessions(context, &validated_session);
+            audit_events.extend(outcome.audit_events);
+            let mut key_state = if section == "security" {
+                Some(self.gateway.key_management(context, &validated_session))
             } else {
                 None
             };
-
-        let outcome = self.gateway.load_settings(context, &validated_session);
-        audit_events.extend(outcome.audit_events);
-
-        match outcome.decision {
-            BrowserSettingsDecision::Loaded {
-                canonical_username,
-                settings,
-            } => HandledHttpResponse {
+            if let Some(keys) = key_state.as_mut() {
+                audit_events.append(&mut keys.audit_events);
+            }
+            return HandledHttpResponse {
                 response: html_response(
                     200,
                     "OK",
                     "Settings",
-                    render_settings_page(&SettingsPageModel {
+                    crate::http_ui::render_security_page_with_recovery(
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.csrf_token,
+                        &outcome.decision,
+                        key_state.as_ref().map(|keys| &keys.state),
+                        section == "authentication",
+                        self.gateway.password_change_available(&validated_session),
+                        self.gateway
+                            .password_changed_at(&validated_session)
+                            .as_deref(),
+                        self.gateway
+                            .recovery_contact(&validated_session)
+                            .ok()
+                            .as_ref(),
+                        self.gateway.authenticator(&validated_session).ok().as_ref(),
+                    ),
+                ),
+                audit_events,
+            };
+        }
+        let (presentation, appearance_error) = match self
+            .gateway
+            .load_display(context, &validated_session)
+        {
+            Ok(value) => (value, None),
+            Err(_) => {
+                audit_events.push(build_http_warning_event(
+                    "appearance_load_failed",
+                    "appearance preference unavailable",
+                    context,
+                ));
+                (AppearanceSettings::default(), Some("Your saved appearance could not be loaded. System colours are being used. If this continues, ask your administrator to check preference storage."))
+            }
+        };
+        let outcome = self.gateway.load_settings(context, &validated_session);
+        audit_events.extend(outcome.audit_events);
+
+        match outcome.decision {
+            BrowserSettingsDecision::Loaded { ref canonical_username, .. }
+                if canonical_username != &validated_session.record.canonical_username =>
+            {
+                HandledHttpResponse {
+                    response: html_response(
+                        503,
+                        "Service Unavailable",
+                        "Settings Unavailable",
+                        "<p>The saved settings could not be confirmed for this account. No preference was changed.</p>",
+                    ),
+                    audit_events,
+                }
+            }
+            BrowserSettingsDecision::Loaded {
+                canonical_username,
+                settings,
+            } => HandledHttpResponse {
+                response: html_response(200, "OK", if folders_page { "Folders" } else { "Settings" }, {
+                    let model = SettingsPageModel {
                         canonical_username: &canonical_username,
                         csrf_token: &validated_session.record.csrf_token,
                         success_message,
-                        error_message: None,
+                        error_message: appearance_error,
                         html_display_preference: settings.html_display_preference,
                         archive_mailbox_name: settings.archive_mailbox_name.as_deref(),
-                    }),
+                    };
+                    if section == "privacy" {
+                        crate::http_ui::render_privacy_page(&model)
+                    } else if section == "copies" {
+                        let owned_mailboxes = self.reading_mailbox_choices(context, &validated_session, &mut audit_events).filter(|entries| valid_folder_listing(entries));
+                        let mailboxes = owned_mailboxes.as_ref().map(|entries| super::routes_mail::filter_user_visible_mailboxes(entries));
+                        let hierarchy = owned_mailboxes.as_ref().and_then(|entries| self.folder_hierarchy(context, &validated_session, entries, &mut audit_events));
+                        let chosen = request.query_params.get("folder").map(String::as_str)
+                            .or(if folders_page { Some("INBOX") } else { model.archive_mailbox_name }).filter(|name| hierarchy.as_ref().is_none_or(|tree| tree.selectable(name))).filter(|name| mailboxes.as_ref().is_some_and(|entries| entries.iter().any(|v| v.name == *name)))
+                            .or_else(|| if request.query_params.contains_key("folder") { None } else { mailboxes.as_ref().and_then(|v| v.iter().find(|m| hierarchy.as_ref().is_none_or(|tree| tree.selectable(&m.name)))).map(|v| v.name.as_str()) });
+                        if request.query_params.contains_key("folder") && mailboxes.is_some() && chosen.is_none() {
+                            return HandledHttpResponse { response: html_response(400, "Bad Request", "Folder Unavailable", "<p>Select a folder from Copies &amp; Folders.</p>"), audit_events };
+                        }
+                        let counts = chosen.and_then(|name| self.folder_counts(context, &validated_session, name, &mut audit_events));
+                        {
+                            let status=chosen.and_then(|folder| self.folder_status(context,&validated_session,folder,&mut audit_events));
+                            let receipt_names = self.gateway.folder_disposition_receipts(&validated_session).ok().map(|receipts| crate::folder_disposition::protected_names(&receipts));
+                            let creation = chosen.zip(status.as_ref()).zip(hierarchy.as_ref()).is_some_and(|((name, status), tree)| tree.can_create(&canonical_username, name, status)) && chosen.zip(receipt_names.as_ref()).is_some_and(|(name, names)| !names.iter().any(|stored| name == stored || name.starts_with(&format!("{stored}."))));
+                            {
+                                let bin = self.gateway.load_bin_preference(&validated_session).ok();
+                                let draft_location = self.gateway.load_draft_location_preference(&validated_session).ok();
+                                let draft_location_ready = draft_location.as_ref().is_some_and(|saved| self.gateway.draft_location_ready(&validated_session, saved.location));
+                                let sent_copy = self.gateway.load_sent_copy_preference(&validated_session).ok();
+                                let sent_location = self.gateway.load_sent_location_preference(&validated_session).ok();
+                                let rename_state = self.gateway.pending_folder_rename(&validated_session);
+                                let rename_pending = rename_state.as_ref().is_ok_and(|state| state.is_some());
+                                let rename = rename_state.is_ok() && !rename_pending && chosen.zip(status.as_ref()).zip(hierarchy.as_ref()).is_some_and(|((name, status), tree)| tree.can_rename(&canonical_username, name, status)) && chosen.zip(bin.as_ref()).zip(sent_location.as_ref()).is_some_and(|((name, bin), sent)| sent.valid() && !crate::folder_rename::role_conflict(&[Some(bin.mailbox_name.clone()), Some(sent.mailbox_name.clone()), model.archive_mailbox_name.map(str::to_owned)].into_iter().flatten().collect::<Vec<_>>(), name, name)) && chosen.zip(receipt_names.as_ref()).is_some_and(|(name, names)| !crate::folder_rename::role_conflict(names, name, name));
+                                let sent_location_choices = self.sent_location_choices(context, &validated_session, &mut audit_events);
+                                let bin_choices = self.bin_folder_choices(context, &validated_session, &mut audit_events);
+                                let labels = if folders_page { None } else { self.gateway.load_labels(&validated_session).ok() };
+                                let state = crate::http_ui::CopiesPageState { labels: labels.as_ref(), mailboxes: mailboxes.as_deref(), chosen, counts, status: status.as_ref(), hierarchy: hierarchy.as_ref(), creation, rename, rename_pending, draft_location: draft_location.as_ref(), draft_location_ready, bin: bin.as_ref(), bin_choices: bin_choices.as_deref(), sent_copy: sent_copy.as_ref(), sent_location: sent_location.as_ref(), sent_location_choices: sent_location_choices.as_deref() };
+                                if folders_page { crate::http_ui::render_folders_page_with_state(&model, state) } else { crate::http_ui::render_copies_page_with_state(&model, state) }
+                            }
+                        }
+                    } else if section == "appearance" {
+                        crate::http_ui::render_appearance_page(&model, &presentation)
+                    } else if section == "composition" {
+                        crate::http_ui::render_composition_page_with_signature(
+                            &model,
+                            self.gateway.load_composition_preferences(context, &validated_session).ok(),
+                            self.gateway.load_signature(&validated_session).ok().as_ref(),
+                            self.gateway.load_autosave(&validated_session).ok().as_ref(),
+                        )
+                    } else if section == "general" {
+                        let mark_read = self.load_settings_mark_read_policy(context, &validated_session, &mut audit_events);
+                        let mut keys = self.gateway.key_management(context, &validated_session);
+                        audit_events.append(&mut keys.audit_events);
+                        let password_changed_at = self.gateway.password_changed_at(&validated_session);
+                        let recovery = self.gateway.recovery_contact(&validated_session).ok();
+                        let authenticator = self.gateway.authenticator(&validated_session).ok();
+                        let storage = crate::storage_ui::StorageView::from_report(
+                            &validated_session.record.canonical_username,
+                            self.gateway.mail_storage_report(&validated_session),
+                        );
+                        crate::http_ui::render_general_page_with_mark_read(
+                            &model,
+                            &presentation,
+                            self.gateway
+                                .load_composition_preferences(context, &validated_session)
+                                .ok(),
+                            self.gateway
+                                .load_identity_preferences(context, &validated_session)
+                                .ok(),
+                            self.gateway.load_reading_preferences(context, &validated_session).ok(),
+                            self.gateway.load_signature(&validated_session).ok().as_ref(),
+                            crate::http_ui::GeneralPageState {
+                                storage: Some(&storage),
+                                mark_read: mark_read.as_ref(),
+                                timezone: self.gateway.load_timezone(&validated_session).ok().as_ref(),
+                                security: crate::http_ui::GeneralSecurityState {
+                                    keys: Some(&keys.state),
+                                    password_changed_at: password_changed_at.as_deref(),
+                                    recovery: recovery.as_ref(),
+                                    authenticator: authenticator.as_ref(),
+                                },
+                            },
+                        )
+                    } else {
+                        let preferences = match self.gateway.load_reading_preferences(context, &validated_session) {
+                            Ok(value) => value,
+                            Err(_) => {
+                                audit_events.push(build_http_warning_event("reading_preferences_load_failed", "stored reading preferences could not be loaded", context));
+                                return HandledHttpResponse {
+                                    response: html_response(503, "Service Unavailable", "Reading Settings Unavailable", "<p>Your saved reading preferences could not be loaded. No defaults were saved. <a href=\"/settings?section=reading\">Try loading Reading settings again</a>.</p>"),
+                                    audit_events,
+                                };
+                            }
+                        };
+                        let mailboxes = self.reading_mailbox_choices(context, &validated_session, &mut audit_events);
+                        let mark_read = self.load_settings_mark_read_policy(context, &validated_session, &mut audit_events);
+                        {
+                            let bin = self.gateway.load_bin_preference(&validated_session).ok();
+                            let bin_choices = self.bin_folder_choices(context, &validated_session, &mut audit_events);
+                            let draft_location = self.gateway.load_draft_location_preference(&validated_session).ok();
+                            let draft_location_ready = draft_location.as_ref().is_some_and(|saved| self.gateway.draft_location_ready(&validated_session, saved.location));
+                            crate::http_ui::render_reading_page_with_state(&model, &preferences, crate::http_ui::ReadingFoldersState {
+                            mailboxes: mailboxes.as_deref(), after_archive: self.gateway.load_after_archive(&validated_session).ok().as_ref(), mark_read: mark_read.as_ref(), bin: bin.as_ref(), bin_choices: bin_choices.as_deref(), draft_location: draft_location.as_ref(), draft_location_ready,
+                        })
+                        }
+                    }
+                })
+                .with_header(
+                    "Set-Cookie",
+                    presentation.theme.cookie(self.policy.secure_session_cookie),
+                )
+                .with_header(
+                    "Set-Cookie",
+                    presentation.cookie(self.policy.secure_session_cookie),
                 ),
                 audit_events,
             },
@@ -67,6 +433,25 @@ where
                 ),
                 audit_events,
             },
+        }
+    }
+
+    fn load_settings_mark_read_policy(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        audit_events: &mut Vec<LogEvent>,
+    ) -> Option<crate::mark_read::Preference> {
+        match self.gateway.load_mark_read_policy(session) {
+            Ok(value) => Some(value),
+            Err(_) => {
+                audit_events.push(build_http_warning_event(
+                    "mark_read_preference_load_failed",
+                    "stored mark-read preference could not be loaded",
+                    context,
+                ));
+                None
+            }
         }
     }
 
@@ -131,40 +516,99 @@ where
             return response;
         }
 
-        let Some(html_display_preference) = form.get("html_display_preference") else {
+        let destination = match form.get("return_section").map(String::as_str) {
+            None | Some("general") => "/settings?updated=1",
+            Some("reading") => "/settings?section=reading&updated=1",
+            Some("copies") => "/settings?section=copies&updated=1",
+            Some("privacy") => "/settings?section=privacy&updated=1",
+            Some(_) => return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Settings Request",
+                    "<p>The settings return section was invalid. No preference was changed.</p>",
+                ),
+                audit_events,
+            },
+        };
+        let content_only = form.get("settings_action").map(String::as_str) == Some("content");
+        let archive_only = form.get("settings_action").map(String::as_str) == Some("archive");
+        if form
+            .get("settings_action")
+            .is_some_and(|value| value != "archive" && value != "content")
+            || content_only
+                && (!form.contains_key("html_display_preference")
+                    || form.keys().any(|key| {
+                        ![
+                            "csrf_token",
+                            "settings_action",
+                            "html_display_preference",
+                            "return_section",
+                        ]
+                        .contains(&key.as_str())
+                    }))
+            || archive_only
+                && (!form.contains_key("archive_mailbox_name")
+                    || form.keys().any(|key| {
+                        ![
+                            "csrf_token",
+                            "settings_action",
+                            "archive_mailbox_name",
+                            "return_section",
+                        ]
+                        .contains(&key.as_str())
+                    }))
+        {
             return HandledHttpResponse {
                 response: html_response(
                     400,
                     "Bad Request",
                     "Invalid Settings Request",
-                    "<p>An HTML display preference is required.</p>",
+                    "<p>The settings action was invalid. No preference was changed.</p>",
                 ),
-                audit_events: vec![build_http_warning_event(
-                    "http_settings_missing_preference",
-                    "settings update missing html display preference",
-                    context,
-                )],
+                audit_events,
             };
-        };
-
-        let html_display_preference = match HtmlDisplayPreference::parse(html_display_preference) {
-            Ok(html_display_preference) => html_display_preference,
-            Err(error) => {
+        }
+        let html_display_preference = if archive_only {
+            None
+        } else {
+            let Some(html_display_preference) = form.get("html_display_preference") else {
                 return HandledHttpResponse {
                     response: html_response(
                         400,
                         "Bad Request",
                         "Invalid Settings Request",
-                        "<p>The submitted HTML display preference was not valid.</p>",
+                        "<p>An HTML display preference is required.</p>",
                     ),
                     audit_events: vec![build_http_warning_event(
-                        "http_settings_preference_rejected",
-                        "settings update preference validation failed",
+                        "http_settings_missing_preference",
+                        "settings update missing html display preference",
                         context,
-                    )
-                    .with_field("reason", error.reason)],
+                    )],
                 };
-            }
+            };
+
+            let html_display_preference =
+                match HtmlDisplayPreference::parse(html_display_preference) {
+                    Ok(html_display_preference) => html_display_preference,
+                    Err(error) => {
+                        return HandledHttpResponse {
+                            response: html_response(
+                                400,
+                                "Bad Request",
+                                "Invalid Settings Request",
+                                "<p>The submitted HTML display preference was not valid.</p>",
+                            ),
+                            audit_events: vec![build_http_warning_event(
+                                "http_settings_preference_rejected",
+                                "settings update preference validation failed",
+                                context,
+                            )
+                            .with_field("reason", error.reason)],
+                        };
+                    }
+                };
+            Some(html_display_preference)
         };
         let archive_mailbox_name = match parse_archive_mailbox_name(
             form.get("archive_mailbox_name").map(String::as_str),
@@ -193,7 +637,19 @@ where
             audit_events.extend(mailbox_outcome.audit_events);
 
             match mailbox_outcome.decision {
-                BrowserMailboxDecision::Listed { mailboxes, .. } => {
+                BrowserMailboxDecision::Listed {
+                    canonical_username,
+                    mailboxes,
+                } => {
+                    if canonical_username != validated_session.record.canonical_username {
+                        return HandledHttpResponse { response: html_response(503,"Service Unavailable","Settings Update Failed","<p>The mailbox list could not be confirmed for this account. No preference was changed.</p>"), audit_events };
+                    }
+                    let mailboxes =
+                        if form.get("return_section").map(String::as_str) == Some("copies") {
+                            super::routes_mail::filter_user_visible_mailboxes(&mailboxes)
+                        } else {
+                            mailboxes
+                        };
                     if !mailbox_name_exists(&mailboxes, archive_mailbox_name) {
                         return HandledHttpResponse {
                             response: html_response(
@@ -236,17 +692,41 @@ where
             }
         }
 
-        let outcome = self.gateway.update_settings(
-            context,
-            &validated_session,
-            html_display_preference,
-            archive_mailbox_name.as_deref(),
-        );
+        let outcome = if archive_only {
+            self.gateway.update_archive_setting(
+                context,
+                &validated_session,
+                archive_mailbox_name.as_deref(),
+            )
+        } else {
+            let Some(content) = html_display_preference else {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Settings Request",
+                        "<p>A content preference is required.</p>",
+                    ),
+                    audit_events,
+                };
+            };
+            if content_only {
+                self.gateway
+                    .update_content_setting(context, &validated_session, content)
+            } else {
+                self.gateway.update_settings(
+                    context,
+                    &validated_session,
+                    content,
+                    archive_mailbox_name.as_deref(),
+                )
+            }
+        };
         audit_events.extend(outcome.audit_events);
 
         match outcome.decision {
             BrowserSettingsUpdateDecision::Updated => HandledHttpResponse {
-                response: redirect_response(303, "See Other", "/settings?updated=1"),
+                response: redirect_response(303, "See Other", destination),
                 audit_events,
             },
             BrowserSettingsUpdateDecision::Denied { public_reason } => {
@@ -262,12 +742,229 @@ where
                         title,
                         TrustedHtml::from_template(format!(
                             "<p>{}</p>",
-                            escape_html(public_reason_message(&public_reason))
+                            escape_html(if public_reason == "invalid_request" {
+                                public_reason_message(&public_reason)
+                            } else {
+                                "The settings save could not be confirmed. Review your saved values before retrying."
+                            })
                         )),
                     ),
                     audit_events,
                 }
             }
         }
+    }
+}
+
+pub(super) fn valid_folder_listing(entries: &[MailboxEntry]) -> bool {
+    let mut names = std::collections::BTreeSet::new();
+    entries.len() <= crate::mailbox::DEFAULT_MAX_MAILBOXES
+        && entries.iter().all(|v| {
+            MailboxEntry::new(
+                crate::mailbox::MailboxListingPolicy::default(),
+                v.name.clone(),
+            )
+            .is_ok()
+                && names.insert(v.name.as_str())
+        })
+}
+
+fn verified_folder_counts(
+    account: &str,
+    folder: &str,
+    decision: BrowserMessageListDecision,
+) -> Option<(usize, usize)> {
+    let BrowserMessageListDecision::Listed {
+        canonical_username,
+        mailbox_name,
+        messages,
+    } = decision
+    else {
+        return None;
+    };
+    let mut uids = std::collections::BTreeSet::new();
+    if canonical_username != account
+        || mailbox_name != folder
+        || messages.len() > crate::mailbox::DEFAULT_MAX_MESSAGES
+        || messages.iter().any(|row| {
+            row.mailbox_name != folder
+                || row.uid == 0
+                || row.uid > u64::from(u32::MAX)
+                || !uids.insert(row.uid)
+                || row.flags.len() > 256
+                || row.flags.iter().map(String::len).sum::<usize>() > 256
+                || row.flags.iter().any(|flag| {
+                    flag.is_empty() || flag.chars().any(|ch| ch.is_control() || ch.is_whitespace())
+                })
+        })
+    {
+        return None;
+    }
+    Some((
+        messages.len(),
+        messages
+            .iter()
+            .filter(|row| {
+                !row.flags
+                    .iter()
+                    .any(|flag| flag.eq_ignore_ascii_case("\\Seen"))
+            })
+            .count(),
+    ))
+}
+
+impl<G: BrowserGateway> BrowserApp<G> {
+    fn folder_hierarchy(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        entries: &[MailboxEntry],
+        audit: &mut Vec<LogEvent>,
+    ) -> Option<crate::http::FolderTree> {
+        let (guard, event) =
+            match self.acquire_mailbox_budget(context, session, "settings_folder_hierarchy") {
+                Ok(v) => v,
+                Err(r) => {
+                    audit.extend(r.audit_events);
+                    return None;
+                }
+            };
+        audit.push(event);
+        let outcome = self.gateway.folder_metadata(context, session);
+        audit.extend(outcome.audit_events);
+        audit.push(self.release_request_budget(
+            guard,
+            "settings_folder_hierarchy",
+            context,
+            session,
+        ));
+        if outcome.canonical_username != session.record.canonical_username {
+            return None;
+        }
+        crate::http::FolderTree::build(
+            &session.record.canonical_username,
+            outcome.snapshot.as_ref()?,
+            entries,
+        )
+    }
+    fn folder_status(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        folder: &str,
+        audit: &mut Vec<LogEvent>,
+    ) -> Option<crate::mailbox_status::MailboxStatus> {
+        crate::mailbox_status::validate_name(folder).ok()?;
+        let (guard, event) =
+            match self.acquire_mailbox_budget(context, session, "settings_folder_status") {
+                Ok(v) => v,
+                Err(r) => {
+                    audit.extend(r.audit_events);
+                    return None;
+                }
+            };
+        audit.push(event);
+        let outcome = self.gateway.mailbox_status(context, session, folder);
+        audit.extend(outcome.audit_events);
+        audit.push(self.release_request_budget(guard, "settings_folder_status", context, session));
+        if outcome.canonical_username != session.record.canonical_username {
+            return None;
+        }
+        outcome.status.filter(|v| v.validate(folder).is_ok())
+    }
+    fn folder_counts(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        folder: &str,
+        audit: &mut Vec<LogEvent>,
+    ) -> Option<(usize, usize)> {
+        let (guard, event) =
+            match self.acquire_mailbox_budget(context, session, "settings_folder_summaries") {
+                Ok(value) => value,
+                Err(response) => {
+                    audit.extend(response.audit_events);
+                    return None;
+                }
+            };
+        audit.push(event);
+        let outcome = self.gateway.list_messages(context, session, folder);
+        audit.extend(outcome.audit_events);
+        audit.push(self.release_request_budget(
+            guard,
+            "settings_folder_summaries",
+            context,
+            session,
+        ));
+        verified_folder_counts(&session.record.canonical_username, folder, outcome.decision)
+    }
+}
+
+impl<G: BrowserGateway> BrowserApp<G> {
+    fn public_inventory_view(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        audit: &mut Vec<LogEvent>,
+    ) -> crate::http_ui::key_inventory_ui::PublicInventoryView {
+        let outcome = self.gateway.public_key_inventory(context, session);
+        audit.extend(outcome.audit_events);
+        crate::http_ui::key_inventory_ui::map_public_inventory(
+            &session.record.canonical_username,
+            &outcome.canonical_username,
+            outcome.inventory.as_ref(),
+        )
+    }
+}
+
+#[cfg(test)]
+mod folder_count_tests {
+    use super::*;
+    #[test]
+    fn counts_refuse_overbound_malformed_flags_and_ambiguous_folders() {
+        let row = MessageSummary {
+            to: None,
+            metadata: None,
+            mailbox_name: "INBOX".into(),
+            uid: 1,
+            flags: vec![],
+            date_received: String::new(),
+            size_virtual: 0,
+            subject: None,
+            from: None,
+        };
+        let project = |rows| {
+            verified_folder_counts(
+                "a@example.test",
+                "INBOX",
+                BrowserMessageListDecision::Listed {
+                    canonical_username: "a@example.test".into(),
+                    mailbox_name: "INBOX".into(),
+                    messages: rows,
+                },
+            )
+        };
+        assert_eq!(project(vec![row.clone()]), Some((1, 1)));
+        let mut read = row.clone();
+        read.flags = vec!["\\seen".into()];
+        assert_eq!(project(vec![read]), Some((1, 0)));
+        let mut oversized_uid = row.clone();
+        oversized_uid.uid = u64::from(u32::MAX) + 1;
+        assert_eq!(project(vec![oversized_uid]), None);
+        assert_eq!(project(vec![row.clone(); 2001]), None);
+        let mut bad = row;
+        bad.flags = vec!["\\Seen\n".into()];
+        assert_eq!(project(vec![bad]), None);
+        assert!(!valid_folder_listing(&[
+            MailboxEntry {
+                name: "INBOX".into()
+            },
+            MailboxEntry {
+                name: "INBOX".into()
+            }
+        ]));
+        assert!(!valid_folder_listing(&[MailboxEntry {
+            name: "bad\n".into()
+        }]));
     }
 }

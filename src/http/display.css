@@ -1,0 +1,26 @@
+/* Typed persisted display preferences, restricted to authenticated pages. */
+:root[data-font-size=small]:has(.app-rail) { font-size: 14px; }
+:root[data-font-size=large]:has(.app-rail) { font-size: 18px; }
+:root[data-font-size=small] body:has(.app-rail) { font-size: 12.25px; }
+:root[data-font-size=large] body:has(.app-rail) { font-size: 15.75px; }
+:root[data-density=compact] body:has(.app-rail) .message-card { min-height: 3rem; padding-top: .35rem; padding-bottom: .35rem; }
+:root[data-density=compact] body:has(.app-rail) .draft-list td { padding-top: .3rem; padding-bottom: .3rem; }
+:root[data-reader-layout=stacked] body:has(.app-rail) .coordinated-mail.has-selection { grid-template-columns: minmax(0,1fr); }
+:root[data-reader-layout=stacked] body:has(.app-rail) .coordinated-mail.has-selection > .coordinated-list { display: block; }
+:root[data-show-avatars=false] body:has(.app-rail) .message-avatar,
+:root[data-show-avatars=false] body:has(.app-rail) .sender-avatar { display: none; }
+:root[data-message-preview=false] body:has(.app-rail) .message-body-preview { display: none; }
+/* Reclaim the avatar column within reader/list cards, retaining action controls. */
+:root[data-show-avatars=false] body:has(.app-rail) .message-card-main { grid-template-columns: minmax(0,1fr) auto; }
+:root[data-show-avatars=false] body:has(.app-rail) .message-card-main .message-sender { grid-column: 1; }
+:root[data-show-avatars=false] body:has(.app-rail) .message-card-main .message-subject-link,
+:root[data-show-avatars=false] body:has(.app-rail) .message-card-main .message-body-preview { grid-column: 1 / -1; }
+:root[data-show-avatars=false] body:has(.app-rail) .message-card-main .message-date { grid-column: 2; }
+@media (min-width: 72rem) {
+  /* Desktop table-like rows use display:contents rather than the card grid. */
+  :root[data-show-avatars=false] body:has(.app-rail) .coordinated-mail:not(.has-selection) .message-sender { grid-column: 3; padding-left: 0; }
+  :root[data-show-avatars=false] body:has(.app-rail) .coordinated-mail:not(.has-selection) .message-card .message-subject-link,
+  :root[data-show-avatars=false] body:has(.app-rail) .coordinated-mail:not(.has-selection) .message-body-preview { grid-column: 4; }
+  :root[data-show-avatars=false] body:has(.app-rail) .coordinated-mail:not(.has-selection) .message-date { grid-column: 7; }
+  :root[data-show-avatars=false] body:has(.app-rail) .coordinated-mail.search-results:not(.has-selection) .message-mailbox { padding-left: 0; }
+}

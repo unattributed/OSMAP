@@ -1,0 +1,605 @@
+use super::*;
+use crate::config::LogLevel;
+use crate::identity::MailboxIdentity;
+use crate::logging::{EventCategory, LogEvent};
+use crate::openpgp_bindings::{AccountBinding, BindingRecord, RecipientBinding, Requirement};
+use crate::openpgp_inventory::Inventory;
+use crate::protected_message::{CryptoFailure, KeyValidity};
+use crate::rendering::RenderingPolicy;
+
+fn session() -> ValidatedSession {
+    ValidatedSession {
+        record: crate::session::SessionRecord {
+            account_epoch: None,
+            session_id: "0".repeat(64),
+            csrf_token: "1".repeat(64),
+            canonical_username: "bob".into(),
+            issued_at: 10,
+            expires_at: 100,
+            last_seen_at: 20,
+            revoked_at: None,
+            remote_addr: "127.0.0.1".into(),
+            user_agent: "Synthetic fixture".into(),
+            factor: crate::auth::RequiredSecondFactor::Totp,
+        },
+        audit_event: LogEvent::new(
+            LogLevel::Info,
+            EventCategory::Session,
+            "session_validated",
+            "synthetic validated session",
+        ),
+    }
+}
+
+fn message() -> MessageView {
+    MessageView {
+        metadata: Some(crate::message_metadata::MessageMetadata {
+            threading: None,
+            attachments: None,
+            protection: crate::message_metadata::MessageProtection::Unknown,
+            version: MessageVersion::new("a".repeat(32), "b".repeat(32)).unwrap(),
+            attachment_count: None,
+            preview: None,
+        }),
+        mailbox_name: "INBOX".into(),
+        uid: 7,
+        flags: Vec::new(),
+        date_received: String::new(),
+        size_virtual: 128,
+        header_block:
+            "From: Alice <alice@example.test>\r\nSubject: synthetic\r\nContent-Type: text/plain\r\n"
+                .into(),
+        body_text: "Stored body  \t\r\nsecond line\nfinal".into(),
+    }
+}
+
+fn decision() -> MessageViewDecision {
+    MessageViewDecision::Retrieved {
+        canonical_username: "bob".into(),
+        session_id: session().record.session_id,
+        message: Box::new(message()),
+    }
+}
+
+fn request() -> MessageViewRequest {
+    MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 7).unwrap()
+}
+
+struct NeverCrypto;
+impl CryptoExecutor for NeverCrypto {
+    fn execute(
+        &self,
+        _: &CanonicalUsername,
+        _: &crate::openpgp_crypto::Operation,
+    ) -> Result<crate::openpgp_crypto::Outcome, CryptoFailure> {
+        panic!("engine must not execute")
+    }
+}
+
+fn record() -> BindingRecord {
+    let mut record = BindingRecord::empty("bob").unwrap();
+    record.revision = 1;
+    record.account_binding = Some(AccountBinding {
+        primary_fingerprint: "B".repeat(40),
+        signing_fingerprint: None,
+        decrypt_primary_fingerprints: vec!["B".repeat(40)],
+    });
+    record.recipient_bindings = vec![RecipientBinding {
+        address: "alice@example.test".into(),
+        primary_fingerprint: "A".repeat(40),
+        encryption: Requirement::Optional,
+    }];
+    record
+}
+
+fn inventory(expired: bool, revoked: bool) -> Inventory {
+    let key = serde_json::json!({"fingerprint":"A".repeat(40),"algorithm":1,"bits":3072,"created":1,"expires":if expired {100}else{0},"revoked":revoked,"expired":expired,"disabled":false,"invalid":false,"can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false});
+    let data = serde_json::json!({"version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.4.8","keys":[{"primary":key,"subkeys":[]}]});
+    Inventory::parse(&serde_json::to_vec(&data).unwrap()).unwrap()
+}
+
+#[test]
+fn owned_snapshot_checks_account_session_mailbox_uid_and_stable_version() {
+    let source = assemble_source(&message()).unwrap();
+    let version = message().metadata.unwrap().version;
+    for kind in 0..5 {
+        let mut decision = decision();
+        let MessageViewDecision::Retrieved {
+            canonical_username,
+            session_id,
+            message,
+        } = &mut decision
+        else {
+            unreachable!()
+        };
+        match kind {
+            0 => *canonical_username = "alice".into(),
+            1 => *session_id = "other-session".into(),
+            2 => message.mailbox_name = "Sent".into(),
+            3 => message.uid = 8,
+            _ => message.metadata = None,
+        }
+        assert_eq!(
+            OwnedSnapshot::from_retrieved(
+                &session(),
+                &request(),
+                Some(&version),
+                &decision,
+                &source
+            )
+            .unwrap_err(),
+            ProtectedError::MessageIdentity
+        );
+    }
+    let decision = decision();
+    let snapshot =
+        OwnedSnapshot::from_retrieved(&session(), &request(), Some(&version), &decision, &source)
+            .unwrap();
+    assert_eq!(snapshot.message().uid, 7);
+    assert!(!format!("{snapshot:?}").contains("Stored body"));
+}
+
+#[test]
+fn snapshot_cannot_be_processed_after_switching_account_or_session() {
+    let source = assemble_source(&message()).unwrap();
+    let decision = decision();
+    let snapshot =
+        OwnedSnapshot::from_retrieved(&session(), &request(), None, &decision, &source).unwrap();
+    let processor = Processor::new(NeverCrypto, RenderingPolicy::default());
+    let context = AuthenticationContext::new(
+        crate::auth::AuthenticationPolicy::default(),
+        "req",
+        "127.0.0.1",
+        "Synthetic fixture",
+    )
+    .unwrap();
+    for (account, token) in [("alice", "0".repeat(64)), ("bob", "2".repeat(64))] {
+        let mut switched = session();
+        switched.record.canonical_username = account.into();
+        switched.record.session_id = token;
+        let bindings = InboundBindings {
+            signer_key_validities: Default::default(),
+            account: CanonicalUsername::parse(account).unwrap(),
+            decrypt_primary_fingerprints: Vec::new(),
+            signer: None,
+        };
+        assert_eq!(
+            snapshot
+                .process(&processor, &context, &switched, &bindings)
+                .unwrap_err(),
+            ProtectedError::MessageIdentity
+        );
+    }
+}
+
+#[test]
+fn stored_source_assembly_preserves_body_bytes_and_enforces_total_limit() {
+    let message = message();
+    let source = assemble_source(&message).unwrap();
+    assert!(source.ends_with(message.body_text.as_bytes()));
+    assert_eq!(&source[..source.len() - message.body_text.len()], b"From: Alice <alice@example.test>\r\nSubject: synthetic\r\nContent-Type: text/plain\r\n\r\n");
+    let mut oversized = message;
+    oversized.body_text = "X".repeat(crate::pgp_mime::MAX_PGP_MIME_BYTES);
+    assert_eq!(
+        assemble_source(&oversized).unwrap_err(),
+        ProtectedError::Mime(crate::pgp_mime::PgpMimeError::SizeLimit)
+    );
+}
+
+#[test]
+fn stored_non_ascii_protected_transport_is_refused_before_crypto_dispatch() {
+    use std::cell::Cell;
+
+    struct CountCrypto<'a>(&'a Cell<usize>);
+    impl CryptoExecutor for CountCrypto<'_> {
+        fn execute(
+            &self,
+            _: &CanonicalUsername,
+            _: &crate::openpgp_crypto::Operation,
+        ) -> Result<crate::openpgp_crypto::Outcome, CryptoFailure> {
+            self.0.set(self.0.get() + 1);
+            Err(CryptoFailure::Transport)
+        }
+    }
+
+    let context = AuthenticationContext::new(
+        crate::auth::AuthenticationPolicy::default(),
+        "unsupported-stored-protection",
+        "127.0.0.1",
+        "Synthetic fixture",
+    )
+    .unwrap();
+    let bindings = InboundBindings {
+        signer_key_validities: Default::default(),
+        account: CanonicalUsername::parse("bob").unwrap(),
+        decrypt_primary_fingerprints: vec!["B".repeat(40)],
+        signer: None,
+    };
+    for (content_type, raw_body) in [
+        (
+            "multipart/signed; protocol=\"application/pgp-signature\"; micalg=pgp-sha256; boundary=transport",
+            b"--transport\r\nContent-Type: text/plain\r\nContent-Transfer-Encoding: 8bit\r\n\r\nRaw \xff body\r\n--transport\r\nContent-Type: application/pgp-signature\r\n\r\nsynthetic-signature\r\n--transport--\r\n".as_slice(),
+        ),
+        (
+            "multipart/encrypted; protocol=\"application/pgp-encrypted\"; boundary=transport",
+            b"--transport\r\nContent-Type: application/pgp-encrypted\r\n\r\nVersion: 1\r\n--transport\r\nContent-Type: application/octet-stream\r\nContent-Transfer-Encoding: binary\r\n\r\nRaw \xff ciphertext\r\n--transport--\r\n".as_slice(),
+        ),
+    ] {
+        let mut stored = message();
+        stored.header_block = format!(
+            "From: Alice <alice@example.test>\r\nSubject: unsupported stored transport\r\nMIME-Version: 1.0\r\nContent-Type: {content_type}\r\n"
+        );
+        // This models a stored string after an invalid raw byte was replaced:
+        // the original cryptographic input can no longer be reconstructed.
+        stored.body_text = String::from_utf8_lossy(raw_body).into_owned();
+        assert_ne!(stored.body_text.as_bytes(), raw_body);
+        assert!(stored.body_text.contains('\u{fffd}'));
+        let calls = Cell::new(0);
+        let processor = Processor::new(CountCrypto(&calls), RenderingPolicy::default());
+        let retrieved = MessageViewDecision::Retrieved {
+            canonical_username: "bob".into(),
+            session_id: session().record.session_id,
+            message: Box::new(stored.clone()),
+        };
+        let result = assemble_source(&stored).and_then(|source| {
+            let snapshot = OwnedSnapshot::from_retrieved(
+                &session(),
+                &request(),
+                stored.metadata.as_ref().map(|metadata| &metadata.version),
+                &retrieved,
+                &source,
+            )?;
+            snapshot
+                .process(&processor, &context, &session(), &bindings)
+                .map(|_| ())
+        });
+        assert!(result.is_err(), "unsupported stored transport was accepted");
+        assert_eq!(
+            calls.get(),
+            0,
+            "unsupported stored transport reached the crypto executor"
+        );
+    }
+}
+
+#[test]
+fn stored_ordinary_utf8_body_preserves_text_and_unprotected_classification() {
+    let mut stored = message();
+    stored.body_text = "Café and a literal replacement character: \u{fffd}\r\n".into();
+    let source = assemble_source(&stored).unwrap();
+    assert!(source.ends_with(stored.body_text.as_bytes()));
+    assert!(matches!(
+        crate::pgp_mime::classify(&source, crate::pgp_mime::PgpMimePolicy::default()).unwrap(),
+        crate::pgp_mime::PgpMimeMessage::Unprotected { .. }
+    ));
+    let context = AuthenticationContext::new(
+        crate::auth::AuthenticationPolicy::default(),
+        "ordinary-stored-utf8",
+        "127.0.0.1",
+        "Synthetic fixture",
+    )
+    .unwrap();
+    let bindings = InboundBindings {
+        signer_key_validities: Default::default(),
+        account: CanonicalUsername::parse("bob").unwrap(),
+        decrypt_primary_fingerprints: Vec::new(),
+        signer: None,
+    };
+    let retrieved = MessageViewDecision::Retrieved {
+        canonical_username: "bob".into(),
+        session_id: session().record.session_id,
+        message: Box::new(stored.clone()),
+    };
+    let snapshot = OwnedSnapshot::from_retrieved(
+        &session(),
+        &request(),
+        stored.metadata.as_ref().map(|metadata| &metadata.version),
+        &retrieved,
+        &source,
+    )
+    .unwrap();
+    let processor = Processor::new(NeverCrypto, RenderingPolicy::default());
+    let rendered = snapshot
+        .process(&processor, &context, &session(), &bindings)
+        .unwrap();
+    assert!(!rendered.protection.decrypted_on_mail_host);
+    assert!(rendered.rendered.body_html.contains("Café"));
+}
+
+#[test]
+fn inbound_binding_derivation_uses_confirmed_record_not_key_uids_or_guesses() {
+    let account = CanonicalUsername::parse("bob").unwrap();
+    let record = record();
+    let inventory = inventory(false, false);
+    let bindings = inbound_bindings(&account, &record, Some(&inventory), &message(), 200).unwrap();
+    assert_eq!(bindings.decrypt_primary_fingerprints, ["B".repeat(40)]);
+    let signer = bindings.signer.unwrap();
+    assert_eq!(signer.primary_fingerprint, "A".repeat(40));
+    assert_eq!(
+        signer.mailbox,
+        MailboxIdentity::parse("alice@example.test").unwrap()
+    );
+    assert_eq!(signer.key_validity, KeyValidity::Current);
+    let no_binding = BindingRecord::empty("bob").unwrap();
+    assert!(
+        inbound_bindings(&account, &no_binding, Some(&inventory), &message(), 200)
+            .unwrap()
+            .signer
+            .is_none()
+    );
+    assert_eq!(
+        inbound_bindings(
+            &CanonicalUsername::parse("alice").unwrap(),
+            &record,
+            Some(&inventory),
+            &message(),
+            200
+        )
+        .unwrap_err(),
+        ProtectedError::ForeignBindings
+    );
+}
+
+#[test]
+fn ambiguous_or_unbound_sender_never_produces_confirmed_identity_facts() {
+    let account = CanonicalUsername::parse("bob").unwrap();
+    for from in [
+        "From: other@example.test",
+        "From: alice@example.test, bob@example.test",
+        "From: alice@example.test\r\nFrom: other@example.test",
+        "From: malformed",
+        "From: Alice@example.test",
+    ] {
+        let mut message = message();
+        message.header_block = format!("{from}\r\nContent-Type: text/plain\r\n");
+        assert!(inbound_bindings(
+            &account,
+            &record(),
+            Some(&inventory(false, false)),
+            &message,
+            200
+        )
+        .unwrap()
+        .signer
+        .is_none());
+    }
+}
+
+#[test]
+fn public_inventory_key_validity_is_separate_from_confirmed_binding() {
+    let account = CanonicalUsername::parse("bob").unwrap();
+    for (inventory, expected) in [
+        (None, KeyValidity::Unknown),
+        (Some(inventory(true, false)), KeyValidity::Expired),
+        (Some(inventory(false, true)), KeyValidity::Revoked),
+    ] {
+        let bindings =
+            inbound_bindings(&account, &record(), inventory.as_ref(), &message(), 200).unwrap();
+        assert_eq!(bindings.signer.unwrap().key_validity, expected);
+    }
+}
+
+// Run the owned message -> binding projection -> verifier -> reader assessment
+// chain. Crypto is a distinguishing valid-signature reply, not metadata trust.
+fn assess_sender(
+    account: &str,
+    record: &BindingRecord,
+    inventory: Option<&Inventory>,
+    from: &str,
+    verified_primary: &str,
+) -> Result<crate::protected_message::ProtectionState, ProtectedError> {
+    struct Verified<'a>(&'a str, &'a str);
+    impl CryptoExecutor for Verified<'_> {
+        fn execute(
+            &self,
+            account: &crate::identity::CanonicalUsername,
+            operation: &crate::openpgp_crypto::Operation,
+        ) -> Result<crate::openpgp_crypto::Outcome, CryptoFailure> {
+            assert_eq!(account.as_str(), self.0);
+            assert!(matches!(
+                operation,
+                crate::openpgp_crypto::Operation::Verify { .. }
+            ));
+            Ok(crate::openpgp_crypto::Outcome {
+                operation: "verify".into(),
+                content: vec![],
+                signer_fingerprint: Some(self.1.into()),
+                primary_fingerprint: Some(self.1.into()),
+                signature: crate::openpgp_crypto::SignatureState::Valid,
+                hash_algorithm: Some(8),
+            })
+        }
+    }
+    let entity = crate::pgp_mime::build_signed(
+        b"Content-Type: text/plain\r\n\r\nSynthetic signed account message\r\n",
+        b"-----BEGIN PGP SIGNATURE-----\n\nZml4dHVyZQ==\n-----END PGP SIGNATURE-----\n",
+        crate::pgp_mime::SignatureDigest::Sha256,
+        "account-signature-test",
+        crate::pgp_mime::PgpMimePolicy::default(),
+    )
+    .unwrap();
+    let (headers, body) =
+        entity.split_at(entity.windows(4).position(|w| w == b"\r\n\r\n").unwrap());
+    let mut stored = message();
+    stored.mailbox_name = "Sent".into();
+    stored.header_block = format!("From: {from}\r\n{}", std::str::from_utf8(headers).unwrap());
+    stored.body_text = std::str::from_utf8(&body[4..]).unwrap().into();
+    let account = crate::identity::CanonicalUsername::parse(account).unwrap();
+    let binding = inbound_bindings(&account, record, inventory, &stored, 30)?;
+    let mut session = session();
+    session.record.canonical_username = account.as_str().into();
+    let source = assemble_source(&stored)?;
+    let retrieved = MessageViewDecision::Retrieved {
+        canonical_username: account.as_str().into(),
+        session_id: session.record.session_id.clone(),
+        message: Box::new(stored),
+    };
+    let request = MessageViewRequest::new(MessageViewPolicy::default(), "Sent", 7).unwrap();
+    let snapshot = OwnedSnapshot::from_retrieved(&session, &request, None, &retrieved, &source)?;
+    let context = AuthenticationContext::new(
+        crate::auth::AuthenticationPolicy::default(),
+        "own-signer",
+        "127.0.0.1",
+        "Synthetic fixture",
+    )
+    .unwrap();
+    snapshot
+        .process(
+            &Processor::new(
+                Verified(account.as_str(), verified_primary),
+                RenderingPolicy::default(),
+            ),
+            &context,
+            &session,
+            &binding,
+        )
+        .map(|view| view.protection)
+}
+
+#[test]
+fn own_signed_sent_message_uses_account_binding_without_a_self_contact() {
+    use crate::protected_message::{SignatureValidity, SignerIdentityState};
+    let account = "bob@example.test";
+    let mut record = BindingRecord::empty(account).unwrap();
+    record.revision = 1;
+    record.account_binding = Some(AccountBinding {
+        primary_fingerprint: "A".repeat(40),
+        signing_fingerprint: None,
+        decrypt_primary_fingerprints: vec!["A".repeat(40)],
+    });
+    for conflicting_contact in [false, true] {
+        if conflicting_contact {
+            record.recipient_bindings.push(RecipientBinding {
+                address: account.into(),
+                primary_fingerprint: "B".repeat(40),
+                encryption: Requirement::Optional,
+            });
+        }
+        let result = assess_sender(
+            account,
+            &record,
+            Some(&inventory(false, false)),
+            "=?UTF-8?B?Qm9i?= <bob@EXAMPLE.TEST>",
+            &"A".repeat(40),
+        )
+        .unwrap();
+        assert_eq!(result.signature, SignatureValidity::Valid);
+        assert_eq!(
+            result.signer_identity,
+            SignerIdentityState::ConfirmedBinding
+        );
+        assert_eq!(result.key_validity, Some(KeyValidity::Current));
+        let html = crate::openpgp_reader_ui::render(
+            &crate::openpgp_reader_ui::ReaderState::Assessed(result),
+        );
+        assert!(html.contains("matches the confirmed sender binding"));
+        assert!(html.contains("<dt>Key validity</dt><dd>current</dd>"));
+        let mismatched = assess_sender(
+            account,
+            &record,
+            Some(&inventory(false, false)),
+            account,
+            &"B".repeat(40),
+        )
+        .unwrap();
+        assert_eq!(mismatched.signer_identity, SignerIdentityState::Mismatch);
+        assert_eq!(mismatched.key_validity, Some(KeyValidity::Unknown));
+    }
+    let missing = assess_sender(account, &record, None, account, &"A".repeat(40)).unwrap();
+    assert_eq!(missing.key_validity, Some(KeyValidity::Unknown));
+    for (inv, expected) in [
+        (inventory(true, false), ProtectedError::ExpiredKey),
+        (inventory(false, true), ProtectedError::RevokedKey),
+    ] {
+        assert_eq!(
+            assess_sender(account, &record, Some(&inv), account, &"A".repeat(40)).unwrap_err(),
+            expected
+        );
+    }
+    assert_eq!(
+        assess_sender(
+            "other@example.test",
+            &record,
+            Some(&inventory(false, false)),
+            account,
+            &"A".repeat(40)
+        )
+        .unwrap_err(),
+        ProtectedError::ForeignBindings
+    );
+    record.account_binding = None;
+    record.recipient_bindings[0].primary_fingerprint = "A".repeat(40);
+    let no_account = assess_sender(
+        account,
+        &record,
+        Some(&inventory(false, false)),
+        account,
+        &"A".repeat(40),
+    )
+    .unwrap();
+    assert_eq!(no_account.signer_identity, SignerIdentityState::Unknown);
+    assert_eq!(no_account.key_validity, Some(KeyValidity::Current));
+}
+
+#[test]
+fn verified_key_status_does_not_grant_unbound_or_mismatched_sender_identity() {
+    use crate::protected_message::SignerIdentityState;
+    let mut record = BindingRecord::empty("bob@example.test").unwrap();
+    record.revision = 1;
+    let inv = inventory(false, false);
+    let result = assess_sender(
+        "bob@example.test",
+        &record,
+        Some(&inv),
+        "alice@example.test",
+        &"A".repeat(40),
+    )
+    .unwrap();
+    assert_eq!(result.signer_identity, SignerIdentityState::Unknown);
+    assert_eq!(result.key_validity, Some(KeyValidity::Current));
+    record.recipient_bindings.push(RecipientBinding {
+        address: "alice@example.test".into(),
+        primary_fingerprint: "B".repeat(40),
+        encryption: Requirement::Optional,
+    });
+    let result = assess_sender(
+        "bob@example.test",
+        &record,
+        Some(&inv),
+        "alice@example.test",
+        &"A".repeat(40),
+    )
+    .unwrap();
+    assert_eq!(result.signer_identity, SignerIdentityState::Mismatch);
+    assert_eq!(result.key_validity, Some(KeyValidity::Current));
+    for (inv, expected) in [
+        (inventory(true, false), ProtectedError::ExpiredKey),
+        (inventory(false, true), ProtectedError::RevokedKey),
+    ] {
+        assert_eq!(
+            assess_sender(
+                "bob@example.test",
+                &record,
+                Some(&inv),
+                "alice@example.test",
+                &"A".repeat(40)
+            )
+            .unwrap_err(),
+            expected
+        );
+    }
+    for from in [
+        "alice@example.test, bob@example.test",
+        "alice@example.test\r\nFrom: bob@example.test",
+    ] {
+        let result = assess_sender(
+            "bob@example.test",
+            &record,
+            Some(&inv),
+            from,
+            &"A".repeat(40),
+        )
+        .unwrap();
+        assert_eq!(result.signer_identity, SignerIdentityState::Unknown);
+    }
+}

@@ -41,6 +41,9 @@ rotation_host_check() {
 
 rotation_preflight() (
     # Isolate the revocation helper's function names and process state.
+    # Its initialization must retain the caller's validated runtime selection.
+    local OSMAP_TOTP_SECRET_DIR="${SECRET_DIR}" OSMAP_TOTP_REVOKED_DIR="${REVOKED_DIR}"
+    local OSMAP_TOTP_OWNER="${RUNTIME_OWNER}" OSMAP_TOTP_GROUP="${RUNTIME_GROUP}"
     # shellcheck source=maint/live/osmap-revoke-totp-over-ssh.sh
     source "${LIFECYCLE_DIR}/osmap-revoke-totp-over-ssh.sh"
     SSH_OPTS+=(-o StrictHostKeyChecking=yes)
@@ -77,6 +80,8 @@ REMOTE
 )
 
 rotation_revoke() (
+    local OSMAP_TOTP_SECRET_DIR="${SECRET_DIR}" OSMAP_TOTP_REVOKED_DIR="${REVOKED_DIR}"
+    local OSMAP_TOTP_OWNER="${RUNTIME_OWNER}" OSMAP_TOTP_GROUP="${RUNTIME_GROUP}"
     # shellcheck source=maint/live/osmap-revoke-totp-over-ssh.sh
     source "${LIFECYCLE_DIR}/osmap-revoke-totp-over-ssh.sh"
     SSH_OPTS+=(-o StrictHostKeyChecking=yes)

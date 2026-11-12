@@ -1,0 +1,264 @@
+//! PAGE16 folder settings backed by the existing account settings store.
+use super::*;
+
+fn render_sent_location_form(
+    model: &SettingsPageModel<'_>,
+    saved: Option<&crate::sent_location::Preference>,
+    choices: Option<&[MailboxEntry]>,
+) -> String {
+    let Some(saved) = saved.filter(|saved| saved.valid()) else {
+        return "<div class=\"general-field\"><label for=\"copies-sent-location\">Sent location</label><select id=\"copies-sent-location\" disabled><option>Unavailable</option></select></div><p>The saved Sent folder could not be loaded. Reload Copies &amp; Folders.</p>".into();
+    };
+    let entries = choices.unwrap_or(&[]);
+    let visible = entries.iter().take(DEFAULT_RENDERED_MAILBOXES_MAX);
+    let included = visible
+        .clone()
+        .any(|entry| entry.name == saved.mailbox_name);
+    let mut options = String::new();
+    if !included {
+        let name = escape_html(&saved.mailbox_name);
+        let unavailable = !entries.iter().any(|entry| entry.name == saved.mailbox_name);
+        options.push_str(&format!(
+            "<option value=\"{name}\" selected>{name}{}</option>",
+            if unavailable { " (unavailable)" } else { "" }
+        ));
+    }
+    for entry in visible {
+        let name = escape_html(&entry.name);
+        options.push_str(&format!(
+            "<option value=\"{name}\"{}>{name}</option>",
+            if entry.name == saved.mailbox_name {
+                " selected"
+            } else {
+                ""
+            }
+        ));
+    }
+    let disabled = if choices.is_none() || entries.is_empty() {
+        " disabled"
+    } else {
+        ""
+    };
+    format!("<form id=\"copies-sent-location-form\" method=\"post\" action=\"/settings/sent-location\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><div class=\"general-field\"><label for=\"copies-sent-location\">Sent location</label><select id=\"copies-sent-location\" name=\"mailbox_name\"{disabled}>{options}</select></div><button type=\"submit\"{disabled}><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save Sent folder</span></button></form><p class=\"general-help\">Choose an existing folder in this account. This changes where future Sent copies are saved; it does not move existing mail. An unavailable destination is reported separately from submission.</p>", escape_html(model.csrf_token), saved.revision)
+}
+
+pub(crate) struct CopiesPageState<'a> {
+    pub mailboxes: Option<&'a [MailboxEntry]>,
+    pub chosen: Option<&'a str>,
+    pub counts: Option<(usize, usize)>,
+    pub status: Option<&'a crate::mailbox_status::MailboxStatus>,
+    pub hierarchy: Option<&'a crate::http::FolderTree>,
+    pub creation: bool,
+    pub rename: bool,
+    pub rename_pending: bool,
+    pub bin: Option<&'a crate::bin_folder::BinPreference>,
+    pub bin_choices: Option<&'a [MailboxEntry]>,
+    pub draft_location: Option<&'a crate::draft_location::Preference>,
+    pub draft_location_ready: bool,
+    pub sent_copy: Option<&'a crate::sent_copy::Preference>,
+    pub sent_location: Option<&'a crate::sent_location::Preference>,
+    pub sent_location_choices: Option<&'a [MailboxEntry]>,
+    pub labels: Option<&'a crate::labels::LabelRecord>,
+}
+pub(crate) fn render_copies_page_with_state(
+    model: &SettingsPageModel<'_>,
+    state: CopiesPageState<'_>,
+) -> TrustedHtml {
+    render_folder_settings(model, state, false)
+}
+
+pub(crate) fn render_folders_page_with_state(
+    model: &SettingsPageModel<'_>,
+    state: CopiesPageState<'_>,
+) -> TrustedHtml {
+    render_folder_settings(model, state, true)
+}
+
+fn render_folder_settings(
+    model: &SettingsPageModel<'_>,
+    state: CopiesPageState<'_>,
+    folders_page: bool,
+) -> TrustedHtml {
+    let CopiesPageState {
+        mailboxes,
+        chosen,
+        counts,
+        status,
+        hierarchy,
+        creation,
+        rename,
+        rename_pending,
+        bin,
+        bin_choices,
+        draft_location,
+        draft_location_ready,
+        sent_copy,
+        sent_location,
+        sent_location_choices,
+        labels,
+    } = state;
+    let draft_notice = if draft_location.is_some() && !draft_location_ready {
+        "<p class=\"general-help\">Saved draft location is unavailable. Existing drafts were not moved. If Working drafts storage is missing, explicitly requalify Working drafts using this form. No existing draft is moved or recovered by this choice.</p>"
+    } else {
+        ""
+    };
+    let draft_location_form = match draft_location {
+        Some(saved) => format!("<form id=\"copies-draft-location-form\" method=\"post\" action=\"/settings/draft-location\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><div class=\"general-field\"><label for=\"copies-draft-location\">Draft location</label><select id=\"copies-draft-location\" name=\"location\"><option value=\"default\"{}>Drafts</option><option value=\"working\"{}>Working drafts</option></select></div><button type=\"submit\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save draft location</span></button></form><p class=\"general-help\">Private OSMAP files. Only new drafts use this choice; existing drafts stay in place. The Drafts list includes Drafts and Working drafts under one account limit.</p>", escape_html(model.csrf_token), saved.revision, if saved.location == crate::draft_location::Location::Default { " selected" } else { "" }, if saved.location == crate::draft_location::Location::Working { " selected" } else { "" }),
+        None => "<div class=\"general-field\"><label for=\"copies-draft-location\">Draft location</label><select id=\"copies-draft-location\" disabled><option>Unavailable</option></select></div><p>Private draft location unavailable. Reload before changing the choice.</p>".into(),
+    };
+    let draft_location_form = format!("{draft_location_form}{draft_notice}");
+    let bin_form = render_bin_folder_form(model, "copies-bin", "copies", bin, bin_choices);
+    let sent_copy_form = match sent_copy {
+        Some(saved) => format!("<form id=\"copies-sent-copy-form\" method=\"post\" action=\"/settings/sent-copy\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><div class=\"general-field\"><label for=\"copies-save-sent\">Save sent messages</label><select id=\"copies-save-sent\" name=\"save_sent\"><option value=\"on\"{}>On</option><option value=\"off\"{}>Off</option></select></div><button type=\"submit\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save Sent choice</span></button></form><p class=\"general-help\">The saved choice is captured when a new submission starts. Changing it never submits mail or changes an existing attempt. Off skips the Sent append; attempt recovery remains separate.</p>", escape_html(model.csrf_token), saved.revision, if saved.save_sent { " selected" } else { "" }, if saved.save_sent { "" } else { " selected" }),
+        None => "<div class=\"general-field\"><label for=\"copies-save-sent\">Save sent messages</label><select id=\"copies-save-sent\" disabled><option>Unavailable</option></select></div><p>Saved copy preference unavailable. Reload Copies &amp; Folders before submitting.</p>".into(),
+    };
+    let entries = mailboxes.unwrap_or(&[]);
+    let sent_location_form = render_sent_location_form(model, sent_location, sent_location_choices);
+    let has = |name: &str| entries.iter().any(|v| v.name == name);
+    let missing = model.archive_mailbox_name.is_some_and(|name| !has(name));
+    let mut options = format!(
+        "<option value=\"\"{}>Not configured</option>",
+        if model.archive_mailbox_name.is_none() {
+            " selected"
+        } else {
+            ""
+        }
+    );
+    if missing
+        || model.archive_mailbox_name.is_some_and(|stored| {
+            !entries
+                .iter()
+                .take(DEFAULT_RENDERED_MAILBOXES_MAX)
+                .any(|entry| entry.name == stored)
+        })
+    {
+        let name = escape_html(model.archive_mailbox_name.unwrap_or(""));
+        options.push_str(&format!(
+            "<option value=\"{name}\" selected>{name}{}</option>",
+            if missing { " (unavailable)" } else { "" }
+        ));
+    }
+    for entry in entries.iter().take(DEFAULT_RENDERED_MAILBOXES_MAX) {
+        let name = escape_html(&entry.name);
+        options.push_str(&format!(
+            "<option value=\"{name}\"{}>{name}</option>",
+            if model.archive_mailbox_name == Some(entry.name.as_str()) {
+                " selected"
+            } else {
+                ""
+            }
+        ));
+    }
+    let unavailable = mailboxes.is_none();
+    let destination = if folders_page {
+        "/folders?folder="
+    } else {
+        "/settings?section=copies&amp;folder="
+    };
+    let mut rows = String::new();
+    for entry in entries.iter().take(DEFAULT_RENDERED_MAILBOXES_MAX) {
+        rows.push_str(&format!(
+            "<li><a href=\"{destination}{}\"{}>{}<span>{}</span></a></li>",
+            url_encode(&entry.name),
+            if chosen == Some(entry.name.as_str()) {
+                " aria-current=\"true\""
+            } else {
+                ""
+            },
+            shell_icon("folders"),
+            escape_html(&entry.name)
+        ));
+    }
+    if let Some(tree) = hierarchy {
+        rows = if folders_page {
+            tree.render_at(chosen, destination)
+        } else {
+            tree.render(chosen)
+        };
+    }
+    if rows.is_empty() {
+        rows.push_str("<li>No available mailbox listing.</li>");
+    }
+    let (messages, unread) = counts.map_or_else(
+        || ("Unknown".to_owned(), "Unknown".to_owned()),
+        |(all, unread)| (all.to_string(), unread.to_string()),
+    );
+    let scope = if counts.is_some() {
+        "Loaded unread covers up to 2,000 summaries before filters or snooze. Virtual size is not disk use or quota."
+    } else {
+        "Verified summary counts are unavailable. Opening this folder remains separate from selecting it."
+    };
+    let total = status.map_or_else(|| "Unknown".into(), |v| v.messages().to_string());
+    let size = status.map_or_else(
+        || "Unknown".into(),
+        |v| format!("{} bytes", v.virtual_bytes()),
+    );
+    let selected = chosen.map_or_else(|| "<p>No available folder to inspect.</p>".to_owned(), |name| {
+        let (parent,children)=hierarchy.map(|tree|tree.primary(name)).unwrap_or_else(||("Unknown".into(),"Unknown".into()));
+        let facts=hierarchy.map(|tree|tree.details(name)).unwrap_or_else(||"<p>Hierarchy and reported roles are unavailable.</p>".into());
+        format!("<h3>{}</h3><dl><dt>Parent</dt><dd>{parent}</dd><dt>Total messages</dt><dd data-folder-total>{total}</dd><dt>Visible direct subfolders</dt><dd>{children}</dd><dt>Mailbox owner</dt><dd>{}</dd></dl><a class=\"presentation-text button-link\" href=\"/mailbox?name={}\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open folder</span></a><details class=\"copies-secondary\"><summary class=\"presentation-text\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Folder details</span></summary><dl><dt>Virtual message size</dt><dd data-folder-vsize>{size}</dd><dt>Loaded unread</dt><dd><span data-folder-unread>{unread}</span> of <span data-folder-messages>{messages}</span> loaded</dd></dl>{facts}<p class=\"copies-count-scope\">{scope}</p></details>",escape_html(name),escape_html(model.canonical_username),url_encode(name))
+    });
+    let create = if creation {
+        format!("<a class=\"button-link\" href=\"/settings/folders/create?parent={}\"><span class=\"presentation-icon presentation-icon-add\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">New subfolder</span></a>",url_encode(chosen.unwrap_or("")))
+    } else {
+        "<button disabled><span class=\"presentation-icon presentation-icon-add\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">New subfolder</span></button>".into()
+    };
+    let move_folder = if !rename_pending && rename {
+        format!(
+            "<a class=\"button-link\" href=\"/settings/folders/move?source={}\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move</span></a>",
+            url_encode(chosen.unwrap_or(""))
+        )
+    } else {
+        "<button disabled><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move</span></button>".into()
+    };
+    let delete_folder = if !rename_pending && rename {
+        format!("<a class=\"button-link\" href=\"/settings/folders/delete?source={}\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Delete empty folder</span></a><a class=\"button-link\" href=\"/settings/folders/bin?source={}\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move complete folder to Bin</span></a><a class=\"button-link\" href=\"/folders/deleted\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Deleted folders / Restore</span></a>",url_encode(chosen.unwrap_or("")),url_encode(chosen.unwrap_or("")))
+    } else {
+        "<button disabled><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Delete empty folder</span></button><a class=\"button-link\" href=\"/folders/deleted\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Deleted folders / Restore</span></a>".into()
+    };
+    let rename = if rename_pending {
+        "<a class=\"button-link\" href=\"/settings/folders/rename/check\"><span class=\"presentation-icon presentation-icon-refresh\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Check rename result</span></a><button disabled><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Rename</span></button>".into()
+    } else if rename {
+        format!(
+            "<a class=\"button-link\" href=\"/settings/folders/rename?source={}\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Rename</span></a>",
+            url_encode(chosen.unwrap_or(""))
+        )
+    } else {
+        "<button disabled><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Rename</span></button>".into()
+    };
+    let notices = [
+        (model.success_message, "status"),
+        (model.error_message, "alert"),
+    ]
+    .into_iter()
+    .filter_map(|(v, role)| {
+        v.map(|v| format!("<p class=\"notice\" role=\"{role}\">{}</p>", escape_html(v)))
+    })
+    .collect::<String>();
+    if folders_page {
+        return TrustedHtml::from_template(format!(concat!(
+            "{header}<main id=\"main-content\" class=\"page-shell settings-copies-page folders-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Folders</h1><p>Browse your Inbox subfolders and other account mail folders.</p></div>{notices}",
+            "<section class=\"copies-management\"><div class=\"copies-management-heading\"><div><h2>Mail folders</h2><p>Select a folder to inspect it, then open its messages or manage a private user folder.</p></div><div class=\"copies-management-actions\">{create}{rename}{move_folder}{delete_folder}</div></div>",
+            "<div class=\"copies-browser\"><section class=\"copies-tree\" aria-label=\"Account folder hierarchy\"><h2>Folder hierarchy</h2><ul>{rows}</ul>{limit}{tree_notice}</section><section class=\"copies-details\"><h2>Selected folder</h2>{selected}<div class=\"copies-safety\"><h3>Folder safety</h3><p>System folders and saved mail destinations are protected. Private user folders with at most eight private descendant folders can be renamed, moved or preserved in Bin. Empty deletion removes only an empty container. Each change requires review and confirmation. Restore checks the original parent and unused original name; Bin retention remains separate.</p><p>To move complete emails, open a folder and use the message Move controls. Attachments stay with their email.</p><a href=\"/settings?section=copies\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Copies and folder preferences</span></a></div></section></div></section></main>"
+        ), header=app_header(model.canonical_username, model.csrf_token, "folders"), notices=notices, create=create, rename=rename, move_folder=move_folder, delete_folder=delete_folder, rows=rows, selected=selected, limit=if entries.len()>DEFAULT_RENDERED_MAILBOXES_MAX {"<p>Mailbox display limit reached.</p>"}else{""}, tree_notice=if hierarchy.is_some(){""}else{"<p role=\"status\">Hierarchy unavailable. Only verified account folders can be opened; folder editing is unavailable.</p>"}));
+    }
+    let label_controls =
+        crate::labels_ui::render_label_controls(&crate::labels_ui::LabelPageModel {
+            account: model.canonical_username,
+            csrf: model.csrf_token,
+            record: labels,
+            message: None,
+            entered_name: "",
+            submitted_label_id: "",
+            submitted_action: "",
+            notice: None,
+            editable: labels.is_some(),
+        });
+    TrustedHtml::from_template(format!(concat!(
+        "{header}<main id=\"main-content\" class=\"page-shell settings-page settings-copies-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Settings</h1><p>Manage labels, storage locations, Archive and Bin folders.</p></div>{notices}<div class=\"settings-layout\">{nav}<div class=\"copies-content\"><div class=\"copies-top-grid\">",
+        "<section class=\"general-card\"><h2>Copies</h2>{sent_copy_form}{sent_location_form}{draft_location_form}<div class=\"general-field\"><span>Keep Bcc private</span><span>Bcc omitted from message headers</span></div><div class=\"copies-links\">{sent}<a href=\"/drafts\"><span class=\"presentation-icon presentation-icon-drafts\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open drafts</span></a></div></section>",
+        "<section class=\"general-card\"><h2>Folders</h2><form id=\"copies-archive-form\" method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"return_section\" value=\"copies\"><input type=\"hidden\" name=\"settings_action\" value=\"archive\"><div class=\"general-field\"><label for=\"copies-archive\">Archive</label><select id=\"copies-archive\" name=\"archive_mailbox_name\"{disabled}>{options}</select></div></form>{bin_form}<div class=\"general-field\"><span>Delete action</span><span>Explicit message controls</span></div><div class=\"general-field\"><span>Permanent deletion</span><span>Unavailable here</span></div><div class=\"copies-links\">{bin}<button type=\"submit\" form=\"copies-archive-form\"{disabled}><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save archive folder</span></button></div></section></div>",
+        "<section class=\"copies-management\"><div class=\"copies-management-heading\"><div><h2>Mailbox Folder Management</h2><p>Browse available mailboxes. Private user folders with at most eight private descendant folders can be renamed or moved. Bin preserves the complete folder; empty deletion removes only an empty container.</p></div><div class=\"copies-management-actions\">{create}{rename}{move_folder}{delete_folder}</div></div>",
+        "<div class=\"copies-browser\"><section class=\"copies-tree\"><h3>{tree_heading}</h3><ul>{rows}</ul>{limit}{tree_notice}</section><section class=\"copies-details\"><h3>Selected folder</h3>{selected}<div class=\"copies-safety\"><h4>Folder safety</h4><p>Opening folders does not change mail. System folders and saved mail destinations are protected. Folder changes require review and confirmation. Restore checks the original parent and unused original name; Bin retention remains separate.</p><p>Documents, scheduled storage and quota information are unavailable.</p></div></section></div></section><p class=\"copies-help\">{help}</p><section id=\"labels\" class=\"settings-labels\" aria-labelledby=\"settings-labels-title\"><h2 id=\"settings-labels-title\">Label management</h2><p>Create, rename or delete labels for this account. Deleting a label keeps your messages.</p>{label_controls}</section></div></div></main>"
+    ), label_controls=label_controls, sent_copy_form=sent_copy_form, sent_location_form=sent_location_form, draft_location_form=draft_location_form, bin_form=bin_form, create=create, rename=rename, move_folder=move_folder, delete_folder=delete_folder, header=app_header(model.canonical_username,model.csrf_token,"settings-copies"), nav=settings_navigation("copies"), tree_heading=if hierarchy.is_some(){"Folder hierarchy"}else{"Available folders"}, tree_notice=if hierarchy.is_some(){""}else{"<p class=\"copies-count-scope\">Hierarchy unavailable. The verified flat folder list remains available.</p>"}, notices=notices, sent="<a href=\"/mailbox/shortcut?kind=sent\"><span class=\"presentation-icon presentation-icon-next\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Sent</span></a>", bin="<a href=\"/mailbox/shortcut?kind=bin\">Open Bin</a>", csrf=escape_html(model.csrf_token),disabled=if unavailable {" disabled"} else {""},options=options, rows=rows, selected=selected, limit=if entries.len()>DEFAULT_RENDERED_MAILBOXES_MAX {"<p>Mailbox display limit reached.</p>"} else {""},help=if unavailable {"The mailbox list could not be loaded. Archive changes are unavailable."} else if missing {"The stored Archive folder is unavailable. Select an available folder or Not configured before saving. The saved content preference is preserved."} else {"Archive changes preserve your saved content preference. Sent changes apply to new copy attempts. Draft storage remains OSMAP drafts."}))
+}

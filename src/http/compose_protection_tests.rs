@@ -1,0 +1,668 @@
+use super::*;
+use std::os::unix::fs::PermissionsExt;
+
+#[test]
+fn selected_protection_requires_exact_finite_form_and_version() {
+    let mut fields = BTreeMap::new();
+    fields.insert("pgp_sign".to_string(), "on".to_string());
+    assert!(intent_from_form(&fields).is_err());
+    fields.insert("pgp_binding_revision".to_string(), "7".to_string());
+    let intent = intent_from_form(&fields).unwrap();
+    assert!(intent.sign);
+    assert_eq!(intent.binding_revision, Some(7));
+    fields.insert("pgp_sign".to_string(), "false".to_string());
+    assert!(intent_from_form(&fields).is_err());
+    fields.remove("pgp_sign");
+    fields.insert("pgp_self".to_string(), "on".to_string());
+    assert!(intent_from_form(&fields).is_err());
+    fields.insert("pgp_encrypt".to_string(), "on".to_string());
+    assert!(intent_from_form(&fields).is_ok());
+    fields.insert(
+        "pgp_binding_revision".to_string(),
+        "18446744073709551616".to_string(),
+    );
+    assert!(intent_from_form(&fields).is_err());
+    let retained = retained_intent_from_form(&fields);
+    assert!(retained.encrypt && retained.encrypt_to_self);
+    assert_eq!(retained.binding_revision, None);
+}
+
+struct OrdinaryContextFixture {
+    root: std::path::PathBuf,
+    settings: std::path::PathBuf,
+    app: BrowserApp<RuntimeBrowserGateway>,
+    issued: crate::session::IssuedSession,
+    now: u64,
+    inventory: crate::openpgp_inventory::Inventory,
+}
+impl OrdinaryContextFixture {
+    fn new() -> Self {
+        let root = std::env::temp_dir().join(format!(
+            "osmap-ordinary-context-{}",
+            crate::draft::generate_draft_id().unwrap()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        let config = crate::config::AppConfig::from_env_map(&BTreeMap::from([
+            ("OSMAP_RUN_MODE".into(), "serve".into()),
+            (
+                "OSMAP_STATE_DIR".into(),
+                root.join("state").to_string_lossy().into_owned(),
+            ),
+            (
+                "OSMAP_OPENPGP_CRYPTO_SOCKET".into(),
+                root.join("absent.sock").to_string_lossy().into_owned(),
+            ),
+            (
+                "OSMAP_OPENPGP_CRYPTO_KEY_FILE".into(),
+                root.join("absent.key").to_string_lossy().into_owned(),
+            ),
+            ("OSMAP_OPENPGP_CRYPTO_HELPER_UID".into(), "1".into()),
+        ]))
+        .unwrap();
+        // A local-only owned sendmail process lets route tests cross the real
+        // Runtime gateway without ever using the workstation's MTA.
+        let script = root.join("fixture-sendmail");
+        let called = root.join("fixture-sendmail-called");
+        let called_literal =
+            serde_json::to_string(called.to_str().expect("owned fixture path is UTF-8")).unwrap();
+        std::fs::write(
+            &script,
+            format!(
+                "#!/usr/bin/env python3\nimport sys\nsys.stdin.buffer.read()\nwith open({}, 'ab') as recorder:\n    recorder.write(b'x')\n",
+                called_literal,
+            ),
+        )
+        .unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let gateway =
+            RuntimeBrowserGateway::from_config(&config).with_fixture_sendmail_path(script);
+        assert!(gateway.crypto_client().is_none());
+        let context = AuthenticationContext::new(
+            crate::auth::AuthenticationPolicy::default(),
+            "ordinary-context-fixture",
+            "127.0.0.1",
+            "OSMAP/ordinary-context-fixture",
+        )
+        .unwrap();
+        let sessions = crate::session::SessionService::new(
+            crate::session::FileSessionStore::new(&config.state_layout.session_dir),
+            crate::totp::SystemTimeProvider,
+            crate::session::SystemRandomSource,
+            1800,
+            1800,
+        );
+        // Issued controlled session: no password/TOTP login qualification.
+        let issued = sessions
+            .issue(
+                &context,
+                "alice@example.test",
+                crate::auth::RequiredSecondFactor::Totp,
+            )
+            .unwrap();
+        let now = issued.record.issued_at;
+        let inventory = crate::openpgp_inventory::Inventory::parse(
+            serde_json::to_vec(&serde_json::json!({
+                "version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.5.18",
+                "keys":[{"primary":{"fingerprint":"A".repeat(40),"algorithm":1,"bits":3072,
+                "created":1,"expires":0,"revoked":false,"expired":false,"disabled":false,"invalid":false,
+                "can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false},"subkeys":[]}]
+            })).unwrap().as_slice(),
+        ).unwrap();
+        let fixture = Self {
+            root,
+            settings: config.state_layout.settings_dir.clone(),
+            app: BrowserApp::new(HttpPolicy::from_config(&config), gateway),
+            issued,
+            now,
+            inventory,
+        };
+        fixture.replace(
+            0,
+            crate::openpgp_bindings::ProtectionPolicy::default(),
+            false,
+        );
+        fixture
+    }
+    fn replace(
+        &self,
+        revision: u64,
+        policy: crate::openpgp_bindings::ProtectionPolicy,
+        recipient_required: bool,
+    ) {
+        crate::openpgp_bindings::BindingStore::new(self.settings.join("openpgp-bindings"))
+            .replace_operator(
+                "alice@example.test",
+                revision,
+                crate::openpgp_bindings::Update {
+                    account_binding: None,
+                    recipient_bindings: if recipient_required {
+                        vec![crate::openpgp_bindings::RecipientBinding {
+                            address: "recipient@example.test".into(),
+                            primary_fingerprint: "A".repeat(40),
+                            encryption: crate::openpgp_bindings::Requirement::Required,
+                        }]
+                    } else {
+                        vec![]
+                    },
+                    policy,
+                },
+                &self.inventory,
+                self.now,
+            )
+            .unwrap();
+    }
+    fn page(&self) -> HandledHttpResponse {
+        let wire = format!("GET /compose HTTP/1.1\r\nHost: localhost\r\nUser-Agent: OSMAP/ordinary-context-fixture\r\nCookie: osmap_session={}\r\n\r\n", self.issued.token.as_str());
+        let request = crate::http::parse_http_request(&wire, self.app.policy()).unwrap();
+        self.app.handle_request(&request, "127.0.0.1")
+    }
+    fn rendered_revision(&self, response: &HandledHttpResponse) -> String {
+        assert_eq!(response.response.status_code, 200);
+        let html = std::str::from_utf8(&response.response.body).unwrap();
+        let tag = html
+            .split("<input ")
+            .find_map(|part| {
+                let tag = part.split_once('>')?.0;
+                tag.contains("name=\"pgp_binding_revision\"").then_some(tag)
+            })
+            .expect(
+                "actual compose form must project current revision without crypto construction",
+            );
+        tag.split_once("value=\"")
+            .unwrap()
+            .1
+            .split_once('"')
+            .unwrap()
+            .0
+            .to_owned()
+    }
+    fn prepare(
+        &self,
+        recipient: &str,
+        form: &BTreeMap<String, String>,
+    ) -> Result<(crate::protected_submission::PreparedSubmission, u64), &'static str> {
+        let mut request = crate::send::ComposeRequest::new(
+            crate::send::ComposePolicy::default(),
+            recipient,
+            "Synthetic ordinary context",
+            "Public synthetic body",
+        )
+        .unwrap();
+        request.protection = intent_from_form(form).unwrap();
+        // Exercise the exact runtime preparation path, without submission.
+        self.app
+            .gateway
+            .test_prepare_outbound_request("alice@example.test", &request, self.now)
+    }
+}
+
+#[test]
+fn actual_route_runtime_plain_self_submits_once_and_required_recipient_refuses() {
+    let fixture = OrdinaryContextFixture::new();
+    crate::sent_copy::Store::new(&fixture.settings)
+        .save("alice@example.test", 0, false)
+        .unwrap();
+    let post = |page: &HandledHttpResponse, to: &str| {
+        let html = std::str::from_utf8(&page.response.body).unwrap();
+        let intent = html
+            .split("name=\"send_intent\" value=\"")
+            .nth(1)
+            .unwrap()
+            .split('"')
+            .next()
+            .unwrap();
+        let _revision = fixture.rendered_revision(page);
+        let body = format!(
+            "csrf_token={}&send_intent={intent}&to={to}&subject=RouteOrdinary&body=RouteOrdinaryBody",
+            fixture.issued.record.csrf_token,
+        );
+        let raw = format!(
+            "POST /send HTTP/1.1\r\nHost: localhost\r\nUser-Agent: OSMAP/ordinary-context-fixture\r\nOrigin: http://localhost\r\nCookie: osmap_session={}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {}\r\n\r\n{body}",
+            fixture.issued.token.as_str(), body.len(),
+        );
+        let request = crate::http::parse_http_request(&raw, fixture.app.policy()).unwrap();
+        fixture.app.handle_request(&request, "127.0.0.1")
+    };
+    // This is the exact route form omission accepted by intent_from_form.
+    let plain = post(&fixture.page(), "alice%40example.test");
+    assert_eq!(plain.response.status_code, 303, "{:?}", plain.audit_events);
+    assert_eq!(
+        std::fs::read(fixture.root.join("fixture-sendmail-called")).unwrap(),
+        b"x"
+    );
+    assert!(!plain
+        .audit_events
+        .iter()
+        .any(|event| event.action == "send_preparation_refused"));
+
+    fixture.replace(
+        1,
+        crate::openpgp_bindings::ProtectionPolicy::default(),
+        true,
+    );
+    let required = post(&fixture.page(), "recipient%40example.test");
+    assert_eq!(required.response.status_code, 503);
+    assert!(required
+        .audit_events
+        .iter()
+        .any(|event| event.action == "send_preparation_refused"
+            && event.fields.iter().any(|field| field.key == "reason"
+                && field.value == "openpgp_recipient_encryption_required")));
+    assert_eq!(
+        std::fs::read(fixture.root.join("fixture-sendmail-called")).unwrap(),
+        b"x"
+    );
+}
+impl Drop for OrdinaryContextFixture {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.root);
+    }
+}
+
+#[test]
+fn imported_recipients_use_current_mac_inventory_without_crypto_or_private_account_binding() {
+    use crate::openpgp_inventory_runtime::{now, read_frame, write_frame};
+    use std::os::unix::net::UnixListener;
+    use std::time::{Duration, Instant};
+    let mut fixture = OrdinaryContextFixture::new();
+    std::fs::set_permissions(&fixture.root, std::fs::Permissions::from_mode(0o700)).unwrap();
+    let record_store =
+        crate::openpgp_bindings::BindingStore::new(fixture.settings.join("openpgp-bindings"));
+    let before = record_store.load("alice@example.test").unwrap();
+    assert!(before.account_binding.is_none() && before.recipient_bindings.is_empty());
+    assert!(fixture.app.gateway.crypto_client().is_none());
+    let mut metadata: serde_json::Value =
+        serde_json::from_slice(&fixture.inventory.to_bytes().unwrap()).unwrap();
+    metadata["keys"][0]["email_addresses"] =
+        serde_json::json!(["Recipient@EXAMPLE.test", "alias@example.test"]);
+    let inventory =
+        crate::openpgp_inventory::Inventory::parse(&serde_json::to_vec(&metadata).unwrap())
+            .unwrap();
+    let socket = fixture.root.join("public.sock");
+    let key = fixture.root.join("public.key");
+    std::fs::write(&key, [43; 32]).unwrap();
+    std::fs::set_permissions(&key, std::fs::Permissions::from_mode(0o600)).unwrap();
+    let listener = UnixListener::bind(&socket).unwrap();
+    std::fs::set_permissions(&socket, std::fs::Permissions::from_mode(0o600)).unwrap();
+    listener.set_nonblocking(true).unwrap();
+    fixture.app.gateway.public_inventory_client = Some(
+        crate::openpgp_inventory_runtime::Client::from_operator_files(
+            &socket,
+            &key,
+            crate::openbsd::effective_uid(),
+        )
+        .unwrap(),
+    );
+    let server = std::thread::spawn(move || {
+        let deadline = Instant::now() + Duration::from_secs(3);
+        let mut stream = loop {
+            match listener.accept() {
+                Ok((stream, _)) => break stream,
+                Err(error)
+                    if error.kind() == std::io::ErrorKind::WouldBlock
+                        && Instant::now() < deadline =>
+                {
+                    std::thread::sleep(Duration::from_millis(5))
+                }
+                Err(_) => panic!("bounded public inventory fixture accept failed"),
+            }
+        };
+        let raw = read_frame(&mut stream, 2048, deadline).unwrap();
+        let request = crate::openpgp_inventory_protocol::Verifier::default()
+            .request(&raw, "alice@example.test", &[43; 32], now().unwrap())
+            .unwrap();
+        let response = request
+            .response(&inventory, &[43; 32], now().unwrap())
+            .unwrap();
+        write_frame(&mut stream, &response, deadline).unwrap();
+    });
+    let session = ValidatedSession {
+        record: fixture.issued.record.clone(),
+        audit_event: fixture.issued.audit_event.clone(),
+    };
+    let view = fixture
+        .app
+        .gateway
+        .compose_protection_view(&session, "", "", "", ProtectionIntent::default())
+        .unwrap();
+    assert!(!view.runtime_configured && view.account_binding.is_none());
+    let snapshot = view.imported_recipients.unwrap();
+    assert_eq!(snapshot.choices.len(), 2);
+    let recipient = snapshot
+        .choices
+        .iter()
+        .find(|choice| choice.address == "Recipient@EXAMPLE.test")
+        .unwrap();
+    assert_eq!(
+        snapshot
+            .selected("alice@example.test", &recipient.id)
+            .unwrap()
+            .address,
+        "Recipient@EXAMPLE.test"
+    );
+    server.join().unwrap();
+    let unavailable = fixture
+        .app
+        .gateway
+        .compose_protection_view(&session, "", "", "", ProtectionIntent::default())
+        .unwrap();
+    assert!(
+        unavailable.imported_recipients.is_none(),
+        "a later failed inventory read cannot reuse the prior member snapshot"
+    );
+    assert_eq!(record_store.load("alice@example.test").unwrap(), before);
+}
+
+#[test]
+fn ordinary_compose_projects_existing_revision_when_crypto_client_cannot_construct() {
+    let fixture = OrdinaryContextFixture::new();
+    let revision = fixture.rendered_revision(&fixture.page());
+    assert_eq!(revision, "1");
+    let form = BTreeMap::from([("pgp_binding_revision".into(), revision)]);
+    let (ordinary, current_revision) = fixture.prepare("alice@example.test", &form).unwrap();
+    assert_eq!(current_revision, 1);
+    assert_eq!(
+        ordinary.protection(),
+        crate::protected_submission::SubmissionProtection::Ordinary
+    );
+    assert!(ordinary
+        .as_bytes()
+        .windows(b"Public synthetic body".len())
+        .any(|w| w == b"Public synthetic body"));
+    for flag in ["pgp_sign", "pgp_encrypt"] {
+        let mut selected = form.clone();
+        selected.insert(flag.into(), "on".into());
+        assert!(matches!(
+            fixture.prepare("alice@example.test", &selected),
+            Err("openpgp_inventory_unavailable")
+        ));
+    }
+    let mut stale = form;
+    stale.insert("pgp_binding_revision".into(), "0".into());
+    assert!(matches!(
+        fixture.prepare("alice@example.test", &stale),
+        Err("openpgp_binding_changed")
+    ));
+}
+
+#[test]
+fn crypto_unavailable_compose_keeps_defaults_editable_and_required_policy_enforced() {
+    let fixture = OrdinaryContextFixture::new();
+    crate::composition_preferences::CompositionPreferencesStore::new(&fixture.settings)
+        .save(
+            "alice@example.test",
+            crate::composition_preferences::CompositionPreferences {
+                openpgp: crate::composition_preferences::OpenPgpDefaults {
+                    sign: true,
+                    encrypt: true,
+                    encrypt_to_self: true,
+                },
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    let page = fixture.page();
+    let revision = fixture.rendered_revision(&page);
+    let html = std::str::from_utf8(&page.response.body).unwrap();
+    for name in ["pgp_sign", "pgp_encrypt", "pgp_self"] {
+        let tag = html
+            .split("<input ")
+            .find_map(|part| {
+                let tag = part.split_once('>')?.0;
+                tag.contains(&format!("name=\"{name}\"")).then_some(tag)
+            })
+            .unwrap();
+        assert!(tag
+            .split_whitespace()
+            .any(|field| field.trim_end_matches('/') == "checked"));
+        assert!(!tag
+            .split_whitespace()
+            .any(|field| field.trim_end_matches('/') == "disabled"));
+    }
+    // Native unchecked controls omit these fields; choosing ordinary is possible.
+    let form = BTreeMap::from([("pgp_binding_revision".into(), revision)]);
+    assert!(fixture.prepare("alice@example.test", &form).is_ok());
+    fixture.replace(
+        1,
+        crate::openpgp_bindings::ProtectionPolicy {
+            signing: crate::openpgp_bindings::Requirement::Required,
+            ..Default::default()
+        },
+        false,
+    );
+    let form = BTreeMap::from([(
+        "pgp_binding_revision".into(),
+        fixture.rendered_revision(&fixture.page()),
+    )]);
+    assert!(matches!(
+        fixture.prepare("alice@example.test", &form),
+        Err("openpgp_signing_required")
+    ));
+    fixture.replace(
+        2,
+        crate::openpgp_bindings::ProtectionPolicy::default(),
+        true,
+    );
+    let form = BTreeMap::from([(
+        "pgp_binding_revision".into(),
+        fixture.rendered_revision(&fixture.page()),
+    )]);
+    assert!(matches!(
+        fixture.prepare("recipient@example.test", &form),
+        Err("openpgp_recipient_encryption_required")
+    ));
+}
+
+impl OrdinaryContextFixture {
+    fn preflight(&self, to: &str, selected: &str) -> HandledHttpResponse {
+        let page = self.page();
+        let html = std::str::from_utf8(&page.response.body).unwrap();
+        let intent = html
+            .split("name=\"send_intent\" value=\"")
+            .nth(1)
+            .unwrap()
+            .split('"')
+            .next()
+            .unwrap();
+        let revision = self.rendered_revision(&page);
+        let body = format!("csrf_token={}&send_intent={intent}&pgp_binding_revision={revision}&to={to}&subject=OrdinaryPreflight&body=PublicPreflightBody&compose_action=preflight{}", self.issued.record.csrf_token, match selected { "" => "", "sign" => "&pgp_sign=on", "encrypt" => "&pgp_encrypt=on", "self" => "&pgp_encrypt=on&pgp_self=on", _ => panic!("unknown fixture selection") });
+        let wire = format!("POST /drafts/save HTTP/1.1\r\nHost: localhost\r\nUser-Agent: OSMAP/ordinary-context-fixture\r\nOrigin: http://localhost\r\nCookie: osmap_session={}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {}\r\n\r\n{body}", self.issued.token.as_str(), body.len());
+        let request = crate::http::parse_http_request(&wire, self.app.policy()).unwrap();
+        self.app.handle_request(&request, "127.0.0.1")
+    }
+    fn follow_preflight(&self, saved: &HandledHttpResponse) -> String {
+        assert_eq!(
+            saved.response.status_code,
+            303,
+            "{}",
+            String::from_utf8_lossy(&saved.response.body)
+        );
+        let location = saved
+            .response
+            .headers
+            .iter()
+            .find_map(|(key, value)| (key == "Location").then_some(value))
+            .unwrap();
+        assert!(location.starts_with("/draft?id=") && location.ends_with("&preflight=1"));
+        let wire = format!("GET {location} HTTP/1.1\r\nHost: localhost\r\nUser-Agent: OSMAP/ordinary-context-fixture\r\nCookie: osmap_session={}\r\n\r\n", self.issued.token.as_str());
+        let request = crate::http::parse_http_request(&wire, self.app.policy()).unwrap();
+        let page = self.app.handle_request(&request, "127.0.0.1");
+        assert_eq!(page.response.status_code, 200);
+        String::from_utf8(page.response.body).unwrap()
+    }
+    fn no_submission(&self) {
+        assert!(!self.root.join("fixture-sendmail-called").exists());
+    }
+}
+
+#[test]
+fn ordinary_preflight_optional_binding_missing_inventory_and_crypto_saves_without_submission() {
+    let fixture = OrdinaryContextFixture::new();
+    assert!(fixture.app.gateway.inventory_client().is_none());
+    assert!(fixture.app.gateway.crypto_client().is_none());
+    let result = fixture.preflight("recipient%40example.test", "");
+    let html = fixture.follow_preflight(&result);
+    assert!(html.contains("pass composition checks"));
+    assert!(html.contains("name=\"pgp_binding_revision\" value=\"1\""));
+    assert!(html.contains("PublicPreflightBody"));
+    assert!(html.contains("No protection selected"));
+    fixture.no_submission();
+}
+
+#[test]
+fn ordinary_preflight_required_policy_keeps_blocked_plan_and_send_refusal_without_inventory() {
+    for recipient_required in [false, true] {
+        let fixture = OrdinaryContextFixture::new();
+        fixture.replace(
+            1,
+            if recipient_required {
+                Default::default()
+            } else {
+                crate::openpgp_bindings::ProtectionPolicy {
+                    encryption: crate::openpgp_bindings::Requirement::Required,
+                    ..Default::default()
+                }
+            },
+            recipient_required,
+        );
+        let saved = fixture.preflight("recipient%40example.test", "");
+        let html = fixture.follow_preflight(&saved);
+        assert!(html.contains("Blocked"));
+        assert!(html.contains(if recipient_required {
+            "A recipient binding requires encryption"
+        } else {
+            "The account policy requires encryption"
+        }));
+        let form = BTreeMap::from([("pgp_binding_revision".into(), "2".into())]);
+        assert_eq!(
+            fixture
+                .prepare("recipient@example.test", &form)
+                .unwrap_err(),
+            if recipient_required {
+                "openpgp_recipient_encryption_required"
+            } else {
+                "openpgp_encryption_required"
+            }
+        );
+        fixture.no_submission();
+    }
+}
+
+#[test]
+fn protected_preflight_still_refuses_without_crypto_and_inventory() {
+    let fixture = OrdinaryContextFixture::new();
+    for selection in ["sign", "encrypt", "self"] {
+        assert_eq!(
+            fixture
+                .preflight("recipient%40example.test", selection)
+                .response
+                .status_code,
+            503
+        );
+        let mut form = BTreeMap::from([("pgp_binding_revision".into(), "1".into())]);
+        for flag in match selection {
+            "sign" => vec!["pgp_sign"],
+            "encrypt" => vec!["pgp_encrypt"],
+            _ => vec!["pgp_encrypt", "pgp_self"],
+        } {
+            form.insert(flag.into(), "on".into());
+        }
+        assert!(matches!(
+            fixture.prepare("recipient@example.test", &form),
+            Err("openpgp_inventory_unavailable")
+        ));
+    }
+    fixture.no_submission();
+}
+
+#[test]
+fn ordinary_preflight_does_not_waive_explicit_stale_send_revision() {
+    let fixture = OrdinaryContextFixture::new();
+    let result = fixture.preflight("recipient%40example.test", "");
+    fixture.follow_preflight(&result);
+    let stale = BTreeMap::from([("pgp_binding_revision".into(), "0".into())]);
+    assert!(matches!(
+        fixture.prepare("recipient@example.test", &stale),
+        Err("openpgp_binding_changed")
+    ));
+    fixture.no_submission();
+}
+
+#[test]
+fn ordinary_preflight_fresh_default_zero_record_needs_no_key_inventory() {
+    let fixture = OrdinaryContextFixture::new();
+    std::fs::remove_dir_all(fixture.settings.join("openpgp-bindings")).unwrap();
+    assert_eq!(fixture.rendered_revision(&fixture.page()), "0");
+    let html = fixture.follow_preflight(&fixture.preflight("recipient%40example.test", ""));
+    assert!(html.contains("name=\"pgp_binding_revision\" value=\"0\""));
+    assert!(html.contains("pass composition checks"));
+    fixture.no_submission();
+}
+
+#[test]
+fn ordinary_preflight_configured_crypto_missing_inventory_does_not_claim_keys_or_dispatch_crypto() {
+    use std::os::unix::net::UnixListener;
+    let mut fixture = OrdinaryContextFixture::new();
+    let socket = fixture.root.join("c.sock");
+    std::fs::set_permissions(&fixture.root, std::fs::Permissions::from_mode(0o700)).unwrap();
+    let listener = UnixListener::bind(&socket).unwrap();
+    std::fs::set_permissions(&socket, std::fs::Permissions::from_mode(0o600)).unwrap();
+    let key = fixture.root.join("c.key");
+    std::fs::write(&key, b"public-fixture-key-0123456789abcdef").unwrap();
+    std::fs::set_permissions(&key, std::fs::Permissions::from_mode(0o600)).unwrap();
+    fixture.app.gateway.crypto_client = Some(
+        crate::openpgp_crypto_runtime::Client::from_operator_files(
+            &socket,
+            &key,
+            crate::openbsd::effective_uid(),
+        )
+        .unwrap(),
+    );
+    assert!(fixture.app.gateway.inventory_client().is_none());
+    let html = fixture.follow_preflight(&fixture.preflight("recipient%40example.test", ""));
+    assert!(html.contains("No protection selected"));
+    assert!(!html.contains("Public key eligible"));
+    listener.set_nonblocking(true).unwrap();
+    assert!(
+        matches!(listener.accept(), Err(error) if error.kind() == std::io::ErrorKind::WouldBlock)
+    );
+    fixture.no_submission();
+}
+
+#[test]
+fn ordinary_preflight_required_signing_remains_blocked_and_preparation_refuses() {
+    let fixture = OrdinaryContextFixture::new();
+    fixture.replace(
+        1,
+        crate::openpgp_bindings::ProtectionPolicy {
+            signing: crate::openpgp_bindings::Requirement::Required,
+            ..Default::default()
+        },
+        false,
+    );
+    let html = fixture.follow_preflight(&fixture.preflight("recipient%40example.test", ""));
+    assert!(html.contains("The account policy requires signing"));
+    let form = BTreeMap::from([("pgp_binding_revision".into(), "2".into())]);
+    assert!(matches!(
+        fixture.prepare("recipient@example.test", &form),
+        Err("openpgp_signing_required")
+    ));
+    fixture.no_submission();
+}
+
+#[test]
+fn ordinary_preflight_corrupt_binding_store_cannot_claim_current_policy() {
+    let fixture = OrdinaryContextFixture::new();
+    let path = fixture.settings.join("openpgp-bindings");
+    std::fs::remove_dir_all(&path).unwrap();
+    std::fs::write(&path, b"public-invalid-fixture").unwrap();
+    let page = fixture.page();
+    assert_eq!(page.response.status_code, 200);
+    assert!(!String::from_utf8_lossy(&page.response.body).contains("name=\"pgp_binding_revision\""));
+    let form = BTreeMap::from([("pgp_binding_revision".into(), "1".into())]);
+    assert!(matches!(
+        fixture.prepare("recipient@example.test", &form),
+        Err("openpgp_binding_unavailable")
+    ));
+    fixture.no_submission();
+}

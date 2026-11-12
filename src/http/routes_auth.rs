@@ -29,6 +29,23 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
+        let request_host = request
+            .headers
+            .get("host")
+            .map(|host| host.to_ascii_lowercase())
+            .unwrap_or_default();
+        if let Some((action, message)) = same_origin_metadata_error(request, &[request_host]) {
+            return HandledHttpResponse {
+                response: html_response(
+                    403,
+                    "Forbidden",
+                    "Request Origin Rejected",
+                    "<p>The request did not include accepted same-origin request metadata.</p>",
+                ),
+                audit_events: vec![build_http_warning_event(action, message, context)],
+            };
+        }
+
         if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str))
         {
             return HandledHttpResponse {
@@ -86,17 +103,54 @@ where
         audit_events.insert(0, budget_event);
 
         match outcome.decision {
-            BrowserLoginDecision::Authenticated { session_token, .. } => HandledHttpResponse {
-                response: redirect_response(303, "See Other", "/mailboxes").with_header(
-                    "Set-Cookie",
-                    build_session_cookie(
-                        self.policy.session_cookie_name,
-                        session_token.as_str(),
-                        self.policy.secure_session_cookie,
+            BrowserLoginDecision::Authenticated {
+                canonical_username,
+                session_token,
+                appearance,
+                presentation,
+                reading,
+                ..
+            } => {
+                // Only the successful ordinary password/TOTP login can restore
+                // remembered key permission, using the newly validated session.
+                let fresh = self
+                    .gateway
+                    .validate_session(context, session_token.as_str());
+                audit_events.extend(fresh.audit_events);
+                if let BrowserSessionDecision::Valid { validated_session } = fresh.decision {
+                    self.resume_browser_key(request, &validated_session);
+                }
+                let recorded = self.record_session_notice(
+                    context,
+                    &canonical_username,
+                    crate::notifications::NotificationKind::SessionIssued,
+                    &mut audit_events,
+                );
+                HandledHttpResponse {
+                response: (if recorded {redirect_response(303, "See Other", reading.start_page.path())} else {html_response(200,"OK","Signed In",TrustedHtml::from_template(format!("<main id=\"main-content\" class=\"page-shell standalone-notice\"><section class=\"panel\"><h1>Signed in</h1><p>Your session is active. Notification recording could not be confirmed; this does not undo sign-in.</p><p><a href=\"{}\">Continue</a></p></section></main>",escape_html(reading.start_page.path()))))})
+                    .with_header(
+                        "Set-Cookie",
+                        build_session_cookie(
+                            self.policy.session_cookie_name,
+                            session_token.as_str(),
+                            self.policy.secure_session_cookie,
+                        ),
+                    )
+                    .with_header(
+                        "Set-Cookie",
+                        appearance.cookie(self.policy.secure_session_cookie),
+                    )
+                    .with_header(
+                        "Set-Cookie",
+                        presentation.cookie(self.policy.secure_session_cookie),
+                    )
+                    .with_header(
+                        "Set-Cookie",
+                        reading.cookie(self.policy.secure_session_cookie),
                     ),
-                ),
                 audit_events,
-            },
+            }
+            }
             BrowserLoginDecision::Denied { public_reason } => HandledHttpResponse {
                 response: html_response(
                     401,
@@ -118,9 +172,13 @@ where
         if let Some(session_token) = session_cookie_value(request, self.policy.session_cookie_name)
         {
             let outcome = self.gateway.validate_session(context, &session_token);
-            if matches!(outcome.decision, BrowserSessionDecision::Valid { .. }) {
+            if let BrowserSessionDecision::Valid { validated_session } = outcome.decision {
+                let preferences = self
+                    .gateway
+                    .load_reading_preferences(context, &validated_session)
+                    .unwrap_or_default();
                 return HandledHttpResponse {
-                    response: redirect_response(303, "See Other", "/mailboxes"),
+                    response: redirect_response(303, "See Other", preferences.start_page.path()),
                     audit_events: outcome.audit_events,
                 };
             }
@@ -304,6 +362,22 @@ where
 
         audit_events.extend(outcome.audit_events);
 
+        let has_new_revocation = match &outcome.decision {
+            BrowserSessionRevokeDecision::Revoked { newly_revoked, .. } => *newly_revoked,
+            BrowserSessionRevokeDecision::RevokedMany { revoked_count, .. } => *revoked_count > 0,
+            _ => false,
+        };
+        let recorded = !has_new_revocation
+            || self.record_session_notice(
+                context,
+                &validated_session.record.canonical_username,
+                crate::notifications::NotificationKind::SessionRevoked,
+                &mut audit_events,
+            );
+        // Explicit session revocation is a security action, unlike natural
+        // expiry. Conservatively end this account's remembered key access.
+        let remembered_cookie =
+            has_new_revocation.then(|| self.revoke_account_remembered_keys(&validated_session));
         match outcome.decision {
             BrowserSessionRevokeDecision::Revoked {
                 revoked_current_session,
@@ -322,6 +396,9 @@ where
                         "/sessions?revoked=1"
                     },
                 );
+                if !recorded {
+                    response=html_response(200,"OK","Session Revocation Complete",TrustedHtml::from_template(format!("<main id=\"main-content\" class=\"page-shell standalone-notice\"><section class=\"panel\"><h1>Session revocation complete</h1><p>The session action succeeded. Notification recording could not be confirmed.</p><p><a href=\"{}\">Continue</a></p></section></main>",if revoked_current_session {"/login"}else{"/sessions"})));
+                }
                 if revoked_current_session {
                     response = response.with_header(
                         "Set-Cookie",
@@ -330,6 +407,22 @@ where
                             self.policy.secure_session_cookie,
                         ),
                     );
+                }
+                if let Some((cookie, confirmed)) = remembered_cookie {
+                    if !confirmed {
+                        audit_events.push(build_http_warning_event("personal_key_session_revoke_cleanup_unconfirmed", "session revocation complete; remembered restoration removed; helper key cleanup unconfirmed", context));
+                        response = html_response(200, "OK", "Session Revocation Complete", "<p>Your session revocation succeeded and remembered sign-in restoration was removed. Key-service cleanup could not be confirmed. Open Personal Key settings and lock the account key to reconcile remaining permissions.</p><p><a href=\"/settings/keys\">Personal key settings</a></p>");
+                        if revoked_current_session {
+                            response = response.with_header(
+                                "Set-Cookie",
+                                clear_session_cookie(
+                                    self.policy.session_cookie_name,
+                                    self.policy.secure_session_cookie,
+                                ),
+                            );
+                        }
+                    }
+                    response = response.with_header("Set-Cookie", cookie);
                 }
 
                 HandledHttpResponse {
@@ -435,14 +528,24 @@ where
             audit_events.extend(outcome.audit_events);
         }
 
+        let (remembered_cookie, key_cleanup_confirmed) = self.forget_browser_key(request);
+        if !key_cleanup_confirmed {
+            audit_events.push(build_http_warning_event(
+                "personal_key_logout_cleanup_unconfirmed",
+                "browser remembered permission removed; helper grant cleanup unconfirmed",
+                context,
+            ));
+        }
         HandledHttpResponse {
-            response: redirect_response(303, "See Other", "/login").with_header(
-                "Set-Cookie",
-                clear_session_cookie(
-                    self.policy.session_cookie_name,
-                    self.policy.secure_session_cookie,
-                ),
-            ),
+            response: (if key_cleanup_confirmed { redirect_response(303, "See Other", "/login") } else { html_response(503, "Service Unavailable", "Key Cleanup Unconfirmed", "<p>Your browser has been signed out and its remembered permission was removed. Cleanup of earlier private-key permissions in the key service could not be confirmed. Sign in and use Lock this account’s personal key to reconcile key access.</p><p><a href=\"/login\">Sign in</a></p>") })
+                .with_header(
+                    "Set-Cookie",
+                    clear_session_cookie(
+                        self.policy.session_cookie_name,
+                        self.policy.secure_session_cookie,
+                    ),
+                )
+                .with_header("Set-Cookie", remembered_cookie),
             audit_events,
         }
     }
@@ -468,6 +571,9 @@ where
         let outcome = self.gateway.validate_session(context, &session_token);
         match outcome.decision {
             BrowserSessionDecision::Valid { validated_session } => {
+                let mut render_context = request.notification_context.borrow_mut();
+                render_context.session = Some((*validated_session).clone());
+                render_context.authentication_context = Some(context.clone());
                 Ok((*validated_session, outcome.audit_events))
             }
             BrowserSessionDecision::Invalid => Err(HandledHttpResponse {
@@ -543,66 +649,61 @@ where
         None
     }
 
-    fn require_same_origin_request(
+    pub(super) fn require_same_origin_request(
         &self,
         request: &HttpRequest,
         validated_session: &ValidatedSession,
         context: &AuthenticationContext,
     ) -> Option<HandledHttpResponse> {
-        if let Some(origin) = request.headers.get("origin") {
-            if is_opaque_origin(origin) {
-                if let Some(referer) = request.headers.get("referer") {
-                    return validate_same_origin_header(
-                        SameOriginHeaderKind::Referer,
-                        referer,
-                        &self.policy.allowed_hosts,
-                        validated_session,
-                        context,
-                    );
-                }
-
-                if is_same_origin_fetch_site(request.headers.get("sec-fetch-site")) {
-                    return None;
-                }
-
-                return Some(rejected_same_origin_response(
-                    "http_origin_opaque",
-                    "origin header was opaque and no fallback referer was present",
-                    context,
-                    validated_session,
-                ));
-            }
-
-            return validate_same_origin_header(
-                SameOriginHeaderKind::Origin,
-                origin,
-                &self.policy.allowed_hosts,
-                validated_session,
-                context,
-            );
-        }
-
-        if is_same_origin_fetch_site(request.headers.get("sec-fetch-site")) {
-            return None;
-        }
-
-        if let Some(referer) = request.headers.get("referer") {
-            return validate_same_origin_header(
-                SameOriginHeaderKind::Referer,
-                referer,
-                &self.policy.allowed_hosts,
-                validated_session,
-                context,
-            );
-        }
-
+        let (action, message) = same_origin_metadata_error(request, &self.policy.allowed_hosts)?;
         Some(rejected_same_origin_response(
-            "http_same_origin_missing",
-            "same-origin request metadata missing from state-changing request",
+            action,
+            message,
             context,
             validated_session,
         ))
     }
+}
+
+fn same_origin_metadata_error(
+    request: &HttpRequest,
+    allowed_hosts: &[String],
+) -> Option<(&'static str, &'static str)> {
+    if let Some(origin) = request.headers.get("origin") {
+        if is_opaque_origin(origin) {
+            if let Some(referer) = request.headers.get("referer") {
+                return same_origin_header_error(
+                    SameOriginHeaderKind::Referer,
+                    referer,
+                    allowed_hosts,
+                );
+            }
+
+            if is_same_origin_fetch_site(request.headers.get("sec-fetch-site")) {
+                return None;
+            }
+
+            return Some((
+                "http_origin_opaque",
+                "origin header was opaque and no fallback referer was present",
+            ));
+        }
+
+        return same_origin_header_error(SameOriginHeaderKind::Origin, origin, allowed_hosts);
+    }
+
+    if is_same_origin_fetch_site(request.headers.get("sec-fetch-site")) {
+        return None;
+    }
+
+    if let Some(referer) = request.headers.get("referer") {
+        return same_origin_header_error(SameOriginHeaderKind::Referer, referer, allowed_hosts);
+    }
+
+    Some((
+        "http_same_origin_missing",
+        "same-origin request metadata missing from state-changing request",
+    ))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -611,13 +712,11 @@ enum SameOriginHeaderKind {
     Referer,
 }
 
-fn validate_same_origin_header(
+fn same_origin_header_error(
     header_kind: SameOriginHeaderKind,
     value: &str,
     allowed_hosts: &[String],
-    validated_session: &ValidatedSession,
-    context: &AuthenticationContext,
-) -> Option<HandledHttpResponse> {
+) -> Option<(&'static str, &'static str)> {
     let Some((scheme, header_host)) = extract_absolute_uri_scheme_authority(value) else {
         let (action, message) = match header_kind {
             SameOriginHeaderKind::Origin => (
@@ -629,12 +728,7 @@ fn validate_same_origin_header(
                 "referer header was not a valid absolute http(s) uri",
             ),
         };
-        return Some(rejected_same_origin_response(
-            action,
-            message,
-            context,
-            validated_session,
-        ));
+        return Some((action, message));
     };
 
     if scheme == "http" && !is_loopback_authority(&header_host) {
@@ -648,12 +742,7 @@ fn validate_same_origin_header(
                 "referer header used http for a non-loopback authority",
             ),
         };
-        return Some(rejected_same_origin_response(
-            action,
-            message,
-            context,
-            validated_session,
-        ));
+        return Some((action, message));
     }
 
     if !allowed_hosts
@@ -670,12 +759,7 @@ fn validate_same_origin_header(
                 "referer header did not match configured allowed hosts",
             ),
         };
-        return Some(rejected_same_origin_response(
-            action,
-            message,
-            context,
-            validated_session,
-        ));
+        return Some((action, message));
     }
 
     None

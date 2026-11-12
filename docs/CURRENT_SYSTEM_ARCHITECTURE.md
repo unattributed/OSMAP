@@ -1,5 +1,34 @@
 # Current System Architecture
 
+## Current S04-02 integration note — 2026-10-19
+
+The March 27 host inventory below is historical; it is not an assertion of the
+current deployed service set. Current password development selects OSMAP's
+existing browser/session coordinator and account-scoped Rust SQL/auth helper
+over the stock mail backend. It requires browser-session revocation, old/new
+credential verification and other-account preservation. A verified disabled
+authentication cache supplies a typed zero-cache capability; no cache flush is
+performed. Existing authenticated external mail connections may remain.
+
+The selected helper does not require public Dovecot, Postfix or MariaDB lifecycle
+or configuration changes, a new IMAP plugin, submission proxy/Generation or
+global mail-ingress epoch fence. The unsafe historical fixture/cold-cutover path
+is retired. Root retains one host queue and separately reviews any finite owned
+state disposition; an expired fixture is not renewed.
+
+Current stock journey46 failed at helper startup, before HTTP or any ordered
+backend event. Its result leaves helper disposition unconfirmed; subsequent
+observations/dispositions must be read in the current ledger rather than
+inferred from transport exit. The native flags remain false, password form
+remains disabled and installed password change/operator UAT are not ready.
+This update makes no WSTG, slice or release PASS claim.
+
+The October 17 stop remains a historical outcome in
+[the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md). Explicit later
+operator instructions resumed S04-02; the current assignment and retained results
+are in [the execution ledger](UX_EXECUTION_LEDGER.md) and
+[Current Project Status](CURRENT_PROJECT_STATUS.md).
+
 ## Scope
 
 This document is the public-safe Phase 1 snapshot of the existing platform that
@@ -27,7 +56,8 @@ and helper-boundary documents for current OSMAP runtime claims.
 ## Host Baseline
 
 - Hostname: `mail.blackbagsecurity.com`
-- Operating system: OpenBSD 7.7 `GENERIC.MP`
+- Operating system: current stable OpenBSD `GENERIC.MP`, maintained with at
+  least weekly `syspatch` and `pkg_add -u` checks
 - Current uptime during inspection: just over five days
 - Current model: single host running both mail services and multiple web/control
   plane applications

@@ -1,5 +1,13 @@
 # V14 Slice 9 No-JavaScript and Low-SBOM Gates
 
+Revision-2 exception (2026-09-30): the S03-01C work order in
+`UX_EXECUTION_LEDGER.md`, under `UX_PLAN_AMENDMENT_R2.md`, permits exactly
+`src/http/compose_local.js` on authenticated compose forms. Its exact hash is
+pinned by `compose_enhancement.rs` and independently checked by this gate.
+Mail readers and all other routes retain no runtime JavaScript. The local
+composer enhancement has no network/storage API, and native forms remain usable
+without it. The historical Slice 9 boundary below otherwise remains in force.
+
 ## Purpose
 
 Slice 9 adds repository-owned gates that keep V14 aligned with the approved

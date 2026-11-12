@@ -8,26 +8,30 @@ use crate::logging::{EventCategory, LogEvent, Logger};
 use crate::mailbox::{
     MailboxBackend, MessageAppendBackend, MessageAppendRequest, MessageListBackend,
     MessageListPolicy, MessageListRequest, MessageMoveBackend, MessageMovePolicy,
-    MessageMoveRequest, MessageSearchBackend, MessageSearchPolicy, MessageSearchRequest,
-    MessageViewBackend, MessageViewPolicy, MessageViewRequest,
+    MessageMoveRequest, MessageSearchBackend, MessageSearchBatchRequest, MessageSearchPolicy,
+    MessageSearchRequest, MessageViewBackend, MessageViewPolicy, MessageViewRequest,
 };
 
 #[cfg(unix)]
 use super::{MailboxHelperRequest, MailboxHelperResponse};
+#[cfg(unix)]
+use crate::mailbox::MessageFlagBackend;
 
 #[cfg(unix)]
-pub(super) struct HelperBackends<'a, MB, MLB, MSB, MVB, MMB, MAB> {
+pub(super) struct HelperBackends<'a, MB, MLB, MSB, MVB, MMB, MAB, MFB> {
     pub(super) mailbox_backend: &'a MB,
     pub(super) message_list_backend: &'a MLB,
     pub(super) message_search_backend: &'a MSB,
     pub(super) message_view_backend: &'a MVB,
     pub(super) message_move_backend: &'a MMB,
     pub(super) message_append_backend: &'a MAB,
+    pub(super) message_flag_backend: &'a MFB,
 }
 
 #[cfg(unix)]
-pub(super) fn dispatch_helper_request<MB, MLB, MSB, MVB, MMB, MAB>(
-    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB>,
+pub(super) fn dispatch_helper_request_with_delete<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
+    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
+    delete_backend: Option<&dyn crate::mailbox::MessageDeleteBackend>,
     request: &MailboxHelperRequest,
 ) -> MailboxHelperResponse
 where
@@ -37,12 +41,164 @@ where
     MVB: MessageViewBackend,
     MMB: MessageMoveBackend,
     MAB: MessageAppendBackend,
+    MFB: MessageFlagBackend,
 {
+    if !super::mailbox_helper_protocol::ordinary_request_allowed(request) {
+        return MailboxHelperResponse::Error {
+            backend: "mailbox-helper-request".into(),
+            reason: "reserved Documents mailbox requires dedicated operation".into(),
+        };
+    }
     match request {
+        MailboxHelperRequest::RetentionStatus {
+            canonical_username,
+            mailbox_name,
+            grant,
+        } => MailboxHelperResponse::RetentionStatus {
+            canonical_username: canonical_username.clone(),
+            mailbox_name: mailbox_name.clone(),
+            decision: delete_backend
+                .map(|backend| backend.retention_status(canonical_username, mailbox_name))
+                .unwrap_or(crate::mailbox::RetentionDecision::Unavailable),
+            nonce: grant.nonce.clone(),
+        },
+        MailboxHelperRequest::MessageDelete { request, grant } => {
+            MailboxHelperResponse::MessageDelete {
+                request: Box::new(request.clone()),
+                result: delete_backend
+                    .map(|backend| backend.delete_message(&request.canonical_username, request))
+                    .unwrap_or(Err(crate::mailbox::MessageDeleteError::PolicyUnavailable)),
+                nonce: grant.nonce.clone(),
+            }
+        }
+        MailboxHelperRequest::FolderDeleteCompletion { request, grant } => {
+            MailboxHelperResponse::FolderDeleteCompletionOk {
+                request: Box::new(request.clone()),
+                completion: crate::folder_delete::Completion::Unconfirmed,
+                nonce: grant.nonce.clone(),
+            }
+        }
+        MailboxHelperRequest::FolderDelete { request, grant } => {
+            MailboxHelperResponse::FolderDeleteOk {
+                request: Box::new(request.clone()),
+                outcome: backends.mailbox_backend.delete_folder(request),
+                nonce: grant.nonce.clone(),
+            }
+        }
+        MailboxHelperRequest::FolderRenameCompletion { request, grant } => {
+            MailboxHelperResponse::FolderRenameCompletionOk {
+                request: Box::new(request.clone()),
+                completion: crate::folder_rename::Completion::Unconfirmed,
+                nonce: grant.nonce.clone(),
+            }
+        }
+        MailboxHelperRequest::FolderRename { request, grant } => {
+            MailboxHelperResponse::FolderRenameOk {
+                request: Box::new(request.clone()),
+                outcome: backends.mailbox_backend.rename_folder(request),
+                nonce: grant.nonce.clone(),
+            }
+        }
+        MailboxHelperRequest::FolderCreate { request, .. } => {
+            MailboxHelperResponse::FolderCreateOk {
+                request: request.clone(),
+                outcome: backends.mailbox_backend.create_folder(request),
+            }
+        }
+        MailboxHelperRequest::FolderFacts {
+            canonical_username,
+            mailbox_names,
+            grant,
+        } => match backends
+            .mailbox_backend
+            .folder_facts(canonical_username, mailbox_names)
+        {
+            Ok(facts) => match facts
+                .snapshot()
+                .without_reserved_documents()
+                .map_err(|_| crate::mailbox_status::unavailable())
+                .and_then(|snapshot| {
+                    crate::mailbox_status::FolderFacts::new(
+                        canonical_username,
+                        mailbox_names,
+                        snapshot,
+                        facts.statuses().to_vec(),
+                    )
+                }) {
+                Ok(facts) => MailboxHelperResponse::FolderFactsOk {
+                    facts: Box::new(facts),
+                    nonce: grant.nonce.clone(),
+                },
+                Err(_) => MailboxHelperResponse::Error {
+                    backend: "folder-facts".into(),
+                    reason: "exact folder facts unavailable".into(),
+                },
+            },
+            _ => MailboxHelperResponse::Error {
+                backend: "folder-facts".into(),
+                reason: "exact folder facts unavailable".into(),
+            },
+        },
+        MailboxHelperRequest::FolderMetadata {
+            canonical_username, ..
+        } => match backends
+            .mailbox_backend
+            .folder_metadata(canonical_username)
+            .and_then(|snapshot| {
+                snapshot
+                    .without_reserved_documents()
+                    .map_err(|_| crate::folder_metadata_backend::unavailable())
+            }) {
+            Ok(snapshot) if snapshot.validate_for(canonical_username).is_ok() => {
+                MailboxHelperResponse::FolderMetadataOk { snapshot }
+            }
+            _ => MailboxHelperResponse::Error {
+                backend: "folder-metadata".into(),
+                reason: "folder metadata unavailable".into(),
+            },
+        },
+        MailboxHelperRequest::MailboxStatus {
+            canonical_username,
+            mailbox_name,
+            ..
+        } => match backends
+            .mailbox_backend
+            .mailbox_status(canonical_username, mailbox_name)
+        {
+            Ok(status) if status.validate(mailbox_name).is_ok() => {
+                MailboxHelperResponse::MailboxStatusOk { status }
+            }
+            _ => MailboxHelperResponse::Error {
+                backend: "mailbox-status".into(),
+                reason: "exact folder status is unavailable".into(),
+            },
+        },
+        MailboxHelperRequest::MessageFlag {
+            canonical_username,
+            request,
+            ..
+        } => match backends
+            .message_flag_backend
+            .set_message_flag(canonical_username, request)
+        {
+            Ok(result) => MailboxHelperResponse::MessageFlagOk {
+                request: request.clone(),
+                result,
+            },
+            Err(error) => MailboxHelperResponse::Error {
+                backend: error.backend.into(),
+                reason: error.reason,
+            },
+        },
         MailboxHelperRequest::MailboxList {
             canonical_username, ..
         } => match backends.mailbox_backend.list_mailboxes(canonical_username) {
-            Ok(mailboxes) => MailboxHelperResponse::MailboxListOk { mailboxes },
+            Ok(mut mailboxes) => {
+                mailboxes.retain(|entry| {
+                    !crate::documents_doveadm::reserved_documents_mailbox(&entry.name)
+                });
+                MailboxHelperResponse::MailboxListOk { mailboxes }
+            }
             Err(error) => MailboxHelperResponse::Error {
                 backend: error.backend.to_string(),
                 reason: error.reason,
@@ -102,6 +258,41 @@ where
             }) {
                 Ok(results) => MailboxHelperResponse::MessageSearchOk {
                     mailbox_name: mailbox_name.clone(),
+                    query: query.clone(),
+                    field: *field,
+                    results,
+                },
+                Err(error_response) => error_response,
+            }
+        }
+        MailboxHelperRequest::MessageSearchBatch {
+            canonical_username,
+            mailbox_names,
+            query,
+            field,
+            ..
+        } => {
+            match MessageSearchBatchRequest::new(
+                MessageSearchPolicy::default(),
+                mailbox_names.clone(),
+                query.clone(),
+                *field,
+            )
+            .map_err(|error| MailboxHelperResponse::Error {
+                backend: error.backend.to_string(),
+                reason: error.reason,
+            })
+            .and_then(|request| {
+                backends
+                    .message_search_backend
+                    .search_messages_batch(canonical_username, &request)
+                    .map_err(|error| MailboxHelperResponse::Error {
+                        backend: error.backend.to_string(),
+                        reason: error.reason,
+                    })
+            }) {
+                Ok(results) => MailboxHelperResponse::MessageSearchBatchOk {
+                    mailbox_names: mailbox_names.clone(),
                     query: query.clone(),
                     field: *field,
                     results,
@@ -176,6 +367,7 @@ where
             source_mailbox_name,
             destination_mailbox_name,
             uid,
+            version,
             ..
         } => {
             match MessageMoveRequest::new(
@@ -183,6 +375,7 @@ where
                 source_mailbox_name.clone(),
                 destination_mailbox_name.clone(),
                 *uid,
+                version.clone(),
             )
             .map_err(|error| MailboxHelperResponse::Error {
                 backend: error.backend.to_string(),
@@ -201,6 +394,7 @@ where
                     source_mailbox_name: source_mailbox_name.clone(),
                     destination_mailbox_name: destination_mailbox_name.clone(),
                     uid: *uid,
+                    version: version.clone(),
                 },
                 Err(error_response) => error_response,
             }
@@ -209,9 +403,14 @@ where
             canonical_username,
             mailbox_name,
             message,
+            destination_mailbox_guid,
             ..
         } => {
             match MessageAppendRequest::new(mailbox_name.clone(), message.clone())
+                .and_then(|request| match destination_mailbox_guid {
+                    Some(guid) => request.with_destination_mailbox_guid(guid),
+                    None => Ok(request),
+                })
                 .map_err(|error| MailboxHelperResponse::Error {
                     backend: error.backend.to_string(),
                     reason: error.reason,
@@ -226,6 +425,7 @@ where
                         })
                 }) {
                 Ok(()) => MailboxHelperResponse::MessageAppendOk {
+                    destination_mailbox_guid: destination_mailbox_guid.clone(),
                     mailbox_name: mailbox_name.clone(),
                     message_bytes: message.len(),
                 },
@@ -236,12 +436,136 @@ where
 }
 
 #[cfg(unix)]
+fn search_success_audit_event(
+    response: &MailboxHelperResponse,
+    request: &MailboxHelperRequest,
+) -> Option<LogEvent> {
+    let (
+        MailboxHelperResponse::MessageSearchOk {
+            mailbox_name,
+            field,
+            results,
+            ..
+        },
+        MailboxHelperRequest::MessageSearch {
+            canonical_username, ..
+        },
+    ) = (response, request)
+    else {
+        return None;
+    };
+    Some(
+        LogEvent::new(
+            LogLevel::Info,
+            EventCategory::Mailbox,
+            "mailbox_helper_message_searched",
+            "mailbox helper searched messages",
+        )
+        .with_field("canonical_username", canonical_username.clone())
+        .with_field("mailbox_name", mailbox_name.clone())
+        .with_field("search_field", field.query_value())
+        .with_field("result_count", results.len().to_string()),
+    )
+}
+
+#[cfg(unix)]
+fn search_failure_audit_event(
+    response: &MailboxHelperResponse,
+    request: &MailboxHelperRequest,
+) -> Option<LogEvent> {
+    if !matches!(response, MailboxHelperResponse::Error { .. })
+        || !matches!(
+            request,
+            MailboxHelperRequest::MessageSearch { .. }
+                | MailboxHelperRequest::MessageSearchBatch { .. }
+        )
+    {
+        return None;
+    }
+    Some(
+        LogEvent::new(
+            LogLevel::Warn,
+            EventCategory::Mailbox,
+            "mailbox_helper_request_failed",
+            "mailbox helper request failed",
+        )
+        .with_field("operation", helper_operation_label(request))
+        .with_field("reason_code", "backend_failed"),
+    )
+}
+
+#[cfg(unix)]
 pub(super) fn log_helper_response(
     logger: &Logger,
     response: &MailboxHelperResponse,
     request: Option<&MailboxHelperRequest>,
 ) {
     match (response, request) {
+        (
+            MailboxHelperResponse::RetentionStatus { decision, .. },
+            Some(MailboxHelperRequest::RetentionStatus { .. }),
+        ) => logger.emit(
+            &LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Mailbox,
+                "mailbox_helper_retention_status",
+                "mailbox helper checked retention authority",
+            )
+            .with_field(
+                "result",
+                match decision {
+                    crate::mailbox::RetentionDecision::Allowed { .. } => "allowed",
+                    crate::mailbox::RetentionDecision::Denied => "denied",
+                    crate::mailbox::RetentionDecision::Unavailable => "unavailable",
+                },
+            ),
+        ),
+        (
+            MailboxHelperResponse::MessageDelete { result, .. },
+            Some(MailboxHelperRequest::MessageDelete { .. }),
+        ) => logger.emit(
+            &LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Mailbox,
+                "mailbox_helper_message_delete_result",
+                "mailbox helper returned exact deletion outcome",
+            )
+            .with_field(
+                "result",
+                match result {
+                    Ok(_) => "deleted",
+                    Err(crate::mailbox::MessageDeleteError::Invalid) => "invalid",
+                    Err(crate::mailbox::MessageDeleteError::Stale) => "stale",
+                    Err(crate::mailbox::MessageDeleteError::PolicyDenied) => "policy_denied",
+                    Err(crate::mailbox::MessageDeleteError::PolicyUnavailable) => {
+                        "policy_unavailable"
+                    }
+                    Err(crate::mailbox::MessageDeleteError::Busy) => "busy",
+                    Err(crate::mailbox::MessageDeleteError::Unavailable) => "unavailable",
+                    Err(crate::mailbox::MessageDeleteError::Unknown) => "unknown",
+                },
+            ),
+        ),
+        (
+            MailboxHelperResponse::MessageFlagOk { request, result },
+            Some(MailboxHelperRequest::MessageFlag { .. }),
+        ) => logger.emit(
+            &LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Mailbox,
+                "mailbox_helper_message_flagged",
+                "mailbox helper confirmed message flag state",
+            )
+            .with_field("flag", request.flag.value())
+            .with_field("enabled", request.enabled.to_string())
+            .with_field(
+                "result",
+                match result {
+                    crate::mailbox::MessageFlagResult::Updated => "updated",
+                    crate::mailbox::MessageFlagResult::AlreadySet => "already_set",
+                },
+            ),
+        ),
         (
             MailboxHelperResponse::MailboxListOk { mailboxes },
             Some(MailboxHelperRequest::MailboxList {
@@ -277,26 +601,31 @@ pub(super) fn log_helper_response(
             .with_field("message_count", messages.len().to_string()),
         ),
         (
-            MailboxHelperResponse::MessageSearchOk {
-                mailbox_name,
-                query,
-                field,
+            response @ MailboxHelperResponse::MessageSearchOk { .. },
+            Some(request @ MailboxHelperRequest::MessageSearch { .. }),
+        ) => {
+            if let Some(event) = search_success_audit_event(response, request) {
+                logger.emit(&event);
+            }
+        }
+        (
+            MailboxHelperResponse::MessageSearchBatchOk {
+                mailbox_names,
                 results,
+                ..
             },
-            Some(MailboxHelperRequest::MessageSearch {
+            Some(MailboxHelperRequest::MessageSearchBatch {
                 canonical_username, ..
             }),
         ) => logger.emit(
             &LogEvent::new(
                 LogLevel::Info,
                 EventCategory::Mailbox,
-                "mailbox_helper_message_searched",
-                "mailbox helper searched messages",
+                "mailbox_helper_batch_searched",
+                "mailbox helper searched ordered mailbox scope",
             )
             .with_field("canonical_username", canonical_username.clone())
-            .with_field("mailbox_name", mailbox_name.clone())
-            .with_field("query", query.clone())
-            .with_field("search_field", field.query_value())
+            .with_field("mailbox_count", mailbox_names.len().to_string())
             .with_field("result_count", results.len().to_string()),
         ),
         (
@@ -320,6 +649,7 @@ pub(super) fn log_helper_response(
                 source_mailbox_name,
                 destination_mailbox_name,
                 uid,
+                ..
             },
             Some(MailboxHelperRequest::MessageMove {
                 canonical_username, ..
@@ -358,6 +688,7 @@ pub(super) fn log_helper_response(
             MailboxHelperResponse::MessageAppendOk {
                 mailbox_name,
                 message_bytes,
+                ..
             },
             Some(MailboxHelperRequest::MessageAppend {
                 canonical_username, ..
@@ -373,6 +704,17 @@ pub(super) fn log_helper_response(
             .with_field("mailbox_name", mailbox_name.clone())
             .with_field("message_bytes", message_bytes.to_string()),
         ),
+        (
+            response @ MailboxHelperResponse::Error { .. },
+            Some(
+                request @ (MailboxHelperRequest::MessageSearch { .. }
+                | MailboxHelperRequest::MessageSearchBatch { .. }),
+            ),
+        ) => {
+            if let Some(event) = search_failure_audit_event(response, request) {
+                logger.emit(&event);
+            }
+        }
         (MailboxHelperResponse::Error { backend, reason }, Some(request)) => logger.emit(
             &LogEvent::new(
                 LogLevel::Warn,
@@ -401,12 +743,72 @@ pub(super) fn log_helper_response(
 #[cfg(unix)]
 fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
     match request {
+        MailboxHelperRequest::RetentionStatus { .. } => "retention_status",
+        MailboxHelperRequest::MessageDelete { .. } => "message_delete",
+        MailboxHelperRequest::MessageFlag { .. } => "message_flag",
+        MailboxHelperRequest::FolderDeleteCompletion { .. } => "folder_delete_completion",
+        MailboxHelperRequest::FolderDelete { .. } => "folder_delete",
+        MailboxHelperRequest::FolderRenameCompletion { .. } => "folder_rename_completion",
+        MailboxHelperRequest::FolderRename { .. } => "folder_rename",
+        MailboxHelperRequest::FolderCreate { .. } => "folder_create",
+        MailboxHelperRequest::FolderFacts { .. } => "folder_facts",
+        MailboxHelperRequest::FolderMetadata { .. } => "folder_metadata",
+        MailboxHelperRequest::MailboxStatus { .. } => "mailbox_status",
         MailboxHelperRequest::MailboxList { .. } => "mailbox_list",
         MailboxHelperRequest::MessageList { .. } => "message_list",
         MailboxHelperRequest::MessageSearch { .. } => "message_search",
+        MailboxHelperRequest::MessageSearchBatch { .. } => "message_search_batch",
         MailboxHelperRequest::MessageView { .. } => "message_view",
         MailboxHelperRequest::AttachmentDownload { .. } => "attachment_download",
         MailboxHelperRequest::MessageMove { .. } => "message_move",
         MailboxHelperRequest::MessageAppend { .. } => "message_append",
+    }
+}
+
+#[cfg(all(test, unix))]
+mod search_audit_tests {
+    use super::*;
+    use crate::config::LogFormat;
+    use crate::mailbox::MessageSearchField;
+    use crate::mailbox_helper::MailboxHelperGrant;
+
+    #[test]
+    fn helper_search_audit_omits_private_query_and_failure_reason() {
+        let private_query = "private-mail-phrase-7a9";
+        let request = MailboxHelperRequest::MessageSearch {
+            canonical_username: "tester@example.invalid".into(),
+            mailbox_name: "INBOX".into(),
+            query: private_query.into(),
+            field: MessageSearchField::All,
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let success = MailboxHelperResponse::MessageSearchOk {
+            mailbox_name: "INBOX".into(),
+            query: private_query.into(),
+            field: MessageSearchField::All,
+            results: Vec::new(),
+        };
+        let logger = Logger::new(LogFormat::Text, LogLevel::Debug);
+        let success_line = logger.render_with_timestamp(
+            &search_success_audit_event(&success, &request).expect("search success event"),
+            5353,
+        );
+        assert!(success_line.contains("action=mailbox_helper_message_searched"));
+        assert!(success_line.contains("result_count=\"0\""));
+        assert!(!success_line.contains(private_query));
+        assert!(!success_line.contains("query="));
+
+        let failure = MailboxHelperResponse::Error {
+            backend: "private-native-output".into(),
+            reason: format!("failed while searching {private_query}"),
+        };
+        let failure_line = logger.render_with_timestamp(
+            &search_failure_audit_event(&failure, &request).expect("search failure event"),
+            5353,
+        );
+        assert!(failure_line.contains("operation=\"message_search\""));
+        assert!(failure_line.contains("reason_code=\"backend_failed\""));
+        assert!(!failure_line.contains(private_query));
+        assert!(!failure_line.contains("private-native-output"));
     }
 }

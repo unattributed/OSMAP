@@ -54,9 +54,9 @@ if [ -n "$frontend_paths" ]; then
   exit 2
 fi
 
-js_paths="$(git ls-files | grep -E '\.(js|mjs|cjs|jsx|ts|tsx|wasm)$' || true)"
+js_paths="$(git ls-files --cached --others --exclude-standard | grep -E '\.(js|mjs|cjs|jsx|ts|tsx|wasm)$' | grep -Fvx -e 'src/http/compose_local.js' -e 'src/http/password_local.js' -e 'src/http/notification_local.js' -e 'maint/ux/folder_rename_workflows.cjs' -e 'maint/ux/password_controls_workflows.cjs' -e 'maint/ux/recovery_contact_workflows.cjs' -e 'maint/ux/recovery_contact_native.cjs' || true)"
 if [ -n "$js_paths" ]; then
-  echo "error: JavaScript, TypeScript, or WASM artifacts are tracked" >&2
+  echo "error: script artifacts outside the exact R2 first-party allowances" >&2
   printf '%s\n' "$js_paths" >&2
   exit 2
 fi
@@ -65,6 +65,110 @@ python3 - <<'PY'
 from pathlib import Path
 import sys
 import tomllib
+import base64
+import hashlib
+import re
+
+# R2 / S03-02: exact compose-only hash plus two literal first-party saves.
+script = Path("src/http/compose_local.js").read_bytes()
+boundary = Path("src/http/compose_enhancement.rs").read_text()
+
+def validate_compose(script, boundary):
+    expected = "sha256-" + base64.b64encode(hashlib.sha256(script).digest()).decode()
+    assert re.search(r'const SCRIPT_HASH: &str =\s*"([^"]+)";', boundary).group(1) == expected, "composer script hash drift"
+    assert 'include_str!("compose_local.js")' in boundary, "composer source boundary drift"
+    assert '"{}; connect-src \'self\'; script-src \'{}\'; script-src-attr \'none\'"' in boundary, "composer CSP drift"
+    assert boundary.count("connect-src") == 1, "extra connection directive"
+    for forbidden in ["unsafe-eval", "strict-dynamic", "script-src 'self'", "script-src 'unsafe-inline'"]:
+        assert forbidden not in boundary, "broad composer CSP allowance"
+    text = script.decode()
+    for forbidden in ["innerHTML", "outerHTML", "insertAdjacentHTML", "setHTMLUnsafe", "createContextualFragment", "parseFromString", "srcdoc", "document.write", "eval(", "Function(",
+                      "XMLHttpRequest", "WebSocket", "EventSource", "WebTransport", "RTCPeerConnection", "sendBeacon", "localStorage", "sessionStorage", "indexedDB",
+                      "document.cookie", "import(", "import ", "Worker(", "serviceWorker", "</script"]:
+        assert forbidden not in text, f"unexpected composer API: {forbidden}"
+    # A capability test grants no alias or call authority. Exactly one probe.
+    probe = 'typeof fetch === "function"'
+    assert text.count(probe) == 1, "missing or altered exact fetch capability probe"
+    text = text.replace(probe, "")
+    calls = [
+        'fetch("/drafts/autosave", { method: "POST", body: fields, credentials: "same-origin", mode: "same-origin", redirect: "error", cache: "no-store", signal: controller.signal })',
+        'fetch("/drafts/autosave/config", { credentials: "same-origin", mode: "same-origin", redirect: "error", cache: "no-store" })',
+    ]
+    for call in calls:
+        pattern = r"\s+".join(re.escape(part) for part in call.split())
+        text, count = re.subn(pattern, "", text)
+        assert count == 1, "missing or altered exact autosave request"
+    assert not re.search(r"\bfetch\b", text), "additional or dynamic fetch API"
+
+validate_compose(script, boundary)
+# Negative controls run through the same validator with a valid replacement hash,
+# so rejection proves the source boundary rather than merely hash mismatch.
+mutations = [
+    (script.replace(b'typeof fetch === "function"', b'fetch("/third", {})'), boundary),
+    (script.replace(b'typeof fetch === "function"', b'(alias = fetch)'), boundary),
+    (script + b'\nconst alias = fetch;', boundary),
+    (script + b'\ntypeof fetch === "function";', boundary),
+    (script + b'\nfetch("/third", {});', boundary),
+    (script.replace(b'"/drafts/autosave/config"', b'destination'), boundary),
+    (script, boundary.replace("connect-src 'self'", "connect-src https://example.invalid")),
+    (script + b'\nnode.innerHTML = returned;', boundary),
+    (script.replace(b'credentials: "same-origin"', b'credentials: "include"'), boundary),
+    (script.replace(b'mode: "same-origin"', b'mode: "cors"'), boundary),
+    (script.replace(b'redirect: "error"', b'redirect: "follow"'), boundary),
+    (script.replace(b'cache: "no-store"', b'cache: "default"'), boundary),
+]
+for altered, policy in mutations:
+    digest = "sha256-" + base64.b64encode(hashlib.sha256(altered).digest()).decode()
+    policy = re.sub(r'(const SCRIPT_HASH: &str =\s*")[^"]+(";)', lambda m: m[1] + digest + m[2], policy)
+    try:
+        validate_compose(altered, policy)
+    except AssertionError:
+        continue
+    raise AssertionError("negative composer source control unexpectedly accepted")
+print(f"composer source/CSP negative controls passed: {len(mutations)}")
+
+# S04-02: exact local visibility-only script. No network, secret read or storage.
+password_script = Path("src/http/password_local.js").read_bytes()
+password_boundary = Path("src/http/routes_password.rs").read_text()
+def validate_password(script, boundary):
+    expected = "sha256-" + base64.b64encode(hashlib.sha256(script).digest()).decode()
+    assert re.search(r'const PASSWORD_SCRIPT_HASH: &str =\s*"([^"]+)";', boundary).group(1) == expected, "password script hash drift"
+    assert 'include_str!("password_local.js")' in boundary
+    assert 'script-src \'{}\'; script-src-attr \'none\'; connect-src \'none\'' in boundary, "password CSP drift"
+    assert boundary.count("connect-src") == 1, "extra password connection directive"
+    text = script.decode()
+    assert text.count('input.value = "";') == 1, "password wipe drift"
+    text = text.replace('input.value = "";', '')
+    for forbidden in [".value", "fetch", "XMLHttpRequest", "WebSocket", "sendBeacon", "localStorage", "sessionStorage", "indexedDB", "document.cookie", "innerHTML", "outerHTML", "insertAdjacentHTML", "document.write", "eval(", "Function(", "import", "Worker", "</script"]:
+        assert forbidden not in text, f"unexpected password script API: {forbidden}"
+    for forbidden in ["unsafe-eval", "strict-dynamic", "script-src 'self'", "script-src 'unsafe-inline'"]:
+        assert forbidden not in boundary, "broad password CSP"
+validate_password(password_script, password_boundary)
+for altered, policy in [
+    (password_script + b'\nfetch("/foreign");', password_boundary),
+    (password_script + b'\nconst secret = input.value;', password_boundary),
+    (password_script, password_boundary.replace("connect-src 'none'", "connect-src 'self'")),
+]:
+    digest = "sha256-" + base64.b64encode(hashlib.sha256(altered).digest()).decode()
+    policy = re.sub(r'(const PASSWORD_SCRIPT_HASH: &str =\s*")[^"]+(";)', lambda m: m[1] + digest + m[2], policy)
+    try:
+        validate_password(altered, policy)
+    except AssertionError:
+        continue
+    raise AssertionError("negative password source control unexpectedly accepted")
+print("password source/CSP negative controls passed: 3")
+allowed_callers = {"src/http/routes_compose.rs", "src/http/routes_draft.rs"}
+for path in Path("src").rglob("*.rs"):
+    production = path.read_text().split("\n#[cfg(test)]", 1)[0]
+    assert all(name not in production for name in ("folder_rename_workflows.cjs", "password_controls_workflows.cjs", "recovery_contact_workflows.cjs", "recovery_contact_native.cjs")), f"browser test fixture referenced by runtime: {path}"
+    if "compose_enhancement::response(" in production:
+        assert str(path) in allowed_callers, f"scripted response escaped composer: {path}"
+    if 'include_str!("password_local.js")' in production or "PASSWORD_SCRIPT_HASH" in production:
+        assert str(path) == "src/http/routes_password.rs", f"password script escaped exact route: {path}"
+    if 'include_str!("notification_local.js")' in production:
+        assert str(path) == "src/http/notification_delivery.rs", f"notification script escaped exact module: {path}"
+    if "notification_delivery::response(" in production:
+        assert str(path) in {"src/http/routes_notifications.rs", "src/http/routes_settings.rs"}, f"notification script escaped native surfaces: {path}"
 
 runtime_files = [Path("src/http_ui.rs"), Path("src/http_support.rs")]
 patterns = [

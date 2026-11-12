@@ -1,11 +1,40 @@
 use super::*;
 
+#[cfg(all(test, target_os = "openbsd"))]
+#[path = "http_gateway_storage_native_tests.rs"]
+mod storage_native_tests;
+
+#[path = "http_gateway_account.rs"]
+mod http_gateway_account;
+use http_gateway_account::AccountRuntimeCapability;
+
 #[path = "http_gateway_auth.rs"]
 mod http_gateway_auth;
+#[path = "http_gateway_delete.rs"]
+mod http_gateway_delete;
+#[path = "http_gateway_documents.rs"]
+mod http_gateway_documents;
 #[path = "http_gateway_draft.rs"]
 mod http_gateway_draft;
+#[path = "http_gateway_flags.rs"]
+mod http_gateway_flags;
+#[path = "http_gateway_keys.rs"]
+mod http_gateway_keys;
 #[path = "http_gateway_mail.rs"]
 mod http_gateway_mail;
+#[path = "http_gateway_notifications.rs"]
+mod http_gateway_notifications;
+#[cfg(unix)]
+#[path = "http_gateway_password.rs"]
+mod http_gateway_password;
+#[path = "http_gateway_protected.rs"]
+pub(super) mod http_gateway_protected;
+#[path = "http_gateway_recovery.rs"]
+mod http_gateway_recovery;
+#[path = "http_gateway_scheduled.rs"]
+mod http_gateway_scheduled;
+#[path = "http_gateway_scheduled_send.rs"]
+mod http_gateway_scheduled_send;
 #[path = "http_gateway_settings.rs"]
 mod http_gateway_settings;
 #[path = "http_mailbox_backends.rs"]
@@ -14,6 +43,21 @@ mod http_mailbox_backends;
 /// The concrete runtime gateway built from the existing OSMAP services.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimeBrowserGateway {
+    pub(crate) account_runtime: AccountRuntimeCapability,
+    recovery_contact_local_domain: Option<String>,
+    recovery_contact_external_delivery: bool,
+    pub(crate) account_rollout: Option<String>,
+    pub(crate) public_inventory_client: Option<crate::openpgp_inventory_runtime::Client>,
+    pub(crate) crypto_client: Option<crate::openpgp_crypto_runtime::Client>,
+    pub(crate) public_admin_client: Option<crate::openpgp_public_admin_runtime::Client>,
+    inventory_recovery:
+        std::sync::Arc<std::sync::OnceLock<crate::openpgp_inventory_runtime::Client>>,
+    crypto_recovery: std::sync::Arc<std::sync::OnceLock<crate::openpgp_crypto_runtime::Client>>,
+    admin_recovery:
+        std::sync::Arc<std::sync::OnceLock<crate::openpgp_public_admin_runtime::Client>>,
+    inventory_config: Option<crate::config::OpenPgpInventoryConfig>,
+    crypto_config: Option<crate::config::OpenPgpCryptoConfig>,
+    admin_config: Option<crate::config::OpenPgpAdminConfig>,
     authentication_policy: AuthenticationPolicy,
     totp_policy: TotpPolicy,
     login_throttle_policy: LoginThrottlePolicy,
@@ -24,7 +68,8 @@ pub struct RuntimeBrowserGateway {
     expensive_request_timeout_secs: u64,
     auth_backend_timeout_secs: u64,
     session_dir: PathBuf,
-    settings_dir: PathBuf,
+    pub(crate) settings_dir: PathBuf,
+    sender_authority: crate::sender_authority::Provider,
     draft_dir: PathBuf,
     login_throttle_dir: PathBuf,
     submission_throttle_dir: PathBuf,
@@ -36,14 +81,117 @@ pub struct RuntimeBrowserGateway {
     doveadm_userdb_socket_path: Option<PathBuf>,
     mailbox_helper_socket_path: Option<PathBuf>,
     mailbox_helper_grant_key_path: Option<PathBuf>,
+    mailbox_helper_peer_uid: Option<u32>,
     sendmail_path: PathBuf,
     render_policy: RenderingPolicy,
 }
 
 impl RuntimeBrowserGateway {
+    fn requested_sender(
+        &self,
+        session: &ValidatedSession,
+        captured: crate::identity_preferences::IdentityPreferences,
+        id: Option<&str>,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferences,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        let Some(id) = id else { return Ok(captured) };
+        if !crate::sender_authority::valid_id(id) {
+            return Err(crate::identity_preferences::IdentityPreferencesError::InvalidInput);
+        }
+        let old_id = captured
+            .sender()
+            .map(|v| v.id())
+            .unwrap_or(crate::sender_authority::CANONICAL_ID);
+        if id == old_id {
+            return Ok(captured);
+        }
+        self.sender_identity_settings(session)?.preferences_for_id(
+            &session.record.canonical_username,
+            &self.sender_authority,
+            id,
+        )
+    }
+
+    /// Routes only an explicitly opted-in test fixture to its owned transport.
+    /// Production construction retains the fixed local sendmail executable.
+    #[cfg(test)]
+    pub(crate) fn with_fixture_sendmail_path(mut self, path: PathBuf) -> Self {
+        self.sendmail_path = path;
+        self
+    }
+
+    #[cfg(all(test, target_os = "openbsd"))]
+    pub(crate) fn with_scheduled_serve_fixture_transports(mut self, config: &AppConfig) -> Self {
+        if let Some((smtp, sent)) =
+            crate::http::http_runtime::scheduled_positive_fixture::transport_paths(config)
+        {
+            self.sendmail_path = smtp;
+            self.doveadm_path = sent;
+        }
+        self
+    }
+
+    #[cfg(test)]
+    pub(crate) fn with_fixture_sender_authority(
+        mut self,
+        provider: crate::sender_authority::Provider,
+    ) -> Self {
+        self.sender_authority = provider;
+        self
+    }
+
     /// Builds the runtime gateway from validated configuration.
     pub fn from_config(config: &AppConfig) -> Self {
+        Self::from_config_with_account(config, Self::prepare_account_runtime(config))
+    }
+
+    pub(crate) fn from_config_with_account(
+        config: &AppConfig,
+        account_runtime: AccountRuntimeCapability,
+    ) -> Self {
         Self {
+            account_runtime,
+            recovery_contact_local_domain: config.recovery_contact_local_domain.clone(),
+            recovery_contact_external_delivery: config.recovery_contact_external_delivery,
+            account_rollout: config
+                .account_runtime
+                .as_ref()
+                .and_then(|value| value.rollout_account.clone()),
+            public_admin_client: config.openpgp_public_admin.as_ref().and_then(|c| {
+                crate::openpgp_public_admin_runtime::Client::from_operator_files(
+                    &c.socket,
+                    &c.key_file,
+                    c.helper_uid,
+                )
+                .ok()
+            }),
+            crypto_client: config.openpgp_crypto.as_ref().and_then(|c| {
+                if !crate::openpgp_crypto_runtime::NATIVE_CONFINEMENT_QUALIFIED {
+                    return None;
+                }
+                crate::openpgp_crypto_runtime::Client::from_operator_files(
+                    &c.socket,
+                    &c.key_file,
+                    c.helper_uid,
+                )
+                .ok()
+            }),
+            public_inventory_client: config.openpgp_inventory.as_ref().and_then(|c| {
+                crate::openpgp_inventory_runtime::Client::from_operator_files(
+                    &c.socket,
+                    &c.key_file,
+                    c.helper_uid,
+                )
+                .ok()
+            }),
+            inventory_recovery: std::sync::Arc::new(std::sync::OnceLock::new()),
+            crypto_recovery: std::sync::Arc::new(std::sync::OnceLock::new()),
+            admin_recovery: std::sync::Arc::new(std::sync::OnceLock::new()),
+            inventory_config: config.openpgp_inventory.clone(),
+            crypto_config: config.openpgp_crypto.clone(),
+            admin_config: config.openpgp_public_admin.clone(),
             authentication_policy: AuthenticationPolicy::default(),
             totp_policy: TotpPolicy {
                 allowed_skew_steps: config.totp_allowed_skew_steps,
@@ -73,6 +221,10 @@ impl RuntimeBrowserGateway {
             auth_backend_timeout_secs: config.auth_backend_timeout_seconds,
             session_dir: config.state_layout.session_dir.clone(),
             settings_dir: config.state_layout.settings_dir.clone(),
+            sender_authority: crate::sender_authority::Provider::new(
+                config.sender_authority_path.clone(),
+                0,
+            ),
             draft_dir: config.state_layout.draft_dir.clone(),
             login_throttle_dir: config.state_layout.cache_dir.join("login-throttle"),
             submission_throttle_dir: config.state_layout.cache_dir.join("submission-throttle"),
@@ -84,14 +236,133 @@ impl RuntimeBrowserGateway {
             doveadm_userdb_socket_path: config.doveadm_userdb_socket_path.clone(),
             mailbox_helper_socket_path: config.mailbox_helper_socket_path.clone(),
             mailbox_helper_grant_key_path: config.mailbox_helper_grant_key_path.clone(),
+            mailbox_helper_peer_uid: config.mailbox_helper_peer_uid,
             sendmail_path: PathBuf::from("/usr/sbin/sendmail"),
             render_policy: RenderingPolicy::default(),
         }
     }
 
+    // A helper may start after the web service. Failures remain retryable;
+    // success is cached across gateway clones so the client's response verifier
+    // preserves its replay and clock high-water state.
+    pub(crate) fn inventory_client(&self) -> Option<crate::openpgp_inventory_runtime::Client> {
+        if let Some(client) = &self.public_inventory_client {
+            return Some(client.clone());
+        }
+        if let Some(client) = self.inventory_recovery.get() {
+            return Some(client.clone());
+        }
+        let c = self.inventory_config.as_ref()?;
+        let client = crate::openpgp_inventory_runtime::Client::from_operator_files(
+            &c.socket,
+            &c.key_file,
+            c.helper_uid,
+        )
+        .ok()?;
+        let _ = self.inventory_recovery.set(client);
+        self.inventory_recovery.get().cloned()
+    }
+
+    pub(crate) fn crypto_client(&self) -> Option<crate::openpgp_crypto_runtime::Client> {
+        if let Some(client) = &self.crypto_client {
+            return Some(client.clone());
+        }
+        if let Some(client) = self.crypto_recovery.get() {
+            return Some(client.clone());
+        }
+        if !crate::openpgp_crypto_runtime::NATIVE_CONFINEMENT_QUALIFIED {
+            return None;
+        }
+        let c = self.crypto_config.as_ref()?;
+        let client = crate::openpgp_crypto_runtime::Client::from_operator_files(
+            &c.socket,
+            &c.key_file,
+            c.helper_uid,
+        )
+        .ok()?;
+        let _ = self.crypto_recovery.set(client);
+        self.crypto_recovery.get().cloned()
+    }
+
+    pub(crate) fn admin_client(&self) -> Option<crate::openpgp_public_admin_runtime::Client> {
+        if let Some(client) = &self.public_admin_client {
+            return Some(client.clone());
+        }
+        if let Some(client) = self.admin_recovery.get() {
+            return Some(client.clone());
+        }
+        let c = self.admin_config.as_ref()?;
+        let client = crate::openpgp_public_admin_runtime::Client::from_operator_files(
+            &c.socket,
+            &c.key_file,
+            c.helper_uid,
+        )
+        .ok()?;
+        let _ = self.admin_recovery.set(client);
+        self.admin_recovery.get().cloned()
+    }
+
+    /// Construction checks the local socket and grant; it does not prove an
+    /// authenticated RPC or that a helper is accepting requests.
+    pub(crate) fn helper_client_status_events(&self) -> [LogEvent; 3] {
+        let status = |configured: bool, constructed: bool, helper: &'static str| {
+            LogEvent::new(
+                if configured && !constructed {
+                    LogLevel::Warn
+                } else {
+                    LogLevel::Info
+                },
+                crate::logging::EventCategory::Bootstrap,
+                "openpgp_helper_client_status",
+                "OpenPGP helper client construction checked",
+            )
+            .with_field("helper", helper)
+            .with_field(
+                "status",
+                if !configured {
+                    "not_configured"
+                } else if constructed {
+                    "client_constructed"
+                } else {
+                    "configured_client_unavailable"
+                },
+            )
+        };
+        [
+            status(
+                self.inventory_config.is_some(),
+                self.public_inventory_client.is_some(),
+                "public_inventory",
+            ),
+            status(
+                self.admin_config.is_some(),
+                self.public_admin_client.is_some(),
+                "public_admin",
+            ),
+            status(
+                self.crypto_config.is_some(),
+                self.crypto_client.is_some(),
+                "crypto",
+            ),
+        ]
+    }
+
     #[cfg(test)]
     pub(crate) fn for_test(temp_root: &std::path::Path) -> Self {
         Self {
+            account_runtime: AccountRuntimeCapability::Disabled,
+            recovery_contact_local_domain: None,
+            recovery_contact_external_delivery: false,
+            account_rollout: None,
+            public_inventory_client: None,
+            crypto_client: None,
+            public_admin_client: None,
+            inventory_recovery: std::sync::Arc::new(std::sync::OnceLock::new()),
+            crypto_recovery: std::sync::Arc::new(std::sync::OnceLock::new()),
+            admin_recovery: std::sync::Arc::new(std::sync::OnceLock::new()),
+            inventory_config: None,
+            crypto_config: None,
+            admin_config: None,
             authentication_policy: AuthenticationPolicy::default(),
             totp_policy: TotpPolicy::default(),
             login_throttle_policy: LoginThrottlePolicy {
@@ -118,6 +389,7 @@ impl RuntimeBrowserGateway {
             auth_backend_timeout_secs: crate::config::DEFAULT_AUTH_BACKEND_TIMEOUT_SECONDS,
             session_dir: temp_root.join("sessions"),
             settings_dir: temp_root.join("settings"),
+            sender_authority: crate::sender_authority::Provider::default(),
             draft_dir: temp_root.join("drafts"),
             login_throttle_dir: temp_root.join("cache").join("login-throttle"),
             submission_throttle_dir: temp_root.join("cache").join("submission-throttle"),
@@ -129,6 +401,7 @@ impl RuntimeBrowserGateway {
             doveadm_userdb_socket_path: None,
             mailbox_helper_socket_path: None,
             mailbox_helper_grant_key_path: None,
+            mailbox_helper_peer_uid: None,
             sendmail_path: PathBuf::from("/usr/sbin/sendmail"),
             render_policy: RenderingPolicy::default(),
         }
@@ -136,6 +409,990 @@ impl RuntimeBrowserGateway {
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
+    fn access_view(
+        &self,
+        context: &AuthenticationContext,
+        authority: crate::browser_access::AccessAuthority<'_>,
+        csrf: &str,
+    ) -> Result<crate::browser_access::AccessView, crate::browser_access::AccessError> {
+        use crate::browser_access::{AccessAuthority, AccessError, AccessView};
+        if matches!(authority, AccessAuthority::Unauthenticated) {
+            return Ok(AccessView::RecoveryEmail { csrf: csrf.into() });
+        }
+        self.account_runtime
+            .ready()
+            .ok_or_else(|| {
+                eprintln!("account_access_gateway stage=runtime_ready result=unavailable");
+                AccessError::Unavailable
+            })?
+            .mutation()
+            .access_exchange(
+                authority,
+                None,
+                csrf,
+                &context.remote_addr,
+                std::time::Instant::now() + std::time::Duration::from_secs(30),
+            )
+            .map(|outcome| outcome.view)
+    }
+    fn access_action(
+        &self,
+        context: &AuthenticationContext,
+        authority: crate::browser_access::AccessAuthority<'_>,
+        csrf: &str,
+        action: crate::browser_access::AccessAction<'_>,
+        deadline: std::time::Instant,
+    ) -> Result<crate::browser_access::AccessOutcome, crate::browser_access::AccessError> {
+        use crate::browser_access::{AccessAuthority, AccessError};
+        if let AccessAuthority::Session(session) = &authority {
+            self.ready_account_runtime(&session.record.canonical_username)
+                .ok_or(AccessError::Unavailable)?;
+        }
+        let fact = match (&authority, &action) {
+            (
+                AccessAuthority::Session(session),
+                crate::browser_access::AccessAction::ConfirmTotpReset { enrollment_id, .. },
+            ) => Some((
+                session.record.canonical_username.clone(),
+                (*enrollment_id).to_string(),
+            )),
+            _ => None,
+        };
+        let result = self
+            .account_runtime
+            .ready()
+            .ok_or_else(|| {
+                eprintln!("account_access_gateway stage=runtime_ready result=unavailable");
+                AccessError::Unavailable
+            })?
+            .mutation()
+            .access_exchange(
+                authority,
+                Some(&action),
+                csrf,
+                &context.remote_addr,
+                deadline,
+            );
+        if let (Some((account, source)), Ok(outcome)) = (fact, &result) {
+            if matches!(outcome.view, crate::browser_access::AccessView::Complete) {
+                let mut events = Vec::new();
+                self.record_notice(
+                    &account,
+                    crate::notifications::NotificationKind::TotpChanged,
+                    &source,
+                    crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+                    &mut events,
+                );
+                for event in events {
+                    eprintln!("notification_recording action={}", event.action);
+                }
+            }
+        }
+        result
+    }
+    fn authenticator(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::authenticator::Snapshot, crate::authenticator::Error> {
+        self.ready_account_runtime(&session.record.canonical_username)
+            .ok_or(crate::authenticator::Error::Unavailable)?;
+        crate::authenticator::snapshot(
+            &session.record.canonical_username,
+            &self.totp_secret_dir,
+            &self.totp_replay_dir,
+            &crate::authenticator::Store::new(self.settings_dir.join("account-recovery")),
+        )
+    }
+    fn request_account_recovery(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+    ) -> Result<crate::authenticator::RequestRecord, crate::authenticator::Error> {
+        self.ready_account_runtime(&session.record.canonical_username)
+            .ok_or(crate::authenticator::Error::Unavailable)?;
+        let result = crate::authenticator::Store::new(self.settings_dir.join("account-recovery"))
+            .request(
+                &session.record.canonical_username,
+                revision,
+                crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+            );
+        if let Ok(record) = &result {
+            let mut events = Vec::new();
+            self.record_notice(
+                &record.account,
+                crate::notifications::NotificationKind::RecoveryRequested,
+                &record.case_id,
+                record.requested_at,
+                &mut events,
+            );
+            for event in events {
+                eprintln!("notification_recording action={}", event.action);
+            }
+        }
+        result
+    }
+    fn mail_storage_report(
+        &self,
+        session: &ValidatedSession,
+    ) -> Option<crate::documents::MailStorageReport> {
+        self.read_mail_storage_report(&session.record.canonical_username)
+            .ok()
+    }
+    fn documents_quota_status(
+        &self,
+        session: &ValidatedSession,
+    ) -> Option<crate::documents::QuotaStatus> {
+        self.document_store()
+            .ok()?
+            .quota_status(&session.record.canonical_username)
+            .ok()?
+    }
+    fn documents_quota_ready(&self, session: &ValidatedSession) -> bool {
+        self.document_store()
+            .and_then(|store| store.quota_ready(&session.record.canonical_username))
+            .unwrap_or(false)
+    }
+    fn create_document_folder(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        name: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?.create_folder(
+            &session.record.canonical_username,
+            revision,
+            name,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn move_document_to_folder(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        document_id: &str,
+        folder_id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?.move_to_folder(
+            &session.record.canonical_username,
+            revision,
+            document_id,
+            folder_id,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn load_documents(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?
+            .load(&session.record.canonical_username)
+    }
+    fn upload_document(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        name: &str,
+        media_type: &str,
+        bytes: &[u8],
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?.upload(
+            &session.record.canonical_username,
+            revision,
+            name,
+            media_type,
+            bytes,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn download_document(
+        &self,
+        session: &ValidatedSession,
+        id: &str,
+    ) -> Result<(String, Vec<u8>), crate::documents::Error> {
+        self.document_store()?
+            .download(&session.record.canonical_username, id)
+    }
+    fn bin_document(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?.bin(
+            &session.record.canonical_username,
+            revision,
+            id,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn restore_document(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?.restore(
+            &session.record.canonical_username,
+            revision,
+            id,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn delete_document(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?.delete_confirmed(
+            &session.record.canonical_username,
+            revision,
+            id,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn reconcile_document(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?.reconcile(
+            &session.record.canonical_username,
+            revision,
+            id,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn retention_status(
+        &self,
+        session: &ValidatedSession,
+        mailbox: &str,
+    ) -> crate::mailbox::RetentionDecision {
+        use crate::mailbox::MessageDeleteBackend;
+        self.build_message_delete_backend()
+            .map(|backend| backend.retention_status(&session.record.canonical_username, mailbox))
+            .unwrap_or(crate::mailbox::RetentionDecision::Unavailable)
+    }
+    fn delete_message(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        request: &crate::mailbox::MessageDeleteRequest,
+    ) -> BrowserMessageDeleteOutcome {
+        self.delete_message_impl(context, session, request)
+    }
+    fn key_management(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> crate::key_management::StateOutcome {
+        self.key_management_state(context, session)
+    }
+    fn personal_key_state(
+        &self,
+        session: &ValidatedSession,
+    ) -> Option<crate::openpgp_personal::PersonalState> {
+        self.crypto_client()?
+            .personal(
+                &session.record.canonical_username,
+                &Self::private_key_session(session),
+                crate::openpgp_personal::PersonalAction::Status,
+            )
+            .ok()
+    }
+    fn remember_personal_key(&self, session: &ValidatedSession, token: &[u8]) -> Option<u64> {
+        self.crypto_client()?
+            .personal(
+                &session.record.canonical_username,
+                &Self::private_key_session(session),
+                crate::openpgp_personal::PersonalAction::Remember { token },
+            )
+            .ok()?
+            .remembered_until
+    }
+    fn resume_personal_key(&self, session: &ValidatedSession, token: &[u8]) -> bool {
+        self.crypto_client().is_some_and(|client| {
+            client
+                .personal(
+                    &session.record.canonical_username,
+                    &Self::private_key_session(session),
+                    crate::openpgp_personal::PersonalAction::Resume { token },
+                )
+                .is_ok()
+        })
+    }
+    fn lock_personal_key(&self, session: &ValidatedSession) -> bool {
+        self.crypto_client().is_some_and(|client| {
+            client
+                .personal(
+                    &session.record.canonical_username,
+                    &Self::private_key_session(session),
+                    crate::openpgp_personal::PersonalAction::Lock,
+                )
+                .is_ok()
+        })
+    }
+    fn forget_remembered_key(&self, account: &str, token: &[u8]) -> bool {
+        self.crypto_client()
+            .is_some_and(|client| client.forget_remembered(account, token).is_ok())
+    }
+    fn change_keys(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        token: &SessionToken,
+        request: crate::key_management::MutationRequest<'_>,
+    ) -> crate::key_management::MutationOutcome {
+        self.change_keys_impl(context, session, token, request)
+    }
+    fn compose_protection(
+        &self,
+        session: &ValidatedSession,
+        to: &str,
+        cc: &str,
+        bcc: &str,
+        intent: crate::send::ProtectionIntent,
+    ) -> Option<crate::http::ComposeProtectionView> {
+        self.compose_protection_view(session, to, cc, bcc, intent)
+    }
+
+    fn public_key_inventory(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> BrowserPublicInventoryOutcome {
+        let inventory = self
+            .inventory_client()
+            .as_ref()
+            .and_then(|client| client.read(&session.record.canonical_username).ok());
+        let audit_events = if inventory
+            .as_ref()
+            .and_then(crate::openpgp_inventory::Inventory::keys)
+            .is_none()
+        {
+            vec![build_http_warning_event(
+                "public_inventory_unavailable",
+                "public key inventory unavailable",
+                context,
+            )]
+        } else {
+            vec![]
+        };
+        BrowserPublicInventoryOutcome {
+            canonical_username: session.record.canonical_username.clone(),
+            inventory,
+            audit_events,
+        }
+    }
+
+    fn load_bin_preference(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::bin_folder::BinPreference, crate::bin_folder::Error> {
+        crate::bin_folder::BinPreferencesStore::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+    fn update_bin_preference(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        mailbox_name: &str,
+    ) -> Result<crate::bin_folder::BinPreference, crate::bin_folder::Error> {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return Err(crate::bin_folder::Error::Unavailable);
+        };
+        crate::bin_folder::BinPreferencesStore::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            revision,
+            mailbox_name,
+        )
+    }
+
+    fn load_after_archive(
+        &self,
+        s: &ValidatedSession,
+    ) -> Result<crate::after_archive::Preference, crate::after_archive::Error> {
+        crate::after_archive::Store::new(&self.settings_dir).load(&s.record.canonical_username)
+    }
+    fn save_after_archive(
+        &self,
+        s: &ValidatedSession,
+        revision: u64,
+        choice: crate::after_archive::Choice,
+    ) -> Result<crate::after_archive::Preference, crate::after_archive::Error> {
+        crate::after_archive::Store::new(&self.settings_dir).save(
+            &s.record.canonical_username,
+            revision,
+            choice,
+        )
+    }
+
+    fn load_mark_read_policy(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
+        crate::mark_read::Store::new(&self.settings_dir).load(&session.record.canonical_username)
+    }
+    fn load_timezone(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::timezone::Preference, crate::timezone::Error> {
+        crate::timezone::Store::new(&self.settings_dir).load(&session.record.canonical_username)
+    }
+    fn save_timezone(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        offset: crate::timezone::FixedOffset,
+    ) -> Result<crate::timezone::Preference, crate::timezone::Error> {
+        crate::timezone::Store::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            revision,
+            offset,
+        )
+    }
+    fn load_draft_location_preference(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::draft_location::Preference, crate::draft_location::Error> {
+        crate::draft_location::Store::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+    fn draft_location_ready(
+        &self,
+        session: &ValidatedSession,
+        location: crate::draft_location::Location,
+    ) -> bool {
+        self.build_draft_store()
+            .with_new_location(location)
+            .require_new_location(&session.record.canonical_username)
+            .is_ok()
+    }
+    fn save_draft_location_preference(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        location: crate::draft_location::Location,
+    ) -> Result<crate::draft_location::Preference, crate::draft_location::Error> {
+        crate::draft_location::Store::new(&self.settings_dir).save_qualified(
+            &session.record.canonical_username,
+            revision,
+            location,
+            || self.qualify_draft_location(session, location),
+        )
+    }
+    fn qualify_draft_location(
+        &self,
+        session: &ValidatedSession,
+        location: crate::draft_location::Location,
+    ) -> Result<(), crate::draft_location::Error> {
+        self.build_draft_store()
+            .qualify_location(&session.record.canonical_username, location)
+            .map_err(|_| crate::draft_location::Error::Unavailable)
+    }
+    fn load_sent_location_preference(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::sent_location::Preference, crate::sent_location::Error> {
+        crate::sent_location::Store::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+    fn save_sent_location_preference(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        name: &str,
+        guid: &str,
+    ) -> Result<crate::sent_location::Preference, crate::sent_location::Error> {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return Err(crate::sent_location::Error::Unavailable);
+        };
+        crate::sent_location::Store::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            revision,
+            name,
+            guid,
+        )
+    }
+    fn load_sent_copy_preference(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::sent_copy::Preference, crate::sent_copy::Error> {
+        crate::sent_copy::Store::new(&self.settings_dir).load(&session.record.canonical_username)
+    }
+    fn save_sent_copy_preference(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        save_sent: bool,
+    ) -> Result<crate::sent_copy::Preference, crate::sent_copy::Error> {
+        crate::sent_copy::Store::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            revision,
+            save_sent,
+        )
+    }
+    fn save_mark_read_policy(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        policy: crate::mark_read::Policy,
+    ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
+        crate::mark_read::Store::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            revision,
+            policy,
+        )
+    }
+
+    fn load_autosave(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::autosave::Preference, crate::autosave::Error> {
+        crate::autosave::Store::new(&self.settings_dir).load(&session.record.canonical_username)
+    }
+    fn save_autosave(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        enabled: bool,
+        interval: u16,
+    ) -> Result<crate::autosave::Preference, crate::autosave::Error> {
+        crate::autosave::Store::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            revision,
+            enabled,
+            interval,
+        )
+    }
+    fn load_signature(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::signature::SignatureRecord, crate::signature::SignatureError> {
+        crate::signature::SignatureStore::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+    fn change_signature(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        change: crate::signature::SignatureChange<'_>,
+    ) -> Result<crate::signature::SignatureRecord, crate::signature::SignatureError> {
+        crate::signature::SignatureStore::new(&self.settings_dir).change(
+            &session.record.canonical_username,
+            revision,
+            change,
+        )
+    }
+
+    fn scheduled_list(
+        &self,
+        s: &ValidatedSession,
+    ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+        self.scheduled_list_impl(s)
+    }
+    fn outbox_attempts(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<Vec<crate::send_recovery::OutboxAttempt>, crate::scheduled_send::Error> {
+        let now = crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider);
+        let journal = self.send_journal();
+        let _guard = journal
+            .account_guard(&session.record.canonical_username, now)
+            .map_err(|_| crate::scheduled_send::Error::Unavailable)?;
+        crate::send_recovery::SendRecovery::new(self.settings_dir.join("send-recovery"))
+            .outbox_attempts(&journal, &session.record.canonical_username, now)
+            .map_err(|_| crate::scheduled_send::Error::Unavailable)
+    }
+    fn scheduled_payload(
+        &self,
+        s: &ValidatedSession,
+        id: &str,
+    ) -> Result<crate::send::ComposeRequest, crate::scheduled_send::Error> {
+        self.scheduled_payload_impl(s, id)
+    }
+    fn scheduled_from_draft(
+        &self,
+        s: &ValidatedSession,
+        id: &str,
+        revision: u64,
+        due: u64,
+    ) -> Result<String, crate::scheduled_send::Error> {
+        self.scheduled_from_draft_impl(s, id, revision, due)
+    }
+    fn scheduled_edit(
+        &self,
+        s: &ValidatedSession,
+        id: &str,
+        revision: u64,
+        due: u64,
+        to: &str,
+        cc: &str,
+        bcc: &str,
+        subject: &str,
+        body: &str,
+    ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+        self.scheduled_edit_impl(s, id, revision, due, to, cc, bcc, subject, body)
+    }
+    fn scheduled_change(
+        &self,
+        s: &ValidatedSession,
+        id: &str,
+        revision: u64,
+        action: &str,
+        due: Option<u64>,
+    ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+        self.scheduled_change_impl(s, id, revision, action, due)
+    }
+    fn snooze_load(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::snooze::SnoozeRecord, crate::snooze::SnoozeError> {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return Err(crate::snooze::SnoozeError::Unavailable);
+        };
+        crate::snooze::SnoozeStore::new(&self.settings_dir)
+            .load(&session.record.canonical_username, self.snooze_clock())
+    }
+    fn snooze_change(
+        &self,
+        session: &ValidatedSession,
+        identity: &crate::snooze::MessageIdentity,
+        revision: u64,
+        until: Option<u64>,
+    ) -> Result<crate::snooze::SnoozeRecord, crate::snooze::SnoozeError> {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return Err(crate::snooze::SnoozeError::Unavailable);
+        };
+        let store = crate::snooze::SnoozeStore::new(&self.settings_dir);
+        match until {
+            Some(until) => store.set(
+                &session.record.canonical_username,
+                identity,
+                revision,
+                until,
+                self.snooze_clock(),
+            ),
+            None => store.cancel(
+                &session.record.canonical_username,
+                identity,
+                revision,
+                self.snooze_clock(),
+            ),
+        }
+    }
+    fn snooze_project(
+        &self,
+        session: &ValidatedSession,
+        owner: &str,
+        folder: &str,
+        rows: &[MessageSummary],
+    ) -> crate::snooze::SnoozeProjection {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return crate::snooze::SnoozeProjection {
+                hidden: vec![],
+                revision: None,
+                unavailable: Some(crate::snooze::SnoozeError::Unavailable),
+            };
+        };
+        let store = crate::snooze::SnoozeStore::new(&self.settings_dir);
+        store.project(
+            &session.record.canonical_username,
+            owner,
+            folder,
+            rows,
+            self.snooze_clock(),
+        )
+    }
+
+    fn read_send_recovery(
+        &self,
+        session: &ValidatedSession,
+        intent: &str,
+    ) -> BrowserSendRecoveryDecision {
+        use crate::send_recovery::{RecoveryRead, SendRecovery};
+        match SendRecovery::new(self.settings_dir.join("send-recovery")).lookup(
+            &self.send_journal(),
+            &session.record.canonical_username,
+            intent,
+            self.send_clock(),
+        ) {
+            Ok(RecoveryRead::Available(value)) => {
+                BrowserSendRecoveryDecision::Available(BrowserSendRecoverySnapshot {
+                    request: value.request,
+                    created_at: value.created_at,
+                    expires_at: value.expires_at,
+                })
+            }
+            Ok(RecoveryRead::Missing) => BrowserSendRecoveryDecision::Missing,
+            Ok(RecoveryRead::Expired) => BrowserSendRecoveryDecision::Expired,
+            Ok(RecoveryRead::Unconfirmed) => BrowserSendRecoveryDecision::Unconfirmed,
+            Err(_) => BrowserSendRecoveryDecision::Unavailable,
+        }
+    }
+
+    fn send_receipt(
+        &self,
+        session: &ValidatedSession,
+        intent: &str,
+    ) -> Result<Option<BrowserSendDecision>, String> {
+        self.send_journal()
+            .receipt_with_sent_location(&session.record.canonical_username, intent)
+            .map(|value| value.map(http_gateway_mail::located_send_decision))
+            .map_err(|_| "send_attempt_paused".into())
+    }
+    fn cleanup_sent_draft(
+        &self,
+        session: &ValidatedSession,
+        id: &str,
+        revision: u64,
+        intent: &str,
+    ) -> Result<bool, String> {
+        self.cleanup_submitted_draft_impl(
+            &session.record.canonical_username,
+            id,
+            revision,
+            intent,
+            self.send_clock(),
+        )
+        .map_err(|_| "send_attempt_paused".into())
+    }
+
+    fn archive_events_available(&self) -> bool {
+        true
+    }
+    fn load_archive_events(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::archive_event::Snapshot, crate::archive_event::Error> {
+        crate::archive_event::Store::new(self.settings_dir.join("archive-events-v1"))
+            .load(&session.record.canonical_username)
+    }
+    fn record_archive_event(
+        &self,
+        session: &ValidatedSession,
+        confirmation: &crate::archive_event::ConfirmedArchive,
+        confirmed_at: u64,
+    ) -> Result<crate::archive_event::Snapshot, crate::archive_event::Error> {
+        crate::archive_event::Store::new(self.settings_dir.join("archive-events-v1"))
+            .record_confirmed_archive(
+                &session.record.canonical_username,
+                confirmation,
+                confirmed_at,
+            )
+    }
+
+    fn labels_available(&self) -> bool {
+        true
+    }
+    fn load_labels(
+        &self,
+        s: &ValidatedSession,
+    ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        let Ok(_guard) =
+            crate::folder_rename::settings_gate(&self.settings_dir, &s.record.canonical_username)
+        else {
+            return Err(crate::labels::LabelError::Unavailable);
+        };
+        crate::labels::LabelStore::new(self.settings_dir.join("labels-v1"))
+            .load(&s.record.canonical_username)
+    }
+    fn change_labels(
+        &self,
+        s: &ValidatedSession,
+        r: u64,
+        c: crate::labels::LabelChange<'_>,
+    ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        let Ok(_guard) =
+            crate::folder_rename::settings_gate(&self.settings_dir, &s.record.canonical_username)
+        else {
+            return Err(crate::labels::LabelError::Unavailable);
+        };
+        crate::labels::LabelStore::new(self.settings_dir.join("labels-v1")).change(
+            &s.record.canonical_username,
+            r,
+            c,
+        )
+    }
+    fn reconcile_labels(
+        &self,
+        s: &ValidatedSession,
+        r: u64,
+        a: &crate::labels::MessageIdentity,
+        b: &crate::labels::MessageIdentity,
+    ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        let Ok(_guard) =
+            crate::folder_rename::settings_gate(&self.settings_dir, &s.record.canonical_username)
+        else {
+            return Err(crate::labels::LabelError::Unavailable);
+        };
+        crate::labels::LabelStore::new(self.settings_dir.join("labels-v1"))
+            .reconcile_confirmed_move(&s.record.canonical_username, r, a, b)
+    }
+    fn load_contacts(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::contacts::ContactBook, crate::contacts::ContactError> {
+        crate::contacts::ContactStore::new(self.settings_dir.join("contacts-v1"))
+            .load(&session.record.canonical_username)
+    }
+
+    fn change_contact(
+        &self,
+        session: &ValidatedSession,
+        expected_revision: u64,
+        change: crate::contacts::ContactChange,
+    ) -> Result<crate::contacts::ContactBook, crate::contacts::ContactError> {
+        crate::contacts::ContactStore::new(self.settings_dir.join("contacts-v1")).change(
+            &session.record.canonical_username,
+            expected_revision,
+            change,
+        )
+    }
+
+    fn set_message_flag(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &crate::mailbox::MessageFlagRequest,
+    ) -> BrowserMessageFlagOutcome {
+        self.set_message_flag_impl(context, validated_session, request)
+    }
+
+    fn load_notification_preference(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::notification_preferences::Preference, crate::notification_preferences::Error>
+    {
+        crate::notification_preferences::Store::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+    fn save_notification_preference(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        digest: crate::notification_preferences::DigestMode,
+    ) -> Result<crate::notification_preferences::Preference, crate::notification_preferences::Error>
+    {
+        crate::notification_preferences::Store::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            revision,
+            digest,
+        )
+    }
+    fn save_notification_choices(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        digest: crate::notification_preferences::DigestMode,
+        choices: crate::notification_preferences::Choice,
+    ) -> Result<crate::notification_preferences::Preference, crate::notification_preferences::Error>
+    {
+        crate::notification_preferences::Store::new(&self.settings_dir).save_choices(
+            &session.record.canonical_username,
+            revision,
+            digest,
+            choices,
+        )
+    }
+    fn refresh_notification_sources(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> Result<(), crate::notifications::NotificationError> {
+        self.refresh_notices_impl(context, session)
+    }
+    fn record_session_notification(
+        &self,
+        account: &str,
+        kind: crate::notifications::NotificationKind,
+    ) -> Result<(), crate::notifications::NotificationError> {
+        crate::notifications::NotificationStore::new(&self.settings_dir).record(
+            account,
+            kind,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn notification_inbox(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        crate::notifications::NotificationStore::new(&self.settings_dir).load(
+            &session.record.canonical_username,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn mark_all_notifications_read(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        crate::notifications::NotificationStore::new(&self.settings_dir).mark_all_read(
+            &session.record.canonical_username,
+            revision,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn delete_all_notifications(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        crate::notifications::NotificationStore::new(&self.settings_dir).delete_all(
+            &session.record.canonical_username,
+            revision,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn delete_notification(
+        &self,
+        session: &ValidatedSession,
+        id: &str,
+        revision: u64,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        crate::notifications::NotificationStore::new(&self.settings_dir).delete(
+            &session.record.canonical_username,
+            id,
+            revision,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn set_notification_read(
+        &self,
+        session: &ValidatedSession,
+        id: &str,
+        revision: u64,
+        read: bool,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        crate::notifications::NotificationStore::new(&self.settings_dir).set_read(
+            &session.record.canonical_username,
+            id,
+            revision,
+            read,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
     fn login(
         &self,
         context: &AuthenticationContext,
@@ -144,6 +1401,92 @@ impl BrowserGateway for RuntimeBrowserGateway {
         totp_code: &str,
     ) -> BrowserLoginOutcome {
         self.login_impl(context, username, password, totp_code)
+    }
+
+    fn recovery_contact(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<
+        crate::recovery_contact::RecoveryContactSnapshot,
+        crate::recovery_contact::RecoveryContactError,
+    > {
+        self.read_recovery_contact(session)
+    }
+    fn recovery_contact_action(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        token: &SessionToken,
+        revision: u64,
+        action: crate::recovery_contact::RecoveryContactAction,
+        current_password: &str,
+        totp_code: &str,
+        deadline: std::time::Instant,
+    ) -> Result<
+        crate::recovery_contact::RecoveryContactResult,
+        crate::recovery_contact::RecoveryContactError,
+    > {
+        self.mutate_recovery_contact(
+            context,
+            session,
+            token,
+            revision,
+            action,
+            current_password,
+            totp_code,
+            deadline,
+        )
+    }
+    fn password_change_available(&self, session: &ValidatedSession) -> bool {
+        self.ready_account_runtime(&session.record.canonical_username)
+            .is_some()
+            && session
+                .record
+                .account_epoch
+                .is_some_and(crate::account_admission::valid_epoch)
+    }
+
+    fn begin_password_result(
+        &self,
+        session: &ValidatedSession,
+        existing: Option<&str>,
+    ) -> Result<Option<String>, BrowserPasswordResultError> {
+        self.begin_password_result_record(session, existing)
+    }
+    fn finish_password_result(
+        &self,
+        session: &ValidatedSession,
+        capability: &str,
+        outcome: &BrowserPasswordOutcome,
+    ) -> bool {
+        self.finish_password_result_record(session, capability, outcome)
+    }
+    fn password_result(&self, capability: &str) -> Option<BrowserPasswordResult> {
+        self.read_password_result_record(capability)
+    }
+    fn password_changed_at(&self, session: &ValidatedSession) -> Option<String> {
+        let ready = self.ready_account_runtime(&session.record.canonical_username)?;
+        let epoch = session.record.account_epoch?;
+        ready
+            .admission()
+            .password_changed_at_before(
+                &session.record.canonical_username,
+                epoch,
+                std::time::Instant::now() + std::time::Duration::from_secs(5),
+            )
+            .ok()
+            .flatten()
+    }
+
+    fn change_own_password(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        token: &SessionToken,
+        request: crate::password_change::Request<'_>,
+        deadline: std::time::Instant,
+    ) -> BrowserPasswordOutcome {
+        self.change_own_password_impl(context, session, token, request, deadline)
     }
 
     fn validate_session(
@@ -188,12 +1531,216 @@ impl BrowserGateway for RuntimeBrowserGateway {
         self.revoke_sessions_impl(context, validated_session, scope)
     }
 
+    fn load_reading_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> std::io::Result<crate::reading_preferences::ReadingPreferences> {
+        crate::reading_preferences::ReadingPreferencesStore::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+
+    fn update_reading_start_page(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        start_page: crate::reading_preferences::StartPage,
+    ) -> std::io::Result<crate::reading_preferences::ReadingPreferences> {
+        crate::reading_preferences::ReadingPreferencesStore::new(&self.settings_dir)
+            .save_start_page(&session.record.canonical_username, start_page)
+    }
+
+    fn update_reading_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        value: crate::reading_preferences::ReadingPreferences,
+    ) -> std::io::Result<()> {
+        crate::reading_preferences::ReadingPreferencesStore::new(&self.settings_dir)
+            .save(&session.record.canonical_username, value)
+    }
+
+    fn load_identity_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        let mut record = self.sender_identity_settings(session)?;
+        record.preferences = record
+            .selected_preferences(&session.record.canonical_username, &self.sender_authority)?;
+        Ok(record)
+    }
+    fn sender_inventory(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::sender_authority::Snapshot, crate::sender_authority::Error> {
+        self.sender_authority
+            .snapshot(&session.record.canonical_username)
+    }
+    fn sender_identity_settings(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        crate::identity_preferences::IdentityPreferencesStore::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+    fn update_sender_identity(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        update: &crate::identity_preferences::SenderIdentityUpdate,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        let inventory = self
+            .sender_inventory(session)
+            .map_err(|_| crate::identity_preferences::IdentityPreferencesError::Unavailable)?;
+        crate::identity_preferences::IdentityPreferencesStore::new(&self.settings_dir).save_sender(
+            &session.record.canonical_username,
+            revision,
+            &inventory,
+            update,
+        )
+    }
+    fn update_identity_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        expected_revision: u64,
+        value: &crate::identity_preferences::IdentityPreferences,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        crate::identity_preferences::IdentityPreferencesStore::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            expected_revision,
+            value,
+        )
+    }
+
+    fn load_composition_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> std::io::Result<crate::composition_preferences::CompositionPreferences> {
+        crate::composition_preferences::CompositionPreferencesStore::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+    fn update_composition_format(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        value: crate::compose_format::BodyFormat,
+    ) -> std::io::Result<()> {
+        crate::composition_preferences::CompositionPreferencesStore::new(&self.settings_dir)
+            .save_format(&session.record.canonical_username, value)
+    }
+
+    fn update_composition_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        value: crate::composition_preferences::CompositionPreferencesUpdate,
+    ) -> std::io::Result<()> {
+        crate::composition_preferences::CompositionPreferencesStore::new(&self.settings_dir)
+            .update(&session.record.canonical_username, value)
+    }
+
+    fn load_appearance(
+        &self,
+        _context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> std::io::Result<AppearancePreference> {
+        AppearanceStore::new(&self.settings_dir).load(&validated_session.record.canonical_username)
+    }
+
+    fn update_appearance(
+        &self,
+        _context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        appearance: AppearancePreference,
+    ) -> std::io::Result<()> {
+        AppearanceStore::new(&self.settings_dir)
+            .save(&validated_session.record.canonical_username, appearance)
+    }
+
+    fn load_display(
+        &self,
+        _context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> std::io::Result<AppearanceSettings> {
+        AppearanceStore::new(&self.settings_dir)
+            .load_settings(&validated_session.record.canonical_username)
+    }
+
+    fn update_display(
+        &self,
+        _context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        preferences: AppearanceSettings,
+    ) -> std::io::Result<()> {
+        AppearanceStore::new(&self.settings_dir)
+            .save_settings(&validated_session.record.canonical_username, preferences)
+    }
+
     fn load_settings(
         &self,
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
     ) -> BrowserSettingsOutcome {
         self.load_settings_impl(context, validated_session)
+    }
+
+    fn update_content_setting(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        content: HtmlDisplayPreference,
+    ) -> BrowserSettingsUpdateOutcome {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return BrowserSettingsUpdateOutcome {
+                decision: BrowserSettingsUpdateDecision::Denied {
+                    public_reason: "temporarily_unavailable".into(),
+                },
+                audit_events: vec![],
+            };
+        };
+        let result = crate::settings::FileUserSettingsStore::new(&self.settings_dir)
+            .save_content(&session.record.canonical_username, content);
+        self.partial_settings_outcome(context, session, "content", result)
+    }
+
+    fn update_archive_setting(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        archive: Option<&str>,
+    ) -> BrowserSettingsUpdateOutcome {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return BrowserSettingsUpdateOutcome {
+                decision: BrowserSettingsUpdateDecision::Denied {
+                    public_reason: "temporarily_unavailable".into(),
+                },
+                audit_events: vec![],
+            };
+        };
+        let result = crate::settings::FileUserSettingsStore::new(&self.settings_dir)
+            .save_archive(&session.record.canonical_username, archive);
+        self.partial_settings_outcome(context, session, "archive", result)
     }
 
     fn update_settings(
@@ -203,6 +1750,17 @@ impl BrowserGateway for RuntimeBrowserGateway {
         html_display_preference: HtmlDisplayPreference,
         archive_mailbox_name: Option<&str>,
     ) -> BrowserSettingsUpdateOutcome {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &validated_session.record.canonical_username,
+        ) else {
+            return BrowserSettingsUpdateOutcome {
+                decision: BrowserSettingsUpdateDecision::Denied {
+                    public_reason: "temporarily_unavailable".into(),
+                },
+                audit_events: vec![],
+            };
+        };
         self.update_settings_impl(
             context,
             validated_session,
@@ -211,6 +1769,510 @@ impl BrowserGateway for RuntimeBrowserGateway {
         )
     }
 
+    fn pending_folder_delete(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<Option<crate::folder_delete::DeleteFolderRequest>, crate::folder_create::Refusal>
+    {
+        crate::folder_rename::role_lease(&self.settings_dir, &session.record.canonical_username)
+            .map(|l| l.pending_delete().cloned())
+    }
+    fn delete_folder(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        request: &crate::folder_delete::DeleteFolderRequest,
+    ) -> crate::folder_delete::Outcome {
+        use crate::{folder_create::Refusal, folder_delete::Outcome};
+        if self.mailbox_helper_socket_path.is_some()
+            && (self.mailbox_helper_peer_uid.is_none()
+                || self.mailbox_helper_grant_key_path.is_none())
+        {
+            return Outcome::Refused(Refusal::Unavailable);
+        }
+        let Ok(mut lease) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return Outcome::Refused(Refusal::Unavailable);
+        };
+        if request.account() != session.record.canonical_username || request.validate().is_err() {
+            return Outcome::Refused(Refusal::Invalid);
+        }
+        if let Err(reason) = crate::folder_disposition::guard_ordinary(
+            &self.settings_dir,
+            &lease,
+            request.source(),
+            request.source(),
+        ) {
+            return Outcome::Refused(reason);
+        }
+        let Ok(names) = crate::folder_rename::protected_destinations(self, context, session) else {
+            return Outcome::Refused(Refusal::Unavailable);
+        };
+        if crate::folder_rename::role_conflict(&names, request.source(), request.source()) {
+            return Outcome::Refused(Refusal::Invalid);
+        }
+        if lease.begin_delete(request).is_err() {
+            return Outcome::Refused(Refusal::Unavailable);
+        }
+        let outcome = crate::mailbox::MailboxBackend::delete_folder(
+            &self.build_mailbox_list_backend(),
+            request,
+        );
+        if outcome != Outcome::Unknown && lease.confirm().is_err() {
+            return Outcome::Unknown;
+        }
+        outcome
+    }
+    fn check_folder_delete(
+        &self,
+        _: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> crate::folder_delete::CheckOutcome {
+        use crate::{
+            folder_delete::{CheckOutcome, Completion},
+            mailbox::MailboxBackend,
+        };
+        if self.mailbox_helper_socket_path.is_some()
+            && (self.mailbox_helper_peer_uid.is_none()
+                || self.mailbox_helper_grant_key_path.is_none())
+        {
+            return CheckOutcome::Unavailable;
+        }
+        let Ok(mut lease) = crate::folder_rename::role_lease(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return CheckOutcome::Unavailable;
+        };
+        let Some(request) = lease.pending_delete().cloned() else {
+            return CheckOutcome::NoPending;
+        };
+        let backend = self.build_mailbox_list_backend();
+        let (Ok(snapshot), Ok(parent)) = (
+            backend.folder_metadata(request.account()),
+            backend.mailbox_status(request.account(), request.parent()),
+        ) else {
+            return CheckOutcome::Unconfirmed;
+        };
+        let witness = backend.folder_delete_completion(&request);
+        let result =
+            if witness == Completion::Deleted && request.confirmed_absent(&snapshot, &parent) {
+                CheckOutcome::Deleted
+            } else if witness == Completion::NoMutation
+                && backend
+                    .mailbox_status(request.account(), request.source())
+                    .is_ok_and(|source| request.confirmed_unchanged(&snapshot, &source, &parent))
+            {
+                CheckOutcome::Unchanged
+            } else {
+                return CheckOutcome::Unconfirmed;
+            };
+        if lease.confirm().is_err() {
+            CheckOutcome::Unavailable
+        } else {
+            result
+        }
+    }
+    fn folder_disposition_receipts(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<Vec<crate::folder_disposition::Receipt>, crate::folder_create::Refusal> {
+        crate::folder_disposition::list(&self.settings_dir, &session.record.canonical_username)
+    }
+    fn prepare_folder_bin(
+        &self,
+        _: &AuthenticationContext,
+        session: &ValidatedSession,
+        source: &str,
+    ) -> Result<crate::folder_rename::RenameFolderRequest, crate::folder_create::Refusal> {
+        if self.mailbox_helper_socket_path.is_none()
+            || self.mailbox_helper_peer_uid.is_none()
+            || self.mailbox_helper_grant_key_path.is_none()
+        {
+            return Err(crate::folder_create::Refusal::Unavailable);
+        }
+        crate::folder_disposition::prepare_bin(
+            &self.settings_dir,
+            &self.build_mailbox_list_backend(),
+            &session.record.canonical_username,
+            source,
+        )
+    }
+    fn apply_folder_disposition(
+        &self,
+        _: &AuthenticationContext,
+        session: &ValidatedSession,
+        request: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Outcome {
+        if request.account() != session.record.canonical_username
+            || self.mailbox_helper_socket_path.is_none()
+            || self.mailbox_helper_peer_uid.is_none()
+            || self.mailbox_helper_grant_key_path.is_none()
+        {
+            return crate::folder_rename::Outcome::Refused(
+                crate::folder_create::Refusal::Unavailable,
+            );
+        }
+        crate::folder_disposition::execute(
+            &self.settings_dir,
+            &self.build_mailbox_list_backend(),
+            request,
+            self.snooze_clock(),
+        )
+    }
+    fn check_folder_disposition(
+        &self,
+        _: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> crate::folder_rename::CheckOutcome {
+        if self.mailbox_helper_socket_path.is_none()
+            || self.mailbox_helper_peer_uid.is_none()
+            || self.mailbox_helper_grant_key_path.is_none()
+        {
+            return crate::folder_rename::CheckOutcome::Unavailable;
+        }
+        crate::folder_disposition::check(
+            &self.settings_dir,
+            &self.build_mailbox_list_backend(),
+            &session.record.canonical_username,
+        )
+    }
+    fn pending_folder_rename(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<Option<crate::folder_rename::RenameFolderRequest>, crate::folder_create::Refusal>
+    {
+        crate::folder_rename::role_lease(&self.settings_dir, &session.record.canonical_username)
+            .and_then(|lease| {
+                if lease.pending_delete().is_some() {
+                    Err(crate::folder_create::Refusal::Unavailable)
+                } else {
+                    lease
+                        .pending()
+                        .map(|r| match lease.recovery() {
+                            Some(intent) => r.for_recovery(&intent.nonce),
+                            None => Ok(r.clone()),
+                        })
+                        .transpose()
+                }
+            })
+    }
+    fn check_folder_rename(
+        &self,
+        _: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> crate::folder_rename::CheckOutcome {
+        use crate::folder_rename::CheckOutcome;
+        if self.mailbox_helper_socket_path.is_some()
+            && (self.mailbox_helper_peer_uid.is_none()
+                || self.mailbox_helper_grant_key_path.is_none())
+        {
+            return CheckOutcome::Unavailable;
+        }
+        let Ok(mut lease) = crate::folder_rename::role_lease(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return CheckOutcome::Unavailable;
+        };
+        let Some(request) = lease.pending().cloned() else {
+            return CheckOutcome::NoPending;
+        };
+        if lease.recovery().is_some() {
+            return CheckOutcome::Unconfirmed;
+        }
+        if request.disposition().is_some() {
+            return CheckOutcome::Unconfirmed;
+        }
+        let backend = self.build_mailbox_list_backend();
+        let (Ok(snapshot), Ok(parent)) = (
+            crate::mailbox::MailboxBackend::folder_metadata(&backend, request.account()),
+            crate::mailbox::MailboxBackend::mailbox_status(
+                &backend,
+                request.account(),
+                request.parent(),
+            ),
+        ) else {
+            return CheckOutcome::Unconfirmed;
+        };
+        if let Ok(destination) = crate::mailbox::MailboxBackend::mailbox_status(
+            &backend,
+            request.account(),
+            &request.destination(),
+        ) {
+            if crate::folder_rename::confirmed_settled_result(
+                &backend,
+                &request,
+                &snapshot,
+                &destination,
+                &parent,
+            ) {
+                if crate::folder_rename::reconcile_metadata(&self.settings_dir, &request).is_err()
+                    || lease.confirm().is_err()
+                {
+                    return CheckOutcome::Unavailable;
+                }
+                return CheckOutcome::Renamed {
+                    destination: request.destination(),
+                };
+            }
+        }
+        if crate::mailbox::MailboxBackend::folder_rename_completion(&backend, &request)
+            != crate::folder_rename::Completion::NoMutation
+        {
+            return CheckOutcome::Unconfirmed;
+        }
+        let Ok(source) = crate::mailbox::MailboxBackend::mailbox_status(
+            &backend,
+            request.account(),
+            request.source(),
+        ) else {
+            return CheckOutcome::Unconfirmed;
+        };
+        if !crate::folder_rename::confirmed_unchanged(&request, &snapshot, &source, &parent) {
+            return CheckOutcome::Unconfirmed;
+        }
+        if crate::folder_subtree::check(&backend, &request, &snapshot, false).is_err() {
+            return CheckOutcome::Unconfirmed;
+        }
+        if request.is_move() {
+            let Ok(source_parent) = crate::mailbox::MailboxBackend::mailbox_status(
+                &backend,
+                request.account(),
+                request.source_parent(),
+            ) else {
+                return CheckOutcome::Unconfirmed;
+            };
+            if request
+                .validate_source_parent(&snapshot, &source_parent)
+                .is_err()
+            {
+                return CheckOutcome::Unconfirmed;
+            }
+        }
+        if lease.confirm().is_err() {
+            return CheckOutcome::Unavailable;
+        }
+        CheckOutcome::Unchanged
+    }
+    fn rename_folder(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        request: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Outcome {
+        use crate::{folder_create::Refusal, folder_rename::Outcome};
+        if self.mailbox_helper_socket_path.is_some()
+            && (self.mailbox_helper_peer_uid.is_none()
+                || self.mailbox_helper_grant_key_path.is_none())
+        {
+            return Outcome::Refused(Refusal::Unavailable);
+        }
+        let Ok(mut lease) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return Outcome::Refused(Refusal::Unavailable);
+        };
+        if request.is_recovery()
+            || request.account() != session.record.canonical_username
+            || request.disposition().is_some()
+        {
+            return Outcome::Refused(Refusal::Invalid);
+        }
+        if let Err(reason) = crate::folder_disposition::guard_ordinary(
+            &self.settings_dir,
+            &lease,
+            request.source(),
+            &request.destination(),
+        ) {
+            return Outcome::Refused(reason);
+        }
+        let Ok(names) = crate::folder_rename::protected_destinations(self, context, session) else {
+            return Outcome::Refused(Refusal::Unavailable);
+        };
+        if crate::folder_rename::role_conflict(&names, request.source(), &request.destination()) {
+            return Outcome::Refused(Refusal::Invalid);
+        }
+        if crate::labels::LabelStore::new(self.settings_dir.join("labels-v1"))
+            .load(request.account())
+            .is_err()
+            || crate::snooze::SnoozeStore::new(&self.settings_dir)
+                .load(request.account(), self.snooze_clock())
+                .is_err()
+        {
+            return Outcome::Refused(Refusal::Unavailable);
+        }
+        if lease.begin(request).is_err() {
+            return Outcome::Refused(Refusal::Unavailable);
+        }
+        let outcome = crate::mailbox::MailboxBackend::rename_folder(
+            &self.build_mailbox_list_backend(),
+            request,
+        );
+        if outcome == Outcome::Renamed
+            && crate::folder_rename::reconcile_metadata(&self.settings_dir, request).is_err()
+        {
+            return Outcome::Unknown;
+        }
+        if outcome != Outcome::Unknown && lease.confirm().is_err() {
+            return Outcome::Unknown;
+        }
+        outcome
+    }
+    fn recover_folder_rename(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        nonce: &str,
+    ) -> crate::folder_rename::RecoveryOutcome {
+        use crate::folder_rename::{CheckOutcome, RecoveryOutcome};
+        if self.mailbox_helper_socket_path.is_none()
+            || self.mailbox_helper_peer_uid.is_none()
+            || self.mailbox_helper_grant_key_path.is_none()
+        {
+            return RecoveryOutcome::Unavailable;
+        }
+        let pending = match self.pending_folder_rename(session) {
+            Ok(Some(value)) => value,
+            _ => return RecoveryOutcome::Unavailable,
+        };
+        let result = crate::folder_subtree_recovery::recover(
+            &self.settings_dir,
+            &self.build_mailbox_list_backend(),
+            &session.record.canonical_username,
+            nonce,
+        );
+        if !matches!(
+            result,
+            RecoveryOutcome::Progress | RecoveryOutcome::Inspected
+        ) {
+            return result;
+        }
+        let checked = if pending.disposition().is_some() {
+            self.check_folder_disposition(context, session)
+        } else {
+            self.check_folder_rename(context, session)
+        };
+        match checked {
+            CheckOutcome::Renamed { destination } => RecoveryOutcome::Complete { destination },
+            CheckOutcome::Unchanged => RecoveryOutcome::Unchanged,
+            CheckOutcome::Unconfirmed => result,
+            _ => RecoveryOutcome::Unavailable,
+        }
+    }
+    fn create_folder(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        request: &crate::folder_create::CreateFolderRequest,
+    ) -> BrowserFolderCreateOutcome {
+        let outcome = (|| {
+            use crate::folder_create::{Outcome, Refusal};
+            if request.account() != session.record.canonical_username || request.validate().is_err()
+            {
+                return Outcome::Refused(Refusal::Invalid);
+            }
+            let Ok(lease) =
+                crate::folder_rename::settings_gate(&self.settings_dir, request.account())
+            else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            if let Err(reason) = crate::folder_disposition::guard_ordinary(
+                &self.settings_dir,
+                &lease,
+                &request.child(),
+                &request.child(),
+            ) {
+                return Outcome::Refused(reason);
+            }
+            crate::mailbox::MailboxBackend::create_folder(
+                &self.build_mailbox_list_backend(),
+                request,
+            )
+        })();
+        let event = LogEvent::new(
+            LogLevel::Info,
+            crate::logging::EventCategory::Mailbox,
+            "folder_create_result",
+            "folder create completed with bounded result",
+        )
+        .with_field("request_id", context.request_id.clone())
+        .with_field(
+            "confirmed",
+            matches!(outcome, crate::folder_create::Outcome::Created { .. }).to_string(),
+        );
+        BrowserFolderCreateOutcome {
+            outcome,
+            audit_events: vec![event],
+        }
+    }
+    fn folder_metadata(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> BrowserFolderMetadataOutcome {
+        let account = &session.record.canonical_username;
+        let snapshot = crate::mailbox::MailboxBackend::folder_metadata(
+            &self.build_mailbox_list_backend(),
+            account,
+        )
+        .ok()
+        .filter(|v| v.validate_for(account).is_ok());
+        let event = LogEvent::new(
+            if snapshot.is_some() {
+                LogLevel::Info
+            } else {
+                LogLevel::Warn
+            },
+            crate::logging::EventCategory::Mailbox,
+            "folder_metadata_read",
+            "folder metadata lookup completed",
+        )
+        .with_field("request_id", context.request_id.clone())
+        .with_field("available", snapshot.is_some().to_string());
+        BrowserFolderMetadataOutcome {
+            canonical_username: account.clone(),
+            snapshot,
+            audit_events: vec![event],
+        }
+    }
+    fn mailbox_status(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        folder: &str,
+    ) -> BrowserMailboxStatusOutcome {
+        let status = crate::mailbox::MailboxBackend::mailbox_status(
+            &self.build_mailbox_list_backend(),
+            &session.record.canonical_username,
+            folder,
+        )
+        .ok();
+        let event = LogEvent::new(
+            if status.is_some() {
+                LogLevel::Info
+            } else {
+                LogLevel::Warn
+            },
+            crate::logging::EventCategory::Mailbox,
+            "mailbox_status_read",
+            "folder status lookup completed",
+        )
+        .with_field("request_id", context.request_id.clone())
+        .with_field(
+            "canonical_username",
+            session.record.canonical_username.clone(),
+        )
+        .with_field("available", status.is_some().to_string());
+        BrowserMailboxStatusOutcome {
+            canonical_username: session.record.canonical_username.clone(),
+            status,
+            audit_events: vec![event],
+        }
+    }
     fn list_mailboxes(
         &self,
         context: &AuthenticationContext,
@@ -260,6 +2322,72 @@ impl BrowserGateway for RuntimeBrowserGateway {
         self.download_attachment_impl(context, validated_session, mailbox_name, uid, part_path)
     }
 
+    fn download_stored_attachment(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        message: &MessageView,
+        part: &str,
+    ) -> BrowserAttachmentDownloadOutcome {
+        if !http_gateway_protected::has_protection_envelope(message) {
+            let result = AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
+                .download_for_validated_session(context, session, message, part);
+            return BrowserAttachmentDownloadOutcome {
+                decision: match result.decision {
+                    AttachmentDownloadDecision::Downloaded {
+                        canonical_username,
+                        attachment,
+                        ..
+                    } => BrowserAttachmentDownloadDecision::Downloaded {
+                        canonical_username,
+                        attachment,
+                    },
+                    AttachmentDownloadDecision::Denied { public_reason } => {
+                        BrowserAttachmentDownloadDecision::Denied {
+                            public_reason: public_reason.as_str().into(),
+                        }
+                    }
+                },
+                audit_events: vec![result.audit_event],
+            };
+        }
+        let result = self.protected_attachment_snapshot(context, session, message, part);
+        BrowserAttachmentDownloadOutcome {
+            decision: match result {
+                Ok(attachment) => BrowserAttachmentDownloadDecision::Downloaded {
+                    canonical_username: session.record.canonical_username.clone(),
+                    attachment,
+                },
+                Err(crate::protected_message::ProtectedError::Attachment(reason)) => {
+                    BrowserAttachmentDownloadDecision::Denied {
+                        public_reason: reason.as_str().into(),
+                    }
+                }
+                Err(_) => BrowserAttachmentDownloadDecision::Denied {
+                    public_reason: "temporarily_unavailable".into(),
+                },
+            },
+            audit_events: vec![build_http_info_event(
+                "protected_attachment_processed",
+                "protected attachment request completed",
+                context,
+            )],
+        }
+    }
+
+    fn read_message_source(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &MessageViewRequest,
+    ) -> crate::mailbox::MessageViewOutcome {
+        MessageViewService::new(self.build_message_view_backend()).fetch_for_validated_session(
+            context,
+            validated_session,
+            request,
+        )
+    }
+
     fn send_message(
         &self,
         context: &AuthenticationContext,
@@ -273,17 +2401,9 @@ impl BrowserGateway for RuntimeBrowserGateway {
         &self,
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
-        source_mailbox_name: &str,
-        uid: u64,
-        destination_mailbox_name: &str,
+        request: &MessageMoveRequest,
     ) -> BrowserMessageMoveOutcome {
-        self.move_message_impl(
-            context,
-            validated_session,
-            source_mailbox_name,
-            uid,
-            destination_mailbox_name,
-        )
+        self.move_message_impl(context, validated_session, request)
     }
 
     fn list_drafts(
@@ -317,7 +2437,328 @@ impl BrowserGateway for RuntimeBrowserGateway {
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
         draft_id: &str,
+        expected_revision: u64,
     ) -> BrowserDraftDeleteOutcome {
-        self.delete_draft_impl(context, validated_session, draft_id)
+        self.delete_draft_impl(context, validated_session, draft_id, expected_revision)
+    }
+
+    fn set_draft_star(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        draft_id: &str,
+        expected_revision: u64,
+        starred: bool,
+    ) -> BrowserDraftSaveOutcome {
+        self.set_draft_star_impl(
+            context,
+            validated_session,
+            draft_id,
+            expected_revision,
+            starred,
+        )
+    }
+}
+
+impl RuntimeBrowserGateway {
+    fn read_mail_storage_report(
+        &self,
+        account: &str,
+    ) -> Result<crate::documents::MailStorageReport, crate::documents::Error> {
+        use crate::documents::Backend as _;
+        let canonical = crate::identity::CanonicalUsername::parse(account)
+            .map_err(|_| crate::documents::Error::Invalid)?;
+        if canonical.as_str() != account {
+            return Err(crate::documents::Error::Invalid);
+        }
+        let backend = crate::mailbox_helper::MailboxHelperDocumentsBackend::new(
+            self.mailbox_helper_socket_path
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?,
+            self.mailbox_helper_grant_key_path
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?,
+            crate::mailbox_helper::MailboxHelperPolicy::default(),
+        )
+        .with_helper_uid(
+            self.mailbox_helper_peer_uid
+                .ok_or(crate::documents::Error::Unavailable)?,
+        );
+        let report = backend.storage_report(account)?;
+        if report.account != account {
+            return Err(crate::documents::Error::Unavailable);
+        }
+        Ok(report)
+    }
+}
+
+#[cfg(test)]
+mod public_inventory_gateway_tests {
+    use super::*;
+    #[test]
+    fn runtime_inventory_defaults_to_disabled() {
+        let config = AppConfig::from_env_map(&std::collections::BTreeMap::new()).unwrap();
+        let gateway = RuntimeBrowserGateway::from_config(&config);
+        assert!(gateway.inventory_client().is_none());
+        assert!(gateway.admin_client().is_none());
+        assert!(gateway.crypto_client().is_none());
+        assert_eq!(gateway, gateway.clone());
+        let context = AuthenticationContext::new(
+            AuthenticationPolicy::default(),
+            "inventory-test",
+            "127.0.0.1",
+            "Test",
+        )
+        .unwrap();
+        let session = ValidatedSession {
+            record: crate::session::SessionRecord {
+                account_epoch: None,
+                session_id: "synthetic".into(),
+                csrf_token: "synthetic".into(),
+                canonical_username: "alice@example.com".into(),
+                issued_at: 1,
+                expires_at: 100,
+                last_seen_at: 1,
+                revoked_at: None,
+                remote_addr: "127.0.0.1".into(),
+                user_agent: "Test".into(),
+                factor: RequiredSecondFactor::Totp,
+            },
+            audit_event: LogEvent::new(LogLevel::Info, EventCategory::Session, "test", "test"),
+        };
+        let result = gateway.public_key_inventory(&context, &session);
+        assert_eq!(result.canonical_username, "alice@example.com");
+        assert!(result.inventory.is_none());
+        assert_eq!(result.audit_events.len(), 1);
+        assert!(!format!("{:?}", result.audit_events).contains("alice@example.com"));
+    }
+
+    #[test]
+    fn configured_helpers_recover_after_socket_appears_without_rebuilding_gateway() {
+        use std::os::unix::fs::PermissionsExt;
+        use std::os::unix::net::UnixListener;
+
+        // The security gate exports TMPDIR=/tmp/osmap-tmp, which may be
+        // group-writable. Client path validation intentionally rejects that
+        // ancestor, so this protected fixture uses the canonical sticky /tmp.
+        let root = std::fs::canonicalize("/tmp").unwrap().join(format!(
+            "osmap-gateway-helper-retry-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let socket = root.join("helper.sock");
+        let grant = root.join("grant");
+        std::fs::write(&grant, [17_u8; 32]).unwrap();
+        std::fs::set_permissions(&grant, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let binding = crate::config::OpenPgpInventoryConfig {
+            socket: socket.clone(),
+            key_file: grant.clone(),
+            helper_uid: crate::openbsd::effective_uid(),
+        };
+        let mut gateway = RuntimeBrowserGateway::for_test(&root);
+        gateway.inventory_config = Some(binding.clone());
+        gateway.admin_config = Some(binding.clone());
+        gateway.crypto_config = Some(binding);
+
+        assert!(gateway.inventory_client().is_none());
+        assert!(gateway.admin_client().is_none());
+        assert!(gateway.crypto_client().is_none());
+        let unavailable = gateway.helper_client_status_events();
+        assert!(unavailable.iter().all(|event| {
+            event.action == "openpgp_helper_client_status"
+                && event.level == LogLevel::Warn
+                && event.fields.iter().any(|field| {
+                    field.key == "status" && field.value == "configured_client_unavailable"
+                })
+        }));
+        let logged = format!("{unavailable:?}");
+        assert!(!logged.contains(root.to_str().unwrap()));
+        assert!(!logged.contains("grant"));
+
+        let listener = UnixListener::bind(&socket).unwrap();
+        std::fs::set_permissions(&socket, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let uid = crate::openbsd::effective_uid();
+        assert!(
+            gateway.inventory_client().is_some(),
+            "configured inventory client failed after socket appeared: {:?}",
+            crate::openpgp_inventory_runtime::Client::from_operator_files(&socket, &grant, uid)
+                .err()
+        );
+        assert!(
+            gateway.admin_client().is_some(),
+            "configured admin client failed after socket appeared: {:?}",
+            crate::openpgp_public_admin_runtime::Client::from_operator_files(&socket, &grant, uid)
+                .err()
+        );
+        assert!(
+            gateway.crypto_client().is_some(),
+            "configured crypto client failed after socket appeared: {:?}",
+            crate::openpgp_crypto_runtime::Client::from_operator_files(&socket, &grant, uid).err()
+        );
+        let cloned_gateway = gateway.clone();
+        assert!(cloned_gateway.inventory_client().is_some());
+        assert!(cloned_gateway.admin_client().is_some());
+        assert!(cloned_gateway.crypto_client().is_some());
+        assert!(std::ptr::eq(
+            gateway.inventory_recovery.get().unwrap(),
+            cloned_gateway.inventory_recovery.get().unwrap()
+        ));
+        assert!(std::ptr::eq(
+            gateway.admin_recovery.get().unwrap(),
+            cloned_gateway.admin_recovery.get().unwrap()
+        ));
+        assert!(std::ptr::eq(
+            gateway.crypto_recovery.get().unwrap(),
+            cloned_gateway.crypto_recovery.get().unwrap()
+        ));
+        drop(listener);
+        std::fs::remove_file(&socket).unwrap();
+        // Construction success remains cached, but each RPC still validates
+        // the live socket and fails closed if the helper stops.
+        assert!(gateway.inventory_client().is_some());
+        assert!(gateway.admin_client().is_some());
+        assert!(gateway.crypto_client().is_some());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[cfg(all(test, unix))]
+mod mail_storage_gateway_tests {
+    use super::*;
+    use crate::documents::{Backend, Error, Location, MailStorageReport, QuotaStatus};
+    use std::os::unix::fs::PermissionsExt;
+    use std::os::unix::net::UnixListener;
+    use std::sync::{Arc, Mutex};
+    struct Reports(Arc<Mutex<Vec<String>>>);
+    impl Backend for Reports {
+        fn storage_report(&self, account: &str) -> Result<MailStorageReport, Error> {
+            let mut calls = self.0.lock().unwrap();
+            calls.push(account.into());
+            Ok(MailStorageReport {
+                account: if calls.len() == 3 {
+                    "bob@example.test".into()
+                } else {
+                    account.into()
+                },
+                message_bytes: if account == "alice@example.test" {
+                    1111
+                } else {
+                    2222
+                },
+                configured_limit_bytes: if account == "alice@example.test" {
+                    Some(10000)
+                } else {
+                    Some(0)
+                },
+            })
+        }
+        fn quota_status(&self, _: &str) -> Result<Option<QuotaStatus>, Error> {
+            panic!("mail reporting must not query Documents quota")
+        }
+        fn append(&self, _: &str, _: &str, _: &str, _: &str, _: &[u8]) -> Result<Location, Error> {
+            panic!("mail reporting must not append Documents")
+        }
+        fn read(&self, _: &str, _: &str, _: &Location) -> Result<Vec<u8>, Error> {
+            panic!("mail reporting must not read Documents")
+        }
+        fn move_to_bin(&self, _: &str, _: &str, _: &Location) -> Result<Location, Error> {
+            panic!("mail reporting must not move Documents")
+        }
+        fn restore(&self, _: &str, _: &str, _: &Location) -> Result<Location, Error> {
+            panic!("mail reporting must not restore Documents")
+        }
+        fn expunge(&self, _: &str, _: &str, _: &Location) -> Result<(), Error> {
+            panic!("mail reporting must not expunge Documents")
+        }
+        fn inspect(&self, _: &str, _: &str) -> Result<Vec<Location>, Error> {
+            panic!("mail reporting must not inspect Documents")
+        }
+    }
+    #[test]
+    fn direct_mail_report_uses_signed_account_bound_helper_without_documents_state() {
+        let root = std::fs::canonicalize("/tmp").unwrap().join(format!(
+            "osmap-mail-report-{}",
+            crate::draft::generate_draft_id().unwrap()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let owner = crate::openbsd::effective_uid();
+        let socket = root.join("helper.sock");
+        let key = root.join("grant.key");
+        std::fs::write(&key, [37; 32]).unwrap();
+        std::fs::set_permissions(&key, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let listener = UnixListener::bind(&socket).unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let backend = Reports(Arc::clone(&calls));
+        let server = std::thread::spawn(move || {
+            let replay = Mutex::new(std::collections::BTreeMap::new());
+            let until = std::time::Instant::now() + std::time::Duration::from_secs(10);
+            for _ in 0..3 {
+                let mut stream = loop {
+                    match listener.accept() {
+                        Ok((stream, _)) => break stream,
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                            assert!(
+                                std::time::Instant::now() < until,
+                                "bounded mail report fixture accept"
+                            );
+                            std::thread::sleep(std::time::Duration::from_millis(2));
+                        }
+                        Err(_) => panic!("mail report fixture socket unavailable"),
+                    }
+                };
+                crate::mailbox_helper::native_documents_test_stream(
+                    &backend,
+                    &mut stream,
+                    &[37; 32],
+                    owner,
+                    &replay,
+                )
+                .unwrap();
+            }
+        });
+        let config = AppConfig::from_env_map(&std::collections::BTreeMap::new()).unwrap();
+        let mut gateway = RuntimeBrowserGateway::from_config(&config);
+        gateway.mailbox_helper_socket_path = Some(socket);
+        gateway.mailbox_helper_grant_key_path = Some(key);
+        gateway.mailbox_helper_peer_uid = Some(owner);
+        gateway.settings_dir = root.join("unavailable-settings-file");
+        std::fs::write(&gateway.settings_dir, b"not a Documents index directory").unwrap();
+        for (account, bytes, limit) in [
+            ("alice@example.test", 1111, 10000),
+            ("bob@example.test", 2222, 0),
+        ] {
+            let report = gateway.read_mail_storage_report(account).unwrap();
+            assert_eq!(report.account, account);
+            assert_eq!(report.message_bytes, bytes);
+            assert_eq!(report.configured_limit_bytes, Some(limit));
+        }
+        assert_eq!(
+            gateway.read_mail_storage_report("alice@example.test"),
+            Err(Error::Unavailable)
+        );
+        server.join().unwrap();
+        assert_eq!(
+            *calls.lock().unwrap(),
+            [
+                "alice@example.test",
+                "bob@example.test",
+                "alice@example.test"
+            ]
+        );
+        assert!(
+            std::fs::read(&gateway.settings_dir).unwrap() == b"not a Documents index directory"
+        );
+        assert_eq!(
+            gateway.read_mail_storage_report("invalid account"),
+            Err(Error::Invalid)
+        );
+        std::fs::remove_dir_all(&root).unwrap();
     }
 }

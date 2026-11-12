@@ -1,5 +1,51 @@
 # Build And Release Process
 
+## Current automatic GitHub preservation — 2026-10-21
+
+The operator's standing instruction makes GitHub preservation part of delivery.
+Inventory all tracked/untracked repository changes, inspect their contents and
+include all public-safe code, tests, documentation, generated evidence and ledger
+updates in independently reviewed Shopkeeper-signed commits. Verify each
+signature, run the normal commit/push hooks, and push to the current approved
+branch without a separate operator source-review pause. Fetch after pushing and
+prove exact local/remote SHA equality and zero ahead/behind. Do not leave eligible
+work local while reporting delivery or backup complete.
+
+Existing secret/private-artifact exclusions and explicit operator holds apply.
+Failed checks or divergence remain blockers; do not bypass hooks, force updates,
+rewrite history or renew exhausted allowances. Retain actual failures and report
+what remains local. This source-preservation authority does not authorize binary
+deployment, public-service changes or acceptance of unfinished workflows. It
+supersedes older manual push-approval requirements in the historical sections.
+
+## Current S04-02 source and delivery boundary — 2026-10-20
+
+The operator resumed bounded S04-02 development; the historical stop below is
+superseded for that scope. The current hour ends05:38:47UTC. The observed OpenBSD
+FSTAT NAME column is admitted by the installer's existing exact header predicate;
+command, row grammar, process ownership and reference refusals are unchanged.
+Readonly epoch admission also stops constructing an unused primary-auth profile;
+profile construction remains in authenticated Authenticate with the same deadline.
+The focused real-Store/stale/readonly-refusal test passes; changed OpenBSD
+qualification and performance remain NOT_RUN. Prior native binaries do not
+qualify this new source by implication.
+Focused compatibility/refusal control and independent source review pass. No
+production qualification flag, activation or installed/release claim follows.
+Actual full workflows80/85 failed;85 exhausted its90s aggregate fixture budget
+during request11.86 independently confirms restored backend state/public service
+preservation. HTTP scratch remains retained/UNKNOWN. Normal signing/gates and
+explicit push authorization remain; see Current Project Status and the ledger.
+
+## Historical operator stop — 2026-10-17
+
+Development, live/native qualification and deployment are stopped by explicit
+operator direction. Only documentation preservation, signed repository commits
+and synchronization of `feat/ux-completion-20260929` are currently authorized.
+S04-02 password change and S04 remain incomplete; the installed password-change
+control remains disabled. Historical work orders do not authorize resumption.
+See [the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md) and
+[Current Project Status](CURRENT_PROJECT_STATUS.md) for current results and limits.
+
 ## Purpose
 
 This document defines the expected build and release discipline for OSMAP. It is
@@ -262,3 +308,71 @@ should remain:
 - hostile to unnecessary dependency growth
 - compatible with packaging and redistribution expectations
 - free of Linux-first release assumptions
+
+## UX S02-01 compatible search-helper rollout
+
+The new authenticated batch-search request preserves the single-folder codec.
+Deploy the matching reviewed native application to the authoritative mailbox
+helper before the obsd1 web client starts using the new operation. Preserve the
+original binary in a private, exclusive rollback directory on each host; do not
+change routing, keys, account policy, Dovecot/Postfix configuration or data.
+The obsd1 mailbox relay transports opaque bounded bytes and needs no protocol
+change. Confirm its actual destination identity rather than relying on an old
+address in a handoff.
+
+Service health and binary hashes are activation prerequisites, not functional
+acceptance. Verify installed INBOX and all-folder searches against authoritative
+matching metadata, then keyboard Clear filters from an empty filtered view back
+to those matches with query, field and scope retained. Record the assessed signed
+source, native test/build input hashes, installed digests, rollback paths and
+outcomes in the execution ledger. This bounded development rollout does not
+refresh historical strict-release reports or qualify Send/OpenPGP/human UAT.
+
+The S02 saved Manual/On Open preference uses a separate private 512-byte
+`osmap-mark-read-v1` account record. Missing state stays Manual without a write;
+legacy Reading preference saves cannot erase it. Confirm explicit native
+opening, persisted Seen and Unread-body reconciliation against disposable
+Dovecot mailboxes before deploying its matching application. Rendered forms and
+settings CAS must also pass the bounded no-script browser workflow. Binary
+rollback preserves the separate preference record; older binaries ignore it.
+Do not change operator flags or keys to manufacture installed acceptance.
+
+## UX S02-02 bounded conversation metadata rollout
+
+Saved Conversation ordering uses supported Message-ID, In-Reply-To and References
+from the existing bounded native summary fetch. It groups only the loaded, owned,
+filtered rows in the existing flat list and reader arrows. Explicit URL sorts
+retain precedence; missing headers, unsupported syntax, duplicate IDs, invalid
+identity/time and cyclic components stay independent. Public thread structure
+does not establish sender verification, private-key readiness or Send acceptance.
+
+The optional typed helper field is a protocol migration: the new web accepts old
+helpers without thread metadata, while old web parsers reject the new field.
+Stage matching signed-source candidates first, then activate the compatible web
+on obsd1 against the existing helper before activating the authoritative mail
+helper. Rollback restores the old helper before the old web. Preserve existing
+4 MiB native/1 MiB helper limits, commands, deadlines, routing, configuration,
+keys, policies and mail. Require actual disposable native and browser ordering,
+saved-setting and reader identity results; health checks alone cannot close UAT.
+
+
+### S04-02 Rust password service — unqualified source, 2026-10-18
+
+The new account-passwd Rust target and owned IMAP PUBLISH2/SCM_RIGHTS plugin are
+source-delivered prerequisites only. Build both from the same reviewed source;
+qualify the actual parent-sealed role utilities, private-primary binding, public
+policy/publication, SMTP forwarding/PF/registration and cross-host web/helper
+composition before any reversible installed-pair delivery. Matching configuration,
+source/binary parity, nine-scenario outcomes, owned cleanup and independent audit
+are required. Current native flags are false and the ordinary password form is
+unavailable. Compiler success and historical Python fixtures are not release
+qualification. Preserve keys, operator accounts, unrelated services and rollback
+custody; never repeat an uncertain credential write.
+
+The first controlled current Rust SQL/hash execution does not qualify release:
+it fails before executor construction at parent-plan preparation. Retained
+fixture resources and uncertain cleanup are explicit; existing services and
+operator credentials are preserved. Fresh recovery disposition is required.
+Do not infer a password update from successful root fixture provisioning or
+private profile construction. The wrapper's cross-session getsid model was
+invalid on OpenBSD and must not authorize cleanup or historical PID signals.

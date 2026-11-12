@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "classification": "bounded engineering remediation and executed revalidation; not human sprint acceptance",
+  "runtime_source_commit": "9a73a29a2f1db7afa6b36086a6efac2516e9c685",
+  "runtime_source_signature": "verified Shopkeeper",
+  "github_synced": true,
+  "validation_host": "obsd1.blackbagsecurity.com",
+  "authoritative_mailbox_backend": "mail.blackbagsecurity.com",
+  "installed_binary_sha256": "963aae9329909e882e9c408836dcd54fa3c69bc6b20dfa3a870418ee22df9b8f",
+  "native_source_inputs": 258,
+  "native_security_and_search_tests": 5,
+  "slices": {
+    "S01-01": {
+      "repair": "explicit AppearanceLock unlock on logical guard release",
+      "native_red_failed": 1,
+      "native_green_passed": 13,
+      "linux_passed": 24,
+      "real_store_browser_journeys": 6,
+      "installed_theme_workflow": "PASS",
+      "human_acceptance": "OPEN"
+    },
+    "S01-02": {
+      "repair": "missing actual shared-shell keyboard navigation regression coverage",
+      "source_keyboard_get_journeys": 8,
+      "installed_keyboard_get_journeys": 8,
+      "responsive_shell_captures": 26,
+      "welcome_current_journeys": 13,
+      "welcome_current_captures": 11,
+      "engineering_exit": "PASS",
+      "human_acceptance": "OPEN"
+    },
+    "S01-03": {
+      "repairs": [
+        "owned public key Security overview and real management navigation",
+        "actual configured fingerprint overflow",
+        "missing existing signing/encryption/self settings search entries"
+      ],
+      "security_route_red_failed": 2,
+      "security_route_green_passed": 2,
+      "search_green_distinct_tests": 3,
+      "configured_layout_widths": [
+        360,
+        768,
+        1440
+      ],
+      "installed_read_only_workflow": "PASS",
+      "human_acceptance": "OPEN"
+    },
+    "S01-04": {
+      "repair": "current every-surface theme and contrast execution gap; no new runtime defect observed",
+      "route_states": 74,
+      "route_state_captures": 950,
+      "shell_records": {
+        "skip_rail_account_long_identity": 24,
+        "global_search_menu": 212
+      },
+      "table_records": 38,
+      "verified_image_hashes": 1210,
+      "login_normal_error_body_and_combined_totp": "retained exactly excluding shared stylesheet and outer preference marker",
+      "engineering_exit": "PASS",
+      "human_acceptance": "OPEN"
+    }
+  },
+  "evidence_pins": {
+    "theme_verified_json_sha256": "107eff0fb223db58ef7b017140f5c553c7ad6c73637d6a5c391412c153e8517f",
+    "native_build_proof_sha256": "324486655aca867a760c5baf44e651d66b27fa1e47cbc6da5d3252a1f9b71e1d",
+    "installed_security_search_sha256": "663403fba6be8ae07488a0856570fea8a466f4d9594d4d9ad80ea0dec41be253",
+    "installed_navigation_sha256": "2354fc1236668e99af0ff7834e138c6c58fe9d7246f902d03f4b08d9472ea94a"
+  },
+  "explicit_limits": [
+    "seeded installed sessions bypass password/TOTP",
+    "synthetic snapshots do not implement missing functionality",
+    "flat computed contrast excludes gradient/translucent/native-control/icon and human assistive review",
+    "reference dimensions and bounded visual sampling do not establish exact final-picture approval",
+    "operator controls next real external Send; no agent email submitted",
+    "all current human Send/provider/readable encrypted authoritative Sent/return/key lifecycle outcomes remain OPEN",
+    "not all 403 controls, full sprint human UAT or epic completion"
+  ]
+}

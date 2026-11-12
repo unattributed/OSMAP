@@ -1,0 +1,1409 @@
+use super::*;
+struct Fixture {
+    root: PathBuf,
+    app: BrowserApp<StubGateway>,
+}
+impl Fixture {
+    fn new() -> Self {
+        let root = temp_dir(&format!(
+            "folder-rename-{}",
+            crate::draft::generate_draft_id().unwrap()
+        ));
+        let gateway = StubGateway {
+            sent_location_store: Some(crate::sent_location::Store::new(root.join("sent"))),
+            bin_store: Some(crate::bin_folder::BinPreferencesStore::new(
+                root.join("bin"),
+            )),
+            settings_store: Some(crate::settings::FileUserSettingsStore::new(
+                root.join("settings"),
+            )),
+            labels_store: Some(crate::labels::LabelStore::new(
+                root.join("settings/labels-v1"),
+            )),
+            snooze_store: Some(crate::snooze::SnoozeStore::new(root.join("settings"))),
+            browser_fixture_accounts: true,
+            ..StubGateway::default()
+        };
+        gateway.created_folders.lock().unwrap().insert(
+            "alice@example.com".into(),
+            vec!["INBOX.Alpha".into(), "INBOX.Existing".into()],
+        );
+        let app = BrowserApp::new(HttpPolicy::default(), gateway);
+        Self { root, app }
+    }
+    fn run(
+        &self,
+        method: &str,
+        path: &str,
+        body: &str,
+        agent: &str,
+        bob: bool,
+    ) -> HandledHttpResponse {
+        let mut req = request(method, path, &authenticated_same_origin_headers(), body);
+        req.headers.insert("user-agent".into(), agent.into());
+        if bob {
+            req.headers
+                .insert("cookie".into(), format!("osmap_session={}", "b".repeat(64)));
+        }
+        self.app.handle_request(&req, "127.0.0.1")
+    }
+    fn form(&self) -> String {
+        format!("csrf_token={}&source=INBOX.Alpha&source_guid={}&parent_guid=1234567890abcdef1234567890abcdef&leaf=Beta&action=review", StubGateway::validated_session().record.csrf_token, self.app.gateway.created_folder_guid("alice@example.com", "INBOX.Alpha").unwrap())
+    }
+}
+impl Drop for Fixture {
+    fn drop(&mut self) {
+        fs::remove_dir_all(&self.root).unwrap();
+    }
+}
+#[test]
+fn folder_subtree_retained_leaf_bin_restore_check_has_owned_actionable_notice() {
+    for restoring in [false, true] {
+        let f = Fixture::new();
+        let account = "alice@example.com";
+        let bin = crate::folder_disposition::Receipt::bin_request(
+            account,
+            "INBOX.Alpha",
+            &f.app
+                .gateway
+                .created_folder_guid(account, "INBOX.Alpha")
+                .unwrap(),
+            "1234567890abcdef1234567890abcdef",
+            &crate::bin_folder::BinPreference {
+                revision: 0,
+                mailbox_name: "Deleted".into(),
+            },
+            &"d".repeat(32),
+        )
+        .unwrap();
+        let original = if restoring {
+            crate::folder_rename::RenameFolderRequest::for_disposition(
+                account,
+                &bin.destination(),
+                bin.source_guid(),
+                bin.parent_guid(),
+                "INBOX",
+                bin.source_parent_guid(),
+                "Alpha",
+                &"2".repeat(32),
+                crate::folder_disposition::Purpose::Restore(
+                    bin.disposition().unwrap().context().clone(),
+                ),
+            )
+            .unwrap()
+        } else {
+            bin
+        };
+        assert!(original.descendants().is_empty());
+        {
+            crate::folder_rename::role_lease(&f.root.join("settings"), account)
+                .unwrap()
+                .begin(&original)
+                .unwrap();
+        }
+        let get = f.run(
+            "GET",
+            "/settings/folders/disposition/check",
+            "",
+            "FolderCreateValid",
+            false,
+        );
+        assert_eq!(get.response.status_code, 200);
+        let form = format!(
+            "csrf_token={}&confirm=check",
+            StubGateway::validated_session().record.csrf_token
+        );
+        let post = f.run(
+            "POST",
+            "/settings/folders/disposition/check",
+            &form,
+            "FolderCreateValid",
+            false,
+        );
+        assert_eq!(post.response.status_code, 409);
+        for page in [&get, &post] {
+            let html = body_text(page);
+            for required in [
+                "This is not a successful completion",
+                "mail service administrator",
+                "do not need to troubleshoot",
+                original.action_nonce(),
+                account,
+            ] {
+                assert!(html.contains(required), "{required}");
+            }
+            assert!(!html.contains("Review bounded partial recovery"));
+        }
+        let bob = f.run(
+            "GET",
+            "/settings/folders/disposition/check",
+            "",
+            "FolderCreateValid",
+            true,
+        );
+        assert!(!body_text(&bob).contains(original.action_nonce()));
+        assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+        assert!(f.app.gateway.submitted.lock().unwrap().is_empty());
+        assert_eq!(
+            crate::folder_rename::role_lease(&f.root.join("settings"), account)
+                .unwrap()
+                .pending(),
+            Some(&original)
+        );
+    }
+}
+#[test]
+fn folder_subtree_recovery_review_is_read_only_and_post_requires_current_session_csrf() {
+    let mut f = Fixture::new();
+    let account = "alice@example.com";
+    f.app
+        .gateway
+        .created_folders
+        .lock()
+        .unwrap()
+        .get_mut(account)
+        .unwrap()
+        .push("INBOX.Alpha.Child".into());
+    let mut wire = serde_json::to_value(
+        crate::folder_rename::RenameFolderRequest::new(
+            account,
+            "INBOX.Alpha",
+            &f.app
+                .gateway
+                .created_folder_guid(account, "INBOX.Alpha")
+                .unwrap(),
+            "1234567890abcdef1234567890abcdef",
+            "Beta",
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    wire["descendants"] = serde_json::json!([{"suffix":".Child","guid":f.app.gateway.created_folder_guid(account,"INBOX.Alpha.Child").unwrap()}]);
+    let original: crate::folder_rename::RenameFolderRequest = serde_json::from_value(wire).unwrap();
+    {
+        let mut role = crate::folder_rename::role_lease(&f.root.join("settings"), account).unwrap();
+        role.begin(&original).unwrap();
+    }
+    let page = f.run(
+        "GET",
+        "/settings/folders/rename/recover",
+        "",
+        "FolderCreateValid",
+        false,
+    );
+    assert_eq!(page.response.status_code, 200);
+    assert!(body_text(&page).contains("Confirm recover next subfolder"));
+    assert!(body_text(&page).contains("never repeats the original root rename"));
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    let bad = format!(
+        "csrf_token=invalid&confirm=recover&recovery_nonce={}",
+        "1".repeat(32)
+    );
+    assert_eq!(
+        f.run(
+            "POST",
+            "/settings/folders/rename/recover",
+            &bad,
+            "FolderCreateValid",
+            false
+        )
+        .response
+        .status_code,
+        403
+    );
+    let malformed = format!(
+        "csrf_token={}&confirm=recover&recovery_nonce=invalid",
+        StubGateway::validated_session().record.csrf_token
+    );
+    assert_eq!(
+        f.run(
+            "POST",
+            "/settings/folders/rename/recover",
+            &malformed,
+            "FolderCreateValid",
+            false
+        )
+        .response
+        .status_code,
+        400
+    );
+    assert_eq!(
+        f.run(
+            "GET",
+            "/settings/folders/rename/recover",
+            "",
+            "FolderCreateValid",
+            true
+        )
+        .response
+        .status_code,
+        409
+    );
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    assert!(f.app.gateway.submitted.lock().unwrap().is_empty());
+    // Inject only the UI outcome here; durable before-witness restart handling
+    // is exercised separately against the real private helper records.
+    f.app.gateway.folder_recovery_outcome = Some(crate::folder_rename::RecoveryOutcome::Unknown);
+    let valid = format!(
+        "csrf_token={}&confirm=recover&recovery_nonce={}",
+        StubGateway::validated_session().record.csrf_token,
+        "1".repeat(32)
+    );
+    let refused = f.run(
+        "POST",
+        "/settings/folders/rename/recover",
+        &valid,
+        "FolderCreateValid",
+        false,
+    );
+    assert_eq!(refused.response.status_code, 409);
+    let html = body_text(&refused);
+    for required in [
+        "This is not a successful completion",
+        "mail service administrator",
+        "do not need to troubleshoot",
+        "Do not repeat the folder action",
+        original.action_nonce(),
+        account,
+    ] {
+        assert!(html.contains(required), "{required}");
+    }
+    assert!(!html.contains("confirmed. Other original subfolders"));
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    assert!(f.app.gateway.submitted.lock().unwrap().is_empty());
+    let role = crate::folder_rename::role_lease(&f.root.join("settings"), account).unwrap();
+    assert_eq!(role.pending(), Some(&original));
+}
+#[test]
+fn folder_subtree_review_binds_children_and_refuses_changed_tree_before_dispatch() {
+    let f = Fixture::new();
+    let account = "alice@example.com";
+    f.app
+        .gateway
+        .created_folders
+        .lock()
+        .unwrap()
+        .get_mut(account)
+        .unwrap()
+        .extend(["INBOX.Alpha.Child".into(), "INBOX.Alpha.Child.Grand".into()]);
+    let child = f
+        .app
+        .gateway
+        .created_folder_guid(account, "INBOX.Alpha.Child")
+        .unwrap();
+    let grand = f
+        .app
+        .gateway
+        .created_folder_guid(account, "INBOX.Alpha.Child.Grand")
+        .unwrap();
+    let binding = serde_json::json!([{"suffix":".Child","guid":child}, {"suffix":".Child.Grand","guid":grand}]).to_string();
+    // Struct serialization has stable suffix/guid order, independently of map key order.
+    let parsed: Vec<crate::folder_subtree::Descendant> = serde_json::from_str(&binding).unwrap();
+    let binding = serde_json::to_string(&parsed).unwrap();
+    let review = f.run(
+        "POST",
+        "/settings/folders/rename",
+        &f.form(),
+        "FolderCreateValid",
+        false,
+    );
+    assert_eq!(review.response.status_code, 200);
+    assert!(body_text(&review).contains(&format!(
+        "name=\"descendants\" value=\"{}\"",
+        crate::http_support::escape_html(&binding)
+    )));
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    let confirm = format!(
+        "{}&confirm=rename&descendants={}",
+        f.form().replace("action=review", "action=rename"),
+        crate::http_support::url_encode(&binding)
+    );
+    f.app
+        .gateway
+        .created_folders
+        .lock()
+        .unwrap()
+        .get_mut(account)
+        .unwrap()
+        .push("INBOX.Alpha.ArrivedFolder".into());
+    assert_eq!(
+        f.run(
+            "POST",
+            "/settings/folders/rename",
+            &confirm,
+            "FolderCreateValid",
+            false
+        )
+        .response
+        .status_code,
+        409
+    );
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    f.app
+        .gateway
+        .created_folders
+        .lock()
+        .unwrap()
+        .get_mut(account)
+        .unwrap()
+        .retain(|name| name != "INBOX.Alpha.ArrivedFolder");
+    assert_eq!(
+        f.run(
+            "POST",
+            "/settings/folders/rename",
+            &confirm,
+            "FolderCreateValid",
+            false
+        )
+        .response
+        .status_code,
+        303
+    );
+    assert_eq!(
+        f.app.gateway.renamed_folders.lock().unwrap()[0]
+            .descendants()
+            .len(),
+        2
+    );
+    let owned = f.app.gateway.created_folders.lock().unwrap()[account].clone();
+    for name in ["INBOX.Beta", "INBOX.Beta.Child", "INBOX.Beta.Child.Grand"] {
+        assert!(owned.iter().any(|n| n == name));
+    }
+    assert!(!owned
+        .iter()
+        .any(|name| name == "INBOX.Alpha" || name.starts_with("INBOX.Alpha.")));
+    assert_eq!(
+        f.app
+            .gateway
+            .created_folder_guid(account, "INBOX.Beta.Child")
+            .unwrap(),
+        child
+    );
+    assert_eq!(
+        f.app
+            .gateway
+            .created_folder_guid(account, "INBOX.Beta.Child.Grand")
+            .unwrap(),
+        grand
+    );
+    assert!(f.app.gateway.submitted.lock().unwrap().is_empty());
+}
+#[test]
+fn folders_page_uses_owned_hierarchy_and_existing_review_routes() {
+    let f = Fixture::new();
+    let inbox = f.run("GET", "/folders", "", "FolderCreateValid", false);
+    assert_eq!(inbox.response.status_code, 200);
+    let html = body_text(&inbox);
+    for expected in [
+        "<h1>Folders</h1>",
+        "href=\"/folders\" aria-label=\"Folders\" title=\"Folders\" aria-current=\"page\"",
+        "href=\"/folders?folder=INBOX.Alpha\"",
+        "Subfolders of INBOX",
+        "href=\"/mailbox?name=INBOX\"",
+        "href=\"/settings/folders/create?parent=INBOX\"",
+        "Attachments stay with their email.",
+    ] {
+        assert!(html.contains(expected), "{expected}");
+    }
+    assert!(!html.contains("documents-unavailable"));
+    assert!(!html.contains("id=\"copies-archive-form\""));
+    let private = f.run(
+        "GET",
+        "/folders?folder=INBOX.Alpha",
+        "",
+        "FolderCreateValid",
+        false,
+    );
+    assert_eq!(private.response.status_code, 200);
+    for route in ["rename", "move", "delete", "bin"] {
+        assert!(body_text(&private).contains(&format!(
+            "href=\"/settings/folders/{route}?source=INBOX.Alpha\""
+        )));
+        let review = f.run(
+            "GET",
+            &format!("/settings/folders/{route}?source=INBOX.Alpha"),
+            "",
+            "FolderCreateValid",
+            false,
+        );
+        assert_eq!(review.response.status_code, 200);
+        assert!(body_text(&review).contains("Review"));
+    }
+    assert!(body_text(&private).contains("href=\"/folders/deleted\""));
+    assert!(!body_text(&private).contains("Folder deletion and restore are not available here yet"));
+    let deleted = f.run("GET", "/folders/deleted", "", "FolderCreateValid", false);
+    assert_eq!(deleted.response.status_code, 200);
+    assert!(body_text(&deleted).contains("Deleted folders"));
+    let create = f.run(
+        "GET",
+        "/settings/folders/create?parent=INBOX",
+        "",
+        "FolderCreateValid",
+        false,
+    );
+    assert_eq!(create.response.status_code, 200);
+    assert!(body_text(&create).contains("Review creation"));
+    assert!(f
+        .app
+        .gateway
+        .created_folder_guid("alice@example.com", "INBOX.Alpha")
+        .is_some());
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    assert!(f.app.gateway.submitted.lock().unwrap().is_empty());
+}
+
+#[test]
+fn folders_page_refuses_foreign_and_malformed_selection_without_dispatch() {
+    let f = Fixture::new();
+    for path in [
+        "/folders?folder=Missing",
+        "/folders?folder=INBOX.Alpha&section=copies",
+        "/folders?q=mail",
+        "/folders?folder=dovecot",
+    ] {
+        assert_eq!(
+            f.run("GET", path, "", "FolderCreateValid", false)
+                .response
+                .status_code,
+            400,
+            "{path}"
+        );
+    }
+    assert_eq!(
+        f.run(
+            "GET",
+            "/folders?folder=INBOX.Alpha",
+            "",
+            "FolderCreateValid",
+            true
+        )
+        .response
+        .status_code,
+        400
+    );
+    let wrong_owner = f.run("GET", "/folders", "", "CopiesWrongOwner", false);
+    assert_eq!(wrong_owner.response.status_code, 200);
+    assert!(!body_text(&wrong_owner).contains("Archive/2026"));
+    assert!(!body_text(&wrong_owner).contains("href=\"/settings/folders/create?"));
+    let wrong_tree = f.run("GET", "/folders", "", "FolderTreeWrongOwner", false);
+    assert!(!body_text(&wrong_tree).contains("href=\"/settings/folders/rename?"));
+    assert!(!body_text(&wrong_tree).contains("href=\"/settings/folders/move?"));
+    let unauthenticated = f
+        .app
+        .handle_request(&request("GET", "/folders", &[], ""), "127.0.0.1");
+    assert_eq!(unauthenticated.response.status_code, 303);
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    assert!(f.app.gateway.submitted.lock().unwrap().is_empty());
+}
+
+#[test]
+fn folders_theme_return_is_bounded_to_the_selected_folder() {
+    assert_eq!(
+        super::super::header_theme::safe_return("/folders/deleted").as_deref(),
+        Some("/folders/deleted")
+    );
+    assert!(super::super::header_theme::safe_return("/folders/deleted?folder=INBOX").is_none());
+    assert_eq!(
+        super::super::header_theme::safe_return("/folders?folder=INBOX.Alpha").as_deref(),
+        Some("/folders?folder=INBOX.Alpha")
+    );
+    for path in [
+        "/folders?folder=INBOX&section=copies",
+        "/folders?return_to=https://example.com",
+        "/folders?folder=%00",
+    ] {
+        assert!(super::super::header_theme::safe_return(path).is_none());
+    }
+}
+#[test]
+fn folder_move_review_confirm_and_current_parent_authority() {
+    let f = Fixture::new();
+    let settings = f.run(
+        "GET",
+        "/settings?section=copies&folder=INBOX.Alpha",
+        "",
+        "FolderCreateValid",
+        false,
+    );
+    assert_eq!(settings.response.status_code, 200);
+    let settings_html = body_text(&settings);
+    let move_link = settings_html
+        .split_once("href=\"/settings/folders/move?source=INBOX.Alpha\">")
+        .expect("owned folder move URL")
+        .1
+        .split("</a>")
+        .next()
+        .unwrap();
+    assert!(move_link.contains("Move"));
+    let csrf = &StubGateway::validated_session().record.csrf_token;
+    let source_guid = f
+        .app
+        .gateway
+        .created_folder_guid("alice@example.com", "INBOX.Alpha")
+        .unwrap();
+    let target_guid = f
+        .app
+        .gateway
+        .created_folder_guid("alice@example.com", "INBOX.Existing")
+        .unwrap();
+    let form = format!("csrf_token={csrf}&source=INBOX.Alpha&source_guid={source_guid}&source_parent_guid=1234567890abcdef1234567890abcdef&parent_guid={target_guid}&destination_parent=INBOX.Existing&action=review");
+    let apply = form.replace("action=review", "action=rename&confirm=rename");
+    let get = f.run(
+        "GET",
+        "/settings/folders/move?source=INBOX.Alpha",
+        "",
+        "FolderCreateValid",
+        false,
+    );
+    assert_eq!(get.response.status_code, 200);
+    assert!(body_text(&get).contains("Review move"));
+    assert!(body_text(&get).contains("value=\"INBOX.Existing\""));
+    let review = f.run(
+        "POST",
+        "/settings/folders/move",
+        &form,
+        "FolderCreateValid",
+        false,
+    );
+    assert_eq!(review.response.status_code, 200);
+    assert!(body_text(&review).contains("INBOX.Existing.Alpha"));
+    assert!(body_text(&review).contains("Confirm move folder"));
+    for (bad, agent, bob) in [
+        (apply.replace(csrf, "wrong"), "FolderCreateValid", false),
+        (
+            apply.replace(&source_guid, &"c".repeat(32)),
+            "FolderCreateValid",
+            false,
+        ),
+        (
+            apply.replace("source_parent_guid=123", "source_parent_guid=bad123"),
+            "FolderCreateValid",
+            false,
+        ),
+        (
+            apply.replace(
+                &format!("parent_guid={target_guid}"),
+                &format!("parent_guid={}", "d".repeat(32)),
+            ),
+            "FolderCreateValid",
+            false,
+        ),
+        (
+            apply.replace(
+                "destination_parent=INBOX.Existing",
+                "destination_parent=INBOX.Sent",
+            ),
+            "FolderCreateValid",
+            false,
+        ),
+        (apply.clone(), "FolderTreeWrongOwner", false),
+        (apply.clone(), "FolderCreateValid", true),
+        (
+            apply.replace("&confirm=rename", ""),
+            "FolderCreateValid",
+            false,
+        ),
+    ] {
+        assert!(
+            f.run("POST", "/settings/folders/move", &bad, agent, bob)
+                .response
+                .status_code
+                >= 400
+        );
+        assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    }
+    let result = f.run(
+        "POST",
+        "/settings/folders/move",
+        &apply,
+        "FolderCreateValid",
+        false,
+    );
+    assert_eq!(result.response.status_code, 303);
+    assert_eq!(
+        f.app
+            .gateway
+            .created_folder_guid("alice@example.com", "INBOX.Existing.Alpha"),
+        Some(source_guid)
+    );
+    assert!(f
+        .app
+        .gateway
+        .created_folder_guid("alice@example.com", "INBOX.Alpha")
+        .is_none());
+    assert_eq!(f.app.gateway.renamed_folders.lock().unwrap().len(), 1);
+}
+
+#[test]
+fn folder_move_unknown_original_action_is_inspected_without_redispatch() {
+    let f = Fixture::new();
+    let csrf = &StubGateway::validated_session().record.csrf_token;
+    let source = f
+        .app
+        .gateway
+        .created_folder_guid("alice@example.com", "INBOX.Alpha")
+        .unwrap();
+    let parent = f
+        .app
+        .gateway
+        .created_folder_guid("alice@example.com", "INBOX.Existing")
+        .unwrap();
+    let apply = format!("csrf_token={csrf}&source=INBOX.Alpha&source_guid={source}&source_parent_guid=1234567890abcdef1234567890abcdef&parent_guid={parent}&destination_parent=INBOX.Existing&action=rename&confirm=rename");
+    let result = f.run(
+        "POST",
+        "/settings/folders/move",
+        &apply,
+        "FolderCreateRenameUnknownCommitted",
+        false,
+    );
+    assert_eq!(result.response.status_code, 503);
+    assert_eq!(f.app.gateway.renamed_folders.lock().unwrap().len(), 1);
+    assert_eq!(
+        f.run(
+            "POST",
+            "/settings/folders/move",
+            &apply,
+            "FolderCreateValid",
+            false
+        )
+        .response
+        .status_code,
+        409
+    );
+    let checked = f.run(
+        "POST",
+        "/settings/folders/rename/check",
+        &format!("csrf_token={csrf}&confirm=check"),
+        "FolderCreateValid",
+        false,
+    );
+    assert_eq!(checked.response.status_code, 303);
+    assert_eq!(f.app.gateway.renamed_folders.lock().unwrap().len(), 1);
+    assert!(f
+        .app
+        .gateway
+        .pending_folder_rename(&StubGateway::validated_session())
+        .unwrap()
+        .is_none());
+}
+#[test]
+fn folder_rename_route_review_confirmation_csrf_stale_unknown_and_continuity() {
+    let f = Fixture::new();
+    let form = f.form();
+    let apply = form.replace("action=review", "action=rename&confirm=rename");
+    let get = f.run(
+        "GET",
+        "/settings/folders/rename?source=INBOX.Alpha",
+        "",
+        "FolderCreateValid",
+        false,
+    );
+    assert_eq!(get.response.status_code, 200);
+    assert!(body_text(&get).contains("Review rename"));
+    assert_eq!(
+        f.run(
+            "POST",
+            "/settings/folders/rename",
+            &form,
+            "FolderCreateValid",
+            false
+        )
+        .response
+        .status_code,
+        200
+    );
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    for (body, agent, code) in [
+        (
+            apply.replace("csrf_token=", "csrf_token=wrong"),
+            "FolderCreateValid",
+            403,
+        ),
+        (
+            apply.replace("confirm=rename", "confirm=no"),
+            "FolderCreateValid",
+            400,
+        ),
+        (
+            apply.replace("leaf=Beta", "leaf=Existing"),
+            "FolderCreateValid",
+            409,
+        ),
+        (
+            apply.replace(
+                "parent_guid=1234567890abcdef1234567890abcdef",
+                &format!("parent_guid={}", "b".repeat(32)),
+            ),
+            "FolderCreateValid",
+            409,
+        ),
+        (
+            apply.replace("source_guid=", "source_guid=wrong"),
+            "FolderCreateValid",
+            409,
+        ),
+        (apply.clone() + "&leaf=Gamma", "FolderCreateValid", 403),
+        (apply.clone(), "FolderTreeStatusWrongOwner", 503),
+        (apply.clone(), "FolderTreeWrongOwner", 503),
+        (
+            apply.clone() + "&account=bob%40example.com",
+            "FolderCreateValid",
+            400,
+        ),
+    ] {
+        let r = f.run("POST", "/settings/folders/rename", &body, agent, false);
+        assert_eq!(r.response.status_code, code, "{agent}/{body}");
+        assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+        if agent == "FolderCreateRenameUnknown" {
+            assert!(!body_text(&r).contains("action=\"/settings/folders/rename\""));
+            assert!(body_text(&r).contains("href=\"/settings?section=copies\""));
+        }
+    }
+    let unicode = apply.replace(
+        "leaf=Beta",
+        &format!("leaf={}", url_encode("Élodie & Office")),
+    );
+    let r = f.run(
+        "POST",
+        "/settings/folders/rename",
+        &unicode,
+        "FolderCreateValid",
+        false,
+    );
+    assert_eq!(r.response.status_code, 303);
+    let renamed = f.app.gateway.renamed_folders.lock().unwrap();
+    assert_eq!(renamed.len(), 1);
+    assert_eq!(renamed[0].destination(), "INBOX.Élodie & Office");
+    assert_eq!(renamed[0].account(), "alice@example.com");
+    let guid = renamed[0].source_guid().to_owned();
+    drop(renamed);
+    assert_eq!(
+        f.app
+            .gateway
+            .created_folder_guid("alice@example.com", "INBOX.Élodie & Office"),
+        Some(guid)
+    );
+    assert_eq!(
+        f.run(
+            "POST",
+            "/settings/folders/rename",
+            &apply,
+            "FolderCreateValid",
+            false
+        )
+        .response
+        .status_code,
+        409
+    );
+}
+#[test]
+fn folder_rename_route_protected_destinations_and_accounts() {
+    for role in ["archive", "bin", "sent"] {
+        let f = Fixture::new();
+        let form = f.form();
+        match role {
+            "archive" => {
+                f.app
+                    .gateway
+                    .settings_store
+                    .as_ref()
+                    .unwrap()
+                    .save_archive("alice@example.com", Some("INBOX.Alpha"))
+                    .unwrap();
+            }
+            "bin" => {
+                f.app
+                    .gateway
+                    .bin_store
+                    .as_ref()
+                    .unwrap()
+                    .save("alice@example.com", 0, "INBOX.Alpha")
+                    .unwrap();
+            }
+            "sent" => {
+                f.app
+                    .gateway
+                    .sent_location_store
+                    .as_ref()
+                    .unwrap()
+                    .save(
+                        "alice@example.com",
+                        0,
+                        "INBOX.Alpha",
+                        &f.app
+                            .gateway
+                            .created_folder_guid("alice@example.com", "INBOX.Alpha")
+                            .unwrap(),
+                    )
+                    .unwrap();
+            }
+            _ => unreachable!(),
+        }
+        assert_eq!(
+            f.run(
+                "POST",
+                "/settings/folders/rename",
+                &form,
+                "FolderCreateValid",
+                false
+            )
+            .response
+            .status_code,
+            409,
+            "{role}"
+        );
+        assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    }
+    let f = Fixture::new();
+    let r = f.run(
+        "POST",
+        "/settings/folders/rename",
+        &f.form()
+            .replace("action=review", "action=rename&confirm=rename")
+            .replace(
+                &StubGateway::validated_session().record.csrf_token,
+                &"c".repeat(64),
+            ),
+        "FolderCreateValid",
+        true,
+    );
+    assert_ne!(r.response.status_code, 303);
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    let r = f.run(
+        "GET",
+        "/settings?section=copies&folder=INBOX.Alpha",
+        "",
+        "FolderCreateValid",
+        false,
+    );
+    assert_eq!(r.response.status_code, 200);
+    assert!(body_text(&r).contains("/settings/folders/rename?source=INBOX.Alpha"));
+    assert_eq!(
+        f.run(
+            "GET",
+            "/settings/folders/rename?source=INBOX",
+            "",
+            "FolderCreateValid",
+            false
+        )
+        .response
+        .status_code,
+        503
+    );
+}
+#[test]
+fn folder_rename_runtime_preferences_share_nonwaiting_admission() {
+    let root = temp_dir(&format!(
+        "folder-rename-admission-{}",
+        crate::draft::generate_draft_id().unwrap()
+    ));
+    let gateway = RuntimeBrowserGateway::for_test(&root);
+    let session = StubGateway::validated_session();
+    let context = AuthenticationContext::new(
+        AuthenticationPolicy::default(),
+        "req-rename",
+        "127.0.0.1",
+        "Fixture",
+    )
+    .unwrap();
+    let guard = crate::folder_rename::settings_gate(
+        &gateway.settings_dir,
+        &session.record.canonical_username,
+    )
+    .unwrap();
+    assert!(gateway
+        .update_bin_preference(&session, 0, "INBOX.User")
+        .is_err());
+    assert!(gateway
+        .save_sent_location_preference(&session, 0, "INBOX.User", &"a".repeat(32))
+        .is_err());
+    assert!(matches!(
+        gateway
+            .update_content_setting(
+                &context,
+                &session,
+                HtmlDisplayPreference::PreferSanitizedHtml
+            )
+            .decision,
+        BrowserSettingsUpdateDecision::Denied { .. }
+    ));
+    assert!(matches!(
+        gateway
+            .update_archive_setting(&context, &session, Some("INBOX.User"))
+            .decision,
+        BrowserSettingsUpdateDecision::Denied { .. }
+    ));
+    assert!(matches!(
+        gateway
+            .update_settings(
+                &context,
+                &session,
+                HtmlDisplayPreference::PreferSanitizedHtml,
+                Some("INBOX.User")
+            )
+            .decision,
+        BrowserSettingsUpdateDecision::Denied { .. }
+    ));
+    assert!(crate::folder_rename::settings_gate(
+        &gateway.settings_dir,
+        &session.record.canonical_username
+    )
+    .is_err());
+    assert!(crate::folder_rename::settings_gate(&gateway.settings_dir, "bob@example.com").is_ok());
+    drop(guard);
+    assert!(crate::folder_rename::settings_gate(
+        &gateway.settings_dir,
+        &session.record.canonical_username
+    )
+    .is_ok());
+    assert!(gateway
+        .update_bin_preference(&session, 0, "INBOX.User")
+        .is_ok());
+    assert!(gateway
+        .save_sent_location_preference(&session, 0, "INBOX.User", &"a".repeat(32))
+        .is_ok());
+    assert_eq!(
+        gateway
+            .update_archive_setting(&context, &session, Some("INBOX.User"))
+            .decision,
+        BrowserSettingsUpdateDecision::Updated
+    );
+    assert_eq!(
+        gateway
+            .update_content_setting(
+                &context,
+                &session,
+                HtmlDisplayPreference::PreferSanitizedHtml
+            )
+            .decision,
+        BrowserSettingsUpdateDecision::Updated
+    );
+    assert_eq!(
+        gateway
+            .update_settings(
+                &context,
+                &session,
+                HtmlDisplayPreference::PreferSanitizedHtml,
+                Some("INBOX.User")
+            )
+            .decision,
+        BrowserSettingsUpdateDecision::Updated
+    );
+
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn folder_rename_route_rechecks_changed_roles_and_refuses_missing_authority() {
+    let mut f = Fixture::new();
+    let form = f.form();
+    assert_eq!(
+        f.run(
+            "POST",
+            "/settings/folders/rename",
+            &form,
+            "FolderCreateValid",
+            false
+        )
+        .response
+        .status_code,
+        200
+    );
+    f.app
+        .gateway
+        .bin_store
+        .as_ref()
+        .unwrap()
+        .save("alice@example.com", 0, "INBOX.Beta")
+        .unwrap();
+    let confirmed = form.replace("action=review", "action=rename&confirm=rename");
+    assert_eq!(
+        f.run(
+            "POST",
+            "/settings/folders/rename",
+            &confirmed,
+            "FolderCreateValid",
+            false
+        )
+        .response
+        .status_code,
+        409
+    );
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    f.app.gateway.sent_location_store = None;
+    assert_eq!(
+        f.run(
+            "POST",
+            "/settings/folders/rename",
+            &confirmed,
+            "FolderCreateValid",
+            false
+        )
+        .response
+        .status_code,
+        503
+    );
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+}
+#[test]
+fn folder_rename_pending_result_is_account_bound_and_never_retried() {
+    for (agent, confirmed) in [
+        ("FolderCreateRenameUnknown", false),
+        ("FolderCreateRenameUnknownCommitted", true),
+    ] {
+        let f = Fixture::new();
+        let apply = f
+            .form()
+            .replace("action=review", "action=rename&confirm=rename");
+        let unknown = f.run("POST", "/settings/folders/rename", &apply, agent, false);
+        assert_eq!(unknown.response.status_code, 503);
+        assert!(!body_text(&unknown).contains("action=\"/settings/folders/rename\""));
+        let session = StubGateway::validated_session();
+        let stored = f
+            .app
+            .gateway
+            .pending_folder_rename(&session)
+            .unwrap()
+            .unwrap();
+        assert_eq!(stored.destination(), "INBOX.Beta");
+        assert_eq!(
+            f.run(
+                "POST",
+                "/settings/folders/rename",
+                &apply,
+                "FolderCreateValid",
+                false
+            )
+            .response
+            .status_code,
+            409
+        );
+        let before = f.app.gateway.renamed_folders.lock().unwrap().len();
+        let fields = format!("csrf_token={}&confirm=check", session.record.csrf_token);
+        assert_eq!(
+            f.run(
+                "POST",
+                "/settings/folders/rename/check",
+                &fields.replace("csrf_token=", "csrf_token=wrong"),
+                "FolderCreateValid",
+                false
+            )
+            .response
+            .status_code,
+            403
+        );
+        assert_eq!(
+            f.run(
+                "POST",
+                "/settings/folders/rename/check",
+                &(fields.clone() + "&result=renamed"),
+                "FolderCreateValid",
+                false
+            )
+            .response
+            .status_code,
+            400
+        );
+        let result = f.run(
+            "POST",
+            "/settings/folders/rename/check",
+            &fields,
+            "FolderCreateValid",
+            false,
+        );
+        assert_eq!(
+            result.response.status_code,
+            if confirmed { 303 } else { 409 }
+        );
+        assert_eq!(f.app.gateway.renamed_folders.lock().unwrap().len(), before);
+        assert_eq!(
+            f.app
+                .gateway
+                .pending_folder_rename(&session)
+                .unwrap()
+                .is_none(),
+            confirmed
+        );
+        let mut bob = session.clone();
+        bob.record.canonical_username = "bob@example.com".into();
+        assert!(f.app.gateway.pending_folder_rename(&bob).unwrap().is_none());
+        if !confirmed {
+            assert!(body_text(&result).contains("A proven settled helper result is required"));
+            assert!(crate::folder_rename::settings_gate(
+                f.app
+                    .gateway
+                    .settings_store
+                    .as_ref()
+                    .unwrap()
+                    .settings_path_for_username("alice@example.com")
+                    .parent()
+                    .unwrap(),
+                "alice@example.com"
+            )
+            .is_err());
+        }
+    }
+}
+#[test]
+fn folder_rename_pending_record_restart_and_corruption_fail_closed() {
+    let f = Fixture::new();
+    let account = "alice@example.com";
+    let directory = f
+        .app
+        .gateway
+        .settings_store
+        .as_ref()
+        .unwrap()
+        .settings_path_for_username(account)
+        .parent()
+        .unwrap()
+        .to_path_buf();
+    let request = crate::folder_rename::RenameFolderRequest::new(
+        account,
+        "INBOX.Alpha",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        "Beta",
+    )
+    .unwrap();
+    let mut lease = crate::folder_rename::settings_gate(&directory, account).unwrap();
+    lease.begin(&request).unwrap();
+    drop(lease);
+    assert!(crate::folder_rename::settings_gate(&directory, account).is_err());
+    let recovered = crate::folder_rename::role_lease(&directory, account).unwrap();
+    assert_eq!(recovered.pending(), Some(&request));
+    drop(recovered);
+    let file = crate::private_account_file::PrivateAccountFile::new(
+        directory.clone(),
+        "osmap-folder-roles-v1",
+        4096,
+    );
+    let corrupt = file.lock(account).unwrap();
+    corrupt
+        .write(b"{\"version\":1,\"account\":\"bob@example.com\",\"pending\":null}")
+        .unwrap();
+    drop(corrupt);
+    assert!(crate::folder_rename::role_lease(&directory, account).is_err());
+    assert!(crate::folder_rename::settings_gate(&directory, account).is_err());
+}
+
+#[test]
+fn folder_rename_lost_settled_refusal_clears_only_current_unchanged_identity() {
+    let f = Fixture::new();
+    let apply = f
+        .form()
+        .replace("action=review", "action=rename&confirm=rename");
+    let result = f.run(
+        "POST",
+        "/settings/folders/rename",
+        &apply,
+        "FolderCreateRenameRefusedLost",
+        false,
+    );
+    assert_eq!(result.response.status_code, 503);
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    let session = StubGateway::validated_session();
+    assert!(f
+        .app
+        .gateway
+        .pending_folder_rename(&session)
+        .unwrap()
+        .is_some());
+    let fields = format!("csrf_token={}&confirm=check", session.record.csrf_token);
+    let checked = f.run(
+        "POST",
+        "/settings/folders/rename/check",
+        &fields,
+        "FolderCreateValid",
+        false,
+    );
+    assert_eq!(checked.response.status_code, 200);
+    assert!(body_text(&checked).contains("finished without attempting a rename"));
+    assert!(f
+        .app
+        .gateway
+        .pending_folder_rename(&session)
+        .unwrap()
+        .is_none());
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    assert!(crate::folder_rename::settings_gate(
+        f.app
+            .gateway
+            .settings_store
+            .as_ref()
+            .unwrap()
+            .settings_path_for_username("alice@example.com")
+            .parent()
+            .unwrap(),
+        "alice@example.com"
+    )
+    .is_ok());
+}
+
+#[test]
+fn folder_rename_preserves_private_labels_snooze_and_idempotent_reconciliation() {
+    use crate::labels::{LabelChange, MessageIdentity as LabelIdentity};
+    use crate::snooze::MessageIdentity as SnoozeIdentity;
+    for mode in [0, 1, 2] {
+        let uncertain = mode != 0;
+        let f = Fixture::new();
+        let account = "alice@example.com";
+        let guid = f
+            .app
+            .gateway
+            .created_folder_guid(account, "INBOX.Alpha")
+            .unwrap();
+        let row = MessageSummary {
+            uid: 17,
+            mailbox_name: "INBOX.Alpha".into(),
+            metadata: Some(crate::message_metadata::MessageMetadata {
+                threading: None,
+                attachments: None,
+                protection: crate::message_metadata::MessageProtection::Unknown,
+                version: crate::message_metadata::MessageVersion::new(
+                    guid.clone(),
+                    "message-17".into(),
+                )
+                .unwrap(),
+                attachment_count: Some(0),
+                preview: None,
+            }),
+            to: None,
+            flags: vec![],
+            date_received: String::new(),
+            size_virtual: 77,
+            subject: None,
+            from: None,
+        };
+        let labels = f.app.gateway.labels_store.as_ref().unwrap();
+        let snooze = f.app.gateway.snooze_store.as_ref().unwrap();
+        let original = LabelIdentity::from_summary(account, account, "INBOX.Alpha", &row).unwrap();
+        let created = labels
+            .change(account, 0, LabelChange::Create("Keep me"))
+            .unwrap();
+        let id = created.labels()[0].id().to_owned();
+        let mut attached = labels
+            .change(
+                account,
+                created.revision(),
+                LabelChange::Attach {
+                    id: &id,
+                    message: &original,
+                },
+            )
+            .unwrap();
+        let snooze_identity =
+            SnoozeIdentity::from_summary(account, account, "INBOX.Alpha", &row).unwrap();
+        let now = f.app.gateway.snooze_clock();
+        let before = snooze
+            .set(account, &snooze_identity, 0, now + 600, now)
+            .unwrap();
+        let mut other = row.clone();
+        other.uid = 18;
+        other.metadata.as_mut().unwrap().version =
+            crate::message_metadata::MessageVersion::new("f".repeat(32), "other-message".into())
+                .unwrap();
+        let other_label =
+            LabelIdentity::from_summary(account, account, "INBOX.Alpha", &other).unwrap();
+        attached = labels
+            .change(
+                account,
+                attached.revision(),
+                LabelChange::Attach {
+                    id: &id,
+                    message: &other_label,
+                },
+            )
+            .unwrap();
+        let other_snooze =
+            SnoozeIdentity::from_summary(account, account, "INBOX.Alpha", &other).unwrap();
+        snooze
+            .set(account, &other_snooze, before.revision(), now + 700, now)
+            .unwrap();
+        let bob_original =
+            LabelIdentity::from_summary("bob@example.com", "bob@example.com", "INBOX.Alpha", &row)
+                .unwrap();
+        let bob_labels = labels
+            .change("bob@example.com", 0, LabelChange::Create("Bob only"))
+            .unwrap();
+        let bob_id = bob_labels.labels()[0].id().to_owned();
+        let bob_labels = labels
+            .change(
+                "bob@example.com",
+                bob_labels.revision(),
+                LabelChange::Attach {
+                    id: &bob_id,
+                    message: &bob_original,
+                },
+            )
+            .unwrap();
+        let bob_snooze_identity =
+            SnoozeIdentity::from_summary("bob@example.com", "bob@example.com", "INBOX.Alpha", &row)
+                .unwrap();
+        let bob_snooze = snooze
+            .set("bob@example.com", &bob_snooze_identity, 0, now + 900, now)
+            .unwrap();
+        let apply = f
+            .form()
+            .replace("action=review", "action=rename&confirm=rename");
+        let result = f.run(
+            "POST",
+            "/settings/folders/rename",
+            &apply,
+            match mode {
+                0 => "FolderCreateValid",
+                1 => "FolderCreateRenameUnknownCommitted",
+                _ => "FolderCreateRenameMetadataFailure",
+            },
+            false,
+        );
+        assert_eq!(
+            result.response.status_code,
+            if uncertain { 503 } else { 303 }
+        );
+        if uncertain {
+            let fields = format!(
+                "csrf_token={}&confirm=check",
+                StubGateway::validated_session().record.csrf_token
+            );
+            assert_eq!(
+                f.run(
+                    "POST",
+                    "/settings/folders/rename/check",
+                    &fields,
+                    "FolderCreateValid",
+                    false
+                )
+                .response
+                .status_code,
+                303
+            );
+        }
+        let mut destination = row.clone();
+        destination.mailbox_name = "INBOX.Beta".into();
+        let dest =
+            LabelIdentity::from_summary(account, account, "INBOX.Beta", &destination).unwrap();
+        let current = labels.load(account).unwrap();
+        assert_eq!(current.labels_for(&dest).unwrap()[0].id(), id);
+        assert_eq!(current.labels_for(&other_label).unwrap()[0].id(), id);
+        assert!(current.labels_for(&original).unwrap().is_empty());
+        assert_eq!(current.revision(), attached.revision() + 1);
+        let after = snooze.load(account, now).unwrap();
+        assert_eq!(after.markers()[0].identity().folder(), "INBOX.Beta");
+        assert_eq!(after.markers()[0].identity().mailbox_guid(), guid);
+        assert_eq!(after.markers()[0].identity().message_guid(), "message-17");
+        assert_eq!(after.markers()[0].identity().uid(), 17);
+        assert_eq!(after.markers()[0].until(), before.markers()[0].until());
+        assert_eq!(after.markers()[1].identity(), &other_snooze);
+        let rename = f.app.gateway.renamed_folders.lock().unwrap()[0].clone();
+        labels.reconcile_folder_rename(&rename).unwrap();
+        snooze.reconcile_folder_rename(&rename).unwrap();
+        assert_eq!(labels.load(account).unwrap().revision(), current.revision());
+        assert_eq!(
+            snooze.load(account, now).unwrap().revision(),
+            after.revision()
+        );
+        assert_eq!(labels.load("bob@example.com").unwrap(), bob_labels);
+        assert_eq!(snooze.load("bob@example.com", now).unwrap(), bob_snooze);
+    }
+}

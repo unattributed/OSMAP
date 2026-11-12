@@ -1,15 +1,230 @@
 # Known Limitations
 
-## Full-functional UX epic planning boundary
+Current S04-04 boundary: obsd1 runs matching installed code and the selected
+owner account is now enabled by the native rollout selector for local browser
+UAT. This does not complete recovery qualification or authorize changing the
+owner's credentials. Current LOCAL auth/mailbox routing is unchanged and does
+not qualify Toronto mailbox synchronization. The old two-terminal fixture flow
+is withdrawn and disabled; its fixture-specific cleanup/signing actors must not
+be reused for owner state. Full T04/T05/T08/T09 remain NOT_RUN. The historical
+fixture/preparation details below predate the owner-selector change.
+
+S04-04 has source/native-tested governed factor-recovery components and matching
+installed Web/helper executables. The disposable fixture now has a separately
+initialized private password, human-enrolled initial factor and independently
+verified factor custody/digest. Its temporary LOCAL Web profile and reserved-only
+native authority are active with epoch0/active and no recovery case; all54 loaded
+environment fields match and17 roles passed. The whole-Web auth/mailbox route is
+local during this controlled interval; the prior bridge profile is backed up for
+guarded restoration. Two actual baseline logins and nine controls passed, but
+the aggregate remains UNCONFIRMED after a final SSH observation failure. A new
+bounded current-state idempotency check passed separately. The fixture factor
+is EXPOSED; the human classified isolated factor exposure with no broader
+suspicion, requiring the existing fresh human-signed recovery path. One live
+cookie passed pre-containment GET200; the other original session had already
+idle-expired. Native containment, actual replacement/refusal/restart, complete
+recovery and independent human acceptance remain unqualified. The first human
+recovery command stopped pre-begin; authoritative Active0/no-case/original-factor
+readback and post-refusal preservation passed. A separately reproduced nested
+helper path-reset defect was corrected; focused source tests and corrected actual
+read-only snapshot passed. Its earlier dry-run did not
+exercise that boundary. The exposed replacement candidate cannot be reused;
+transcript-safe QR display passed focused source/local controls, with actual
+human GUI/recovery still pending. Manual fixture initialization and
+factor enrollment do not qualify product lost-password recovery. Lost-password,
+missing-factor and already-partial cases continue to require manual review.
+OSMAP admission/browser-session containment does not prove termination of public
+IMAP/SMTP connections. See `UX_SLICE_S04_04.md`.
+
+2026-10-26 — S04-03 is engineering-qualified for local obsd1 development; owner
+acceptance remains pending. Recovery-contact delivery is enabled only for the
+configured local mail domain. This slice does not enable external recovery mail,
+identity adjudication, password reset or factor reset (S04-04). Native05's full
+test remains failed after a transport interruption; only its six observed
+contact-specific controls and separate successful recovery/readback are used for
+qualification, with unchanged accepted common-session evidence reused explicitly.
+See [S04-03 qualification](UX_SLICE_S04_03.md).
+
+## Current S04-02 limits — 2026-10-19
+
+Password change is not ready for installed acceptance or operator UAT. Native
+stock journey46 failed at helper startup (stage5), with zero HTTP and zero
+ordered backend events. Its helper disposition remained unconfirmed even though
+both SSH groups were reaped/gone and the frontend reported its request producer
+stopped. Separate owned observations/cleanup never turn that functional FAIL
+into PASS; use the current execution ledger for their exact disposition scope.
+Both native qualification flags remain false and the password form is disabled.
+
+The selected stock adapter retains OSMAP account epoch/pending/CAS and browser
+session revocation, requires authoritative old-password rejection/new-password
+acceptance and other-account preservation, and requires a verified disabled
+authentication cache. It performs no cache flush and does not force existing
+external IMAP/SMTP authenticated sessions to close. Those sessions may remain.
+It excludes the retired global mail-ingress fence, plugin, proxy/Generation and
+public mail lifecycle/configuration mutation design. New tests must preserve
+public Dovecot, Postfix and MariaDB availability without those operations.
+
+All twenty S04-02 obligations and nine scenario identities remain tracked; a
+source, build, endpoint or cleanup PASS is not complete scenario qualification.
+No new functional retry, release/WSTG PASS or scope acceptance is asserted here.
+The historical stops and earlier outcomes below are retained as provenance,
+not current assignments. [Current Project Status](CURRENT_PROJECT_STATUS.md) and
+[the execution ledger](UX_EXECUTION_LEDGER.md) govern current results.
+
+## Historical bounded resumption — 2026-10-18
+
+The operator resumed S04-02 only and assigned its implementation and review to
+subagents. S04_readiness owns the single canonical/host/Git execution queue;
+root coordinates, password_delivery_engineer authors isolated changes and
+account_backend independently reviews. Other stopped slices do not resume. The actual native SQL/hash
+body and separate exact-owned fixture cleanup are independently accepted as a
+bounded prerequisite; the original outer qualifier remains FAIL. Actual
+production Startup/Primary/Control execution and the complete installed
+password-change journey remain unqualified. The new source consumer requires
+measured native capabilities; source review does not activate the form or
+qualify the actual service/configuration/namespace.
+Normal signed source review before any push or synchronization remains required;
+the operator explicitly authorized normal signed UX-branch push and reversible
+implementation on obsd1 against the authoritative backend.
+
+The current Primary-only source graph accepts the mandatory26 files without
+Control, and binds optional Control immutably when present. Local policy tests
+pass; actual service admission and loaded-byte qualification remain open.
+The controlled service experiment did not reach helper/client authentication;
+an anvil-listener live reload lost master continuity and a fresh observation
+confirmed Dovecot stopped. The original configuration and service status were
+subsequently restored and the exact temporary fixture disposed of, independently
+reviewed as de9f7bf4/89cfd318. Original failed/uncertain outcomes remain recorded.
+Do not add or change anvil listeners through a live reload. No full password
+journey or owner usability claim follows from source checks or service recovery.
+
+The later Primary-only case3 reached helper/client startup but failed at its
+first wrong-password request. The initiating cause remains unknown; correct-password
+admission and password mutation were not reached. Its retained fixture was safely
+disposed by exact recovery245c4a0b, independently accepted65e530a7. The original
+failed/uncertain receipt remains historical. The reviewed diagnostic source adds
+only static, bounded failure stages to the existing authority checks; it does not
+relax those checks or prove an actual native request. Launcher mask correction is
+source-only until a fresh correctly bound changed native case. The form stays disabled.
+
+A later diagnostic-only same-held stream measured eligible reciprocal workers0→1
+in0.424 seconds, with owned rollback independently accepted2f1e89bb. Reviewed
+source769e7c51 now waits only for a zero-worker Primary snapshot under the original
+deadline and an initial3-second cap. Multiple workers and metadata errors still
+refuse immediately; all final authority checks and Control one-shot behavior remain.
+This source repair is not yet a successful native admission or installed password
+workflow; historical case3/case4 failures and their unknown exact causes remain.
+
+## Historical operator stop — 2026-10-17
+
+Development, live/native qualification and deployment are stopped by explicit
+operator direction. Only documentation preservation, signed repository commits
+and synchronization of `feat/ux-completion-20260929` are currently authorized.
+S04-02 password change and S04 remain incomplete; the installed password-change
+control remains disabled. Historical work orders do not authorize resumption.
+See [the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md) and
+[Current Project Status](CURRENT_PROJECT_STATUS.md) for current results and limits.
+
+## Historical account and protected-mail snapshot — 2026-10-17
+
+S04-02 password change has no installed obsd1-to-Toronto workflow PASS. The
+then-latest changed integration HTTP25 failed at the initial controlled Bob login
+with401; no mutation was reached and the underlying cause is unknown. A
+separate stock private-auth component passed8 controls. These results do not
+permit enabling the live form. Settings acceptance, recovery contacts and
+governed recovery remain incomplete.
+
+The October14 operator evidence establishes encrypted Proton receipt/readable
+body and reported Bcc privacy for the first message, plus readable Thunderbird
+receipt for a second message. It does not establish the entire protected-mail
+round trip, a verified signature, complete key lifecycle or OSMAP encrypted Sent
+body readability. Earlier October1 observations below are historical and do
+not supersede those later bounded results. No new operational health or release
+qualification was performed for this documentation update.
+
+## Current UX folder lifecycle boundary
+
+S08-02 is engineering-delivered with matching signedc4e/application324b and
+independent original17 review. The current distinct13-request installed journey
+observes successful populated Bin and Restore replies at3937ms/4007ms, exact
+three-folder/message/attachment continuity, selected facts, reloaded label badges
+and own logical/session cleanup. Current Runtime batch delegation has a real
+counterfactual wire regression and matching native proof. Human Folders usability
+and the controlled attachment download now PASS; independent review permits
+S08-02 functional acceptance. S09 final-reference visual/accessibility remains
+NOT RUN; broader S08/epic/release
+acceptance remains OPEN.
+
+Historical Bin/Restore client replies were unobserved and remain failures;
+later exact durable observations do not retrospectively pass them. Distinct new
+intents use fresh recorded nonces, never automatic replay. Native injected
+partial-placement/restart/no-witness/no-replay controls and safe UNKNOWN retention
+are bounded evidence, not actual process-crash/quiescence proof. Old failed
+fixture cleanup is retained as unconfirmed. Reader Seen side effects were not
+separately assessed. No provider mail, private-key or operator-policy action
+was part of the current folder qualification. See UX_EXECUTION_LEDGER.md for
+exact per-control evidence and the minimal nonmutating human handoff.
+
+## Historical deployment observations and UX execution boundary
+
+The October 1 obsd1 development deployment has native-qualified public
+inventory and administration helpers. PAGE21 exposes authenticated public-key
+inspection, import/removal, binding and policy controls. Their browser mutations
+still require human acceptance; the deployed read-only confined client probe
+does not establish that acceptance. Import alone never establishes account
+binding or recipient trust. The Duncan mailbox private key was imported into
+its isolated obsd1 helper home. The repaired terminal Pinentry handoff has now
+passed real-account signing/verification, tamper refusal, self-encryption/
+decryption and Proton public-key encryption through the authenticated native
+helper. Duncan's account binding is present at revision 2. A real encrypted
+Proton delivery round trip and browser acceptance remain unqualified. The
+isolated agent cache remains bounded at 300 seconds. The crypto service is
+running on obsd1; automatic startup is tracked separately in the ledger.
+The OpenBSD native fixture and controlled gateway-to-wire proofs
+establish bounded source behavior, not the full release assurance profile or
+human UAT. The `NATIVE_CONFINEMENT_QUALIFIED` source constant records the
+native helper qualification; it does not imply this deployment has private-key
+readiness. See `UX_EXECUTION_LEDGER.md` for the exact assessed commit and host
+evidence.
+
+The authoritative-backend continuation keeps the browser on obsd1 and bridges
+password authentication and the account-bound Rust mailbox helper to Toronto.
+This deployment preserves obsd1 TOTP/OpenPGP custody and its existing outbound
+SMTP relay. It does not put a public OSMAP frontend on Toronto, supply mailbox
+passwords, or qualify encrypted Proton delivery. Live native checks established
+authoritative reads in the confined web and synthetic remote append/search/view/
+flag/move/folder operations. The HTTP check used a disposable synthetic session;
+real password/TOTP browser login and the protected external-mail journey remain
+open. Loss of the
+configured remote helper must refuse rather than use obsd1's stale local store.
+
 
 The operator-requested `UX_FULL_FUNCTIONAL_EPIC.md` is a plan, not a
-functional-completion claim. Its 48 slices have not started. Runtime OpenPGP,
-new account workflows, ancillary mockup functions and every-page dark mode
-remain unqualified until their implementation and acceptance evidence exists.
-Browser-only decryption versus server-side helper custody, and pane-only
-updates versus the no-JavaScript policy, require explicit decisions before
-dependent implementation. Do not resolve either conflict by changing security
-claims or disabling gates. Roundcube removal is operator-reported, not proof
+functional-completion claim. S00 engineering intake is complete as of
+2026-09-29; S01 adds account-persisted light/dark/system appearance, the native
+navigation/account shell and shared responsive components. See
+`UX_EXECUTION_LEDGER.md` for verified signed progress. Runtime OpenPGP,
+new account workflows and ancillary mockup functions remain unqualified until
+their implementation and acceptance evidence exists. Appearance has local
+route/browser and process-restart evidence. The synthetic 360/768/1440 matrix,
+200% reflow simulation, keyboard, contrast and forced-colour checks do not
+constitute independent assistive-technology or WCAG conformance acceptance.
+Native host qualification and deployment remain separate. The protected-reader
+indicator is a truthful text badge; exact icon/picture fidelity remains in the
+later visual review. S02-04 implements `view=source` as authenticated, escaped
+stored headers and MIME body text. It is not byte-exact wire-message export:
+native retrieval/text decoding can normalize line endings or replace bytes.
+Source remains bounded to the existing 64 KiB headers and 512 KiB MIME body;
+decoded attachment downloads remain limited to 256 KiB and bounded filenames.
+New source/download links carry stored identities and refuse stale replacements.
+Unversioned read URLs, including legacy-helper download links, retain
+session-scoped current-UID semantics;
+they do not promise that an old UID still refers to the originally viewed mail.
+No source or download operation changes flags, decrypts content, or permits
+active HTML/remote content in the source page. Reply-all remains S03.
+`UX_DECISIONS.md` selects isolated host-helper cryptography and script-free full
+navigation with preserved context. These decisions are not implemented crypto
+or visual acceptance, and do not weaken existing gates. Roundcube removal is operator-reported, not proof
 that all pictured OSMAP functions already work.
 
 ## TOTP lifecycle continuation and host migration

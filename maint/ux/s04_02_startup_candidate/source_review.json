@@ -1,0 +1,50 @@
+{
+  "checks": {
+    "database_version": "Observation only; genuine identity, schema, grants, controlled-account, engine and unsafe-object checks preserved.",
+    "native_confinement": "No Rust confinement or service security behavior changed.",
+    "one_shot_and_cleanup": "Exclusive dispatch markers, original operation bounds, exact born-process handling and exact-owned cleanup preserved.",
+    "positive_and_negative_integration": "Actual current compiler receipt and binary bytes exercised through binder, producer, consumer and cleanup; failed admission and changed identity/profile refuse. Native observations in local tests are explicitly fixtures.",
+    "public_preservation": "No public mail service lifecycle/configuration changes or actual operator account changes added.",
+    "source_identity": "Binder verifies current signed source and compiler manifest; producer and consumer agree on actual current binary hashes and compiler receipt."
+  },
+  "decision": "CLEAR",
+  "evidence_sha256": {
+    "mariadb_focused_review": "8b1c371fa6baf5a1fe75509f581d806c4ccc99aaacdf8454edd816f7942df73b",
+    "native_build_outcome_review": "99be7579346b412c18f9bbefedbc0f3f9bc2c629a108bb27b0f657a156da893f",
+    "startup_independent_review": "ae7fa9417fbde7db0d384ca94398238a2740bc58db9b6528113b7abf9f750a6e"
+  },
+  "findings": [],
+  "limits": [
+    "Source review is distinct from native startup evidence.",
+    "Local integration fixtures do not establish native product acceptance.",
+    "No full T03 journey or production readiness claim."
+  ],
+  "native_result_reference": {
+    "T03": "NOT_RUN",
+    "final_disposition": "Controlled runtime effects and both historical/current staging directory pairs disposed; compiler artifacts retained for reuse.",
+    "milestone1": "PASS",
+    "timing_limit": "Paired socket publication time is measured; ParentPrepare and ParentSeal completion is separately established by handled EOF connections, without individual phase timestamps."
+  },
+  "reviewed_at": "2026-10-23T15:44:14.460157+00:00",
+  "reviewer": "independent source reviewer",
+  "schema": "osmap-milestone1-source-review-v1",
+  "scope": "MariaDB prerequisite semantics, current-source startup integration, exact-owned cleanup and focused tests",
+  "separate_independent_build_source_review": {
+    "decision": "CLEAR",
+    "note": "Build implementation authored by this source reviewer was independently reviewed by another agent.",
+    "sha256": "846b0e793dc776fb9f7777983fa8eda1827c43361b67bf0ea92a2b051c434864"
+  },
+  "sources": {
+    "bind_startup.py": "9a2cb72c961b07c19c63233b7483205e5af09301d263f303eef86db029c87ba3",
+    "cleanup_owned_stages.py": "54bbd19fb525cbabf34bf160e8692d48f5e95cb2825ff87c85518260c8c2e9c9",
+    "consume_startup.py": "3b1248c874b35a9235b2c44965d8e8c1322f4c448b49bd5ce69c7dbf39b76533",
+    "dispatch_startup.py": "c6e56382606fc9fe0eebecf2fec27965b2fd064d573adae4c6026424ed880bd7",
+    "remote_wrapper.py": "444aa0c0751dfa00edfd3975efc76ddda558ec7db5e1c3165d0f9f28a3f781bb",
+    "sources/backend/stock_schema.py": "51861add9908ac12efd4d648857d31f2fed852f1fcfb1bb46019995cc5a9cb90",
+    "stage_root.py": "b5a201f8abe3616c394b8623bc7250a9656e44aa66b8be74cf47016ca246a300",
+    "startup_only.py": "0f286ffef32a8f85c060c9055f218d750d7cef76d4a0123427de614c94b6828f",
+    "test_candidate.py": "e6a2cf2d29f1f5c8bbd6d7db0ca431777233331b2266ce68376cc5bb6f62de39",
+    "test_current_source.py": "ff2cb437c49f45c78cd3d8ef7f3a29548111675289beda1875832d315d36313c",
+    "test_startup_probe_cleanup.py": "6f93e6ecabd6442626f9aa4c7942a630751144c4d48ca8e883f02919d888915e"
+  }
+}

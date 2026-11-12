@@ -185,7 +185,7 @@ fn render_text_line(timestamp: u64, event: &LogEvent) -> String {
     line
 }
 
-fn format_unix_timestamp_utc(timestamp: u64) -> String {
+pub(crate) fn format_unix_timestamp_utc(timestamp: u64) -> String {
     const SECONDS_PER_DAY: u64 = 86_400;
 
     let days = (timestamp / SECONDS_PER_DAY) as i128;
@@ -196,6 +196,22 @@ fn format_unix_timestamp_utc(timestamp: u64) -> String {
     let second = seconds_of_day % 60;
 
     format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}Z")
+}
+
+/// Display-only signed timestamp conversion; UTC log serialization is unchanged.
+pub(crate) fn format_unix_timestamp_offset(timestamp: i64, offset_minutes: i16) -> Option<String> {
+    let local = i128::from(timestamp) + i128::from(offset_minutes) * 60;
+    let (year, month, day) = civil_from_unix_days(local.div_euclid(86_400));
+    if !(1..=9999).contains(&year) {
+        return None;
+    }
+    let seconds = local.rem_euclid(86_400);
+    Some(format!(
+        "{year:04}-{month:02}-{day:02} {:02}:{:02}:{:02}",
+        seconds / 3600,
+        seconds % 3600 / 60,
+        seconds % 60
+    ))
 }
 
 fn civil_from_unix_days(days_since_unix_epoch: i128) -> (i128, u32, u32) {

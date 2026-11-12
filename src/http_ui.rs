@@ -3,16 +3,54 @@
 //! Keeping these rendering helpers separate from routing reduces the amount of
 //! browser-facing template code inside the request parser and route logic.
 
+#[path = "folder_create_ui.rs"]
+mod folder_create_ui;
+#[path = "key_inventory_ui.rs"]
+pub(crate) mod key_inventory_ui;
+pub(crate) use folder_create_ui::render_folder_create;
+#[path = "folder_rename_ui.rs"]
+mod folder_rename_ui;
+pub(crate) use folder_rename_ui::{render_folder_rename, RenamePageModel};
+
+#[path = "snooze_ui.rs"]
+mod snooze_ui;
+pub(crate) use snooze_ui::{render_snooze_page, render_snoozed_page, SnoozePageModel};
+#[path = "notifications_ui.rs"]
+mod notifications_ui;
+pub(crate) use notifications_ui::render_notification_inbox;
+
+#[path = "authenticator_ui.rs"]
+mod authenticator_ui;
+#[path = "settings_ui.rs"]
+mod settings_ui;
 use crate::draft::DraftSummary;
+use crate::draft_list::{DraftFilter, DraftListView, DraftSort};
 use crate::html::TrustedHtml;
 use crate::http::BrowserVisibleSession;
 use crate::http_support::{escape_html, url_encode};
+use crate::mail_list::{
+    has_flag, sender_initials, AttachmentFilter, BulkSelection, ListViewState, MessageFilter,
+    ProtectionFilter, MAX_BULK_SELECTION,
+};
 use crate::mailbox::{
     MailboxEntry, MessageSearchField, MessageSearchResult, MessageSort, MessageSortColumn,
-    MessageSortDirection, MessageSummary, DEFAULT_MAX_MAILBOXES, DEFAULT_MAX_SEARCH_RESULTS,
+    MessageSortDirection, MessageSummary, DEFAULT_MAX_MAILBOXES,
 };
+use crate::message_metadata::{MessageFlag, MessageMetadata};
 use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
+pub(crate) use authenticator_ui::authenticator_summary;
+pub(crate) use settings_ui::render_openpgp_settings;
+#[cfg(test)]
+pub(crate) use settings_ui::render_security_page;
+pub(crate) use settings_ui::{
+    render_appearance_page, render_composition_page_with_signature, render_copies_page_with_state,
+    render_folders_page_with_state, render_general_page_with_mark_read, render_identity_page,
+    render_identity_page_with_signature, render_notifications_page, render_password_page,
+    render_privacy_page, render_reading_page_with_state, CopiesPageState, GeneralPageState,
+    GeneralSecurityState, IdentityPageModel, ReadingFoldersState,
+};
+pub(crate) use settings_ui::{render_recovery_contact_page, render_security_page_with_recovery};
 
 /// Defense-in-depth cap for attachment metadata rows rendered by one route.
 const DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX: usize = DEFAULT_MIME_PARTS_MAX;
@@ -20,8 +58,22 @@ const DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX: usize = DEFAULT_MIME_PARTS_MAX;
 /// Defense-in-depth cap for mailbox links rendered by one route.
 const DEFAULT_RENDERED_MAILBOXES_MAX: usize = DEFAULT_MAX_MAILBOXES;
 
+#[path = "http/archive_ui.rs"]
+mod archive_ui;
+
+#[path = "http/sessions_ui.rs"]
+mod sessions_ui;
+pub(crate) use sessions_ui::render_sessions_page;
+
 /// Small view model for the current server-rendered compose page.
 pub(crate) struct ComposePageModel<'a> {
+    pub sender_choices: Option<crate::sender_authority::Snapshot>,
+    pub selected_sender_id: Option<&'a str>,
+    pub protection: crate::send::ProtectionIntent,
+    pub openpgp: Option<crate::http::ComposeProtectionView>,
+    pub sender_identity: Option<&'a crate::identity_preferences::IdentityPreferences>,
+    pub send_intent: &'a str,
+    pub contacts: Option<&'a crate::contacts::ContactBook>,
     pub heading: &'a str,
     pub canonical_username: &'a str,
     pub csrf_token: &'a str,
@@ -33,12 +85,19 @@ pub(crate) struct ComposePageModel<'a> {
     pub bcc_value: &'a str,
     pub subject_value: &'a str,
     pub body_value: &'a str,
+    pub body_format: crate::compose_format::BodyFormat,
+    pub preview: bool,
+    pub preflight: bool,
     pub draft_id: Option<&'a str>,
-    pub draft_attachment_count: usize,
+    pub draft_revision: Option<u64>,
+    pub draft_attachments: &'a [crate::send::UploadedAttachment],
+    pub removed_attachment_indices: &'a [usize],
     pub source_mailbox_name: Option<&'a str>,
     pub source_uid: Option<u64>,
+    pub source_version: Option<&'a crate::message_metadata::MessageVersion>,
     pub source_attachments: &'a [AttachmentMetadata],
     pub selected_source_part_paths: &'a [String],
+    pub reply_reference: Option<&'a crate::reply_thread::ReplyReference>,
 }
 
 /// Small view model for the draft list page.
@@ -48,13 +107,119 @@ pub(crate) struct DraftListPageModel<'a> {
     pub success_message: Option<&'a str>,
     pub error_message: Option<&'a str>,
     pub drafts: &'a [DraftSummary],
+    pub view: &'a DraftListView,
+    pub total_count: usize,
+    pub states: &'a [crate::http::BrowserDraftState],
+    pub usage: &'a crate::http::BrowserDraftStorageUsage,
 }
 
 /// Small view model for mailbox message-list sort links.
 pub(crate) struct MessageListSortLinks<'a> {
-    pub active_sort: Option<MessageSort>,
+    pub view: &'a ListViewState,
     pub search_query: Option<&'a str>,
     pub search_scope: Option<&'a str>,
+    pub reader: &'a MailReaderContext,
+}
+
+#[derive(Default)]
+pub(crate) enum SelectedMessagePane {
+    #[default]
+    Unselected,
+    Unavailable(&'static str),
+    Ready(Box<RenderedMessageView>),
+}
+
+pub(crate) struct MailReaderContext {
+    pub timezone: crate::timezone::FixedOffset,
+    pub pane: SelectedMessagePane,
+    pub neighbours: crate::reader_neighbours::ReaderNeighbours,
+    pub archive_mailbox_name: Option<String>,
+    pub bin_mailbox_name: Option<String>,
+    pub sent_role: Option<SentFolderRole>,
+    pub mailboxes: Vec<MailboxEntry>,
+    pub archive_events: Option<crate::archive_event::Snapshot>,
+    pub labels: Option<crate::labels::LabelRecord>,
+}
+
+impl Default for MailReaderContext {
+    fn default() -> Self {
+        Self {
+            timezone: crate::timezone::FixedOffset::default(),
+            pane: SelectedMessagePane::default(),
+            neighbours: crate::reader_neighbours::ReaderNeighbours::default(),
+            archive_mailbox_name: None,
+            bin_mailbox_name: Some("Trash".into()),
+            sent_role: Some(SentFolderRole::legacy()),
+            mailboxes: Vec::new(),
+            archive_events: None,
+            labels: None,
+        }
+    }
+}
+/// A response-local rendering role, never mailbox or mutation authority.
+/// Production routes derive it from the authenticated preference and current
+/// account-owned folder status. Legacy wrappers preserve the old Sent view.
+#[derive(Clone)]
+pub(crate) struct SentFolderRole {
+    mailbox_name: String,
+    mailbox_guid: Option<String>,
+}
+impl SentFolderRole {
+    fn legacy() -> Self {
+        Self {
+            mailbox_name: "Sent".into(),
+            mailbox_guid: None,
+        }
+    }
+    pub(crate) fn confirmed(
+        saved: &crate::sent_location::Preference,
+        status: Option<&crate::mailbox_status::MailboxStatus>,
+    ) -> Option<Self> {
+        if !saved.valid() {
+            return None;
+        }
+        match saved.mailbox_guid.as_deref() {
+            None => Some(Self::legacy()),
+            Some(guid) => {
+                let status = status?;
+                if status.validate(&saved.mailbox_name).is_err() || status.guid() != guid {
+                    return None;
+                }
+                Some(Self {
+                    mailbox_name: saved.mailbox_name.clone(),
+                    mailbox_guid: Some(guid.into()),
+                })
+            }
+        }
+    }
+    fn matches(&self, name: &str) -> bool {
+        self.mailbox_name == name
+    }
+    fn matches_rendered(&self, rendered: &RenderedMessageView) -> bool {
+        self.matches(&rendered.mailbox_name)
+            && self.mailbox_guid.as_deref().is_none_or(|guid| {
+                rendered
+                    .metadata
+                    .as_ref()
+                    .is_some_and(|metadata| metadata.version.mailbox_guid == guid)
+            })
+    }
+}
+
+#[derive(Clone, Copy)]
+struct ReaderFolders<'a> {
+    timezone: crate::timezone::FixedOffset,
+    account: &'a str,
+    labels: Option<&'a crate::labels::LabelRecord>,
+    archive: Option<&'a str>,
+    bin: Option<&'a str>,
+    mailboxes: &'a [MailboxEntry],
+}
+
+pub(crate) struct MessageSearchContext<'a> {
+    pub view: &'a ListViewState,
+    pub field: MessageSearchField,
+    pub reader: &'a MailReaderContext,
 }
 
 /// Small view model for bounded selected-message mailbox actions.
@@ -73,91 +238,538 @@ pub(crate) struct SettingsPageModel<'a> {
     pub archive_mailbox_name: Option<&'a str>,
 }
 
+fn render_bin_folder_form(
+    model: &SettingsPageModel<'_>,
+    id: &str,
+    section: &str,
+    saved: Option<&crate::bin_folder::BinPreference>,
+    choices: Option<&[MailboxEntry]>,
+) -> String {
+    let (Some(saved), Some(choices)) = (saved, choices) else {
+        return format!("<div class=\"general-field\"><label for=\"{id}\">Bin folder</label><select id=\"{id}\" disabled><option>Unavailable</option></select></div><p>Saved Bin or available folders could not be loaded. Reload settings before changing Bin.</p>");
+    };
+    let mut options = String::new();
+    if !choices.iter().any(|m| m.name == saved.mailbox_name) {
+        options.push_str(&format!(
+            "<option value=\"{}\" selected>{} (unavailable)</option>",
+            escape_html(&saved.mailbox_name),
+            escape_html(&saved.mailbox_name)
+        ));
+    }
+    for entry in choices {
+        options.push_str(&format!(
+            "<option value=\"{}\"{}>{}</option>",
+            escape_html(&entry.name),
+            if entry.name == saved.mailbox_name {
+                " selected"
+            } else {
+                ""
+            },
+            escape_html(&entry.name)
+        ));
+    }
+    format!("<form id=\"{id}-form\" method=\"post\" action=\"/settings/bin-folder\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><input type=\"hidden\" name=\"section\" value=\"{section}\"><div class=\"general-field\"><label for=\"{id}\">Bin folder</label><select id=\"{id}\" name=\"mailbox_name\">{options}</select></div><button type=\"submit\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save Bin folder</span></button></form>", escape_html(model.csrf_token), saved.revision)
+}
+
 fn logout_form(csrf_token: &str) -> String {
     format!(
-        "<form class=\"logout-form\" method=\"post\" action=\"/logout\" aria-label=\"Sign out of current session\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button class=\"logout-button\" type=\"submit\">Log Out</button></form>",
+        "<form class=\"logout-form\" method=\"post\" action=\"/logout\" aria-label=\"Sign out of current session\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button class=\"logout-button\" type=\"submit\"><span class=\"presentation-icon presentation-icon-logout\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Log Out</span></button></form>",
         escape_html(csrf_token)
     )
 }
 
-fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> String {
-    format!(
-        concat!(
-            "<a class=\"skip-link\" href=\"#main-content\">Skip to content</a>",
-            "<header class=\"topbar\" role=\"banner\" aria-label=\"Authenticated OSMAP shell\">",
-            "<div class=\"brand\"><span class=\"brand-mark\" aria-hidden=\"true\"><span class=\"ui-icon brand-icon\">OS</span></span><span>OSMAP</span></div>",
-            "<nav class=\"top-actions\" aria-label=\"Primary navigation\">",
-            "<a href=\"/mailboxes\"{}>Mailboxes</a>",
-            "<a href=\"/compose\"{}>Compose</a>",
-            "<a href=\"/drafts\"{}>Drafts</a>",
-            "<a href=\"/sessions\"{}>Sessions</a>",
-            "<a href=\"/settings\"{}>Settings</a>",
-            "{}",
-            "</nav>",
-            "<div class=\"status-row auth-status\" aria-label=\"Session status and identity\">",
-            "<span class=\"status-pill badge-ok shell-session-chip\">2FA session</span>",
-            "<span class=\"status-pill identity-chip\">signed in as <strong>{}</strong></span>",
-            "</div>",
-            "</header>"
-        ),
-        if current == "mailboxes" {
-            " aria-current=\"page\""
-        } else {
-            ""
-        },
-        if current == "compose" {
-            " aria-current=\"page\""
-        } else {
-            ""
-        },
-        if current == "drafts" {
-            " aria-current=\"page\""
-        } else {
-            ""
-        },
-        if current == "sessions" {
-            " aria-current=\"page\""
-        } else {
-            ""
-        },
-        if current == "settings" {
-            " aria-current=\"page\""
-        } else {
-            ""
-        },
-        logout_form(csrf_token),
-        escape_html(canonical_username),
-    )
+#[path = "http/back_focus.rs"]
+mod back_focus;
+/// Repository-owned vector paths; decorative, never fetched from a network.
+#[path = "http/reader_toolbar.rs"]
+mod reader_toolbar;
+
+// Reuse the retained login logo in every branded application header.
+const OSMAP_BRAND_SHIELD: &str = "<svg class=\"login-shield\" aria-hidden=\"true\" viewBox=\"0 0 64 72\" role=\"img\"><path d=\"M32 4 56 13v18c0 17-9 29-24 37C17 60 8 48 8 31V13L32 4Z\" fill=\"#eaf2ff\" stroke=\"#9db9ee\" stroke-width=\"2\"/><path d=\"M32 10 49 17v14c0 12-6 22-17 29C21 53 15 43 15 31V17l17-7Z\" fill=\"#2f66d8\"/><circle cx=\"32\" cy=\"31\" r=\"7\" fill=\"#fff\"/><path d=\"M29 37h6l2 14H27l2-14Z\" fill=\"#fff\"/></svg>";
+
+/// Source-owned action content only. Unmapped actions retain their readable
+/// label instead of receiving a misleading fallback symbol. Message content
+/// never passes through this helper; all labels remain escaped text.
+pub(crate) fn presentation_label(label: &str, icon: &str) -> String {
+    if !matches!(
+        icon,
+        "save"
+            | "sent"
+            | "clock"
+            | "compose"
+            | "add"
+            | "bin"
+            | "archive"
+            | "inbox"
+            | "drafts"
+            | "outbox"
+            | "folders"
+            | "search"
+            | "close"
+            | "refresh"
+            | "back"
+            | "next"
+            | "previous"
+            | "people"
+            | "settings"
+            | "key"
+            | "import-key"
+            | "unlock"
+            | "shield"
+            | "label"
+            | "more"
+            | "eye"
+            | "download"
+            | "info"
+            | "select"
+            | "logout"
+            | "sessions"
+            | "notifications"
+            | "minimize"
+            | "star"
+            | "read"
+            | "unread"
+            | "bold"
+            | "italic"
+            | "underline"
+            | "list"
+            | "numbers"
+            | "link"
+            | "image"
+            | "attachment"
+            | "emoji"
+    ) {
+        return escape_html(label).to_string();
+    }
+    format!("<span class=\"presentation-icon presentation-icon-{icon}\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">{}</span>", escape_html(label))
 }
 
-fn folder_pane(mailboxes: &[MailboxEntry], current_mailbox_name: Option<&str>) -> String {
-    let mut items = String::new();
-    for mailbox in mailboxes.iter().take(DEFAULT_RENDERED_MAILBOXES_MAX) {
-        let mailbox_href = format!("/mailbox?name={}", url_encode(&mailbox.name));
-        let current = if current_mailbox_name == Some(mailbox.name.as_str()) {
-            " aria-current=\"page\""
-        } else {
-            ""
-        };
-        items.push_str(&format!(
-            "<li><a href=\"{}\"{}>{}</a></li>",
-            escape_html(&mailbox_href),
-            current,
-            escape_html(&mailbox.name),
-        ));
-    }
-    if mailboxes.len() > DEFAULT_RENDERED_MAILBOXES_MAX {
-        items.push_str(&format!(
-            "<li class=\"muted\">Mailbox list display limit reached: showing first {} of {} visible mailboxes.</li>",
-            DEFAULT_RENDERED_MAILBOXES_MAX,
-            mailboxes.len(),
-        ));
-    }
+fn shell_icon(name: &str) -> String {
+    let path = match name {
+        "back" => "<path d=\"M20 12H4m6-6-6 6 6 6\"/>",
+        "reply" => "<path d=\"m9 4-6 6 6 6M3 10h11c5 0 7 4 7 10\"/>",
+        "read" => "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"m3 6 9 7 9-7\"/>",
+        "clock" => "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 6v6l4 2\"/>",
+        "label" => "<path d=\"m3 3 9 0 9 9-9 9-9-9z\"/><circle cx=\"8\" cy=\"8\" r=\"1\"/>",
+        "more" => "<circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/>",
+        "bell" => "<path d=\"M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4\"/>",
+        "light" => "<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2\"/>",
+        "dark" => "<path d=\"M16 3a9 9 0 1 0 0 18 10 10 0 0 1 0-18z\"/>",
+        "shield" => "<path d=\"M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z\"/><path d=\"m8 12 3 3 5-6\"/>",
+        "inbox" => "<path d=\"M4 4h16l2 10v6H2v-6zM2 14h6l2 3h4l2-3h6\"/>",
+        "outbox" => "<path d=\"M3 13v8h18v-8M8 13l4-4 4 4M12 9v9M7 5h10\"/>",
+        "sent" => "<path d=\"m3 3 18 9-18 9 4-9zM7 12h14\"/>",
+        "archive" => "<rect x=\"3\" y=\"3\" width=\"18\" height=\"5\" rx=\"1\"/><path d=\"M5 8v13h14V8M9 12h6\"/>",
+        "bin" => "<path d=\"M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7\"/>",
+        "compose" => "<path d=\"m14 4 6 6M4 20l5-1L21 7l-4-4L5 15z\"/>",
+        "drafts" => "<path d=\"M5 3h9l5 5v13H5zM14 3v6h5M9 13h6M9 17h6\"/>",
+        "people" => "<circle cx=\"9\" cy=\"7\" r=\"3\"/><path d=\"M3 21v-3a6 6 0 0 1 12 0v3M16 4a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 4v3\"/>",
+        "settings" => "<path d=\"m10 3-.5 3-2 1-3-.7-2 3 2.3 2v2l-2.3 2 2 3 3-.7 2 1 .5 3h4l.5-3 2-1 3 .7 2-3-2.3-2v-2l2.3-2-2-3-3 .7-2-1L14 3z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>",
+        "folders" => "<path d=\"M3 5h7l2 3h9v13H3zM3 5V3h7l2 2h9v3\"/>",
+        "menu" => "<path d=\"M4 6h16M4 12h16M4 18h16\"/>",
+        "search" => "<circle cx=\"10\" cy=\"10\" r=\"7\"/><path d=\"m15 15 6 6\"/>",
+        _ => "<path d=\"m7 10 5 5 5-5\"/>",
+    };
+    format!("<svg class=\"shell-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\">{path}</svg>")
+}
 
-    format!(
-        "<aside class=\"folder-pane\" aria-label=\"Mail folders\"><h2>Folders</h2><ul class=\"folder-list\">{}</ul></aside>",
-        items,
+pub(crate) fn notification_header_link(account: &str, unread: Option<usize>) -> String {
+    let (label, badge, state) = match unread {
+        Some(0) => ("Notifications: no unread notices".into(), String::new(), "0".into()),
+        Some(count) => (format!("Notifications: {count} unread"), format!("<span class=\"notification-badge\" aria-hidden=\"true\">{count}</span>"), count.to_string()),
+        None => ("Notifications: unread count unavailable".into(), "<span class=\"notification-badge notification-badge-unknown\" aria-hidden=\"true\">?</span>".into(), "unknown".into()),
+    };
+    format!("<a class=\"header-notifications\" href=\"/notifications\" aria-label=\"{label}\" title=\"{label}\" data-notification-account=\"{}\" data-unread=\"{state}\">{}<span class=\"presentation-label\">Notifications</span>{badge}</a>", escape_html(account), shell_icon("bell"))
+}
+
+fn header_theme_controls(csrf: &str, current: &str) -> String {
+    let compose = current == "compose";
+    let disabled = current == "compose-result"
+        || current == "settings"
+        || (current.starts_with("settings-")
+            && !matches!(current, "settings-search" | "settings-openpgp"))
+        || current == "contacts"
+        || current == "labels"
+        || current == "snooze";
+    let explanation = if current == "compose-result" {
+        "Theme switching is unavailable here. Keep this result page open to retain the text from this submission attempt."
+    } else if compose {
+        "Changing theme saves this draft first, including selected attachments. If saving fails, the theme stays unchanged; reselect any unsaved uploads before retrying."
+    } else if disabled {
+        "Quick theme changes are unavailable while editing settings or contacts. Save your changes and use Appearance settings."
+    } else {
+        "Saves your account theme. System theme is available in Appearance settings."
+    };
+    let mut controls = if compose || disabled {
+        "<div class=\"header-theme\" role=\"group\" aria-label=\"Quick theme\" aria-describedby=\"header-theme-help\">".to_owned()
+    } else {
+        format!("<form class=\"header-theme\" method=\"post\" action=\"/settings/appearance\" aria-label=\"Quick theme\" aria-describedby=\"header-theme-help\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"/settings?section=appearance\" data-header-return>", escape_html(csrf))
+    };
+    for (theme, label) in [("light", "Light"), ("dark", "Dark")] {
+        let action = if compose {
+            format!(" form=\"compose-form\" formaction=\"/drafts/save\" formmethod=\"post\" formenctype=\"multipart/form-data\" name=\"compose_action\" value=\"theme-{theme}\" data-compose-theme")
+        } else if disabled {
+            " disabled".to_owned()
+        } else {
+            format!(" name=\"appearance\" value=\"{theme}\"")
+        };
+        controls.push_str(&format!("<button type=\"submit\"{action} data-header-theme=\"{theme}\" aria-pressed=\"false\" aria-label=\"Use {label} theme\" title=\"{}\">{}<span class=\"presentation-label\">{label}</span></button>", escape_html(explanation), shell_icon(theme)));
+    }
+    controls.push_str(&format!(
+        "<span id=\"header-theme-help\" class=\"sr-only\">{}</span>{}",
+        escape_html(explanation),
+        if compose || disabled {
+            "</div>"
+        } else {
+            "</form>"
+        }
+    ));
+    controls
+}
+
+pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> String {
+    app_header_with_storage(canonical_username, csrf_token, current, None)
+}
+
+pub(crate) fn app_header_with_storage(
+    canonical_username: &str,
+    csrf_token: &str,
+    current: &str,
+    storage: Option<&crate::storage_ui::StorageView>,
+) -> String {
+    let rail_storage = crate::storage_ui::render_rail(canonical_username, storage);
+    let clock = request_clock(crate::totp::TimeProvider::unix_timestamp(
+        &crate::totp::SystemTimeProvider,
+    ));
+    let welcome = current == "mailboxes";
+    let brand_mark = OSMAP_BRAND_SHIELD;
+    let brand_copy = if welcome {
+        "<span class=\"brand-copy\"><strong>OSMAP</strong><small>Secure Email. Your Data. Your Control.</small></span>"
+    } else {
+        "<span>OSMAP</span>"
+    };
+    let theme_controls = header_theme_controls(csrf_token, current);
+    let mut links = String::new();
+    for (name, label, href, icon) in [
+        ("mailboxes", "Mailbox", "/mailboxes", "folders"),
+        ("compose", "Compose", "/compose", "compose"),
+        ("inbox", "Inbox", "/mailbox?name=INBOX", "inbox"),
+        ("drafts", "Drafts", "/drafts", "drafts"),
+        ("outbox", "Outbox", "/outbox", "outbox"),
+        ("sent", "Sent", "/mailbox/shortcut?kind=sent", "sent"),
+        ("contacts", "Contacts", "/contacts", "people"),
+        ("folders", "Folders", "/folders", "folders"),
+        ("labels", "Labels", "/labels", "label"),
+        (
+            "archive",
+            "Archive / Bin / Junk",
+            "/mailbox/shortcut?kind=archive",
+            "archive",
+        ),
+        (
+            "security",
+            "Security",
+            "/settings?section=security",
+            "shield",
+        ),
+        ("settings", "Settings", "/settings", "settings"),
+        ("search", "Search", "/search", "search"),
+    ] {
+        links.push_str(&format!(
+            "<a class=\"rail-link{}\" href=\"{}\" aria-label=\"{}\" title=\"{}\"{}>{}<span class=\"rail-label\">{}</span></a>",
+            if name == "compose" { " rail-compose" } else { "" },
+            escape_html(href), label, label,
+            if name == current || name == "compose" && current == "compose-result" || name == "archive" && current == "bin" || name == "settings" && (current == "sessions" || current.starts_with("settings-")) { " aria-current=\"page\"" } else { "" },
+            shell_icon(icon), label));
+    }
+    let search_menu = if current == "settings" || current.starts_with("settings-") {
+        concat!(
+            "<div class=\"header-search\"><form role=\"search\" method=\"get\" action=\"/settings\"><label class=\"sr-only\" for=\"settings-query\">Search settings</label>",
+            "<input id=\"settings-query\" name=\"q\" type=\"search\" placeholder=\"Search settings…\" maxlength=\"128\" autocomplete=\"off\" accesskey=\"s\"><button type=\"submit\" aria-label=\"Search settings\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search</span></button></form></div>"
+        )
+    } else {
+        concat!(
+        "<div class=\"header-search\"><form role=\"search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"scope\" value=\"all\"><label class=\"sr-only\" for=\"global-mail-query\">Search all mail</label><input id=\"global-mail-query\" name=\"q\" type=\"search\" placeholder=\"Search mail…\" maxlength=\"256\" autocomplete=\"off\" accesskey=\"s\" required><button type=\"submit\" aria-label=\"Search mail\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search</span></button></form>",
+        "<details class=\"global-search-menu\" name=\"toolbar-menu\"><summary title=\"Mail shortcuts\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Shortcuts</span></summary>",
+        "<div class=\"account-menu-panel global-search-panel\">",
+        "<nav aria-label=\"Mail shortcuts\"><h2>Shortcuts</h2><a href=\"/compose\">Compose a message</a><a href=\"/mailbox?name=INBOX\"><span class=\"presentation-icon presentation-icon-inbox\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Inbox</span></a><a href=\"/mailbox/shortcut?kind=sent\"><span class=\"presentation-icon presentation-icon-next\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Sent</span></a><a href=\"/mailbox/shortcut?kind=archive\">Open Archive</a><a href=\"/mailbox/shortcut?kind=bin\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Bin</span></a><a href=\"/drafts\"><span class=\"presentation-icon presentation-icon-drafts\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Drafts</span></a> <a href=\"/outbox\">Open Outbox</a><a href=\"/mailboxes\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Browse mailboxes</span></a><a href=\"/settings\">Open account settings</a></nav></div></details></div>"
     )
+    };
+    format!(concat!(
+        "<a class=\"skip-link\" href=\"#main-content\">Skip to content</a>",
+        "<aside class=\"app-rail\" aria-label=\"Application navigation\">",
+        "<details class=\"rail-disclosure\"><summary title=\"Navigation labels\">{}<span class=\"sr-only rail-expand-label\">Expand navigation</span><span class=\"sr-only rail-collapse-label\">Collapse navigation</span></summary><p class=\"sr-only\">Navigation labels are expanded.</p></details>",
+        "<nav class=\"rail-links\" aria-label=\"Primary navigation\">{}</nav>{rail_storage}</aside>",
+        "<header class=\"topbar{brand_variant}\" role=\"banner\" aria-label=\"Authenticated OSMAP shell\">",
+        "<a class=\"brand\" href=\"/mailboxes\" aria-label=\"OSMAP mailboxes\"><span class=\"brand-mark\" aria-hidden=\"true\">{}</span>{brand_copy}</a>",
+        "{}",
+        "<div class=\"status-row auth-status\" aria-label=\"Session status and identity\">",
+        "<details class=\"protection-menu\" name=\"toolbar-menu\"><summary>Protected by Default</summary><div class=\"account-menu-panel\"><p>Remote images and active content are blocked. These protections do not encrypt a message or verify its sender.</p><p class=\"shell-session-chip\">Your browser session was authenticated with two factors.</p></div></details>",
+        "{notification_link}",
+        "<details class=\"account-menu\" name=\"toolbar-menu\"><summary class=\"identity-chip\"><span class=\"account-avatar\" aria-hidden=\"true\">{}</span><span class=\"account-name\" title=\"{}\">{}</span>{}</summary>",
+        "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings?section=appearance\">Appearance</a><a href=\"/contacts\"><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Contacts</span></a><a href=\"/sessions\"><span class=\"presentation-icon presentation-icon-sessions\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage sessions</span></a>{}</div>",
+        "</details>{theme_controls}</div></header>{clock}"
+    ), shell_icon("menu"), links, brand_mark, search_menu, escape_html(&sender_initials(Some(canonical_username))), escape_html(canonical_username),
+        escape_html(canonical_username), shell_icon("chevron"), escape_html(canonical_username), logout_form(csrf_token), theme_controls = theme_controls, clock = clock, brand_copy = brand_copy, notification_link = notification_header_link(canonical_username, None), brand_variant = if welcome { " topbar-welcome" } else { "" }, rail_storage = rail_storage)
+}
+
+fn request_clock(timestamp: u64) -> String {
+    // SystemTimeProvider reports zero when a pre-epoch system time cannot be read.
+    // Do not turn that fallback into a purported current date.
+    if timestamp == 0 {
+        return "<div class=\"shell-request-clock\" aria-label=\"Server time\"><span>UTC time unavailable</span><small>Updated on page load</small></div>".into();
+    }
+    let date = crate::logging::format_unix_timestamp_utc(timestamp);
+    format!("<div class=\"shell-request-clock\" aria-label=\"Server time\"><time datetime=\"{}\">{} UTC</time><small>Updated on page load</small></div>", escape_html(&date), escape_html(date.replace('T', " ").trim_end_matches('Z')))
+}
+
+#[cfg(test)]
+mod request_clock_tests {
+    use super::*;
+    #[test]
+    fn request_clock_uses_utc_and_unavailable_sentinel() {
+        let clock = request_clock(1_735_689_600);
+        assert!(clock.contains("datetime=\"2025-01-01T00:00:00Z\""));
+        assert!(clock.contains(">2025-01-01 00:00:00 UTC</time>"));
+        assert!(clock.contains("Updated on page load"));
+        let unknown = request_clock(0);
+        assert!(unknown.contains("UTC time unavailable"));
+        assert!(!unknown.contains("<time"));
+        assert!(!unknown.contains("1970"));
+    }
+}
+
+pub(crate) fn render_settings_search_page(account: &str, csrf: &str, query: &str) -> TrustedHtml {
+    let query_lower = query.to_lowercase();
+    let mut results = String::new();
+    for (label, terms, href) in [
+        (
+            "Labels",
+            "create rename delete message labels",
+            "/settings?section=copies#labels",
+        ),
+        (
+            "Theme",
+            "appearance light dark system colours",
+            "/settings?section=appearance#settings-appearance-title",
+        ),
+        (
+            "Density",
+            "appearance comfortable compact spacing",
+            "/settings?section=appearance#settings-density",
+        ),
+        (
+            "Font size",
+            "appearance typography text small medium large",
+            "/settings?section=appearance#settings-font-size",
+        ),
+        (
+            "Reader layout",
+            "appearance split stacked reader",
+            "/settings?section=appearance#settings-reader-layout",
+        ),
+        (
+            "Show avatars",
+            "appearance sender initials pictures",
+            "/settings?section=appearance#settings-show-avatars",
+        ),
+        (
+            "Message preview",
+            "appearance snippet mail summary",
+            "/settings?section=appearance#settings-message-preview",
+        ),
+        (
+            "Default format",
+            "composition compose new blank message plain formatted",
+            "/settings?section=composition#composition-format",
+        ),
+        (
+            "Reply placement",
+            "composition reply reply-all above below quoted text",
+            "/settings?section=composition#composition-reply-placement",
+        ),
+        (
+            "Sign outgoing",
+            "composition openpgp signing default protected delivery",
+            "/settings?section=composition#composition-signing",
+        ),
+        (
+            "Encryption",
+            "composition openpgp encrypt default protected delivery",
+            "/settings?section=composition#composition-encryption",
+        ),
+        (
+            "Encrypt to self",
+            "composition openpgp encryption default protected delivery",
+            "/settings?section=composition#composition-self",
+        ),
+        (
+            "Identity",
+            "identity display name reply-to sender profile email",
+            "/settings?section=identity",
+        ),
+        (
+            "Security",
+            "security authentication password totp sessions protection",
+            "/settings?section=security",
+        ),
+        (
+            "OpenPGP public inventory",
+            "openpgp keys public inventory fingerprint",
+            "/settings?section=openpgp",
+        ),
+        (
+            "Notifications",
+            "notifications session events in-app notices read unread",
+            "/settings?section=notifications",
+        ),
+        (
+            "Authentication & Recovery",
+            "authentication recovery password totp sessions contact",
+            "/settings?section=authentication",
+        ),
+        (
+            "Privacy & Security",
+            "privacy security protected rendering remote images source attachments content plain html",
+            "/settings?section=privacy",
+        ),
+        (
+            "HTML Message Display",
+            "reading plain sanitized content",
+            "/settings?section=reading#html-display-prefer-sanitized",
+        ),
+        (
+            "Default start page",
+            "reading mailbox inbox drafts sent login",
+            "/settings?section=reading#reading-start-page",
+        ),
+        (
+            "Message ordering",
+            "reading newest oldest date default",
+            "/settings?section=reading#reading-date-order",
+        ),
+        (
+            "Show source shortcut",
+            "reading reader source headers MIME",
+            "/settings?section=reading#reading-show-source",
+        ),
+        (
+            "Attachment details",
+            "reading reader file metadata",
+            "/settings?section=reading#reading-attachment-details",
+        ),
+        (
+            "Archive Mailbox",
+            "reading shortcut folder",
+            "/settings?section=copies#copies-archive",
+        ),
+        (
+            "Active Sessions",
+            "security browser revoke sign out",
+            "/sessions",
+        ),
+    ] {
+        if query_lower
+            .split_whitespace()
+            .all(|word| format!("{label} {terms}").to_lowercase().contains(word))
+        {
+            results.push_str(&format!("<li><a href=\"{href}\">{label}</a></li>"));
+        }
+    }
+    let content = if results.is_empty() {
+        "<p>No available settings match this search.</p>".into()
+    } else {
+        format!("<ul class=\"settings-search-results\">{results}</ul>")
+    };
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell settings-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Search settings</h1><p>Available settings matching <strong>{}</strong>.</p></div><section class=\"content-pane\">{}<a class=\"button-link\" href=\"/settings?section=appearance\">Appearance settings</a></section></main>", app_header(account, csrf, "settings-search"), escape_html(query), content))
+}
+
+pub(crate) fn mailbox_nav_section(
+    mailbox_name: &str,
+    archive_mailbox_name: Option<&str>,
+) -> &'static str {
+    mailbox_nav_section_with_sent(mailbox_name, archive_mailbox_name, mailbox_name == "Sent")
+}
+fn mailbox_nav_section_with_sent(
+    mailbox_name: &str,
+    archive_mailbox_name: Option<&str>,
+    is_sent: bool,
+) -> &'static str {
+    if is_sent {
+        return "sent";
+    }
+    match mailbox_name {
+        "INBOX" => "inbox",
+        value if Some(value) == archive_mailbox_name => "archive",
+        _ => "mailboxes",
+    }
+}
+
+pub(crate) fn render_navigation_notice(
+    canonical_username: &str,
+    csrf_token: &str,
+    title: &str,
+    message: &str,
+) -> TrustedHtml {
+    TrustedHtml::from_template(format!(
+        "{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><section class=\"content-pane\"><h1>{}</h1><p>{}</p><div class=\"toolbar\"><a class=\"button-link\" href=\"/mailboxes\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">All mailboxes</span></a><a class=\"button-link\" href=\"/settings\">Settings</a></div></section></main>",
+        app_header(canonical_username, csrf_token, "archive"), escape_html(title), escape_html(message)))
+}
+
+// PAGE27 states use native links only; callers supply bounded, constructed routes.
+pub(crate) fn mail_state_card(
+    title: &str,
+    detail: &str,
+    href: &str,
+    action: &str,
+    failed: bool,
+) -> String {
+    format!("<section class=\"mail-state-card{}\"><h2>{}</h2><p>{}</p><a class=\"button-link\" href=\"{}\">{}</a></section>", if failed { " mail-state-failed" } else { "" }, escape_html(title), escape_html(detail), escape_html(href), escape_html(action))
+}
+
+pub(crate) fn render_mail_load_failure(
+    account: &str,
+    csrf: &str,
+    current: &str,
+    detail: &str,
+    retry: &str,
+) -> TrustedHtml {
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell mail-state-page\" tabindex=\"-1\"><h1>Mail unavailable</h1>{}</main>", app_header(account, csrf, current), mail_state_card("Failed load", detail, retry, "Retry", true)))
+}
+
+pub(crate) fn render_content_notice(
+    username: &str,
+    csrf: &str,
+    title: &str,
+    message: &str,
+    return_to: &str,
+    retry: Option<&str>,
+) -> TrustedHtml {
+    let retry = retry
+        .map(|url| {
+            format!(
+                "<a class=\"button-link\" href=\"{}\"><span class=\"presentation-icon presentation-icon-refresh\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Retry loading</span></a>",
+                escape_html(url)
+            )
+        })
+        .unwrap_or_default();
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><section class=\"content-pane\"><h1>{}</h1><p>{}</p><nav class=\"toolbar\" aria-label=\"Content recovery\"><a class=\"button-link\" href=\"{}\"><span class=\"presentation-icon presentation-icon-back\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Back to message</span></a>{}<a href=\"/mailboxes\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">All mailboxes</span></a></nav></section></main>",
+        app_header(username, csrf, "mailboxes"), escape_html(title), escape_html(message), escape_html(return_to), retry))
+}
+
+pub(crate) fn render_message_source_page(
+    username: &str,
+    csrf: &str,
+    message: &crate::mailbox::MessageView,
+    return_to: &str,
+) -> TrustedHtml {
+    TrustedHtml::from_template(format!(concat!(
+        "{}<main id=\"main-content\" class=\"page-shell source-page\" tabindex=\"-1\"><section class=\"content-pane\">",
+        "<nav class=\"toolbar\" aria-label=\"Source navigation\"><a class=\"button-link\" href=\"{}\"><span class=\"presentation-icon presentation-icon-back\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Back to message</span></a></nav>",
+        "<h1>Message source</h1><p class=\"muted\">Stored headers and MIME body text are shown as escaped text. Content is not rendered or fetched. Line endings and text decoding may differ from the original wire message.</p>",
+        "<p class=\"muted\">{} · Message {}</p><pre class=\"message-source\" aria-label=\"Stored message source\" tabindex=\"0\">{}\n\n{}</pre></section></main>"),
+        app_header(username, csrf, mailbox_nav_section(&message.mailbox_name, None)), escape_html(return_to), escape_html(&message.mailbox_name), message.uid,
+        escape_html(message.header_block.trim_end_matches(['\r', '\n'])), escape_html(&message.body_text)))
 }
 
 /// Renders the current login page with an optional operator-safe error banner.
@@ -177,7 +789,7 @@ pub(crate) fn render_login_page(error_message: Option<&str>) -> TrustedHtml {
             "<div class=\"login-decor login-decor-right\" aria-hidden=\"true\"><svg viewBox=\"0 0 320 320\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M83 28 124 52v48l-41 24-41-24V52l41-24Z\" opacity=\".28\"/><path d=\"M165 78 206 102v48l-41 24-41-24v-48l41-24Z\" opacity=\".24\"/><path d=\"M247 78 288 102v48l-41 24-41-24v-48l41-24Z\" opacity=\".2\"/><path d=\"M83 170 124 194v48l-41 24-41-24v-48l41-24Z\" opacity=\".22\"/><path d=\"M165 220 206 244v48l-41 24-41-24v-48l41-24Z\" opacity=\".18\"/><path d=\"M247 220 288 244v48l-41 24-41-24v-48l41-24Z\" opacity=\".14\"/><path d=\"M124 76h41M206 126h41M124 218h41\" opacity=\".14\"/><path d=\"M288 22v80M42 52V5\" opacity=\".08\"/></g><g fill=\"currentColor\"><circle cx=\"83\" cy=\"28\" r=\"4\" opacity=\".32\"/><circle cx=\"124\" cy=\"52\" r=\"4\" opacity=\".28\"/><circle cx=\"165\" cy=\"78\" r=\"4\" opacity=\".26\"/><circle cx=\"206\" cy=\"102\" r=\"4\" opacity=\".22\"/><circle cx=\"247\" cy=\"78\" r=\"4\" opacity=\".2\"/><circle cx=\"288\" cy=\"102\" r=\"4\" opacity=\".18\"/><circle cx=\"83\" cy=\"266\" r=\"4\" opacity=\".2\"/><circle cx=\"165\" cy=\"316\" r=\"4\" opacity=\".14\"/></g></svg></div>",
             "<section class=\"login-card\">",
             "<div class=\"login-brand\">",
-            "<svg class=\"login-shield\" aria-hidden=\"true\" viewBox=\"0 0 64 72\" role=\"img\"><path d=\"M32 4 56 13v18c0 17-9 29-24 37C17 60 8 48 8 31V13L32 4Z\" fill=\"#eaf2ff\" stroke=\"#9db9ee\" stroke-width=\"2\"/><path d=\"M32 10 49 17v14c0 12-6 22-17 29C21 53 15 43 15 31V17l17-7Z\" fill=\"#2f66d8\"/><circle cx=\"32\" cy=\"31\" r=\"7\" fill=\"#fff\"/><path d=\"M29 37h6l2 14H27l2-14Z\" fill=\"#fff\"/></svg>",
+            "{brand_shield}",
             "<div class=\"login-brand-text\"><h1 id=\"login-title\" class=\"login-title\">OSMAP</h1><p class=\"login-subtitle\">Secure Webmail</p></div>",
             "</div>",
             "<div class=\"login-rule\" aria-hidden=\"true\"><svg viewBox=\"0 0 24 24\"><path d=\"M12 3 19 6v5c0 5-2.6 8.5-7 10-4.4-1.5-7-5-7-10V6l7-3Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"/></svg></div>",
@@ -190,6 +802,7 @@ pub(crate) fn render_login_page(error_message: Option<&str>) -> TrustedHtml {
             "<div class=\"login-field\"><label for=\"login-totp\">TOTP Code</label><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M12 3 19 6v5c0 5-2.6 8.5-7 10-4.4-1.5-7-5-7-10V6l7-3Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"m9 12 2 2 4-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg><input id=\"login-totp\" type=\"text\" name=\"totp_code\" inputmode=\"numeric\" autocomplete=\"one-time-code\" placeholder=\"Enter 6-digit code from authenticator\"></div>",
             "<button class=\"primary-button\" type=\"submit\"><svg class=\"login-lock\" aria-hidden=\"true\" viewBox=\"0 0 24 24\"><rect x=\"5\" y=\"10\" width=\"14\" height=\"10\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M8 10V7a4 4 0 0 1 8 0v3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg>Sign In</button>",
             "<p id=\"login-help\" class=\"login-help\">Password and TOTP are both required.</p>",
+            "<p class=\"login-help\"><a href=\"/recover\">Forgot password or lost your authenticator?</a></p>",
             "</form>",
             "<div class=\"security-grid\" aria-label=\"Security indicators\">",
             "<div class=\"security-item\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><rect x=\"5\" y=\"10\" width=\"14\" height=\"10\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M8 10V7a4 4 0 0 1 8 0v3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg><div><strong>TLS Protected</strong><span>Encrypted in transit</span></div></div>",
@@ -201,39 +814,13 @@ pub(crate) fn render_login_page(error_message: Option<&str>) -> TrustedHtml {
             "</main>"
         ),
         banner,
+        brand_shield = OSMAP_BRAND_SHIELD,
     ))
 }
 
-/// Renders the mailbox home page for the validated user.
-pub(crate) fn render_mailboxes_page(
-    canonical_username: &str,
-    csrf_token: &str,
-    mailboxes: &[MailboxEntry],
-) -> TrustedHtml {
-    TrustedHtml::from_template(format!(
-        concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
-            "{}",
-            "<div class=\"mail-shell\">",
-            "{}",
-            "<section class=\"content-pane\" aria-labelledby=\"mailboxes-title\">",
-            "<div class=\"section-header\"><div><h1 id=\"mailboxes-title\" class=\"section-title\">Mailboxes</h1><p class=\"muted\">Choose a visible mailbox, compose a message, or run a bounded backend search.</p></div>",
-            "<div class=\"badge-list\"><span class=\"badge badge-ok\">2FA active</span><span class=\"badge\">mail access bounded by helper policy</span></div></div>",
-            "<form class=\"search-row\" method=\"get\" action=\"/search\">",
-            "<label for=\"mailbox-global-search\">Search all mailboxes<input id=\"mailbox-global-search\" type=\"text\" name=\"q\" autocomplete=\"off\"></label>",
-            "{}",
-            "<button type=\"submit\">Search</button>",
-            "</form>",
-            "<div class=\"notice\"><strong>Security posture:</strong> Remote content is not loaded by the browser, message rendering remains server-side, and state-changing actions stay CSRF-bound.</div>",
-            "</section>",
-            "</div>",
-            "</main>"
-        ),
-        app_header(canonical_username, csrf_token, "mailboxes"),
-        folder_pane(mailboxes, None),
-        render_search_field_select(MessageSearchField::All),
-    ))
-}
+#[path = "welcome_ui.rs"]
+mod welcome_ui;
+pub(crate) use welcome_ui::{render_mailboxes_page_with_storage, WelcomeAccountState};
 
 const MESSAGE_SORT_COLUMNS: [MessageSortColumn; 6] = [
     MessageSortColumn::Uid,
@@ -271,13 +858,14 @@ fn next_message_sort_direction(
     }
 }
 
-fn render_mailbox_sort_headers(
+fn render_mailbox_sort_controls(
     mailbox_name: &str,
-    active_sort: Option<MessageSort>,
+    view: &ListViewState,
     search_query: Option<&str>,
     search_scope: Option<&str>,
 ) -> String {
-    MESSAGE_SORT_COLUMNS
+    let active_sort = Some(view.sort);
+    let links = MESSAGE_SORT_COLUMNS
         .iter()
         .map(|column| {
             let direction = next_message_sort_direction(*column, active_sort);
@@ -294,24 +882,34 @@ fn render_mailbox_sort_headers(
             href.push_str(column.query_value());
             href.push_str("&dir=");
             href.push_str(direction.query_value());
+            append_list_filter_selection(&mut href, view);
 
             format!(
-                "<th><a href=\"{}\">{}{}</a></th>",
+                "<a href=\"{}\" aria-label=\"Sort by {} {}\"{}>{}{}</a>",
                 escape_html(&href),
+                column.label(),
+                sort_direction_label(direction),
+                if view.sort.column == *column {
+                    " aria-current=\"true\""
+                } else {
+                    ""
+                },
                 column.label(),
                 message_sort_indicator(*column, active_sort),
             )
         })
         .collect::<Vec<_>>()
-        .join("")
+        .join("");
+    render_sort_control_group(&links, view)
 }
 
-fn render_search_sort_headers(
+fn render_search_sort_controls(
     mailbox_name: Option<&str>,
     query: &str,
-    active_sort: Option<MessageSort>,
+    view: &ListViewState,
     search_field: MessageSearchField,
 ) -> String {
+    let active_sort = Some(view.sort);
     let mut headers = String::new();
     for column in MESSAGE_SORT_COLUMNS {
         let direction = next_message_sort_direction(column, active_sort);
@@ -331,18 +929,824 @@ fn render_search_sort_headers(
         href.push_str(column.query_value());
         href.push_str("&dir=");
         href.push_str(direction.query_value());
+        append_list_filter_selection(&mut href, view);
 
         headers.push_str(&format!(
-            "<th><a href=\"{}\">{}{}</a></th>",
+            "<a href=\"{}\" aria-label=\"Sort by {} {}\"{}>{}{}</a>",
             escape_html(&href),
+            column.label(),
+            sort_direction_label(direction),
+            if view.sort.column == column {
+                " aria-current=\"true\""
+            } else {
+                ""
+            },
             column.label(),
             message_sort_indicator(column, active_sort),
         ));
-        if column == MessageSortColumn::Uid {
-            headers.push_str("<th>Mailbox</th>");
+    }
+    render_sort_control_group(&headers, view)
+}
+
+fn append_list_filter_selection(href: &mut String, view: &ListViewState) {
+    if let Some(label) = &view.label {
+        href.push_str(&format!("&label={}", url_encode(label)));
+    }
+    for (key, value) in [("after", &view.dates.after), ("before", &view.dates.before)] {
+        if let Some(value) = value {
+            href.push_str(&format!("&{key}={}", url_encode(value)));
         }
     }
-    headers
+
+    if view.filter != MessageFilter::All {
+        href.push_str("&filter=");
+        href.push_str(view.filter.value());
+    }
+    if view.attachment != AttachmentFilter::All {
+        href.push_str("&attachment=");
+        href.push_str(view.attachment.value());
+    }
+    if view.protection != ProtectionFilter::All {
+        href.push_str("&pgp=");
+        href.push_str(view.protection.value());
+    }
+    if view.sender.active() {
+        href.push_str("&from=");
+        href.push_str(&url_encode(view.sender.value()));
+    }
+    if let Some(selected) = &view.selection {
+        href.push_str("&selected_mailbox=");
+        href.push_str(&url_encode(&selected.mailbox));
+        href.push_str("&selected_uid=");
+        href.push_str(&selected.uid.to_string());
+        if let Some(version) = &view.requested_version {
+            href.push_str(&format!(
+                "&selected_mailbox_guid={}&selected_message_guid={}",
+                url_encode(&version.mailbox_guid),
+                url_encode(&version.message_guid)
+            ));
+            if view.opened_read {
+                href.push_str("&opened_read=1");
+            }
+        }
+    }
+}
+
+pub(crate) fn list_navigation_href(base: &str, view: &ListViewState, page: usize) -> String {
+    let mut href = base.to_string();
+    if view.conversation_order.is_none() {
+        href.push_str(&format!(
+            "&sort={}&dir={}",
+            view.sort.column.query_value(),
+            view.sort.direction.query_value()
+        ));
+    }
+    append_list_filter_selection(&mut href, view);
+    if page > 1 {
+        href.push_str(&format!("&page={page}"));
+    }
+    href
+}
+
+fn list_form_state(view: &ListViewState) -> String {
+    let mut fields = format!(
+        "<input type=\"hidden\" name=\"filter\" value=\"{}\">",
+        view.filter.value()
+    );
+    if let Some(label) = &view.label {
+        fields.push_str(&format!(
+            "<input type=\"hidden\" name=\"label\" value=\"{}\">",
+            escape_html(label)
+        ));
+    }
+    if view.conversation_order.is_none() {
+        fields.push_str(&format!("<input type=\"hidden\" name=\"sort\" value=\"{}\"><input type=\"hidden\" name=\"dir\" value=\"{}\">", view.sort.column.query_value(), view.sort.direction.query_value()));
+    }
+    fields.push_str(&format!(
+        "<input type=\"hidden\" name=\"attachment\" value=\"{}\">",
+        view.attachment.value()
+    ));
+    fields.push_str(&format!(
+        "<input type=\"hidden\" name=\"pgp\" value=\"{}\">",
+        view.protection.value()
+    ));
+    if view.sender.active() {
+        fields.push_str(&format!(
+            "<input type=\"hidden\" name=\"from\" value=\"{}\">",
+            escape_html(view.sender.value())
+        ));
+    }
+    for (key, value) in [("after", &view.dates.after), ("before", &view.dates.before)] {
+        if let Some(value) = value {
+            fields.push_str(&format!(
+                "<input type=\"hidden\" name=\"{key}\" value=\"{}\">",
+                escape_html(value)
+            ));
+        }
+    }
+    if let Some(selected) = &view.selection {
+        fields.push_str(&format!("<input type=\"hidden\" name=\"selected_mailbox\" value=\"{}\"><input type=\"hidden\" name=\"selected_uid\" value=\"{}\">", escape_html(&selected.mailbox), selected.uid));
+        if let Some(version) = &view.requested_version {
+            fields.push_str(&format!("<input type=\"hidden\" name=\"selected_mailbox_guid\" value=\"{}\"><input type=\"hidden\" name=\"selected_message_guid\" value=\"{}\">", escape_html(&version.mailbox_guid), escape_html(&version.message_guid)));
+            if view.opened_read {
+                fields.push_str("<input type=\"hidden\" name=\"opened_read\" value=\"1\">");
+            }
+        }
+    }
+    fields
+}
+
+fn selected_message_href(
+    base: &str,
+    view: &ListViewState,
+    mailbox: &str,
+    uid: u64,
+    version: Option<&crate::message_metadata::MessageVersion>,
+) -> String {
+    let mut selected = view.clone();
+    selected.selection = Some(crate::mail_list::ListSelection {
+        mailbox: mailbox.into(),
+        uid,
+    });
+    selected.requested_version = version.cloned();
+    selected.opened_read = false;
+    format!(
+        "{}#reading-pane",
+        list_navigation_href(base, &selected, view.page)
+    )
+}
+
+// Template-derived destinations still require a complete bounded public identity.
+// The opening POST revalidates that identity against the authenticated mailbox.
+pub(crate) fn message_open_control(
+    csrf: &str,
+    href: &str,
+    class: &str,
+    text: &str,
+    selected: bool,
+    on_open: bool,
+    aria_label: Option<&str>,
+) -> String {
+    message_open_markup(
+        csrf,
+        href,
+        class,
+        &TrustedHtml::from_template(escape_html(text).to_string()),
+        selected,
+        on_open,
+        aria_label,
+    )
+}
+
+fn message_open_markup(
+    csrf: &str,
+    href: &str,
+    class: &str,
+    content: &TrustedHtml,
+    selected: bool,
+    on_open: bool,
+    aria_label: Option<&str>,
+) -> String {
+    let attributes = format!(
+        "{}{}",
+        if selected {
+            " aria-current=\"true\""
+        } else {
+            ""
+        },
+        aria_label
+            .map(|label| format!(" aria-label=\"{}\"", escape_html(label)))
+            .unwrap_or_default(),
+    );
+    if !on_open {
+        return format!(
+            "<a class=\"{}\" href=\"{}\"{attributes} dir=\"auto\">{content}</a>",
+            escape_html(class),
+            escape_html(href)
+        );
+    }
+    let identity = || -> Option<(String, String, String, String, String)> {
+        let target = href.strip_suffix("#reading-pane").unwrap_or(href);
+        let safe = crate::mail_navigation::safe_mail_return(target)?;
+        let (path, query) = safe.split_once('?')?;
+        let fields = crate::http_form::parse_urlencoded_form(
+            query.as_bytes(),
+            crate::mail_navigation::MAIL_RETURN_MAX_FIELDS,
+            2048,
+        )
+        .ok()?;
+        let names = match path {
+            "/mailbox" | "/search" => [
+                "selected_mailbox",
+                "selected_uid",
+                "selected_mailbox_guid",
+                "selected_message_guid",
+            ],
+            "/message" => ["mailbox", "uid", "mailbox_guid", "message_guid"],
+            _ => return None,
+        };
+        let mailbox = fields.get(names[0])?.clone();
+        MailboxEntry::new(crate::mailbox::MailboxListingPolicy::default(), &mailbox).ok()?;
+        let uid = fields.get(names[1])?.parse::<u32>().ok()?;
+        if uid == 0 {
+            return None;
+        }
+        let version = crate::message_metadata::MessageVersion::new(
+            fields.get(names[2])?.clone(),
+            fields.get(names[3])?.clone(),
+        )
+        .ok()?;
+        Some((
+            mailbox,
+            uid.to_string(),
+            version.mailbox_guid,
+            version.message_guid,
+            safe,
+        ))
+    };
+    let Some((mailbox, uid, mailbox_guid, message_guid, return_to)) = identity() else {
+        return format!("<button class=\"{}\" type=\"button\"{attributes} dir=\"auto\" disabled>{content}</button>", escape_html(class));
+    };
+    let fields: String = [
+        ("csrf_token", csrf),
+        ("mailbox", &mailbox),
+        ("uid", &uid),
+        ("mailbox_guid", &mailbox_guid),
+        ("message_guid", &message_guid),
+        ("return_to", &return_to),
+    ]
+    .into_iter()
+    .map(|(name, value)| {
+        format!(
+            "<input type=\"hidden\" name=\"{name}\" value=\"{}\">",
+            escape_html(value)
+        )
+    })
+    .collect();
+    format!("<form class=\"message-open-form\" method=\"post\" action=\"/message/open\">{fields}<button class=\"{}\" type=\"submit\"{attributes} dir=\"auto\">{content}</button></form>", escape_html(class))
+}
+
+#[cfg(test)]
+mod message_open_control_tests {
+    use super::*;
+
+    #[test]
+    fn on_open_controls_bind_complete_identity_and_escape_every_projection() {
+        for href in [
+            "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=7&selected_mailbox_guid=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&selected_message_guid=message-7#reading-pane",
+            "/search?q=report&selected_mailbox=INBOX&selected_uid=7&selected_mailbox_guid=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&selected_message_guid=message-7#reading-pane",
+            "/message?mailbox=INBOX&uid=7&mailbox_guid=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&message_guid=message-7&return_to=%2Fsearch%3Fq%3Dreport",
+        ] {
+            let html = message_open_control("csrf<&\"", href, "message-subject-link", concat!("<", "script> & subject"), true, true, Some("Open <message>"));
+            assert!(html.contains("method=\"post\" action=\"/message/open\""));
+            assert_eq!(html.matches("type=\"hidden\"").count(), 6);
+            for (name,value) in [("mailbox","INBOX"),("uid","7"),("mailbox_guid","aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),("message_guid","message-7")] {
+                assert!(html.contains(&format!("name=\"{name}\" value=\"{value}\"")));
+            }
+            assert!(html.contains("csrf&lt;&amp;&quot;"));
+            assert!(html.contains("&lt;script&gt; &amp; subject"));
+            assert!(html.contains("aria-current=\"true\""));
+            assert!(html.contains("aria-label=\"Open &lt;message&gt;\""));
+            assert!(!html.contains("<a "));
+            assert!(!html.contains("#reading-pane"));
+        }
+    }
+
+    #[test]
+    fn missing_or_unsafe_opening_identity_is_disabled_without_get_fallback() {
+        for href in [
+            "/message?mailbox=INBOX&uid=7",
+            "/message?mailbox=INBOX&uid=0&mailbox_guid=a&message_guid=b",
+            "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=7",
+            "/message?mailbox=INBOX&uid=7&mailbox_guid=a&message_guid=b&unknown=1",
+            "/message?mailbox=INBOX&uid=7&mailbox_guid=a&message_guid=b#untrusted",
+            "https://example.invalid/message?mailbox=INBOX&uid=7&mailbox_guid=a&message_guid=b",
+        ] {
+            let html = message_open_control("csrf", href, "subject", "Subject", false, true, None);
+            assert!(html.contains("disabled>Subject</button>"), "{href}");
+            assert!(!html.contains("<form"));
+            assert!(!html.contains("href="));
+        }
+        let manual = message_open_control(
+            "csrf",
+            "/message?mailbox=INBOX&uid=7",
+            "subject",
+            "Subject & text",
+            false,
+            false,
+            None,
+        );
+        assert!(manual.contains("<a class=\"subject\" href=\"/message?mailbox=INBOX&amp;uid=7\""));
+        assert!(manual.contains("Subject &amp; text</a>"));
+        assert!(!manual.contains("<form"));
+    }
+
+    #[test]
+    fn navigation_preserves_opened_identity_but_new_selection_drops_marker() {
+        let mut view = ListViewState::from_query(&std::collections::BTreeMap::new()).unwrap();
+        view.selection = Some(crate::mail_list::ListSelection {
+            mailbox: "INBOX".into(),
+            uid: 7,
+        });
+        view.requested_version = Some(
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "message-7".into())
+                .unwrap(),
+        );
+        view.opened_read = true;
+        assert!(list_navigation_href("/mailbox?name=INBOX", &view, 1).contains("opened_read=1"));
+        assert!(list_form_state(&view).contains("name=\"opened_read\""));
+        let next = selected_message_href(
+            "/mailbox?name=INBOX",
+            &view,
+            "INBOX",
+            8,
+            Some(
+                &crate::message_metadata::MessageVersion::new("a".repeat(32), "message-8".into())
+                    .unwrap(),
+            ),
+        );
+        assert!(!next.contains("opened_read"));
+        view.requested_version = None;
+        assert!(!list_navigation_href("/mailbox?name=INBOX", &view, 1).contains("opened_read"));
+        assert!(!list_form_state(&view).contains("opened_read"));
+        view.selection = None;
+        assert!(!list_navigation_href("/mailbox?name=INBOX", &view, 1).contains("opened_read"));
+    }
+}
+
+fn render_coordinated_reader(
+    base: &str,
+    view: &ListViewState,
+    csrf: &str,
+    reader: &MailReaderContext,
+    account: &str,
+) -> String {
+    let mut cleared = view.clone();
+    cleared.selection = None;
+    let back = list_navigation_href(base, &cleared, view.page);
+    render_coordinated_reader_with_back(base, view, csrf, reader, &back, account)
+}
+
+fn render_coordinated_reader_with_focus(
+    base: &str,
+    view: &ListViewState,
+    csrf: &str,
+    reader: &MailReaderContext,
+    account: &str,
+    targets: &[Option<String>],
+) -> String {
+    let back = back_focus::back_href(account, base, view, reader, targets);
+    render_coordinated_reader_with_back(base, view, csrf, reader, &back, account)
+}
+
+fn render_coordinated_reader_with_back(
+    base: &str,
+    view: &ListViewState,
+    csrf: &str,
+    reader: &MailReaderContext,
+    back: &str,
+    account: &str,
+) -> String {
+    match &reader.pane {
+        SelectedMessagePane::Unselected => "<article class=\"reading-pane reader-empty\" aria-label=\"Reading pane\"><h2>Choose a message</h2><p class=\"muted\">Open a subject to read it alongside this list.</p></article>".into(),
+        SelectedMessagePane::Unavailable(message) => format!("<article id=\"reading-pane\" class=\"reading-pane\" tabindex=\"-1\" aria-labelledby=\"reading-unavailable\"><a href=\"{}\"><span class=\"presentation-icon presentation-icon-back\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Back to list</span></a><h2 id=\"reading-unavailable\">Message unavailable</h2><p role=\"status\">{}</p></article>", escape_html(back), escape_html(message)),
+        SelectedMessagePane::Ready(rendered) => {
+            let locate = match view.selection_page {
+                Some(page) if page != view.page => format!("<p class=\"reader-locate\"><a href=\"{}\">Locate selected message on page {page}</a></p>", escape_html(&list_navigation_href(base, view, page))),
+                _ => String::new(),
+            };
+            format!("<div class=\"reader-column\">{locate}{}</div>", render_reader_fragment(csrf, rendered, ReaderFolders { timezone: reader.timezone, account, labels: reader.labels.as_ref(), archive: reader.archive_mailbox_name.as_deref(), bin: reader.bin_mailbox_name.as_deref(), mailboxes: &reader.mailboxes }, back, &list_navigation_href(base, view, view.page), Some(&reader.neighbours)))
+        }
+    }
+}
+
+fn render_date_filter(base: &str, view: &ListViewState) -> String {
+    let Some((path, query)) = base.split_once('?') else {
+        return String::new();
+    };
+    if !matches!(path, "/mailbox" | "/search") || query.len() > 2048 {
+        return String::new();
+    }
+    let Ok(fields) = crate::http_form::parse_query_string(query, 8) else {
+        return String::new();
+    };
+    if fields
+        .keys()
+        .any(|key| !["name", "mailbox", "q", "scope", "field"].contains(&key.as_str()))
+    {
+        return String::new();
+    }
+    let base_fields: String = fields
+        .iter()
+        .map(|(key, value)| {
+            format!(
+                "<input type=\"hidden\" name=\"{}\" value=\"{}\">",
+                escape_html(key),
+                escape_html(value)
+            )
+        })
+        .collect();
+    let mut cleared = view.clone();
+    cleared.dates = crate::mail_list::ReceivedDateRange::default();
+    let state = list_form_state(&cleared);
+    let label = if view.dates.active() {
+        "Received dates: filtered"
+    } else {
+        "Received dates: all"
+    };
+    format!("<details class=\"date-filter\"><summary>{label}</summary><form method=\"get\" action=\"{path}\">{base_fields}{state}<label>From date (UTC)<input type=\"date\" name=\"after\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"{}\"></label><label>Through date (UTC)<input type=\"date\" name=\"before\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"{}\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Apply dates</span></button><a href=\"{}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear dates</span></a><p class=\"muted\">Inclusive UTC received dates, applied to loaded results. Messages with missing or invalid dates are excluded while a range is active. These are not archive or delivery dates.</p></form></details>", escape_html(view.dates.after.as_deref().unwrap_or("")), escape_html(view.dates.before.as_deref().unwrap_or("")), escape_html(&list_navigation_href(base, &cleared, 1)))
+}
+
+fn render_list_navigation(base: &str, view: &ListViewState, compact: bool) -> String {
+    let (filters, pages, notices) = render_list_navigation_parts(base, view, compact);
+    format!("<div class=\"list-navigation\">{filters}{pages}</div>{notices}")
+}
+
+fn render_sender_filter(base: &str, view: &ListViewState) -> String {
+    let Some((path, query)) = base.split_once('?') else {
+        return String::new();
+    };
+    if !matches!(path, "/mailbox" | "/search") || query.len() > 2048 {
+        return String::new();
+    }
+    let Ok(fields) = crate::http_form::parse_query_string(query, 8) else {
+        return String::new();
+    };
+    if fields
+        .keys()
+        .any(|key| !["name", "mailbox", "q", "scope", "field"].contains(&key.as_str()))
+    {
+        return String::new();
+    }
+    let base_fields: String = fields
+        .iter()
+        .map(|(key, value)| {
+            format!(
+                "<input type=\"hidden\" name=\"{}\" value=\"{}\">",
+                escape_html(key),
+                escape_html(value)
+            )
+        })
+        .collect();
+    let mut cleared = view.clone();
+    cleared.sender = crate::mail_list::SenderFilter::default();
+    cleared.selection = None;
+    let state = list_form_state(&cleared);
+    format!("<details class=\"sender-filter\"><summary>From: {}</summary><form method=\"get\" action=\"{path}\" aria-label=\"Sender filter\">{base_fields}{state}<label>Sender address<input type=\"email\" name=\"from\" maxlength=\"320\" placeholder=\"sender@example.com\" value=\"{}\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Apply sender</span></button><a href=\"{}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear sender</span></a><p class=\"muted\">Exact mailbox address in the public From header, applied to loaded results. This does not verify the sender's identity.</p></form></details>", escape_html(if view.sender.active() { view.sender.value() } else { "all" }), escape_html(view.sender.value()), escape_html(&list_navigation_href(base, &cleared, 1)))
+}
+
+fn render_read_filter_choices(
+    view: &ListViewState,
+    href: &impl Fn(&ListViewState) -> String,
+) -> String {
+    let mut filters = String::new();
+    for filter in [
+        MessageFilter::All,
+        MessageFilter::Unread,
+        MessageFilter::Starred,
+    ] {
+        let mut target = view.clone();
+        target.filter = filter;
+        filters.push_str(&format!(
+            "<a class=\"filter-link\" href=\"{}\"{}>{}</a>",
+            escape_html(&href(&target)),
+            if filter == view.filter {
+                " aria-current=\"page\""
+            } else {
+                ""
+            },
+            filter.label()
+        ));
+    }
+    filters
+}
+
+fn render_attachment_filter_choices(
+    view: &ListViewState,
+    href: &impl Fn(&ListViewState) -> String,
+) -> String {
+    let mut filters = String::new();
+    filters.push_str(&format!("<details class=\"attachment-filter\"><summary>Attachments: {}</summary><div role=\"group\" aria-label=\"Attachment filter\">", view.attachment.label()));
+    for attachment in [
+        AttachmentFilter::All,
+        AttachmentFilter::With,
+        AttachmentFilter::Without,
+        AttachmentFilter::Unknown,
+    ] {
+        let mut target = view.clone();
+        target.attachment = attachment;
+        filters.push_str(&format!(
+            "<a class=\"filter-link\" href=\"{}\"{}>{}</a>",
+            escape_html(&href(&target)),
+            if attachment == view.attachment {
+                " aria-current=\"page\""
+            } else {
+                ""
+            },
+            attachment.label()
+        ));
+    }
+    filters.push_str(
+        "</div><p class=\"muted\">Unknown means attachment metadata is unavailable.</p></details>",
+    );
+    filters
+}
+
+fn render_protection_filter_choices(
+    view: &ListViewState,
+    href: &impl Fn(&ListViewState) -> String,
+) -> String {
+    let mut filters = String::new();
+    filters.push_str(&format!("<details class=\"protection-filter\"><summary>OpenPGP: {}</summary><div role=\"group\" aria-label=\"OpenPGP filter\">", view.protection.label()));
+    for protection in [
+        ProtectionFilter::All,
+        ProtectionFilter::Plain,
+        ProtectionFilter::Signed,
+        ProtectionFilter::Encrypted,
+        ProtectionFilter::Unknown,
+    ] {
+        let mut target = view.clone();
+        target.protection = protection;
+        filters.push_str(&format!(
+            "<a class=\"filter-link\" href=\"{}\"{}>{}</a>",
+            escape_html(&href(&target)),
+            if protection == view.protection {
+                " aria-current=\"page\""
+            } else {
+                ""
+            },
+            protection.label()
+        ));
+    }
+    filters.push_str("</div><p class=\"muted\">Outer MIME structure only; signatures are not verified by this filter. No outer OpenPGP MIME does not exclude nested or inline PGP. Unknown includes absent or unsupported metadata.</p></details>");
+    filters
+}
+
+fn render_filter_choices(view: &ListViewState, href: impl Fn(&ListViewState) -> String) -> String {
+    [
+        render_read_filter_choices(view, &href),
+        render_attachment_filter_choices(view, &href),
+        render_protection_filter_choices(view, &href),
+        render_label_filter_choices(view, &href),
+    ]
+    .concat()
+}
+
+fn render_label_filter_choices(
+    view: &ListViewState,
+    href: &impl Fn(&ListViewState) -> String,
+) -> String {
+    if view.label_choices.is_empty() {
+        return String::new();
+    }
+    let name = view
+        .label
+        .as_ref()
+        .and_then(|id| view.label_choices.iter().find(|(value, _)| value == id))
+        .map(|(_, name)| name.as_str())
+        .unwrap_or("All messages");
+    let mut html = format!("<details class=\"label-filter\"><summary>Labels: {}</summary><nav aria-label=\"Label filter\"><a href=\"{}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear label filter</span></a>",escape_html(name),escape_html(&href(&view.clear_label())));
+    for (id, name) in &view.label_choices {
+        let mut target = view.clear_label();
+        target.label = Some(id.clone());
+        html.push_str(&format!(
+            "<a class=\"filter-link\" href=\"{}\"{}>{}</a>",
+            escape_html(&href(&target)),
+            if view.label.as_ref() == Some(id) {
+                " aria-current=\"page\""
+            } else {
+                ""
+            },
+            escape_html(name)
+        ));
+    }
+    html.push_str("</nav><p class=\"muted\">Private labels filter current identities in this mailbox before pagination. Clearing preserves the other mailbox filters and sorting.</p></details>");
+    html
+}
+
+pub(crate) fn category_filter_hidden(
+    context: &crate::mail_navigation::SearchFilterContext,
+) -> String {
+    context
+        .fields()
+        .iter()
+        .map(|(key, value)| {
+            format!(
+                "<input type=\"hidden\" name=\"{}\" value=\"{}\">",
+                escape_html(key),
+                escape_html(value)
+            )
+        })
+        .collect()
+}
+
+pub(crate) fn render_search_category_filters(
+    context: &crate::mail_navigation::SearchFilterContext,
+    query: &str,
+) -> String {
+    use crate::mail_navigation::SearchTab;
+    let view = &context.view;
+    let href = |target: &ListViewState| {
+        let mut target_context = context.clone();
+        target_context.view = target.clone();
+        target_context.href(SearchTab::All, query, None)
+    };
+    let mut filters = String::new();
+    let state = |context: &crate::mail_navigation::SearchFilterContext| {
+        format!("<input type=\"hidden\" name=\"category\" value=\"all\"><input type=\"hidden\" name=\"q\" value=\"{}\">{}",escape_html(query),category_filter_hidden(context))
+    };
+    let mut sender = context.clone();
+    sender.view.sender = crate::mail_list::SenderFilter::default();
+    filters.push_str(&format!("<details class=\"sender-filter\"><summary>From: {}</summary><form method=\"get\" action=\"/search\" aria-label=\"Sender filter\">{}<label>Sender address<input type=\"email\" name=\"from\" maxlength=\"320\" value=\"{}\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Apply sender</span></button><a href=\"{}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear sender</span></a><p class=\"muted\">Exact public From mailbox in loaded Messages; this does not verify identity.</p></form></details>",escape_html(if view.sender.active(){view.sender.value()}else{"all"}),state(&sender),escape_html(view.sender.value()),escape_html(&sender.href(SearchTab::All,query,None))));
+    let mut dates = context.clone();
+    dates.view.dates = crate::mail_list::ReceivedDateRange::default();
+    filters.push_str(&format!("<details class=\"date-filter\"><summary>Received dates: {}</summary><form method=\"get\" action=\"/search\">{}<label>From date (UTC)<input type=\"date\" name=\"after\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"{}\"></label><label>Through date (UTC)<input type=\"date\" name=\"before\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"{}\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Apply dates</span></button><a href=\"{}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear dates</span></a><p class=\"muted\">Inclusive UTC received dates in loaded Messages; missing or invalid dates do not match an active range.</p></form></details>",if view.dates.active(){"filtered"}else{"all"},state(&dates),escape_html(view.dates.after.as_deref().unwrap_or("")),escape_html(view.dates.before.as_deref().unwrap_or("")),escape_html(&dates.href(SearchTab::All,query,None))));
+    filters.push_str(&render_attachment_filter_choices(view, &href));
+    filters.push_str(&render_protection_filter_choices(view, &href));
+    filters.push_str(&format!("<details class=\"read-filter\"><summary>Read state: {}</summary><div role=\"group\" aria-label=\"Read state filter\">{}</div></details>", view.filter.label(), render_read_filter_choices(view, &href)));
+    let mut folder = context.clone();
+    folder.mailbox = None;
+    filters.push_str(&format!("<details class=\"folder-filter\"><summary>Folder: {}</summary><form method=\"get\" action=\"/search\" aria-label=\"Folder filter\">{}<label>Folder<input name=\"mailbox\" maxlength=\"255\" value=\"{}\" placeholder=\"Mailbox name\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Apply folder</span></button><a href=\"{}\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">All mailboxes</span></a><p class=\"muted\">Selected folder is checked under your account before Messages are searched.</p></form></details>",escape_html(context.mailbox.as_deref().unwrap_or("All mailboxes")),state(&folder),escape_html(context.mailbox.as_deref().unwrap_or("")),escape_html(&folder.href(SearchTab::All,query,None))));
+    format!("<div class=\"list-navigation search-category-filters\">{filters}</div><p class=\"search-filter-applicability muted\">Mail filters apply only to Messages. People is matched by saved name or email address.</p>")
+}
+
+fn render_list_navigation_parts(
+    base: &str,
+    view: &ListViewState,
+    compact: bool,
+) -> (String, String, String) {
+    let mut filters = render_filter_choices(view, |target| list_navigation_href(base, target, 1));
+    filters.push_str(&render_sender_filter(base, view));
+    filters.push_str(&render_date_filter(base, view));
+    if compact {
+        filters = format!("<details class=\"sent-filter-menu\" name=\"list-tools\"><summary>{}</summary><div class=\"mail-tools-panel\"><nav aria-label=\"Sent filters\">{filters}</nav></div></details>", if view.attachment == AttachmentFilter::All { format!("{}{}", view.filter.label(), if view.dates.active() { " · Dates" } else { "" }) } else { format!("{} · {}", view.filter.label(), view.attachment.label()) });
+    }
+    let previous = if view.page > 1 {
+        format!(
+            "<a class=\"button-link\" rel=\"prev\" href=\"{}\"><span class=\"presentation-icon presentation-icon-previous\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Previous page</span></a>",
+            escape_html(&list_navigation_href(base, view, view.page - 1))
+        )
+    } else {
+        "<span class=\"muted\" aria-disabled=\"true\">Previous page</span>".to_string()
+    };
+    let next = if view.page < view.pages() {
+        format!(
+            "<a class=\"button-link\" rel=\"next\" href=\"{}\"><span class=\"presentation-icon presentation-icon-next\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Next page</span></a>",
+            escape_html(&list_navigation_href(base, view, view.page + 1))
+        )
+    } else {
+        "<span class=\"muted\" aria-disabled=\"true\">Next page</span>".to_string()
+    };
+    let adjustment = if view.page != view.requested_page {
+        "<p class=\"notice\" role=\"status\">The requested page is outside the current results. Showing the last available page.</p>"
+    } else {
+        ""
+    };
+    let limit = if view.backend_truncated {
+        format!("<p class=\"notice\" role=\"status\"><strong>Result limit reached.</strong> Showing up to {} backend results. Narrow your search for more specific results.</p>", view.backend_limit)
+    } else {
+        String::new()
+    };
+    (
+        format!("<nav class=\"message-filters\" aria-label=\"Message filters\">{filters}</nav>"),
+        format!("<p class=\"list-window muted\">Showing {}–{} of {} messages · Page {} of {}</p><nav class=\"list-pagination\" aria-label=\"Result pages\">{previous}{next}</nav>", view.first_result(), view.last_result(), view.total_results, view.page, view.pages()),
+        format!("{adjustment}{limit}"),
+    )
+}
+
+fn render_message_flags(flags: &[String]) -> String {
+    let read = if has_flag(flags, "\\Seen") {
+        "Read"
+    } else {
+        "Unread"
+    };
+    let (star, label) = if has_flag(flags, "\\Flagged") {
+        ("★", "Starred")
+    } else {
+        ("☆", "Not starred")
+    };
+    format!("<span class=\"message-star\" role=\"img\" aria-label=\"{label}\">{star}</span><span class=\"message-flags\" title=\"{}\">{read}</span>", escape_html(&flags.join(" ")))
+}
+
+fn render_message_state_controls(
+    csrf: &str,
+    mailbox: &str,
+    uid: u64,
+    flags: &[String],
+    metadata: Option<&MessageMetadata>,
+    return_to: &str,
+) -> String {
+    let indicators = render_message_flags(flags);
+    let Some(metadata) = metadata else {
+        return format!("{indicators}<span class=\"state-unavailable muted\" title=\"Message state controls are unavailable. Refresh the list to check again.\">State controls unavailable</span>");
+    };
+    let mut controls = String::new();
+    for flag in [MessageFlag::Seen, MessageFlag::Flagged] {
+        let current = has_flag(flags, flag.imap());
+        controls.push_str(&render_message_flag_form(
+            csrf, mailbox, uid, metadata, flag, current, return_to,
+        ));
+    }
+    let attachments = render_attachment_count(Some(metadata));
+    format!("<div class=\"message-state-controls\" role=\"group\" aria-label=\"Message state\">{controls}{attachments}</div>")
+}
+
+fn render_message_flag_form(
+    csrf: &str,
+    mailbox: &str,
+    uid: u64,
+    metadata: &MessageMetadata,
+    flag: MessageFlag,
+    current: bool,
+    return_to: &str,
+) -> String {
+    let state_label = if flag == MessageFlag::Seen {
+        "Read"
+    } else {
+        "Star"
+    };
+    let (label, text) = match (flag, current) {
+        (MessageFlag::Seen, false) => ("Mark read", "Mark read"),
+        (MessageFlag::Seen, true) => ("Mark unread", "Mark unread"),
+        (MessageFlag::Flagged, false) => ("Star", "☆"),
+        (MessageFlag::Flagged, true) => ("Remove star from", "★"),
+    };
+    let text = presentation_label(
+        if flag == MessageFlag::Seen {
+            text
+        } else if current {
+            "Unstar"
+        } else {
+            "Star"
+        },
+        if flag == MessageFlag::Seen {
+            if current {
+                "unread"
+            } else {
+                "read"
+            }
+        } else {
+            "star"
+        },
+    );
+    format!(
+            "<form class=\"message-state-form\" method=\"post\" action=\"/message/flag\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{uid}\"><input type=\"hidden\" name=\"mailbox_guid\" value=\"{}\"><input type=\"hidden\" name=\"message_guid\" value=\"{}\"><input type=\"hidden\" name=\"flag\" value=\"{}\"><input type=\"hidden\" name=\"enabled\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\"><button class=\"flag-control\" type=\"submit\" aria-label=\"{state_label} message #{uid} in {}\" aria-pressed=\"{current}\" title=\"{label}\">{text}</button></form>",
+            escape_html(csrf), escape_html(mailbox), escape_html(&metadata.version.mailbox_guid), escape_html(&metadata.version.message_guid), flag.value(),
+            if current { "0" } else { "1" }, escape_html(return_to), escape_html(mailbox),
+        )
+}
+
+fn render_attachment_count(metadata: Option<&MessageMetadata>) -> String {
+    if metadata.is_some_and(|value| {
+        value.protection == crate::message_metadata::MessageProtection::Encrypted
+    }) {
+        return "<span class=\"muted attachment-count\">Attachments unknown until decrypted</span>"
+            .into();
+    }
+    match metadata.and_then(|metadata| metadata.attachment_count) {
+        Some(0) => String::new(),
+        Some(count) => format!("<span class=\"badge attachment-count\" data-attachment-count=\"{count}\">{count} {}</span>", if count == 1 { "attachment" } else { "attachments" }),
+        None => "<span class=\"muted attachment-count\" aria-label=\"Attachment metadata unavailable\" title=\"Attachment metadata unavailable\">–</span>".into(),
+    }
+}
+
+fn render_public_attachment_details(metadata: Option<&MessageMetadata>) -> String {
+    let Some(metadata) = metadata else {
+        return "<p class=\"muted\">Attachment details unavailable.</p>".into();
+    };
+    if metadata.protection == crate::message_metadata::MessageProtection::Encrypted {
+        return "<p class=\"muted\">Attachment details are unknown until the message is decrypted.</p>".into();
+    }
+    let Some(summaries) = metadata.attachments.as_deref().filter(|summaries| {
+        crate::message_metadata::validate_attachment_summaries(summaries, metadata.attachment_count)
+    }) else {
+        return "<p class=\"muted\">Attachment details unavailable or outside the supported limit.</p>".into();
+    };
+    if summaries.is_empty() {
+        return String::new();
+    }
+    let items: String = summaries
+        .iter()
+        .map(|summary| {
+            format!(
+                "<li><span dir=\"auto\">{}</span> · {} encoded MIME bytes</li>",
+                escape_html(summary.filename.as_deref().unwrap_or("Name unavailable")),
+                summary.encoded_size_bytes
+            )
+        })
+        .collect();
+    format!("<section class=\"public-attachment-details\" aria-label=\"Public attachment details\"><h3>Attachment details</h3><ul>{items}</ul><p class=\"muted\">Public MIME parts, not decoded download size. Unsupported names and protected inner files are unavailable here.</p></section>")
+}
+
+fn render_public_message_protection(metadata: Option<&MessageMetadata>) -> String {
+    use crate::message_metadata::MessageProtection;
+    let label = match metadata.map(|value| value.protection).unwrap_or_default() {
+        MessageProtection::Unknown => "OpenPGP MIME unknown",
+        MessageProtection::Plain => "No outer OpenPGP MIME",
+        MessageProtection::Signed => "Signed MIME",
+        MessageProtection::Encrypted => "Encrypted MIME",
+    };
+    format!("<span class=\"message-security\" title=\"Public outer MIME structure only; signatures are not verified and ciphertext has not been decrypted. No outer OpenPGP MIME does not exclude nested or inline PGP.\">{label}</span>")
 }
 
 fn render_search_field_select(active_field: MessageSearchField) -> String {
@@ -367,128 +1771,552 @@ fn render_search_field_select(active_field: MessageSearchField) -> String {
     )
 }
 
+fn render_message_label_badges(
+    record: Option<&crate::labels::LabelRecord>,
+    account: &str,
+    expected_folder: &str,
+    folder: &str,
+    uid: u64,
+    metadata: Option<&MessageMetadata>,
+    show_empty: bool,
+) -> String {
+    let unavailable =
+        || "<span class=\"muted message-labels-unavailable\">Labels unavailable</span>".to_owned();
+    let Some(record) = record else {
+        return unavailable();
+    };
+    let Ok(identity) = crate::labels::MessageIdentity::from_current_metadata(
+        account,
+        account,
+        expected_folder,
+        folder,
+        uid,
+        metadata,
+    ) else {
+        return unavailable();
+    };
+    let Ok(labels) = record.labels_for(&identity) else {
+        return unavailable();
+    };
+    if labels.is_empty() {
+        return if show_empty {
+            "<span class=\"muted message-labels-empty\">No labels</span>".into()
+        } else {
+            String::new()
+        };
+    }
+    let badges: String = labels
+        .into_iter()
+        .map(|label| {
+            format!(
+                "<span class=\"badge message-label\" data-label-id=\"{}\" dir=\"auto\">{}</span>",
+                escape_html(label.id()),
+                escape_html(label.name())
+            )
+        })
+        .collect();
+    format!("<span class=\"message-labels\" aria-label=\"Assigned labels\">{badges}</span>")
+}
+
+struct MessageCard<'a> {
+    timezone: crate::timezone::FixedOffset,
+    focus_target: Option<&'a str>,
+    open_on_select: bool,
+    recipient: bool,
+    mailbox: &'a str,
+    uid: u64,
+    subject: Option<&'a str>,
+    sender: Option<&'a str>,
+    received: &'a str,
+    flags: &'a [String],
+    metadata: Option<&'a MessageMetadata>,
+    size: u64,
+    labels: &'a str,
+}
+
+fn render_message_card(
+    message: MessageCard<'_>,
+    csrf: &str,
+    href: &str,
+    selected: bool,
+    return_to: &str,
+    actions: &str,
+    selection: &str,
+) -> String {
+    let party = message.sender.unwrap_or(if message.recipient {
+        "Recipient unavailable"
+    } else {
+        "Sender unavailable"
+    });
+    let visible_party = if message.recipient && message.sender.is_some() {
+        format!("To: {party}")
+    } else {
+        party.to_string()
+    };
+    let (star, read_action) = match message.metadata {
+        Some(metadata) => (
+            render_message_flag_form(
+                csrf,
+                message.mailbox,
+                message.uid,
+                metadata,
+                MessageFlag::Flagged,
+                has_flag(message.flags, "\\Flagged"),
+                return_to,
+            ),
+            render_message_flag_form(
+                csrf,
+                message.mailbox,
+                message.uid,
+                metadata,
+                MessageFlag::Seen,
+                has_flag(message.flags, "\\Seen"),
+                return_to,
+            ),
+        ),
+        None => (
+            render_message_flags(message.flags),
+            "<span class=\"state-unavailable muted\">State controls unavailable</span>".into(),
+        ),
+    };
+    format!(
+        concat!(
+            "<li class=\"message-row message-card{}\" data-selected=\"{}\"{focus_attributes}>{selection}",
+            "<div class=\"message-card-main\"><span class=\"message-avatar\" aria-hidden=\"true\" title=\"{initials_hint}\">{}</span><span class=\"message-sender\" title=\"{}\" dir=\"auto\">{}</span>",
+            "<span class=\"message-date\" title=\"{}\">{}</span>",
+            "{subject_control}<span class=\"message-body-preview\" dir=\"auto\">{}</span></div>",
+            "<div class=\"message-card-footer message-preview-meta\"><span class=\"message-mailbox\">{}</span><div class=\"message-star-cell\">{star}</div>{}{labels}{protection}",
+            "<details class=\"message-more\"><summary aria-label=\"More for message #{} in {}\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More</span></summary>",
+            "<div class=\"message-more-content\"><p class=\"muted\">Message #{} · {} bytes</p><p><strong>{party_label}:</strong> {}</p><p><strong>Subject:</strong> {}</p>{attachment_details}{read_action}{}</div></details></div></li>"
+        ),
+        if has_flag(message.flags, "\\Seen") { "" } else { " message-unread" },
+        selected,
+        escape_html(&sender_initials(message.sender)),
+        escape_html(party),
+        escape_html(&visible_party),
+        escape_html(message.received),
+        escape_html(&message.timezone.display_received(message.received)),
+        escape_html(message.metadata.and_then(|metadata| metadata.preview.as_deref()).filter(|preview| crate::message_metadata::valid_message_preview(preview)).unwrap_or("No preview available")),
+        escape_html(message.mailbox),
+        render_attachment_count(message.metadata),
+        message.uid, escape_html(message.mailbox), message.uid, message.size,
+        escape_html(party),
+        escape_html(message.subject.unwrap_or("(No subject)")), actions,
+        initials_hint = if message.recipient { "Initials from the recipient header" } else { "Initials from the sender header" },
+        party_label = if message.recipient { "To" } else { "From" },
+        selection = selection,
+        focus_attributes = back_focus::attributes(message.focus_target),
+        star = star,
+        read_action = read_action,
+        protection = render_public_message_protection(message.metadata),
+        attachment_details = render_public_attachment_details(message.metadata),
+        labels = message.labels,
+        subject_control = message_open_control(csrf, href, "message-subject-link", message.subject.unwrap_or("(No subject)"), selected, message.open_on_select, None),
+    )
+}
+
+fn message_column_headings(recipient: bool) -> String {
+    let heading = "<div class=\"message-columns\" aria-hidden=\"true\"><span class=\"column-sender\">From</span><span class=\"column-subject\">Subject</span><span class=\"column-attachment\">Attachment</span><span class=\"column-security\">Security</span><span class=\"column-date\">Date</span></div>";
+    if recipient {
+        heading.replace(">From<", ">Recipient<")
+    } else {
+        heading.to_string()
+    }
+}
+
+fn render_sort_control_group(links: &str, view: &ListViewState) -> String {
+    let label = if view.conversation_order.is_some() {
+        "Conversation"
+    } else {
+        view.sort.column.label()
+    };
+    let help = if view.conversation_order.is_some() {
+        "<p>Related members stay together within these loaded results. Missing or ambiguous thread headers remain independent; thread headers do not verify a sender.</p>"
+    } else {
+        ""
+    };
+    format!(
+        "<details class=\"message-sort\"><summary>Sorted by {} {}</summary><nav aria-label=\"Sort messages\">{links}</nav>{help}</details>",
+        label,
+        sort_direction_label(view.sort.direction),
+    )
+}
+
+fn move_identity_fields(
+    csrf: &str,
+    mailbox: &str,
+    uid: u64,
+    metadata: Option<&MessageMetadata>,
+    return_to: &str,
+) -> Option<String> {
+    let version = &metadata?.version;
+    Some(format!("<input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{uid}\"><input type=\"hidden\" name=\"mailbox_guid\" value=\"{}\"><input type=\"hidden\" name=\"message_guid\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\">",
+        escape_html(csrf), escape_html(mailbox), escape_html(&version.mailbox_guid), escape_html(&version.message_guid), escape_html(return_to)))
+}
+
+fn render_reader_move_controls(
+    csrf: &str,
+    rendered: &RenderedMessageView,
+    folders: ReaderFolders<'_>,
+    return_to: &str,
+) -> String {
+    let ReaderFolders {
+        archive,
+        bin,
+        mailboxes,
+        ..
+    } = folders;
+    let Some(fields) = move_identity_fields(
+        csrf,
+        &rendered.mailbox_name,
+        rendered.uid,
+        rendered.metadata.as_ref(),
+        return_to,
+    ) else {
+        return "<p class=\"muted\">Move actions unavailable: current stored message identity could not be confirmed. Refresh the message before choosing an action.</p>".into();
+    };
+    let options: String = mailboxes
+        .iter()
+        .filter(|m| m.name != rendered.mailbox_name)
+        .map(|m| {
+            format!(
+                "<option value=\"{}\">{}</option>",
+                escape_html(&m.name),
+                escape_html(&m.name)
+            )
+        })
+        .collect();
+    let mut buttons = String::new();
+    if archive.is_some_and(|name| name != rendered.mailbox_name) {
+        buttons.push_str(
+            "<button type=\"submit\" name=\"action\" value=\"archive\"><span class=\"presentation-icon presentation-icon-archive\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Archive Message</span></button>",
+        );
+    }
+    if archive.is_none() {
+        buttons.push_str("<p class=\"muted\">Set an archive mailbox in Settings to enable the archive shortcut.</p>");
+    }
+    if bin.is_some_and(|name| {
+        rendered.mailbox_name != name && mailboxes.iter().any(|m| m.name == name)
+    }) {
+        buttons
+            .push_str("<button type=\"submit\" name=\"action\" value=\"bin\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move to Bin</span></button>");
+    }
+    if bin == Some(rendered.mailbox_name.as_str()) && mailboxes.iter().any(|m| m.name == "INBOX") {
+        buttons.push_str(
+            "<button type=\"submit\" name=\"action\" value=\"restore\"><span class=\"presentation-icon presentation-icon-inbox\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Restore to Inbox</span></button>",
+        );
+    }
+    let chooser = if options.is_empty() {
+        String::new()
+    } else {
+        format!("<label>Destination Mailbox<select name=\"destination_mailbox\">{options}</select></label><button type=\"submit\" name=\"action\" value=\"move\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move Message</span></button>")
+    };
+    format!("<form class=\"message-move-controls\" method=\"post\" action=\"/message/move\">{fields}<div class=\"toolbar\">{buttons}</div>{chooser}<p class=\"muted\">Bin moves mail to your saved folder. Restore returns it to Inbox. These controls never permanently delete mail.</p></form>")
+}
+
+fn render_bulk_selection_menu(base: &str, view: &ListViewState, eligible_count: usize) -> String {
+    if view.total_results == 0 {
+        return String::new();
+    }
+    let visible = view.last_result() - view.first_result() + 1;
+    let count = eligible_count;
+    let base = list_navigation_href(base, view, view.page);
+    let label = if count != visible.min(MAX_BULK_SELECTION) {
+        if visible <= MAX_BULK_SELECTION {
+            format!("Select {count} eligible on this page")
+        } else {
+            format!("Select {count} eligible in first {MAX_BULK_SELECTION} on this page")
+        }
+    } else if visible <= MAX_BULK_SELECTION {
+        format!("Select all {count} on this page")
+    } else {
+        format!("Select first {count} on this page")
+    };
+    let mut links = if count == 0 {
+        String::new()
+    } else {
+        format!(
+            "<a href=\"{}\">{}</a>",
+            escape_html(&format!("{base}&select=move")),
+            label
+        )
+    };
+    links.push_str(&format!(
+        "<a href=\"{}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear selection</span></a>",
+        escape_html(&base)
+    ));
+    let selected = match view.bulk_selection {
+        BulkSelection::Move | BulkSelection::Archive if count > 0 => {
+            format!("{count} selected for the next action.")
+        }
+        _ => "No automatic selection.".into(),
+    };
+    format!("<details class=\"bulk-selection-menu\"><summary><span class=\"presentation-icon presentation-icon-select\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Select messages</span></summary><nav aria-label=\"Select messages on this page\">{links}</nav><p class=\"muted\">Actions accept at most {MAX_BULK_SELECTION} messages. A selection applies only to the current page. {selected}</p></details>")
+}
+
+fn sort_direction_label(direction: MessageSortDirection) -> &'static str {
+    if direction == MessageSortDirection::Asc {
+        "ascending"
+    } else {
+        "descending"
+    }
+}
+
 /// Renders the message-list page for one mailbox.
 pub(crate) fn render_message_list_page(
     canonical_username: &str,
     csrf_token: &str,
     mailbox_name: &str,
     messages: &[MessageSummary],
-    success_message: Option<&str>,
+    list_notice: Option<&str>,
     bulk_actions: MessageListBulkActions<'_>,
     sort_links: MessageListSortLinks<'_>,
 ) -> TrustedHtml {
-    let success_banner = match success_message {
-        Some(success_message) => format!(
-            "<div class=\"notice notice-success\" role=\"status\"><strong>Update complete:</strong> {}</div>",
-            escape_html(success_message)
+    // Bin retains its existing deletion workflow if folder roles overlap.
+    let is_sent = sort_links.reader.bin_mailbox_name.as_deref() != Some(mailbox_name)
+        && sort_links
+            .reader
+            .sent_role
+            .as_ref()
+            .is_some_and(|role| role.matches(mailbox_name));
+    let distinct_junk = sort_links.reader.bin_mailbox_name.as_deref() != Some("Junk")
+        && bulk_actions.archive_mailbox_name != Some("Junk")
+        && !sort_links
+            .reader
+            .sent_role
+            .as_ref()
+            .is_some_and(|role| role.matches("Junk"));
+    let is_junk = distinct_junk && mailbox_name == "Junk";
+    let archive_page = is_junk
+        || sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name)
+        || (Some(mailbox_name) == bulk_actions.archive_mailbox_name
+            && mailbox_name != "INBOX"
+            && !is_sent);
+    let list_notice_banner = match list_notice {
+        Some(list_notice) => format!(
+            "<div class=\"notice\" role=\"status\">{}</div>",
+            escape_html(list_notice)
         ),
         None => String::new(),
     };
+    let mut navigation_base = format!("/mailbox?name={}", url_encode(mailbox_name));
+    if let Some(query) = sort_links.search_query {
+        navigation_base.push_str(&format!("&q={}", url_encode(query)));
+    }
+    if let Some(scope) = sort_links.search_scope {
+        navigation_base.push_str(&format!("&scope={}", url_encode(scope)));
+    }
+    let focus_targets = back_focus::summary_targets(canonical_username, messages);
+    // Count the same GUID-bearing rows that the first-ten selection checks.
+    // Do not fill missing identities with later manually selectable rows.
+    let automatic_selection_count = messages
+        .iter()
+        .take(MAX_BULK_SELECTION)
+        .filter(|message| message.metadata.is_some())
+        .count();
     let mut rows = String::new();
     let archive_actions_available = bulk_actions
         .archive_mailbox_name
         .is_some_and(|archive_mailbox_name| archive_mailbox_name != mailbox_name);
-    let bulk_actions_available = !bulk_actions.move_destinations.is_empty();
-    for message in messages {
-        let message_href = format!(
-            "/message?mailbox={}&uid={}",
-            url_encode(mailbox_name),
-            message.uid
+    for (index, message) in messages.iter().enumerate() {
+        let labels = render_message_label_badges(
+            sort_links.reader.labels.as_ref(),
+            canonical_username,
+            mailbox_name,
+            &message.mailbox_name,
+            message.uid,
+            message.metadata.as_ref(),
+            false,
         );
-        let archive_action = if let Some(archive_mailbox_name) = bulk_actions.archive_mailbox_name {
-            if archive_mailbox_name != mailbox_name {
-                format!(
-                    "<form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"{}\"><button type=\"submit\">Archive</button></form>",
-                    escape_html(csrf_token),
-                    escape_html(mailbox_name),
-                    message.uid,
-                    escape_html(archive_mailbox_name),
-                )
-            } else {
-                String::new()
-            }
+        let message_href = if message.metadata.is_some() {
+            selected_message_href(
+                &navigation_base,
+                sort_links.view,
+                mailbox_name,
+                message.uid,
+                message.metadata.as_ref().map(|metadata| &metadata.version),
+            )
+        } else {
+            format!(
+                "/message?mailbox={}&uid={}",
+                url_encode(mailbox_name),
+                message.uid
+            )
+        };
+        let return_to =
+            list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page);
+        let archive_action = if archive_actions_available {
+            move_identity_fields(csrf_token, mailbox_name, message.uid, message.metadata.as_ref(), &return_to)
+                .map(|fields| format!("<form method=\"post\" action=\"/message/move\">{fields}<button type=\"submit\" name=\"action\" value=\"archive\"><span class=\"presentation-icon presentation-icon-archive\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Archive</span></button></form>"))
+                .unwrap_or_default()
         } else {
             String::new()
         };
-        let selection_cells = match (bulk_actions_available, archive_actions_available) {
-            (true, true) => format!(
-                "<td><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk move\"></td><td><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk archive\"></td>",
-                message.uid, message.uid, message.uid, message.uid, message.uid, message.uid
-            ),
-            (true, false) => format!(
-                "<td><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk move\"></td>",
-                message.uid, message.uid, message.uid
-            ),
-            (false, true) => format!(
-                "<td><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk archive\"></td>",
-                message.uid, message.uid, message.uid
-            ),
-            (false, false) => String::new(),
-        };
-        let subject_label = message.subject.as_deref().unwrap_or("<none>");
-        let from_label = message.from.as_deref().unwrap_or("<none>");
-        let flags_label = if message.flags.is_empty() {
-            "<none>".to_string()
+        let selection_cells = if message.metadata.is_some() {
+            message.metadata.as_ref().map(|metadata| format!(
+                "<label class=\"bulk-row-choice\"><input form=\"bulk-move-form\" type=\"checkbox\" name=\"message_{}\" value=\"{}|{}|{}\" aria-label=\"Select message #{}\"{}><span class=\"sr-only\">Select message</span></label>",
+                message.uid, message.uid, escape_html(&metadata.version.mailbox_guid), escape_html(&metadata.version.message_guid), message.uid,
+                if index < MAX_BULK_SELECTION && sort_links.view.bulk_selection != BulkSelection::None { " checked" } else { "" })).unwrap_or_default()
         } else {
-            message.flags.join(" ")
+            String::new()
         };
-        rows.push_str(&format!(
-            "<tr class=\"message-row\">{}<td class=\"message-uid-cell\"><a class=\"message-uid-link\" href=\"{}\">#{}</a></td><td class=\"message-subject-cell\"><a class=\"message-subject-link\" href=\"{}\">{}</a><div class=\"message-preview-meta\"><span>from {}</span><span>{}</span></div></td><td class=\"message-from-cell\">{}</td><td class=\"message-date-cell\">{}</td><td class=\"message-flags-cell\"><span class=\"message-flags\">{}</span></td><td class=\"message-size-cell\">{} bytes</td>{}</tr>",
-            selection_cells,
-            escape_html(&message_href),
-            message.uid,
-            escape_html(&message_href),
-            escape_html(subject_label),
-            escape_html(from_label),
-            escape_html(&message.date_received),
-            escape_html(from_label),
-            escape_html(&message.date_received),
-            escape_html(&flags_label),
-            message.size_virtual,
-            if archive_actions_available {
-                format!("<td class=\"message-action-cell\">{archive_action}</td>")
-            } else {
-                String::new()
+        if archive_page {
+            let archived_at = crate::archive_event::date_for(
+                sort_links.reader.archive_events.as_ref(),
+                canonical_username,
+                mailbox_name,
+                message,
+            );
+            rows.push_str(&archive_ui::row(
+                (message, archived_at),
+                &selection_cells,
+                &message_href,
+                csrf_token,
+                &return_to,
+                archive_ui::RowState {
+                    timezone: sort_links.reader.timezone,
+                    selected: sort_links.view.is_selected(mailbox_name, message.uid),
+                    on_open: sort_links.view.open_on_select,
+                    kind: if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name) {
+                        archive_ui::FolderView::Bin
+                    } else if is_junk {
+                        archive_ui::FolderView::Junk
+                    } else {
+                        archive_ui::FolderView::Archive
+                    },
+                },
+                &labels,
+            ));
+            continue;
+        }
+        let actions = archive_action;
+        rows.push_str(&render_message_card(
+            MessageCard {
+                timezone: sort_links.reader.timezone,
+                focus_target: focus_targets.get(index).and_then(Option::as_deref),
+                open_on_select: sort_links.view.open_on_select,
+                mailbox: mailbox_name,
+                uid: message.uid,
+                subject: message.subject.as_deref(),
+                recipient: is_sent,
+                sender: if is_sent {
+                    message.to.as_deref()
+                } else {
+                    message.from.as_deref()
+                },
+                received: &message.date_received,
+                flags: &message.flags,
+                metadata: message.metadata.as_ref(),
+                size: message.size_virtual,
+                labels: &labels,
             },
+            csrf_token,
+            &message_href,
+            sort_links.view.is_selected(mailbox_name, message.uid),
+            &list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page),
+            &actions,
+            &selection_cells,
         ));
     }
-    if messages.is_empty() {
-        rows.push_str("<tr class=\"message-empty-row\"><td colspan=\"9\"><div class=\"message-empty-state\"><strong>No messages shown.</strong><br><span class=\"muted\">This mailbox has no visible messages for the current bounded query.</span></div></td></tr>");
+    if messages.is_empty() && !archive_page {
+        rows.push_str(&format!("<li class=\"message-empty-state\">{}</li>", mail_state_card("No messages", "No messages are shown in this mailbox view. Active filters and snoozed messages may limit the loaded results.", "/compose", "Compose", false)));
     }
 
-    let bulk_move_form = if bulk_actions_available && !messages.is_empty() {
-        let destination_options = bulk_actions
+    let bulk_move_form = if messages.iter().any(|m| m.metadata.is_some()) {
+        let options: String = bulk_actions
             .move_destinations
             .iter()
-            .map(|destination| {
+            .map(|name| {
                 format!(
                     "<option value=\"{}\">{}</option>",
-                    escape_html(destination),
-                    escape_html(destination)
+                    escape_html(name),
+                    escape_html(name)
                 )
             })
-            .collect::<Vec<_>>()
-            .join("");
-        format!(
-            "<form id=\"bulk-move-form\" method=\"post\" action=\"/messages/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label for=\"bulk-destination-mailbox\">Move selected to<select id=\"bulk-destination-mailbox\" name=\"destination_mailbox\">{}</select></label><button type=\"submit\">Move Selected</button></form>",
-            escape_html(csrf_token),
-            escape_html(mailbox_name),
-            destination_options,
-        )
+            .collect();
+        let chooser = if options.is_empty() {
+            String::new()
+        } else {
+            format!("<label for=\"bulk-destination-mailbox\">Move selected to<select id=\"bulk-destination-mailbox\" name=\"destination_mailbox\">{options}</select></label><button type=\"submit\" name=\"action\" value=\"move\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move Selected</span></button>")
+        };
+        let is_trash = sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name);
+        let mut buttons = if is_trash {
+            String::new()
+        } else {
+            String::from("<button type=\"submit\" formaction=\"/messages/labels/review\" name=\"action\" value=\"review\"><span class=\"presentation-icon presentation-icon-label\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Review labels for selected</span></button>")
+        };
+        if archive_actions_available && !is_trash {
+            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"archive\"><span class=\"presentation-icon presentation-icon-archive\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Archive Selected</span></button>");
+        }
+        if sort_links
+            .reader
+            .bin_mailbox_name
+            .as_deref()
+            .is_some_and(|bin| {
+                bin != mailbox_name
+                    && bulk_actions
+                        .move_destinations
+                        .iter()
+                        .any(|name| name == bin)
+            })
+        {
+            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"bin\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move Selected to Bin</span></button>");
+        }
+        if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name)
+            && bulk_actions
+                .move_destinations
+                .iter()
+                .any(|name| name == "INBOX")
+        {
+            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"restore\"><span class=\"presentation-icon presentation-icon-inbox\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Restore to Inbox</span></button>");
+        }
+        if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name) {
+            buttons.push_str("<button class=\"danger\" type=\"submit\" formaction=\"/messages/delete/review\" name=\"action\" value=\"review-delete\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Delete permanently</span></button>");
+        }
+        let chooser = if is_trash {
+            format!("<details class=\"trash-more\"><summary><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move to folder</span></summary>{chooser}</details>")
+        } else {
+            chooser
+        };
+        let help = if is_trash {
+            "Select up to ten messages for Restore, Delete permanently or Move. Empty trash includes every page and ignores filters."
+        } else if is_junk {
+            "Select up to ten messages. Use Move Selected to return them to Inbox or another folder."
+        } else {
+            "Select up to ten messages. Bin moves to your saved folder; restore returns to Inbox."
+        };
+        format!("<form id=\"bulk-move-form\" class=\"bulk-move-controls\" method=\"post\" action=\"/messages/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\"><div class=\"toolbar\">{buttons}{chooser}</div><p class=\"muted\">{help}</p></form>", escape_html(csrf_token), escape_html(mailbox_name), escape_html(&list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page)))
     } else {
         String::new()
     };
-    let bulk_archive_form = if archive_actions_available && !messages.is_empty() {
-        let archive_mailbox_name = bulk_actions.archive_mailbox_name.unwrap_or_default();
-        format!(
-            "<form id=\"bulk-archive-form\" method=\"post\" action=\"/messages/archive\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"{}\"><button type=\"submit\">Archive Selected</button></form>",
-            escape_html(csrf_token),
-            escape_html(mailbox_name),
-            escape_html(archive_mailbox_name),
-        )
-    } else {
-        String::new()
-    };
+    if archive_page {
+        return archive_ui::page(archive_ui::Page {
+            account: canonical_username,
+            csrf: csrf_token,
+            mailbox: mailbox_name,
+            actions: &bulk_actions,
+            links: &sort_links,
+            base: &navigation_base,
+            rows: &rows,
+            banner: &list_notice_banner,
+            bulk_form: &bulk_move_form,
+            automatic_selection_count,
+            kind: if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name) {
+                archive_ui::FolderView::Bin
+            } else if is_junk {
+                archive_ui::FolderView::Junk
+            } else {
+                archive_ui::FolderView::Archive
+            },
+            junk_available: distinct_junk
+                && (is_junk
+                    || bulk_actions
+                        .move_destinations
+                        .iter()
+                        .any(|name| name == "Junk")),
+        });
+    }
+    let bulk_archive_form = String::new();
     let archive_notice = match bulk_actions.archive_mailbox_name {
         Some(archive_mailbox_name) if archive_mailbox_name != mailbox_name => format!(
             "<p class=\"muted\">Archive shortcut sends messages from this mailbox to <strong>{}</strong>.</p>",
@@ -497,53 +2325,104 @@ pub(crate) fn render_message_list_page(
         Some(_) => "<p class=\"muted\">This mailbox matches your configured archive destination, so archive shortcuts are hidden here.</p>".to_string(),
         None => "<p class=\"muted\">Set an archive mailbox in Settings to add one-click archive actions on list and message pages.</p>".to_string(),
     };
-    let sort_headers = render_mailbox_sort_headers(
+    let sort_headers = render_mailbox_sort_controls(
         mailbox_name,
-        sort_links.active_sort,
+        sort_links.view,
         sort_links.search_query,
         sort_links.search_scope,
     );
+    let search_view = if sort_links.view.label.is_some() {
+        sort_links.view.clear_label()
+    } else {
+        sort_links.view.clone()
+    };
+    let label_search_notice = if sort_links.view.label.is_some() {
+        "<p class=\"muted\">Search opens a separate query without this mailbox label filter.</p>"
+    } else {
+        ""
+    };
+    let search_controls = format!(concat!(
+        "<details class=\"mail-search-disclosure\" name=\"list-tools\"><summary><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search this mailbox</span></summary><div class=\"mail-tools-panel\">",
+        "<form class=\"search-row compact-search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search</span></button><details class=\"search-options\"><summary><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search options</span></summary><div>{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></div></details></form></div></details>"
+    ), escape_html(mailbox_name), list_form_state(&search_view), escape_html(sort_links.search_query.unwrap_or("")), render_search_field_select(MessageSearchField::All)) + label_search_notice;
+    let action_controls = format!(concat!(
+        "<details class=\"bulk-actions\" name=\"list-tools\"><summary><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Bulk actions</span></summary><div class=\"mail-tools-panel\">{}<p class=\"muted\">Use the row checkboxes to select messages for an action.</p><div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div></div></details>"
+    ), archive_notice, bulk_move_form, bulk_archive_form);
 
+    let table_mailbox = mailbox_name == "INBOX" || is_sent;
+    let compact_tool = |html: String, text: &str, icon: &str| {
+        if table_mailbox {
+            html.replace(
+                &format!("<summary>{text}</summary>"),
+                &format!(
+                    "<summary aria-label=\"{text}\" title=\"{text}\">{}</summary>",
+                    shell_icon(icon)
+                ),
+            )
+        } else {
+            html
+        }
+    };
+    let selection_controls = compact_tool(
+        render_bulk_selection_menu(&navigation_base, sort_links.view, automatic_selection_count),
+        "Select messages",
+        "inbox",
+    );
+    let search_controls = compact_tool(search_controls, "Search this mailbox", "search");
+    let action_controls = compact_tool(action_controls, "Bulk actions", "more");
+    // The selection form remains shared with the existing mailbox actions.
+    // Keep this entry outside its disclosure so labelling is discoverable.
+    let label_actions = if messages.iter().any(|message| message.metadata.is_some()) {
+        "<div class=\"mail-label-actions\" role=\"group\" aria-label=\"Message labels\"><button type=\"submit\" form=\"bulk-move-form\" formaction=\"/messages/labels/review\" name=\"action\" value=\"review\"><span class=\"presentation-icon presentation-icon-label\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Label selected messages</span></button><a href=\"/labels\"><span class=\"presentation-icon presentation-icon-label\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Create or manage labels</span></a><span class=\"muted\">Select messages using their checkboxes.</span></div>"
+    } else {
+        "<div class=\"mail-label-actions\"><a href=\"/labels\"><span class=\"presentation-icon presentation-icon-label\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Create or manage labels</span></a></div>"
+    };
+    let mut navigation = render_list_navigation(&navigation_base, sort_links.view, is_sent);
+    let mut sort_headers = sort_headers;
+    if table_mailbox {
+        navigation = navigation.replace("Attachments: All attachment states", "Attachments: all");
+        for (label, symbol) in [("Previous page", "‹"), ("Next page", "›")] {
+            navigation = navigation.replace(
+                &format!(">{label}</a>"),
+                &format!(" aria-label=\"{label}\" title=\"{label}\">{symbol}</a>"),
+            );
+            navigation = navigation.replace(
+                &format!(">{label}</span>"),
+                &format!(" aria-label=\"{label}\" title=\"{label}\">{symbol}</span>"),
+            );
+        }
+        sort_headers = sort_headers
+            .replace("Sorted by Received descending", "Newest first")
+            .replace("Sorted by Received ascending", "Oldest first");
+    }
     TrustedHtml::from_template(format!(
         concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
-            "<section class=\"content-pane\" aria-labelledby=\"mailbox-title\">",
-            "<div class=\"section-header\"><div><h1 id=\"mailbox-title\" class=\"section-title\">Mailbox: {}</h1><p class=\"muted\">Signed in as <strong>{}</strong>. Message data remains fetched through the reviewed mailbox route.</p></div>",
-            "<div class=\"badge-list message-list-summary\" aria-label=\"Message list status\"><span class=\"badge badge-ok\">2FA active</span><span class=\"badge\">Remote content blocked</span><span class=\"badge\">sorting/search preserved</span><span class=\"badge\">bulk actions CSRF-bound</span></div></div>",
-            "{}{}",
-            "<form class=\"search-row\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></form>",
-            "<div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div>",
-            "<div class=\"table-wrap\"><table class=\"message-list-table\" aria-label=\"Mailbox message list\"><thead><tr>{}{}{}{}</tr></thead><tbody>{}</tbody></table></div>",
-            "</section>",
+            "<main id=\"main-content\" class=\"page-shell coordinated-mail{}{table_class}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>{}</h1><p>{list_intro}</p></div>",
+            "<section class=\"content-pane coordinated-list\" aria-labelledby=\"mailbox-title\">",
+            "<div class=\"section-header sr-only\"><h2 id=\"mailbox-title\" class=\"section-title message-list-summary\">Mailbox: {}</h2></div>",
+            "{}",
+            "<div class=\"mail-list-toolbar\">{}{}{}{}{}</div>",
+            "{label_actions}{}<ul role=\"list\" class=\"message-cards\" aria-label=\"Mailbox message list\">{}</ul>",
+            "</section>{}",
             "</main>"
         ),
-        app_header(canonical_username, csrf_token, "mailboxes"),
+        app_header(canonical_username, csrf_token, if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name) { "bin" } else { mailbox_nav_section_with_sent(mailbox_name, bulk_actions.archive_mailbox_name, is_sent) }),
+        if sort_links.view.selection.is_some() { " has-selection" } else { "" },
+        escape_html(if mailbox_name == "INBOX" { "Inbox" } else { mailbox_name }),
         escape_html(mailbox_name),
-        escape_html(canonical_username),
-        success_banner,
-        archive_notice,
-        escape_html(mailbox_name),
-        render_search_field_select(MessageSearchField::All),
-        bulk_move_form,
-        bulk_archive_form,
-        if bulk_actions_available {
-            "<th>Move</th>"
-        } else {
-            ""
-        },
-        if archive_actions_available {
-            "<th>Archive</th>"
-        } else {
-            ""
-        },
+        list_notice_banner,
+        selection_controls,
+        navigation,
         sort_headers,
-        if archive_actions_available {
-            "<th>Action</th>"
-        } else {
-            ""
-        },
+        search_controls,
+        action_controls,
+        message_column_headings(is_sent),
         rows,
+        render_coordinated_reader_with_focus(&navigation_base, sort_links.view, csrf_token, sort_links.reader, canonical_username, &focus_targets),
+        table_class = if is_sent { " approved-mail-table sent-table" } else if mailbox_name == "INBOX" { " approved-mail-table inbox-table" } else { "" },
+        list_intro = if is_sent { "Stored Sent copies. Their presence does not confirm delivery." } else { "Search, filter, sort and work with messages without losing context." },
+        label_actions = label_actions,
     ))
 }
 
@@ -554,95 +2433,113 @@ pub(crate) fn render_message_search_page(
     mailbox_name: Option<&str>,
     query: &str,
     results: &[MessageSearchResult],
-    active_sort: Option<MessageSort>,
-    search_field: MessageSearchField,
+    context: MessageSearchContext<'_>,
 ) -> TrustedHtml {
-    let displayed_results = results
-        .iter()
-        .take(DEFAULT_MAX_SEARCH_RESULTS)
-        .collect::<Vec<_>>();
-    let truncation_notice = if results.len() > displayed_results.len() {
-        format!(
-            "<div class=\"notice notice-error\" role=\"status\"><strong>Result limit reached.</strong> Displaying the first {} of {} backend results.</div>",
-            displayed_results.len(),
-            results.len(),
-        )
-    } else {
-        String::new()
-    };
+    let view = context.view;
+    let search_field = context.field;
     let back_link = match mailbox_name {
         Some(mailbox_name) => format!(
-            "<a href=\"/mailbox?name={}\">Back to mailbox</a> | ",
+            "<a href=\"/mailbox?name={}\"><span class=\"presentation-icon presentation-icon-back\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Back to mailbox</span></a>",
             escape_html(&url_encode(mailbox_name))
         ),
         None => String::new(),
     };
     let search_scope = mailbox_name.unwrap_or("All mailboxes");
-    let mailbox_hidden_input = mailbox_name.map_or_else(String::new, |mailbox_name| {
-        format!(
-            "<input type=\"hidden\" name=\"mailbox\" value=\"{}\">",
-            escape_html(mailbox_name)
-        )
-    });
+    let mailbox_input = format!(
+        "<label>Folder<input name=\"mailbox\" value=\"{}\" placeholder=\"Mailbox name\"></label>",
+        escape_html(mailbox_name.unwrap_or(""))
+    );
     let search_all_checked = if mailbox_name.is_none() {
         " checked"
     } else {
         ""
     };
     let search_field_select = render_search_field_select(search_field);
-    let sort_headers = render_search_sort_headers(mailbox_name, query, active_sort, search_field);
+    let sort_headers = render_search_sort_controls(mailbox_name, query, view, search_field);
+    let mut navigation_base = match mailbox_name {
+        Some(name) => format!("/search?mailbox={}", url_encode(name)),
+        None => "/search?scope=all".to_string(),
+    };
+    navigation_base.push_str(&format!(
+        "&q={}&field={}",
+        url_encode(query),
+        search_field.query_value()
+    ));
+    let focus_targets = back_focus::search_targets(canonical_username, results);
     let mut rows = String::new();
     if results.is_empty() {
-        rows.push_str("<tr><td colspan=\"7\">No messages matched this search.</td></tr>");
+        rows.push_str(&format!(
+            "<li class=\"message-empty-state\">{}</li>",
+            mail_state_card(
+                "Empty search",
+                "No results match the current search and filters.",
+                &navigation_base,
+                "Clear filters",
+                false
+            )
+        ));
     } else {
-        for result in &displayed_results {
-            let message_href = format!(
-                "/message?mailbox={}&uid={}",
-                url_encode(&result.mailbox_name),
-                result.uid
-            );
-            rows.push_str(&format!(
-                "<tr><td><a href=\"{}\">{}</a></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
-                escape_html(&message_href),
+        for (index, result) in results.iter().enumerate() {
+            let mut more_controls = render_message_state_controls(
+                csrf_token,
+                &result.mailbox_name,
                 result.uid,
-                escape_html(&result.mailbox_name),
-                escape_html(result.subject.as_deref().unwrap_or("<none>")),
-                escape_html(result.from.as_deref().unwrap_or("<none>")),
-                escape_html(&result.date_received),
-                escape_html(&result.flags.join(" ")),
-                result.size_virtual,
+                &result.flags,
+                result.metadata.as_ref(),
+                &list_navigation_href(&navigation_base, view, view.page),
+            );
+            more_controls.push_str(&render_public_attachment_details(result.metadata.as_ref()));
+            let message_href = if result.metadata.is_some() {
+                selected_message_href(
+                    &navigation_base,
+                    view,
+                    &result.mailbox_name,
+                    result.uid,
+                    result.metadata.as_ref().map(|metadata| &metadata.version),
+                )
+            } else {
+                format!(
+                    "/message?mailbox={}&uid={}",
+                    url_encode(&result.mailbox_name),
+                    result.uid
+                )
+            };
+            rows.push_str(&format!(
+                "<li class=\"message-row search-result-row\" data-selected=\"{}\"{focus_attributes}><span class=\"search-result-type\">{}</span><div class=\"search-result-title\">{subject_control}<span class=\"message-sender\" dir=\"auto\"><span class=\"sr-only\">From</span> {}{preview}</span>{labels}</div><span class=\"search-result-location message-mailbox\" dir=\"auto\">{}</span><time class=\"search-result-date\">{}</time><details class=\"search-result-more\"><summary aria-label=\"More for message #{} in {}\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More</span></summary><div>{}</div></details></li>",
+                view.is_selected(&result.mailbox_name, result.uid), shell_icon("inbox"),
+                escape_html(result.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&result.mailbox_name), escape_html(&context.reader.timezone.display_received(&result.date_received)),
+                result.uid, escape_html(&result.mailbox_name),
+                more_controls,
+                focus_attributes = back_focus::attributes(focus_targets.get(index).and_then(Option::as_deref)),
+                subject_control = message_open_control(csrf_token, &message_href, "message-subject-link", result.subject.as_deref().unwrap_or("(No subject)"), view.is_selected(&result.mailbox_name, result.uid), view.open_on_select, None),
+                preview = result.metadata.as_ref().and_then(|metadata| metadata.preview.as_deref()).filter(|preview| crate::message_metadata::valid_message_preview(preview)).map(|preview| format!(" · {}", escape_html(preview))).unwrap_or_default(),
+                labels = render_message_label_badges(context.reader.labels.as_ref(),canonical_username,mailbox_name.unwrap_or(&result.mailbox_name),&result.mailbox_name,result.uid,result.metadata.as_ref(),false),
             ));
         }
     }
 
+    let (navigation, pages, notices) = render_list_navigation_parts(&navigation_base, view, false);
+    let landing = query.trim().is_empty();
+    if landing {
+        rows = "<li class=\"message-empty-state\">Enter keywords to search your mail.</li>".into();
+    }
     TrustedHtml::from_template(format!(
         concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
-            "{}",
-            "<section class=\"content-pane\">",
-            "<p>{}<a href=\"/mailboxes\">All mailboxes</a></p>",
-            "<h1>Search Results</h1>",
-            "<p class=\"muted\">This bounded retrieval slice keeps Dovecot authoritative for the query while letting the browser search one mailbox or all visible mailboxes without turning OSMAP into a broad search product.</p>",
-            "{}",
-            "<form class=\"search-row\" method=\"get\" action=\"/search\">{}<label for=\"search-query\">Search query<input id=\"search-query\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></form>",
-            "<p><strong>Scope:</strong> {}<br><strong>Field:</strong> {}<br><strong>Query:</strong> {}<br><strong>Results:</strong> {}</p>",
-            "<div class=\"table-wrap\"><table><thead><tr>{}</tr></thead><tbody>{}</tbody></table></div>",
-            "</section>",
-            "</main>"
+            "{}<main id=\"main-content\" class=\"page-shell coordinated-mail search-results{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>Search</h1><p>Find messages across your mailboxes.</p></div>",
+            "<section class=\"content-pane coordinated-list\"><h2 class=\"section-title sr-only\">Search Results</h2>",
+            "<div class=\"search-query-panel\"><form class=\"search-row compact-search\" method=\"get\" action=\"/search\">{}<label class=\"search-query-label\" for=\"search-query\"><span class=\"sr-only\">Search query</span><input id=\"search-query\" type=\"search\" name=\"q\" value=\"{}\" placeholder=\"Search mail…\" autocomplete=\"off\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search</span></button><details class=\"search-options\"><summary><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search options</span></summary><div>{}{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></div></details></form>{}</div>",
+            "<div class=\"search-result-tabs\" aria-label=\"Search types\"><a href=\"{all_href}\"><span class=\"presentation-icon presentation-icon-select\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">All</span></a><span aria-current=\"true\">Messages{}</span><a href=\"{people_href}\"><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">People</span></a><span class=\"search-scope\">{}</span>{}</div>",
+            "<div class=\"search-result-headings\" aria-hidden=\"true\"><span>Type</span><span>Result</span><span>Location</span><span>Received</span><span></span></div><ul role=\"list\" class=\"message-cards search-result-list\" aria-label=\"Search results\">{}</ul>",
+            "<div class=\"search-result-footer\">{}{}</div>{}<p class=\"search-capability-note muted\">Search covers accessible messages. OpenPGP filters use public MIME structure, not signature verification or decryption. People search covers your saved contacts.</p></section>{}</main>"
         ),
-        app_header(canonical_username, csrf_token, "mailboxes"),
-        back_link,
-        truncation_notice,
-        mailbox_hidden_input,
-        escape_html(query),
-        search_field_select,
-        search_all_checked,
-        escape_html(search_scope),
-        escape_html(search_field.label()),
-        escape_html(query),
-        displayed_results.len(),
-        sort_headers,
-        rows,
+        app_header(canonical_username, csrf_token, "search"),
+        if view.selection.is_some() { " has-selection" } else { "" },
+        list_form_state(view), escape_html(query), search_field_select, mailbox_input, search_all_checked, navigation,
+        if landing { String::new() } else { format!(" ({})", view.total_results) }, escape_html(search_scope),
+        sort_headers, rows, pages, back_link, notices,
+        render_coordinated_reader_with_focus(&navigation_base, view, csrf_token, context.reader, canonical_username, &focus_targets),
+        all_href = escape_html(&crate::mail_navigation::SearchFilterContext {view:view.clone(),mailbox:mailbox_name.map(str::to_string)}.href(crate::mail_navigation::SearchTab::All,query,None)),
+        people_href = escape_html(&crate::mail_navigation::SearchFilterContext {view:view.clone(),mailbox:mailbox_name.map(str::to_string)}.href(crate::mail_navigation::SearchTab::People,query,None)),
     ))
 }
 
@@ -654,6 +2551,144 @@ pub fn render_message_view_page(
     archive_mailbox_name: Option<&str>,
     user_visible_mailboxes: &[MailboxEntry],
 ) -> TrustedHtml {
+    render_message_view_page_with_neighbours(
+        canonical_username,
+        csrf_token,
+        rendered,
+        archive_mailbox_name,
+        user_visible_mailboxes,
+        &crate::reader_neighbours::ReaderNeighbours::default(),
+    )
+}
+
+pub(crate) fn render_message_view_page_with_neighbours(
+    canonical_username: &str,
+    csrf_token: &str,
+    rendered: &RenderedMessageView,
+    archive_mailbox_name: Option<&str>,
+    user_visible_mailboxes: &[MailboxEntry],
+    neighbours: &crate::reader_neighbours::ReaderNeighbours,
+) -> TrustedHtml {
+    render_message_view_page_with_folders(
+        canonical_username,
+        csrf_token,
+        rendered,
+        archive_mailbox_name,
+        Some("Trash"),
+        user_visible_mailboxes,
+        neighbours,
+    )
+}
+
+pub(crate) fn render_message_view_page_with_folders(
+    canonical_username: &str,
+    csrf_token: &str,
+    rendered: &RenderedMessageView,
+    archive_mailbox_name: Option<&str>,
+    bin_mailbox_name: Option<&str>,
+    user_visible_mailboxes: &[MailboxEntry],
+    neighbours: &crate::reader_neighbours::ReaderNeighbours,
+) -> TrustedHtml {
+    let context = MailReaderContext {
+        archive_mailbox_name: archive_mailbox_name.map(str::to_string),
+        bin_mailbox_name: bin_mailbox_name.map(str::to_string),
+        mailboxes: user_visible_mailboxes.to_vec(),
+        ..MailReaderContext::default()
+    };
+    render_message_view_page_with_context(
+        canonical_username,
+        csrf_token,
+        rendered,
+        &context,
+        neighbours,
+    )
+}
+
+pub(crate) fn render_message_view_page_with_context(
+    canonical_username: &str,
+    csrf_token: &str,
+    rendered: &RenderedMessageView,
+    context: &MailReaderContext,
+    neighbours: &crate::reader_neighbours::ReaderNeighbours,
+) -> TrustedHtml {
+    let archive_mailbox_name = context.archive_mailbox_name.as_deref();
+    let bin_mailbox_name = context.bin_mailbox_name.as_deref();
+    let user_visible_mailboxes = &context.mailboxes;
+    let is_sent = context
+        .sent_role
+        .as_ref()
+        .is_some_and(|role| role.matches_rendered(rendered));
+    let back = neighbours
+        .back
+        .clone()
+        .unwrap_or_else(|| format!("/mailbox?name={}", url_encode(&rendered.mailbox_name)));
+    let mut current = format!(
+        "/message?mailbox={}&uid={}",
+        url_encode(&rendered.mailbox_name),
+        rendered.uid
+    );
+    if let Some(metadata) = &rendered.metadata {
+        current.push_str(&format!(
+            "&mailbox_guid={}&message_guid={}",
+            url_encode(&metadata.version.mailbox_guid),
+            url_encode(&metadata.version.message_guid)
+        ));
+    }
+    if let Some(back) = &neighbours.back {
+        current.push_str(&format!("&return_to={}", url_encode(back)));
+    }
+    let current =
+        crate::mail_navigation::safe_mail_return(&current).unwrap_or_else(|| back.clone());
+    let header = app_header(
+        canonical_username,
+        csrf_token,
+        if bin_mailbox_name == Some(rendered.mailbox_name.as_str()) {
+            "bin"
+        } else {
+            mailbox_nav_section_with_sent(&rendered.mailbox_name, archive_mailbox_name, is_sent)
+        },
+    )
+    .replace(
+        "name=\"return_to\" value=\"/settings?section=appearance\" data-header-return",
+        &format!(
+            "name=\"return_to\" value=\"{}\" data-header-return",
+            escape_html(&current)
+        ),
+    );
+    TrustedHtml::from_template(format!(
+        "{}<main id=\"main-content\" class=\"page-shell standalone-reader\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Message Reader</h1><p>Protected reading with message details, isolated attachments and source view.</p></div>{}</main>",
+        header,
+        render_reader_fragment(csrf_token, rendered, ReaderFolders { timezone: context.timezone, account: canonical_username, labels: context.labels.as_ref(), archive: archive_mailbox_name, bin: bin_mailbox_name, mailboxes: user_visible_mailboxes }, &back, &current, Some(neighbours))))
+}
+
+fn render_reader_fragment(
+    csrf_token: &str,
+    rendered: &RenderedMessageView,
+    folders: ReaderFolders<'_>,
+    back_href: &str,
+    return_to: &str,
+    neighbours: Option<&crate::reader_neighbours::ReaderNeighbours>,
+) -> String {
+    let standalone = neighbours.is_some();
+    let attachments_unavailable = matches!(
+        rendered.openpgp.as_ref(),
+        Some(crate::openpgp_reader_ui::ReaderState::Refused(_))
+    );
+    let navigation = neighbours
+        .map(|value| value.html_with_policy(csrf_token))
+        .unwrap_or_default();
+    let snooze_control=rendered.metadata.as_ref().map(|m|format!("<a class=\"reader-snooze\" aria-label=\"Snooze message\" title=\"Snooze message\" href=\"/snooze?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}&amp;return_to={}\"><span aria-hidden=\"true\">◷</span></a>",escape_html(&url_encode(&rendered.mailbox_name)),rendered.uid,escape_html(&url_encode(&m.version.mailbox_guid)),escape_html(&url_encode(&m.version.message_guid)),escape_html(&url_encode(return_to)))).unwrap_or_else(||"<button class=\"reader-snooze\" aria-label=\"Snooze unavailable\" disabled><span aria-hidden=\"true\">◷</span></button>".into());
+    let badges = render_message_label_badges(
+        folders.labels,
+        folders.account,
+        &rendered.mailbox_name,
+        &rendered.mailbox_name,
+        rendered.uid,
+        rendered.metadata.as_ref(),
+        true,
+    );
+    let label_icon = reader_toolbar::reader_icon("label");
+    let label_control = rendered.metadata.as_ref().map(|metadata| format!("{badges}<a class=\"button-link secondary reader-labels\" aria-label=\"Edit message labels\" title=\"Edit message labels\" href=\"/labels?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}\">{label_icon}</a>", escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid, escape_html(&url_encode(&metadata.version.mailbox_guid)), escape_html(&url_encode(&metadata.version.message_guid)))).unwrap_or(badges);
     let displayed_attachments = rendered
         .attachments
         .iter()
@@ -679,18 +2714,26 @@ pub fn render_message_view_page(
         })
         .count();
     let mut attachments = String::new();
-    if rendered.attachments.is_empty() {
-        attachments.push_str(
-            "<li class=\"attachment-item\">No attachment metadata surfaced for this message.</li>",
-        );
+    if attachments_unavailable {
+        attachments.push_str("<li class=\"attachment-item\">Attachments have not been checked because protected content could not be processed.</li>");
+    } else if rendered.attachments.is_empty() {
+        attachments.push_str("<li class=\"attachment-item\">No attachments.</li>");
     } else {
         for attachment in &displayed_attachments {
-            let download_href = format!(
+            let mut download_href = format!(
                 "/attachment?mailbox={}&uid={}&part={}",
                 url_encode(&rendered.mailbox_name),
                 rendered.uid,
                 url_encode(&attachment.part_path),
             );
+            if let Some(metadata) = &rendered.metadata {
+                download_href.push_str(&format!(
+                    "&mailbox_guid={}&message_guid={}&return_to={}",
+                    url_encode(&metadata.version.mailbox_guid),
+                    url_encode(&metadata.version.message_guid),
+                    url_encode(return_to)
+                ));
+            }
             let content_id_metadata = attachment
                 .content_id
                 .as_deref()
@@ -702,12 +2745,12 @@ pub fn render_message_view_page(
                 })
                 .unwrap_or_default();
             attachments.push_str(&format!(
-                "<li class=\"attachment-item\"><strong>{}</strong><br>Part {}. {}, {}, {} bytes{}<br><a class=\"button-link\" href=\"{}\">Download</a></li>",
+                "<li class=\"attachment-item\"><div class=\"attachment-description\"><strong>{}</strong><p class=\"muted\">Isolated download</p><details class=\"reader-file-details\"><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">File details</span></summary><p>Encoded size hint: {} bytes. Part {}. {}, {}{}</p></details></div><a class=\"button-link\" href=\"{}\"><span class=\"presentation-icon presentation-icon-download\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Download</span></a></li>",
                 escape_html(attachment.filename.as_deref().unwrap_or("<unnamed>")),
+                attachment.size_hint_bytes,
                 escape_html(&attachment.part_path),
                 escape_html(&attachment.content_type),
                 escape_html(attachment.disposition.as_str()),
-                attachment.size_hint_bytes,
                 content_id_metadata,
                 escape_html(&download_href),
             ));
@@ -721,53 +2764,7 @@ pub fn render_message_view_page(
         }
     }
 
-    let archive_form = match archive_mailbox_name {
-        Some(archive_mailbox_name) if archive_mailbox_name != rendered.mailbox_name => format!(
-            "<section class=\"panel\"><h2>Archive Message</h2><p class=\"muted\">This shortcut reuses the bounded move path with your configured archive mailbox.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"{}\"><button type=\"submit\">Archive Message</button></form></section>",
-            escape_html(csrf_token),
-            escape_html(&rendered.mailbox_name),
-            rendered.uid,
-            escape_html(archive_mailbox_name),
-        ),
-        Some(_) => "<section class=\"panel\"><p class=\"muted\">This message is already in your configured archive mailbox.</p></section>".to_string(),
-        None => "<section class=\"panel\"><p class=\"muted\">Set an archive mailbox in Settings to add a one-click archive shortcut here.</p></section>".to_string(),
-    };
-    let trash_mailbox_available = user_visible_mailboxes
-        .iter()
-        .any(|mailbox| mailbox.name == "Trash" && mailbox.name != rendered.mailbox_name);
-    let delete_form = if trash_mailbox_available {
-        format!(
-            "<section class=\"panel\"><h2>Delete Message</h2><p class=\"muted\">This delete control stays inside the current bounded mailbox-move slice by moving the message into <strong>Trash</strong>.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"Trash\"><button type=\"submit\">Delete to Trash</button></form></section>",
-            escape_html(csrf_token),
-            escape_html(&rendered.mailbox_name),
-            rendered.uid,
-        )
-    } else {
-        String::new()
-    };
-    let move_destination_options = user_visible_mailboxes
-        .iter()
-        .filter(|mailbox| mailbox.name != rendered.mailbox_name)
-        .map(|mailbox| {
-            format!(
-                "<option value=\"{}\">{}</option>",
-                escape_html(&mailbox.name),
-                escape_html(&mailbox.name)
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("");
-    let move_form = if move_destination_options.is_empty() {
-        "<section class=\"panel\"><h2>Move Message</h2><p class=\"muted\">No alternate visible mailbox destinations are currently available for this bounded move action.</p></section>".to_string()
-    } else {
-        format!(
-            "<section class=\"panel\"><h2>Move Message</h2><p class=\"muted\">This first folder-organization slice still keeps the general move path narrow: one message into one existing visible mailbox per request.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><label>Destination Mailbox<select name=\"destination_mailbox\">{}</select></label><button type=\"submit\">Move Message</button></form></section>",
-            escape_html(csrf_token),
-            escape_html(&rendered.mailbox_name),
-            rendered.uid,
-            move_destination_options,
-        )
-    };
+    let move_form = render_reader_move_controls(csrf_token, rendered, folders, return_to);
     let rendering_notice = match rendered.rendering_mode.as_str() {
         "sanitized_html" => "<div class=\"notice\"><strong>Sanitized HTML:</strong> HTML content is shown through the current allowlist sanitization policy. Active content, external fetches, and unsafe URLs are removed.</div>",
         _ => "",
@@ -801,176 +2798,240 @@ pub fn render_message_view_page(
     } else {
         "not requested by selected body"
     };
+    let source_link = rendered.metadata.as_ref().map(|metadata| format!(
+        "<a class=\"reader-source-shortcut\" href=\"{}\"><span class=\"presentation-icon presentation-icon-eye\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">View source</span></a>", escape_html(&format!("/message?mailbox={}&uid={}&view=source&mailbox_guid={}&message_guid={}&return_to={}",
+            url_encode(&rendered.mailbox_name), rendered.uid, url_encode(&metadata.version.mailbox_guid), url_encode(&metadata.version.message_guid), url_encode(return_to)))))
+        .unwrap_or_else(|| "<span class=\"muted reader-source-shortcut\">Source view unavailable</span>".into());
+    let compose_link = |mode: &str, label: &str| {
+        let mut href = format!(
+            "/compose?mode={mode}&mailbox={}&uid={}",
+            url_encode(&rendered.mailbox_name),
+            rendered.uid
+        );
+        if let Some(metadata) = &rendered.metadata {
+            href.push_str(&format!(
+                "&mailbox_guid={}&message_guid={}",
+                url_encode(&metadata.version.mailbox_guid),
+                url_encode(&metadata.version.message_guid)
+            ));
+        }
+        format!(
+            "<a class=\"button-link\" href=\"{}\">{label}</a>",
+            escape_html(&href)
+        )
+    };
     let protected_reader_strip = format!(
         concat!(
-            "<section class=\"protected-trust-strip\" aria-label=\"Protected by Default reader trust strip\">",
-            "<div><strong>Protected by Default</strong><p>Verified signatures do not make content safe. Rendered and future decrypted content must still pass protected rendering.</p></div>",
+            "<details class=\"protected-trust-strip\" aria-label=\"Protected by Default reader trust strip\"><summary><strong>Protected by Default</strong><span>Remote content blocked</span></summary>",
+            "<div><strong>Protected by Default</strong><p>Verified signatures do not make content safe. All displayed message content passes protected rendering.</p></div>",
             "<div class=\"trust-strip-badges\" aria-label=\"Reader protection states\">",
             "<span class=\"badge badge-ok\">Remote content blocked</span>",
             "<span class=\"badge\">{} rendering</span>",
-            "<span class=\"badge\">Source view escaped</span>",
-            "</div></section>"
+            "<span class=\"badge\">Source is never active HTML</span>",
+            "</div></details>"
         ),
         escape_html(rendered.rendering_mode.as_str()),
     );
-    let openpgp_reader_states = concat!(
-        "<section class=\"openpgp-reader-states\" aria-label=\"OpenPGP reader states\" data-openpgp-reader-states=\"ui-only\">",
-        "<div><strong>OpenPGP reader state</strong><p>No account OpenPGP capability is configured for this reader session. No decrypt, verify, key discovery, private-key access, or passphrase handling was attempted.</p></div>",
-        "<dl class=\"openpgp-state-list\"><dt>Encrypted</dt><dd>not assessed</dd><dt>Decrypted locally</dt><dd>not produced</dd><dt>Signature</dt><dd>not verified</dd><dt>Signer</dt><dd>unknown until configured evidence exists</dd><dt>Missing key</dt><dd>not actionable in this UI-only slice</dd></dl>",
-        "<p class=\"muted openpgp-boundary-note\">Verified signatures do not make content safe. Future decrypted content must still pass Protected by Default rendering.</p>",
-        "</section>"
-    );
-    TrustedHtml::from_template(format!(
-        concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
-            "{}",
-            "<div class=\"mail-shell mail-shell-three\">",
-            "{}",
-            "{}",
-            "{}",
-            "<section class=\"message-summary-pane\" aria-labelledby=\"message-title\">",
-            "<p><a href=\"/mailbox?name={}\">Back to mailbox</a></p>",
-            "<h1 id=\"message-title\" class=\"section-title\">{}</h1>",
-            "<p class=\"muted\">from {}</p>",
-            "<div class=\"badge-list reader-badge-list\" aria-label=\"Reader status\"><span class=\"badge badge-ok\">2FA session</span><span class=\"badge badge-ok\">Protected by Default</span>{}<span class=\"badge\">{}</span></div>",
-            "<dl class=\"message-meta reader-meta\"><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd><dt>Protection</dt><dd>Protected by Default</dd><dt>Remote Content</dt><dd>{}</dd></dl>",
-            "<div class=\"toolbar\" aria-label=\"Message actions\"><a class=\"button-link\" href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a><a class=\"button-link\" href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a></div>",
-            "<div class=\"action-stack\">{}{}{}</div>",
-            "</section>",
-            "<article class=\"reading-pane protected-reading-pane\" aria-labelledby=\"reading-title\" data-reader-mode=\"Protected Reader\">",
-            "<h2 id=\"reading-title\">Reading Pane</h2>",
-            "{}{}",
-            "<section class=\"panel\"><h2>Attachments</h2><ul class=\"attachment-list\">{}</ul></section>",
-            "<section class=\"body-panel\"><h2>Body</h2><div class=\"reader-section-heading\" data-protected-body-panel=\"true\"><span class=\"badge badge-ok\">Protected rendering</span></div><p class=\"muted reader-boundary-note\">Message content is rendered through the protected server-side pipeline. Source and body controls remain explicit, escaped, authorized, and bounded.</p>{}</section>",
-            "</article>",
-            "</div>",
-            "</main>"
-        ),
-        app_header(canonical_username, csrf_token, "mailboxes"),
-        folder_pane(user_visible_mailboxes, Some(&rendered.mailbox_name)),
-        protected_reader_strip,
-        openpgp_reader_states,
-        escape_html(&url_encode(&rendered.mailbox_name)),
-        escape_html(rendered.subject.as_deref().unwrap_or("<none>")),
-        escape_html(rendered.from.as_deref().unwrap_or("<none>")),
-        html_state_badge,
-        if rendered.contains_html_body {
-            "remote content blocked"
-        } else {
-            "safe text render"
-        },
-        escape_html(&rendered.mailbox_name),
-        rendered.uid,
-        escape_html(&rendered.date_received),
-        escape_html(&rendered.mime_top_level_content_type),
-        escape_html(rendered.body_source.as_str()),
-        escape_html(rendered.rendering_mode.as_str()),
-        if rendered.contains_html_body { "yes" } else { "no" },
-        remote_content_state,
-        escape_html(&url_encode(&rendered.mailbox_name)),
-        rendered.uid,
-        escape_html(&url_encode(&rendered.mailbox_name)),
-        rendered.uid,
-        archive_form,
-        delete_form,
-        move_form,
-        rendering_notice,
-        inline_image_notice,
-        attachments,
-        rendered.body_html,
-    ))
-}
+    let openpgp_reader_states = rendered.openpgp.as_ref().map(crate::openpgp_reader_ui::render).unwrap_or_else(|| concat!(
+        "<details class=\"openpgp-reader-states\" aria-label=\"OpenPGP reader states\" data-openpgp-reader-states=\"unassessed\"><summary><strong>OpenPGP not assessed for this message</strong><span>No verification or decryption result</span></summary>",
+        "<p>Signature and decryption results appear here when protected content is processed. This message has no such result.</p>",
+        "<dl class=\"openpgp-state-list\"><dt>Decryption</dt><dd>not produced</dd><dt>Signature</dt><dd>not verified</dd><dt>Signer identity</dt><dd>not established</dd></dl>",
+        "<p class=\"muted openpgp-boundary-note\">Remote content and active content remain blocked.</p>",
+        "<p><a href=\"/settings?section=openpgp\">OpenPGP settings</a></p>",
+        "</details>"
+    ).to_string());
+    let toolbar = if let Some(neighbours) = neighbours {
+        reader_toolbar::render(
+            csrf_token,
+            rendered,
+            folders,
+            back_href,
+            return_to,
+            neighbours,
+            &compose_link("reply", "Reply to message"),
+            &label_control,
+            &snooze_control,
+            &move_form,
+        )
+    } else {
+        format!(concat!(
+            "<div class=\"reader-toolbar\"><nav class=\"reader-navigation toolbar\" aria-label=\"Reader navigation\"><a href=\"{}\"><span class=\"presentation-icon presentation-icon-back\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Back to list</span></a>{}</nav><div class=\"reader-quick-actions\">{}{label_control}{snooze_control}</div>",
+            "{navigation}<details class=\"reader-more-actions\"><summary><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move, archive, bin or restore</span></summary><div class=\"action-stack\">{}</div></details></div>",
 
-/// Renders the browser-visible session-management page.
-pub(crate) fn render_sessions_page(
-    canonical_username: &str,
-    current_session_id: &str,
-    csrf_token: &str,
-    session_lifetime_seconds: u64,
-    session_idle_timeout_seconds: u64,
-    sessions: &[BrowserVisibleSession],
-    success_message: Option<&str>,
-) -> TrustedHtml {
-    let success_banner = match success_message {
-        Some(success_message) => format!(
-            "<p><strong>Update complete:</strong> {}</p>",
-            escape_html(success_message)
-        ),
-        None => String::new(),
+        ), escape_html(back_href), &source_link, render_message_state_controls(csrf_token, &rendered.mailbox_name, rendered.uid, &rendered.flags, rendered.metadata.as_ref(), return_to), &move_form, navigation = navigation, label_control = label_control, snooze_control = snooze_control)
     };
-
-    let mut rows = String::new();
-    for session in sessions {
-        let state = if session.revoked_at.is_some() {
-            "revoked"
-        } else if session.session_id == current_session_id {
-            "current"
-        } else {
-            "active"
-        };
-        let action = if session.revoked_at.is_some() {
-            "<span class=\"muted\">Already revoked</span>".to_string()
-        } else {
-            format!(
-                "<form method=\"post\" action=\"/sessions/revoke\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"session_id\" value=\"{}\"><button type=\"submit\">{}</button></form>",
-                escape_html(csrf_token),
-                escape_html(&session.session_id),
-                if session.session_id == current_session_id {
-                    "Revoke This Session"
-                } else {
-                    "Revoke"
-                }
-            )
-        };
-        let revoked_at = session
-            .revoked_at
-            .map(|value| value.to_string())
-            .unwrap_or_else(|| "-".to_string());
-
-        rows.push_str(&format!(
-            "<tr><td><code>{}</code></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
-            escape_html(&session.session_id),
-            escape_html(state),
-            escape_html(&session.device_label),
-            session.issued_at,
-            session.last_seen_at,
-            session.expires_at,
-            escape_html(&revoked_at),
-            escape_html(&session.remote_addr),
-            escape_html(&session.user_agent),
-            action,
-        ));
-    }
-
-    let controls = format!(
-        "<section class=\"panel\"><h2>Session Controls</h2><p><strong>Idle timeout:</strong> {} seconds. <strong>Absolute lifetime:</strong> {} seconds.</p><div class=\"toolbar\"><form method=\"post\" action=\"/sessions/revoke\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"scope\" value=\"others\"><button type=\"submit\">Revoke Other Sessions</button></form><form method=\"post\" action=\"/sessions/revoke\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"scope\" value=\"all\"><button type=\"submit\">Revoke All Sessions</button></form></div></section>",
-        session_idle_timeout_seconds,
-        session_lifetime_seconds,
-        escape_html(csrf_token),
-        escape_html(csrf_token),
-    );
-
-    TrustedHtml::from_template(format!(
+    format!(
         concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
-            "{}",
-            "<section class=\"content-pane\">",
-            "<h1>Sessions</h1>",
-            "<p class=\"muted\">Concurrent browser sessions are allowed. Use the device label, remote address, and last-seen time to identify sessions before revoking one, other sessions, or all sessions.</p>",
-            "{}{}",
-            "<div class=\"table-wrap\"><table><thead><tr><th>Session ID</th><th>Status</th><th>Device</th><th>Issued</th><th>Last Seen</th><th>Expires</th><th>Revoked</th><th>Remote Address</th><th>User Agent</th><th>Action</th></tr></thead><tbody>{}</tbody></table></div>",
-            "</section>",
-            "</main>"
+            "<article id=\"reading-pane\" class=\"reading-pane protected-reading-pane\" tabindex=\"-1\" aria-labelledby=\"message-title\" data-reader-mode=\"Protected Reader\">",
+            "{toolbar}",
+            "<header class=\"message-heading\"><div class=\"reader-message-top\"><h2 id=\"message-title\" dir=\"auto\">{}</h2><p class=\"muted reader-date\">{} · {}</p></div><div class=\"reader-message-person\"><span class=\"message-avatar\" aria-hidden=\"true\">{}</span><div><p class=\"message-from\" dir=\"auto\">From: {}</p><p class=\"muted reader-to\" dir=\"auto\">To: {}</p></div></div></header>",
+            "<div class=\"reader-status\">{}{}{}</div>",
+            "<span id=\"reading-title\" class=\"sr-only\">Reading Pane</span>",
+            "<div class=\"reader-section-heading sr-only\" data-protected-body-panel=\"true\"><span class=\"badge badge-ok\">Protected rendering</span></div><p class=\"notice reader-boundary-note\">Message content is displayed with active content and remote images removed.</p><section class=\"body-panel\"><h2 class=\"sr-only\">Body</h2>{}</section>",
+            "<section class=\"panel reader-attachments\"><h2>{}</h2><ul class=\"attachment-list\">{}</ul></section>",
+            "<div class=\"toolbar reader-primary-actions\" aria-label=\"Message actions\">{}{}{}</div>",
+            "<details class=\"reader-details\"><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Message details</span></summary>{}{}{}<dl class=\"message-meta reader-meta\"><dt>Subject</dt><dd dir=\"auto\">{}</dd><dt>From</dt><dd dir=\"auto\">{}</dd><dt>To</dt><dd dir=\"auto\">{}</dd><dt>Cc</dt><dd dir=\"auto\">{}</dd><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd><dt>Protection</dt><dd>Protected by Default</dd><dt>Remote Content</dt><dd>{}</dd></dl></details>",
+            "</article>"
         ),
-        app_header(canonical_username, csrf_token, "sessions"),
-        success_banner,
-        controls,
-        rows,
-    ))
+        escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")),
+        escape_html(&rendered.mailbox_name), escape_html(&folders.timezone.display_received(&rendered.date_received)),
+        escape_html(&sender_initials(rendered.from.as_deref())),
+        escape_html(rendered.from.as_deref().unwrap_or("Sender unavailable")),
+        escape_html(rendered.to.as_deref().unwrap_or("Not present")),
+        protected_reader_strip, openpgp_reader_states, if standalone { &source_link } else { "" },
+        rendered.body_html, if attachments_unavailable { "Attachments unavailable".into() } else if standalone { format!("Attachments ({})", rendered.attachments.len()) } else { "Attachments".into() }, attachments,
+        compose_link("reply", "Reply"), compose_link("reply-all", "Reply all"), compose_link("forward", "Forward"),
+        html_state_badge, rendering_notice, inline_image_notice,
+        escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")), escape_html(rendered.from.as_deref().unwrap_or("Sender unavailable")),
+        escape_html(rendered.to.as_deref().unwrap_or("Not present")), escape_html(rendered.cc.as_deref().unwrap_or("Not present")),
+        escape_html(&rendered.mailbox_name), rendered.uid, escape_html(&folders.timezone.display_received(&rendered.date_received)),
+        escape_html(&rendered.mime_top_level_content_type), escape_html(rendered.body_source.as_str()),
+        escape_html(rendered.rendering_mode.as_str()), if rendered.contains_html_body { "yes" } else { "no" }, remote_content_state,
+        toolbar = toolbar,
+    )
 }
 
 /// Renders the compose page for the current user and CSRF-bound session.
+fn render_live_openpgp_compose_controls(model: &ComposePageModel<'_>) -> String {
+    let checked = |selected| if selected { " checked" } else { "" };
+    let stale_binding = model
+        .protection
+        .binding_revision
+        .zip(model.openpgp.as_ref().and_then(|view| view.revision))
+        .is_some_and(|(saved, current)| saved != current);
+    let review_action = if stale_binding {
+        let disabled = if model.draft_id.is_some() && model.draft_revision.is_none() {
+            " disabled"
+        } else {
+            ""
+        };
+        format!("<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"preflight\"><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Review current keys</span></button>")
+    } else {
+        String::new()
+    };
+    let revision = model
+        .protection
+        .binding_revision
+        .or_else(|| model.openpgp.as_ref().and_then(|view| view.revision));
+    let revision_field = revision
+        .map(|value| {
+            format!("<input type=\"hidden\" name=\"pgp_binding_revision\" value=\"{value}\">")
+        })
+        .unwrap_or_default();
+    let (summary, status, requirements) = match model.openpgp.as_ref().and_then(|view| {
+        view.preflight.as_ref().map(|preflight| (view, preflight))
+    }) {
+        Some((view, preflight)) => {
+            let state = if stale_binding {
+                "Keys changed — review required"
+            } else if model.protection.sign || model.protection.encrypt
+                || preflight.state == crate::openpgp_bindings::PreflightState::Blocked {
+                crate::http::compose_protection::selection_text(preflight.state)
+            } else {
+                "No protection selected"
+            };
+            let recipients = preflight.recipients.iter().map(|recipient| {
+                let readiness = match recipient.state {
+                    crate::openpgp_bindings::KeyStatus::Ready => "Public key eligible",
+                    crate::openpgp_bindings::KeyStatus::MissingBinding => "No approved key binding",
+                    crate::openpgp_bindings::KeyStatus::InventoryUnavailable => "Key inventory unavailable",
+                    crate::openpgp_bindings::KeyStatus::MissingKey => "Bound key missing",
+                    crate::openpgp_bindings::KeyStatus::Revoked => "Key revoked",
+                    crate::openpgp_bindings::KeyStatus::Expired => "Key expired",
+                    crate::openpgp_bindings::KeyStatus::Invalid => "Key invalid",
+                    crate::openpgp_bindings::KeyStatus::Unsupported => "Key unsupported",
+                    crate::openpgp_bindings::KeyStatus::WrongUsage => "Key cannot encrypt",
+                    crate::openpgp_bindings::KeyStatus::Ambiguous => "Key ambiguous",
+                };
+                let policy = match recipient.requirement {
+                    crate::openpgp_bindings::Requirement::Required => "Encryption required",
+                    crate::openpgp_bindings::Requirement::Optional => "Encryption optional",
+                    crate::openpgp_bindings::Requirement::Disabled => "Encryption disabled",
+                };
+                format!("<li><span>{}</span>: {readiness}; {policy}</li>", escape_html(&recipient.address))
+            }).collect::<String>();
+            let reasons = preflight.reasons.iter().map(|reason| {
+                use crate::openpgp_bindings::BlockReason;
+                let message = match reason {
+                    BlockReason::RecipientRequiresEncryption => "A recipient binding requires encryption. Select Encrypt on send, or explicitly edit that recipient's policy in Manage keys.",
+                    BlockReason::RecipientForbidsEncryption => "A recipient binding disables encryption. Review that recipient's policy in Manage keys.",
+                    BlockReason::RecipientKeyUnavailable => "A recipient has no eligible approved encryption key. Review Recipient key status.",
+                    BlockReason::SigningRequired => "The account policy requires signing. Select Sign on send, or explicitly edit the account policy in Manage keys.",
+                    BlockReason::SigningDisabled => "The account policy disables signing. Review the account policy in Manage keys.",
+                    BlockReason::EncryptionRequired => "The account policy requires encryption. Select Encrypt on send, or explicitly edit the account policy in Manage keys.",
+                    BlockReason::EncryptionDisabled => "The account policy disables encryption. Review the account policy in Manage keys.",
+                    BlockReason::SigningUnavailable => "The approved signing public key is not eligible. Review the account key in Manage keys.",
+                    BlockReason::EncryptedBccUnqualified => "Encrypted Bcc delivery is not available. Remove Bcc before an encrypted send.",
+                    BlockReason::SelfRequiresEncryption => "Include my approved key requires Encrypt on send.",
+                    BlockReason::SelfKeyUnavailable => "The account encryption public key is not eligible. Review the account key in Manage keys.",
+                };
+                format!("<li>{message}</li>")
+            }).collect::<String>();
+            let requirements = preflight.recipients.iter().map(|recipient| {
+                let policy = match recipient.requirement {
+                    crate::openpgp_bindings::Requirement::Required => "Encryption required",
+                    crate::openpgp_bindings::Requirement::Optional => "Encryption optional",
+                    crate::openpgp_bindings::Requirement::Disabled => "Encryption disabled",
+                };
+                format!("<li><span>{}</span>: {policy}</li>", escape_html(&recipient.address))
+            }).collect::<String>();
+            let policy = view.policy;
+            let requirement = |value| match value {
+                crate::openpgp_bindings::Requirement::Required => "required",
+                crate::openpgp_bindings::Requirement::Optional => "optional",
+                crate::openpgp_bindings::Requirement::Disabled => "disabled",
+            };
+            (
+                state,
+                format!("<p>Public-key eligibility for the addresses shown when this page loaded. It does not establish private-key readiness or delivery.</p><ul>{recipients}</ul>"),
+                format!("<strong>{state}</strong><p>Account policy: signing {}; encryption {}.</p><ul>{requirements}</ul><ul>{reasons}</ul><p>After changing recipients or protection choices, use Pre-send check to save this draft and check the current choices without sending. Send checks the final choices again.</p>", requirement(policy.signing), requirement(policy.encryption)),
+            )
+        }
+        None => (
+            "Not checked",
+            "<p>OpenPGP key status could not be checked. Public-key eligibility and private-key readiness are not confirmed.</p>".to_string(),
+            "<strong>Recipient protection not checked</strong><p>Use Pre-send check after entering recipients to save this draft and check current keys and policy without sending. A selected protected send pauses if its checks fail; it does not fall back to plaintext.</p>".to_string(),
+        ),
+    };
+    let requirements = format!(
+        "{requirements}<p>Signing requires your private key to be unlocked on the mail host. Public-key checks do not test whether it is unlocked. <a href=\"/settings/keys#personal-key\"><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Your personal key: unlock or lock signing access</span></a>.</p>"
+    );
+    format!(
+        "<section class=\"openpgp-compose-controls compose-policy-row\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"server-enforced\">{revision_field}<label class=\"compose-protection-choice\"><span>Sign</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_sign\"{}/> Sign on send<strong class=\"compose-choice-state compose-choice-off\">Unsigned</strong><strong class=\"compose-choice-state compose-choice-on\">Signing requested</strong></span></label><label class=\"compose-protection-choice\"><span>Encrypt</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_encrypt\"{}/> Encrypt on send<strong class=\"compose-choice-state compose-choice-off\">Not encrypted</strong><strong class=\"compose-choice-state compose-choice-on\">Encryption requested</strong></span></label><label class=\"compose-protection-choice\"><span>Encrypt to self</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_self\"{}/> Include my approved key<strong class=\"compose-choice-state compose-choice-off\">Off</strong><strong class=\"compose-choice-state compose-choice-on\">Requested</strong></span></label><details class=\"compose-key-status\"><summary><span>Recipient key status</span><strong>{summary}</strong></summary><div class=\"compose-policy-detail\">{status}</div></details><div class=\"compose-key-management\"><span>Approved keys</span>{review_action}<a href=\"/settings/keys\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"presentation-icon presentation-icon-key\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage keys</span></a></div></section><div class=\"notice compose-protection-requirements\" role=\"status\" data-protection-snapshot=\"page-load\">{requirements}</div>",
+        checked(model.protection.sign),
+        checked(model.protection.encrypt),
+        checked(model.protection.encrypt_to_self),
+    )
+}
+
 pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
+    let confirmation_required = model.draft_id.is_some() && model.draft_revision.is_none();
+    let (save_state, save_status) = if confirmation_required {
+        (
+            "unconfirmed",
+            "Save not confirmed — compare with the stored version.",
+        )
+    } else if model.error_message.is_some()
+        || (model.draft_id.is_none()
+            && [
+                model.to_value,
+                model.cc_value,
+                model.bcc_value,
+                model.subject_value,
+                model.body_value,
+            ]
+            .iter()
+            .any(|value| !value.is_empty()))
+    {
+        (
+            "unsaved",
+            "Unsaved changes — Save Draft to keep this version.",
+        )
+    } else if model.draft_id.is_some() {
+        ("saved", "Saved draft.")
+    } else {
+        ("new", "Not saved yet.")
+    };
     let success_banner = match model.success_message {
         Some(success_message) => format!(
             "<div class=\"notice notice-success\" role=\"status\"><strong>Submission complete:</strong> {}</div>",
@@ -978,13 +3039,17 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         ),
         None => String::new(),
     };
-    let error_banner = match model.error_message {
-        Some(error_message) => format!(
-            "<div class=\"notice notice-error\" role=\"alert\"><strong>Request failed:</strong> {}</div>",
+    let error_banner =
+        match model.error_message {
+            Some(error_message) => {
+                format!(
+            "<div class=\"notice notice-error\" role=\"alert\"><strong>{}</strong> {}</div>",
+            if confirmation_required { "Save not confirmed:" } else { "Request failed:" },
             escape_html(error_message)
-        ),
-        None => String::new(),
-    };
+        )
+            }
+            None => String::new(),
+        };
     let context_banner = match model.context_notice {
         Some(context_notice) => format!(
             "<div class=\"notice\"><strong>Context:</strong> {}</div>",
@@ -992,7 +3057,50 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         ),
         None => String::new(),
     };
-    let draft_id_field = model
+    let sender_initial = sender_initials(Some(model.canonical_username));
+    let sender_label = model
+        .sender_identity
+        .map(|identity| identity.display_name())
+        .filter(|name| !name.is_empty())
+        .unwrap_or(&sender_initial);
+    let sender_address = model
+        .sender_identity
+        .and_then(|identity| identity.sender())
+        .map(|sender| sender.address())
+        .unwrap_or(model.canonical_username);
+    let selected_id = model
+        .selected_sender_id
+        .or_else(|| {
+            model
+                .sender_identity
+                .and_then(|v| v.sender())
+                .map(|v| v.id())
+        })
+        .unwrap_or(crate::sender_authority::CANONICAL_ID);
+    let sender_choice = model.sender_choices.as_ref().filter(|s|s.validate(model.canonical_username).is_ok()).map(|snapshot| {
+        let options = snapshot.identities.iter().map(|identity|format!("<option value=\"{}\"{}>{}</option>",escape_html(&identity.id),if identity.id==selected_id {" selected"} else {""},escape_html(&identity.address))).collect::<String>();
+        // Revoked captured identities are retained as an unavailable choice, never silently retargeted.
+        let missing = if snapshot.identities.iter().any(|v|v.id==selected_id) {String::new()} else {format!("<option value=\"{}\" selected>Captured identity unavailable</option>",escape_html(selected_id))};
+        format!("<label for=\"compose-sender-identity\">Send as</label><select id=\"compose-sender-identity\" name=\"sender_id\">{missing}{options}</select>")
+    }).unwrap_or_default();
+    let sender_input = if model.sender_identity.and_then(|v| v.sender()).is_some() {
+        format!("<input type=\"hidden\" name=\"from\" value=\"{}\"><input id=\"compose-from\" value=\"{}\" readonly aria-describedby=\"sender-policy\">",escape_html(model.canonical_username),escape_html(sender_address))
+    } else {
+        format!("<input id=\"compose-from\" name=\"from\" value=\"{}\" readonly aria-describedby=\"sender-policy\">",escape_html(model.canonical_username))
+    };
+    let sender_detail = match model.sender_identity {
+        Some(identity) => format!("{} Reply-to: {}. Captured sender: {}.",
+            if model.draft_id.is_some() { "This draft keeps its captured identity after profile changes." }
+            else { "Current profile shown; preferences are captured when first saved or submitted and may change before then." },
+            identity.reply_to().unwrap_or(sender_address), sender_address),
+        None if model.draft_id.is_some() => "Captured sender presentation is unavailable in this response. Open the saved draft to inspect it; current profile values have not been substituted.".into(),
+        None => "Sender preferences could not be confirmed here. New messages capture the account profile when first saved or submitted.".into(),
+    };
+    let intent_field = format!(
+        "<input type=\"hidden\" name=\"send_intent\" value=\"{}\">",
+        escape_html(model.send_intent)
+    );
+    let mut draft_id_field = model
         .draft_id
         .map(|draft_id| {
             format!(
@@ -1001,91 +3109,390 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             )
         })
         .unwrap_or_default();
-    let draft_attachment_notice = if model.draft_attachment_count > 0 {
-        format!(
-            "<div class=\"notice\"><strong>Draft attachments:</strong> {} stored attachment(s) will stay send-only and are not previewed.</div>",
-            model.draft_attachment_count
-        )
-    } else {
-        String::new()
-    };
+    draft_id_field.push_str(&intent_field);
+    if let Some(revision) = model.draft_revision {
+        draft_id_field.push_str(&format!(
+            "<input type=\"hidden\" name=\"draft_revision\" value=\"{revision}\">"
+        ));
+    }
+    if model.error_message.is_some() {
+        if let Some(draft_id) = model.draft_id {
+            draft_id_field.push_str(&format!("<p class=\"notice\"><a href=\"/draft?id={}\" target=\"_blank\" rel=\"noopener\"><span class=\"presentation-icon presentation-icon-eye\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open saved version in a new tab</span></a>. Keep this tab open to preserve your unsaved text.</p>", url_encode(draft_id)));
+        }
+    }
+    let draft_attachment_notice = render_saved_attachment_controls(model);
+    let (discard_control, discard_form) = crate::http::compose_actions::discard_controls(model);
     let source_attachment_controls = render_source_attachment_controls(
         model.source_mailbox_name,
         model.source_uid,
         model.source_attachments,
         model.selected_source_part_paths,
     );
-    let openpgp_compose_controls = concat!(
-        "<section class=\"openpgp-compose-controls panel\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"ui-only\">",
-        "<h2>OpenPGP compose controls</h2>",
-        "<p>No account OpenPGP capability is configured for compose in this UI-only slice. No encrypt, sign, key lookup, private-key access, passphrase handling, or message mutation was attempted.</p>",
-        "<fieldset class=\"openpgp-compose-option-list\" disabled aria-describedby=\"openpgp-compose-boundary\">",
-        "<legend>Future account-controlled actions</legend>",
-        "<label for=\"openpgp-compose-encrypt\"><input id=\"openpgp-compose-encrypt\" type=\"checkbox\" disabled>Encrypt when configured</label>",
-        "<label for=\"openpgp-compose-sign\"><input id=\"openpgp-compose-sign\" type=\"checkbox\" disabled>Sign when configured</label>",
-        "<label for=\"openpgp-compose-recipients\"><input id=\"openpgp-compose-recipients\" type=\"checkbox\" disabled>Require configured recipient keys</label>",
-        "</fieldset>",
-        "<p id=\"openpgp-compose-boundary\" class=\"muted openpgp-compose-boundary-note\">Controls are presentation only and remain locked until account capability, recipient-key, and policy evidence exists. Send Message and Save Draft remain unchanged plaintext submission paths in this slice.</p>",
+    let openpgp_compose_controls = if model.openpgp.is_some()
+        || model.protection.sign
+        || model.protection.encrypt
+        || model.protection.encrypt_to_self
+    {
+        render_live_openpgp_compose_controls(model)
+    } else {
+        concat!(
+        "<section class=\"openpgp-compose-controls compose-policy-row\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"ui-only\">",
+        "<details name=\"compose-policy\"><summary><span>Sign</span><strong>Unsigned</strong></summary><div class=\"compose-policy-detail\"><p>Signing is unavailable for this account.</p></div></details>",
+        "<details name=\"compose-policy\"><summary><span>Encrypt</span><strong>Not encrypted</strong></summary><div class=\"compose-policy-detail\"><p>Encryption is unavailable for this account.</p></div></details>",
+        "<details name=\"compose-policy\"><summary><span>Encrypt to self</span><strong>Off</strong></summary><div class=\"compose-policy-detail\"><p>No encrypted copy will be created for your account.</p></div></details>",
+        "<details name=\"compose-policy\"><summary><span>Recipient key status</span><strong>Unavailable</strong></summary><div class=\"compose-policy-detail\"><p>Recipient keys have not been checked. OpenPGP is unavailable for this account.</p></div></details>",
+        "<details name=\"compose-policy\" class=\"compose-policy-attention\"><summary><span>Security pre-flight</span><strong>Attention</strong></summary><div class=\"compose-policy-detail\"><p>This message will be sent without OpenPGP protection.</p><p class=\"openpgp-compose-boundary-note\">Send Message and Save Draft use unencrypted message content.</p></div></details>",
         "</section>"
-    );
+        ).to_string()
+    };
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
-            "<section class=\"content-pane\">",
-            "<h1>{}</h1>",
-            "<p class=\"muted\">This send slice uses the local submission surface, keeps the browser body plain-text-first, and accepts bounded new file uploads or explicitly selected source-message attachments.</p>",
-            "{}{}{}{}",
-            "<form method=\"post\" action=\"/send\" enctype=\"multipart/form-data\">",
+            "<main id=\"main-content\" class=\"page-shell compose-shell\" tabindex=\"-1\">",
+            "<div class=\"page-intro\"><h1>{}</h1><p>Create mail with drafts, attachments, delivery controls and OpenPGP policy.</p></div>",
+            "{}{}{}",
+            "<section class=\"content-pane compose-card\">",
+            "<form id=\"compose-form\" data-enhancement=\"local-v1\" data-save-state=\"{save_state}\" method=\"post\" action=\"/send\" enctype=\"multipart/form-data\">",
+            "<div class=\"compose-card-header\"><h2>{}</h2><div class=\"compose-window-actions\"><button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"minimize\" title=\"Save this draft and return to Drafts\"><span class=\"presentation-icon presentation-icon-minimize\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">− Minimize</span></button><input class=\"sr-only compose-expand-state\" id=\"compose-expanded\" type=\"checkbox\"><label class=\"button-link\" for=\"compose-expanded\"><span class=\"expand-text\">↗ Expand</span><span class=\"collapse-text\">↙ Restore</span></label><details class=\"compose-more\"><summary><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More actions</span></summary><div><a href=\"/drafts\"><span class=\"presentation-icon presentation-icon-drafts\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Open Drafts</span></a><a href=\"/contacts\" target=\"_blank\" rel=\"noopener\">Manage contacts</a></div></details></div></div>",
             "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
             "{}",
             "{}",
             "{}",
+            "<div class=\"compose-field\"><label for=\"compose-from\">From</label><div class=\"compose-sender\">{sender_choice}<span class=\"compose-sender-chip\" >{sender_label}</span>{sender_input}<details class=\"compose-sender-details\"><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Sender details</span></summary><p id=\"sender-policy\">{sender_detail}</p></details></div></div>",
+            "<div class=\"compose-field\"><label for=\"compose-to\">To</label><input id=\"compose-to\" type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></div>",
+            "<div class=\"compose-recipient-tools\"><details class=\"compose-cc\"{}><summary><span class=\"presentation-icon presentation-icon-add\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">+ Cc</span></summary><label for=\"compose-cc\">Cc</label><input id=\"compose-cc\" type=\"text\" name=\"cc\" value=\"{}\" autocomplete=\"off\"></details>",
+            "<details class=\"compose-bcc\"{}><summary><span class=\"presentation-icon presentation-icon-add\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">+ Bcc</span></summary><label for=\"compose-bcc\">Bcc</label><input id=\"compose-bcc\" type=\"text\" name=\"bcc\" value=\"{}\" autocomplete=\"off\"></details>{}</div>",
+            "<div class=\"compose-field compose-subject-field\"><label for=\"compose-subject\">Subject</label><input id=\"compose-subject\" type=\"text\" name=\"subject\" value=\"{}\"></div>",
             "{}",
-            "<label for=\"compose-to\">To<input id=\"compose-to\" type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label>",
-            "<label for=\"compose-cc\">Cc<input id=\"compose-cc\" type=\"text\" name=\"cc\" value=\"{}\" autocomplete=\"off\"></label>",
-            "<label for=\"compose-bcc\">Bcc<input id=\"compose-bcc\" type=\"text\" name=\"bcc\" value=\"{}\" autocomplete=\"off\"></label>",
-            "<label for=\"compose-subject\">Subject<input id=\"compose-subject\" type=\"text\" name=\"subject\" value=\"{}\"></label>",
-            "<label for=\"compose-body\">Body<textarea id=\"compose-body\" name=\"body\">{}</textarea></label>",
-            "<label for=\"compose-attachment\">Attachments<input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple></label>",
-            "<button class=\"primary-button\" type=\"submit\">Send Message</button>",
-            "<button type=\"submit\" formaction=\"/drafts/save\">Save Draft</button>",
-            "</form>",
+            "{formatting_controls}<label class=\"sr-only\" for=\"compose-body\">Body</label><textarea id=\"compose-body\" name=\"body\" placeholder=\"Write your message…\">\n{}</textarea>{preview}{preflight}",
+            "<section class=\"compose-attachments\" aria-labelledby=\"compose-attachments-heading\"><h2 id=\"compose-attachments-heading\">Attachments</h2>{}{}<label for=\"compose-attachment\">Add attachments</label><input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple><details class=\"compose-attachment-help\"><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Attachment help</span></summary><p>Up to 3 attachments, 10 MiB each and 30 MiB total, including saved and selected source files. Local images have a 5 MiB limit. Select Remove, then Save Draft or Send Message to apply removal. Other saved files stay attached.</p></details></section>",
+            "<div class=\"compose-save-bar\"><p id=\"compose-save-status\" role=\"status\" aria-live=\"polite\" data-state=\"{save_state}\">{save_status}</p><span id=\"compose-auto-status\" class=\"muted\" role=\"status\">Auto-save requires scripting. Save Draft remains available.</span></div>",
+            "<div class=\"compose-footer\"><div class=\"compose-footer-actions\">{discard_control}<button id=\"compose-save\" type=\"submit\"{disabled} formaction=\"/drafts/save\" aria-keyshortcuts=\"Control+S Meta+S\"><span class=\"presentation-icon presentation-icon-save\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Save Draft</span></button><button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"schedule\" aria-describedby=\"compose-schedule-status\"><span class=\"presentation-icon presentation-icon-clock\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Schedule</span></button><span id=\"compose-schedule-status\" class=\"muted\">Save and choose a send time</span>{footer_more}</div>",
+            "{send_controls}",
+            "</div>",
+            "</form>{discard_form}",
             "</section>",
             "</main>"
         ),
-        app_header(model.canonical_username, model.csrf_token, "compose"),
+        app_header(model.canonical_username, model.csrf_token, "compose").replace(" data-compose-theme", if confirmation_required { " disabled data-compose-theme" } else { " data-compose-theme" }),
         escape_html(model.heading),
         success_banner,
         error_banner,
         context_banner,
-        draft_attachment_notice,
+        if confirmation_required { "Save not confirmed" } else if model.draft_id.is_some() { "Saved Draft" } else { "New Message" },
         escape_html(model.csrf_token),
         draft_id_field,
-        render_source_attachment_hidden_fields(model.source_mailbox_name, model.source_uid),
-        source_attachment_controls,
-        openpgp_compose_controls,
+        render_source_attachment_hidden_fields(model.source_mailbox_name, model.source_uid, model.source_version),
+        render_reply_reference(model.reply_reference),
         escape_html(model.to_value),
+        if model.cc_value.is_empty() { "" } else { " open" },
         escape_html(model.cc_value),
+        if model.bcc_value.is_empty() { "" } else { " open" },
         escape_html(model.bcc_value),
+        render_contact_selection(
+            model.canonical_username,
+            model.contacts,
+            model.openpgp.as_ref().and_then(|view| view.imported_recipients.as_ref()),
+            confirmation_required,
+        ),
         escape_html(model.subject_value),
+        openpgp_compose_controls,
         escape_html(model.body_value),
+        draft_attachment_notice,
+        source_attachment_controls,
+        disabled = if confirmation_required { " disabled" } else { "" },
+        save_state = save_state,
+        save_status = save_status,
+        discard_control = discard_control,
+        discard_form = discard_form,
+        formatting_controls = crate::http::compose_actions::formatting_controls(model),
+        preview = crate::http::compose_actions::preview(model),
+        preflight = crate::http::compose_preflight::render(model),
+        footer_more = crate::http::compose_delivery_ui::footer_more(model),
+        send_controls = crate::http::compose_delivery_ui::send_controls(model),
+        sender_label = escape_html(sender_label),
+        sender_detail = escape_html(&sender_detail),
+ sender_choice = sender_choice,
+ sender_input = sender_input,
     ))
+}
+
+fn format_draft_bytes(bytes: u64) -> String {
+    if bytes < 1024 {
+        format!("{bytes} B")
+    } else if bytes < 1024 * 1024 {
+        format!("{:.1} KiB", bytes as f64 / 1024.0)
+    } else {
+        format!("{:.1} MiB", bytes as f64 / (1024.0 * 1024.0))
+    }
+}
+
+fn render_saved_attachment_controls(model: &ComposePageModel<'_>) -> String {
+    if model.draft_attachments.is_empty() && model.removed_attachment_indices.is_empty() {
+        return String::new();
+    }
+    let mut rows = String::new();
+    for (index, attachment) in model.draft_attachments.iter().enumerate() {
+        rows.push_str(&format!("<li class=\"saved-attachment\" data-bytes=\"{}\"><div><strong dir=\"auto\">📄 {}</strong><span class=\"muted\">{} · saved file</span></div><label class=\"saved-attachment-remove\"><input type=\"checkbox\" name=\"remove_saved_attachment_{index}\" value=\"1\" aria-label=\"Remove {}\"{}><span>Remove</span></label></li>", attachment.body.len(), escape_html(&attachment.filename), format_draft_bytes(attachment.body.len() as u64), escape_html(&attachment.filename), if model.removed_attachment_indices.contains(&index) { " checked" } else { "" }));
+    }
+    // A failed stale form must not borrow attachment names from a newer revision.
+    // Retain its explicit indices, still bound to the submitted draft revision.
+    if model.draft_attachments.is_empty() {
+        for index in model.removed_attachment_indices {
+            rows.push_str(&format!("<li class=\"saved-attachment\"><label class=\"checkbox-row\"><input type=\"checkbox\" name=\"remove_saved_attachment_{index}\" value=\"1\" checked>Remove saved file {}</label></li>", index + 1));
+        }
+    }
+    let count = if model.draft_attachments.is_empty() {
+        "Your pending removal selection is retained.".into()
+    } else {
+        format!("{} stored attachment(s).", model.draft_attachments.len())
+    };
+    format!("<div class=\"saved-attachments\"><ul class=\"saved-attachment-list\">{rows}</ul><p class=\"sr-only compose-attachment-guidance\">{count} Select Remove, then Save Draft or Send Message to apply. Other saved files stay attached.</p></div>")
+}
+
+fn render_reply_reference(reference: Option<&crate::reply_thread::ReplyReference>) -> String {
+    reference
+        .map(|reference| {
+            format!(
+                concat!(
+                    "<input type=\"hidden\" name=\"reply_mailbox\" value=\"{}\">",
+                    "<input type=\"hidden\" name=\"reply_uid\" value=\"{}\">",
+                    "<input type=\"hidden\" name=\"reply_mailbox_guid\" value=\"{}\">",
+                    "<input type=\"hidden\" name=\"reply_message_guid\" value=\"{}\">"
+                ),
+                escape_html(&reference.mailbox_name),
+                reference.uid,
+                escape_html(&reference.version.mailbox_guid),
+                escape_html(&reference.version.message_guid)
+            )
+        })
+        .unwrap_or_default()
+}
+
+fn render_contact_selection(
+    account: &str,
+    book: Option<&crate::contacts::ContactBook>,
+    imported: Option<&crate::contacts::ImportedRecipientSnapshot>,
+    confirmation_required: bool,
+) -> String {
+    let manage =
+        "<a href=\"/contacts\" target=\"_blank\" rel=\"noopener\">Manage contacts in a new tab</a>";
+    let book = book.filter(|book| book.ensure_account(account).is_ok());
+    let imported = imported.filter(|snapshot| snapshot.ensure_account(account).is_ok());
+    let mut seen = std::collections::BTreeSet::new();
+    let saved_options: String = book
+        .into_iter()
+        .flat_map(|book| &book.contacts)
+        .filter(|contact| seen.insert(crate::mail_address::comparison_key(&contact.address)))
+        .map(|contact| {
+            format!(
+                "<option value=\"{}\">{} &lt;{}&gt;</option>",
+                escape_html(&contact.id),
+                escape_html(&contact.display_name),
+                escape_html(&contact.address)
+            )
+        })
+        .collect();
+    let imported_options: String = imported
+        .into_iter()
+        .flat_map(|snapshot| &snapshot.choices)
+        .filter(|choice| seen.insert(crate::mail_address::comparison_key(&choice.address)))
+        .map(|choice| {
+            format!(
+                "<option value=\"{}\">{}</option>",
+                escape_html(&choice.id),
+                escape_html(&choice.address)
+            )
+        })
+        .collect();
+    let saved_notice = match book {
+        None => "Saved contacts are unavailable.",
+        Some(book) if book.contacts.is_empty() => "No saved contacts.",
+        Some(_) => "",
+    };
+    let imported_notice = match imported {
+        None => "Imported public-key recipients are unavailable.",
+        Some(snapshot) if snapshot.choices.is_empty() => {
+            "No email addresses from imported public keys are available."
+        }
+        Some(_) if imported_options.is_empty() => {
+            "Imported-key addresses are already listed in Saved contacts."
+        }
+        Some(_) => "",
+    };
+    let notices = [saved_notice, imported_notice]
+        .into_iter()
+        .filter(|notice| !notice.is_empty())
+        .map(|notice| format!("<p class=\"muted\">{notice}</p>"))
+        .collect::<String>();
+    if saved_options.is_empty() && imported_options.is_empty() {
+        return format!("<details class=\"compose-contacts\"><summary><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Contacts and imported keys</span></summary><div>{notices}<p>{manage}</p></div></details>");
+    }
+    let mut options = String::new();
+    if !saved_options.is_empty() {
+        options.push_str(&format!(
+            "<optgroup label=\"Saved contacts\">{saved_options}</optgroup>"
+        ));
+    }
+    if !imported_options.is_empty() {
+        options.push_str(&format!(
+            "<optgroup label=\"Imported public keys\">{imported_options}</optgroup>"
+        ));
+    }
+    format!(concat!(
+        "<details class=\"compose-contacts panel\"><summary><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Choose a recipient</span></summary>",
+        "<p>Adding a recipient saves this message as a draft, including selected uploads. This does not change encryption settings.</p>{notices}",
+        "<input type=\"hidden\" name=\"contact_revision\" value=\"{}\">",
+        "<label for=\"compose-contact\">Contact or imported key recipient</label><select id=\"compose-contact\" name=\"contact_id\"><option value=\"\">Choose a recipient</option>{}</select>",
+        "<label for=\"compose-contact-target\">Add recipient to</label><select id=\"compose-contact-target\" name=\"contact_target\"><option value=\"to\">To</option><option value=\"cc\">Cc</option><option value=\"bcc\">Bcc</option></select>",
+        "<button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"add-contact\"{}><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Add recipient and save draft</span></button><p>{}</p></details>"
+    ), book.map(|book| book.revision).unwrap_or(0), options, if confirmation_required { " disabled" } else { "" }, manage, notices=notices)
+}
+
+#[cfg(test)]
+mod contact_selection_tests {
+    use super::*;
+
+    fn imported(account: &str, addresses: &[&str]) -> crate::contacts::ImportedRecipientSnapshot {
+        let inventory = crate::openpgp_inventory::Inventory::parse(
+            &serde_json::to_vec(&serde_json::json!({
+                "version":1,"ok":true,"protocol":"openpgp",
+                "gpgme_version":"2.0.1","engine_version":"2.5.18",
+                "keys":[{"primary":{"fingerprint":"A".repeat(40),"algorithm":1,
+                    "bits":3072,"created":1704067200u64,"expires":0,
+                    "revoked":false,"expired":false,"disabled":false,"invalid":false,
+                    "can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false},
+                    "subkeys":[],"email_addresses":addresses}]
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        crate::contacts::ImportedRecipientSnapshot::from_inventory(
+            account,
+            &crate::openpgp_bindings::BindingRecord::empty(account).unwrap(),
+            &inventory,
+        )
+        .unwrap()
+    }
+
+    fn book(account: &str) -> crate::contacts::ContactBook {
+        serde_json::from_value(serde_json::json!({
+            "version":1,"canonical_username":account,"revision":7,
+            "contacts":[{"id":"a".repeat(32),"display_name":"Desk <Public> & Team","address":"desk@EXAMPLE.TEST"}]
+        })).unwrap()
+    }
+
+    #[test]
+    fn imported_recipients_remain_selectable_without_saved_contacts_and_retain_save_guard() {
+        let account = "alice@example.test";
+        let snapshot = imported(account, &["bob&tag@example.test"]);
+        let empty = crate::contacts::ContactBook::empty(account);
+        for contacts in [None, Some(&empty)] {
+            let html = render_contact_selection(account, contacts, Some(&snapshot), false);
+            assert!(html.contains("<optgroup label=\"Imported public keys\">"));
+            assert!(html.contains(&format!(
+                "<option value=\"{}\">bob&amp;tag@example.test</option>",
+                snapshot.choices[0].id
+            )));
+            assert!(!html.contains("<optgroup label=\"Saved contacts\">"));
+            assert!(html.contains("name=\"contact_revision\" value=\"0\""));
+            for target in ["to", "cc", "bcc"] {
+                assert!(html.contains(&format!("<option value=\"{target}\">")));
+            }
+            let button = html.split_once("<button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"add-contact\">").expect("enabled recipient draft action").1.split("</button>").next().unwrap();
+            assert!(button.contains("Add recipient and save draft"));
+            assert!(html.contains("This does not change encryption settings."));
+            assert!(!html.contains("Imported public-key recipients are unavailable."));
+            assert!(!html.contains("name=\"pgp_encrypt\""));
+        }
+        let guarded = render_contact_selection(account, None, Some(&snapshot), true);
+        let button = guarded.split_once("<button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"add-contact\" disabled>").expect("guarded recipient draft action remains disabled").1.split("</button>").next().unwrap();
+        assert!(button.contains("Add recipient and save draft"));
+    }
+
+    #[test]
+    fn merged_recipient_sources_preserve_saved_labels_and_dedupe_addresses_case_insensitively() {
+        let account = "alice@example.test";
+        let saved = book(account);
+        let snapshot = imported(account, &["desk@example.test", "bob&tag@example.test"]);
+        let before = serde_json::to_vec(&saved).unwrap();
+        let html = render_contact_selection(account, Some(&saved), Some(&snapshot), false);
+        assert!(html.contains("<optgroup label=\"Saved contacts\">"));
+        assert!(html.contains("<optgroup label=\"Imported public keys\">"));
+        assert!(html.contains(&format!("<option value=\"{}\">Desk &lt;Public&gt; &amp; Team &lt;desk@EXAMPLE.TEST&gt;</option>", saved.contacts[0].id)));
+        let duplicate = snapshot
+            .choices
+            .iter()
+            .find(|choice| choice.address == "desk@example.test")
+            .unwrap();
+        assert!(!html.contains(&format!("value=\"{}\"", duplicate.id)));
+        assert!(html.contains("bob&amp;tag@example.test"));
+        assert!(!html.contains("Desk <Public>"));
+        assert!(!html.contains("bob&tag@example.test"));
+        assert!(html.contains("name=\"contact_revision\" value=\"7\""));
+        assert_eq!(serde_json::to_vec(&saved).unwrap(), before);
+    }
+
+    #[test]
+    fn recipient_source_ownership_is_checked_independently_without_hiding_the_other_source() {
+        let account = "alice@example.test";
+        let saved = book(account);
+        let foreign_book = book("mallory@example.test");
+        let own_keys = imported(account, &["owned@example.test"]);
+        let foreign_keys = imported("mallory@example.test", &["foreign@example.test"]);
+        let saved_only =
+            render_contact_selection(account, Some(&saved), Some(&foreign_keys), false);
+        assert!(saved_only.contains("Desk &lt;Public&gt; &amp; Team"));
+        assert!(!saved_only.contains("foreign@example.test"));
+        assert!(saved_only.contains("Imported public-key recipients are unavailable."));
+        let key_only =
+            render_contact_selection(account, Some(&foreign_book), Some(&own_keys), false);
+        assert!(key_only.contains("owned@example.test"));
+        assert!(!key_only.contains("Desk &lt;Public&gt; &amp; Team"));
+        assert!(key_only.contains("Saved contacts are unavailable."));
+        let neither =
+            render_contact_selection(account, Some(&foreign_book), Some(&foreign_keys), false);
+        assert!(!neither.contains("name=\"contact_id\""));
+        assert!(!neither.contains("foreign@example.test"));
+    }
+
+    #[test]
+    fn empty_and_unavailable_recipient_sources_have_distinct_truthful_states() {
+        let account = "alice@example.test";
+        let empty_book = crate::contacts::ContactBook::empty(account);
+        let empty_keys = imported(account, &[]);
+        let empty = render_contact_selection(account, Some(&empty_book), Some(&empty_keys), false);
+        assert!(empty.contains("No saved contacts."));
+        assert!(empty.contains("No email addresses from imported public keys are available."));
+        assert!(!empty.contains("unavailable"));
+        assert!(!empty.contains("value=\"add-contact\""));
+        let unavailable = render_contact_selection(account, None, None, false);
+        assert!(unavailable.contains("Saved contacts are unavailable."));
+        assert!(unavailable.contains("Imported public-key recipients are unavailable."));
+        assert!(!unavailable.contains("No saved contacts."));
+        let saved = book(account);
+        let saved_only = render_contact_selection(account, Some(&saved), None, false);
+        assert!(saved_only.contains(&format!("value=\"{}\"", saved.contacts[0].id)));
+        let button = saved_only.split_once("<button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"add-contact\">").expect("enabled saved recipient action").1.split("</button>").next().unwrap();
+        assert!(button.contains("Add recipient and save draft"));
+    }
 }
 
 fn render_source_attachment_hidden_fields(
     source_mailbox_name: Option<&str>,
     source_uid: Option<u64>,
+    source_version: Option<&crate::message_metadata::MessageVersion>,
 ) -> String {
     match (source_mailbox_name, source_uid) {
         (Some(mailbox), Some(uid)) => format!(
             concat!(
                 "<input type=\"hidden\" name=\"source_mailbox\" value=\"{}\">",
-                "<input type=\"hidden\" name=\"source_uid\" value=\"{}\">"
+                "<input type=\"hidden\" name=\"source_uid\" value=\"{}\">{}"
             ),
             escape_html(mailbox),
             uid,
+            source_version.map(|version| format!("<input type=\"hidden\" name=\"source_mailbox_guid\" value=\"{}\"><input type=\"hidden\" name=\"source_message_guid\" value=\"{}\">", escape_html(&version.mailbox_guid), escape_html(&version.message_guid))).unwrap_or_default(),
         ),
         _ => String::new(),
     }
@@ -1097,8 +3504,17 @@ fn render_source_attachment_controls(
     attachments: &[AttachmentMetadata],
     selected_part_paths: &[String],
 ) -> String {
-    if source_mailbox_name.is_none() || source_uid.is_none() || attachments.is_empty() {
+    if source_mailbox_name.is_none() || source_uid.is_none() {
         return String::new();
+    }
+    if attachments.is_empty() {
+        if selected_part_paths.is_empty() {
+            return String::new();
+        }
+        let retained: String = selected_part_paths.iter().enumerate().map(|(index, path)| format!(
+            "<label class=\"checkbox-row\"><input type=\"checkbox\" name=\"include_original_attachment_{}\" value=\"{}\" checked>Source attachment part {}</label>",
+            index + 1, escape_html(path), escape_html(path))).collect();
+        return format!("<fieldset class=\"panel\"><legend>Retained source attachments</legend><p>Your selection is retained and will be checked again when you save or send.</p>{retained}</fieldset>");
     }
 
     let mut rows = String::new();
@@ -1176,143 +3592,206 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
         None => String::new(),
     };
     let mut rows = String::new();
+    let mut selectable_count = 0;
     for draft in model.drafts {
+        let mut matching = model
+            .states
+            .iter()
+            .filter(|state| state.draft_id == draft.draft_id && state.revision == draft.revision);
+        let state = matching
+            .next()
+            .filter(|_| matching.next().is_none())
+            .map(|value| &value.state);
+        if !matches!(state, Some(crate::http::BrowserDraftEditState::Editable)) {
+            let selectable = matches!(state, Some(crate::http::BrowserDraftEditState::Scheduled { job_id }) if crate::draft::validate_draft_id(job_id).is_ok());
+            selectable_count += usize::from(selectable);
+            rows.push_str(&render_locked_draft_row(
+                draft,
+                state,
+                model.csrf_token,
+                model.view.select_editable
+                    && selectable_count <= crate::draft_list::MAX_DRAFT_SELECTION,
+            ));
+            continue;
+        }
+        selectable_count += 1;
         let resume_href = format!("/draft?id={}", url_encode(&draft.draft_id));
         rows.push_str(&format!(
             concat!(
-                "<tr>",
-                "<td><a href=\"{}\">Resume</a></td>",
+                "<tr data-draft-state=\"editable\">",
+                "<td class=\"draft-select\"><input type=\"checkbox\" form=\"draft-selection\" name=\"selected_{}\" value=\"{}\"{checked} aria-label=\"Select draft: {}\"></td>",
+                "<td class=\"draft-star\"><form method=\"post\" action=\"/drafts/star\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"draft_id\" value=\"{}\"><input type=\"hidden\" name=\"draft_revision\" value=\"{}\"><input type=\"hidden\" name=\"starred\" value=\"{}\">{}<button type=\"submit\" aria-label=\"{}\" aria-pressed=\"{}\" title=\"{}\">{}</button></form></td>",
+                "<td class=\"draft-recipient\" dir=\"auto\"><div class=\"draft-recipient-person\"><span class=\"sender-avatar\" aria-hidden=\"true\">{}</span><span>{}</span></div></td>",
+                "<td class=\"draft-subject\"><a href=\"{}\" dir=\"auto\">{}</a><span class=\"muted\">Draft saved, continue editing.</span></td>",
                 "<td>{}</td>",
-                "<td>{}</td>",
-                "<td>{}</td>",
-                "<td>{}</td>",
+                "<td><span class=\"badge\">Draft</span></td>",
+                "<td><time datetime=\"{}\">{}</time></td>",
                 "<td>",
+                "<details class=\"draft-discard\" name=\"draft-actions\"><summary aria-label=\"Draft actions\" title=\"Draft actions\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More</span></summary><div class=\"draft-action-menu\"><a class=\"draft-resume\" href=\"{}\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Resume</span></a><p>Discard this saved draft?</p>",
                 "<form method=\"post\" action=\"/drafts/delete\">",
                 "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
                 "<input type=\"hidden\" name=\"draft_id\" value=\"{}\">",
-                "<button type=\"submit\">Delete</button>",
-                "</form>",
+                "<input type=\"hidden\" name=\"draft_revision\" value=\"{}\">",
+                "{}",
+                "<button type=\"submit\" name=\"confirm\" value=\"1\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Delete</span></button>",
+                "</form></div></details>",
                 "</td>",
                 "</tr>"
             ),
+            escape_html(&draft.draft_id), draft.revision, escape_html(if draft.subject.is_empty() { "(No subject)" } else { &draft.subject }),
+            escape_html(model.csrf_token), escape_html(&draft.draft_id), draft.revision, u8::from(!draft.starred), render_draft_list_state(model.view),
+            if draft.starred { "Unstar draft" } else { "Star draft" }, draft.starred, if draft.starred { "Unstar draft" } else { "Star draft" }, presentation_label(if draft.starred { "Unstar" } else { "Star" }, "star"),
+            escape_html(&sender_initials(draft.recipient_preview.as_deref())),
+            escape_html(draft.recipient_preview.as_deref().unwrap_or(if draft.recipient_count == 0 { "No recipients yet" } else { "Undisclosed recipients" })),
             escape_html(&resume_href),
-            draft.updated_at,
-            draft.recipient_count,
-            draft.body_len,
-            draft.attachment_count,
+            escape_html(if draft.subject.is_empty() { "(No subject)" } else { &draft.subject }),
+            if draft.attachment_count > 0 { format!("<span class=\"draft-attachment-count\" aria-label=\"{} attachments\">📎 {}</span>", draft.attachment_count, draft.attachment_count) } else { "<span class=\"muted\" aria-label=\"No attachments\">—</span>".into() },
+            crate::logging::format_unix_timestamp_utc(draft.updated_at),
+            crate::logging::format_unix_timestamp_utc(draft.updated_at).replace('T', " ").replace('Z', " UTC"),
+            escape_html(&resume_href),
             escape_html(model.csrf_token),
             escape_html(&draft.draft_id),
+            draft.revision,
+            render_draft_list_state(model.view),
+            checked = if model.view.select_editable && selectable_count <= crate::draft_list::MAX_DRAFT_SELECTION { " checked" } else { "" },
         ));
     }
     if rows.is_empty() {
-        rows.push_str("<tr><td colspan=\"6\" class=\"muted\">No saved drafts.</td></tr>");
+        rows.push_str(if model.total_count == 0 { "<tr><td colspan=\"8\" class=\"muted\">No saved drafts.</td></tr>" } else { "<tr><td colspan=\"8\" class=\"muted\">No drafts match these filters. <a href=\"/drafts\"><span class=\"presentation-icon presentation-icon-select\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Show all drafts</span></a>.</td></tr>" });
     }
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
-            "<section class=\"content-pane\">",
-            "<h1>Drafts</h1>{}{}",
-            "<p class=\"muted\">Saved drafts are bounded server-side compose state. Stored attachments remain send-only and are not previewed.</p>",
-            "<p><a class=\"primary-button\" href=\"/compose\">New Message</a></p>",
-            "<table>",
-            "<thead><tr><th>Action</th><th>Updated</th><th>Recipients</th><th>Body Bytes</th><th>Attachments</th><th>Delete</th></tr></thead>",
+            "<main id=\"main-content\" class=\"page-shell drafts-page\" tabindex=\"-1\">",
+            "<div class=\"page-intro\"><h1>Drafts</h1><p>Resume, organize and safely discard saved messages. Includes Drafts and Working drafts under one account limit.</p></div>{}{}",
+            "<p class=\"muted\"><a href=\"/labels\"><span class=\"presentation-icon presentation-icon-label\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Create or manage labels</span></a>. Labels apply to stored mailbox messages; labelling unsent drafts is not available.</p>",
+            "<div class=\"draft-list-toolbar\"><details class=\"draft-selection-menu\"><summary><span class=\"presentation-icon presentation-icon-select\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Select drafts</span></summary><nav aria-label=\"Draft selection\"><a href=\"{select_href}\"><span class=\"presentation-icon presentation-icon-select\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Select up to 10 drafts shown</span></a><a href=\"{clear_href}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Clear selection</span></a><p>Select editable drafts and confirmed scheduled source copies. Review discard before confirming deletion.</p></nav></details><form method=\"get\" action=\"/drafts\"><label class=\"sr-only\" for=\"draft-filter\">Draft filter</label><select id=\"draft-filter\" name=\"filter\">{}</select><label class=\"sr-only\" for=\"draft-sort\">Draft order</label><select id=\"draft-sort\" name=\"sort\">{}</select><label class=\"sr-only\" for=\"draft-query\">Search drafts</label><input id=\"draft-query\" name=\"q\" value=\"{}\" maxlength=\"200\" placeholder=\"Search subjects or recipients\"><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Apply</span></button></form><a class=\"button-link primary-button\" href=\"/compose\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">+ New Message</span></a></div>",
+            "<div class=\"table-wrap draft-list\" role=\"region\" aria-label=\"Saved drafts\" tabindex=\"0\"><table>",
+            "<thead><tr><th><span class=\"sr-only\">Select</span></th><th><span class=\"sr-only\">Star</span></th><th>Recipient</th><th>Subject</th><th>Attachment</th><th>Status</th><th>Saved</th><th><span class=\"sr-only\">Actions</span></th></tr></thead>",
             "<tbody>{}</tbody>",
-            "</table>",
-            "</section>",
+            "</table></div>",
+            "<p class=\"draft-list-status muted\" role=\"status\">Showing {} of {} saved drafts</p><p class=\"draft-storage-status muted\">{}</p>",
+            "<form id=\"draft-selection\" class=\"draft-selection-actions\" method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<p class=\"muted\">Select up to 10 drafts or scheduled source copies. Scheduled messages and delivery status are kept.</p><button type=\"submit\" name=\"stage\" value=\"review\"{review_disabled}><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Review discard</span></button></form>",
             "</main>"
         ),
         app_header(model.canonical_username, model.csrf_token, "drafts"),
         success_banner,
         error_banner,
+        DraftFilter::ALL.iter().map(|filter| format!("<option value=\"{}\"{}>{}</option>", filter.value(), if *filter == model.view.filter { " selected" } else { "" }, filter.label())).collect::<String>(),
+        DraftSort::ALL.iter().map(|sort| format!("<option value=\"{}\"{}>{}</option>", sort.value(), if *sort == model.view.sort { " selected" } else { "" }, sort.label())).collect::<String>(),
+        escape_html(&model.view.query),
         rows,
+        model.drafts.len(),
+        model.total_count,
+        render_draft_storage(model.usage),
+        escape_html(model.csrf_token), render_draft_list_state(model.view),
+        select_href = escape_html(&format!("{}&select=editable",model.view.href())),
+        clear_href = escape_html(&format!("{}&select=clear",model.view.href())),
+        review_disabled = if selectable_count == 0 { " disabled" } else { "" },
     ))
 }
 
-/// Renders the first bounded end-user settings page.
-pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml {
-    let success_banner = match model.success_message {
-        Some(success_message) => format!(
-            "<div class=\"notice notice-success\" role=\"status\"><strong>Update complete:</strong> {}</div>",
-            escape_html(success_message)
+fn render_locked_draft_row(
+    draft: &DraftSummary,
+    state: Option<&crate::http::BrowserDraftEditState>,
+    csrf_token: &str,
+    checked: bool,
+) -> String {
+    use crate::http::BrowserDraftEditState as State;
+    let (kind, label, explanation, intent) = match state {
+        Some(State::Attempted { receipt_intent }) => (
+            "attempted",
+            "Attempt recorded",
+            "Review the receipt; this saved version is read-only.",
+            Some(receipt_intent),
         ),
-        None => String::new(),
+        Some(State::Paused { receipt_intent }) => (
+            "paused",
+            "Paused",
+            "Submission state needs review. This saved version is read-only.",
+            Some(receipt_intent),
+        ),
+        Some(State::Scheduled { .. }) => (
+            "scheduled",
+            "Scheduled copy",
+            "Managed in Outbox. You can delete this source copy; the scheduled message is kept.",
+            None,
+        ),
+        _ => (
+            "unknown",
+            "Unavailable",
+            "Editing status could not be verified. Reload Drafts before making changes.",
+            None,
+        ),
     };
-    let error_banner = match model.error_message {
-        Some(error_message) => format!(
-            "<div class=\"notice notice-error\" role=\"alert\"><strong>Request failed:</strong> {}</div>",
-            escape_html(error_message)
-        ),
-        None => String::new(),
+    let intent = intent.filter(|value| crate::send_journal::receipt_intent_valid(value));
+    let title = if draft.subject.is_empty() {
+        "(No subject)"
+    } else {
+        &draft.subject
     };
-    let prefer_sanitized_html_checked =
-        if model.html_display_preference == HtmlDisplayPreference::PreferSanitizedHtml {
-            " checked"
+    let links = if let Some(State::Scheduled { job_id }) = state {
+        if crate::draft::validate_draft_id(job_id).is_ok() {
+            format!(
+                "<a href=\"/outbox?id={}\"><span class=\"presentation-icon presentation-icon-outbox\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">View scheduled message</span></a>",
+                escape_html(job_id)
+            )
         } else {
-            ""
-        };
-    let prefer_plain_text_checked =
-        if model.html_display_preference == HtmlDisplayPreference::PreferPlainText {
-            " checked"
+            "<a href=\"/outbox\">Open Outbox</a>".into()
+        }
+    } else if let Some(intent) = intent {
+        format!("<a href=\"/compose?receipt={}\"><span class=\"presentation-icon presentation-icon-eye\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">View attempt</span></a><a href=\"/draft?id={}\"><span class=\"presentation-icon presentation-icon-eye\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Saved version</span></a>", escape_html(&url_encode(intent)), escape_html(&url_encode(&draft.draft_id)))
+    } else {
+        "<a href=\"/drafts\"><span class=\"presentation-icon presentation-icon-refresh\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Reload Drafts</span></a>".into()
+    };
+    let discard = if matches!(state, Some(State::Scheduled { job_id }) if crate::draft::validate_draft_id(job_id).is_ok())
+    {
+        format!(concat!("<p>Delete this saved source copy? The scheduled message and its delivery status are kept.</p>",
+            "<form method=\"post\" action=\"/drafts/delete\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"draft_id\" value=\"{}\"><input type=\"hidden\" name=\"draft_revision\" value=\"{}\"><button type=\"submit\" name=\"confirm\" value=\"1\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Delete source copy</span></button></form>"), escape_html(csrf_token), escape_html(&draft.draft_id), draft.revision)
+    } else {
+        "<button disabled><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Delete unavailable</span></button>".into()
+    };
+    let selection = if matches!(state, Some(State::Scheduled { job_id }) if crate::draft::validate_draft_id(job_id).is_ok())
+    {
+        format!("<input type=\"checkbox\" form=\"draft-selection\" name=\"selected_{}\" value=\"{}\"{} aria-label=\"Select draft: {}\">", escape_html(&draft.draft_id), draft.revision, if checked { " checked" } else { "" }, escape_html(title))
+    } else {
+        format!(
+            "<input type=\"checkbox\" disabled aria-label=\"Select draft: {}\">",
+            escape_html(title)
+        )
+    };
+    format!(concat!("<tr data-draft-state=\"{kind}\"><td class=\"draft-select\">{selection}</td><td class=\"draft-star\"><span role=\"img\" aria-label=\"Star unavailable\" title=\"Star unavailable\">{star}</span></td>",
+        "<td class=\"draft-recipient\"><div class=\"draft-recipient-person\"><span class=\"sender-avatar\" aria-hidden=\"true\">{initials}</span><span>{recipient}</span></div></td><td class=\"draft-subject\"><strong dir=\"auto\">{title}</strong>{primary_link}<span class=\"muted\">{explanation}</span></td><td>{files}</td><td><span class=\"badge\">{label}</span></td><td><time datetime=\"{utc}\">{time}</time></td><td><details class=\"draft-discard\"><summary aria-label=\"Draft actions\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More</span></summary><div class=\"draft-action-menu\">{links}{discard}</div></details></td></tr>"),kind=kind,selection=selection,primary_link=if matches!(state, Some(State::Scheduled { .. })) {links.as_str()} else {""},title=escape_html(title),star=if draft.starred {"★"} else {"☆"},initials=escape_html(&sender_initials(draft.recipient_preview.as_deref())),recipient=escape_html(draft.recipient_preview.as_deref().unwrap_or("No visible recipients")),explanation=explanation,files=if draft.attachment_count>0 {format!("{} files",draft.attachment_count)} else {"—".into()},label=label,utc=crate::logging::format_unix_timestamp_utc(draft.updated_at),time=crate::logging::format_unix_timestamp_utc(draft.updated_at).replace('T'," ").replace('Z'," UTC"),links=links,discard=discard)
+}
+fn render_draft_storage(usage: &crate::http::BrowserDraftStorageUsage) -> String {
+    let size = |bytes: u64| {
+        if bytes < 1024 {
+            format!("{bytes} B")
+        } else if bytes < 1024 * 1024 {
+            format!("{} KiB", bytes.div_ceil(1024))
         } else {
-            ""
-        };
-    let account_security_panel = concat!(
-        r#"<section class="panel account-security-panel" aria-labelledby="account-security-title">"#,
-        r#"<h2 id="account-security-title">Account Security</h2>"#,
-        r#"<p class="muted">OpenPGP account controls are shown here as UI-only placeholders until a later evidenced slice wires configured-account policy into runtime behavior.</p>"#,
-        r#"<div class="openpgp-account-security" aria-label="OpenPGP account controls" data-openpgp-account-controls="ui-only">"#,
-        r#"<div class="badge-list openpgp-account-badges" aria-label="OpenPGP account status"><span class="badge badge-warn">OpenPGP not configured</span><span class="badge">UI-only controls</span><span class="badge">Protected by Default preserved</span></div>"#,
-        r#"<dl class="openpgp-state-list"><dt>Account capability</dt><dd>not configured</dd><dt>Signing policy</dt><dd>not active</dd><dt>Encryption policy</dt><dd>not active</dd><dt>Private key access</dt><dd>not attempted</dd><dt>Passphrase handling</dt><dd>not present</dd></dl>"#,
-        r#"<fieldset class="openpgp-account-control-set" disabled>"#,
-        r#"<legend>Future configured-account controls</legend>"#,
-        r#"<label for="openpgp-account-enable"><input id="openpgp-account-enable" type="checkbox" disabled> Enable OpenPGP for this account</label>"#,
-        r#"<label for="openpgp-account-require-sign"><input id="openpgp-account-require-sign" type="checkbox" disabled> Require signing when configured</label>"#,
-        r#"<label for="openpgp-account-require-encrypt"><input id="openpgp-account-require-encrypt" type="checkbox" disabled> Require encryption when configured</label>"#,
-        r#"</fieldset>"#,
-        r#"<p class="muted openpgp-account-boundary-note">These controls are placeholders for a later evidenced slice. They submit no OpenPGP form fields and do not activate cryptographic behavior.</p>"#,
-        r#"</div>"#,
-        r#"</section>"#,
-    );
+            format!("{:.1} MiB", bytes as f64 / (1024.0 * 1024.0))
+        }
+    };
+    match usage {
+        crate::http::BrowserDraftStorageUsage::Verified { ordinary_count, ordinary_bytes, recovery_count, recovery_bytes, max_count, max_bytes } => format!("Saved drafts: {ordinary_count} ({}). Retained attempts: {recovery_count} ({}). Combined storage: {} of {}; {} of {max_count} items. This limit covers drafts and attempt recovery.",size(*ordinary_bytes),size(*recovery_bytes),size(ordinary_bytes.saturating_add(*recovery_bytes)),size(*max_bytes),ordinary_count.saturating_add(*recovery_count)),
+        crate::http::BrowserDraftStorageUsage::Unknown => "Combined storage usage could not be verified. Limits include saved drafts and retained attempts.".into(),
+    }
+}
 
-    let archive_mailbox_name = model.archive_mailbox_name.unwrap_or("");
+fn render_draft_list_state(view: &DraftListView) -> String {
+    format!("<input type=\"hidden\" name=\"filter\" value=\"{}\"><input type=\"hidden\" name=\"sort\" value=\"{}\"><input type=\"hidden\" name=\"q\" value=\"{}\">", view.filter.value(), view.sort.value(), escape_html(&view.query))
+}
 
-    TrustedHtml::from_template(format!(
-        concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
-            "{}",
-            "<section class=\"content-pane\">",
-            "<h1>Settings</h1>{}{}",
-            "<p class=\"muted\">This settings slice stays intentionally small. It controls HTML display preference and one optional archive mailbox shortcut without turning OSMAP into a broad preference UI.</p>",
-            "{}",
-            "<form method=\"post\" action=\"/settings\" class=\"action-stack\">",
-            "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
-            "<fieldset class=\"panel\">",
-            "<legend>HTML Message Display</legend>",
-            "<div><input id=\"html-display-prefer-sanitized\" type=\"radio\" name=\"html_display_preference\" value=\"prefer_sanitized_html\"{}><label for=\"html-display-prefer-sanitized\">Prefer sanitized HTML when available</label></div>",
-            "<div><input id=\"html-display-prefer-plain\" type=\"radio\" name=\"html_display_preference\" value=\"prefer_plain_text\"{}><label for=\"html-display-prefer-plain\">Prefer plain text when available</label></div>",
-            "</fieldset>",
-            "<fieldset class=\"panel\">",
-            "<legend>Archive Shortcut</legend>",
-            "<label for=\"archive-mailbox-name\">Archive Mailbox</label>",
-            "<input id=\"archive-mailbox-name\" type=\"text\" name=\"archive_mailbox_name\" value=\"{}\" autocomplete=\"off\">",
-            "<p class=\"muted\">Leave this blank to keep only the manual move flow.</p>",
-            "</fieldset>",
-            "<div><button type=\"submit\">Save Settings</button></div>",
-            "</form>",
-            "</section>",
-            "</main>"
-        ),
-        app_header(model.canonical_username, model.csrf_token, "settings"),
-        success_banner,
-        error_banner,
-        account_security_panel,
-        escape_html(model.csrf_token),
-        prefer_sanitized_html_checked,
-        prefer_plain_text_checked,
-        escape_html(archive_mailbox_name),
-    ))
+pub(crate) fn render_draft_selection_review(
+    account: &str,
+    csrf: &str,
+    drafts: &[DraftSummary],
+    view: &DraftListView,
+) -> TrustedHtml {
+    let rows: String = drafts.iter().map(|draft| format!("<li><strong dir=\"auto\">{}</strong><span class=\"muted\"> · {} attachment(s)</span><input type=\"hidden\" name=\"selected_{}\" value=\"{}\"></li>", escape_html(if draft.subject.is_empty() { "(No subject)" } else { &draft.subject }), draft.attachment_count, escape_html(&draft.draft_id), draft.revision)).collect();
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Discard selected drafts?</h1><p>Review these {} saved drafts before discarding their text and saved attachments.</p></div><section class=\"content-pane\"><form method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<ul class=\"draft-discard-review\">{}</ul><p>Discard cannot be undone. For scheduled source copies, only the copy in Drafts is removed; the scheduled message and delivery status are kept. If a draft changes, discard stops; any earlier completed deletions remain.</p><div class=\"inline-actions\"><a class=\"button-link\" href=\"{}\"><span class=\"presentation-icon presentation-icon-close\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Keep drafts</span></a><button type=\"submit\" name=\"stage\" value=\"confirm\">Discard {} drafts</button></div></form></section></main>", app_header(account, csrf, "drafts"), drafts.len(), escape_html(csrf), render_draft_list_state(view), rows, escape_html(&view.href()), drafts.len()))
 }
 
 #[cfg(test)]
@@ -1326,10 +3805,16 @@ mod v7_rendering_regression_tests {
     #[test]
     fn ui_message_view_surfaces_truthful_rendering_labels() {
         let rendered = RenderedMessageView {
+            openpgp: None,
+            metadata: None,
+            flags: Vec::new(),
             mailbox_name: "INBOX".to_string(),
             uid: 42,
             subject: Some("Decoded café".to_string()),
             from: Some("Example Sender <sender@example.invalid>".to_string()),
+            to: Some("Reader <reader@example.invalid>".into()),
+            cc: None,
+            reply_metadata: None,
             date_received: "2026-06-20 00:00:00 +0000".to_string(),
             mime_top_level_content_type: "multipart/alternative".to_string(),
             body_source: MimeBodySource::MultipartHtmlSanitized,
@@ -1367,9 +3852,148 @@ mod v7_rendering_regression_tests {
         assert!(page.contains("Rendering Mode</dt><dd>sanitized_html</dd>"));
         assert!(page.contains("HTML Present</dt><dd>yes</dd>"));
         assert!(page.contains("HTML present"));
-        assert!(page.contains("remote content blocked"));
+        assert!(page.contains("Remote content blocked"));
         assert!(page.contains("<strong>Sanitized HTML:</strong>"));
         assert!(page.contains("Remote content blocked by policy"));
         assert!(page.contains("Safe rendered body"));
+        assert!(page.contains("data-openpgp-reader-states=\"unassessed\""));
+        assert!(page.contains("OpenPGP not assessed for this message"));
+        for obsolete in [
+            "OpenPGP unavailable",
+            "UI-only",
+            "ui-only",
+            "future decrypted",
+            "Future decrypted",
+        ] {
+            assert!(!page.contains(obsolete), "ordinary reader cannot infer account capability or describe obsolete implementation");
+        }
     }
 }
+
+#[cfg(test)]
+#[test]
+fn draft_ui_unmatched_revision_and_duplicate_state_never_enable_editing() {
+    use crate::http::{BrowserDraftEditState, BrowserDraftState, BrowserDraftStorageUsage};
+    let drafts = vec![DraftSummary {
+        draft_id: "a".repeat(32),
+        created_at: 100,
+        updated_at: 100,
+        expires_at: 200,
+        revision: 2,
+        starred: false,
+        storage_bytes: 1,
+        recipient_count: 0,
+        recipient_preview: None,
+        subject: "Synthetic".into(),
+        subject_len: 9,
+        body_len: 1,
+        attachment_count: 0,
+        total_attachment_bytes: 0,
+    }];
+    let good = BrowserDraftState {
+        draft_id: drafts[0].draft_id.clone(),
+        revision: 2,
+        state: BrowserDraftEditState::Editable,
+    };
+    let mut stale = good.clone();
+    stale.revision = 1;
+    for states in [vec![], vec![stale], vec![good.clone(), good.clone()]] {
+        let view = DraftListView::parse(&[("select".into(), "editable".into())].into()).unwrap();
+        let html = render_draft_list_page(&DraftListPageModel {
+            canonical_username: "alice@example.test",
+            csrf_token: "synthetic",
+            success_message: None,
+            error_message: None,
+            drafts: &drafts,
+            view: &view,
+            total_count: 1,
+            states: &states,
+            usage: &BrowserDraftStorageUsage::Unknown,
+        });
+        let html = html.as_str();
+        assert!(html.contains("data-draft-state=\"unknown\""));
+        assert!(!html.contains("action=\"/drafts/star\""));
+        assert!(!html.contains("action=\"/drafts/delete\""));
+        assert!(!html.contains("continue editing"));
+        assert!(!html.contains(" checked"));
+        assert!(html.contains("Combined storage usage could not be verified"));
+        assert!(html.contains("value=\"review\" disabled"));
+    }
+    let drafts: Vec<_> = (1..=12)
+        .map(|id| {
+            let mut d = drafts[0].clone();
+            d.draft_id = format!("{id:032x}");
+            d
+        })
+        .collect();
+    let states: Vec<_> = drafts
+        .iter()
+        .map(|d| BrowserDraftState {
+            draft_id: d.draft_id.clone(),
+            revision: d.revision,
+            state: BrowserDraftEditState::Editable,
+        })
+        .collect();
+    let view = DraftListView::parse(&[("select".into(), "editable".into())].into()).unwrap();
+    let html = render_draft_list_page(&DraftListPageModel {
+        canonical_username: "alice@example.test",
+        csrf_token: "synthetic",
+        success_message: None,
+        error_message: None,
+        drafts: &drafts,
+        view: &view,
+        total_count: 12,
+        states: &states,
+        usage: &BrowserDraftStorageUsage::Unknown,
+    });
+    assert_eq!(html.as_str().matches(" checked").count(), 10);
+    // The same ten-item selection bound includes confirmed source copies.
+    let mixed: Vec<_> = states
+        .iter()
+        .enumerate()
+        .map(|(index, state)| {
+            let mut state = state.clone();
+            if index % 2 == 0 {
+                state.state = BrowserDraftEditState::Scheduled {
+                    job_id: "b".repeat(32),
+                };
+            }
+            state
+        })
+        .collect();
+    let html = render_draft_list_page(&DraftListPageModel {
+        canonical_username: "alice@example.test",
+        csrf_token: "synthetic",
+        success_message: None,
+        error_message: None,
+        drafts: &drafts,
+        view: &view,
+        total_count: 12,
+        states: &mixed,
+        usage: &BrowserDraftStorageUsage::Unknown,
+    });
+    assert_eq!(html.as_str().matches(" checked").count(), 10);
+    assert_eq!(
+        html.as_str().matches("form=\"draft-selection\"").count(),
+        12
+    );
+    assert!(!html.as_str().contains("value=\"review\" disabled"));
+    assert!(!view.href().contains("select="));
+    assert!(!render_draft_list_state(&view).contains("select="));
+    assert!(DraftListView::parse(&[("select".into(), "all".into())].into()).is_err());
+}
+
+#[cfg(test)]
+#[path = "http_ui_state_tests.rs"]
+mod mail_state_tests;
+
+#[cfg(test)]
+#[path = "http_ui_sent_role_tests.rs"]
+mod sent_role_tests;
+
+#[path = "folder_delete_ui.rs"]
+mod folder_delete_ui;
+#[path = "folder_disposition_ui.rs"]
+mod folder_disposition_ui;
+pub(crate) use folder_delete_ui::{render_folder_delete, DeletePageModel};
+pub(crate) use folder_disposition_ui::{render_deleted_folders, render_folder_disposition};

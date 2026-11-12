@@ -61,13 +61,14 @@ Design and implement a restricted, secure, stable mail access platform that:
 
 ## Target Environment
 
-The current deployment baseline is a single OpenBSD 7.7 host that already runs
+The deployment baseline is a single current-stable OpenBSD host that already runs
 the mail stack and supporting operational services. OSMAP is expected to sit on
 top of that existing environment rather than replace its foundations.
 
 Current observed stack elements include:
 
-- OpenBSD 7.7 on `mail.blackbagsecurity.com`
+- Current stable OpenBSD on `mail.blackbagsecurity.com`, maintained with at
+  least weekly `syspatch` and `pkg_add -u` checks
 - Postfix for inbound SMTP and authenticated submission
 - Dovecot for IMAP, LMTP, and authentication-related roles
 - nginx and PHP-FPM for the current web applications

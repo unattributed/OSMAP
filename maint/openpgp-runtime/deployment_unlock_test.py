@@ -1,0 +1,376 @@
+#!/usr/bin/env python3
+"""Focused mailbox-agent policy tests; never imports or unlocks a real key.
+
+Run native verification on obsd1 with OSMAP_UNLOCK_NATIVE=1. It replaces only
+an agent in disposable scratch and checks the running process configuration.
+"""
+import importlib.util
+import os
+import pathlib
+import pty
+import fcntl
+import select
+import socket
+import struct
+import subprocess
+import sys
+import tempfile
+import termios
+import time
+import unittest
+import contextlib
+import io
+import stat
+from types import SimpleNamespace
+from unittest.mock import patch
+
+SOURCE = pathlib.Path(__file__).with_name("deployment_unlock.py")
+SPEC = importlib.util.spec_from_file_location("deployment_unlock", SOURCE)
+unlock = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(unlock)
+
+
+class WarmOperationTests(unittest.TestCase):
+    def operations(self, fail=None):
+        calls = []
+        def gpg(arguments, data=None, capture=False):
+            calls.append((arguments, data, capture))
+            if fail and fail in arguments:
+                raise unlock.AgentGuardError("mailbox key operation refused")
+            if "--list-secret-keys" in arguments:
+                return ("fpr:::::::::" + unlock.PRIMARY + ":\n"
+                        "fpr:::::::::" + unlock.SIGNER + ":\n").encode()
+            if "--encrypt" in arguments:
+                return b"synthetic-ciphertext"
+        return calls, gpg
+
+    def test_actual_warm_sequence_uses_stdout_without_capturing_private_output(self):
+        calls, gpg = self.operations()
+        unlock.warm_key_operations(gpg)
+        self.assertEqual(len(calls), 4)
+        for arguments, _, capture in (calls[1], calls[3]):
+            self.assertEqual(arguments[arguments.index("--output") + 1], "-")
+            self.assertFalse(capture)
+        self.assertEqual(calls[3][1], b"synthetic-ciphertext")
+        self.assertTrue(calls[0][2] and calls[2][2])
+
+    def test_operation_failure_stops_the_actual_sequence(self):
+        for fail, count in (("--detach-sign", 2), ("--encrypt", 3), ("--decrypt", 4)):
+            calls, gpg = self.operations(fail)
+            with self.subTest(fail=fail), self.assertRaises(unlock.AgentGuardError):
+                unlock.warm_key_operations(gpg)
+            self.assertEqual(len(calls), count)
+
+    def test_private_gpg_stdout_is_discarded_and_failure_is_explicit(self):
+        for status in (0, 1):
+            def run(command, **kwargs):
+                self.assertEqual(command[-3:], ["--output", "-", "--decrypt"])
+                self.assertEqual(kwargs["stdout"], subprocess.DEVNULL)
+                self.assertEqual(kwargs["input"], b"synthetic-ciphertext")
+                self.assertEqual(kwargs["timeout"], 300)
+                return subprocess.CompletedProcess(command, status, None)
+            with self.subTest(status=status), patch.object(unlock.subprocess, "run", run):
+                if status:
+                    with self.assertRaises(unlock.AgentGuardError):
+                        unlock.run_gpg(["--output", "-", "--decrypt"], b"synthetic-ciphertext",
+                                       env={}, home=pathlib.Path("/unused"), demote=None)
+                else:
+                    self.assertIsNone(unlock.run_gpg(["--output", "-", "--decrypt"], b"synthetic-ciphertext",
+                                                    env={}, home=pathlib.Path("/unused"), demote=None))
+
+    def test_failed_warm_restores_terminal_and_does_not_report_success(self):
+        with tempfile.TemporaryDirectory(prefix="osmap-unlock-finally-") as directory:
+            home = pathlib.Path(directory)
+            home.chmod(0o700)
+            master, slave = pty.openpty()
+            original = os.fstat(slave)
+            saved_stdin = os.dup(0)
+            handlers = {value: unlock.signal.getsignal(value)
+                        for value in (unlock.signal.SIGTERM, unlock.signal.SIGHUP)}
+            output = io.StringIO()
+            try:
+                os.dup2(slave, 0)
+                helper = SimpleNamespace(pw_uid=os.getuid(), pw_gid=original.st_gid, pw_name="fixture")
+                with patch.object(unlock.os, "geteuid", return_value=0), \
+                     patch.object(unlock.socket, "gethostname", return_value="obsd1.blackbagsecurity.com"), \
+                     patch.object(unlock, "HOME", home), \
+                     patch.object(unlock.pwd, "getpwnam", return_value=helper), \
+                     patch.object(unlock, "require_stopped_helpers"), \
+                     patch.object(unlock, "restart_bounded_agent"), \
+                     patch.object(unlock, "warm_key_operations", side_effect=unlock.AgentGuardError("mailbox key operation refused")), \
+                     patch.object(unlock.resource, "setrlimit"), \
+                     contextlib.redirect_stdout(output):
+                    with self.assertRaises(unlock.AgentGuardError):
+                        unlock.warm_mailbox_agent()
+                restored = os.fstat(slave)
+                self.assertEqual((restored.st_uid, restored.st_gid, stat.S_IMODE(restored.st_mode)),
+                                 (original.st_uid, original.st_gid, stat.S_IMODE(original.st_mode)))
+                self.assertEqual({value: unlock.signal.getsignal(value) for value in handlers}, handlers)
+                self.assertNotIn("warmed=PASS", output.getvalue())
+                self.assertNotIn("mailbox_agent_cache_policy=", output.getvalue())
+            finally:
+                os.dup2(saved_stdin, 0)
+                os.close(saved_stdin)
+                os.close(master)
+                os.close(slave)
+
+
+class AgentPolicyTests(unittest.TestCase):
+    def test_agent_guards_are_enforced_with_python_optimization(self):
+        code = '''
+import importlib.util, pathlib, tempfile, sys
+spec = importlib.util.spec_from_file_location("unlock", sys.argv[1])
+unlock = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(unlock)
+with tempfile.TemporaryDirectory(prefix="osmap-unlock-optimized-") as directory:
+    home = pathlib.Path(directory)
+    home.chmod(0o755)
+    try:
+        unlock.agent_endpoint(home)
+    except AssertionError:
+        raise SystemExit(0)
+    raise SystemExit("optimized interpreter bypassed the private-home guard")
+'''
+        result = subprocess.run([sys.executable, "-O", "-c", code, str(SOURCE)],
+                                capture_output=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+
+    def test_stopped_helpers_are_checked_without_secret_input(self):
+        calls = []
+
+        def run(command, **kwargs):
+            calls.append(command)
+            self.assertEqual(kwargs["stdin"], subprocess.DEVNULL)
+            self.assertEqual(kwargs["timeout"], 15)
+            return subprocess.CompletedProcess(command, 1)
+
+        unlock.require_stopped_helpers({}, run)
+        self.assertEqual([c[-1] for c in calls],
+                         ["osmap_crypto", "osmap_public_inventory", "osmap_public_admin"])
+
+    def test_running_or_unknown_helper_state_refuses(self):
+        for status in (0, 2):
+            with self.subTest(status=status), self.assertRaises(AssertionError):
+                unlock.require_stopped_helpers({}, lambda command, **_: subprocess.CompletedProcess(command, status))
+
+    def test_existing_agent_is_replaced_with_bounded_cache(self):
+        with tempfile.TemporaryDirectory(prefix="osmap-unlock-policy-") as directory:
+            home = pathlib.Path(directory)
+            agent_socket = home / "S.gpg-agent"
+            listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self.addCleanup(listener.close)
+            listener.bind(str(agent_socket))
+            listener.listen(4)
+            calls = []
+
+            def run(command, **kwargs):
+                calls.append(command)
+                self.assertEqual(kwargs["stdin"], subprocess.DEVNULL)
+                self.assertEqual(kwargs["stdout"], subprocess.DEVNULL)
+                self.assertEqual(kwargs["stderr"], subprocess.DEVNULL)
+                self.assertEqual(kwargs["cwd"], home)
+                self.assertEqual(kwargs["timeout"], 15)
+                self.assertNotIn("input", kwargs)
+                if command[0].endswith("gpgconf"):
+                    listener.close()
+                    agent_socket.unlink()
+                return subprocess.CompletedProcess(command, 0)
+
+            unlock.restart_bounded_agent(home, {}, None, run)
+            self.assertEqual(len(calls), 2)
+            self.assertEqual(calls[0][-2:], ["--kill", "gpg-agent"])
+            agent = calls[1]
+            for option in ("--default-cache-ttl", "--max-cache-ttl"):
+                self.assertEqual(agent[agent.index(option) + 1], "28800")
+            self.assertIn("--no-allow-external-cache", agent)
+            self.assertIn("--no-options", agent)
+            self.assertEqual(agent[agent.index("--pinentry-program") + 1], "/usr/local/bin/pinentry-tty")
+
+    def test_failed_agent_stop_or_start_never_reuses_existing_policy(self):
+        with tempfile.TemporaryDirectory(prefix="osmap-unlock-policy-") as directory:
+            home = pathlib.Path(directory)
+            calls = []
+
+            def failure(command, **_):
+                calls.append(command)
+                return subprocess.CompletedProcess(command, 1)
+
+            with self.assertRaises(AssertionError):
+                unlock.restart_bounded_agent(home, {}, None, failure)
+            self.assertEqual(len(calls), 1)
+            calls.clear()
+
+            def startup_failure(command, **_):
+                calls.append(command)
+                return subprocess.CompletedProcess(command, int(command[0].endswith("gpg-agent")))
+
+            with self.assertRaises(AssertionError):
+                unlock.restart_bounded_agent(home, {}, None, startup_failure)
+            self.assertEqual(len(calls), 2)
+
+    def test_live_socket_refuses_new_daemon_after_original_bounded_wait(self):
+        with tempfile.TemporaryDirectory(prefix="osmap-unlock-policy-") as directory:
+            home = pathlib.Path(directory)
+            listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self.addCleanup(listener.close)
+            listener.bind(str(home / "S.gpg-agent"))
+            listener.listen(4)
+            calls = []
+
+            def stopped(command, **_):
+                calls.append(command)
+                return subprocess.CompletedProcess(command, 0)
+
+            with patch.object(unlock.time, "monotonic", side_effect=[0, 6]), self.assertRaises(AssertionError):
+                unlock.restart_bounded_agent(home, {}, None, stopped)
+            self.assertEqual(len(calls), 1)
+
+    def test_stale_owned_socket_is_removed_before_bounded_daemon_start(self):
+        with tempfile.TemporaryDirectory(prefix="osmap-unlock-stale-") as directory:
+            home = pathlib.Path(directory)
+            path = home / "S.gpg-agent"
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as peer:
+                peer.bind(str(path))
+            calls = []
+            def run(command, **_):
+                calls.append(command)
+                if command[0].endswith("gpg-agent"):
+                    self.assertFalse(path.exists())
+                return subprocess.CompletedProcess(command, 0)
+            unlock.restart_bounded_agent(home, {}, None, run)
+            self.assertEqual(len(calls), 2)
+            self.assertFalse(path.exists())
+
+    def test_foreign_symlink_and_replaced_socket_are_never_removed(self):
+        with tempfile.TemporaryDirectory(prefix="osmap-unlock-refusal-") as directory:
+            home = pathlib.Path(directory)
+            path = home / "S.gpg-agent"
+            path.touch()
+            with self.assertRaises(AssertionError):
+                unlock.remove_stale_agent_socket(home)
+            self.assertTrue(path.is_file())
+            path.unlink()
+            path.symlink_to(home / "missing")
+            with self.assertRaises(AssertionError):
+                unlock.remove_stale_agent_socket(home)
+            self.assertTrue(path.is_symlink())
+            path.unlink()
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as old:
+                old.bind(str(path))
+            original = path.lstat()
+            actual_lstat = pathlib.Path.lstat
+            foreign = type("ForeignSocket", (), {"st_mode": original.st_mode,
+                           "st_uid": original.st_uid + 1, "st_nlink": 1})()
+            with patch.object(pathlib.Path, "lstat", autospec=True,
+                              side_effect=lambda item: foreign if item == path else actual_lstat(item)):
+                with self.assertRaises(AssertionError):
+                    unlock.remove_stale_agent_socket(home)
+            self.assertTrue(path.exists())
+            with patch.object(unlock, "agent_endpoint", return_value=(original, False)):
+                path.unlink()
+                path.touch()
+                with self.assertRaises(AssertionError):
+                    unlock.remove_stale_agent_socket(home)
+            self.assertTrue(path.is_file())
+            path.unlink()
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as live:
+                live.bind(str(path))
+                live.listen(4)
+                with patch.object(unlock, "peer_uid", return_value=os.geteuid() + 1):
+                    with self.assertRaises(AssertionError):
+                        unlock.remove_stale_agent_socket(home)
+                self.assertTrue(path.exists())
+
+    def test_launcher_serialization_refuses_a_second_owner(self):
+        with tempfile.TemporaryDirectory(prefix="osmap-unlock-lock-") as directory:
+            path = pathlib.Path(directory) / "launcher.lock"
+            with unlock.launcher_lock(path):
+                with self.assertRaises(BlockingIOError):
+                    with unlock.launcher_lock(path):
+                        self.fail("concurrent unlock admitted")
+            with unlock.launcher_lock(path):
+                pass
+
+    @unittest.skipUnless(os.environ.get("OSMAP_UNLOCK_NATIVE") == "1", "requires disposable obsd1 native agent")
+    def test_native_existing_agent_is_replaced_and_actual_flags_are_bounded(self):
+        self.assertEqual(socket.gethostname(), "obsd1.blackbagsecurity.com")
+        with tempfile.TemporaryDirectory(prefix="osmap-unlock-native-") as directory:
+            home = pathlib.Path(directory)
+            env = {"PATH": "/usr/local/bin:/usr/bin:/bin", "LC_ALL": "C", "HOME": directory}
+
+            def pid():
+                result = subprocess.run(["/usr/local/bin/gpg-connect-agent", "--homedir", directory,
+                                         "--no-autostart", "GETINFO pid", "/bye"],
+                                        env=env, capture_output=True, timeout=10, check=True)
+                return int(next(line[2:] for line in result.stdout.decode().splitlines() if line.startswith("D ")))
+
+            try:
+                subprocess.run(["/usr/local/bin/gpg-agent", "--no-options", "--homedir", directory, "--daemon"],
+                               env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL, timeout=15, check=True)
+                old = pid()
+                unlock.restart_bounded_agent(home, env, None)
+                current = pid()
+                self.assertNotEqual(old, current)
+                command = subprocess.check_output(["/bin/ps", "-ww", "-p", str(current), "-o", "args="], env=env, timeout=10).decode()
+                self.assertIn("--default-cache-ttl 28800", command)
+                self.assertIn("--max-cache-ttl 28800", command)
+                self.assertIn("--no-allow-external-cache", command)
+                self.assertIn("--pinentry-program /usr/local/bin/pinentry-tty", command)
+                self.assertEqual(list((home / "private-keys-v1.d").glob("*.key")), [])
+            finally:
+                subprocess.run(["/usr/local/bin/gpgconf", "--homedir", directory, "--kill", "gpg-agent"],
+                               env=env, capture_output=True, timeout=15, check=True)
+                until = time.monotonic() + 5
+                while (home / "S.gpg-agent").exists() and time.monotonic() < until:
+                    time.sleep(0.02)
+                self.assertFalse((home / "S.gpg-agent").exists())
+
+    @unittest.skipUnless(os.environ.get("OSMAP_UNLOCK_NATIVE") == "1", "requires disposable obsd1 native tty Pinentry")
+    def test_native_tty_pinentry_accepts_tiny_terminal_without_term_or_echo(self):
+        self.assertEqual(socket.gethostname(), "obsd1.blackbagsecurity.com")
+        master, slave = pty.openpty()
+        process = None
+        # Public fixture data, never an actual passphrase or private-key input.
+        fixture_input = b"synthetic-public-fixture"
+        try:
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 1, 1, 0, 0))
+            name = os.ttyname(slave)
+            process = subprocess.Popen([unlock.PINENTRY_PROGRAM], stdin=subprocess.PIPE,
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                       env={"PATH": "/usr/local/bin:/usr/bin:/bin", "LC_ALL": "C"},
+                                       start_new_session=True)
+            protocol = ("OPTION ttyname=" + name + "\nSETDESC Disposable terminal fixture\n"
+                        "SETPROMPT Fixture:\nGETPIN\nBYE\n").encode()
+            process.stdin.write(protocol)
+            process.stdin.flush()
+            screen = bytearray()
+            until = time.monotonic() + 5
+            while b"Fixture:" not in screen and time.monotonic() < until:
+                ready, _, _ = select.select([master], [], [], 0.1)
+                if ready:
+                    screen.extend(os.read(master, 4096))
+                    self.assertLess(len(screen), 8192, "bounded terminal fixture output")
+                if process.poll() is not None:
+                    break
+            self.assertIn(b"Fixture:", screen, "tiny tty prompt did not appear")
+            self.assertFalse(termios.tcgetattr(slave)[3] & termios.ECHO, "terminal echo must be disabled before entry")
+            os.write(master, fixture_input + b"\n")
+            output, _ = process.communicate(timeout=5)
+            self.assertEqual(process.returncode, 0)
+            self.assertTrue(b"D " + fixture_input + b"\n" in output, "synthetic fixture was not accepted")
+            self.assertFalse(b"ERR " in output, "tty Pinentry returned a protocol error")
+            while select.select([master], [], [], 0)[0]:
+                screen.extend(os.read(master, 4096))
+                self.assertLess(len(screen), 8192, "bounded terminal fixture output")
+            self.assertNotIn(fixture_input, screen, "input must not echo on the terminal")
+        finally:
+            if process is not None and process.poll() is None:
+                process.kill()
+                process.wait(timeout=5)
+            os.close(master)
+            os.close(slave)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

@@ -9,6 +9,7 @@ out of the production Rust boundary unless they are reviewed and allowlisted.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import sys
 from dataclasses import dataclass
@@ -16,6 +17,78 @@ from pathlib import Path
 
 
 TOP25_VERSION = "MITRE CWE Top 25 2025"
+
+# These files are compiled exclusively through cfg(test) modules. Verify the
+# registration before excluding their native-fixture process calls.
+TEST_ONLY_RUST_PATHS = {
+    "src/account_access_service_tests.rs": (
+        "src/account_access_service.rs",
+        '#[cfg(test)]\n#[path = "account_access_service_tests.rs"]\nmod tests;',
+    ),
+    "src/account_password_transaction_tests.rs": (
+        "src/account_password_server.rs",
+        '#[cfg(test)]\n#[path = "account_password_transaction_tests.rs"]\nmod transaction_tests;',
+    ),
+    "src/account_password_backend_tests.rs": (
+        "src/account_password_backend.rs",
+        '#[cfg(test)]\n#[path = "account_password_backend_tests.rs"]\nmod tests;',
+    ),
+    "src/account_password_native_tests.rs": (
+        "src/account_password_native.rs",
+        '#[cfg(test)]\n#[path = "account_password_native_tests.rs"]\nmod tests;',
+    ),
+    "src/account_password_policy_endpoint_tests.rs": (
+        "src/account_password_policy_endpoint.rs",
+        '#[cfg(test)]\n#[path = "account_password_policy_endpoint_tests.rs"]\nmod tests;',
+    ),
+    "src/account_password_process_tests.rs": (
+        "src/account_password_process.rs",
+        '#[cfg(test)]\n#[path = "account_password_process_tests.rs"]\nmod tests;',
+    ),
+    "src/openpgp_public_admin_tests.rs": (
+        "src/openpgp_public_admin.rs",
+        '#[cfg(test)]\n#[path = "openpgp_public_admin_tests.rs"]\nmod tests;',
+    ),
+    "src/openpgp_public_admin_runtime_tests.rs": (
+        "src/openpgp_public_admin_runtime.rs",
+        '#[cfg(test)]\n#[path = "openpgp_public_admin_runtime_tests.rs"]\nmod tests;',
+    ),
+    "src/openpgp_crypto_personal_tests.rs": (
+        "src/openpgp_crypto_personal.rs",
+        '#[cfg(test)]\n#[path = "openpgp_crypto_personal_tests.rs"]\nmod tests;',
+    ),
+    "src/http_gateway_keys_tests.rs": (
+        "src/http_gateway_keys.rs",
+        '#[cfg(test)]\n#[path = "http_gateway_keys_tests.rs"]\nmod tests;',
+    ),
+    "src/http/protected_send_gateway_native_tests.rs": (
+        "src/http_gateway_mail.rs",
+        'include!("http/protected_send_gateway_native_tests.rs");',
+    ),
+}
+
+# The scheduled native fixtures have two different test-only registration paths.
+# Require every link of the include chain, rather than exempting a filename or
+# allowing a process/shell pattern in production source.
+SCHEDULED_TEST_ONLY_REGISTRATIONS = {
+    "src/http_runtime_scheduled_positive_native_tests.rs": (
+        ("src/http_runtime.rs", '#[cfg(all(test, target_os = "openbsd"))]\n#[path = "http_runtime_scheduled_positive_native_tests.rs"]\npub(crate) mod scheduled_positive_fixture;'),
+    ),
+    "src/http/protected_send_gateway_scheduled_native_tests.rs": (
+        ("src/http_gateway_mail.rs", '#[cfg(test)]\nmod tests {'),
+        ("src/http_gateway_mail.rs", 'include!("http/protected_send_gateway_native_tests.rs");'),
+        ("src/http/protected_send_gateway_native_tests.rs", 'mod scheduled_native {\n    use super::*;\n    include!("protected_send_gateway_scheduled_native_tests.rs");\n}'),
+    ),
+}
+
+
+# Operator-approved fixed password SQL adapter. Admission covers CWE-89 only;
+# every byte change requires renewed source review, even without a regex hit.
+# Other production rules continue to scan the entire file.
+REVIEWED_SQL_RUST_PATHS = {
+    "src/account_password_backend.rs":
+        "31f6fd1f8b2a4b4b53235d98ad9490053eeaf25757da662e528922c8b709e1ba",
+}
 
 
 @dataclass(frozen=True)
@@ -156,8 +229,31 @@ def scan_rust(root: Path) -> list[Finding]:
     findings: list[Finding] = []
     for path in sorted(src_dir.rglob("*.rs")):
         rel = repo_relative(path, root)
+        if rel in SCHEDULED_TEST_ONLY_REGISTRATIONS and all(
+            marker in (root / parent).read_text(encoding="utf-8", errors="replace")
+            for parent, marker in SCHEDULED_TEST_ONLY_REGISTRATIONS[rel]
+        ):
+            continue
+        if rel in TEST_ONLY_RUST_PATHS:
+            parent, marker = TEST_ONLY_RUST_PATHS[rel]
+            parent_source = (root / parent).read_text(encoding="utf-8", errors="replace")
+            if marker in parent_source and (
+                rel != "src/http/protected_send_gateway_native_tests.rs"
+                or "#[cfg(test)]\nmod tests {" in parent_source
+            ):
+                continue
+        reviewed_sql = False
+        if rel in REVIEWED_SQL_RUST_PATHS:
+            reviewed_sql = hashlib.sha256(path.read_bytes()).hexdigest() == REVIEWED_SQL_RUST_PATHS[rel]
+            if not reviewed_sql:
+                findings.append(Finding(
+                    "CWE-89", "reviewed SQL boundary changed; renewed source review required",
+                    Path(rel), 1, "fixed password adapter digest differs",
+                ))
         for line_number, line in production_rust_lines(path):
             for rule in PRODUCTION_RULES:
+                if rule.cwe == "CWE-89" and reviewed_sql:
+                    continue
                 if rel in rule.allow_paths:
                     continue
                 if rule.pattern.search(line):

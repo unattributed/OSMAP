@@ -100,10 +100,16 @@ impl HtmlDisplayPreference {
 /// A browser-safe rendered message projection.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RenderedMessageView {
+    pub openpgp: Option<crate::openpgp_reader_ui::ReaderState>,
+    pub metadata: Option<crate::message_metadata::MessageMetadata>,
+    pub flags: Vec<String>,
     pub mailbox_name: String,
     pub uid: u64,
     pub subject: Option<String>,
     pub from: Option<String>,
+    pub to: Option<String>,
+    pub cc: Option<String>,
+    pub reply_metadata: Option<crate::reply_thread::ReplyMetadata>,
     pub date_received: String,
     pub mime_top_level_content_type: String,
     pub body_source: MimeBodySource,
@@ -188,10 +194,27 @@ impl PlainTextMessageRenderer {
         };
 
         let rendered = RenderedMessageView {
+            openpgp: None,
+            metadata: message.metadata.clone(),
+            flags: message.flags.clone(),
             mailbox_name: message.mailbox_name.clone(),
             uid: message.uid,
             subject,
             from,
+            reply_metadata: crate::reply_thread::ReplyMetadata::from_original(
+                &message.header_block,
+            )
+            .ok(),
+            to: extract_header_value(
+                &unfolded_headers,
+                "To",
+                self.policy.rendered_header_value_max_len,
+            )?,
+            cc: extract_header_value(
+                &unfolded_headers,
+                "Cc",
+                self.policy.rendered_header_value_max_len,
+            )?,
             date_received: message.date_received.clone(),
             mime_top_level_content_type: analysis.top_level_content_type.clone(),
             body_source: rendered_body.body_source,
@@ -605,6 +628,7 @@ mod tests {
     fn validated_session_fixture() -> ValidatedSession {
         ValidatedSession {
             record: SessionRecord {
+                account_epoch: None,
                 session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                     .to_string(),
                 csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
@@ -629,6 +653,7 @@ mod tests {
 
     fn plain_text_message_view_fixture() -> MessageView {
         MessageView {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 9,
             flags: vec!["\\Seen".to_string()],
@@ -648,6 +673,7 @@ mod tests {
 
     fn html_only_message_view_fixture() -> MessageView {
         MessageView {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 10,
             flags: vec!["\\Seen".to_string()],
@@ -665,6 +691,7 @@ mod tests {
 
     fn multipart_message_view_fixture() -> MessageView {
         MessageView {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 11,
             flags: vec!["\\Seen".to_string()],
@@ -706,6 +733,7 @@ mod tests {
             .split_once("\n\n")
             .expect("fixture should contain a header/body separator");
         MessageView {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 99,
             flags: vec!["\\Seen".to_string()],
@@ -728,6 +756,28 @@ mod tests {
 
         assert_eq!(subject.as_deref(), Some("Test message"));
         assert_eq!(folded.as_deref(), Some("folded continuation line"));
+    }
+
+    #[test]
+    fn reader_recipient_headers_are_decoded_bounded_and_remain_untrusted_text() {
+        let mut message = plain_text_message_view_fixture();
+        message.header_block.push_str(
+            "\nTo: =?UTF-8?Q?Andr=C3=A9?= <reader@example.test>\nCc: <untrusted@example.test>\n",
+        );
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let rendered = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("bounded recipients")
+            .rendered;
+        assert_eq!(rendered.to.as_deref(), Some("André <reader@example.test>"));
+        assert_eq!(rendered.cc.as_deref(), Some("<untrusted@example.test>"));
+        message.header_block = format!(
+            "Content-Type: text/plain\nTo: {}\n",
+            "x".repeat(DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN + 1)
+        );
+        assert!(renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .is_err());
     }
 
     #[test]

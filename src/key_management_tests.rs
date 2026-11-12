@@ -1,0 +1,1128 @@
+use super::*;
+use crate::auth::{
+    PrimaryAuthBackendError, PrimaryAuthVerdict, SecondFactorBackendError, SecondFactorVerdict,
+};
+use crate::config::LogLevel;
+use crate::logging::EventCategory;
+use crate::session::SessionRecord;
+use std::cell::Cell;
+use std::fs;
+use std::os::unix::fs::PermissionsExt;
+use std::path::PathBuf;
+
+struct Scratch(PathBuf);
+impl Scratch {
+    fn new() -> Self {
+        let path = std::env::temp_dir().join(format!(
+            "osmap-key-management-{}",
+            crate::draft::generate_draft_id().unwrap()
+        ));
+        fs::create_dir(&path).unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o700)).unwrap();
+        Self(path)
+    }
+}
+impl Drop for Scratch {
+    fn drop(&mut self) {
+        let _ = fs::remove_dir_all(&self.0);
+    }
+}
+fn context() -> AuthenticationContext {
+    AuthenticationContext::new(
+        AuthenticationPolicy::default(),
+        "keys-test",
+        "127.0.0.1",
+        "test",
+    )
+    .unwrap()
+}
+use crate::auth::AuthenticationPolicy;
+fn session() -> ValidatedSession {
+    ValidatedSession {
+        record: SessionRecord {
+            account_epoch: None,
+            session_id: "A".repeat(64),
+            csrf_token: "B".repeat(64),
+            canonical_username: "alice@example.test".into(),
+            issued_at: 10,
+            expires_at: 100,
+            last_seen_at: 20,
+            revoked_at: None,
+            remote_addr: "127.0.0.1".into(),
+            user_agent: "test".into(),
+            factor: RequiredSecondFactor::Totp,
+        },
+        audit_event: LogEvent::new(LogLevel::Info, EventCategory::Session, "test", "test"),
+    }
+}
+struct Primary {
+    verdict: Result<PrimaryAuthVerdict, PrimaryAuthBackendError>,
+}
+impl PrimaryCredentialBackend for Primary {
+    fn verify_primary(
+        &self,
+        _: &AuthenticationContext,
+        username: &str,
+        password: &str,
+    ) -> Result<PrimaryAuthVerdict, PrimaryAuthBackendError> {
+        assert_eq!(username, "alice@example.test");
+        assert_eq!(password, "fixture-password");
+        self.verdict.clone()
+    }
+}
+struct Factor(Cell<usize>);
+impl SecondFactorVerifier for Factor {
+    fn verify_second_factor(
+        &self,
+        account: &str,
+        _: RequiredSecondFactor,
+        code: &str,
+    ) -> Result<SecondFactorVerdict, SecondFactorBackendError> {
+        self.0.set(self.0.get() + 1);
+        assert_eq!(account, "alice@example.test");
+        Ok(if code == "123456" {
+            SecondFactorVerdict::Accept
+        } else {
+            SecondFactorVerdict::Reject
+        })
+    }
+}
+fn primary(account: &str) -> AuthenticationService<Primary> {
+    AuthenticationService::new(
+        AuthenticationPolicy::default(),
+        Primary {
+            verdict: Ok(PrimaryAuthVerdict::Accept {
+                canonical_username: account.into(),
+            }),
+        },
+    )
+}
+fn proof(c: &AuthenticationContext, s: &ValidatedSession) -> FreshAuthorization {
+    verify_fresh(
+        &primary("alice@example.test"),
+        &SecondFactorService::new(AuthenticationPolicy::default(), Factor(Cell::new(0))),
+        c,
+        s,
+        ("fixture-password", "123456"),
+        59,
+    )
+    .authorization
+    .ok()
+    .unwrap()
+}
+struct InventoryBackend {
+    reads: Cell<usize>,
+    unavailable: bool,
+}
+impl PublicKeyBackend for InventoryBackend {
+    fn read(&self, account: &str) -> Result<Inventory, Error> {
+        self.reads.set(self.reads.get() + 1);
+        assert_eq!(account, "alice@example.test");
+        if self.unavailable {
+            return Err(Error::Unavailable);
+        }
+        let k = |fp: char| serde_json::json!({"email_addresses":if fp == 'B' {vec!["recipient@example.test"]} else {vec!["recipient@example.test", "other@example.test"]},"primary":{"fingerprint":fp.to_string().repeat(40),"algorithm":1,"bits":3072,"created":1,"expires":0,"revoked":false,"expired":false,"disabled":false,"invalid":false,"can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false},"subkeys":[]});
+        Inventory::parse(&serde_json::to_vec(&serde_json::json!({"version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.4.8","keys":[k('A'),k('B')]})).unwrap()).map_err(|_|Error::Unavailable)
+    }
+}
+fn backend() -> InventoryBackend {
+    InventoryBackend {
+        reads: Cell::new(0),
+        unavailable: false,
+    }
+}
+fn request(action: Action<'_>, revision: u64) -> MutationRequest<'_> {
+    MutationRequest {
+        action,
+        expected_revision: revision,
+        expected_public_revision: None,
+        password: "fixture-password",
+        totp: "123456",
+    }
+}
+const PUBLIC_REVISION: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+fn public_request(action: Action<'_>, revision: u64) -> MutationRequest<'_> {
+    MutationRequest {
+        expected_public_revision: Some(PUBLIC_REVISION),
+        ..request(action, revision)
+    }
+}
+
+#[test]
+fn key_management_fresh_verification_is_account_bound_and_backend_outage_distinct() {
+    let c = context();
+    let s = session();
+    let factor = SecondFactorService::new(AuthenticationPolicy::default(), Factor(Cell::new(0)));
+    assert!(matches!(
+        verify_fresh(
+            &primary("bob@example.test"),
+            &factor,
+            &c,
+            &s,
+            ("fixture-password", "123456"),
+            59
+        )
+        .authorization,
+        Err(Error::Authentication)
+    ));
+    let unavailable = AuthenticationService::new(
+        AuthenticationPolicy::default(),
+        Primary {
+            verdict: Err(PrimaryAuthBackendError {
+                backend: "fixture",
+                reason: "unavailable".into(),
+            }),
+        },
+    );
+    assert!(matches!(
+        verify_fresh(
+            &unavailable,
+            &factor,
+            &c,
+            &s,
+            ("fixture-password", "123456"),
+            59
+        )
+        .authorization,
+        Err(Error::Unavailable)
+    ));
+    let out = verify_fresh(
+        &primary("alice@example.test"),
+        &factor,
+        &c,
+        &s,
+        ("fixture-password", "654321"),
+        59,
+    );
+    assert!(matches!(out.authorization, Err(Error::Authentication)));
+    let audit = format!("{:?}", out.audit_events);
+    assert!(!audit.contains("fixture-password"));
+    assert!(!audit.contains("654321"));
+}
+#[test]
+fn selected_primary_constraint_refuses_before_factor_and_retains_actual_audit() {
+    let c = context();
+    let s = session();
+    let factor = SecondFactorService::new(AuthenticationPolicy::default(), Factor(Cell::new(0)));
+    for expected in [Error::Stale, Error::Unavailable] {
+        let out = verify_fresh_with_primary(
+            |context, account, password| {
+                (
+                    primary("alice@example.test").authenticate(context, account, password),
+                    Err(expected),
+                )
+            },
+            &factor,
+            &c,
+            &s,
+            ("fixture-password", "123456"),
+            59,
+        );
+        assert!(matches!(out.authorization, Err(error) if error == expected));
+        assert_eq!(out.audit_events.len(), 1);
+        assert_eq!(out.audit_events[0].action, "login_mfa_required");
+    }
+}
+
+#[test]
+fn key_management_binding_changes_require_fresh_same_request_and_cas() {
+    let root = Scratch::new();
+    let store = BindingStore::new(root.0.join("bindings"));
+    let b = backend();
+    let c = context();
+    let s = session();
+    let fp = "A".repeat(40);
+    let r = request(
+        Action::SetAccount {
+            primary_fingerprint: &fp,
+            signing_fingerprint: Some(&fp),
+            decrypt_fingerprints: &fp,
+        },
+        0,
+    );
+    assert_eq!(mutate(&b, &store, proof(&c, &s), &c, &s, &r, 59), Ok(()));
+    let record = store.load("alice@example.test").unwrap();
+    assert_eq!(record.revision, 1);
+    assert_eq!(record.account_binding.unwrap().primary_fingerprint, fp);
+    assert_eq!(
+        mutate(&b, &store, proof(&c, &s), &c, &s, &r, 59),
+        Err(Error::Stale)
+    );
+    assert_eq!(b.reads.get(), 1);
+    let mut foreign = s.clone();
+    foreign.record.canonical_username = "bob@example.test".into();
+    assert_eq!(
+        mutate(
+            &b,
+            &store,
+            proof(&c, &s),
+            &c,
+            &foreign,
+            &request(Action::ClearAccount, 1),
+            59
+        ),
+        Err(Error::Authentication)
+    );
+    let mut other = c.clone();
+    other.request_id = "other".into();
+    assert_eq!(
+        mutate(
+            &b,
+            &store,
+            proof(&c, &s),
+            &other,
+            &s,
+            &request(Action::ClearAccount, 1),
+            59
+        ),
+        Err(Error::Authentication)
+    );
+    assert_eq!(b.reads.get(), 1);
+    assert_eq!(
+        mutate(
+            &b,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &request(Action::ClearAccount, 1),
+            121
+        ),
+        Err(Error::Authentication)
+    );
+    assert_eq!(b.reads.get(), 1);
+}
+#[test]
+fn key_management_certificate_recipient_policy_roundtrip() {
+    let root = Scratch::new();
+    let store = BindingStore::new(root.0.join("bindings"));
+    let b = backend();
+    let c = context();
+    let s = session();
+    let fp = "B".repeat(40);
+    assert_eq!(
+        mutate(
+            &b,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &request(
+                Action::SetRecipient {
+                    address: "recipient@example.test",
+                    primary_fingerprint: &fp,
+                    encryption: Requirement::Required
+                },
+                0
+            ),
+            59
+        ),
+        Ok(())
+    );
+    assert_eq!(
+        mutate(
+            &b,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &request(
+                Action::SetPolicy {
+                    signing: Requirement::Optional,
+                    encryption: Requirement::Required
+                },
+                1
+            ),
+            59
+        ),
+        Ok(())
+    );
+    let record = store.load("alice@example.test").unwrap();
+    assert_eq!(record.revision, 2);
+    assert_eq!(
+        record.recipient_bindings[0].address,
+        "recipient@example.test"
+    );
+    assert_eq!(record.policy.encryption, Requirement::Required);
+    assert_eq!(
+        mutate(
+            &b,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &request(
+                Action::RemoveRecipient {
+                    address: "recipient@example.test"
+                },
+                2
+            ),
+            59
+        ),
+        Ok(())
+    );
+    assert!(store
+        .load("alice@example.test")
+        .unwrap()
+        .recipient_bindings
+        .is_empty());
+}
+
+#[test]
+fn recipient_rotation_changes_exact_key_and_preserves_other_bindings_on_stale_retry() {
+    let root = Scratch::new();
+    let store = BindingStore::new(root.0.join("bindings"));
+    let backend = backend();
+    let context = context();
+    let session = session();
+    let original = "A".repeat(40);
+    let replacement = "B".repeat(40);
+    let change = |address, fingerprint, encryption, revision| {
+        mutate(
+            &backend,
+            &store,
+            proof(&context, &session),
+            &context,
+            &session,
+            &request(
+                Action::SetRecipient {
+                    address,
+                    primary_fingerprint: fingerprint,
+                    encryption,
+                },
+                revision,
+            ),
+            59,
+        )
+    };
+    assert_eq!(
+        change(
+            "recipient@example.test",
+            &original,
+            Requirement::Optional,
+            0
+        ),
+        Ok(())
+    );
+    assert_eq!(
+        change("other@example.test", &original, Requirement::Required, 1),
+        Ok(())
+    );
+    let before = store.load("alice@example.test").unwrap();
+    let other = before
+        .recipient_bindings
+        .iter()
+        .find(|binding| binding.address == "other@example.test")
+        .unwrap()
+        .clone();
+    assert_eq!(
+        change(
+            "recipient@example.test",
+            &replacement,
+            Requirement::Required,
+            2
+        ),
+        Ok(())
+    );
+    let rotated = store.load("alice@example.test").unwrap();
+    assert_eq!(rotated.revision, before.revision + 1);
+    assert_eq!(rotated.recipient_bindings.len(), 2);
+    let recipient = rotated
+        .recipient_bindings
+        .iter()
+        .find(|binding| binding.address == "recipient@example.test")
+        .unwrap();
+    assert_eq!(recipient.primary_fingerprint, replacement);
+    assert_eq!(recipient.encryption, Requirement::Required);
+    assert!(rotated
+        .recipient_bindings
+        .iter()
+        .any(|binding| binding == &other));
+    assert_eq!(
+        change(
+            "recipient@example.test",
+            &original,
+            Requirement::Optional,
+            2
+        ),
+        Err(Error::Stale)
+    );
+    assert_eq!(store.load("alice@example.test").unwrap(), rotated);
+    assert_eq!(store.load("bob@example.test").unwrap().revision, 0);
+}
+
+#[test]
+fn key_management_public_writes_unavailable_and_invalid_key_never_committed() {
+    let root = Scratch::new();
+    let store = BindingStore::new(root.0.join("bindings"));
+    let b = backend();
+    let c = context();
+    let s = session();
+    let fp = "A".repeat(40);
+    let missing = "C".repeat(40);
+    assert_eq!(
+        mutate(
+            &b,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &request(
+                Action::SetAccount {
+                    primary_fingerprint: &missing,
+                    signing_fingerprint: None,
+                    decrypt_fingerprints: ""
+                },
+                0
+            ),
+            59
+        ),
+        Err(Error::InvalidKey)
+    );
+    let public =
+        b"-----BEGIN PGP PUBLIC KEY BLOCK-----\nfixture\n-----END PGP PUBLIC KEY BLOCK-----";
+    assert_eq!(
+        mutate(
+            &b,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &public_request(
+                Action::ImportPublic {
+                    certificate: public,
+                    expected_primary_fingerprint: &fp
+                },
+                0
+            ),
+            59
+        ),
+        Err(Error::Unavailable)
+    );
+    assert_eq!(
+        mutate(
+            &b,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &public_request(
+                Action::RemovePublic {
+                    primary_fingerprint: &fp
+                },
+                0
+            ),
+            59
+        ),
+        Err(Error::Unavailable)
+    );
+    assert_eq!(store.load("alice@example.test").unwrap().revision, 0);
+    assert_eq!(
+        validate_public_certificate(b"-----BEGIN PGP PRIVATE KEY BLOCK-----", &fp),
+        Err(Error::Invalid)
+    );
+    assert_eq!(
+        validate_public_certificate(&vec![b'A'; MAX_PUBLIC_CERTIFICATE + 1], &fp),
+        Err(Error::Invalid)
+    );
+}
+#[test]
+fn public_import_dispatches_validated_armor_without_outer_paste_whitespace() {
+    struct NativeArmorContract<'a> {
+        expected: &'a [u8],
+        calls: Cell<usize>,
+    }
+    impl PublicKeyBackend for NativeArmorContract<'_> {
+        fn read(&self, _: &str) -> Result<Inventory, Error> {
+            panic!("public import must not read the inventory first");
+        }
+        fn import_public(
+            &self,
+            account: &str,
+            revision: &str,
+            primary: &str,
+            certificate: &[u8],
+        ) -> Result<(), Error> {
+            assert_eq!(account, "alice@example.test");
+            assert_eq!(revision, PUBLIC_REVISION);
+            assert_eq!(primary, "B".repeat(40));
+            self.calls.set(self.calls.get() + 1);
+            // The native public helper requires BEGIN at byte zero. Compare
+            // every byte too: normalization must preserve CRLF and base64 '+'.
+            if certificate == self.expected {
+                Ok(())
+            } else {
+                Err(Error::Unavailable)
+            }
+        }
+    }
+    let armor = b"-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n\r\nYWJj+ZGVm\r\n-----END PGP PUBLIC KEY BLOCK-----";
+    let backend = NativeArmorContract {
+        expected: armor,
+        calls: Cell::new(0),
+    };
+    let root = Scratch::new();
+    let store = BindingStore::new(root.0.join("bindings"));
+    let c = context();
+    let s = session();
+    let fp = "B".repeat(40);
+    let submit = |certificate: &[u8]| {
+        mutate(
+            &backend,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &public_request(
+                Action::ImportPublic {
+                    certificate,
+                    expected_primary_fingerprint: &fp,
+                },
+                0,
+            ),
+            59,
+        )
+    };
+    let mut pasted = b" \r\n\t".to_vec();
+    pasted.extend_from_slice(armor);
+    pasted.extend_from_slice(b"\r\n \t");
+    assert_eq!(validate_public_certificate(&pasted, &fp), Ok(()));
+    assert_eq!(submit(&pasted), Ok(()));
+    assert_eq!(submit(armor), Ok(()));
+    assert_eq!(backend.calls.get(), 2);
+
+    let mut oversized_padding = vec![b' '; MAX_PUBLIC_CERTIFICATE];
+    oversized_padding.extend_from_slice(armor);
+    let mut non_ascii = pasted.clone();
+    non_ascii.push(0xff);
+    for invalid in [
+        oversized_padding.as_slice(),
+        non_ascii.as_slice(),
+        b"-----BEGIN PGP PRIVATE KEY BLOCK-----\nsecret\n-----END PGP PRIVATE KEY BLOCK-----",
+        b"-----BEGIN PGP PUBLIC KEY BLOCK-----\nSECRET KEY\n-----END PGP PUBLIC KEY BLOCK-----",
+        b"prefix-----BEGIN PGP PUBLIC KEY BLOCK-----\nfixture\n-----END PGP PUBLIC KEY BLOCK-----",
+    ] {
+        assert_eq!(submit(invalid), Err(Error::Invalid));
+    }
+    assert_eq!(backend.calls.get(), 2);
+    assert_eq!(store.load("alice@example.test").unwrap().revision, 0);
+}
+// Public synthetic v4 RSA packet (creation 0, n=211, e=3). This is a parser
+// fixture, not a usable certificate. The constant fingerprint was independently
+// calculated with OpenSSL SHA-1 over 99 00 0c followed by these twelve bytes.
+const DERIVED_PUBLIC_FP: &str = "066CA89D7D52A9C7FE639E865A3A1CDC422D444D";
+const DERIVED_PUBLIC_BODY: &[u8] = &[4, 0, 0, 0, 0, 1, 0, 8, 211, 0, 2, 3];
+const DERIVED_PUBLIC_ARMOR: &[u8] = b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nxgwEAAAAAAEACNMAAgM=\n-----END PGP PUBLIC KEY BLOCK-----";
+
+fn packet_armor(packets: &[u8]) -> Vec<u8> {
+    format!(
+        "-----BEGIN PGP PUBLIC KEY BLOCK-----\n\n{}\n-----END PGP PUBLIC KEY BLOCK-----",
+        crate::send::base64_encode_wrapped(packets)
+    )
+    .into_bytes()
+}
+
+#[test]
+fn blank_public_fingerprint_uses_independent_v4_identity_and_preserves_armor() {
+    for armor in [
+        DERIVED_PUBLIC_ARMOR.to_vec(),
+        b"-----BEGIN PGP PUBLIC KEY BLOCK-----\r\nVersion: Synthetic\r\nComment: Public parser fixture\r\n\r\nxgwEAAAAAAEACNMAAgM=\r\n=AAAA\r\n-----END PGP PUBLIC KEY BLOCK-----".to_vec(),
+        b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nxgwEAAAAAAEACNMAAgM=\n=malformed CRC is not authority\n-----END PGP PUBLIC KEY BLOCK-----".to_vec(),
+    ] {
+        let mut pasted = b" \r\n\t".to_vec();
+        pasted.extend_from_slice(&armor);
+        pasted.extend_from_slice(b"\r\n \t");
+        let (actual_armor, fingerprint) = normalized_public_certificate(&pasted, "").unwrap();
+        assert_eq!(fingerprint.as_ref(), DERIVED_PUBLIC_FP);
+        assert_eq!(actual_armor, armor);
+        assert_eq!(validate_public_certificate(&pasted, ""), Ok(()));
+    }
+    assert_eq!(
+        validate_public_certificate(DERIVED_PUBLIC_ARMOR, " "),
+        Err(Error::Invalid)
+    );
+}
+
+#[test]
+fn blank_public_fingerprint_accepts_checked_old_and_new_definite_packet_lengths() {
+    for header in [
+        vec![0x98, 12],
+        vec![0x99, 0, 12],
+        vec![0x9a, 0, 0, 0, 12],
+        vec![0xc6, 12],
+        vec![0xc6, 255, 0, 0, 0, 12],
+    ] {
+        let mut packets = header;
+        packets.extend_from_slice(DERIVED_PUBLIC_BODY);
+        // Exercise a two-octet new-format length without changing primary bytes.
+        packets.extend_from_slice(&[0xcd, 192, 0]);
+        packets.extend_from_slice(&[b'u'; 192]);
+        packets.extend_from_slice(&[0xce, 12]);
+        packets.extend_from_slice(DERIVED_PUBLIC_BODY);
+        let armor = packet_armor(&packets);
+        assert_eq!(
+            normalized_public_certificate(&armor, "")
+                .unwrap()
+                .1
+                .as_ref(),
+            DERIVED_PUBLIC_FP
+        );
+    }
+}
+
+#[test]
+fn blank_public_fingerprint_refuses_ambiguous_secret_unsupported_and_truncated_packets() {
+    let primary = [vec![0xc6, 12], DERIVED_PUBLIC_BODY.to_vec()].concat();
+    let mut duplicate = primary.clone();
+    duplicate.extend_from_slice(&primary);
+    let mut secret_primary = primary.clone();
+    secret_primary.extend_from_slice(&[0xc5, 3, 1, 2, 3]);
+    let mut secret_subkey = primary.clone();
+    secret_subkey.extend_from_slice(&[0xc7, 3, 1, 2, 3]);
+    let mut version6 = primary.clone();
+    version6[2] = 6;
+    let mut trailing = primary.clone();
+    trailing.push(0);
+    for packets in [
+        duplicate,
+        secret_primary,
+        secret_subkey,
+        version6,
+        trailing,
+        primary[..primary.len() - 1].to_vec(),
+        vec![0xc6, 224], // Partial lengths are outside the certificate boundary.
+        vec![0x9b, 4, 0, 0, 0, 0, 1], // Legacy indeterminate length.
+        vec![0xc6, 255, 0, 0],
+        vec![0xc6, 255, 255, 255, 255, 255],
+        vec![0xc6, 0],
+        vec![0xc6, 5, 4, 0, 0, 0, 0],
+        vec![0xcd, 1, b'u'], // User ID alone cannot supply the primary identity.
+        [vec![0xce, 12], DERIVED_PUBLIC_BODY.to_vec()].concat(),
+    ] {
+        assert_eq!(
+            validate_public_certificate(&packet_armor(&packets), ""),
+            Err(Error::Invalid)
+        );
+    }
+}
+
+#[test]
+fn blank_public_fingerprint_refuses_noncanonical_armor_and_base64_before_rpc() {
+    let armor = std::str::from_utf8(DERIVED_PUBLIC_ARMOR).unwrap();
+    let mut oversized = vec![b' '; MAX_PUBLIC_CERTIFICATE];
+    oversized.extend_from_slice(DERIVED_PUBLIC_ARMOR);
+    let mut non_ascii = DERIVED_PUBLIC_ARMOR.to_vec();
+    non_ascii.push(0xff);
+    for invalid in [
+        armor.replace("AgM=", "AgN=").into_bytes(), // Non-zero unused base64 bits.
+        armor.replace("AgM=", "AgM=AA==").into_bytes(), // Interior padding.
+        armor.replace("AgM=", "Ag=M").into_bytes(),
+        armor.replace("AgM=", "AgM").into_bytes(),
+        armor.replace("AgM=", "Ag-=").into_bytes(),
+        armor.replace("-----\n\n", "-----\n").into_bytes(),
+        armor
+            .replace("-----\n\n", "-----\nInvalid header\n\n")
+            .into_bytes(),
+        format!("{armor}\n{armor}").into_bytes(),
+        armor.replace("PUBLIC KEY", "PRIVATE KEY").into_bytes(),
+        oversized,
+        non_ascii,
+        Vec::new(),
+    ] {
+        assert_eq!(
+            validate_public_certificate(&invalid, ""),
+            Err(Error::Invalid)
+        );
+    }
+}
+
+#[test]
+fn blank_public_fingerprint_is_used_for_in_use_guard_and_exact_native_import() {
+    struct DerivedImport<'a> {
+        armor: &'a [u8],
+        calls: Cell<usize>,
+        result: Result<(), Error>,
+    }
+    impl PublicKeyBackend for DerivedImport<'_> {
+        fn read(&self, _: &str) -> Result<Inventory, Error> {
+            panic!("public import does not read inventory before its native transaction")
+        }
+        fn import_public(
+            &self,
+            account: &str,
+            revision: &str,
+            fingerprint: &str,
+            certificate: &[u8],
+        ) -> Result<(), Error> {
+            assert_eq!(account, "alice@example.test");
+            assert_eq!(revision, PUBLIC_REVISION);
+            assert_eq!(fingerprint, DERIVED_PUBLIC_FP);
+            assert_eq!(certificate, self.armor);
+            self.calls.set(self.calls.get() + 1);
+            self.result
+        }
+    }
+    let root = Scratch::new();
+    let store = BindingStore::new(root.0.join("bindings"));
+    let c = context();
+    let s = session();
+    let request = public_request(
+        Action::ImportPublic {
+            certificate: DERIVED_PUBLIC_ARMOR,
+            expected_primary_fingerprint: "",
+        },
+        0,
+    );
+    for result in [
+        Ok(()),
+        Err(Error::InvalidKey),
+        Err(Error::Unconfirmed),
+        Err(Error::Unavailable),
+    ] {
+        let backend = DerivedImport {
+            armor: DERIVED_PUBLIC_ARMOR,
+            calls: Cell::new(0),
+            result,
+        };
+        assert_eq!(
+            mutate(&backend, &store, proof(&c, &s), &c, &s, &request, 59),
+            result
+        );
+        assert_eq!(backend.calls.get(), 1);
+        assert_eq!(store.load("alice@example.test").unwrap().revision, 0);
+    }
+    let inventory = Inventory::parse(&serde_json::to_vec(&serde_json::json!({
+        "version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.4.8",
+        "keys":[{"primary":{"fingerprint":DERIVED_PUBLIC_FP,"algorithm":1,"bits":3072,"created":1,"expires":0,"revoked":false,"expired":false,"disabled":false,"invalid":false,"can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false},"subkeys":[]}]
+    })).unwrap()).unwrap();
+    store
+        .replace_operator(
+            "alice@example.test",
+            0,
+            Update {
+                account_binding: Some(AccountBinding {
+                    primary_fingerprint: DERIVED_PUBLIC_FP.into(),
+                    signing_fingerprint: None,
+                    decrypt_primary_fingerprints: Vec::new(),
+                }),
+                recipient_bindings: Vec::new(),
+                policy: ProtectionPolicy::default(),
+            },
+            &inventory,
+            59,
+        )
+        .unwrap();
+    let before = store.load("alice@example.test").unwrap();
+    let backend = DerivedImport {
+        armor: DERIVED_PUBLIC_ARMOR,
+        calls: Cell::new(0),
+        result: Ok(()),
+    };
+    let request = public_request(
+        Action::ImportPublic {
+            certificate: DERIVED_PUBLIC_ARMOR,
+            expected_primary_fingerprint: "",
+        },
+        1,
+    );
+    assert_eq!(
+        mutate(&backend, &store, proof(&c, &s), &c, &s, &request, 59),
+        Err(Error::KeyInUse)
+    );
+    assert_eq!(backend.calls.get(), 0);
+    assert_eq!(store.load("alice@example.test").unwrap(), before);
+    assert_eq!(store.load("bob@example.test").unwrap().revision, 0);
+}
+
+struct PublicWriteSpy {
+    inventory: Inventory,
+    calls: Cell<usize>,
+}
+impl PublicKeyBackend for PublicWriteSpy {
+    fn read(&self, account: &str) -> Result<Inventory, Error> {
+        assert_eq!(account, "alice@example.test");
+        Ok(self.inventory.clone())
+    }
+    fn import_public(
+        &self,
+        account: &str,
+        revision: &str,
+        primary: &str,
+        _certificate: &[u8],
+    ) -> Result<(), Error> {
+        assert_eq!(account, "alice@example.test");
+        assert_eq!(revision, PUBLIC_REVISION);
+        assert_eq!(primary, "B".repeat(40));
+        self.calls.set(self.calls.get() + 1);
+        Ok(())
+    }
+    fn remove_public(&self, account: &str, revision: &str, primary: &str) -> Result<(), Error> {
+        assert_eq!(account, "alice@example.test");
+        assert_eq!(revision, PUBLIC_REVISION);
+        assert_eq!(primary, "B".repeat(40));
+        self.calls.set(self.calls.get() + 1);
+        Ok(())
+    }
+}
+#[test]
+fn bound_signing_fingerprint_blocks_public_reimport_and_removal_before_rpc() {
+    let root = Scratch::new();
+    let store = BindingStore::new(root.0.join("bindings"));
+    let material = |fingerprint: String| serde_json::json!({"fingerprint":fingerprint,"algorithm":1,"bits":3072,"created":1,"expires":0,"revoked":false,"expired":false,"disabled":false,"invalid":false,"can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false});
+    let inventory = Inventory::parse(
+        &serde_json::to_vec(&serde_json::json!({"version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.4.8","keys":[{"primary":material("A".repeat(40)),"subkeys":[material("B".repeat(40))]}]})).unwrap(),
+    )
+    .unwrap();
+    let backend = PublicWriteSpy {
+        inventory,
+        calls: Cell::new(0),
+    };
+    let c = context();
+    let s = session();
+    let account_primary = "A".repeat(40);
+    let signing = "B".repeat(40);
+    assert_eq!(
+        mutate(
+            &backend,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &request(
+                Action::SetAccount {
+                    primary_fingerprint: &account_primary,
+                    signing_fingerprint: Some(&signing),
+                    decrypt_fingerprints: "",
+                },
+                0,
+            ),
+            59,
+        ),
+        Ok(())
+    );
+    let cert = b"-----BEGIN PGP PUBLIC KEY BLOCK-----\nfixture\n-----END PGP PUBLIC KEY BLOCK-----";
+    assert_eq!(
+        mutate(
+            &backend,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &public_request(
+                Action::ImportPublic {
+                    certificate: cert,
+                    expected_primary_fingerprint: &signing,
+                },
+                1,
+            ),
+            59,
+        ),
+        Err(Error::KeyInUse)
+    );
+    assert_eq!(
+        mutate(
+            &backend,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &public_request(
+                Action::RemovePublic {
+                    primary_fingerprint: &signing,
+                },
+                1,
+            ),
+            59,
+        ),
+        Err(Error::KeyInUse)
+    );
+    assert_eq!(backend.calls.get(), 0);
+    assert_eq!(store.load("alice@example.test").unwrap().revision, 1);
+}
+#[derive(Clone, Copy)]
+struct FixedTime;
+impl crate::totp::TimeProvider for FixedTime {
+    fn unix_timestamp(&self) -> u64 {
+        59
+    }
+}
+#[test]
+fn key_management_real_persistent_totp_replay_cannot_authorize_twice() {
+    use crate::totp::{FileTotpSecretStore, TotpPolicy, TotpVerifier};
+    let root = Scratch::new();
+    let secret_dir = root.0.join("secrets");
+    fs::create_dir(&secret_dir).unwrap();
+    fs::set_permissions(&secret_dir, fs::Permissions::from_mode(0o700)).unwrap();
+    let store = FileTotpSecretStore::new(&secret_dir).with_replay_dir(root.0.join("replay"));
+    let path = store.secret_path_for_username("alice@example.test");
+    fs::write(&path, "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n").unwrap();
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+    let policy = TotpPolicy {
+        digits: 6,
+        period_seconds: 30,
+        allowed_skew_steps: 0,
+    };
+    let c = context();
+    let s = session();
+    let factor = SecondFactorService::new(
+        AuthenticationPolicy::default(),
+        TotpVerifier::new(store, FixedTime, policy),
+    );
+    assert!(verify_fresh(
+        &primary("alice@example.test"),
+        &factor,
+        &c,
+        &s,
+        ("fixture-password", "287082"),
+        59
+    )
+    .authorization
+    .is_ok());
+    let reopened = FileTotpSecretStore::new(&secret_dir).with_replay_dir(root.0.join("replay"));
+    let factor = SecondFactorService::new(
+        AuthenticationPolicy::default(),
+        TotpVerifier::new(reopened, FixedTime, policy),
+    );
+    assert!(matches!(
+        verify_fresh(
+            &primary("alice@example.test"),
+            &factor,
+            &c,
+            &s,
+            ("fixture-password", "287082"),
+            59
+        )
+        .authorization,
+        Err(Error::Authentication)
+    ));
+}
+
+struct EmptyInventory;
+impl PublicKeyBackend for EmptyInventory {
+    fn read(&self, _: &str) -> Result<Inventory, Error> {
+        Inventory::parse(br#"{"version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.4.8","keys":[]}"#).map_err(|_|Error::Unavailable)
+    }
+}
+#[test]
+fn key_management_atomic_cleanup_recovers_multiple_unavailable_bound_keys() {
+    let root = Scratch::new();
+    let store = BindingStore::new(root.0.join("bindings"));
+    let b = backend();
+    let c = context();
+    let s = session();
+    let account = "A".repeat(40);
+    let recipient = "B".repeat(40);
+    assert_eq!(
+        mutate(
+            &b,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &request(
+                Action::SetAccount {
+                    primary_fingerprint: &account,
+                    signing_fingerprint: Some(&account),
+                    decrypt_fingerprints: &account
+                },
+                0
+            ),
+            59
+        ),
+        Ok(())
+    );
+    assert_eq!(
+        mutate(
+            &b,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &request(
+                Action::SetRecipient {
+                    address: "recipient@example.test",
+                    primary_fingerprint: &recipient,
+                    encryption: Requirement::Required
+                },
+                1
+            ),
+            59
+        ),
+        Ok(())
+    );
+    assert_eq!(
+        mutate(
+            &EmptyInventory,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &request(Action::ClearAccount, 2),
+            59
+        ),
+        Err(Error::InvalidKey)
+    );
+    assert_eq!(
+        mutate(
+            &EmptyInventory,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &request(
+                Action::RemoveRecipient {
+                    address: "recipient@example.test"
+                },
+                2
+            ),
+            59
+        ),
+        Err(Error::InvalidKey)
+    );
+    assert_eq!(
+        mutate(
+            &EmptyInventory,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &request(Action::ClearAllBindings, 2),
+            59
+        ),
+        Ok(())
+    );
+    let record = store.load("alice@example.test").unwrap();
+    assert_eq!(record.revision, 3);
+    assert!(record.account_binding.is_none());
+    assert!(record.recipient_bindings.is_empty());
+}
+
+#[test]
+fn policy_change_rejects_address_not_in_certificate_without_writing() {
+    let root = Scratch::new();
+    let store = BindingStore::new(root.0.join("bindings"));
+    let b = backend();
+    let c = context();
+    let s = session();
+    let fp = "B".repeat(40);
+    assert_eq!(
+        mutate(
+            &b,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &request(
+                Action::SetRecipient {
+                    address: "wrong@example.test",
+                    primary_fingerprint: &fp,
+                    encryption: Requirement::Required,
+                },
+                0
+            ),
+            59
+        ),
+        Err(Error::InvalidKey)
+    );
+    assert_eq!(store.load("alice@example.test").unwrap().revision, 0);
+}

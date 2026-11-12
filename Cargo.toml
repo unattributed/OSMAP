@@ -1,5 +1,6 @@
 [package]
 name = "osmap"
+default-run = "osmap"
 version = "0.1.0"
 edition = "2021"
 publish = false
@@ -7,11 +8,24 @@ rust-version = "1.86"
 license = "ISC"
 
 [dependencies]
-ammonia = "4.1.4"
+ammonia = "~4.1.7"
 getrandom = "0.2.16"
 hmac = "0.12.1"
 libc = "0.2.177"
+qrcodegen = { version = "=1.8.0", default-features = false }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 sha1 = "0.10.6"
 sha2 = "0.10.9"
+
+[[bin]]
+name = "account-passwd"
+path = "src/bin/account_passwd.rs"
+
+[[bin]]
+name = "account-recovery"
+path = "src/bin/account_recovery.rs"
+
+[[bin]]
+name = "storage-quota"
+path = "src/bin/storage_quota.rs"

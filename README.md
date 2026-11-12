@@ -1,11 +1,25 @@
 # OSMAP
 
+**2026-11-02: Owner unlock-tool failure corrected and installed.** Actual GPG named-output failure is reproduced; stdout signing/decryption and native Python-interpreter tests pass. Operational guards in the two preparation utilities now survive optimization, with normal regression coverage added. Owner private unlock/body UAT remains pending. See [the repair and audit limits](docs/UX_SLICE_S06_04.md#owner-unlock-failure-and-python-tooling-repair-2026-11-02).
+
+**2026-11-02: S06-01–04 source/native and consolidated installed qualification pass within scope.** The guarded obsd1 update installs the qualified Web and crypto worker. Real public encryption, typed private `Locked` refusal, current signed account-epoch admission, HTTPS and account/key/configuration/state preservation pass. Owner private-key unlock and successful encrypted-body/source/download UAT remain pending; normal signed GitHub delivery is in progress. See [the consolidated S06 result and UAT](docs/UX_SLICE_S06_04.md).
+
+**2026-11-02: S05-04 accepted — T01–T09 PASS.** The owner explicitly accepts the completed infrastructure result. Restored login, native Rust crypto/inventory/admin qualification, account-state preservation, cleanup and signed engineering delivery are recorded in the [slice acceptance](docs/UX_SLICE_S05_04.md#owner-t09-acceptance--2026-11-02). This closure updates acceptance records only.
+
+**2026-11-02: Account-relative Welcome status repair accepted.** The owner has accepted the installed dashboard, with account-specific mailbox/public-key/session observations and expanded details. F3-T01–T09 PASS; broader host monitoring and backup/update integrations remain separate. See [F3 owner acceptance](docs/UX_FOLLOWUP_F3_ACCOUNT_STATUS.md#owner-acceptance--2026-11-02).
+
+**2026-11-01: S05-03 accepted — T01–T09 PASS.** The owner reports `S05-03 T09 = PASS` after a three-recipient functional test, with recipient-side screenshots and successful relay-submission evidence. Runtime lifecycle engineering, native recovery, matching installed QA and normal signed delivery pass. See [S05-03 acceptance and evidence](docs/UX_SLICE_S05_03.md#owner-t09-acceptance--2026-11-01).
+
+**2026-11-01: People-style Contacts owner UAT PASS on obsd1.** The people sidebar icon opens a searchable table of saved contacts and imported-key email identities, their effective encryption policies and practical Write/Add name/Edit actions. Focused source, browser, native and installed checks pass; the owner has accepted the Contacts/Compose handoff with `UAT = PASS`. See the [Contacts delivery record](docs/UX_SLICE_S05_02.md#people-style-contacts-installed--2026-11-01).
+
+**2026-10-17: S04-01 complete (R4 narrowed scope).** Settings/sessions engineering, matching installed QA, independent audit and operator `S04_01_UAT=PASS` are recorded in the [slice checklist](docs/UX_SLICE_S04_01.md). Eleven required follow-up controls remain open; Sprint S04 and the epic are incomplete. Password change, TOTP management and recovery are separate work. All other stopped slices remain stopped. See [current status](docs/CURRENT_PROJECT_STATUS.md).
+
 **OpenBSD Secure Mail Access Platform** is a small, security-focused webmail
 application for hardened OpenBSD mail hosts.
 
 OSMAP gives users browser access to an existing mail system without replacing
 nginx, Dovecot, Postfix, Rspamd, PF, TLS, or native mail clients. It is written
-in Rust, renders its interface on the server, uses no runtime JavaScript, and
+in Rust, renders its interface on the server, uses narrowly scoped local scripts where implemented, and
 keeps privileged mailbox access behind a local helper boundary.
 
 The project deliberately favors a narrow attack surface, least privilege,
@@ -59,20 +73,41 @@ See the [architecture](docs/ARCHITECTURE.md) and
 The operator requested a full-functional UX implementation plan covering the
 approved mockups, every-page light/dark mode, missing account/mail capabilities,
 and runtime OpenPGP. The [epic](docs/UX_FULL_FUNCTIONAL_EPIC.md) defines 12
-sprints and 48 slices with decision and security gates. This is planning only:
-no new UX or cryptographic capability is claimed by publication of the plan.
+sprints and 48 slices with decision and security gates. Autonomous engineering
+started on 2026-09-29: intake now records the exact reference controls, real
+route baselines, architecture decisions and acceptance cases. S01 now implements
+persistent light/dark/system appearance, a native navigation rail and account
+menu, compact settings/security disclosures and responsive shared components.
+Local route, browser, persistence and accessibility-oriented checks are recorded;
+native-host qualification, independent human acceptance and deployment remain
+separate. Follow the
+[execution ledger](docs/UX_EXECUTION_LEDGER.md) for signed slice deliveries.
+That historical intake did not qualify runtime cryptography; current bounded
+OpenPGP outcomes and their remaining acceptance are recorded in
+[Current Project Status](docs/CURRENT_PROJECT_STATUS.md).
 The operator reports Roundcube removed; this epic is not a retirement project.
 
-The current bounded development sprint covers operator-assisted TOTP rotation,
-recovery, and integration closeout. Rotation has a signed source delivery;
-recovery now requires a short-lived signed operator approval and remains under
-local qualification. See the [sprint record](docs/TOTP_LIFECYCLE_SPRINT.md).
+The earlier TOTP lifecycle sprint is administratively closed with controlled
+recovery and live-account cleanup residuals. Recovery requires a short-lived
+signed human operator approval. See the [sprint record](docs/TOTP_LIFECYCLE_SPRINT.md).
 The mail host has migrated to Vultr; historical on-premises validation does not
 establish qualification of that instance.
-The operator selected obsd1 at `192.168.1.44` for this sprint's validation;
-Vultr is outside the sprint's validation scope.
+The earlier TOTP sprint selected obsd1 at `192.168.1.44` for its validation;
+its historical evidence does not qualify the current authoritative Vultr host.
 
-OSMAP is actively developed and security-sensitive. The crate is currently
+S08-02 folder/label engineering is delivered on the signed UX branch with
+matching installed helper/web application324b1cb9. Authoritative Inbox hierarchy,
+Create/Rename/Move, complete-email attachment-preserving Move, reviewed Bin/Restore,
+confirmed empty Delete, labels/reloaded badges and finite menus have scoped
+functional evidence and independent review. The repaired public Bin and Restore
+responses complete within the existing10s bound. Historical failures stay
+retained. The operator's defined human Folders usability and attachment-download
+checks PASS; independent review closes S08-02 functional acceptance. S04-02
+authoritative password change remains incomplete; development is stopped. S09 final-reference visual acceptance,
+broader S08 and epic/release completion remain separate and open. See the
+[execution ledger](docs/UX_EXECUTION_LEDGER.md) for the exact evidence and limits.
+
+OSMAP is security-sensitive; development is currently stopped. The crate is currently
 version `0.1.0`. The repository contains production-validated and deployed
 slices, but those results are bounded to the documented OpenBSD host,
 configuration, test corpus, and selected user cohort. Treat OSMAP as
@@ -94,9 +129,11 @@ Important limits:
 - the current release evidence is still bounded;
 - complete Roundcube replacement, general hostile-email safety, universal
   production readiness, and full ASVS verification are not claimed;
-- OpenPGP policy, diagnostics, helper scaffolding, and UI states exist, but
-  runtime decrypt, verify, sign, encrypt, PGP/MIME, and key-management
-  operations are not implemented; and
+- runtime decrypt, verify, sign, encrypt, PGP/MIME, and key-management
+  operations retain their individual implementation and acceptance limits.
+  Bounded native implementation and October14 encrypted-provider receipt/
+  decryption evidence exist; complete protected round-trip, signatures, key
+  lifecycle and readable encrypted Sent acceptance remain open; and
 - calendars, groupware, plugins, SaaS hosting, multi-tenancy, and attachment
   preview are outside the current scope.
 

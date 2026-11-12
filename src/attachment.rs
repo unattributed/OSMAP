@@ -447,7 +447,10 @@ fn bounded_bytes(
 }
 
 /// Decodes base64 attachment content without adding another dependency.
-fn decode_base64_bytes(input: &str, max_bytes: usize) -> Result<Vec<u8>, AttachmentDownloadError> {
+pub(crate) fn decode_base64_bytes(
+    input: &str,
+    max_bytes: usize,
+) -> Result<Vec<u8>, AttachmentDownloadError> {
     let cleaned = input
         .bytes()
         .filter(|byte| !byte.is_ascii_whitespace())
@@ -710,6 +713,7 @@ mod tests {
     fn validated_session_fixture() -> ValidatedSession {
         ValidatedSession {
             record: SessionRecord {
+                account_epoch: None,
                 session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                     .to_string(),
                 csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
@@ -734,6 +738,7 @@ mod tests {
 
     fn multipart_message_view(body_text: &str) -> MessageView {
         MessageView {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 9,
             flags: vec!["\\Seen".to_string()],
@@ -751,6 +756,7 @@ mod tests {
             .split_once("\n\n")
             .expect("fixture should contain a header/body separator");
         MessageView {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 99,
             flags: vec!["\\Seen".to_string()],

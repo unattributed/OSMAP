@@ -5,22 +5,96 @@
 //! the goal is an explicit, reviewable request path that consumes the existing
 //! auth, session, mailbox, and rendering layers.
 
+pub(crate) mod compose_actions;
+pub(crate) mod compose_delivery_ui;
+mod compose_enhancement;
+pub(crate) mod compose_preflight;
+pub(crate) mod compose_protection;
+pub use compose_protection::ComposeProtectionView;
+mod contacts_ui;
+#[path = "http/folder_tree.rs"]
+mod folder_tree;
+mod header_theme;
 #[path = "http_browser.rs"]
 mod http_browser;
 #[path = "http_gateway.rs"]
 mod http_gateway;
 #[path = "http_runtime.rs"]
 mod http_runtime;
+#[cfg(all(test, target_os = "openbsd"))]
+pub(crate) use http_runtime::scheduled_positive_fixture;
+mod label_filter;
+mod notification_badge;
+pub(crate) mod notification_delivery;
+#[path = "http/personal_key_ui.rs"]
+mod personal_key_ui;
+#[path = "http/remembered_key.rs"]
+mod remembered_key;
+mod routes_after_archive;
+mod routes_appearance;
 mod routes_auth;
+mod routes_autosave;
+mod routes_bin_folder;
 mod routes_compose;
+mod routes_composition_preferences;
+mod routes_contacts;
+mod routes_content;
+mod routes_display;
+mod routes_documents;
 mod routes_draft;
+#[path = "http/routes_draft_location.rs"]
+mod routes_draft_location;
+mod routes_draft_selection;
+mod routes_flags;
+#[path = "http/routes_folder_disposition.rs"]
+mod routes_folder_disposition;
+mod routes_identity_preferences;
+#[path = "http/routes_keys.rs"]
+mod routes_keys;
+mod routes_label_selection;
+mod routes_labels;
 mod routes_mail;
+mod routes_mark_read;
+mod routes_message_open;
+mod routes_sender_identity;
+mod routes_sent_copy;
+mod routes_sent_location;
+mod routes_timezone;
+pub(crate) use folder_tree::FolderTree;
+#[path = "http/routes_access_recovery.rs"]
+mod routes_access_recovery;
+mod routes_all_search;
+mod routes_bulk_delete;
+mod routes_delete;
+mod routes_documents_search;
+mod routes_folder_create;
+mod routes_folder_delete;
+mod routes_folder_rename;
+mod routes_moves;
+mod routes_notifications;
+mod routes_password;
+#[path = "http/routes_people.rs"]
+mod routes_people;
+mod routes_reading_preferences;
+#[path = "http/routes_recovery.rs"]
+mod routes_recovery;
+mod routes_reply;
+#[path = "http/routes_send_receipt.rs"]
+mod routes_send_receipt;
 mod routes_settings;
+
+mod routes_scheduled;
+mod routes_signature;
+mod routes_snooze;
+mod routes_source_attachments;
+#[path = "http/welcome_data.rs"]
+mod welcome_data;
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+use crate::appearance::{AppearancePreference, AppearanceSettings, AppearanceStore};
 use crate::attachment::{
     AttachmentDownloadDecision, AttachmentDownloadPolicy, AttachmentDownloadPublicFailureReason,
     AttachmentDownloadService, DownloadedAttachment,
@@ -47,39 +121,40 @@ use crate::http_support::{
     redirect_response, session_error_label, throttle_store_error_label, url_encode,
 };
 use crate::http_ui::{
-    render_compose_page, render_draft_list_page, render_login_page, render_mailboxes_page,
-    render_message_list_page, render_message_search_page, render_message_view_page,
-    render_sessions_page, render_settings_page, ComposePageModel, DraftListPageModel,
-    MessageListBulkActions, MessageListSortLinks, SettingsPageModel,
+    render_compose_page, render_draft_list_page, render_login_page,
+    render_mailboxes_page_with_storage, render_message_list_page, render_message_search_page,
+    render_navigation_notice, render_sessions_page, ComposePageModel, DraftListPageModel,
+    MailReaderContext, MessageListBulkActions, MessageListSortLinks, MessageSearchContext,
+    SelectedMessagePane, SettingsPageModel,
 };
 use crate::logging::LogEvent;
 #[cfg(test)]
 use crate::logging::{EventCategory, Logger};
+use crate::mailbox::MessageView;
 use crate::mailbox::{
-    sort_message_search_results, sort_message_summaries, DoveadmMailboxListBackend,
-    DoveadmMessageAppendBackend, DoveadmMessageListBackend, DoveadmMessageMoveBackend,
-    DoveadmMessageSearchBackend, DoveadmMessageViewBackend, MailboxEntry, MailboxListingDecision,
-    MailboxListingPolicy, MailboxListingService, MessageAppendBackend, MessageAppendRequest,
-    MessageListDecision, MessageListPolicy, MessageListRequest, MessageListService,
-    MessageMoveDecision, MessageMoveOutcome, MessageMovePolicy, MessageMoveRequest,
-    MessageMoveService, MessageSearchDecision, MessageSearchField, MessageSearchPolicy,
-    MessageSearchRequest, MessageSearchResult, MessageSearchService, MessageSort, MessageSummary,
-    MessageViewDecision, MessageViewPolicy, MessageViewRequest, MessageViewService,
+    DoveadmMailboxListBackend, DoveadmMessageAppendBackend, DoveadmMessageListBackend,
+    DoveadmMessageMoveBackend, DoveadmMessageSearchBackend, DoveadmMessageViewBackend,
+    MailboxEntry, MailboxListingDecision, MailboxListingPolicy, MailboxListingService,
+    MessageAppendBackend, MessageAppendRequest, MessageListDecision, MessageListPolicy,
+    MessageListRequest, MessageListService, MessageMovePolicy, MessageMoveRequest,
+    MessageSearchDecision, MessageSearchField, MessageSearchPolicy, MessageSearchRequest,
+    MessageSearchResult, MessageSearchService, MessageSummary, MessageViewDecision,
+    MessageViewPolicy, MessageViewRequest, MessageViewService,
 };
 use crate::mailbox_helper::{
-    MailboxHelperAttachmentDownloadBackend, MailboxHelperMailboxListBackend,
-    MailboxHelperMessageAppendBackend, MailboxHelperMessageListBackend,
-    MailboxHelperMessageMoveBackend, MailboxHelperMessageSearchBackend,
-    MailboxHelperMessageViewBackend, MailboxHelperPolicy,
+    MailboxHelperMailboxListBackend, MailboxHelperMessageAppendBackend,
+    MailboxHelperMessageListBackend, MailboxHelperMessageMoveBackend,
+    MailboxHelperMessageSearchBackend, MailboxHelperMessageViewBackend, MailboxHelperPolicy,
 };
 use crate::rendering::{
     HtmlDisplayPreference, PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy,
 };
+#[cfg(test)]
+use crate::send::build_submission_message;
 use crate::send::{
-    build_submission_message, ComposeDraft, ComposeIntent, ComposePolicy, ComposeRequest,
-    SendmailSubmissionBackend, SubmissionDecision, SubmissionOutcome,
-    SubmissionPublicFailureReason, SubmissionService, UploadedAttachment,
-    DEFAULT_ATTACHMENT_MAX_BYTES, DEFAULT_TOTAL_ATTACHMENT_MAX_BYTES,
+    ComposeDraft, ComposeIntent, ComposePolicy, ComposeRequest, SendmailSubmissionBackend,
+    SubmissionDecision, SubmissionOutcome, SubmissionPublicFailureReason, SubmissionService,
+    UploadedAttachment, DEFAULT_ATTACHMENT_MAX_BYTES, DEFAULT_TOTAL_ATTACHMENT_MAX_BYTES,
 };
 use crate::session::{
     FileSessionStore, SessionService, SessionToken, SystemRandomSource, ValidatedSession,
@@ -275,13 +350,24 @@ impl HttpMethod {
 }
 
 /// A small parsed HTTP request.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct HttpRequest {
+    pub(crate) notification_context: std::cell::RefCell<notification_badge::RenderContext>,
     pub method: HttpMethod,
     pub path: String,
     pub query_params: BTreeMap<String, String>,
     pub headers: BTreeMap<String, String>,
     pub body: Vec<u8>,
+}
+
+impl std::fmt::Debug for HttpRequest {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("HttpRequest")
+            .field("method", &self.method)
+            .field("body_bytes", &self.body.len())
+            .finish_non_exhaustive()
+    }
 }
 
 /// A small HTTP response that can be written directly to a socket.
@@ -558,6 +644,7 @@ pub struct BrowserApp<G> {
     policy: HttpPolicy,
     gateway: G,
     request_budgets: RequestBudgets,
+    remembered_keys: remembered_key::RememberedKeys,
 }
 
 impl<G> BrowserApp<G> {
@@ -568,6 +655,7 @@ impl<G> BrowserApp<G> {
             policy,
             gateway,
             request_budgets,
+            remembered_keys: Default::default(),
         }
     }
 
@@ -767,25 +855,242 @@ fn request_budget_event(
 
 pub use self::http_browser::{
     BrowserAttachmentDownloadDecision, BrowserAttachmentDownloadOutcome,
-    BrowserDraftDeleteDecision, BrowserDraftDeleteOutcome, BrowserDraftListDecision,
-    BrowserDraftListOutcome, BrowserDraftLoadDecision, BrowserDraftLoadOutcome,
-    BrowserDraftSaveDecision, BrowserDraftSaveOutcome, BrowserDraftSaveRequest, BrowserGateway,
-    BrowserLoginDecision, BrowserLoginOutcome, BrowserLogoutOutcome, BrowserMailboxDecision,
-    BrowserMailboxOutcome, BrowserMessageListDecision, BrowserMessageListOutcome,
+    BrowserDraftDeleteDecision, BrowserDraftDeleteOutcome, BrowserDraftEditState,
+    BrowserDraftListDecision, BrowserDraftListOutcome, BrowserDraftLoadDecision,
+    BrowserDraftLoadOutcome, BrowserDraftSaveDecision, BrowserDraftSaveOutcome,
+    BrowserDraftSaveRequest, BrowserDraftState, BrowserDraftStorageUsage,
+    BrowserFolderCreateOutcome, BrowserFolderMetadataOutcome, BrowserGateway, BrowserLoginDecision,
+    BrowserLoginOutcome, BrowserLogoutOutcome, BrowserMailboxDecision, BrowserMailboxOutcome,
+    BrowserMailboxStatusOutcome, BrowserMessageDeleteOutcome, BrowserMessageFlagFailure,
+    BrowserMessageFlagOutcome, BrowserMessageListDecision, BrowserMessageListOutcome,
     BrowserMessageMoveDecision, BrowserMessageMoveOutcome, BrowserMessageSearchDecision,
     BrowserMessageSearchOutcome, BrowserMessageViewDecision, BrowserMessageViewOutcome,
-    BrowserSendDecision, BrowserSendOutcome, BrowserSendRequest, BrowserSessionDecision,
-    BrowserSessionListDecision, BrowserSessionListOutcome, BrowserSessionRevokeDecision,
-    BrowserSessionRevokeOutcome, BrowserSessionRevokeScope, BrowserSessionValidationOutcome,
-    BrowserSettingsDecision, BrowserSettingsOutcome, BrowserSettingsUpdateDecision,
-    BrowserSettingsUpdateOutcome, BrowserVisibleSession, BrowserVisibleSettings,
+    BrowserPasswordDecision, BrowserPasswordOutcome, BrowserPasswordResult,
+    BrowserPasswordResultError, BrowserPublicInventoryOutcome, BrowserSendDecision,
+    BrowserSendOutcome, BrowserSendRecoveryDecision, BrowserSendRecoverySnapshot,
+    BrowserSendRequest, BrowserSessionDecision, BrowserSessionListDecision,
+    BrowserSessionListOutcome, BrowserSessionRevokeDecision, BrowserSessionRevokeOutcome,
+    BrowserSessionRevokeScope, BrowserSessionValidationOutcome, BrowserSettingsDecision,
+    BrowserSettingsOutcome, BrowserSettingsUpdateDecision, BrowserSettingsUpdateOutcome,
+    BrowserVisibleSession, BrowserVisibleSettings,
 };
 pub use self::http_gateway::RuntimeBrowserGateway;
 pub use self::http_runtime::run_http_server;
 
 #[cfg(test)]
 mod tests {
+    mod inventory_route_tests {
+        include!("http_inventory_tests.rs");
+    }
+    mod key_inventory_fixture {
+        use super::*;
+        include!("http/key_inventory_fixture.rs");
+    }
+    mod folder_create_fixture {
+        include!("http/folder_create_fixture.rs");
+    }
+    mod folder_delete_tests {
+        include!("http/folder_delete_tests.rs");
+    }
+    mod folder_rename_tests {
+        include!("http/folder_rename_tests.rs");
+    }
+    mod folder_create_tests {
+        include!("http/folder_create_tests.rs");
+    }
     use super::*;
+    mod welcome_data_tests {
+        include!("http/welcome_data_tests.rs");
+    }
+    mod compose_enhancement_tests {
+        include!("http/compose_enhancement_tests.rs");
+    }
+    mod fixture_sessions {
+        include!("http/fixture_sessions.rs");
+    }
+    mod compose_format_tests {
+        include!("http/compose_format_tests.rs");
+    }
+    mod send_recovery_ui_tests {
+        include!("http/send_recovery_ui_tests.rs");
+    }
+    mod send_journal_routes_tests {
+        include!("http/send_journal_routes_tests.rs");
+    }
+    mod send_result_tests {
+        include!("http/send_result_tests.rs");
+    }
+    mod security_settings_tests {
+        include!("http/security_settings_tests.rs");
+    }
+    mod password_tests {
+        include!("http/password_tests.rs");
+    }
+    mod access_recovery_tests {
+        include!("http/access_recovery_tests.rs");
+    }
+    mod recovery_contact_tests {
+        include!("http/recovery_contact_tests.rs");
+    }
+    #[cfg(unix)]
+    mod authenticator_tests {
+        include!("http/authenticator_tests.rs");
+    }
+    mod scheduled_tests {
+        include!("http/scheduled_tests.rs");
+    }
+    mod snooze_tests {
+        include!("http/snooze_tests.rs");
+    }
+    mod notification_tests {
+        include!("http/notification_tests.rs");
+    }
+    mod notification_preference_tests {
+        include!("http/notification_preference_tests.rs");
+    }
+    mod notification_updates_tests {
+        include!("http/notification_updates_tests.rs");
+    }
+    #[cfg(unix)]
+    mod notification_digest_runtime_tests {
+        include!("http/notification_digest_runtime_tests.rs");
+    }
+    mod identity_preference_tests {
+        include!("http/identity_preference_tests.rs");
+        include!("http/sender_identity_tests.rs");
+        include!("http/sender_identity_runtime_tests.rs");
+    }
+    mod archive_event_route_tests {
+        include!("http/archive_event_route_tests.rs");
+    }
+    mod after_archive_tests {
+        include!("http/after_archive_tests.rs");
+    }
+    mod message_delete_tests {
+        include!("http_message_delete_tests.rs");
+    }
+    mod bulk_delete_tests {
+        include!("http_bulk_delete_tests.rs");
+    }
+    mod bin_folder_tests {
+        include!("http/bin_folder_tests.rs");
+    }
+    mod copies_tests {
+        include!("http/copies_tests.rs");
+    }
+    mod composition_preference_tests {
+        include!("http/composition_preference_tests.rs");
+    }
+    mod reading_preferences_tests {
+        include!("http/reading_preferences_tests.rs");
+    }
+    mod conversation_tests {
+        include!("http/conversation_tests.rs");
+    }
+    mod ux_fixtures {
+        include!("http/ux_fixtures.rs");
+    }
+    mod header_theme_tests {
+        include!("http/header_theme_tests.rs");
+    }
+    mod appearance_tests {
+        include!("http/appearance_tests.rs");
+    }
+    mod shell_tests {
+        include!("http/shell_tests.rs");
+    }
+    mod component_tests {
+        include!("http_component_tests.rs");
+    }
+    mod ux_browser_server {
+        include!("http/ux_browser_server.rs");
+    }
+    mod mail_list_tests {
+        include!("http/mail_list_tests.rs");
+    }
+    mod move_fixtures {
+        include!("http/move_fixtures.rs");
+    }
+    use move_fixtures::{move_form, SyntheticMessageMoves};
+    mod move_tests {
+        include!("http/move_tests.rs");
+    }
+    mod content_tests {
+        include!("http/content_tests.rs");
+    }
+    mod protected_route_tests {
+        include!("http/protected_route_tests.rs");
+    }
+    mod key_management_route_tests {
+        include!("http/key_management_route_tests.rs");
+    }
+    mod reply_tests {
+        include!("http/reply_tests.rs");
+    }
+    mod autosave_tests {
+        include!("http/autosave_tests.rs");
+    }
+    mod general_preferences_tests {
+        include!("http/general_preferences_tests.rs");
+    }
+
+    mod signature_tests {
+        include!("http/signature_tests.rs");
+    }
+    mod label_selection_tests {
+        include!("http/label_selection_tests.rs");
+    }
+    mod label_tests {
+        include!("http/label_tests.rs");
+    }
+    mod label_filter_tests {
+        include!("http/label_filter_tests.rs");
+    }
+    mod people_tests {
+        include!("http/people_tests.rs");
+    }
+    mod all_search_tests {
+        include!("http/all_search_tests.rs");
+    }
+    mod document_search_tests {
+        include!("http/document_search_tests.rs");
+    }
+    mod contact_tests {
+        include!("http/contact_tests.rs");
+    }
+    mod document_tests {
+        include!("http/document_tests.rs");
+    }
+    mod draft_preservation_tests {
+        include!("http/draft_preservation_tests.rs");
+    }
+    mod stale_binding_recovery_tests {
+        include!("http/stale_binding_recovery_tests.rs");
+    }
+    mod source_attachment_tests {
+        include!("http/source_attachment_tests.rs");
+    }
+    mod flag_fixtures {
+        include!("http/flag_fixtures.rs");
+    }
+    mod flag_tests {
+        include!("http/flag_tests.rs");
+    }
+    mod mark_read_tests {
+        include!("http/mark_read_tests.rs");
+    }
+    mod timezone_tests {
+        include!("http/timezone_tests.rs");
+    }
+    mod draft_location_tests {
+        include!("http/draft_location_tests.rs");
+    }
+    mod sent_location_tests {
+        include!("http/sent_location_tests.rs");
+    }
+    mod sent_copy_tests {
+        include!("http/sent_copy_tests.rs");
+    }
     use crate::auth::RequiredSecondFactor;
     use crate::mailbox::MessageView;
     use crate::mime::{AttachmentDisposition, MimeBodySource};
@@ -801,23 +1106,237 @@ mod tests {
     use std::thread;
     use std::time::Duration;
 
+    type AccessViewQueue = Arc<
+        Mutex<
+            std::collections::VecDeque<
+                Result<crate::browser_access::AccessView, crate::browser_access::AccessError>,
+            >,
+        >,
+    >;
+    type AccessOutcomeQueue = Arc<
+        Mutex<
+            std::collections::VecDeque<
+                Result<crate::browser_access::AccessOutcome, crate::browser_access::AccessError>,
+            >,
+        >,
+    >;
+    type SyntheticFlagStates = BTreeMap<(String, String, u64), Vec<String>>;
+
     #[derive(Debug, Clone)]
-    struct StubGateway {
+    struct FixtureOpenPgpSnapshot {
+        revision: u64,
+        preflight_revision: Option<u64>,
+        available: bool,
+    }
+
+    #[derive(Debug, Clone)]
+    pub(super) struct StubGateway {
+        login_calls: Arc<std::sync::atomic::AtomicUsize>,
+        access_views: AccessViewQueue,
+        access_outcomes: AccessOutcomeQueue,
+        access_calls: Arc<Mutex<Vec<String>>>,
+        authenticator_snapshot: Option<crate::authenticator::Snapshot>,
+        authenticator_store_root: Option<PathBuf>,
+        authenticator_calls: Arc<Mutex<Vec<(String, u64)>>>,
+        authenticator_reads: Arc<Mutex<Vec<String>>>,
+        recovery_snapshot: Option<crate::recovery_contact::RecoveryContactSnapshot>,
+        recovery_calls: Arc<Mutex<usize>>,
+        password_result: Option<BrowserPasswordDecision>,
+        password_changed_at: Option<String>,
+        password_calls: Arc<Mutex<Vec<String>>>,
+        created_folders: Arc<Mutex<BTreeMap<String, Vec<String>>>>,
+        renamed_folders: Arc<Mutex<Vec<crate::folder_rename::RenameFolderRequest>>>,
+        folder_recovery_outcome: Option<crate::folder_rename::RecoveryOutcome>,
+        deleted_folders: Arc<Mutex<Vec<crate::folder_delete::DeleteFolderRequest>>>,
+        disposition_prepares: Arc<Mutex<Vec<String>>>,
+        disposition_applies: Arc<Mutex<Vec<crate::folder_rename::RenameFolderRequest>>>,
+        disposition_receipt_loads: Arc<std::sync::atomic::AtomicUsize>,
+        send_journal: crate::send_journal::SendJournal,
+        recovery_root: PathBuf,
+        recovery_now: Option<u64>,
+        labels_store: Option<crate::labels::LabelStore>,
+        signature_store: Option<crate::signature::SignatureStore>,
+        autosave_store: Option<crate::autosave::Store>,
+        after_archive_store: Option<crate::after_archive::Store>,
+        archive_event_store: Option<crate::archive_event::Store>,
+        archive_event_records: Arc<std::sync::atomic::AtomicUsize>,
+        archive_event_post_list_fault: Arc<Mutex<Option<archive_event_route_tests::PostListFault>>>,
+        bin_store: Option<crate::bin_folder::BinPreferencesStore>,
+        delete_decision: Arc<Mutex<crate::mailbox::RetentionDecision>>,
+        delete_result: Arc<
+            Mutex<Result<crate::mailbox::MessageDeleteResult, crate::mailbox::MessageDeleteError>>,
+        >,
+        delete_calls: Arc<Mutex<Vec<crate::mailbox::MessageDeleteRequest>>>,
+        delete_results: Arc<
+            Mutex<
+                std::collections::VecDeque<
+                    Result<crate::mailbox::MessageDeleteResult, crate::mailbox::MessageDeleteError>,
+                >,
+            >,
+        >,
+        delete_list_decision: Arc<Mutex<Option<BrowserMessageListDecision>>>,
+        mark_read_store: Option<crate::mark_read::Store>,
+        timezone_store: Option<crate::timezone::Store>,
+        scheduled_due_capture: Option<Arc<Mutex<Option<u64>>>>,
+        scheduled_fixture_root: Option<PathBuf>,
+        draft_location_store: Option<crate::draft_location::Store>,
+        sent_copy_store: Option<crate::sent_copy::Store>,
+        sent_location_store: Option<crate::sent_location::Store>,
+        mark_read_policy_loads: Arc<std::sync::atomic::AtomicUsize>,
+        mark_read_policy_sequence: Option<Arc<Mutex<Vec<crate::mark_read::Policy>>>>,
+        contacts_store: Option<crate::contacts::ContactStore>,
+        compose_imported_recipients: Option<crate::contacts::ImportedRecipientSnapshot>,
+        document_store:
+            Option<crate::documents::Store<crate::documents::test_support::FixtureBackend>>,
+        document_reads: Arc<AtomicUsize>,
+        mail_storage_report: Option<crate::documents::MailStorageReport>,
+        draft_store: Option<crate::draft::FileDraftStore>,
+        fail_draft_delete: Option<String>,
         drafts: Arc<Mutex<BTreeMap<String, DraftRecord>>>,
+        submitted: Arc<Mutex<Vec<ComposeRequest>>>,
+        message_flags: Arc<Mutex<SyntheticFlagStates>>,
+        message_moves: Arc<Mutex<SyntheticMessageMoves>>,
+        appearance_store: Option<AppearanceStore>,
+        settings_store: Option<crate::settings::FileUserSettingsStore>,
+        notification_store: Option<crate::notifications::NotificationStore>,
+        notification_source_unavailable: bool,
+        notification_preference_store: Option<crate::notification_preferences::Store>,
+        notification_loads: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+        snooze_store: Option<crate::snooze::SnoozeStore>,
+        identity_preferences_store: Option<crate::identity_preferences::IdentityPreferencesStore>,
+        sender_authority: crate::sender_authority::Provider,
+        composition_preferences_store:
+            Option<crate::composition_preferences::CompositionPreferencesStore>,
+        reading_preferences_store: Option<crate::reading_preferences::ReadingPreferencesStore>,
+        message_list_override: Option<Vec<MessageSummary>>,
+        all_search_override: Option<BrowserMessageSearchDecision>,
+        browser_fixture_accounts: bool,
+        browser_fixture_openpgp: bool,
+        browser_fixture_openpgp_denials: bool,
+        fixture_openpgp_snapshot: Option<Arc<Mutex<FixtureOpenPgpSnapshot>>>,
+        preview_mailbox_tree: bool,
+        fixture_sessions: Option<fixture_sessions::FixtureSessions>,
     }
 
     impl Default for StubGateway {
         fn default() -> Self {
             Self {
+                login_calls: Default::default(),
+                access_views: Default::default(),
+                access_outcomes: Default::default(),
+                access_calls: Default::default(),
+                authenticator_snapshot: None,
+                authenticator_store_root: None,
+                authenticator_calls: Default::default(),
+                authenticator_reads: Default::default(),
+                recovery_snapshot: None,
+                recovery_calls: Default::default(),
+                password_result: None,
+                password_changed_at: None,
+                password_calls: Default::default(),
+                created_folders: Arc::new(Mutex::new(BTreeMap::new())),
+                renamed_folders: Arc::new(Mutex::new(Vec::new())),
+                folder_recovery_outcome: None,
+                deleted_folders: Arc::new(Mutex::new(Vec::new())),
+                disposition_prepares: Default::default(),
+                disposition_applies: Default::default(),
+                disposition_receipt_loads: Default::default(),
+                labels_store: None,
+                signature_store: None,
+                autosave_store: None,
+                after_archive_store: None,
+                archive_event_store: None,
+                archive_event_records: Default::default(),
+                archive_event_post_list_fault: Default::default(),
+                bin_store: None,
+                delete_decision: Arc::new(Mutex::new(
+                    crate::mailbox::RetentionDecision::Unavailable,
+                )),
+                delete_result: Arc::new(Mutex::new(Err(
+                    crate::mailbox::MessageDeleteError::PolicyUnavailable,
+                ))),
+                delete_calls: Arc::new(Mutex::new(Vec::new())),
+                delete_results: Arc::new(Mutex::new(std::collections::VecDeque::new())),
+                delete_list_decision: Arc::new(Mutex::new(None)),
+                mark_read_store: None,
+                timezone_store: None,
+                scheduled_due_capture: None,
+                scheduled_fixture_root: None,
+                draft_location_store: None,
+                sent_copy_store: None,
+                sent_location_store: None,
+                mark_read_policy_loads: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
+                mark_read_policy_sequence: None,
+                contacts_store: None,
+                compose_imported_recipients: None,
+                document_store: None,
+                document_reads: Arc::new(AtomicUsize::new(0)),
+                mail_storage_report: None,
+                draft_store: None,
+                send_journal: fixture_send_journal(),
+                recovery_now: None,
+                recovery_root: temp_dir(&format!(
+                    "recovery-fixture-{}",
+                    crate::draft::generate_draft_id().unwrap()
+                )),
+                fail_draft_delete: None,
                 drafts: Arc::new(Mutex::new(BTreeMap::new())),
+                submitted: Arc::new(Mutex::new(Vec::new())),
+                message_flags: Arc::new(Mutex::new(BTreeMap::new())),
+                message_moves: Arc::new(Mutex::new(SyntheticMessageMoves::default())),
+                appearance_store: None,
+                settings_store: None,
+                identity_preferences_store: None,
+                sender_authority: crate::sender_authority::Provider::default(),
+                notification_store: None,
+                notification_source_unavailable: false,
+                notification_preference_store: None,
+                notification_loads: Default::default(),
+                snooze_store: None,
+                composition_preferences_store: None,
+                reading_preferences_store: None,
+                message_list_override: None,
+                all_search_override: None,
+                browser_fixture_accounts: false,
+                browser_fixture_openpgp: false,
+                browser_fixture_openpgp_denials: false,
+                fixture_openpgp_snapshot: None,
+                preview_mailbox_tree: false,
+                fixture_sessions: None,
             }
         }
     }
 
     impl StubGateway {
-        fn validated_session() -> ValidatedSession {
+        fn created_folder_guid(&self, account: &str, name: &str) -> Option<String> {
+            if let Some(guid) = self
+                .renamed_folders
+                .lock()
+                .unwrap()
+                .iter()
+                .rev()
+                .filter(|r| r.account() == account)
+                .find_map(|r| r.fixture_destination_guid(name))
+            {
+                return Some(guid);
+            }
+
+            use sha2::Digest;
+            self.created_folders
+                .lock()
+                .unwrap()
+                .get(account)
+                .filter(|folders| folders.iter().any(|folder| folder == name))
+                .map(|_| {
+                    format!("{:x}", sha2::Sha256::digest(format!("{account}\0{name}")))[..32]
+                        .to_owned()
+                })
+        }
+
+        pub(super) fn validated_session() -> ValidatedSession {
             ValidatedSession {
                 record: SessionRecord {
+                    account_epoch: None,
                     session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                         .to_string(),
                     csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
@@ -841,20 +1360,1002 @@ mod tests {
         }
 
         fn next_draft_id(&self) -> String {
+            if self.draft_store.is_some() {
+                return crate::draft::generate_draft_id().expect("synthetic draft id");
+            }
             let next = self.drafts.lock().expect("stub drafts should lock").len() + 1;
             format!("{next:032x}")
         }
     }
 
     impl BrowserGateway for StubGateway {
-        fn login(
+        fn access_view(
+            &self,
+            _: &AuthenticationContext,
+            _: crate::browser_access::AccessAuthority<'_>,
+            _: &str,
+        ) -> Result<crate::browser_access::AccessView, crate::browser_access::AccessError> {
+            self.access_calls.lock().unwrap().push("view".into());
+            self.access_views
+                .lock()
+                .unwrap()
+                .pop_front()
+                .unwrap_or(Err(crate::browser_access::AccessError::Unavailable))
+        }
+        fn access_action(
+            &self,
+            _: &AuthenticationContext,
+            _: crate::browser_access::AccessAuthority<'_>,
+            _: &str,
+            action: crate::browser_access::AccessAction<'_>,
+            _: std::time::Instant,
+        ) -> Result<crate::browser_access::AccessOutcome, crate::browser_access::AccessError>
+        {
+            self.access_calls.lock().unwrap().push(action.kind().into());
+            self.access_outcomes
+                .lock()
+                .unwrap()
+                .pop_front()
+                .unwrap_or(Err(crate::browser_access::AccessError::Unavailable))
+        }
+        fn authenticator(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::authenticator::Snapshot, crate::authenticator::Error> {
+            let account = &session.record.canonical_username;
+            self.authenticator_reads
+                .lock()
+                .unwrap()
+                .push(account.clone());
+            let mut snapshot = self
+                .authenticator_snapshot
+                .clone()
+                .ok_or(crate::authenticator::Error::Unavailable)?;
+            if let Some(root) = &self.authenticator_store_root {
+                let store = crate::authenticator::Store::new(root);
+                snapshot.request = store.read_request(account)?;
+                snapshot.case = store.read_case(account)?;
+            }
+            Ok(snapshot)
+        }
+        fn request_account_recovery(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+        ) -> Result<crate::authenticator::RequestRecord, crate::authenticator::Error> {
+            let account = &session.record.canonical_username;
+            self.authenticator_calls
+                .lock()
+                .unwrap()
+                .push((account.clone(), revision));
+            crate::authenticator::Store::new(
+                self.authenticator_store_root
+                    .as_ref()
+                    .ok_or(crate::authenticator::Error::Unavailable)?,
+            )
+            .request(account, revision, 1_700_000_000)
+        }
+        fn recovery_contact(
+            &self,
+            _: &ValidatedSession,
+        ) -> Result<
+            crate::recovery_contact::RecoveryContactSnapshot,
+            crate::recovery_contact::RecoveryContactError,
+        > {
+            self.recovery_snapshot
+                .clone()
+                .ok_or(crate::recovery_contact::RecoveryContactError::Unavailable)
+        }
+        fn recovery_contact_action(
+            &self,
+            _: &AuthenticationContext,
+            _: &ValidatedSession,
+            _: &SessionToken,
+            _: u64,
+            _: crate::recovery_contact::RecoveryContactAction,
+            _: &str,
+            _: &str,
+            _: std::time::Instant,
+        ) -> Result<
+            crate::recovery_contact::RecoveryContactResult,
+            crate::recovery_contact::RecoveryContactError,
+        > {
+            *self.recovery_calls.lock().unwrap() += 1;
+            Err(crate::recovery_contact::RecoveryContactError::InvalidToken)
+        }
+        fn password_changed_at(&self, _session: &ValidatedSession) -> Option<String> {
+            self.password_changed_at.clone()
+        }
+        fn password_change_available(&self, _session: &ValidatedSession) -> bool {
+            self.password_result.is_some()
+        }
+        fn change_own_password(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            token: &SessionToken,
+            _request: crate::password_change::Request<'_>,
+            deadline: std::time::Instant,
+        ) -> BrowserPasswordOutcome {
+            assert!(deadline > std::time::Instant::now());
+            assert!(deadline <= std::time::Instant::now() + std::time::Duration::from_secs(60));
+            assert_eq!(
+                token.as_str(),
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            );
+            assert_eq!(context.remote_addr, "127.0.0.1");
+            self.password_calls
+                .lock()
+                .unwrap()
+                .push(session.record.canonical_username.clone());
+            BrowserPasswordOutcome {
+                changed_at: self.password_changed_at.clone(),
+                decision: self
+                    .password_result
+                    .unwrap_or(BrowserPasswordDecision::PrewriteRefused(
+                        crate::password_change::Error::Unavailable,
+                    )),
+                audit_events: vec![],
+            }
+        }
+        fn mail_storage_report(
+            &self,
+            _session: &ValidatedSession,
+        ) -> Option<crate::documents::MailStorageReport> {
+            self.mail_storage_report.clone()
+        }
+        fn documents_quota_status(
+            &self,
+            session: &ValidatedSession,
+        ) -> Option<crate::documents::QuotaStatus> {
+            self.document_reads.fetch_add(1, Ordering::SeqCst);
+            self.document_store
+                .as_ref()?
+                .quota_status(&session.record.canonical_username)
+                .ok()?
+        }
+        fn documents_quota_ready(&self, session: &ValidatedSession) -> bool {
+            self.document_store
+                .as_ref()
+                .and_then(|store| store.quota_ready(&session.record.canonical_username).ok())
+                .unwrap_or(false)
+        }
+        fn create_document_folder(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            name: &str,
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .create_folder(&session.record.canonical_username, revision, name, 100)
+        }
+        fn move_document_to_folder(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            document_id: &str,
+            folder_id: &str,
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .move_to_folder(
+                    &session.record.canonical_username,
+                    revision,
+                    document_id,
+                    folder_id,
+                    103,
+                )
+        }
+        fn retention_status(
+            &self,
+            _session: &ValidatedSession,
+            _mailbox: &str,
+        ) -> crate::mailbox::RetentionDecision {
+            *self.delete_decision.lock().unwrap()
+        }
+        fn delete_message(
             &self,
             _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            request: &crate::mailbox::MessageDeleteRequest,
+        ) -> BrowserMessageDeleteOutcome {
+            assert_eq!(
+                request.canonical_username,
+                session.record.canonical_username
+            );
+            self.delete_calls.lock().unwrap().push(request.clone());
+            let result = self
+                .delete_results
+                .lock()
+                .unwrap()
+                .pop_front()
+                .unwrap_or_else(|| *self.delete_result.lock().unwrap());
+            BrowserMessageDeleteOutcome {
+                result,
+                retry_after_seconds: None,
+                audit_events: Vec::new(),
+            }
+        }
+        fn compose_protection(
+            &self,
+            session: &ValidatedSession,
+            to: &str,
+            _cc: &str,
+            _bcc: &str,
+            intent: crate::send::ProtectionIntent,
+        ) -> Option<ComposeProtectionView> {
+            let imported_recipients = self.compose_imported_recipients.clone().or_else(|| {
+                if !self.browser_fixture_openpgp {
+                    return None;
+                }
+                let account = &session.record.canonical_username;
+                let inventory =
+                    key_inventory_fixture::outcome("KeyInventoryPractical", account).inventory?;
+                let record = crate::openpgp_bindings::BindingRecord::empty(account).ok()?;
+                crate::contacts::ImportedRecipientSnapshot::from_inventory(
+                    account, &record, &inventory,
+                )
+                .ok()
+            });
+            if let Some(snapshot) = &self.fixture_openpgp_snapshot {
+                let snapshot = snapshot.lock().unwrap();
+                if !snapshot.available {
+                    return None;
+                }
+                return Some(ComposeProtectionView {
+                    imported_recipients: imported_recipients.clone(),
+                    runtime_configured: true,
+                    revision: Some(snapshot.revision),
+                    preflight: snapshot.preflight_revision.map(|revision| {
+                        crate::openpgp_bindings::Preflight {
+                            revision,
+                            state: if intent.sign && intent.encrypt {
+                                crate::openpgp_bindings::PreflightState::Green
+                            } else {
+                                crate::openpgp_bindings::PreflightState::Orange
+                            },
+                            signing: crate::openpgp_bindings::KeyStatus::Ready,
+                            self_encryption: crate::openpgp_bindings::KeyStatus::Ready,
+                            recipients: vec![crate::openpgp_bindings::RecipientReadiness {
+                                address: to.into(),
+                                state: crate::openpgp_bindings::KeyStatus::Ready,
+                                requirement: crate::openpgp_bindings::Requirement::Optional,
+                            }],
+                            reasons: Vec::new(),
+                            plan: Some(crate::openpgp_bindings::OperationPlan {
+                                signer_fingerprint: intent.sign.then(|| "A".repeat(40)),
+                                recipient_fingerprints: if intent.encrypt {
+                                    vec!["B".repeat(40)]
+                                } else {
+                                    Vec::new()
+                                },
+                                encrypt_to_self: intent.encrypt_to_self,
+                            }),
+                        }
+                    }),
+                    account_binding: None,
+                    policy: crate::openpgp_bindings::ProtectionPolicy::default(),
+                    recipient_binding_count: 1,
+                });
+            }
+            (self.browser_fixture_openpgp || imported_recipients.is_some()).then_some(
+                ComposeProtectionView {
+                    imported_recipients: imported_recipients.clone(),
+                    runtime_configured: false,
+                    revision: self.browser_fixture_openpgp.then_some(2),
+                    preflight: None,
+                    account_binding: None,
+                    policy: crate::openpgp_bindings::ProtectionPolicy::default(),
+                    recipient_binding_count: imported_recipients
+                        .as_ref()
+                        .map_or(0, |snapshot| snapshot.choices.len()),
+                },
+            )
+        }
+        fn load_bin_preference(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::bin_folder::BinPreference, crate::bin_folder::Error> {
+            match &self.bin_store {
+                Some(store) => store.load(&session.record.canonical_username),
+                None => Ok(crate::bin_folder::BinPreference::default()),
+            }
+        }
+        fn update_bin_preference(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            mailbox_name: &str,
+        ) -> Result<crate::bin_folder::BinPreference, crate::bin_folder::Error> {
+            self.bin_store
+                .as_ref()
+                .ok_or(crate::bin_folder::Error::Unavailable)?
+                .save(&session.record.canonical_username, revision, mailbox_name)
+        }
+
+        fn load_after_archive(
+            &self,
+            s: &ValidatedSession,
+        ) -> Result<crate::after_archive::Preference, crate::after_archive::Error> {
+            self.after_archive_store
+                .as_ref()
+                .ok_or(crate::after_archive::Error::Unavailable)?
+                .load(&s.record.canonical_username)
+        }
+        fn save_after_archive(
+            &self,
+            s: &ValidatedSession,
+            revision: u64,
+            choice: crate::after_archive::Choice,
+        ) -> Result<crate::after_archive::Preference, crate::after_archive::Error> {
+            self.after_archive_store
+                .as_ref()
+                .ok_or(crate::after_archive::Error::Unavailable)?
+                .save(&s.record.canonical_username, revision, choice)
+        }
+        fn scheduled_list(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+            let root = self
+                .scheduled_fixture_root
+                .as_ref()
+                .ok_or(crate::scheduled_send::Error::Unavailable)?;
+            BrowserGateway::scheduled_list(&RuntimeBrowserGateway::for_test(root), session)
+        }
+        fn outbox_attempts(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<Vec<crate::send_recovery::OutboxAttempt>, crate::scheduled_send::Error>
+        {
+            let root = self
+                .scheduled_fixture_root
+                .as_ref()
+                .ok_or(crate::scheduled_send::Error::Unavailable)?;
+            BrowserGateway::outbox_attempts(&RuntimeBrowserGateway::for_test(root), session)
+        }
+        fn scheduled_payload(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+        ) -> Result<ComposeRequest, crate::scheduled_send::Error> {
+            let root = self
+                .scheduled_fixture_root
+                .as_ref()
+                .ok_or(crate::scheduled_send::Error::Unavailable)?;
+            BrowserGateway::scheduled_payload(&RuntimeBrowserGateway::for_test(root), session, id)
+        }
+        fn scheduled_change(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+            revision: u64,
+            action: &str,
+            due: Option<u64>,
+        ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+            let root = self
+                .scheduled_fixture_root
+                .as_ref()
+                .ok_or(crate::scheduled_send::Error::Unavailable)?;
+            let mut session = session.clone();
+            session.record.account_epoch = Some(2);
+            BrowserGateway::scheduled_change(
+                &RuntimeBrowserGateway::for_test(root),
+                &session,
+                id,
+                revision,
+                action,
+                due,
+            )
+        }
+        #[allow(clippy::too_many_arguments)]
+        fn scheduled_edit(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+            revision: u64,
+            due: u64,
+            to: &str,
+            cc: &str,
+            bcc: &str,
+            subject: &str,
+            body: &str,
+        ) -> Result<crate::scheduled_send::JobList, crate::scheduled_send::Error> {
+            let root = self
+                .scheduled_fixture_root
+                .as_ref()
+                .ok_or(crate::scheduled_send::Error::Unavailable)?;
+            let mut session = session.clone();
+            session.record.account_epoch = Some(2);
+            BrowserGateway::scheduled_edit(
+                &RuntimeBrowserGateway::for_test(root),
+                &session,
+                id,
+                revision,
+                due,
+                to,
+                cc,
+                bcc,
+                subject,
+                body,
+            )
+        }
+        fn scheduled_from_draft(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+            revision: u64,
+            due: u64,
+        ) -> Result<String, crate::scheduled_send::Error> {
+            if let Some(root) = &self.scheduled_fixture_root {
+                let mut session = session.clone();
+                session.record.account_epoch = Some(2);
+                return BrowserGateway::scheduled_from_draft(
+                    &RuntimeBrowserGateway::for_test(root),
+                    &session,
+                    id,
+                    revision,
+                    due,
+                );
+            }
+            let capture = self
+                .scheduled_due_capture
+                .as_ref()
+                .ok_or(crate::scheduled_send::Error::Unavailable)?;
+            *capture.lock().unwrap() = Some(due);
+            Ok("c".repeat(32))
+        }
+        fn load_timezone(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::timezone::Preference, crate::timezone::Error> {
+            self.timezone_store.as_ref().map_or_else(
+                || Ok(crate::timezone::Preference::default()),
+                |store| store.load(&session.record.canonical_username),
+            )
+        }
+        fn save_timezone(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            offset: crate::timezone::FixedOffset,
+        ) -> Result<crate::timezone::Preference, crate::timezone::Error> {
+            self.timezone_store
+                .as_ref()
+                .ok_or(crate::timezone::Error::Unavailable)?
+                .save(&session.record.canonical_username, revision, offset)
+        }
+        fn load_mark_read_policy(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
+            self.mark_read_policy_loads
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            if let Some(sequence) = &self.mark_read_policy_sequence {
+                let mut policies = sequence
+                    .lock()
+                    .map_err(|_| crate::mark_read::Error::Unavailable)?;
+                if policies.is_empty() || policies.len() > 2 {
+                    return Err(crate::mark_read::Error::Invalid);
+                }
+                let policy = policies[0];
+                if policies.len() > 1 {
+                    policies.remove(0);
+                }
+                return Ok(crate::mark_read::Preference {
+                    revision: 1,
+                    policy,
+                });
+            }
+            self.mark_read_store
+                .as_ref()
+                .ok_or(crate::mark_read::Error::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn load_draft_location_preference(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::draft_location::Preference, crate::draft_location::Error> {
+            self.draft_location_store
+                .as_ref()
+                .ok_or(crate::draft_location::Error::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn draft_location_ready(
+            &self,
+            session: &ValidatedSession,
+            location: crate::draft_location::Location,
+        ) -> bool {
+            self.draft_store.as_ref().is_some_and(|store| {
+                store
+                    .clone()
+                    .with_new_location(location)
+                    .require_new_location(&session.record.canonical_username)
+                    .is_ok()
+            })
+        }
+        fn qualify_draft_location(
+            &self,
+            session: &ValidatedSession,
+            location: crate::draft_location::Location,
+        ) -> Result<(), crate::draft_location::Error> {
+            self.draft_store
+                .as_ref()
+                .ok_or(crate::draft_location::Error::Unavailable)?
+                .qualify_location(&session.record.canonical_username, location)
+                .map_err(|_| crate::draft_location::Error::Unavailable)
+        }
+        fn save_draft_location_preference(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            location: crate::draft_location::Location,
+        ) -> Result<crate::draft_location::Preference, crate::draft_location::Error> {
+            self.draft_location_store
+                .as_ref()
+                .ok_or(crate::draft_location::Error::Unavailable)?
+                .save_qualified(
+                    &session.record.canonical_username,
+                    revision,
+                    location,
+                    || self.qualify_draft_location(session, location),
+                )
+        }
+        fn load_sent_location_preference(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::sent_location::Preference, crate::sent_location::Error> {
+            self.sent_location_store
+                .as_ref()
+                .ok_or(crate::sent_location::Error::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn save_sent_location_preference(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            name: &str,
+            guid: &str,
+        ) -> Result<crate::sent_location::Preference, crate::sent_location::Error> {
+            self.sent_location_store
+                .as_ref()
+                .ok_or(crate::sent_location::Error::Unavailable)?
+                .save(&session.record.canonical_username, revision, name, guid)
+        }
+        fn load_sent_copy_preference(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::sent_copy::Preference, crate::sent_copy::Error> {
+            self.sent_copy_store
+                .as_ref()
+                .ok_or(crate::sent_copy::Error::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn save_sent_copy_preference(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            save_sent: bool,
+        ) -> Result<crate::sent_copy::Preference, crate::sent_copy::Error> {
+            self.sent_copy_store
+                .as_ref()
+                .ok_or(crate::sent_copy::Error::Unavailable)?
+                .save(&session.record.canonical_username, revision, save_sent)
+        }
+        fn save_mark_read_policy(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            policy: crate::mark_read::Policy,
+        ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
+            self.mark_read_store
+                .as_ref()
+                .ok_or(crate::mark_read::Error::Unavailable)?
+                .save(&session.record.canonical_username, revision, policy)
+        }
+        fn load_autosave(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::autosave::Preference, crate::autosave::Error> {
+            self.autosave_store
+                .as_ref()
+                .ok_or(crate::autosave::Error::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn save_autosave(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            enabled: bool,
+            interval: u16,
+        ) -> Result<crate::autosave::Preference, crate::autosave::Error> {
+            self.autosave_store
+                .as_ref()
+                .ok_or(crate::autosave::Error::Unavailable)?
+                .save(
+                    &session.record.canonical_username,
+                    revision,
+                    enabled,
+                    interval,
+                )
+        }
+        fn load_signature(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::signature::SignatureRecord, crate::signature::SignatureError> {
+            self.signature_store
+                .as_ref()
+                .ok_or(crate::signature::SignatureError::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn change_signature(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            change: crate::signature::SignatureChange<'_>,
+        ) -> Result<crate::signature::SignatureRecord, crate::signature::SignatureError> {
+            self.signature_store
+                .as_ref()
+                .ok_or(crate::signature::SignatureError::Unavailable)?
+                .change(&session.record.canonical_username, revision, change)
+        }
+
+        fn snooze_load(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::snooze::SnoozeRecord, crate::snooze::SnoozeError> {
+            self.snooze_store
+                .as_ref()
+                .ok_or(crate::snooze::SnoozeError::Unavailable)?
+                .load(&session.record.canonical_username, self.snooze_clock())
+        }
+        fn snooze_change(
+            &self,
+            session: &ValidatedSession,
+            identity: &crate::snooze::MessageIdentity,
+            revision: u64,
+            until: Option<u64>,
+        ) -> Result<crate::snooze::SnoozeRecord, crate::snooze::SnoozeError> {
+            let store = self
+                .snooze_store
+                .as_ref()
+                .ok_or(crate::snooze::SnoozeError::Unavailable)?;
+            match until {
+                Some(until) => store.set(
+                    &session.record.canonical_username,
+                    identity,
+                    revision,
+                    until,
+                    self.snooze_clock(),
+                ),
+                None => store.cancel(
+                    &session.record.canonical_username,
+                    identity,
+                    revision,
+                    self.snooze_clock(),
+                ),
+            }
+        }
+        fn snooze_project(
+            &self,
+            session: &ValidatedSession,
+            owner: &str,
+            folder: &str,
+            rows: &[MessageSummary],
+        ) -> crate::snooze::SnoozeProjection {
+            let store = match self.snooze_store.as_ref() {
+                Some(store) => store,
+                None => {
+                    return crate::snooze::SnoozeProjection {
+                        hidden: vec![],
+                        revision: None,
+                        unavailable: Some(crate::snooze::SnoozeError::Unavailable),
+                    }
+                }
+            };
+            store.project(
+                &session.record.canonical_username,
+                owner,
+                folder,
+                rows,
+                self.snooze_clock(),
+            )
+        }
+
+        fn read_send_recovery(
+            &self,
+            session: &ValidatedSession,
+            intent: &str,
+        ) -> BrowserSendRecoveryDecision {
+            use crate::send_recovery::{RecoveryRead, SendRecovery};
+            match SendRecovery::new(self.recovery_root.clone()).lookup(
+                &self.send_journal,
+                &session.record.canonical_username,
+                intent,
+                self.recovery_now.unwrap_or(100),
+            ) {
+                Ok(RecoveryRead::Available(value)) => {
+                    BrowserSendRecoveryDecision::Available(BrowserSendRecoverySnapshot {
+                        request: value.request,
+                        created_at: value.created_at,
+                        expires_at: value.expires_at,
+                    })
+                }
+                Ok(RecoveryRead::Missing) => BrowserSendRecoveryDecision::Missing,
+                Ok(RecoveryRead::Expired) => BrowserSendRecoveryDecision::Expired,
+                Ok(RecoveryRead::Unconfirmed) => BrowserSendRecoveryDecision::Unconfirmed,
+                Err(_) => BrowserSendRecoveryDecision::Unavailable,
+            }
+        }
+        fn send_clock(&self) -> u64 {
+            if self.scheduled_fixture_root.is_some() {
+                // The opt-in browser journey delegates to the real scheduler,
+                // whose draft expiry checks use the system clock.
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .expect("fixture clock must follow the Unix epoch")
+                    .as_secs()
+            } else {
+                100
+            }
+        }
+        fn send_receipt(
+            &self,
+            session: &ValidatedSession,
+            intent: &str,
+        ) -> Result<Option<BrowserSendDecision>, String> {
+            self.send_journal
+                .receipt(&session.record.canonical_username, intent, 100)
+                .map(|value| {
+                    value.map(|outcome| {
+                        fixture_send_decision(Ok(crate::send_journal::JournalResult {
+                            outcome,
+                            replayed: true,
+                            receipt_persisted: true,
+                        }))
+                    })
+                })
+                .map_err(|_| "send_attempt_paused".into())
+        }
+        fn cleanup_sent_draft(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+            revision: u64,
+            intent: &str,
+        ) -> Result<bool, String> {
+            if self.fail_draft_delete.as_deref() == Some(id) {
+                return Err("cleanup_unconfirmed".into());
+            }
+            let guard = self
+                .send_journal
+                .account_guard(&session.record.canonical_username, 100)
+                .map_err(|_| "paused")?;
+            guard
+                .require_accepted_with_sent(intent)
+                .map_err(|_| "paused")?;
+            let mut drafts = self.drafts.lock().map_err(|_| "paused")?;
+            if let Some(store) = &self.draft_store {
+                let draft = store
+                    .load(&session.record.canonical_username, id, 100)
+                    .map_err(|_| "paused")?
+                    .ok_or("missing")?;
+                if draft.revision != Some(revision)
+                    || guard.draft_intent(&draft).map_err(|_| "paused")? != intent
+                {
+                    return Err("paused".into());
+                }
+                return store
+                    .delete(&session.record.canonical_username, id, revision)
+                    .map_err(|_| "paused".into());
+            }
+            let draft = drafts.get(id).ok_or("missing")?;
+            if draft.revision != Some(revision)
+                || guard.draft_intent(draft).map_err(|_| "paused")? != intent
+            {
+                return Err("paused".into());
+            }
+            Ok(drafts.remove(id).is_some())
+        }
+
+        fn archive_events_available(&self) -> bool {
+            self.archive_event_store.is_some()
+        }
+        fn archive_event_clock(&self) -> u64 {
+            archive_event_route_tests::CONFIRMED_AT
+        }
+        fn load_archive_events(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::archive_event::Snapshot, crate::archive_event::Error> {
+            self.archive_event_store
+                .as_ref()
+                .ok_or(crate::archive_event::Error::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn record_archive_event(
+            &self,
+            session: &ValidatedSession,
+            confirmation: &crate::archive_event::ConfirmedArchive,
+            confirmed_at: u64,
+        ) -> Result<crate::archive_event::Snapshot, crate::archive_event::Error> {
+            self.archive_event_records
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            self.archive_event_store
+                .as_ref()
+                .ok_or(crate::archive_event::Error::Unavailable)?
+                .record_confirmed_archive(
+                    &session.record.canonical_username,
+                    confirmation,
+                    confirmed_at,
+                )
+        }
+        fn labels_available(&self) -> bool {
+            self.labels_store.is_some()
+        }
+        fn load_labels(
+            &self,
+            s: &ValidatedSession,
+        ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+            self.labels_store
+                .as_ref()
+                .ok_or(crate::labels::LabelError::Unavailable)?
+                .load(&s.record.canonical_username)
+        }
+        fn change_labels(
+            &self,
+            s: &ValidatedSession,
+            r: u64,
+            c: crate::labels::LabelChange<'_>,
+        ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+            self.labels_store
+                .as_ref()
+                .ok_or(crate::labels::LabelError::Unavailable)?
+                .change(&s.record.canonical_username, r, c)
+        }
+        fn reconcile_labels(
+            &self,
+            s: &ValidatedSession,
+            r: u64,
+            a: &crate::labels::MessageIdentity,
+            b: &crate::labels::MessageIdentity,
+        ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+            self.labels_store
+                .as_ref()
+                .ok_or(crate::labels::LabelError::Unavailable)?
+                .reconcile_confirmed_move(&s.record.canonical_username, r, a, b)
+        }
+        fn load_contacts(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::contacts::ContactBook, crate::contacts::ContactError> {
+            self.contacts_store
+                .as_ref()
+                .map(|store| store.load(&session.record.canonical_username))
+                .unwrap_or_else(|| {
+                    Ok(crate::contacts::ContactBook::empty(
+                        &session.record.canonical_username,
+                    ))
+                })
+        }
+        fn load_documents(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_reads.fetch_add(1, Ordering::SeqCst);
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn upload_document(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            name: &str,
+            media_type: &str,
+            bytes: &[u8],
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .upload(
+                    &session.record.canonical_username,
+                    revision,
+                    name,
+                    media_type,
+                    bytes,
+                    100,
+                )
+        }
+        fn download_document(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+        ) -> Result<(String, Vec<u8>), crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .download(&session.record.canonical_username, id)
+        }
+        fn bin_document(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            id: &str,
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .bin(&session.record.canonical_username, revision, id, 101)
+        }
+        fn restore_document(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            id: &str,
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .restore(&session.record.canonical_username, revision, id, 102)
+        }
+        fn delete_document(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            id: &str,
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .delete_confirmed(&session.record.canonical_username, revision, id, 104)
+        }
+        fn reconcile_document(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            id: &str,
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .reconcile(&session.record.canonical_username, revision, id, 500)
+        }
+        fn change_contact(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            change: crate::contacts::ContactChange,
+        ) -> Result<crate::contacts::ContactBook, crate::contacts::ContactError> {
+            self.contacts_store
+                .as_ref()
+                .ok_or(crate::contacts::ContactError::Unavailable)?
+                .change(&session.record.canonical_username, revision, change)
+        }
+
+        fn set_message_flag(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            request: &crate::mailbox::MessageFlagRequest,
+        ) -> BrowserMessageFlagOutcome {
+            self.set_fixture_message_flag(context, session, request)
+        }
+        fn login(
+            &self,
+            context: &AuthenticationContext,
             username: &str,
             password: &str,
             totp_code: &str,
         ) -> BrowserLoginOutcome {
-            if username != "alice@example.com" || password != "correct horse battery staple" {
+            self.login_calls.fetch_add(1, Ordering::Relaxed);
+            let account_allowed = username == "alice@example.com"
+                || self.browser_fixture_accounts && username == "bob@example.com";
+            if !account_allowed || password != "correct horse battery staple" {
                 return BrowserLoginOutcome {
                     decision: BrowserLoginDecision::Denied {
                         public_reason: "invalid_credentials".to_string(),
@@ -882,12 +2383,59 @@ mod tests {
                 };
             }
 
+            if let Some(sessions) = &self.fixture_sessions {
+                let presentation = self
+                    .appearance_store
+                    .as_ref()
+                    .map(|store| {
+                        store
+                            .load_settings(username)
+                            .expect("synthetic preference store")
+                    })
+                    .unwrap_or_default();
+                let mut outcome = sessions.login(context, username, presentation.theme);
+                if let BrowserLoginDecision::Authenticated {
+                    presentation: saved,
+                    reading,
+                    ..
+                } = &mut outcome.decision
+                {
+                    *saved = presentation;
+                    *reading = self
+                        .reading_preferences_store
+                        .as_ref()
+                        .and_then(|store| store.load(username).ok())
+                        .unwrap_or_default();
+                }
+                return outcome;
+            }
             BrowserLoginOutcome {
                 decision: BrowserLoginDecision::Authenticated {
                     canonical_username: username.to_string(),
-                    session_token: SessionToken::new(
-                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                    )
+                    reading: self
+                        .reading_preferences_store
+                        .as_ref()
+                        .and_then(|store| store.load(username).ok())
+                        .unwrap_or_default(),
+                    presentation: self
+                        .appearance_store
+                        .as_ref()
+                        .map(|store| {
+                            store
+                                .load_settings(username)
+                                .expect("synthetic preference store")
+                        })
+                        .unwrap_or_default(),
+                    appearance: self
+                        .appearance_store
+                        .as_ref()
+                        .map(|store| store.load(username).expect("synthetic preference store"))
+                        .unwrap_or_default(),
+                    session_token: SessionToken::new(if username == "bob@example.com" {
+                        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                    } else {
+                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    })
                     .expect("token should be valid"),
                 },
                 audit_events: vec![LogEvent::new(
@@ -901,14 +2449,32 @@ mod tests {
 
         fn validate_session(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             presented_token: &str,
         ) -> BrowserSessionValidationOutcome {
-            if presented_token == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            if let Some(sessions) = &self.fixture_sessions {
+                return sessions.validate(context, presented_token);
+            }
+            let bob = self.browser_fixture_accounts
+                && presented_token
+                    == "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+            if bob
+                || presented_token
+                    == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
             {
+                let mut validated_session = Self::validated_session();
+                if bob {
+                    validated_session.record.canonical_username = "bob@example.com".to_string();
+                    validated_session.record.session_id = "b".repeat(64);
+                    validated_session.record.csrf_token = "c".repeat(64);
+                }
+                if context.user_agent.contains("LongIdentity") {
+                    validated_session.record.canonical_username =
+                        format!("{}@example.test", "long-account-name-".repeat(16));
+                }
                 BrowserSessionValidationOutcome {
                     decision: BrowserSessionDecision::Valid {
-                        validated_session: Box::new(Self::validated_session()),
+                        validated_session: Box::new(validated_session),
                     },
                     audit_events: vec![LogEvent::new(
                         LogLevel::Info,
@@ -932,9 +2498,12 @@ mod tests {
 
         fn logout(
             &self,
-            _context: &AuthenticationContext,
-            _presented_token: &str,
+            context: &AuthenticationContext,
+            presented_token: &str,
         ) -> BrowserLogoutOutcome {
+            if let Some(sessions) = &self.fixture_sessions {
+                return sessions.logout(context, presented_token);
+            }
             BrowserLogoutOutcome {
                 session_was_revoked: true,
                 audit_events: vec![LogEvent::new(
@@ -948,9 +2517,12 @@ mod tests {
 
         fn list_sessions(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserSessionListOutcome {
+            if let Some(sessions) = &self.fixture_sessions {
+                return sessions.list(context, validated_session);
+            }
             BrowserSessionListOutcome {
                 decision: BrowserSessionListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
@@ -994,13 +2566,17 @@ mod tests {
 
         fn revoke_session(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             validated_session: &ValidatedSession,
             session_id: &str,
         ) -> BrowserSessionRevokeOutcome {
+            if let Some(sessions) = &self.fixture_sessions {
+                return sessions.revoke(context, validated_session, session_id);
+            }
             if session_id == validated_session.record.session_id {
                 BrowserSessionRevokeOutcome {
                     decision: BrowserSessionRevokeDecision::Revoked {
+                        newly_revoked: true,
                         revoked_session_id: session_id.to_string(),
                         revoked_current_session: true,
                     },
@@ -1016,6 +2592,7 @@ mod tests {
             {
                 BrowserSessionRevokeOutcome {
                     decision: BrowserSessionRevokeDecision::Revoked {
+                        newly_revoked: true,
                         revoked_session_id: session_id.to_string(),
                         revoked_current_session: false,
                     },
@@ -1043,10 +2620,13 @@ mod tests {
 
         fn revoke_sessions(
             &self,
-            _context: &AuthenticationContext,
-            _validated_session: &ValidatedSession,
+            context: &AuthenticationContext,
+            validated_session: &ValidatedSession,
             scope: BrowserSessionRevokeScope,
         ) -> BrowserSessionRevokeOutcome {
+            if let Some(sessions) = &self.fixture_sessions {
+                return sessions.revoke_many(context, validated_session, scope);
+            }
             match scope {
                 BrowserSessionRevokeScope::OtherSessions => BrowserSessionRevokeOutcome {
                     decision: BrowserSessionRevokeDecision::RevokedMany {
@@ -1075,24 +2655,448 @@ mod tests {
             }
         }
 
+        fn load_appearance(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> std::io::Result<AppearancePreference> {
+            if let Some(store) = &self.appearance_store {
+                return store.load(&session.record.canonical_username);
+            }
+            if context.user_agent.contains("AppearanceUnavailable") {
+                return Err(std::io::Error::other("synthetic store unavailable"));
+            }
+            Ok(if context.user_agent.contains("AppearanceDark") {
+                AppearancePreference::Dark
+            } else if context.user_agent.contains("AppearanceLight") {
+                AppearancePreference::Light
+            } else {
+                AppearancePreference::System
+            })
+        }
+
+        fn update_appearance(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            appearance: AppearancePreference,
+        ) -> std::io::Result<()> {
+            if let Some(store) = &self.appearance_store {
+                return store.save(&session.record.canonical_username, appearance);
+            }
+            if context.user_agent.contains("AppearanceUnavailable") {
+                Err(std::io::Error::other("synthetic store unavailable"))
+            } else {
+                Ok(())
+            }
+        }
+
+        fn load_display(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> std::io::Result<AppearanceSettings> {
+            if let Some(store) = &self.appearance_store {
+                return store.load_settings(&session.record.canonical_username);
+            }
+            self.load_appearance(context, session)
+                .map(|theme| AppearanceSettings {
+                    theme,
+                    ..AppearanceSettings::default()
+                })
+        }
+
+        fn update_display(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            preferences: AppearanceSettings,
+        ) -> std::io::Result<()> {
+            if let Some(store) = &self.appearance_store {
+                return store.save_settings(&session.record.canonical_username, preferences);
+            }
+            self.update_appearance(context, session, preferences.theme)
+        }
+
+        fn load_reading_preferences(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> std::io::Result<crate::reading_preferences::ReadingPreferences> {
+            if context.user_agent.contains("ReadingUnavailable") {
+                return Err(std::io::Error::other(
+                    "synthetic reading preference load failure",
+                ));
+            }
+            self.reading_preferences_store.as_ref().map_or_else(
+                || Ok(crate::reading_preferences::ReadingPreferences::default()),
+                |store| store.load(&session.record.canonical_username),
+            )
+        }
+
+        fn update_reading_start_page(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            start_page: crate::reading_preferences::StartPage,
+        ) -> std::io::Result<crate::reading_preferences::ReadingPreferences> {
+            self.reading_preferences_store
+                .as_ref()
+                .ok_or_else(|| std::io::Error::other("reading preferences unavailable"))?
+                .save_start_page(&session.record.canonical_username, start_page)
+        }
+
+        fn update_reading_preferences(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            value: crate::reading_preferences::ReadingPreferences,
+        ) -> std::io::Result<()> {
+            self.reading_preferences_store
+                .as_ref()
+                .ok_or_else(|| {
+                    std::io::Error::other("synthetic reading preference store unavailable")
+                })?
+                .save(&session.record.canonical_username, value)
+        }
+
+        fn load_notification_preference(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<
+            crate::notification_preferences::Preference,
+            crate::notification_preferences::Error,
+        > {
+            self.notification_preference_store.as_ref().map_or(
+                Ok(crate::notification_preferences::Preference::default()),
+                |store| store.load(&session.record.canonical_username),
+            )
+        }
+        fn save_notification_preference(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            digest: crate::notification_preferences::DigestMode,
+        ) -> Result<
+            crate::notification_preferences::Preference,
+            crate::notification_preferences::Error,
+        > {
+            self.notification_preference_store
+                .as_ref()
+                .ok_or(crate::notification_preferences::Error::Unavailable)?
+                .save(&session.record.canonical_username, revision, digest)
+        }
+        fn save_notification_choices(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            digest: crate::notification_preferences::DigestMode,
+            choices: crate::notification_preferences::Choice,
+        ) -> Result<
+            crate::notification_preferences::Preference,
+            crate::notification_preferences::Error,
+        > {
+            self.notification_preference_store
+                .as_ref()
+                .ok_or(crate::notification_preferences::Error::Unavailable)?
+                .save_choices(
+                    &session.record.canonical_username,
+                    revision,
+                    digest,
+                    choices,
+                )
+        }
+        fn refresh_notification_sources(
+            &self,
+            _context: &AuthenticationContext,
+            _session: &ValidatedSession,
+        ) -> Result<(), crate::notifications::NotificationError> {
+            if self.notification_store.is_some() && !self.notification_source_unavailable {
+                Ok(())
+            } else {
+                Err(crate::notifications::NotificationError::Unavailable)
+            }
+        }
+        fn record_session_notification(
+            &self,
+            account: &str,
+            kind: crate::notifications::NotificationKind,
+        ) -> Result<(), crate::notifications::NotificationError> {
+            self.notification_store.as_ref().map_or(Ok(()), |store| {
+                store.record(
+                    account,
+                    kind,
+                    crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
+                )
+            })
+        }
+        fn notification_inbox(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+        {
+            self.notification_loads
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            self.notification_store
+                .as_ref()
+                .ok_or(crate::notifications::NotificationError::Unavailable)?
+                .load(
+                    &session.record.canonical_username,
+                    crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
+                )
+        }
+        fn mark_all_notifications_read(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+        ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+        {
+            self.notification_store
+                .as_ref()
+                .ok_or(crate::notifications::NotificationError::Unavailable)?
+                .mark_all_read(
+                    &session.record.canonical_username,
+                    revision,
+                    crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
+                )
+        }
+        fn delete_all_notifications(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+        ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+        {
+            self.notification_store
+                .as_ref()
+                .ok_or(crate::notifications::NotificationError::Unavailable)?
+                .delete_all(
+                    &session.record.canonical_username,
+                    revision,
+                    crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
+                )
+        }
+        fn delete_notification(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+            revision: u64,
+        ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+        {
+            self.notification_store
+                .as_ref()
+                .ok_or(crate::notifications::NotificationError::Unavailable)?
+                .delete(
+                    &session.record.canonical_username,
+                    id,
+                    revision,
+                    crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
+                )
+        }
+        fn set_notification_read(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+            revision: u64,
+            read: bool,
+        ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+        {
+            self.notification_store
+                .as_ref()
+                .ok_or(crate::notifications::NotificationError::Unavailable)?
+                .set_read(
+                    &session.record.canonical_username,
+                    id,
+                    revision,
+                    read,
+                    crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
+                )
+        }
+        fn sender_inventory(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::sender_authority::Snapshot, crate::sender_authority::Error> {
+            self.sender_authority
+                .snapshot(&session.record.canonical_username)
+        }
+        fn sender_identity_settings(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<
+            crate::identity_preferences::IdentityPreferencesRecord,
+            crate::identity_preferences::IdentityPreferencesError,
+        > {
+            self.identity_preferences_store
+                .as_ref()
+                .ok_or(crate::identity_preferences::IdentityPreferencesError::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn update_sender_identity(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            update: &crate::identity_preferences::SenderIdentityUpdate,
+        ) -> Result<
+            crate::identity_preferences::IdentityPreferencesRecord,
+            crate::identity_preferences::IdentityPreferencesError,
+        > {
+            let inventory = self
+                .sender_inventory(session)
+                .map_err(|_| crate::identity_preferences::IdentityPreferencesError::Unavailable)?;
+            self.identity_preferences_store
+                .as_ref()
+                .ok_or(crate::identity_preferences::IdentityPreferencesError::Unavailable)?
+                .save_sender(
+                    &session.record.canonical_username,
+                    revision,
+                    &inventory,
+                    update,
+                )
+        }
+        fn load_identity_preferences(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> Result<
+            crate::identity_preferences::IdentityPreferencesRecord,
+            crate::identity_preferences::IdentityPreferencesError,
+        > {
+            let mut record = self.sender_identity_settings(session)?;
+            record.preferences = record
+                .selected_preferences(&session.record.canonical_username, &self.sender_authority)?;
+            Ok(record)
+        }
+        fn update_identity_preferences(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            expected_revision: u64,
+            value: &crate::identity_preferences::IdentityPreferences,
+        ) -> Result<
+            crate::identity_preferences::IdentityPreferencesRecord,
+            crate::identity_preferences::IdentityPreferencesError,
+        > {
+            self.identity_preferences_store
+                .as_ref()
+                .ok_or(crate::identity_preferences::IdentityPreferencesError::Unavailable)?
+                .save(&session.record.canonical_username, expected_revision, value)
+        }
+
+        fn load_composition_preferences(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> std::io::Result<crate::composition_preferences::CompositionPreferences> {
+            if context.user_agent.contains("CompositionUnavailable") {
+                return Err(std::io::Error::other("synthetic preference load failure"));
+            }
+            self.composition_preferences_store.as_ref().map_or_else(
+                || Ok(crate::composition_preferences::CompositionPreferences::default()),
+                |store| store.load(&session.record.canonical_username),
+            )
+        }
+
+        fn update_composition_format(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            value: crate::compose_format::BodyFormat,
+        ) -> std::io::Result<()> {
+            self.composition_preferences_store
+                .as_ref()
+                .ok_or_else(|| std::io::Error::other("synthetic preference store unavailable"))?
+                .save_format(&session.record.canonical_username, value)
+        }
+
+        fn update_composition_preferences(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            value: crate::composition_preferences::CompositionPreferencesUpdate,
+        ) -> std::io::Result<()> {
+            self.composition_preferences_store
+                .as_ref()
+                .ok_or_else(|| std::io::Error::other("synthetic preference store unavailable"))?
+                .update(&session.record.canonical_username, value)
+        }
+
         fn load_settings(
             &self,
             context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserSettingsOutcome {
+            if matches!(
+                context.user_agent.as_str(),
+                "SettingsWrongOwner" | "ReaderSettingsWrongOwner"
+            ) {
+                return BrowserSettingsOutcome {
+                    decision: BrowserSettingsDecision::Loaded {
+                        canonical_username: "foreign-settings-owner@example.test".into(),
+                        settings: BrowserVisibleSettings {
+                            html_display_preference: HtmlDisplayPreference::PreferSanitizedHtml,
+                            archive_mailbox_name: Some(
+                                if context.user_agent == "ReaderSettingsWrongOwner" {
+                                    "INBOX"
+                                } else {
+                                    "foreign-private-archive"
+                                }
+                                .into(),
+                            ),
+                        },
+                    },
+                    audit_events: Vec::new(),
+                };
+            }
+            if let Some(store) = &self.settings_store {
+                return BrowserSettingsOutcome {
+                    decision: match crate::settings::UserSettingsStore::load(
+                        store,
+                        &validated_session.record.canonical_username,
+                    ) {
+                        Ok(settings) => {
+                            let settings = settings.unwrap_or_default();
+                            BrowserSettingsDecision::Loaded {
+                                canonical_username: validated_session
+                                    .record
+                                    .canonical_username
+                                    .clone(),
+                                settings: BrowserVisibleSettings {
+                                    html_display_preference: settings.html_display_preference,
+                                    archive_mailbox_name: settings.archive_mailbox_name,
+                                },
+                            }
+                        }
+                        Err(_) => BrowserSettingsDecision::Denied {
+                            public_reason: "temporarily_unavailable".into(),
+                        },
+                    },
+                    audit_events: vec![],
+                };
+            }
+            if context.user_agent.contains("SettingsUnavailable") {
+                return BrowserSettingsOutcome {
+                    decision: BrowserSettingsDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    },
+                    audit_events: Vec::new(),
+                };
+            }
             BrowserSettingsOutcome {
                 decision: BrowserSettingsDecision::Loaded {
                     canonical_username: validated_session.record.canonical_username.clone(),
                     settings: BrowserVisibleSettings {
                         html_display_preference: HtmlDisplayPreference::PreferSanitizedHtml,
-                        archive_mailbox_name: Some(
-                            if context.user_agent == "Firefox/InvalidArchiveTest" {
-                                "MissingArchive"
-                            } else {
-                                "Archive/2026"
-                            }
-                            .to_string(),
-                        ),
+                        archive_mailbox_name: if context.user_agent.contains("NoArchiveTest") {
+                            None
+                        } else {
+                            Some(
+                                if context.user_agent.contains("InvalidArchiveTest") {
+                                    "MissingArchive"
+                                } else {
+                                    "Archive/2026"
+                                }
+                                .to_string(),
+                            )
+                        },
                     },
                 },
                 audit_events: vec![LogEvent::new(
@@ -1104,13 +3108,100 @@ mod tests {
             }
         }
 
+        fn update_content_setting(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            content: HtmlDisplayPreference,
+        ) -> BrowserSettingsUpdateOutcome {
+            let Some(store) = &self.settings_store else {
+                return BrowserSettingsUpdateOutcome {
+                    decision: BrowserSettingsUpdateDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    },
+                    audit_events: vec![],
+                };
+            };
+            let result = store.save_content(&session.record.canonical_username, content);
+            BrowserSettingsUpdateOutcome {
+                decision: if result.is_ok() {
+                    BrowserSettingsUpdateDecision::Updated
+                } else {
+                    BrowserSettingsUpdateDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    }
+                },
+                audit_events: vec![],
+            }
+        }
+
+        fn update_archive_setting(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            archive: Option<&str>,
+        ) -> BrowserSettingsUpdateOutcome {
+            if self.settings_store.is_none() {
+                return BrowserSettingsUpdateOutcome {
+                    decision: BrowserSettingsUpdateDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    },
+                    audit_events: vec![],
+                };
+            }
+            let result = self
+                .settings_store
+                .as_ref()
+                .expect("store checked above")
+                .save_archive(&session.record.canonical_username, archive);
+            BrowserSettingsUpdateOutcome {
+                decision: if result.is_ok() {
+                    BrowserSettingsUpdateDecision::Updated
+                } else {
+                    BrowserSettingsUpdateDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    }
+                },
+                audit_events: vec![LogEvent::new(
+                    if result.is_ok() {
+                        LogLevel::Info
+                    } else {
+                        LogLevel::Warn
+                    },
+                    EventCategory::Session,
+                    "archive_settings_update",
+                    "archive preference update processed",
+                )
+                .with_field("request_id", context.request_id.clone())],
+            }
+        }
+
         fn update_settings(
             &self,
             _context: &AuthenticationContext,
-            _validated_session: &ValidatedSession,
+            validated_session: &ValidatedSession,
             html_display_preference: HtmlDisplayPreference,
             archive_mailbox_name: Option<&str>,
         ) -> BrowserSettingsUpdateOutcome {
+            if let Some(store) = &self.settings_store {
+                let settings = crate::settings::UserSettings {
+                    html_display_preference,
+                    archive_mailbox_name: archive_mailbox_name.map(str::to_owned),
+                };
+                return BrowserSettingsUpdateOutcome {
+                    decision: match crate::settings::UserSettingsStore::save(
+                        store,
+                        &validated_session.record.canonical_username,
+                        &settings,
+                    ) {
+                        Ok(()) => BrowserSettingsUpdateDecision::Updated,
+                        Err(_) => BrowserSettingsUpdateDecision::Denied {
+                            public_reason: "temporarily_unavailable".into(),
+                        },
+                    },
+                    audit_events: vec![],
+                };
+            }
             match (html_display_preference, archive_mailbox_name) {
                 (
                     HtmlDisplayPreference::PreferSanitizedHtml
@@ -1139,11 +3230,801 @@ mod tests {
             }
         }
 
+        fn pending_folder_delete(
+            &self,
+            s: &ValidatedSession,
+        ) -> Result<Option<crate::folder_delete::DeleteFolderRequest>, crate::folder_create::Refusal>
+        {
+            let store = self
+                .settings_store
+                .as_ref()
+                .ok_or(crate::folder_create::Refusal::Unavailable)?;
+            crate::folder_rename::role_lease(
+                store
+                    .settings_path_for_username(&s.record.canonical_username)
+                    .parent()
+                    .unwrap(),
+                &s.record.canonical_username,
+            )
+            .map(|l| l.pending_delete().cloned())
+        }
+        fn delete_folder(
+            &self,
+            c: &AuthenticationContext,
+            s: &ValidatedSession,
+            r: &crate::folder_delete::DeleteFolderRequest,
+        ) -> crate::folder_delete::Outcome {
+            use crate::folder_create::Refusal;
+            use crate::folder_delete::Outcome;
+            if r.account() != s.record.canonical_username {
+                return Outcome::Refused(Refusal::Invalid);
+            }
+            let (Some(snapshot), Some(source), Some(parent)) = (
+                self.folder_metadata(c, s).snapshot,
+                self.mailbox_status(c, s, r.source()).status,
+                self.mailbox_status(c, s, r.parent()).status,
+            ) else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            if let Err(e) = r.validate_before(&snapshot, &source, &parent) {
+                return Outcome::Refused(e);
+            }
+            let Some(store) = &self.settings_store else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            let directory = store
+                .settings_path_for_username(r.account())
+                .parent()
+                .unwrap()
+                .to_path_buf();
+            let Ok(mut lease) = crate::folder_rename::settings_gate(&directory, r.account()) else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            if lease.begin_delete(r).is_err() {
+                return Outcome::Refused(Refusal::Unavailable);
+            }
+            struct Removing {
+                folders: Arc<Mutex<BTreeMap<String, Vec<String>>>>,
+                calls: Arc<Mutex<Vec<crate::folder_delete::DeleteFolderRequest>>>,
+                unknown: bool,
+            }
+            impl crate::mailbox::MailboxBackend for Removing {
+                fn list_mailboxes(
+                    &self,
+                    _: &str,
+                ) -> Result<Vec<MailboxEntry>, crate::mailbox::MailboxBackendError>
+                {
+                    Ok(vec![])
+                }
+                fn delete_folder(&self, r: &crate::folder_delete::DeleteFolderRequest) -> Outcome {
+                    self.calls.lock().unwrap().push(r.clone());
+                    if self.unknown {
+                        return Outcome::Unknown;
+                    }
+                    self.folders
+                        .lock()
+                        .unwrap()
+                        .get_mut(r.account())
+                        .unwrap()
+                        .retain(|name| name != r.source());
+                    Outcome::Deleted
+                }
+            }
+            let outcome =
+                crate::mailbox_helper::mailbox_helper_rename::delete_witness::execute_delete(
+                    &directory.join("fixture-delete-helper"),
+                    &Removing {
+                        folders: self.created_folders.clone(),
+                        calls: self.deleted_folders.clone(),
+                        unknown: c.user_agent == "FolderCreateDeleteUnknown",
+                    },
+                    r,
+                );
+            if c.user_agent == "FolderCreateDeleteUnknownCommitted" {
+                return Outcome::Unknown;
+            }
+            if outcome != Outcome::Unknown {
+                lease.confirm().unwrap();
+            }
+            outcome
+        }
+        fn check_folder_delete(
+            &self,
+            c: &AuthenticationContext,
+            s: &ValidatedSession,
+        ) -> crate::folder_delete::CheckOutcome {
+            use crate::folder_delete::{CheckOutcome, Completion};
+            let Some(store) = &self.settings_store else {
+                return CheckOutcome::Unavailable;
+            };
+            let directory = store
+                .settings_path_for_username(&s.record.canonical_username)
+                .parent()
+                .unwrap()
+                .to_path_buf();
+            let Ok(mut lease) =
+                crate::folder_rename::role_lease(&directory, &s.record.canonical_username)
+            else {
+                return CheckOutcome::Unavailable;
+            };
+            let Some(r) = lease.pending_delete().cloned() else {
+                return CheckOutcome::NoPending;
+            };
+            let witness =
+                crate::mailbox_helper::mailbox_helper_rename::delete_witness::completion_delete(
+                    &directory.join("fixture-delete-helper"),
+                    &r,
+                );
+            let (Some(snapshot), Some(parent)) = (
+                self.folder_metadata(c, s).snapshot,
+                self.mailbox_status(c, s, r.parent()).status,
+            ) else {
+                return CheckOutcome::Unconfirmed;
+            };
+            let result = if witness == Completion::Deleted && r.confirmed_absent(&snapshot, &parent)
+            {
+                CheckOutcome::Deleted
+            } else if witness == Completion::NoMutation
+                && self
+                    .mailbox_status(c, s, r.source())
+                    .status
+                    .is_some_and(|source| r.confirmed_unchanged(&snapshot, &source, &parent))
+            {
+                CheckOutcome::Unchanged
+            } else {
+                return CheckOutcome::Unconfirmed;
+            };
+            if lease.confirm().is_err() {
+                CheckOutcome::Unavailable
+            } else {
+                result
+            }
+        }
+        fn folder_disposition_receipts(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<Vec<crate::folder_disposition::Receipt>, crate::folder_create::Refusal>
+        {
+            self.disposition_receipt_loads
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            let store = self
+                .settings_store
+                .as_ref()
+                .ok_or(crate::folder_create::Refusal::Unavailable)?;
+            crate::folder_disposition::list(
+                store
+                    .settings_path_for_username(&session.record.canonical_username)
+                    .parent()
+                    .unwrap(),
+                &session.record.canonical_username,
+            )
+        }
+        fn prepare_folder_bin(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            source: &str,
+        ) -> Result<crate::folder_rename::RenameFolderRequest, crate::folder_create::Refusal>
+        {
+            self.disposition_prepares
+                .lock()
+                .unwrap()
+                .push(source.into());
+            let guid = self
+                .created_folder_guid(&session.record.canonical_username, source)
+                .ok_or(crate::folder_create::Refusal::Invalid)?;
+            let metadata = self.folder_metadata(context, session);
+            if metadata.canonical_username != session.record.canonical_username {
+                return Err(crate::folder_create::Refusal::Invalid);
+            }
+            let status = self
+                .mailbox_status(context, session, source)
+                .status
+                .ok_or(crate::folder_create::Refusal::Unavailable)?;
+            crate::folder_rename::validate_source(
+                &session.record.canonical_username,
+                source,
+                metadata
+                    .snapshot
+                    .as_ref()
+                    .ok_or(crate::folder_create::Refusal::Unavailable)?,
+                &status,
+            )?;
+            let bin = self
+                .load_bin_preference(session)
+                .map_err(|_| crate::folder_create::Refusal::Unavailable)?;
+            crate::folder_disposition::Receipt::bin_request(
+                &session.record.canonical_username,
+                source,
+                &guid,
+                "1234567890abcdef1234567890abcdef",
+                &bin,
+                &"d".repeat(32),
+            )
+        }
+        fn apply_folder_disposition(
+            &self,
+            context: &AuthenticationContext,
+            _: &ValidatedSession,
+            request: &crate::folder_rename::RenameFolderRequest,
+        ) -> crate::folder_rename::Outcome {
+            self.disposition_applies
+                .lock()
+                .unwrap()
+                .push(request.clone());
+            // Spy only: distinguish actual Apply dispatch from preparatory reads.
+            // Production Runtime independently calls the guarded execute engine.
+            if context.user_agent == "FolderDispositionApplySpy" {
+                crate::folder_rename::Outcome::Unknown
+            } else {
+                crate::folder_rename::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+            }
+        }
+        fn recover_folder_rename(
+            &self,
+            _: &AuthenticationContext,
+            _: &ValidatedSession,
+            _: &str,
+        ) -> crate::folder_rename::RecoveryOutcome {
+            self.folder_recovery_outcome
+                .clone()
+                .unwrap_or(crate::folder_rename::RecoveryOutcome::Unavailable)
+        }
+        fn pending_folder_rename(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<Option<crate::folder_rename::RenameFolderRequest>, crate::folder_create::Refusal>
+        {
+            let store = self
+                .settings_store
+                .as_ref()
+                .ok_or(crate::folder_create::Refusal::Unavailable)?;
+            crate::folder_rename::role_lease(
+                store
+                    .settings_path_for_username(&session.record.canonical_username)
+                    .parent()
+                    .unwrap(),
+                &session.record.canonical_username,
+            )
+            .and_then(|lease| {
+                if lease.pending_delete().is_some() {
+                    Err(crate::folder_create::Refusal::Unavailable)
+                } else {
+                    Ok(lease.pending().cloned())
+                }
+            })
+        }
+        fn check_folder_rename(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> crate::folder_rename::CheckOutcome {
+            use crate::folder_rename::CheckOutcome;
+            let Some(store) = &self.settings_store else {
+                return CheckOutcome::Unavailable;
+            };
+            let Ok(mut lease) = crate::folder_rename::role_lease(
+                store
+                    .settings_path_for_username(&session.record.canonical_username)
+                    .parent()
+                    .unwrap(),
+                &session.record.canonical_username,
+            ) else {
+                return CheckOutcome::Unavailable;
+            };
+            let Some(request) = lease.pending().cloned() else {
+                return CheckOutcome::NoPending;
+            };
+            let (Some(snapshot), Some(parent)) = (
+                self.folder_metadata(context, session).snapshot,
+                self.mailbox_status(context, session, request.parent())
+                    .status,
+            ) else {
+                return CheckOutcome::Unconfirmed;
+            };
+            if let Some(destination) = self
+                .mailbox_status(context, session, &request.destination())
+                .status
+            {
+                if crate::folder_rename::confirmed_result(
+                    &request,
+                    &snapshot,
+                    &destination,
+                    &parent,
+                ) {
+                    if self
+                        .labels_store
+                        .as_ref()
+                        .is_some_and(|store| store.reconcile_folder_rename(&request).is_err())
+                        || self
+                            .snooze_store
+                            .as_ref()
+                            .is_some_and(|store| store.reconcile_folder_rename(&request).is_err())
+                    {
+                        return CheckOutcome::Unavailable;
+                    }
+                    if lease.confirm().is_err() {
+                        return CheckOutcome::Unavailable;
+                    }
+                    return CheckOutcome::Renamed {
+                        destination: request.destination(),
+                    };
+                }
+            }
+            let completion_dir = store
+                .settings_path_for_username(request.account())
+                .parent()
+                .unwrap()
+                .join("fixture-helper-rename");
+            if crate::mailbox_helper::mailbox_helper_rename::completion(&completion_dir, &request)
+                != crate::folder_rename::Completion::NoMutation
+            {
+                return CheckOutcome::Unconfirmed;
+            }
+            let Some(source) = self
+                .mailbox_status(context, session, request.source())
+                .status
+            else {
+                return CheckOutcome::Unconfirmed;
+            };
+            if !crate::folder_rename::confirmed_unchanged(&request, &snapshot, &source, &parent) {
+                return CheckOutcome::Unconfirmed;
+            }
+            if request.is_move() {
+                let Some(source_parent) = self
+                    .mailbox_status(context, session, request.source_parent())
+                    .status
+                else {
+                    return CheckOutcome::Unconfirmed;
+                };
+                if request
+                    .validate_source_parent(&snapshot, &source_parent)
+                    .is_err()
+                {
+                    return CheckOutcome::Unconfirmed;
+                }
+            }
+            if lease.confirm().is_err() {
+                return CheckOutcome::Unavailable;
+            }
+            CheckOutcome::Unchanged
+        }
+        fn rename_folder(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            rename: &crate::folder_rename::RenameFolderRequest,
+        ) -> crate::folder_rename::Outcome {
+            use crate::{folder_create::Refusal, folder_rename::Outcome};
+            if rename.account() != session.record.canonical_username {
+                return Outcome::Refused(Refusal::Invalid);
+            }
+            let (Some(snapshot), Some(source), Some(parent)) = (
+                self.folder_metadata(context, session).snapshot,
+                self.mailbox_status(context, session, rename.source())
+                    .status,
+                self.mailbox_status(context, session, rename.parent())
+                    .status,
+            ) else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            if let Err(e) = rename.validate_before(&snapshot, &source, &parent) {
+                return Outcome::Refused(e);
+            }
+            if rename.is_move() {
+                let Some(source_parent) = self
+                    .mailbox_status(context, session, rename.source_parent())
+                    .status
+                else {
+                    return Outcome::Refused(Refusal::Unavailable);
+                };
+                if let Err(e) = rename.validate_source_parent(&snapshot, &source_parent) {
+                    return Outcome::Refused(e);
+                }
+            }
+            let Some(store) = &self.settings_store else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            let Ok(mut lease) = crate::folder_rename::settings_gate(
+                store
+                    .settings_path_for_username(rename.account())
+                    .parent()
+                    .unwrap(),
+                rename.account(),
+            ) else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            if lease.begin(rename).is_err() {
+                return Outcome::Refused(Refusal::Unavailable);
+            }
+            if context.user_agent == "FolderCreateRenameRefusedLost" {
+                struct RefusingBackend;
+                impl crate::mailbox::MailboxBackend for RefusingBackend {
+                    fn list_mailboxes(
+                        &self,
+                        _: &str,
+                    ) -> Result<
+                        Vec<crate::mailbox::MailboxEntry>,
+                        crate::mailbox::MailboxBackendError,
+                    > {
+                        Ok(vec![])
+                    }
+                    fn rename_folder(
+                        &self,
+                        _: &crate::folder_rename::RenameFolderRequest,
+                    ) -> crate::folder_rename::Outcome {
+                        crate::folder_rename::Outcome::Refused(crate::folder_create::Refusal::Stale)
+                    }
+                }
+                let directory = store
+                    .settings_path_for_username(rename.account())
+                    .parent()
+                    .unwrap()
+                    .join("fixture-helper-rename");
+                assert_eq!(
+                    crate::mailbox_helper::mailbox_helper_rename::execute(
+                        &directory,
+                        &RefusingBackend,
+                        rename
+                    ),
+                    Outcome::Refused(Refusal::Stale)
+                );
+                return Outcome::Unknown;
+            }
+            if context.user_agent == "FolderCreateRenameUnknown" {
+                return Outcome::Unknown;
+            }
+            let mut folders = self.created_folders.lock().unwrap();
+            let Some(owned) = folders.get_mut(rename.account()) else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            if owned.iter().any(|name| name == &rename.destination()) {
+                return Outcome::Conflict;
+            }
+            if !owned.iter().any(|name| name == rename.source()) {
+                return Outcome::Refused(Refusal::Stale);
+            }
+            for name in owned.iter_mut().filter(|name| {
+                name.as_str() == rename.source()
+                    || name.starts_with(&format!("{}.", rename.source()))
+            }) {
+                *name = format!(
+                    "{}{}",
+                    rename.destination(),
+                    name.strip_prefix(rename.source()).unwrap()
+                );
+            }
+            self.renamed_folders.lock().unwrap().push(rename.clone());
+            if context.user_agent == "FolderCreateRenameUnknownCommitted" {
+                return Outcome::Unknown;
+            }
+            let _fixture_snooze_lock = if context.user_agent == "FolderCreateRenameMetadataFailure"
+            {
+                Some(
+                    crate::private_account_file::PrivateAccountFile::new(
+                        store
+                            .settings_path_for_username(rename.account())
+                            .parent()
+                            .unwrap()
+                            .to_path_buf(),
+                        "osmap-snooze-v1",
+                        512 * 1024,
+                    )
+                    .lock(rename.account())
+                    .unwrap(),
+                )
+            } else {
+                None
+            };
+            if self
+                .labels_store
+                .as_ref()
+                .is_some_and(|store| store.reconcile_folder_rename(rename).is_err())
+                || self
+                    .snooze_store
+                    .as_ref()
+                    .is_some_and(|store| store.reconcile_folder_rename(rename).is_err())
+            {
+                return Outcome::Unknown;
+            }
+            if lease.confirm().is_err() {
+                return Outcome::Unknown;
+            }
+            Outcome::Renamed
+        }
+        fn create_folder(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            request: &crate::folder_create::CreateFolderRequest,
+        ) -> BrowserFolderCreateOutcome {
+            use crate::folder_create::{Outcome, Refusal};
+            let metadata = self.folder_metadata(context, session);
+            let status = self.mailbox_status(context, session, request.parent());
+            let outcome = if request.account() != session.record.canonical_username {
+                Outcome::Refused(Refusal::Invalid)
+            } else if let (Some(snapshot), Some(status)) = (metadata.snapshot, status.status) {
+                if let Err(e) = request.validate_parent(&snapshot, &status) {
+                    Outcome::Refused(e)
+                } else if snapshot.folder(request.account(), &request.child()).is_ok() {
+                    Outcome::Conflict
+                } else if context.user_agent.contains("CreateUnknown") {
+                    Outcome::Unknown
+                } else {
+                    self.created_folders
+                        .lock()
+                        .unwrap()
+                        .entry(request.account().into())
+                        .or_default()
+                        .push(request.child());
+                    Outcome::Created {
+                        guid: self
+                            .created_folder_guid(request.account(), &request.child())
+                            .unwrap(),
+                    }
+                }
+            } else {
+                Outcome::Refused(Refusal::Unavailable)
+            };
+            BrowserFolderCreateOutcome {
+                outcome,
+                audit_events: vec![],
+            }
+        }
+        fn key_management(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> crate::key_management::StateOutcome {
+            let inventory = key_inventory_fixture::outcome(
+                &context.user_agent,
+                &session.record.canonical_username,
+            );
+            let practical = context.user_agent.starts_with("KeyInventoryPractical");
+            let interactive = context.user_agent == "KeyInventoryInteractive" || practical;
+            crate::key_management::StateOutcome {
+                state: crate::key_management::State {
+                    canonical_username: inventory.canonical_username.clone(),
+                    inventory: inventory.inventory,
+                    bindings: practical.then(|| {
+                        let primary = "0123456789ABCDEF0123456789ABCDEF01234567";
+                        serde_json::from_value(serde_json::json!({
+                            "version": 1,
+                            "canonical_username": inventory.canonical_username,
+                            "revision": 7,
+                            "account_binding": {
+                                "primary_fingerprint": primary,
+                                "signing_fingerprint": primary,
+                                "decrypt_primary_fingerprints": [primary]
+                            },
+                            "recipient_bindings": [
+                                {"address":"recipient@example.test","primary_fingerprint":primary,"encryption":"required"},
+                                {"address":"optional@example.test","primary_fingerprint":if context.user_agent == "KeyInventoryPracticalMissing" {"FEDCBA9876543210FEDCBA9876543210FEDCBA98"} else {primary},"encryption":"optional"},
+                                {"address":"blocked@example.test","primary_fingerprint":primary,"encryption":"disabled"}
+                            ],
+                            "policy": {"signing":"optional","encryption":if context.user_agent == "KeyInventoryPracticalRequired" {"required"} else {"optional"}}
+                        })).unwrap()
+                    }).or_else(|| interactive.then(|| {
+                        crate::openpgp_bindings::BindingRecord::empty(
+                            &session.record.canonical_username,
+                        )
+                        .unwrap()
+                    })),
+                    binding_changes_available: interactive,
+                    public_key_changes_available: interactive,
+                    public_inventory_revision: interactive.then(|| "a".repeat(64)),
+                },
+                audit_events: vec![],
+            }
+        }
+        fn public_key_inventory(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> BrowserPublicInventoryOutcome {
+            key_inventory_fixture::outcome(&context.user_agent, &session.record.canonical_username)
+        }
+        fn folder_metadata(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> BrowserFolderMetadataOutcome {
+            let account = if context.user_agent == "FolderTreeWrongOwner" {
+                "bob@example.com"
+            } else {
+                &session.record.canonical_username
+            };
+            let bytes=b"* PREAUTH fixture\r\n* NAMESPACE ((\"\" \".\")) ((\"Shared/\" \"/\")) ((\"Public/\" \"/\"))\r\nN1 OK done\r\n* LIST (\\HasChildren) \".\" \"INBOX\"\r\n* LIST (\\HasNoChildren) \".\" \"INBOX.Projects\"\r\n* LIST (\\Drafts) \".\" \"Drafts\"\r\n* LIST (\\Junk) \".\" \"Junk\"\r\n* LIST (\\Trash) \".\" \"Trash\"\r\n* LIST (\\Sent) \".\" \"Sent\"\r\n* LIST (\\Noselect) \"/\" \"Shared/Team\"\r\n* LIST () \"/\" \"Shared/Team/Review\"\r\n* LIST (\\NonExistent) \"/\" \"Public/Old\"\r\n* LIST () \"/\" \"Public/Old/News\"\r\nL1 OK done\r\n* BYE done\r\nZ1 OK done\r\n";
+            BrowserFolderMetadataOutcome {
+                canonical_username: account.into(),
+                snapshot: if context.user_agent == "FolderTreeMalformed" {
+                    None
+                } else {
+                    {
+                        let mut text = String::from_utf8(bytes.to_vec()).unwrap();
+                        let extra = self
+                            .created_folders
+                            .lock()
+                            .unwrap()
+                            .get(account)
+                            .cloned()
+                            .unwrap_or_default()
+                            .iter()
+                            .map(|name| {
+                                let flags = match context.user_agent.as_str() {
+                                    "FolderTreeBinNoselect" if name == "Deleted" => "\\Noselect",
+                                    "FolderTreeBinAbsent" if name == "Deleted" => "\\NonExistent",
+                                    _ => "",
+                                };
+                                format!(
+                                    "* LIST ({flags}) \".\" {}\r\n",
+                                    folder_create_fixture::wire_name(name)
+                                )
+                            })
+                            .collect::<String>();
+                        text = text.replace("L1 OK done", &(extra + "L1 OK done"));
+                        crate::folder_metadata::FolderSnapshot::parse(account, text.as_bytes()).ok()
+                    }
+                },
+                audit_events: vec![],
+            }
+        }
+        fn mailbox_status(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            folder: &str,
+        ) -> BrowserMailboxStatusOutcome {
+            let created_guid = self.created_folder_guid(&session.record.canonical_username, folder);
+            let native = crate::auth::CommandExecution {
+                status_code: 0,
+                stdout: format!(
+                    "[{{\"mailbox\":{},\"guid\":{},\"messages\":\"{}\",\"vsize\":\"{}\"}}]",
+                    serde_json::to_string(folder).unwrap(),
+                    serde_json::to_string(
+                        created_guid
+                            .as_deref()
+                            .unwrap_or("1234567890abcdef1234567890abcdef")
+                    )
+                    .unwrap(),
+                    if created_guid.is_some() && context.user_agent != "FolderCreateDeletePopulated"
+                    {
+                        0
+                    } else {
+                        42
+                    },
+                    if created_guid.is_some() { 0 } else { 8192 }
+                ),
+                stderr: String::new(),
+            };
+            BrowserMailboxStatusOutcome {
+                canonical_username: if context.user_agent.contains("StatusWrongOwner") {
+                    "other@example.test".into()
+                } else {
+                    session.record.canonical_username.clone()
+                },
+                status: if context.user_agent.contains("StatusUnavailable") {
+                    None
+                } else {
+                    crate::mailbox_status::parse_native(folder, &native).ok()
+                },
+                audit_events: vec![LogEvent::new(
+                    LogLevel::Info,
+                    EventCategory::Mailbox,
+                    "status_fixture",
+                    "one status lookup",
+                )],
+            }
+        }
         fn list_mailboxes(
             &self,
             context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserMailboxOutcome {
+            if context.user_agent == "JunkListUnavailable" {
+                return BrowserMailboxOutcome {
+                    decision: BrowserMailboxDecision::Denied {
+                        public_reason: "unavailable".into(),
+                    },
+                    audit_events: vec![],
+                };
+            }
+            if context.user_agent == "CopiesWrongOwner" {
+                return BrowserMailboxOutcome {
+                    decision: BrowserMailboxDecision::Listed {
+                        canonical_username: "bob@example.com".into(),
+                        mailboxes: vec![MailboxEntry {
+                            name: "Archive/2026".into(),
+                        }],
+                    },
+                    audit_events: vec![],
+                };
+            }
+            if matches!(
+                context.user_agent.as_str(),
+                "WelcomeWrongAccount" | "ReaderMailboxWrongOwner"
+            ) {
+                return BrowserMailboxOutcome {
+                    decision: BrowserMailboxDecision::Listed {
+                        canonical_username: "foreign@example.test".into(),
+                        mailboxes: vec![MailboxEntry {
+                            name: if context.user_agent == "ReaderMailboxWrongOwner" {
+                                "Archive/2026"
+                            } else {
+                                "INBOX"
+                            }
+                            .into(),
+                        }],
+                    },
+                    audit_events: vec![],
+                };
+            }
+            if context.user_agent.starts_with("FolderCreate") {
+                let mut names = vec!["INBOX".to_owned(), "INBOX.Projects".to_owned()];
+                names.extend(
+                    self.created_folders
+                        .lock()
+                        .unwrap()
+                        .get(&validated_session.record.canonical_username)
+                        .cloned()
+                        .unwrap_or_default(),
+                );
+                return BrowserMailboxOutcome {
+                    decision: BrowserMailboxDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailboxes: names
+                            .into_iter()
+                            .map(|name| MailboxEntry { name })
+                            .collect(),
+                    },
+                    audit_events: vec![],
+                };
+            }
+            if context.user_agent.starts_with("FolderTree") || self.preview_mailbox_tree {
+                return BrowserMailboxOutcome {
+                    decision: BrowserMailboxDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailboxes: [
+                            "INBOX",
+                            "INBOX.Projects",
+                            "Drafts",
+                            "Junk",
+                            "Trash",
+                            "Sent",
+                            "Shared/Team/Review",
+                            "Public/Old/News",
+                        ]
+                        .iter()
+                        .map(|n| MailboxEntry { name: (*n).into() })
+                        .chain(
+                            self.created_folders
+                                .lock()
+                                .unwrap()
+                                .get(&validated_session.record.canonical_username)
+                                .cloned()
+                                .unwrap_or_default()
+                                .into_iter()
+                                .map(|name| MailboxEntry { name }),
+                        )
+                        .collect(),
+                    },
+                    audit_events: vec![],
+                };
+            }
+            if context.user_agent == "WelcomeMissing" {
+                return BrowserMailboxOutcome {
+                    decision: BrowserMailboxDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailboxes: vec![MailboxEntry {
+                            name: format!(
+                                "INBOX.{}<img src=x> & synthetic",
+                                "long-folder-".repeat(16)
+                            ),
+                        }],
+                    },
+                    audit_events: vec![],
+                };
+            }
             if context.user_agent == "Firefox/ManyMailboxes" {
                 let mut mailboxes = vec![MailboxEntry {
                     name: "INBOX".to_string(),
@@ -1196,7 +4077,17 @@ mod tests {
                         MailboxEntry {
                             name: "Trash".to_string(),
                         },
-                    ],
+                    ]
+                    .into_iter()
+                    .chain(
+                        context
+                            .user_agent
+                            .starts_with("Welcome")
+                            .then(|| MailboxEntry {
+                                name: "Sent".into(),
+                            }),
+                    )
+                    .collect(),
                 },
                 audit_events: vec![LogEvent::new(
                     LogLevel::Info,
@@ -1209,34 +4100,240 @@ mod tests {
 
         fn list_messages(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             validated_session: &ValidatedSession,
             mailbox_name: &str,
         ) -> BrowserMessageListOutcome {
+            if self.archive_event_store.is_some() && mailbox_name == "INBOX.Projects" {
+                let mut rows = self.fixture_reconcile_messages(
+                    &validated_session.record.canonical_username,
+                    mailbox_name,
+                    Vec::new(),
+                );
+                let mut returned_account = validated_session.record.canonical_username.clone();
+                match *self.archive_event_post_list_fault.lock().unwrap() {
+                    Some(archive_event_route_tests::PostListFault::Missing) => rows.clear(),
+                    Some(archive_event_route_tests::PostListFault::Foreign) => {
+                        returned_account = "bob@example.com".into()
+                    }
+                    Some(archive_event_route_tests::PostListFault::Duplicate) => {
+                        if let Some(row) = rows.first().cloned() {
+                            rows.push(row);
+                        }
+                    }
+                    Some(archive_event_route_tests::PostListFault::WrongGeneration) => {
+                        if let Some(mut row) = rows.first().cloned() {
+                            row.uid += 1;
+                            let version = &mut row.metadata.as_mut().unwrap().version;
+                            version.mailbox_guid = "c".repeat(32);
+                            version.message_guid = "different-native-guid".into();
+                            rows.push(row);
+                        }
+                    }
+                    None => {}
+                }
+                return BrowserMessageListOutcome {
+                    decision: BrowserMessageListDecision::Listed {
+                        canonical_username: returned_account,
+                        mailbox_name: mailbox_name.into(),
+                        messages: rows,
+                    },
+                    audit_events: vec![],
+                };
+            }
+            if let Some(decision) = self.delete_list_decision.lock().unwrap().clone() {
+                return BrowserMessageListOutcome {
+                    decision,
+                    audit_events: Vec::new(),
+                };
+            }
+            if let Some(outcome) =
+                ux_browser_server::back_focus_list(validated_session, mailbox_name)
+            {
+                return outcome;
+            }
+            if mailbox_name == "INBOX"
+                && validated_session.record.canonical_username == "alice@example.com"
+            {
+                if let Some(messages) = &self.message_list_override {
+                    return BrowserMessageListOutcome {
+                        decision: BrowserMessageListDecision::Listed {
+                            canonical_username: validated_session.record.canonical_username.clone(),
+                            mailbox_name: mailbox_name.into(),
+                            messages: messages.clone(),
+                        },
+                        audit_events: vec![],
+                    };
+                }
+            }
+            if self
+                .created_folder_guid(&validated_session.record.canonical_username, mailbox_name)
+                .is_some()
+            {
+                return BrowserMessageListOutcome {
+                    decision: BrowserMessageListDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailbox_name: mailbox_name.into(),
+                        messages: self.fixture_reconcile_messages(
+                            &validated_session.record.canonical_username,
+                            mailbox_name,
+                            Vec::new(),
+                        ),
+                    },
+                    audit_events: vec![],
+                };
+            }
+            if (mailbox_name == "INBOX" && context.user_agent.starts_with("WelcomeData/"))
+                || (mailbox_name == "Sent" && context.user_agent.starts_with("WelcomeSent/"))
+            {
+                let marker = context.user_agent.split_once('/').unwrap().1;
+                let mut rows: Vec<_> = (1..=8)
+                    .map(|uid| MessageSummary {
+                        to: None,
+                        metadata: None,
+                        mailbox_name: mailbox_name.into(),
+                        uid,
+                        flags: if uid % 2 == 0 {
+                            vec!["\\Seen".into(), "\\Flagged".into()]
+                        } else {
+                            vec![]
+                        },
+                        date_received: format!("2026-09-{:02} 00:00:00 +0000", uid),
+                        size_virtual: 1,
+                        subject: Some(format!("Actual {uid} <inert>")),
+                        from: Some("Sender & <sender@example.test>".into()),
+                    })
+                    .collect();
+                if marker == "wrong-row" {
+                    rows[0].mailbox_name = "Foreign".into();
+                }
+                if marker == "zero" {
+                    rows[0].uid = 0;
+                }
+                if marker == "duplicate" {
+                    rows[0].uid = rows[1].uid;
+                }
+                if marker == "empty" {
+                    rows.clear();
+                }
+                return BrowserMessageListOutcome {
+                    decision: if marker == "failure" {
+                        BrowserMessageListDecision::Denied {
+                            public_reason: "unavailable".into(),
+                        }
+                    } else {
+                        BrowserMessageListDecision::Listed {
+                            canonical_username: if marker == "wrong-owner" {
+                                "foreign@example.test".into()
+                            } else {
+                                validated_session.record.canonical_username.clone()
+                            },
+                            mailbox_name: if marker == "wrong-mailbox" {
+                                "Foreign".into()
+                            } else {
+                                mailbox_name.into()
+                            },
+                            messages: rows,
+                        }
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Mailbox,
+                        "welcome_fixture_summary_list",
+                        "one summary lookup",
+                    )],
+                };
+            }
             BrowserMessageListOutcome {
                 decision: BrowserMessageListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
                     mailbox_name: mailbox_name.to_string(),
-                    messages: vec![
-                        MessageSummary {
-                            mailbox_name: mailbox_name.to_string(),
-                            uid: 9,
-                            flags: vec!["\\Seen".to_string()],
-                            date_received: "2026-03-27 11:00:00 +0000".to_string(),
-                            size_virtual: 512,
-                            subject: Some("Quarterly report".to_string()),
-                            from: Some("Alice <alice@example.com>".to_string()),
+                    messages: self.fixture_reconcile_messages(
+                        &validated_session.record.canonical_username,
+                        mailbox_name,
+                        if context.user_agent.starts_with("OSMAP/EmptyMailbox") {
+                            Vec::new()
+                        } else if context.user_agent.starts_with("OSMAP/ManyMessages") {
+                            (1..=125)
+                                .map(|uid| MessageSummary {
+                                    to: if context.user_agent.contains("SentRecipients") { match uid % 4 { 0 => None, 1 => Some("<img src=x> & recipient@example.test".into()), 2 => Some("Élodie <elodie@example.test>, Bob <bob@example.test>".into()), _ => Some(format!("Recipient {uid:03} <recipient{uid}@example.test>")) } } else { None },
+                                    metadata: Self::fixture_attachment_metadata(
+                                        context,
+                                        &validated_session.record.canonical_username,
+                                        mailbox_name,
+                                        uid,
+                                    ),
+                                    mailbox_name: mailbox_name.to_string(),
+                                    uid,
+                                    flags: self.fixture_message_flags(
+                                        &validated_session.record.canonical_username,
+                                        mailbox_name,
+                                        uid,
+                                    ),
+                                    date_received: "2026-09-30 00:00:00 +0000".to_string(),
+                                    size_virtual: 1024,
+                                    subject: Some(
+                                        if context.user_agent.contains("LongHeaders") && uid == 125
+                                        {
+                                            format!("<b>Synthetic header</b> {}", "W".repeat(256))
+                                        } else {
+                                            format!("Message {uid:03}")
+                                        },
+                                    ),
+                                    from: Some(
+                                        if context.user_agent.contains("LongHeaders") && uid == 125
+                                        {
+                                            format!(
+                                                "Synthetic long sender {} <sender@example.test>",
+                                                "Y".repeat(256)
+                                            )
+                                        } else {
+                                            "Synthetic Sender <sender@example.test>".to_string()
+                                        },
+                                    ),
+                                })
+                                .collect()
+                        } else {
+                            vec![
+                                MessageSummary {
+                                    to: None,
+                                    metadata: (!context.user_agent.contains("LegacyMetadata"))
+                                        .then(|| {
+                                            Self::fixture_metadata(
+                                                &validated_session.record.canonical_username,
+                                                mailbox_name,
+                                                9,
+                                            )
+                                        }),
+                                    mailbox_name: mailbox_name.to_string(),
+                                    uid: 9,
+                                    flags: vec!["\\Seen".to_string()],
+                                    date_received: "2026-03-27 11:00:00 +0000".to_string(),
+                                    size_virtual: 512,
+                                    subject: Some("Quarterly report".to_string()),
+                                    from: Some("Alice <alice@example.com>".to_string()),
+                                },
+                                MessageSummary {
+                                    to: None,
+                                    metadata: (!context.user_agent.contains("LegacyMetadata"))
+                                        .then(|| {
+                                            Self::fixture_metadata(
+                                                &validated_session.record.canonical_username,
+                                                mailbox_name,
+                                                10,
+                                            )
+                                        }),
+                                    mailbox_name: mailbox_name.to_string(),
+                                    uid: 10,
+                                    flags: Vec::new(),
+                                    date_received: "2026-03-28 12:00:00 +0000".to_string(),
+                                    size_virtual: 768,
+                                    subject: Some("Follow-up".to_string()),
+                                    from: Some("Bob <bob@example.com>".to_string()),
+                                },
+                            ]
                         },
-                        MessageSummary {
-                            mailbox_name: mailbox_name.to_string(),
-                            uid: 10,
-                            flags: Vec::new(),
-                            date_received: "2026-03-28 12:00:00 +0000".to_string(),
-                            size_virtual: 768,
-                            subject: Some("Follow-up".to_string()),
-                            from: Some("Bob <bob@example.com>".to_string()),
-                        },
-                    ],
+                    ),
                 },
                 audit_events: vec![LogEvent::new(
                     LogLevel::Info,
@@ -1249,13 +4346,157 @@ mod tests {
 
         fn search_messages(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             validated_session: &ValidatedSession,
             mailbox_name: Option<&str>,
             query: &str,
             field: MessageSearchField,
         ) -> BrowserMessageSearchOutcome {
+            if let Some(decision) = &self.all_search_override {
+                return BrowserMessageSearchOutcome {
+                    decision: decision.clone(),
+                    audit_events: vec![build_http_info_event(
+                        "stub_all_search",
+                        "controlled search returned",
+                        context,
+                    )
+                    .with_field("all_scope", mailbox_name.is_none().to_string())
+                    .with_field("field", field.query_value())],
+                };
+            }
+            if let Some(outcome) =
+                ux_browser_server::back_focus_search(validated_session, mailbox_name, query, field)
+            {
+                return outcome;
+            }
+            if validated_session.record.canonical_username == "alice@example.com"
+                && mailbox_name.is_none_or(|name| name == "INBOX")
+                && query == "Shared public subject"
+                && field == MessageSearchField::Subject
+            {
+                if let Some(messages) = &self.message_list_override {
+                    return BrowserMessageSearchOutcome {
+                        decision: BrowserMessageSearchDecision::Listed {
+                            canonical_username: validated_session.record.canonical_username.clone(),
+                            mailbox_name: mailbox_name.map(str::to_string),
+                            query: query.into(),
+                            results: messages
+                                .iter()
+                                .map(|message| MessageSearchResult {
+                                    mailbox_name: message.mailbox_name.clone(),
+                                    uid: message.uid,
+                                    flags: message.flags.clone(),
+                                    date_received: message.date_received.clone(),
+                                    size_virtual: message.size_virtual,
+                                    subject: message.subject.clone(),
+                                    from: message.from.clone(),
+                                    metadata: message.metadata.clone(),
+                                })
+                                .collect(),
+                        },
+                        audit_events: Vec::new(),
+                    };
+                }
+            }
+            if context.user_agent == "OSMAP/StateFailure" {
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Denied {
+                        public_reason: "unavailable".into(),
+                    },
+                    audit_events: Vec::new(),
+                };
+            }
+            if context.user_agent == "OSMAP/SearchWrongOwner" {
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Listed {
+                        canonical_username: "foreign@example.test".into(),
+                        mailbox_name: Some("ForeignFolder".into()),
+                        query: "foreign-secret".into(),
+                        results: Vec::new(),
+                    },
+                    audit_events: Vec::new(),
+                };
+            }
             let mailbox_name = mailbox_name.map(str::to_string);
+            if context.user_agent.starts_with("OSMAP/ManyMessages")
+                && matches!(query, "reader-fixture" | "reader-miss")
+            {
+                let mut results = Vec::new();
+                if query == "reader-fixture" {
+                    let names = mailbox_name
+                        .as_deref()
+                        .map(|name| vec![name])
+                        .unwrap_or_else(|| vec!["INBOX", "Sent"]);
+                    for name in names {
+                        for uid in 1..=125 {
+                            if self.fixture_message_removed(
+                                &validated_session.record.canonical_username,
+                                name,
+                                uid,
+                            ) {
+                                continue;
+                            }
+                            results.push(MessageSearchResult {
+                                metadata: Self::fixture_attachment_metadata(
+                                    context,
+                                    &validated_session.record.canonical_username,
+                                    name,
+                                    uid,
+                                ),
+                                mailbox_name: name.into(),
+                                uid,
+                                flags: self.fixture_message_flags(
+                                    &validated_session.record.canonical_username,
+                                    name,
+                                    uid,
+                                ),
+                                date_received: "2026-09-30 00:00:00 +0000".into(),
+                                size_virtual: 1024,
+                                subject: Some(format!("Message {uid:03}")),
+                                from: Some("Synthetic Sender <sender@example.test>".into()),
+                            });
+                        }
+                        results.extend(
+                            self.fixture_reconcile_messages(
+                                &validated_session.record.canonical_username,
+                                name,
+                                Vec::new(),
+                            )
+                            .into_iter()
+                            .map(|message| MessageSearchResult {
+                                metadata: message.metadata,
+                                mailbox_name: message.mailbox_name,
+                                uid: message.uid,
+                                flags: message.flags,
+                                date_received: message.date_received,
+                                size_virtual: message.size_virtual,
+                                subject: message.subject,
+                                from: message.from,
+                            }),
+                        );
+                    }
+                }
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailbox_name,
+                        query: query.into(),
+                        results,
+                    },
+                    audit_events: Vec::new(),
+                };
+            }
+            if query == "ux-empty-fixture" {
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailbox_name,
+                        query: query.to_string(),
+                        results: Vec::new(),
+                    },
+                    audit_events: Vec::new(),
+                };
+            }
             if mailbox_name.as_deref() == Some("MissingArchive") {
                 return BrowserMessageSearchOutcome {
                     decision: BrowserMessageSearchDecision::Denied {
@@ -1272,6 +4513,7 @@ mod tests {
             if query.trim() == "manyresults" {
                 let results = (0..crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS + 25)
                     .map(|index| MessageSearchResult {
+                        metadata: None,
                         mailbox_name: "INBOX".to_string(),
                         uid: 10_000 + index as u64,
                         flags: Vec::new(),
@@ -1300,6 +4542,7 @@ mod tests {
             if query.trim() == "searchsort" {
                 let results = vec![
                     MessageSearchResult {
+                        metadata: None,
                         mailbox_name: "INBOX".to_string(),
                         uid: 30,
                         flags: vec!["\\Seen".to_string()],
@@ -1309,6 +4552,7 @@ mod tests {
                         from: Some("Carol <carol@example.com>".to_string()),
                     },
                     MessageSearchResult {
+                        metadata: None,
                         mailbox_name: "Archive/2026".to_string(),
                         uid: 10,
                         flags: vec!["\\Answered".to_string()],
@@ -1318,6 +4562,7 @@ mod tests {
                         from: Some("Bob <bob@example.com>".to_string()),
                     },
                     MessageSearchResult {
+                        metadata: None,
                         mailbox_name: "Sent".to_string(),
                         uid: 20,
                         flags: vec!["\\Flagged".to_string()],
@@ -1356,6 +4601,7 @@ mod tests {
                         mailbox_name,
                         query: query.trim().to_string(),
                         results: vec![MessageSearchResult {
+                            metadata: None,
                             mailbox_name: "INBOX".to_string(),
                             uid: 19,
                             flags: Vec::new(),
@@ -1375,6 +4621,7 @@ mod tests {
             }
             let results = match mailbox_name.as_deref() {
                 Some(mailbox_name) => vec![MessageSearchResult {
+                    metadata: None,
                     mailbox_name: mailbox_name.to_string(),
                     uid: 17,
                     flags: vec!["\\Seen".to_string()],
@@ -1385,6 +4632,7 @@ mod tests {
                 }],
                 None => vec![
                     MessageSearchResult {
+                        metadata: None,
                         mailbox_name: "INBOX".to_string(),
                         uid: 17,
                         flags: vec!["\\Seen".to_string()],
@@ -1394,6 +4642,7 @@ mod tests {
                         from: Some("Alice <alice@example.com>".to_string()),
                     },
                     MessageSearchResult {
+                        metadata: None,
                         mailbox_name: "Archive/2026".to_string(),
                         uid: 23,
                         flags: Vec::new(),
@@ -1423,12 +4672,57 @@ mod tests {
 
         fn view_message(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             validated_session: &ValidatedSession,
             mailbox_name: &str,
             uid: u64,
         ) -> BrowserMessageViewOutcome {
-            if uid == 900 {
+            if let Some(outcome) =
+                ux_browser_server::back_focus_view(validated_session, mailbox_name, uid)
+            {
+                return outcome;
+            }
+            if mailbox_name == "INBOX"
+                && validated_session.record.canonical_username == "alice@example.com"
+            {
+                if let Some(message) = self
+                    .message_list_override
+                    .as_ref()
+                    .and_then(|messages| messages.iter().find(|message| message.uid == uid))
+                {
+                    let body = format!("Synthetic message {uid} in INBOX for alice@example.com.");
+                    return BrowserMessageViewOutcome {
+                        decision: BrowserMessageViewDecision::Rendered {
+                            canonical_username: validated_session.record.canonical_username.clone(),
+                            rendered: Box::new(RenderedMessageView {
+                                openpgp: None,
+                                metadata: message.metadata.clone(),
+                                to: Some(validated_session.record.canonical_username.clone()),
+                                cc: None,
+                                reply_metadata: None,
+                                flags: message.flags.clone(),
+                                mailbox_name: message.mailbox_name.clone(),
+                                uid,
+                                subject: message.subject.clone(),
+                                from: message.from.clone(),
+                                date_received: message.date_received.clone(),
+                                mime_top_level_content_type: "text/plain".into(),
+                                body_source: MimeBodySource::SinglePartPlainText,
+                                contains_html_body: false,
+                                body_html: TrustedHtml::from_template(format!(
+                                    "<pre>{}</pre>",
+                                    escape_html(&body)
+                                )),
+                                body_text_for_compose: body,
+                                attachments: Vec::new(),
+                                rendering_mode: RenderingMode::PlainTextPreformatted,
+                            }),
+                        },
+                        audit_events: Vec::new(),
+                    };
+                }
+            }
+            if uid == 900 || context.user_agent.contains("ReaderUnavailable") {
                 return BrowserMessageViewOutcome {
                     decision: BrowserMessageViewDecision::Denied {
                         public_reason: "temporarily_unavailable".to_string(),
@@ -1442,7 +4736,54 @@ mod tests {
                 };
             }
 
+            if self.fixture_message_removed(
+                &validated_session.record.canonical_username,
+                mailbox_name,
+                uid,
+            ) {
+                return BrowserMessageViewOutcome {
+                    decision: BrowserMessageViewDecision::Denied {
+                        public_reason: "not_found".into(),
+                    },
+                    audit_events: Vec::new(),
+                };
+            }
+            if context.user_agent == "PrivacyBrowser" {
+                let content = self
+                    .settings_store
+                    .as_ref()
+                    .and_then(|store| {
+                        crate::settings::UserSettingsStore::load(
+                            store,
+                            &validated_session.record.canonical_username,
+                        )
+                        .ok()
+                        .flatten()
+                    })
+                    .unwrap_or_default()
+                    .html_display_preference;
+                let message = MessageView { metadata: None, mailbox_name: mailbox_name.into(), uid, flags: vec![], date_received: "2026-09-30 00:00:00 +0000".into(), size_virtual: 512, header_block: "Subject: Privacy sample\nContent-Type: multipart/alternative; boundary=privacy\n".into(), body_text: "--privacy\nContent-Type: text/plain; charset=utf-8\n\nSynthetic plain part\n--privacy\nContent-Type: text/html; charset=utf-8\n\n<p>Synthetic <strong>protected part</strong></p><img src=\"https://external.invalid/pixel\"><script>unsafe()</script>\n--privacy--\n".into() };
+                let rendered = PlainTextMessageRenderer::new(RenderingPolicy {
+                    html_display_preference: content,
+                    ..RenderingPolicy::default()
+                })
+                .render_for_validated_session(context, validated_session, &message)
+                .unwrap();
+                return BrowserMessageViewOutcome {
+                    decision: BrowserMessageViewDecision::Rendered {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        rendered: Box::new(rendered.rendered),
+                    },
+                    audit_events: vec![rendered.audit_event],
+                };
+            }
+            let moved_fixture = self.fixture_added_message(
+                &validated_session.record.canonical_username,
+                mailbox_name,
+                uid,
+            );
             let _unused_fixture = MessageView {
+                metadata: None,
                 mailbox_name: mailbox_name.to_string(),
                 uid,
                 flags: vec!["\\Seen".to_string()],
@@ -1451,7 +4792,20 @@ mod tests {
                 header_block: "Subject: Example\n".to_string(),
                 body_text: "Hello world\n".to_string(),
             };
-            let attachments = if uid == 901 {
+            let attachments = if context.user_agent.starts_with("OSMAP/ManyMessages") {
+                if uid % 5 == 0 {
+                    vec![crate::mime::AttachmentMetadata {
+                        part_path: "1.2".into(),
+                        filename: Some("fixture.txt".into()),
+                        content_type: "application/octet-stream".into(),
+                        disposition: AttachmentDisposition::Attachment,
+                        content_id: None,
+                        size_hint_bytes: 24,
+                    }]
+                } else {
+                    Vec::new()
+                }
+            } else if uid == 901 {
                 (0..crate::mime::DEFAULT_MIME_PARTS_MAX + 12)
                     .map(|index| crate::mime::AttachmentMetadata {
                         part_path: format!("1.{}", index + 2),
@@ -1483,20 +4837,97 @@ mod tests {
                 ]
             };
 
+            let many = context.user_agent.starts_with("OSMAP/ManyMessages");
+            let body_text = if context.user_agent.contains("CompositionLiteralSource") {
+                composition_preference_tests::LITERAL_SOURCE.into()
+            } else if many {
+                format!(
+                    "Synthetic message {uid} in {mailbox_name} for {}.",
+                    validated_session.record.canonical_username
+                )
+            } else {
+                "Hello world".into()
+            };
+            let mut metadata = if context.user_agent.contains("LegacyMetadata") {
+                None
+            } else {
+                self.fixture_current_metadata(
+                    &validated_session.record.canonical_username,
+                    mailbox_name,
+                    uid,
+                )
+            };
+            if context.user_agent.contains("ReaderStale") {
+                if let Some(metadata) = &mut metadata {
+                    metadata.version.message_guid = "changed-synthetic-message".into();
+                }
+            }
             BrowserMessageViewOutcome {
                 decision: BrowserMessageViewDecision::Rendered {
-                    canonical_username: validated_session.record.canonical_username.clone(),
+                    canonical_username: if context.user_agent.contains("ReaderWrongAccount") {
+                        "other@example.test".into()
+                    } else {
+                        validated_session.record.canonical_username.clone()
+                    },
                     rendered: Box::new(RenderedMessageView {
-                        mailbox_name: mailbox_name.to_string(),
-                        uid,
-                        subject: Some("Example".to_string()),
-                        from: Some("Alice <alice@example.com>".to_string()),
-                        date_received: "2026-03-27 11:00:00 +0000".to_string(),
+                        openpgp: None,
+                        metadata,
+                        to: Some(validated_session.record.canonical_username.clone()),
+                        cc: None,
+                        reply_metadata: crate::reply_thread::ReplyMetadata::from_original(
+                            &reply_tests::source_headers(context, validated_session, uid),
+                        )
+                        .ok(),
+                        flags: self.fixture_message_flags(
+                            &validated_session.record.canonical_username,
+                            mailbox_name,
+                            uid,
+                        ),
+                        mailbox_name: if context.user_agent.contains("ReaderWrongMailbox") {
+                            "Other".into()
+                        } else {
+                            mailbox_name.to_string()
+                        },
+                        uid: if context.user_agent.contains("ReaderWrongUid") {
+                            uid + 1
+                        } else {
+                            uid
+                        },
+                        subject: Some(
+                            if let Some(subject) = moved_fixture
+                                .as_ref()
+                                .and_then(|message| message.subject.as_ref())
+                            {
+                                subject.clone()
+                            } else if many
+                                && context.user_agent.contains("LongHeaders")
+                                && uid == 125
+                            {
+                                format!("<b>Synthetic header</b> {}", "W".repeat(256))
+                            } else if many {
+                                format!("Message {uid:03}")
+                            } else {
+                                "Example".into()
+                            },
+                        ),
+                        from: Some(if many {
+                            "Synthetic Sender <sender@example.test>".into()
+                        } else {
+                            "Alice <alice@example.com>".into()
+                        }),
+                        date_received: if many {
+                            "2026-09-30 00:00:00 +0000".into()
+                        } else {
+                            "2026-03-27 11:00:00 +0000".into()
+                        },
                         mime_top_level_content_type: "multipart/mixed".to_string(),
                         body_source: MimeBodySource::MultipartPlainTextPart,
-                        contains_html_body: true,
-                        body_html: TrustedHtml::from_template("<pre>Hello world</pre>".to_string()),
-                        body_text_for_compose: "Hello world".to_string(),
+                        contains_html_body: !many,
+                        body_html: TrustedHtml::from_template(format!(
+                            "<pre>{}</pre>",
+                            escape_html(&body_text)
+                        )),
+                        body_text_for_compose: body_text,
                         attachments,
                         rendering_mode: RenderingMode::PlainTextPreformatted,
                     }),
@@ -1512,54 +4943,173 @@ mod tests {
 
         fn send_message(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             _validated_session: &ValidatedSession,
             request: BrowserSendRequest<'_>,
         ) -> BrowserSendOutcome {
-            let recipient_count = request
-                .recipients
-                .split(',')
-                .chain(request.cc_recipients.split(','))
-                .chain(request.bcc_recipients.split(','))
-                .filter(|recipient| !recipient.trim().is_empty())
-                .count();
-            if request.recipients == "locked@example.com" {
-                BrowserSendOutcome {
-                    decision: BrowserSendDecision::Denied {
-                        public_reason: TOO_MANY_SUBMISSIONS_PUBLIC_REASON.to_string(),
-                        retry_after_seconds: Some(120),
-                    },
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Warn,
-                        EventCategory::Submission,
-                        "stub_send_throttled",
-                        "stub submission throttled",
-                    )],
-                }
-            } else if recipient_count > 0 && request.attachments.len() <= 1 {
-                BrowserSendOutcome {
-                    decision: BrowserSendDecision::Submitted,
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Info,
-                        EventCategory::Submission,
-                        "stub_send_ok",
-                        "stub submission accepted",
-                    )],
-                }
-            } else {
-                BrowserSendOutcome {
-                    decision: BrowserSendDecision::Denied {
-                        public_reason: "invalid_request".to_string(),
-                        retry_after_seconds: None,
-                    },
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Warn,
-                        EventCategory::Submission,
-                        "stub_send_denied",
-                        "stub submission denied",
-                    )],
+            if let Some(snapshot) = &self.fixture_openpgp_snapshot {
+                if request.protection.binding_revision != Some(snapshot.lock().unwrap().revision) {
+                    return BrowserSendOutcome {
+                        decision: BrowserSendDecision::Denied {
+                            public_reason: "openpgp_binding_changed".into(),
+                            retry_after_seconds: None,
+                        },
+                        audit_events: vec![],
+                    };
                 }
             }
+            if self.browser_fixture_openpgp_denials {
+                let reason = match request.recipients {
+                    "pgp-locked@example.test" => Some("openpgp_key_locked"),
+                    "pgp-blocked@example.test" => Some("openpgp_protection_blocked"),
+                    _ => None,
+                };
+                if let Some(public_reason) = reason {
+                    return BrowserSendOutcome {
+                        decision: BrowserSendDecision::Denied {
+                            public_reason: public_reason.into(),
+                            retry_after_seconds: None,
+                        },
+                        audit_events: vec![],
+                    };
+                }
+            }
+            use crate::send_journal::{AttemptOutcome, PreparedResult};
+            let result = self.send_journal.execute_prepared(
+                &_validated_session.record.canonical_username,
+                request.send_intent,
+                100,
+                |consumed| {
+                    if !consumed && request.recipients == "locked@example.com" {
+                        return Err(BrowserSendDecision::Denied {
+                            public_reason: TOO_MANY_SUBMISSIONS_PUBLIC_REASON.into(),
+                            retry_after_seconds: Some(120),
+                        });
+                    }
+                    let mut parsed = ComposeRequest::new_with_routing(
+                        ComposePolicy::default(),
+                        request.recipients,
+                        request.cc_recipients,
+                        request.bcc_recipients,
+                        request.subject,
+                        request.body,
+                        request.attachments.to_vec(),
+                    )
+                    .and_then(|value| value.with_body_format(request.body_format))
+                    .map_err(|_| BrowserSendDecision::Denied {
+                        public_reason: "invalid_request".into(),
+                        retry_after_seconds: None,
+                    })?;
+                    parsed.sender_identity = if consumed {
+                        match crate::send_recovery::SendRecovery::new(self.recovery_root.clone())
+                            .lookup(
+                                &self.send_journal,
+                                &_validated_session.record.canonical_username,
+                                request.send_intent,
+                                100,
+                            ) {
+                            Ok(crate::send_recovery::RecoveryRead::Available(snapshot)) => {
+                                snapshot.request.sender_identity.clone()
+                            }
+                            _ => {
+                                return Err(BrowserSendDecision::Unconfirmed {
+                                    public_reason: "send_attempt_paused".into(),
+                                })
+                            }
+                        }
+                    } else if let Some(id) = request.draft_id {
+                        let record = if let Some(store) = &self.draft_store {
+                            store
+                                .load(&_validated_session.record.canonical_username, id, 100)
+                                .ok()
+                                .flatten()
+                        } else {
+                            self.drafts.lock().unwrap().get(id).cloned()
+                        };
+                        record
+                            .ok_or_else(|| BrowserSendDecision::Unconfirmed {
+                                public_reason: "send_attempt_paused".into(),
+                            })?
+                            .request
+                            .sender_identity
+                    } else if self.identity_preferences_store.is_some() {
+                        self.load_identity_preferences(context, _validated_session)
+                            .map_err(|_| BrowserSendDecision::Unconfirmed {
+                                public_reason: "send_attempt_paused".into(),
+                            })?
+                            .preferences
+                    } else {
+                        crate::identity_preferences::IdentityPreferences::default()
+                    };
+                    parsed.reply_thread = request.reply_thread.cloned();
+                    Ok(parsed)
+                },
+                |compose| {
+                    let normal = self.draft_store.clone().unwrap_or_else(|| {
+                        FileDraftStore::new(
+                            self.recovery_root.join("ordinary-fixture"),
+                            DraftPolicy::default(),
+                        )
+                    });
+                    let compose =
+                        match crate::send_recovery::SendRecovery::new(self.recovery_root.clone())
+                            .capture(
+                                &self.send_journal,
+                                &normal,
+                                &_validated_session.record.canonical_username,
+                                request.send_intent,
+                                compose,
+                                100,
+                            ) {
+                            Ok(value) => value,
+                            Err(error) => {
+                                return AttemptOutcome::RecoveryRefused {
+                                    capacity: error
+                                        == crate::send_recovery::RecoveryError::Capacity,
+                                }
+                            }
+                        };
+                    self.submitted
+                        .lock()
+                        .expect("synthetic submissions")
+                        .push(compose.clone());
+                    if context.user_agent.contains("SendUnconfirmed") {
+                        AttemptOutcome::Unconfirmed
+                    } else {
+                        AttemptOutcome::Accepted {
+                            sent_copy_stored: !context.user_agent.contains("SentCopyUnconfirmed"),
+                        }
+                    }
+                },
+            );
+            BrowserSendOutcome {
+                decision: match result {
+                    Ok(PreparedResult::Outcome(recorded)) => fixture_send_decision(Ok(recorded)),
+                    Ok(PreparedResult::NotDispatched(decision)) => decision,
+                    Err(error) => fixture_send_decision(Err(error)),
+                },
+                audit_events: vec![],
+            }
+        }
+
+        fn read_message_source(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            request: &MessageViewRequest,
+        ) -> crate::mailbox::MessageViewOutcome {
+            protected_route_tests::source_fixture(context, session, request)
+                .unwrap_or_else(|| content_tests::fixture_source(self, context, session, request))
+        }
+
+        fn download_stored_attachment(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            message: &MessageView,
+            part: &str,
+        ) -> BrowserAttachmentDownloadOutcome {
+            protected_route_tests::stored_attachment_fixture(context, session, message, part)
         }
 
         fn download_attachment(
@@ -1607,73 +5157,11 @@ mod tests {
 
         fn move_message(
             &self,
-            _context: &AuthenticationContext,
-            _validated_session: &ValidatedSession,
-            source_mailbox_name: &str,
-            uid: u64,
-            destination_mailbox_name: &str,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            request: &MessageMoveRequest,
         ) -> BrowserMessageMoveOutcome {
-            if (source_mailbox_name == "INBOX" && uid == 100156)
-                || (source_mailbox_name == "Junk" && uid == 9)
-            {
-                return BrowserMessageMoveOutcome {
-                    decision: BrowserMessageMoveDecision::Denied {
-                        public_reason: "invalid_message_reference".to_string(),
-                        retry_after_seconds: None,
-                    },
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Warn,
-                        EventCategory::Mailbox,
-                        "stub_message_move_reference_denied",
-                        "stub message move reference denied",
-                    )],
-                };
-            }
-            if destination_mailbox_name == "Locked" {
-                return BrowserMessageMoveOutcome {
-                    decision: BrowserMessageMoveDecision::Denied {
-                        public_reason: TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON.to_string(),
-                        retry_after_seconds: Some(180),
-                    },
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Warn,
-                        EventCategory::Mailbox,
-                        "stub_message_move_throttled",
-                        "stub message move throttled",
-                    )],
-                };
-            }
-            if source_mailbox_name == "INBOX"
-                && matches!(uid, 9 | 10)
-                && !destination_mailbox_name.is_empty()
-            {
-                BrowserMessageMoveOutcome {
-                    decision: BrowserMessageMoveDecision::Moved {
-                        source_mailbox_name: source_mailbox_name.to_string(),
-                        destination_mailbox_name: destination_mailbox_name.to_string(),
-                        uid,
-                    },
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Info,
-                        EventCategory::Mailbox,
-                        "stub_message_move",
-                        "stub message move completed",
-                    )],
-                }
-            } else {
-                BrowserMessageMoveOutcome {
-                    decision: BrowserMessageMoveDecision::Denied {
-                        public_reason: "invalid_request".to_string(),
-                        retry_after_seconds: None,
-                    },
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Warn,
-                        EventCategory::Mailbox,
-                        "stub_message_move_denied",
-                        "stub message move denied",
-                    )],
-                }
-            }
+            self.set_fixture_message_move(context, session, request)
         }
 
         fn list_drafts(
@@ -1681,20 +5169,78 @@ mod tests {
             _context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserDraftListOutcome {
-            let drafts = self
-                .drafts
-                .lock()
-                .expect("stub drafts should lock")
-                .values()
-                .filter(|draft| {
-                    draft.canonical_username == validated_session.record.canonical_username
-                })
-                .map(DraftRecord::summary)
-                .collect();
+            if matches!(
+                _context.user_agent.as_str(),
+                "WelcomeDraftFailure" | "WelcomeDraftWrongOwner"
+            ) {
+                return BrowserDraftListOutcome {
+                    decision: if _context.user_agent == "WelcomeDraftFailure" {
+                        BrowserDraftListDecision::Denied {
+                            public_reason: "unavailable".into(),
+                        }
+                    } else {
+                        BrowserDraftListDecision::Listed {
+                            canonical_username: "foreign@example.test".into(),
+                            drafts: vec![],
+                            states: vec![],
+                            usage: BrowserDraftStorageUsage::Unknown,
+                        }
+                    },
+                    audit_events: vec![],
+                };
+            }
+            let guard = match self.send_journal.account_guard(
+                &validated_session.record.canonical_username,
+                self.send_clock(),
+            ) {
+                Ok(guard) => guard,
+                Err(_) => {
+                    return BrowserDraftListOutcome {
+                        decision: BrowserDraftListDecision::Denied {
+                            public_reason: "temporarily_unavailable".into(),
+                        },
+                        audit_events: vec![],
+                    }
+                }
+            };
+            let drafts = if let Some(store) = &self.draft_store {
+                match store.list(
+                    &validated_session.record.canonical_username,
+                    self.send_clock(),
+                ) {
+                    Ok(drafts) => drafts,
+                    Err(error) => {
+                        return BrowserDraftListOutcome {
+                            decision: BrowserDraftListDecision::Denied {
+                                public_reason: fixture_draft_error(&error),
+                            },
+                            audit_events: vec![],
+                        }
+                    }
+                }
+            } else {
+                self.drafts
+                    .lock()
+                    .expect("stub drafts should lock")
+                    .values()
+                    .filter(|draft| {
+                        draft.canonical_username == validated_session.record.canonical_username
+                    })
+                    .map(DraftRecord::summary)
+                    .collect()
+            };
+            let recovery = crate::send_recovery::SendRecovery::new(self.recovery_root.clone())
+                .storage_usage(
+                    &validated_session.record.canonical_username,
+                    self.send_clock(),
+                );
+            let (states, usage) = super::http_browser::project_drafts(&guard, &drafts, recovery);
             BrowserDraftListOutcome {
                 decision: BrowserDraftListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
                     drafts,
+                    states,
+                    usage,
                 },
                 audit_events: vec![LogEvent::new(
                     LogLevel::Info,
@@ -1711,15 +5257,46 @@ mod tests {
             validated_session: &ValidatedSession,
             draft_id: &str,
         ) -> BrowserDraftLoadOutcome {
-            let draft = self
-                .drafts
-                .lock()
-                .expect("stub drafts should lock")
-                .get(draft_id)
-                .filter(|draft| {
-                    draft.canonical_username == validated_session.record.canonical_username
-                })
-                .cloned();
+            let _guard = match self.send_journal.account_guard(
+                &validated_session.record.canonical_username,
+                self.send_clock(),
+            ) {
+                Ok(guard) => guard,
+                Err(_) => {
+                    return BrowserDraftLoadOutcome {
+                        decision: BrowserDraftLoadDecision::Denied {
+                            public_reason: "send_attempt_paused".into(),
+                        },
+                        audit_events: vec![],
+                    }
+                }
+            };
+            let draft = if let Some(store) = &self.draft_store {
+                match store.load(
+                    &validated_session.record.canonical_username,
+                    draft_id,
+                    self.send_clock(),
+                ) {
+                    Ok(draft) => draft,
+                    Err(error) => {
+                        return BrowserDraftLoadOutcome {
+                            decision: BrowserDraftLoadDecision::Denied {
+                                public_reason: fixture_draft_error(&error),
+                            },
+                            audit_events: vec![],
+                        }
+                    }
+                }
+            } else {
+                self.drafts
+                    .lock()
+                    .expect("stub drafts should lock")
+                    .get(draft_id)
+                    .filter(|draft| {
+                        draft.canonical_username == validated_session.record.canonical_username
+                    })
+                    .cloned()
+            };
             match draft {
                 Some(draft) => BrowserDraftLoadOutcome {
                     decision: BrowserDraftLoadDecision::Loaded {
@@ -1747,35 +5324,101 @@ mod tests {
 
         fn save_draft(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             validated_session: &ValidatedSession,
             request: BrowserDraftSaveRequest<'_>,
         ) -> BrowserDraftSaveOutcome {
+            let mut guard = match self.send_journal.account_guard(
+                &validated_session.record.canonical_username,
+                self.send_clock(),
+            ) {
+                Ok(value) => value,
+                Err(_) => return fixture_paused_save(),
+            };
+            if guard.require_unconsumed(request.send_intent).is_err() {
+                return fixture_paused_save();
+            }
             let draft_id = request
                 .draft_id
                 .filter(|value| !value.trim().is_empty())
                 .map(str::to_string)
                 .unwrap_or_else(|| self.next_draft_id());
-            let existing = self
-                .drafts
-                .lock()
-                .expect("stub drafts should lock")
-                .get(&draft_id)
-                .cloned();
-            let attachments = if request.attachments.is_empty() {
+            let mut drafts = self.drafts.lock().expect("stub drafts should lock");
+            let existing = if let Some(store) = &self.draft_store {
+                match store.load(
+                    &validated_session.record.canonical_username,
+                    &draft_id,
+                    self.send_clock(),
+                ) {
+                    Ok(draft) => draft,
+                    Err(error) => {
+                        return BrowserDraftSaveOutcome {
+                            decision: BrowserDraftSaveDecision::Denied {
+                                public_reason: fixture_draft_error(&error),
+                            },
+                            audit_events: vec![],
+                        }
+                    }
+                }
+            } else {
+                drafts.get(&draft_id).cloned()
+            };
+            if existing.as_ref().is_some_and(|draft| {
+                draft.canonical_username != validated_session.record.canonical_username
+            }) {
+                return BrowserDraftSaveOutcome {
+                    decision: BrowserDraftSaveDecision::Denied {
+                        public_reason: "invalid_request".into(),
+                    },
+                    audit_events: vec![],
+                };
+            }
+            if existing.as_ref().and_then(|draft| draft.revision) != request.expected_revision
+                || request.draft_id.is_some() != existing.is_some()
+            {
+                return BrowserDraftSaveOutcome {
+                    decision: BrowserDraftSaveDecision::Denied {
+                        public_reason: "draft_conflict".into(),
+                    },
+                    audit_events: vec![],
+                };
+            }
+            let mut attachments = match crate::draft_content::retain_saved_attachments(
                 existing
                     .as_ref()
-                    .map(|draft| draft.request.attachments.clone())
-                    .unwrap_or_default()
-            } else {
-                request.attachments.to_vec()
+                    .map(|draft| draft.request.attachments.as_slice())
+                    .unwrap_or_default(),
+                request.removed_attachment_indices,
+            ) {
+                Ok(attachments) => attachments,
+                Err(_) => {
+                    return BrowserDraftSaveOutcome {
+                        decision: BrowserDraftSaveDecision::Denied {
+                            public_reason: "invalid_request".into(),
+                        },
+                        audit_events: vec![],
+                    }
+                }
             };
+            attachments.extend_from_slice(request.attachments);
+            if let Some(existing) = &existing {
+                if guard.draft_intent(existing).ok().as_deref() != Some(request.send_intent) {
+                    return fixture_paused_save();
+                }
+            }
+            if request.draft_id.is_none()
+                && guard
+                    .begin_draft_save(request.send_intent, &draft_id)
+                    .is_err()
+            {
+                return fixture_paused_save();
+            }
             let mut record = match DraftRecord::new(
                 DraftPolicy::default(),
                 DraftRecordInput {
                     draft_id: draft_id.clone(),
                     canonical_username: validated_session.record.canonical_username.clone(),
-                    now: 100,
+                    now: self.send_clock(),
                     recipients_text: request.recipients.to_string(),
                     cc_text: request.cc_recipients.to_string(),
                     bcc_text: request.bcc_recipients.to_string(),
@@ -1800,15 +5443,87 @@ mod tests {
                     }
                 }
             };
+            record.request.sender_identity = if let Some(saved) = existing.as_ref() {
+                saved.request.sender_identity.clone()
+            } else if let Some(store) = &self.identity_preferences_store {
+                match store
+                    .load(&validated_session.record.canonical_username)
+                    .and_then(|value| {
+                        value.selected_preferences(
+                            &validated_session.record.canonical_username,
+                            &self.sender_authority,
+                        )
+                    }) {
+                    Ok(value) => value,
+                    Err(_) => return fixture_paused_save(),
+                }
+            } else {
+                crate::identity_preferences::IdentityPreferences::default()
+            };
+            if let Some(id) = request.sender_id {
+                let old = record
+                    .request
+                    .sender_identity
+                    .sender()
+                    .map(|v| v.id())
+                    .unwrap_or(crate::sender_authority::CANONICAL_ID);
+                if id != old {
+                    record.request.sender_identity = match self
+                        .identity_preferences_store
+                        .as_ref()
+                        .ok_or(crate::identity_preferences::IdentityPreferencesError::Unavailable)
+                        .and_then(|store| store.load(&validated_session.record.canonical_username))
+                        .and_then(|record| {
+                            record.preferences_for_id(
+                                &validated_session.record.canonical_username,
+                                &self.sender_authority,
+                                id,
+                            )
+                        }) {
+                        Ok(value) => value,
+                        Err(_) => return fixture_paused_save(),
+                    };
+                }
+            }
+            record.request.body_format = request.body_format;
+            record.request.protection = request.protection;
+            record.request.reply_thread = request.reply_thread.cloned();
+            record.revision = request.expected_revision;
             if let Some(existing) = existing {
                 record.created_at = existing.created_at;
+                record.starred = existing.starred;
+                record.request.reply_thread = existing.request.reply_thread;
             }
-            self.drafts
-                .lock()
-                .expect("stub drafts should lock")
-                .insert(draft_id.clone(), record);
+            if let Some(store) = &self.draft_store {
+                if let Err(error) = store.save(&record, self.send_clock()) {
+                    return BrowserDraftSaveOutcome {
+                        decision: if error.save_unconfirmed() {
+                            BrowserDraftSaveDecision::Unconfirmed { draft_id }
+                        } else {
+                            BrowserDraftSaveDecision::Denied {
+                                public_reason: fixture_draft_error(&error),
+                            }
+                        },
+                        audit_events: vec![],
+                    };
+                }
+            } else {
+                record.revision = Some(request.expected_revision.unwrap_or(0) + 1);
+                drafts.insert(draft_id.clone(), record);
+            }
+            if request.draft_id.is_none()
+                && guard
+                    .finish_draft_save(request.send_intent, &draft_id)
+                    .is_err()
+            {
+                return fixture_paused_save();
+            }
             BrowserDraftSaveOutcome {
-                decision: BrowserDraftSaveDecision::Saved { draft_id },
+                decision: if context.user_agent.contains("DraftSaveUnconfirmed") {
+                    BrowserDraftSaveDecision::Unconfirmed { draft_id }
+                } else {
+                    BrowserDraftSaveDecision::Saved { draft_id }
+                },
                 audit_events: vec![LogEvent::new(
                     LogLevel::Info,
                     EventCategory::Http,
@@ -1821,21 +5536,54 @@ mod tests {
         fn delete_draft(
             &self,
             _context: &AuthenticationContext,
-            _validated_session: &ValidatedSession,
+            validated_session: &ValidatedSession,
             draft_id: &str,
+            expected_revision: u64,
         ) -> BrowserDraftDeleteOutcome {
-            let removed = self
-                .drafts
-                .lock()
-                .expect("stub drafts should lock")
-                .remove(draft_id)
-                .is_some();
-            BrowserDraftDeleteOutcome {
-                decision: if removed {
-                    BrowserDraftDeleteDecision::Deleted
-                } else {
+            if self.fail_draft_delete.as_deref() == Some(draft_id) {
+                return BrowserDraftDeleteOutcome {
+                    decision: BrowserDraftDeleteDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    },
+                    audit_events: vec![],
+                };
+            }
+            if let Some(store) = &self.draft_store {
+                return BrowserDraftDeleteOutcome {
+                    decision: match store.delete(
+                        &validated_session.record.canonical_username,
+                        draft_id,
+                        expected_revision,
+                    ) {
+                        Ok(true) => BrowserDraftDeleteDecision::Deleted,
+                        Ok(false) => BrowserDraftDeleteDecision::NotFound,
+                        Err(error) => BrowserDraftDeleteDecision::Denied {
+                            public_reason: fixture_draft_error(&error),
+                        },
+                    },
+                    audit_events: vec![],
+                };
+            }
+            let mut drafts = self.drafts.lock().expect("stub drafts should lock");
+            let decision = match drafts.get(draft_id) {
+                Some(draft)
+                    if draft.canonical_username != validated_session.record.canonical_username =>
+                {
                     BrowserDraftDeleteDecision::NotFound
-                },
+                }
+                Some(draft) if draft.revision != Some(expected_revision) => {
+                    BrowserDraftDeleteDecision::Denied {
+                        public_reason: "draft_conflict".into(),
+                    }
+                }
+                Some(_) => {
+                    drafts.remove(draft_id);
+                    BrowserDraftDeleteDecision::Deleted
+                }
+                None => BrowserDraftDeleteDecision::NotFound,
+            };
+            BrowserDraftDeleteOutcome {
+                decision,
                 audit_events: vec![LogEvent::new(
                     LogLevel::Info,
                     EventCategory::Http,
@@ -1844,14 +5592,221 @@ mod tests {
                 )],
             }
         }
+
+        fn set_draft_star(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            draft_id: &str,
+            expected_revision: u64,
+            starred: bool,
+        ) -> BrowserDraftSaveOutcome {
+            let mut drafts = self.drafts.lock().unwrap();
+            let result = (|| {
+                let draft = if let Some(store) = &self.draft_store {
+                    store.load(
+                        &session.record.canonical_username,
+                        draft_id,
+                        self.send_clock(),
+                    )?
+                } else {
+                    drafts
+                        .get(draft_id)
+                        .filter(|draft| {
+                            draft.canonical_username == session.record.canonical_username
+                        })
+                        .cloned()
+                };
+                let mut draft = draft.ok_or_else(|| crate::draft::DraftError {
+                    reason: "draft revision is stale".into(),
+                })?;
+                if draft.revision != Some(expected_revision) {
+                    return Err(crate::draft::DraftError {
+                        reason: "draft revision is stale".into(),
+                    });
+                }
+                draft.starred = starred;
+                if let Some(store) = &self.draft_store {
+                    store.save(&draft, self.send_clock())?;
+                } else {
+                    draft.revision = Some(expected_revision + 1);
+                    drafts.insert(draft_id.into(), draft);
+                }
+                Ok(())
+            })();
+            BrowserDraftSaveOutcome {
+                decision: match result {
+                    Ok(()) => BrowserDraftSaveDecision::Saved {
+                        draft_id: draft_id.into(),
+                    },
+                    Err(error) if error.save_unconfirmed() => {
+                        BrowserDraftSaveDecision::Unconfirmed {
+                            draft_id: draft_id.into(),
+                        }
+                    }
+                    Err(error) => BrowserDraftSaveDecision::Denied {
+                        public_reason: fixture_draft_error(&error),
+                    },
+                },
+                audit_events: vec![],
+            }
+        }
     }
 
-    fn app() -> BrowserApp<StubGateway> {
+    pub(super) fn app() -> BrowserApp<StubGateway> {
         BrowserApp::new(HttpPolicy::default(), StubGateway::default())
+    }
+
+    fn fixture_send_journal() -> crate::send_journal::SendJournal {
+        static NEXT: AtomicUsize = AtomicUsize::new(0);
+        let serial = NEXT.fetch_add(1, Ordering::Relaxed);
+        crate::send_journal::SendJournal::new(
+            temp_dir(&format!("send-journal-fixture-{serial}")).join("records"),
+        )
+    }
+    fn fixture_paused_save() -> BrowserDraftSaveOutcome {
+        BrowserDraftSaveOutcome {
+            decision: BrowserDraftSaveDecision::Denied {
+                public_reason: "send_attempt_paused".into(),
+            },
+            audit_events: vec![],
+        }
+    }
+    fn fixture_send_decision(
+        result: Result<crate::send_journal::JournalResult, crate::send_journal::JournalError>,
+    ) -> BrowserSendDecision {
+        match result {
+            Ok(crate::send_journal::JournalResult {
+                outcome: crate::send_journal::AttemptOutcome::RecoveryRefused { capacity },
+                ..
+            }) => BrowserSendDecision::RecoveryRefused { capacity },
+            Ok(crate::send_journal::JournalResult {
+                outcome: crate::send_journal::AttemptOutcome::Accepted { sent_copy_stored },
+                receipt_persisted,
+                ..
+            }) => BrowserSendDecision::Submitted {
+                sent_copy_stored,
+                receipt_persisted,
+            },
+            Ok(crate::send_journal::JournalResult {
+                outcome:
+                    crate::send_journal::AttemptOutcome::DraftSaved {
+                        draft_id,
+                        save_confirmed,
+                    },
+                ..
+            }) => BrowserSendDecision::DraftSaved {
+                draft_id: crate::send_journal::draft_id_text(&draft_id),
+                save_confirmed,
+            },
+            Ok(crate::send_journal::JournalResult {
+                outcome:
+                    crate::send_journal::AttemptOutcome::Scheduled {
+                        job_id,
+                        schedule_confirmed,
+                    },
+                ..
+            }) => BrowserSendDecision::Scheduled {
+                job_id: crate::send_journal::draft_id_text(&job_id),
+                schedule_confirmed,
+            },
+            _ => BrowserSendDecision::Unconfirmed {
+                public_reason: "send_attempt_paused".into(),
+            },
+        }
+    }
+    fn fixture_draft_error(error: &crate::draft::DraftError) -> String {
+        if error.reason.contains("revision") {
+            "draft_conflict"
+        } else if error.reason.contains("quota") {
+            "draft_quota_exceeded"
+        } else if error.reason == "draft store busy" {
+            "draft_busy"
+        } else {
+            "temporarily_unavailable"
+        }
+        .into()
     }
 
     fn app_with_policy(policy: HttpPolicy) -> BrowserApp<StubGateway> {
         BrowserApp::new(policy, StubGateway::default())
+    }
+
+    // Explicit opt-in for existing valid compose fixtures. Generic request()
+    // deliberately stays raw, so missing-intent and duplicate tests stay real.
+    fn native_compose_request_bytes(
+        app: &BrowserApp<StubGateway>,
+        method: &str,
+        path: &str,
+        headers: &[(&str, &str)],
+        body: &[u8],
+    ) -> HttpRequest {
+        let mut req = request_bytes(method, path, headers, body);
+        add_native_compose_intent(app, &mut req);
+        req
+    }
+    fn native_compose_request(
+        app: &BrowserApp<StubGateway>,
+        method: &str,
+        path: &str,
+        headers: &[(&str, &str)],
+        body: &str,
+    ) -> HttpRequest {
+        let mut req = request(method, path, headers, body);
+        add_native_compose_intent(app, &mut req);
+        req
+    }
+    fn add_native_compose_intent(app: &BrowserApp<StubGateway>, req: &mut HttpRequest) {
+        assert_eq!(req.method, HttpMethod::Post);
+        assert!(matches!(
+            req.path.as_str(),
+            "/send" | "/drafts/save" | "/drafts/autosave"
+        ));
+        let kind = req.headers.get("content-type").cloned();
+        let Ok(parsed) = parse_compose_form(
+            &req.body,
+            kind.as_deref(),
+            128,
+            32 * 1024 * 1024,
+            ComposePolicy::default(),
+        ) else {
+            return;
+        };
+        if parsed.fields.contains_key("send_intent") {
+            return;
+        }
+        let account = "alice@example.com";
+        let draft = parsed.fields.get("draft_id").and_then(|id| {
+            if let Some(store) = &app.gateway.draft_store {
+                store.load(account, id, 100).ok().flatten()
+            } else {
+                app.gateway.drafts.lock().unwrap().get(id).cloned()
+            }
+        });
+        let intent = if let Some(draft) = draft {
+            crate::send_journal::intent_for_draft(
+                account,
+                &draft.draft_id,
+                draft.revision.unwrap_or(0),
+                draft.updated_at,
+            )
+            .unwrap()
+        } else {
+            crate::send_journal::mint_intent(app.gateway.send_clock()).unwrap()
+        };
+        if let Some(boundary) = kind
+            .as_deref()
+            .and_then(|value| value.split("boundary=").nth(1))
+        {
+            let mut body = format!("--{boundary}\r\nContent-Disposition: form-data; name=\"send_intent\"\r\n\r\n{intent}\r\n").into_bytes();
+            body.extend_from_slice(&req.body);
+            req.body = body;
+        } else {
+            req.body
+                .extend_from_slice(format!("&send_intent={intent}").as_bytes());
+        }
+        req.headers
+            .insert("content-length".into(), req.body.len().to_string());
     }
 
     fn request(method: &str, path: &str, headers: &[(&str, &str)], body: &str) -> HttpRequest {
@@ -1903,6 +5858,26 @@ mod tests {
 
     fn body_text(response: &HandledHttpResponse) -> String {
         String::from_utf8_lossy(&response.response.body).into_owned()
+    }
+
+    // Test consumer for source-owned action fragments, not an HTML sanitizer.
+    // Caption semantics do not depend on decorative nested template tags.
+    fn rendered_action_caption(contents: &str) -> String {
+        let mut in_tag = false;
+        contents
+            .chars()
+            .filter(|character| match *character {
+                '<' => {
+                    in_tag = true;
+                    false
+                }
+                '>' => {
+                    in_tag = false;
+                    false
+                }
+                _ => !in_tag,
+            })
+            .collect()
     }
 
     fn authenticated_get(path: &str) -> HandledHttpResponse {
@@ -2308,7 +6283,9 @@ mod tests {
         assert!(body.contains("Session Secured"));
         assert!(body.contains("totp_code"));
         assert!(!body.contains("Remember this device"));
-        assert!(!body.contains("Forgot password"));
+        // Oct30 operator-directed recovery is reachable before authentication.
+        assert!(body.contains("Forgot password or lost your authenticator?"));
+        assert!(body.contains("href=\"/recover\""));
     }
 
     #[test]
@@ -2317,7 +6294,7 @@ mod tests {
             &request(
                 "POST",
                 "/login",
-                &[("User-Agent", "Firefox/Test")],
+                &[("User-Agent", "Firefox/Test"), ("Origin", "http://localhost")],
                 "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=123456",
             ),
             "127.0.0.1",
@@ -2333,18 +6310,84 @@ mod tests {
     }
 
     #[test]
+    fn login_rejects_foreign_or_missing_origin_before_authentication() {
+        let app = app();
+        let body =
+            "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=123456";
+        for headers in [
+            vec![
+                ("User-Agent", "Firefox/Test"),
+                ("Origin", "https://attacker.example"),
+            ],
+            vec![
+                ("User-Agent", "Firefox/Test"),
+                ("Origin", "http://localhost:8080"),
+            ],
+            vec![("User-Agent", "Firefox/Test"), ("Origin", "null")],
+            vec![
+                ("User-Agent", "Firefox/Test"),
+                ("Sec-Fetch-Site", "cross-site"),
+            ],
+            vec![("User-Agent", "Firefox/Test")],
+        ] {
+            let response =
+                app.handle_request(&request("POST", "/login", &headers, body), "127.0.0.1");
+            assert_eq!(response.response.status_code, 403);
+            assert!(!response
+                .response
+                .headers
+                .iter()
+                .any(|(name, _)| name == "Set-Cookie"));
+            assert_eq!(app.gateway.login_calls.load(Ordering::Relaxed), 0);
+        }
+    }
+
+    #[test]
+    fn login_accepts_same_origin_referer_or_fetch_metadata() {
+        let body =
+            "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=123456";
+        for headers in [
+            vec![
+                ("User-Agent", "Firefox/Test"),
+                ("Referer", "http://localhost/login"),
+            ],
+            vec![
+                ("User-Agent", "Firefox/Test"),
+                ("Sec-Fetch-Site", "same-origin"),
+            ],
+        ] {
+            let app = app();
+            let response =
+                app.handle_request(&request("POST", "/login", &headers, body), "127.0.0.1");
+            assert_eq!(response.response.status_code, 303);
+            assert!(response
+                .response
+                .headers
+                .iter()
+                .any(|(name, value)| name == "Set-Cookie" && value.starts_with("osmap_session=")));
+            assert_eq!(app.gateway.login_calls.load(Ordering::Relaxed), 1);
+        }
+    }
+
+    #[test]
     fn login_failure_banner_is_identical_for_wrong_password_and_wrong_totp() {
         let app = app();
         let wrong_password_request = request(
             "POST",
             "/login",
-            &[("content-type", "application/x-www-form-urlencoded")],
+            &[
+                ("content-type", "application/x-www-form-urlencoded"),
+                ("Origin", "http://localhost"),
+            ],
             "username=alice%40example.com&password=wrong&totp_code=123456",
         );
         let wrong_totp_request = request(
             "POST",
             "/login",
-            &[("content-type", "application/x-www-form-urlencoded")],
+            &[
+                ("content-type", "application/x-www-form-urlencoded"),
+                ("Origin", "http://localhost"),
+            ],
             "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=000000",
         );
 
@@ -2433,6 +6476,7 @@ mod tests {
         let gateway = RuntimeBrowserGateway::for_test(&temp_root);
         let validated_session = ValidatedSession {
             record: crate::session::SessionRecord {
+                account_epoch: None,
                 session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                     .to_string(),
                 csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
@@ -2458,11 +6502,18 @@ mod tests {
             &context,
             &validated_session,
             BrowserSendRequest {
+                sender_id: None,
+                protection: crate::send::ProtectionIntent::default(),
+                send_intent: &crate::send_journal::mint_intent(gateway.send_clock()).unwrap(),
+                draft_id: None,
+                draft_revision: None,
+                reply_thread: None,
                 recipients: "bob@example.com",
                 cc_recipients: "",
                 bcc_recipients: "",
                 subject: "Test",
                 body: "Hello",
+                body_format: crate::compose_format::BodyFormat::Plain,
                 attachments: &[],
             },
         );
@@ -2513,6 +6564,7 @@ mod tests {
         let gateway = RuntimeBrowserGateway::for_test(&temp_root);
         let validated_session = ValidatedSession {
             record: crate::session::SessionRecord {
+                account_epoch: None,
                 session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                     .to_string(),
                 csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
@@ -2534,7 +6586,19 @@ mod tests {
             ),
         };
 
-        let outcome = gateway.move_message(&context, &validated_session, "INBOX", 9, "Archive");
+        let outcome = gateway.move_message(
+            &context,
+            &validated_session,
+            &MessageMoveRequest::new(
+                MessageMovePolicy::default(),
+                "INBOX",
+                "Archive",
+                9,
+                crate::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into())
+                    .unwrap(),
+            )
+            .unwrap(),
+        );
         match outcome.decision {
             BrowserMessageMoveDecision::Denied {
                 public_reason,
@@ -2560,6 +6624,7 @@ mod tests {
                 &[
                     ("User-Agent", "Firefox/Test"),
                     ("Content-Type", "application/json"),
+                    ("Origin", "http://localhost"),
                 ],
                 "{\"username\":\"alice@example.com\"}",
             ),
@@ -2606,11 +6671,15 @@ mod tests {
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
         assert!(body.contains("alice@example.com"));
-        assert!(body.contains(">INBOX</a>"));
-        assert!(body.contains(">INBOX.Projects</a>"));
-        assert!(body.contains(">Drafts</a>"));
-        assert!(!body.contains(">dovecot</a>"));
-        assert!(!body.contains(">dovecot.sieve</a>"));
+        for name in ["INBOX", "INBOX.Projects", "Drafts"] {
+            assert!(body.contains(&format!("<strong>{name}</strong>")));
+            assert!(body.contains(&format!("href=\"/mailbox?name={name}\"")));
+        }
+        for name in ["dovecot", "dovecot.sieve"] {
+            assert!(!body.contains(&format!("href=\"/mailbox?name={name}\"")));
+            assert!(!body.contains(&format!("<strong>{name}</strong>")));
+            assert!(!body.contains(&format!("value=\"{name}\"")));
+        }
     }
 
     #[test]
@@ -2638,19 +6707,28 @@ mod tests {
         assert!(body.contains("name=\"mailbox\" value=\"INBOX\""));
         assert!(body.contains("name=\"scope\" value=\"all\""));
         assert!(body.contains("Archive shortcut sends messages"));
-        assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
-        assert!(body.contains(">Archive</button>"));
-        assert!(body.contains(">Subject</a></th>"));
-        assert!(body.contains(">From</a></th>"));
+        assert!(body.contains("name=\"action\" value=\"archive\""));
+        assert!(body.split("<button ").any(|button| {
+            let Some((tag, contents)) = button.split_once('>') else {
+                return false;
+            };
+            tag.contains("name=\"action\"")
+                && tag.contains("value=\"archive\"")
+                && contents
+                    .split_once("</button>")
+                    .is_some_and(|(caption, _)| rendered_action_caption(caption) == "Archive")
+        }));
+        assert!(body.contains("aria-label=\"Sort by Subject ascending\""));
+        assert!(body.contains("aria-label=\"Sort by From ascending\""));
         assert!(body.contains("Quarterly report"));
         assert!(body.contains("Alice &lt;alice@example.com&gt;"));
     }
 
     #[test]
-    fn mailbox_message_list_preserves_default_order_without_sort() {
+    fn mailbox_message_list_defaults_to_newest_received_first() {
         let response = authenticated_get("/mailbox?name=INBOX");
         assert_eq!(response.response.status_code, 200);
-        assert_body_order(&body_text(&response), "Quarterly report", "Follow-up");
+        assert_body_order(&body_text(&response), "Follow-up", "Quarterly report");
     }
 
     #[test]
@@ -2724,11 +6802,11 @@ mod tests {
         let response = authenticated_get("/mailbox?name=INBOX&sort=mailbox_name&dir=desc");
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert_body_order(&body, "Quarterly report", "Follow-up");
+        assert_body_order(&body, "Follow-up", "Quarterly report");
         assert!(!body.contains("UID ↓"));
         assert!(!body.contains("Subject ↓"));
         assert!(!body.contains("From ↓"));
-        assert!(!body.contains("Received ↓"));
+        assert!(body.contains("Received ↓"));
         assert!(!body.contains("Flags ↓"));
         assert!(!body.contains("Size ↓"));
     }
@@ -2832,9 +6910,9 @@ mod tests {
         let invalid_sort = authenticated_get("/search?q=searchsort&sort=mailbox_name&dir=desc");
         assert_eq!(invalid_sort.response.status_code, 200);
         let invalid_sort_body = body_text(&invalid_sort);
-        assert_body_order(&invalid_sort_body, "Search Middle", "Search Alpha");
-        assert_body_order(&invalid_sort_body, "Search Alpha", "Search Zulu");
-        assert!(!invalid_sort_body.contains(" ↓"));
+        assert_body_order(&invalid_sort_body, "Search Middle", "Search Zulu");
+        assert_body_order(&invalid_sort_body, "Search Zulu", "Search Alpha");
+        assert!(invalid_sort_body.contains("Received ↓"));
 
         let invalid_dir = authenticated_get("/search?q=searchsort&sort=subject&dir=sideways");
         assert_eq!(invalid_dir.response.status_code, 200);
@@ -2850,7 +6928,7 @@ mod tests {
         assert_eq!(all.response.status_code, 200);
         let all_body = body_text(&all);
         assert!(all_body.contains("All field selected"));
-        assert!(all_body.contains("<strong>Field:</strong> All message text"));
+        assert!(all_body.contains("<option value=\"all\" selected>All message text</option>"));
         assert!(all_body.contains(
             "/search?scope=all&amp;q=fieldfilter&amp;field=all&amp;sort=uid&amp;dir=asc"
         ));
@@ -2900,11 +6978,13 @@ mod tests {
 
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert!(body.contains("<h1>Search Results</h1>"));
+        assert!(body.contains("<h1>Search</h1>"));
+        assert!(body.contains("<h2 class=\"section-title sr-only\">Search Results</h2>"));
+        assert_eq!(body.matches("<h1").count(), 1);
         assert!(body.contains("Quarterly report"));
         assert!(body.contains("Alice &lt;alice@example.com&gt;"));
         assert!(body.contains("/message?mailbox=INBOX&amp;uid=17"));
-        assert!(body.contains("<strong>Scope:</strong> INBOX"));
+        assert!(body.contains("class=\"search-scope\">INBOX"));
     }
 
     #[test]
@@ -2960,6 +7040,51 @@ mod tests {
             "127.0.0.1",
         );
         assert_eq!(response_after_release.response.status_code, 200);
+    }
+
+    #[test]
+    fn batch_search_backend_refusal_releases_browser_worker_and_keeps_login_available() {
+        let app = app_with_policy(HttpPolicy {
+            search_worker_budget: 1,
+            ..HttpPolicy::default()
+        });
+        let mut headers = authenticated_headers();
+        for (name, value) in &mut headers {
+            if *name == "User-Agent" {
+                *value = "OSMAP/StateFailure";
+            }
+        }
+        let response = app.handle_request(
+            &request("GET", "/search?q=needle", &headers, ""),
+            "127.0.0.1",
+        );
+        assert_eq!(response.response.status_code, 503);
+        assert!(!response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "request_budget_exhausted"));
+        let released = app
+            .request_budgets
+            .search_workers
+            .try_acquire()
+            .expect("backend refusal must release its only worker slot");
+        let login = app.handle_request(
+            &request("GET", "/login", &[("User-Agent", "Firefox/Test")], ""),
+            "127.0.0.1",
+        );
+        assert_eq!(login.response.status_code, 200);
+        drop(released);
+        let success = app.handle_request(
+            &request(
+                "GET",
+                "/search?q=quarterly+report",
+                &authenticated_headers(),
+                "",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(success.response.status_code, 200);
+        assert!(body_text(&success).contains("Quarterly report"));
     }
 
     #[test]
@@ -3078,7 +7203,7 @@ mod tests {
                 "POST",
                 "/message/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026", "move"),
             ),
             "127.0.0.1",
         );
@@ -3102,7 +7227,7 @@ mod tests {
                 "POST",
                 "/message/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026", "move"),
             ),
             "127.0.0.1",
         );
@@ -3127,7 +7252,7 @@ mod tests {
                 "POST",
                 "/messages/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9", "move"),
             ),
             "127.0.0.1",
         );
@@ -3151,7 +7276,7 @@ mod tests {
                 "POST",
                 "/messages/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9", "move"),
             ),
             "127.0.0.1",
         );
@@ -3176,7 +7301,7 @@ mod tests {
                 "POST",
                 "/messages/archive",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9", "archive"),
             ),
             "127.0.0.1",
         );
@@ -3199,7 +7324,7 @@ mod tests {
                 "POST",
                 "/messages/archive",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9", "archive"),
             ),
             "127.0.0.1",
         );
@@ -3272,7 +7397,10 @@ mod tests {
             &request(
                 "POST",
                 "/login",
-                &[("content-type", "application/x-www-form-urlencoded")],
+                &[
+                    ("content-type", "application/x-www-form-urlencoded"),
+                    ("Origin", "http://localhost"),
+                ],
                 "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=123456",
             ),
             "127.0.0.1",
@@ -3301,7 +7429,10 @@ mod tests {
             &request(
                 "POST",
                 "/login",
-                &[("content-type", "application/x-www-form-urlencoded")],
+                &[
+                    ("content-type", "application/x-www-form-urlencoded"),
+                    ("Origin", "http://localhost"),
+                ],
                 "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=123456",
             ),
             "127.0.0.1",
@@ -3323,7 +7454,7 @@ mod tests {
             .expect("test should hold the only send slot");
 
         let response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
@@ -3351,7 +7482,7 @@ mod tests {
 
         drop(held_budget);
         let response_after_release = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
@@ -3401,7 +7532,7 @@ mod tests {
     }
 
     #[test]
-    fn search_page_rejects_missing_query() {
+    fn search_page_missing_query_renders_native_landing_without_backend_call() {
         let response = app().handle_request(
             &request(
                 "GET",
@@ -3418,8 +7549,47 @@ mod tests {
             "127.0.0.1",
         );
 
-        assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains("A search query is required."));
+        assert_eq!(response.response.status_code, 200);
+        assert!(body_text(&response).contains("Enter keywords to search your mail."));
+        assert!(body_text(&response).contains("id=\"search-query\""));
+        assert!(!format!("{:?}", response.audit_events).contains("stub_message_search"));
+    }
+
+    #[test]
+    fn search_page_rejects_wrong_owner_without_foreign_values() {
+        let response = app().handle_request(&request("GET", "/search?q=quarterly", &[
+            ("User-Agent", "OSMAP/SearchWrongOwner"),
+            ("Cookie", "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+        ], ""), "127.0.0.1");
+        assert_eq!(response.response.status_code, 503);
+        for value in ["foreign@example.test", "ForeignFolder", "foreign-secret"] {
+            assert!(!body_text(&response).contains(value));
+        }
+        assert_eq!(
+            response
+                .audit_events
+                .iter()
+                .filter(|event| event.action == "request_budget_released")
+                .count(),
+            1
+        );
+    }
+
+    #[test]
+    fn search_page_blank_query_authenticates_and_validates_before_landing() {
+        let unauthenticated =
+            app().handle_request(&request("GET", "/search", &[], ""), "127.0.0.1");
+        assert_ne!(unauthenticated.response.status_code, 200);
+        for (path, status) in [
+            ("/search?q=+++", 200),
+            ("/search?q=&field=unsupported", 400),
+            ("/search?q=&after=invalid", 400),
+            ("/search?q=%0A", 400),
+        ] {
+            let response = app().handle_request(&request("GET", path, &[("Cookie", "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")], ""), "127.0.0.1");
+            assert_eq!(response.response.status_code, status, "{path}");
+            assert!(!format!("{:?}", response.audit_events).contains("stub_message_search"));
+        }
     }
 
     #[test]
@@ -3490,7 +7660,7 @@ mod tests {
 
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert!(body.contains("<strong>Scope:</strong> All mailboxes"));
+        assert!(body.contains("class=\"search-scope\">All mailboxes"));
         assert!(body.contains("name=\"scope\" value=\"all\" checked"));
         assert!(body.contains("/message?mailbox=INBOX&amp;uid=17"));
         assert!(body.contains("/message?mailbox=Archive%2F2026&amp;uid=23"));
@@ -3519,16 +7689,17 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("Result limit reached."));
         assert!(body.contains(&format!(
-            "Displaying the first {} of {} backend results.",
+            "Showing up to {} backend results.",
             crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS,
-            crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS + 25
         )));
         assert!(body.contains(&format!(
-            "<strong>Results:</strong> {}",
+            "Messages ({})",
             crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS
         )));
         assert!(body.contains("Result 249"));
         assert!(!body.contains("Result 250"));
+        assert_eq!(body.matches("class=\"message-row").count(), 50);
+        assert!(body.contains("Page 1 of 5"));
     }
 
     #[test]
@@ -3581,7 +7752,14 @@ mod tests {
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
         assert!(body.contains("multipart/mixed"));
-        assert!(body.contains("mail-shell mail-shell-three"));
+        assert!(body.contains("standalone-reader"));
+        assert!(
+            body.find("<section class=\"body-panel\">")
+                .expect("body panel")
+                < body
+                    .find("<section class=\"panel reader-attachments\">")
+                    .expect("attachments")
+        );
         assert!(body.contains("Reading Pane"));
         assert!(body.contains("Remote content blocked by policy"));
         assert!(body.contains("report.pdf"));
@@ -3589,9 +7767,9 @@ mod tests {
         assert!(body.contains("mode=reply"));
         assert!(body.contains("mode=forward"));
         assert!(body.contains("Archive Message"));
-        assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
-        assert!(body.contains("Delete to Trash"));
-        assert!(body.contains("name=\"destination_mailbox\" value=\"Trash\""));
+        assert!(body.contains("name=\"action\" value=\"archive\""));
+        assert!(body.contains("Move to Bin"));
+        assert!(body.contains("name=\"action\" value=\"bin\""));
         assert!(body.contains("action=\"/message/move\""));
         assert!(body.contains("<select name=\"destination_mailbox\">"));
         assert!(body.contains("<option value=\"Trash\">Trash</option>"));
@@ -3732,7 +7910,9 @@ mod tests {
 
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert!(body.contains("matches your configured archive destination"));
+        assert!(body.contains("<h1>Archive / Bin / Junk</h1>"));
+        assert!(body
+            .contains("href=\"/mailbox?name=Archive%2F2026\" aria-current=\"page\">Archive</a>"));
         assert!(!body.contains(">Archive</button>"));
     }
 
@@ -3758,17 +7938,34 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("id=\"bulk-move-form\""));
         assert!(body.contains("action=\"/messages/move\""));
-        assert!(body.contains("id=\"bulk-archive-form\""));
-        assert!(body.contains("action=\"/messages/archive\""));
-        assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
+        assert!(!body.contains("id=\"bulk-archive-form\""));
+        assert!(body.contains("name=\"action\" value=\"archive\""));
+        assert!(body.contains("name=\"action\" value=\"archive\""));
         assert!(body.contains("<option value=\"Archive/2026\">Archive/2026</option>"));
         assert!(body.contains("<option value=\"INBOX.Projects\">INBOX.Projects</option>"));
-        assert!(body.contains("form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_9\""));
-        assert!(body.contains("form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_10\""));
-        assert!(body.contains("form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_9\""));
-        assert!(body.contains("form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_10\""));
-        assert!(body.contains(">Move Selected</button>"));
-        assert!(body.contains(">Archive Selected</button>"));
+        assert!(body.contains("form=\"bulk-move-form\" type=\"checkbox\" name=\"message_9\""));
+        assert!(body.contains("form=\"bulk-move-form\" type=\"checkbox\" name=\"message_10\""));
+        assert_eq!(
+            body.matches("type=\"checkbox\" name=\"message_9\"").count(),
+            1
+        );
+        assert_eq!(
+            body.matches("type=\"checkbox\" name=\"message_10\"")
+                .count(),
+            1
+        );
+        for (action, label) in [("move", "Move Selected"), ("archive", "Archive Selected")] {
+            assert!(body.split("<button ").any(|button| {
+                let Some((tag, contents)) = button.split_once('>') else {
+                    return false;
+                };
+                tag.contains("name=\"action\"")
+                    && tag.contains(&format!("value=\"{action}\""))
+                    && contents
+                        .split_once("</button>")
+                        .is_some_and(|(caption, _)| rendered_action_caption(caption) == label)
+            }));
+        }
     }
 
     #[test]
@@ -3778,15 +7975,17 @@ mod tests {
                 "POST",
                 "/message/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 303);
-        assert!(response.response.headers.iter().any(|(name, value)| {
-            name == "Location" && value == "/mailbox?name=INBOX&moved_to=Archive%2F2026"
-        }));
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| { name == "Location" && value == "/mailbox?name=INBOX" }));
     }
 
     #[test]
@@ -3796,13 +7995,13 @@ mod tests {
                 "POST",
                 "/message/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=100156&destination_mailbox=Junk",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=100156&destination_mailbox=Junk", "move"),
             ),
             "127.0.0.1",
         );
 
-        assert_eq!(response.response.status_code, 404);
-        assert!(body_text(&response).contains("selected message was not found"));
+        assert_eq!(response.response.status_code, 409);
+        assert!(body_text(&response).contains("current message was moved, removed or replaced"));
         assert!(!response
             .response
             .headers
@@ -3817,13 +8016,13 @@ mod tests {
                 "POST",
                 "/message/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=Junk&uid=9&destination_mailbox=INBOX",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=Junk&uid=9&destination_mailbox=INBOX", "move"),
             ),
             "127.0.0.1",
         );
 
-        assert_eq!(response.response.status_code, 404);
-        assert!(body_text(&response).contains("selected message was not found"));
+        assert_eq!(response.response.status_code, 409);
+        assert!(body_text(&response).contains("current message was moved, removed or replaced"));
     }
 
     #[test]
@@ -3833,13 +8032,15 @@ mod tests {
                 "POST",
                 "/message/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=abc&destination_mailbox=Junk",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=abc&destination_mailbox=Junk", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains("A positive IMAP UID is required."));
+        assert!(
+            body_text(&response).contains("Select current messages and an available destination")
+        );
     }
 
     #[test]
@@ -3849,13 +8050,15 @@ mod tests {
                 "POST",
                 "/message/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains("submitted request was not valid"));
+        assert!(
+            body_text(&response).contains("Select current messages and an available destination")
+        );
     }
 
     #[test]
@@ -3865,16 +8068,17 @@ mod tests {
                 "POST",
                 "/messages/archive",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9&uid_10=10",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9&uid_10=10", "archive"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 303);
-        assert!(response.response.headers.iter().any(|(name, value)| {
-            name == "Location"
-                && value == "/mailbox?name=INBOX&moved_to=Archive%2F2026&moved_count=2"
-        }));
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| { name == "Location" && value == "/mailbox?name=INBOX" }));
     }
 
     #[test]
@@ -3884,16 +8088,17 @@ mod tests {
                 "POST",
                 "/messages/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9&uid_10=10",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9&uid_10=10", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 303);
-        assert!(response.response.headers.iter().any(|(name, value)| {
-            name == "Location"
-                && value == "/mailbox?name=INBOX&moved_to=INBOX.Projects&moved_count=2"
-        }));
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| { name == "Location" && value == "/mailbox?name=INBOX" }));
     }
 
     #[test]
@@ -3903,13 +8108,15 @@ mod tests {
                 "POST",
                 "/messages/archive",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026", "archive"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains("Select at least one message to archive."));
+        assert!(
+            body_text(&response).contains("Select current messages and an available destination")
+        );
     }
 
     #[test]
@@ -3919,13 +8126,15 @@ mod tests {
                 "POST",
                 "/messages/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains("Select at least one message to move."));
+        assert!(
+            body_text(&response).contains("Select current messages and an available destination")
+        );
     }
 
     #[test]
@@ -3935,13 +8144,15 @@ mod tests {
                 "POST",
                 "/messages/archive",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_1=1&uid_2=2&uid_3=3&uid_4=4&uid_5=5&uid_6=6&uid_7=7&uid_8=8&uid_9=9&uid_10=10&uid_11=11",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_1=1&uid_2=2&uid_3=3&uid_4=4&uid_5=5&uid_6=6&uid_7=7&uid_8=8&uid_9=9&uid_10=10&uid_11=11", "archive"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains("The archive selection was not valid."));
+        assert!(
+            body_text(&response).contains("Select current messages and an available destination")
+        );
     }
 
     #[test]
@@ -3951,13 +8162,15 @@ mod tests {
                 "POST",
                 "/messages/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_1=1&uid_2=2&uid_3=3&uid_4=4&uid_5=5&uid_6=6&uid_7=7&uid_8=8&uid_9=9&uid_10=10&uid_11=11",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_1=1&uid_2=2&uid_3=3&uid_4=4&uid_5=5&uid_6=6&uid_7=7&uid_8=8&uid_9=9&uid_10=10&uid_11=11", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains("The move selection was not valid."));
+        assert!(
+            body_text(&response).contains("Select current messages and an available destination")
+        );
     }
 
     #[test]
@@ -3967,14 +8180,15 @@ mod tests {
                 "POST",
                 "/messages/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=dovecot&uid_9=9",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=dovecot&uid_9=9", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response)
-            .contains("The selected destination mailbox is not available for bulk move."));
+        assert!(
+            body_text(&response).contains("Select current messages and an available destination")
+        );
     }
 
     #[test]
@@ -3984,19 +8198,18 @@ mod tests {
                 "POST",
                 "/messages/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9&uid_100156=100156",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9&uid_100156=100156", "move"),
             ),
             "127.0.0.1",
         );
 
-        assert_eq!(response.response.status_code, 404);
-        assert!(
-            body_text(&response).contains("1 message(s) were moved before this request stopped.")
-        );
+        assert_eq!(response.response.status_code, 409);
+        assert!(body_text(&response)
+            .contains("1 confirmed moved; 0 uncertain; 0 remaining messages were not attempted."));
     }
 
     #[test]
-    fn mailbox_page_renders_move_success_notice() {
+    fn mailbox_page_does_not_trust_caller_supplied_move_success() {
         let response = app().handle_request(
             &request(
                 "GET",
@@ -4014,11 +8227,11 @@ mod tests {
         );
 
         assert_eq!(response.response.status_code, 200);
-        assert!(body_text(&response).contains("Message moved to Archive/2026."));
+        assert!(!body_text(&response).contains("Update complete:"));
     }
 
     #[test]
-    fn mailbox_page_renders_bulk_move_success_notice() {
+    fn mailbox_page_does_not_trust_caller_supplied_bulk_count() {
         let response = app().handle_request(
             &request(
                 "GET",
@@ -4036,7 +8249,7 @@ mod tests {
         );
 
         assert_eq!(response.response.status_code, 200);
-        assert!(body_text(&response).contains("2 messages moved to Archive/2026."));
+        assert!(!body_text(&response).contains("Update complete:"));
     }
 
     #[test]
@@ -4072,7 +8285,7 @@ mod tests {
     fn draft_save_resume_and_list_are_authenticated_and_redacted() {
         let app = app();
         let save_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
@@ -4105,23 +8318,35 @@ mod tests {
         assert_eq!(list_response.response.status_code, 200);
         let list_body = body_text(&list_response);
         assert!(list_body.contains("Resume"));
-        assert!(list_body.contains("Body Bytes"));
+        assert!(list_body.contains("Draft Subject"));
+        assert!(list_body.contains("Recipient"));
+        assert!(!list_body.contains("Body Bytes"));
         assert!(!list_body.contains("Private draft body"));
-        assert!(!list_body.contains("Draft Subject"));
+        assert!(!list_body.contains("dana@example.org"));
+        let summaries = app
+            .gateway
+            .drafts
+            .lock()
+            .unwrap()
+            .values()
+            .map(DraftRecord::summary)
+            .collect::<Vec<_>>();
+        let debug = format!("{summaries:?}");
+        assert!(!debug.contains("Draft Subject") && !debug.contains("bob@example.com"));
     }
 
     #[test]
     fn draft_save_resume_and_send_revalidate_explicit_source_attachment_references() {
         let app = app();
         let save_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
                 concat!(
                     "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
                     "&to=bob%40example.com&subject=Source%20Draft&body=Body",
-                    "&source_mailbox=INBOX&source_uid=9",
+                    "&source_mailbox=INBOX&source_uid=9&source_mailbox_guid=bdb0b520cd1ca1698f6409144e01c408&source_message_guid=synthetic-bdb0b520-9",
                     "&include_original_attachment_1=1.2"
                 ),
             ),
@@ -4131,7 +8356,7 @@ mod tests {
         assert!(save_response
             .audit_events
             .iter()
-            .any(|event| event.action == "stub_message_view"));
+            .any(|event| event.action == "stub_source_read"));
 
         let location = location_header(&save_response);
         let draft_id = location.trim_start_matches("/draft?id=");
@@ -4148,12 +8373,12 @@ mod tests {
         assert!(!resume_body.contains("value=\"1.3\" checked"));
 
         let send_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
                 &format!(
-                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&to=bob%40example.com&subject=Source%20Draft&body=Body&source_mailbox=INBOX&source_uid=9&include_original_attachment_1=1.2"
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&draft_revision=1&to=bob%40example.com&subject=Source%20Draft&body=Body&source_mailbox=INBOX&source_uid=9&source_mailbox_guid=bdb0b520cd1ca1698f6409144e01c408&source_message_guid=synthetic-bdb0b520-9&include_original_attachment_1=1.2"
                 ),
             ),
             "127.0.0.1",
@@ -4162,20 +8387,20 @@ mod tests {
         assert!(send_response
             .audit_events
             .iter()
-            .any(|event| event.action == "stub_attachment_download"));
+            .any(|event| event.action == "stub_source_read"));
     }
 
     #[test]
     fn draft_save_rejects_unsurfaced_source_attachment_reference() {
         let response = app().handle_request(
-            &request(
+            &native_compose_request(&app(),
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
                 concat!(
                     "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
                     "&to=bob%40example.com&subject=Stale&body=Body",
-                    "&source_mailbox=INBOX&source_uid=9",
+                    "&source_mailbox=INBOX&source_uid=9&source_mailbox_guid=bdb0b520cd1ca1698f6409144e01c408&source_message_guid=synthetic-bdb0b520-9",
                     "&include_original_attachment_1=1.99"
                 ),
             ),
@@ -4194,7 +8419,7 @@ mod tests {
     fn draft_delete_removes_saved_draft() {
         let app = app();
         let save_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
@@ -4211,7 +8436,7 @@ mod tests {
                 "/drafts/delete",
                 &authenticated_same_origin_headers(),
                 &format!(
-                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}"
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&draft_revision=1&confirm=1"
                 ),
             ),
             "127.0.0.1",
@@ -4229,7 +8454,7 @@ mod tests {
     fn send_success_deletes_draft_after_accepted_handoff() {
         let app = app();
         let save_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
@@ -4241,18 +8466,18 @@ mod tests {
         let draft_id = location.trim_start_matches("/draft?id=");
 
         let send_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
                 &format!(
-                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&to=bob%40example.com&subject=Send%20Me&body=Body"
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&draft_revision=1&to=bob%40example.com&subject=Send%20Me&body=Body"
                 ),
             ),
             "127.0.0.1",
         );
         assert_eq!(send_response.response.status_code, 303);
-        assert_eq!(location_header(&send_response), "/compose?sent=1");
+        assert!(location_header(&send_response).starts_with("/compose?receipt="));
 
         let resume_response = app.handle_request(
             &request("GET", &location, &authenticated_headers(), ""),
@@ -4265,7 +8490,7 @@ mod tests {
     fn send_failure_preserves_draft() {
         let app = app();
         let save_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
@@ -4277,12 +8502,12 @@ mod tests {
         let draft_id = location.trim_start_matches("/draft?id=");
 
         let send_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
                 &format!(
-                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&to=locked%40example.com&subject=Retry%20Later&body=Body"
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&draft_revision=1&to=locked%40example.com&subject=Retry%20Later&body=Body"
                 ),
             ),
             "127.0.0.1",
@@ -4323,7 +8548,7 @@ mod tests {
         multipart_body.push_str("--draft-boundary--\r\n");
 
         let save_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/drafts/save",
                 &[
@@ -4350,12 +8575,12 @@ mod tests {
         assert!(body_text(&resume_response).contains("1 stored attachment"));
 
         let send_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
                 &format!(
-                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&to=bob%40example.com&subject=Attachment%20Draft&body=Body"
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&draft_revision=1&to=bob%40example.com&subject=Attachment%20Draft&body=Body"
                 ),
             ),
             "127.0.0.1",
@@ -4366,7 +8591,8 @@ mod tests {
     #[test]
     fn draft_save_requires_valid_csrf_token() {
         let response = app().handle_request(
-            &request(
+            &native_compose_request(
+                &app(),
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
@@ -4415,13 +8641,13 @@ mod tests {
 
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert!(body.contains("<h1>Sessions</h1>"));
+        assert!(body.contains("<h1>Active Sessions</h1>"));
         assert!(body.contains("Concurrent browser sessions are allowed."));
-        assert!(body.contains("<th>Device</th>"));
+        assert!(body.contains("<th scope=\"col\">Device</th>"));
         assert!(body.contains(">Firefox<"));
         assert!(body.contains("203.0.113.9"));
         assert!(body.contains("Revoke This Session"));
-        assert!(body.contains("Revoke Other Sessions"));
+        assert!(body.contains("Sign out all other sessions"));
         assert!(body.contains("Revoke All Sessions"));
         assert!(body.contains("Idle timeout:</strong> 1800 seconds"));
     }
@@ -4447,14 +8673,17 @@ mod tests {
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
         assert!(body.contains("<h1>Settings</h1>"));
-        assert!(body.contains("prefer_sanitized_html"));
-        assert!(body.contains("id=\"html-display-prefer-sanitized\""));
-        assert!(body.contains("for=\"html-display-prefer-sanitized\""));
+        assert!(body.contains("<h2 id=\"general-profile-title\">Account Profile</h2>"));
+        assert!(body.contains("name=\"settings_action\" value=\"archive\""));
+        assert!(!body.contains("name=\"html_display_preference\""));
         assert!(body.contains("name=\"archive_mailbox_name\""));
-        assert!(body.contains("id=\"archive-mailbox-name\""));
-        assert!(body.contains("class=\"action-stack\""));
+        assert!(body.contains("id=\"general-archive\""));
+        assert!(body.contains("for=\"general-archive\""));
         assert!(body.contains("value=\"Archive/2026\""));
-        assert!(body.contains("Save Settings"));
+        assert!(body.contains("Save archive folder"));
+        assert!(body.contains("Save appearance"));
+        assert!(body.contains("action=\"/settings/display\""));
+        assert!(body.contains("href=\"/settings?section=reading\""));
     }
 
     #[test]
@@ -4537,13 +8766,19 @@ mod tests {
             "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
             "9\r\n",
             "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_mailbox_guid\"\r\n\r\n",
+            "bdb0b520cd1ca1698f6409144e01c408\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_message_guid\"\r\n\r\n",
+            "synthetic-bdb0b520-9\r\n",
+            "--test-boundary\r\n",
             "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
             "1.2\r\n",
             "--test-boundary--\r\n",
         );
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -4564,7 +8799,7 @@ mod tests {
         assert!(response
             .audit_events
             .iter()
-            .any(|event| event.action == "stub_attachment_download"));
+            .any(|event| event.action == "stub_source_read"));
     }
 
     #[test]
@@ -4589,6 +8824,12 @@ mod tests {
             "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
             "9\r\n",
             "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_mailbox_guid\"\r\n\r\n",
+            "bdb0b520cd1ca1698f6409144e01c408\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_message_guid\"\r\n\r\n",
+            "synthetic-bdb0b520-9\r\n",
+            "--test-boundary\r\n",
             "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
             "1.2\r\n",
             "--test-boundary\r\n",
@@ -4598,7 +8839,7 @@ mod tests {
         );
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -4645,13 +8886,19 @@ mod tests {
             "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
             "9\r\n",
             "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_mailbox_guid\"\r\n\r\n",
+            "bdb0b520cd1ca1698f6409144e01c408\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_message_guid\"\r\n\r\n",
+            "synthetic-bdb0b520-9\r\n",
+            "--test-boundary\r\n",
             "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
             "1.2\r\n",
             "--test-boundary--\r\n",
         );
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -4698,13 +8945,19 @@ mod tests {
             "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
             "9\r\n",
             "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_mailbox_guid\"\r\n\r\n",
+            "bdb0b520cd1ca1698f6409144e01c408\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_message_guid\"\r\n\r\n",
+            "synthetic-bdb0b520-9\r\n",
+            "--test-boundary\r\n",
             "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
             "1.99\r\n",
             "--test-boundary--\r\n",
         );
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -4721,12 +8974,12 @@ mod tests {
             "127.0.0.1",
         );
 
-        assert_eq!(response.response.status_code, 503);
-        assert!(body_text(&response).contains("could not be fetched safely"));
+        assert_eq!(response.response.status_code, 409);
+        assert!(body_text(&response).contains("could not be revalidated"));
         assert!(response
             .audit_events
             .iter()
-            .any(|event| event.action == "http_send_original_attachment_fetch_failed"));
+            .any(|event| event.action == "stub_source_read"));
         assert!(!response
             .audit_events
             .iter()
@@ -4755,6 +9008,12 @@ mod tests {
             "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
             "9\r\n",
             "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_mailbox_guid\"\r\n\r\n",
+            "bdb0b520cd1ca1698f6409144e01c408\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_message_guid\"\r\n\r\n",
+            "synthetic-bdb0b520-9\r\n",
+            "--test-boundary\r\n",
             "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
             "1.2\r\n",
         );
@@ -4776,7 +9035,7 @@ mod tests {
         let body = format!("{body_prefix}{uploads}");
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -4842,7 +9101,8 @@ mod tests {
     #[test]
     fn send_route_requires_valid_csrf_token() {
         let response = app().handle_request(
-            &request(
+            &native_compose_request(
+                &app(),
                 "POST",
                 "/send",
                 &authenticated_headers(),
@@ -4858,7 +9118,7 @@ mod tests {
     #[test]
     fn send_route_redirects_after_successful_submission() {
         let response = app().handle_request(
-            &request(
+            &native_compose_request(&app(),
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
@@ -4872,13 +9132,13 @@ mod tests {
             .response
             .headers
             .iter()
-            .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+            .any(|(name, value)| name == "Location" && value.starts_with("/compose?receipt=")));
     }
 
     #[test]
     fn send_route_returns_retry_after_when_submission_is_throttled() {
         let response = app().handle_request(
-            &request(
+            &native_compose_request(&app(),
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
@@ -4898,18 +9158,21 @@ mod tests {
 
     #[test]
     fn message_move_route_returns_retry_after_when_throttled() {
+        let mut headers = authenticated_same_origin_headers().to_vec();
+        headers.retain(|(name, _)| !name.eq_ignore_ascii_case("user-agent"));
+        headers.push(("User-Agent", "OSMAP/ManyMessages;MoveThrottled"));
         let response = app().handle_request(
             &request(
                 "POST",
                 "/message/move",
-                &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Locked",
+                &headers,
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Junk", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 429);
-        assert!(body_text(&response).contains("Too many mailbox move requests were observed."));
+        assert!(body_text(&response).contains("mail action limit has been reached"));
         assert!(response
             .response
             .headers
@@ -5185,7 +9448,7 @@ mod tests {
         multipart_body.extend_from_slice(b"\r\n--test-boundary--\r\n");
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -5207,7 +9470,7 @@ mod tests {
             .response
             .headers
             .iter()
-            .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+            .any(|(name, value)| name == "Location" && value.starts_with("/compose?receipt=")));
     }
 
     #[test]
@@ -5234,7 +9497,7 @@ mod tests {
         multipart_body.extend_from_slice(b"\r\n--test-boundary--\r\n");
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -5282,7 +9545,7 @@ mod tests {
         multipart_body.extend_from_slice(b"\r\n--test-boundary--\r\n");
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -5395,7 +9658,7 @@ mod tests {
     #[test]
     fn send_route_accepts_opaque_origin_when_same_origin_referer_is_present() {
         let response = app().handle_request(
-            &request(
+            &native_compose_request(&app(),
                 "POST",
                 "/send",
                 &[
@@ -5417,13 +9680,13 @@ mod tests {
             .response
             .headers
             .iter()
-            .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+            .any(|(name, value)| name == "Location" && value.starts_with("/compose?receipt=")));
     }
 
     #[test]
     fn send_route_accepts_same_origin_fetch_metadata_when_origin_is_opaque() {
         let response = app().handle_request(
-            &request(
+            &native_compose_request(&app(),
                 "POST",
                 "/send",
                 &[
@@ -5445,7 +9708,7 @@ mod tests {
             .response
             .headers
             .iter()
-            .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+            .any(|(name, value)| name == "Location" && value.starts_with("/compose?receipt=")));
     }
 
     #[test]
@@ -5543,6 +9806,14 @@ mod tests {
             (
                 "/drafts/delete",
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id=00000000000000000000000000000001",
+            ),
+            (
+                "/drafts/star",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+            ),
+            (
+                "/drafts/discard",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
             ),
             (
                 "/sessions/revoke",

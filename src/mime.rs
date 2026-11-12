@@ -1305,6 +1305,7 @@ mod tests {
 
     fn message_view(header_block: &str, body_text: &str) -> MessageView {
         MessageView {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 9,
             flags: vec!["\\Seen".to_string()],

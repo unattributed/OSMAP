@@ -254,6 +254,46 @@ sha256sum "$2" | awk '{print $1}'
         return subprocess.run(["bash", "-c", 'source "$ROTATION_SCRIPT"\n' + body],
                               env=self.env, capture_output=True, text=True, timeout=15)
 
+    def run_native_selected_program(self, body):
+        # The coordinator assigns trusted native paths after sourcing legacy
+        # defaults. Exercise the actual sourced helpers, not replacements.
+        env = dict(self.env, COORDINATOR_SCRIPT=str(ROOT / "maint/live/osmap-coordinate-recovery-over-ssh.sh"),
+                   SELECTED_SECRET_DIR=str(self.store), SELECTED_REVOKED_DIR=str(self.archive),
+                   SELECTED_OWNER=self.env["OSMAP_TOTP_OWNER"],
+                   SELECTED_GROUP=self.env["OSMAP_TOTP_GROUP"],
+                   SELECTED_DIGEST=hashlib.sha256(self.old_bytes).hexdigest())
+        for name in ("OSMAP_TOTP_SECRET_DIR", "OSMAP_TOTP_REVOKED_DIR",
+                     "OSMAP_TOTP_OWNER", "OSMAP_TOTP_GROUP"):
+            env.pop(name, None)
+        return subprocess.run(["bash", "-c", r'''
+source "$COORDINATOR_SCRIPT"
+SECRET_DIR=$SELECTED_SECRET_DIR
+REVOKED_DIR=$SELECTED_REVOKED_DIR
+RUNTIME_OWNER=$SELECTED_OWNER
+RUNTIME_GROUP=$SELECTED_GROUP
+''' + body + r'''
+[[ "$SECRET_DIR" == "$SELECTED_SECRET_DIR" && "$REVOKED_DIR" == "$SELECTED_REVOKED_DIR" &&
+   "$RUNTIME_OWNER" == "$SELECTED_OWNER" && "$RUNTIME_GROUP" == "$SELECTED_GROUP" ]]
+'''], env=env, capture_output=True, text=True, timeout=15)
+
+    def test_native_selected_paths_survive_real_preflight_source(self):
+        result = self.run_native_selected_program(
+            'rotation_snapshot alice@example.com 192.0.2.1 test.example.com\n')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), hashlib.sha256(self.old_bytes).hexdigest())
+        self.assertEqual(self.factor.read_bytes(), self.old_bytes)
+        self.assertFalse(self.archive.exists())
+
+    def test_native_selected_paths_survive_real_revocation_source(self):
+        result = self.run_native_selected_program(
+            'rotation_revoke alice@example.com 192.0.2.1 "$SELECTED_DIGEST" 20260914T120000Z\n')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("TOTP_REVOCATION=PASS", result.stdout)
+        self.assertFalse(self.factor.exists())
+        archived = list(self.archive.glob("*.revoked.totp"))
+        self.assertEqual(len(archived), 1)
+        self.assertEqual(archived[0].read_bytes(), self.old_bytes)
+
     def test_real_primitives_preserve_old_factor_and_install_verified_candidate(self):
         result = self.run_program(r'''
 show_and_verify_enrollment() { return 0; }

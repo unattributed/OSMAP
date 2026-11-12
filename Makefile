@@ -1,7 +1,7 @@
 # Keep developer entrypoints obvious and conservative so operators and
 # collaborating developers do not have to memorize cargo subcommands.
 
-.PHONY: bootstrap-debian verify-debian build check test lint fmt-check supply-chain-check security-check release-check v6-check v7-check v7-rendering-regression-check v8-check v8-mail-workflow-check v8-attachment-safety-check v8-mailbox-operation-check v8-session-integrity-check v8-resource-robustness-check v8-final-regression-check install-hooks run v10-check v11-check v12-check v13-check v14-check acceptance-check
+.PHONY: bootstrap-debian verify-debian build check test lint fmt-check supply-chain-check commit-check security-check release-check v6-check v7-check v7-rendering-regression-check v8-check v8-mail-workflow-check v8-attachment-safety-check v8-mailbox-operation-check v8-session-integrity-check v8-resource-robustness-check v8-final-regression-check install-hooks run v10-check v11-check v12-check v13-check v14-check acceptance-check
 
 bootstrap-debian:
 	bash maint/development/bootstrap-debian.sh
@@ -35,6 +35,9 @@ fmt-check:
 
 supply-chain-check:
 	sh maint/security/osmap-supply-chain-check.sh
+
+commit-check:
+	OSMAP_SECURITY_PROFILE=commit sh maint/security/osmap-security-check.sh
 
 security-check:
 	OSMAP_SECURITY_PROFILE=developer sh maint/security/osmap-security-check.sh
@@ -137,6 +140,8 @@ v12-check:
 	sh maint/security/test-osmap-v12-openpgp-closeout-readiness-gate.sh
 
 v14-check:
+	python3 -B maint/ux/validate_acceptance.py
+	python3 -B -m unittest discover -s maint/ux -p 'test_validate_acceptance.py'
 	sh maint/security/osmap-v14-streamline-webui-docs-gate.sh
 	sh maint/security/osmap-v14-css-icon-foundation-gate.sh
 	sh maint/security/osmap-v14-auth-shell-gate.sh

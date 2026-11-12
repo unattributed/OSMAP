@@ -1,0 +1,13 @@
+# Add to the existing master.cf; retain existing submission policy overrides.
+# Existing public587/465 Postfix entries are removed only in the atomic cutover
+# to the four qualified Dovecot listeners. Port25 and unrelated entries remain.
+127.0.0.1:2525 inet n - n - - smtpd
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_sasl_type=dovecot
+  -o smtpd_sasl_path=private/auth
+  -o smtpd_sasl_security_options=noanonymous
+  -o smtpd_tls_auth_only=no
+  -o smtpd_tls_security_level=none
+# The existing authoritative Dovecot private/auth service must reauthenticate
+# against the same mailbox password with no auth cache and no proxy fields.
+# This fragment alone does not qualify that existing backend or its relay policy.

@@ -31,6 +31,7 @@ fn message_view_from_fixture(raw_message: &str) -> MessageView {
         .split_once("\n\n")
         .expect("fixture should contain a header/body separator");
     MessageView {
+        metadata: None,
         mailbox_name: "INBOX".to_string(),
         uid: 808,
         flags: vec!["\\Seen".to_string()],
@@ -54,6 +55,7 @@ fn test_context() -> AuthenticationContext {
 fn validated_session_fixture() -> ValidatedSession {
     ValidatedSession {
         record: SessionRecord {
+            account_epoch: None,
             session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                 .to_string(),
             csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"

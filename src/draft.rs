@@ -6,14 +6,17 @@
 
 use std::cmp::Reverse;
 use std::fs;
-use std::fs::OpenOptions;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use sha2::{Digest, Sha256};
 
-use crate::send::{ComposePolicy, ComposeRequest, UploadedAttachment};
+use crate::draft_content::DraftContent;
+
+#[path = "draft_atomic.rs"]
+mod atomic;
+use crate::send::{ComposePolicy, UploadedAttachment};
 
 /// Maximum persisted source mailbox length.
 pub const DEFAULT_DRAFT_SOURCE_MAILBOX_MAX_LEN: usize = 255;
@@ -29,16 +32,17 @@ pub const DRAFT_ID_HEX_LEN: usize = DRAFT_ID_BYTES * 2;
 pub const DEFAULT_DRAFT_MAX_AGE_SECONDS: u64 = 30 * 24 * 60 * 60;
 
 /// Default maximum number of drafts one user may keep.
-pub const DEFAULT_MAX_DRAFTS_PER_USER: usize = 100;
+pub const DEFAULT_MAX_DRAFTS_PER_USER: usize = 50;
+
+pub const DEFAULT_DRAFT_STORAGE_MAX_BYTES: u64 = 50 * 1024 * 1024;
 
 /// Default maximum number of summaries rendered from one list operation.
 pub const DEFAULT_MAX_DRAFT_SUMMARY_ROWS: usize = 100;
 
 /// Default maximum metadata file size before parse rejection.
-pub const DEFAULT_DRAFT_METADATA_MAX_BYTES: u64 = 256 * 1024;
+pub const DEFAULT_DRAFT_METADATA_MAX_BYTES: u64 = 1024 * 1024;
 
 const DRAFT_METADATA_FILE: &str = "metadata.draft";
-const DRAFT_STORE_LOCK_FILE: &str = ".draft-store.lock";
 
 /// Policy controlling bounded draft persistence.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -48,6 +52,7 @@ pub struct DraftPolicy {
     pub max_drafts_per_user: usize,
     pub max_summary_rows: usize,
     pub metadata_max_bytes: u64,
+    pub storage_max_bytes: u64,
 }
 
 impl Default for DraftPolicy {
@@ -58,6 +63,7 @@ impl Default for DraftPolicy {
             max_drafts_per_user: DEFAULT_MAX_DRAFTS_PER_USER,
             max_summary_rows: DEFAULT_MAX_DRAFT_SUMMARY_ROWS,
             metadata_max_bytes: DEFAULT_DRAFT_METADATA_MAX_BYTES,
+            storage_max_bytes: DEFAULT_DRAFT_STORAGE_MAX_BYTES,
         }
     }
 }
@@ -68,6 +74,12 @@ pub struct DraftError {
     pub reason: String,
 }
 
+impl DraftError {
+    pub(crate) fn save_unconfirmed(&self) -> bool {
+        self.reason == atomic::SAVE_UNCONFIRMED
+    }
+}
+
 /// One persisted draft record.
 #[derive(Clone, PartialEq, Eq)]
 pub struct DraftRecord {
@@ -76,7 +88,10 @@ pub struct DraftRecord {
     pub created_at: u64,
     pub updated_at: u64,
     pub expires_at: u64,
-    pub request: ComposeRequest,
+    /// None denotes a new draft; Some(0) denotes a legacy persisted record.
+    pub revision: Option<u64>,
+    pub starred: bool,
+    pub request: DraftContent,
     pub source_attachments: Option<DraftSourceAttachments>,
 }
 
@@ -86,6 +101,7 @@ pub struct DraftRecord {
 pub struct DraftSourceAttachments {
     pub mailbox_name: String,
     pub uid: u64,
+    pub version: Option<crate::message_metadata::MessageVersion>,
     pub part_paths: Vec<String>,
 }
 
@@ -113,6 +129,7 @@ impl std::fmt::Debug for DraftRecord {
             .field("created_at", &self.created_at)
             .field("updated_at", &self.updated_at)
             .field("expires_at", &self.expires_at)
+            .field("revision", &self.revision)
             .field("recipient_count", &self.request.total_recipient_count())
             .field("subject_len", &self.request.subject.len())
             .field("body_len", &self.request.body.len())
@@ -135,7 +152,7 @@ impl DraftRecord {
         validate_draft_id(&input.draft_id)?;
         validate_canonical_username(&input.canonical_username)?;
 
-        let request = ComposeRequest::new_with_routing(
+        let request = DraftContent::new(
             policy.compose_policy,
             input.recipients_text,
             input.cc_text,
@@ -151,6 +168,7 @@ impl DraftRecord {
             .source_attachments
             .map(|source| validate_source_attachments(policy, source))
             .transpose()?;
+        validate_combined_attachment_count(policy, &request, source_attachments.as_ref())?;
 
         Ok(Self {
             draft_id: input.draft_id,
@@ -158,6 +176,8 @@ impl DraftRecord {
             created_at: input.now,
             updated_at: input.now,
             expires_at: input.now.saturating_add(policy.max_age_seconds),
+            revision: None,
+            starred: false,
             request,
             source_attachments,
         })
@@ -170,10 +190,26 @@ impl DraftRecord {
             created_at: self.created_at,
             updated_at: self.updated_at,
             expires_at: self.expires_at,
+            revision: self.revision.unwrap_or(0),
+            starred: self.starred,
+            storage_bytes: serialize_draft_metadata(self).len() as u64
+                + self
+                    .request
+                    .attachments
+                    .iter()
+                    .map(|attachment| attachment.size_bytes() as u64)
+                    .sum::<u64>(),
             recipient_count: self.request.total_recipient_count(),
+            recipient_preview: self.request.recipient_preview(),
+            subject: self.request.subject.clone(),
             subject_len: self.request.subject.len(),
             body_len: self.request.body.len(),
-            attachment_count: self.request.attachments.len(),
+            attachment_count: self.request.attachments.len()
+                + self
+                    .source_attachments
+                    .as_ref()
+                    .map(|source| source.part_paths.len())
+                    .unwrap_or_default(),
             total_attachment_bytes: self
                 .request
                 .attachments
@@ -184,18 +220,34 @@ impl DraftRecord {
     }
 }
 
-/// Redacted draft list projection.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Owner-only draft list projection. Bcc and body text are never included.
+#[derive(Clone, PartialEq, Eq)]
 pub struct DraftSummary {
     pub draft_id: String,
     pub created_at: u64,
     pub updated_at: u64,
     pub expires_at: u64,
+    pub revision: u64,
+    pub starred: bool,
+    pub storage_bytes: u64,
     pub recipient_count: usize,
+    pub recipient_preview: Option<String>,
+    pub subject: String,
     pub subject_len: usize,
     pub body_len: usize,
     pub attachment_count: usize,
     pub total_attachment_bytes: usize,
+}
+
+impl std::fmt::Debug for DraftSummary {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DraftSummary")
+            .field("updated_at", &self.updated_at)
+            .field("recipient_count", &self.recipient_count)
+            .field("subject_len", &self.subject_len)
+            .field("attachment_count", &self.attachment_count)
+            .finish_non_exhaustive()
+    }
 }
 
 /// Draft storage operations needed by the later browser route slice.
@@ -208,7 +260,12 @@ pub trait DraftStore {
         now: u64,
     ) -> Result<Option<DraftRecord>, DraftError>;
     fn list(&self, canonical_username: &str, now: u64) -> Result<Vec<DraftSummary>, DraftError>;
-    fn delete(&self, canonical_username: &str, draft_id: &str) -> Result<bool, DraftError>;
+    fn delete(
+        &self,
+        canonical_username: &str,
+        draft_id: &str,
+        expected_revision: u64,
+    ) -> Result<bool, DraftError>;
     fn cleanup_expired(&self, canonical_username: &str, now: u64) -> Result<usize, DraftError>;
 }
 
@@ -217,6 +274,9 @@ pub trait DraftStore {
 pub struct FileDraftStore {
     draft_root: PathBuf,
     policy: DraftPolicy,
+    new_location: crate::draft_location::Location,
+    #[cfg(test)]
+    save_fault: Option<atomic::SaveFault>,
 }
 
 impl FileDraftStore {
@@ -225,7 +285,229 @@ impl FileDraftStore {
         Self {
             draft_root: draft_root.into(),
             policy,
+            new_location: crate::draft_location::Location::Default,
+            #[cfg(test)]
+            save_fault: None,
         }
+    }
+
+    /// Placement is used only for a new ID. Existing IDs resolve independently.
+    pub fn with_new_location(mut self, location: crate::draft_location::Location) -> Self {
+        self.new_location = location;
+        self
+    }
+
+    fn location_root(&self, location: crate::draft_location::Location) -> PathBuf {
+        match location {
+            crate::draft_location::Location::Default => self.draft_root.clone(),
+            crate::draft_location::Location::Working => self.draft_root.join(".locations/working"),
+        }
+    }
+
+    fn working_registration_file(&self) -> crate::private_account_file::PrivateAccountFile {
+        crate::private_account_file::PrivateAccountFile::new(
+            self.draft_root.clone(),
+            "draft-working-location-v1",
+            1024,
+        )
+    }
+
+    fn working_registration_bytes(account: &str) -> Vec<u8> {
+        format!("version=1\naccount={account}\nworking=1\n").into_bytes()
+    }
+
+    fn working_registered(&self, account: &str) -> Result<bool, DraftError> {
+        match self
+            .working_registration_file()
+            .read(account)
+            .map_err(|_| location_unavailable())?
+        {
+            None => Ok(false),
+            Some(bytes) if bytes == Self::working_registration_bytes(account) => Ok(true),
+            Some(_) => Err(location_unavailable()),
+        }
+    }
+
+    fn register_working(&self, account: &str) -> Result<(), DraftError> {
+        let file = self.working_registration_file();
+        let lock = file.lock(account).map_err(|_| location_unavailable())?;
+        let expected = Self::working_registration_bytes(account);
+        match lock.read().map_err(|_| location_unavailable())? {
+            Some(bytes) if bytes == expected => Ok(()),
+            Some(_) => Err(location_unavailable()),
+            None => lock.write(&expected).map_err(|_| DraftError {
+                reason: "draft location registration unconfirmed".into(),
+            }),
+        }
+    }
+
+    fn checked_owners(&self, account: &str) -> Result<Vec<PathBuf>, DraftError> {
+        self.checked_owners_for_qualification(account, false)
+    }
+
+    fn checked_owners_for_qualification(
+        &self,
+        account: &str,
+        initialize_working: bool,
+    ) -> Result<Vec<PathBuf>, DraftError> {
+        // Validate every registered root before considering any individual ID.
+        let root = private_directory_exists(&self.draft_root)?;
+        let locations = self.draft_root.join(".locations");
+        let locations_exists = if root {
+            private_directory_exists(&locations)?
+        } else {
+            false
+        };
+        let working = self.location_root(crate::draft_location::Location::Working);
+        let working_exists = locations_exists && private_directory_exists(&working)?;
+        let registered = self.working_registered(account)?;
+        if !initialize_working {
+            if registered && !working_exists {
+                return Err(location_unavailable());
+            }
+            if registered && !private_directory_exists(&working.join(owner_hash(account)))? {
+                return Err(location_unavailable());
+            }
+        }
+        let owners = [
+            self.owner_dir_for_username(account),
+            working.join(owner_hash(account)),
+        ];
+        let mut seen = std::collections::BTreeMap::new();
+        let mut present = Vec::new();
+        for owner in owners {
+            if !private_directory_exists(&owner)? {
+                continue;
+            }
+            for (index, entry) in fs::read_dir(&owner)
+                .map_err(|_| location_unavailable())?
+                .enumerate()
+            {
+                if index >= 256 {
+                    return Err(location_unavailable());
+                }
+                let entry = entry.map_err(|_| location_unavailable())?;
+                let name = entry.file_name();
+                let Some(name) = name.to_str() else {
+                    return Err(location_unavailable());
+                };
+                let id = if validate_draft_id(name).is_ok() {
+                    Some(name)
+                } else {
+                    atomic::legacy_backup_id(name)
+                };
+                if let Some(id) = id {
+                    if let Some(previous) = seen.insert(id.to_owned(), owner.clone()) {
+                        if previous != owner {
+                            return Err(DraftError {
+                                reason: "draft location is ambiguous".into(),
+                            });
+                        }
+                    }
+                    crate::private_account_file::check_directory(&entry.path())
+                        .map_err(|_| location_unavailable())?;
+                    // Validate complete metadata before any expiry or backup mutation.
+                    let metadata = entry.path().join(DRAFT_METADATA_FILE);
+                    let parsed = self.read_record_from_metadata(account, &metadata)?;
+                    if fs::symlink_metadata(&metadata).is_ok() && parsed.is_none() {
+                        return Err(location_unavailable());
+                    }
+                }
+            }
+            self.validate_legacy_backups_in(account, &owner)?;
+            present.push(owner);
+        }
+        Ok(present)
+    }
+
+    /// Read-only exact-ID lookup shared by ordinary drafts and send recovery.
+    pub fn resolved_draft_dir(
+        &self,
+        account: &str,
+        id: &str,
+    ) -> Result<Option<PathBuf>, DraftError> {
+        validate_canonical_username(account)?;
+        validate_draft_id(id)?;
+        let mut found = None;
+        for owner in self.checked_owners(account)? {
+            let path = owner.join(id);
+            if private_directory_exists(&path)? {
+                if found.is_some() {
+                    return Err(location_unavailable());
+                }
+                found = Some(path);
+            }
+        }
+        Ok(found)
+    }
+
+    pub fn validate_locations(&self, account: &str) -> Result<(), DraftError> {
+        validate_canonical_username(account)?;
+        self.checked_owners(account)?;
+        Ok(())
+    }
+
+    /// Qualifies or initializes only a fixed server-owned placement under the
+    /// common account lock. Browser input cannot supply a filesystem path.
+    pub fn qualify_location(
+        &self,
+        account: &str,
+        location: crate::draft_location::Location,
+    ) -> Result<(), DraftError> {
+        validate_canonical_username(account)?;
+        let _lock = self.acquire_location_qualification_lock(
+            account,
+            location == crate::draft_location::Location::Working,
+        )?;
+        if location == crate::draft_location::Location::Working {
+            // Registration survives disappearance of the .locations ancestor.
+            // Publish it before initializing names so incomplete initialization
+            // refuses ordinary operations until an explicit qualification.
+            self.register_working(account)?;
+            create_private_directory(&self.draft_root.join(".locations"))?;
+            create_private_directory(&self.location_root(location))?;
+        }
+        self.ensure_location_owner(account, location)?;
+        Ok(())
+    }
+
+    pub fn require_new_location(&self, account: &str) -> Result<(), DraftError> {
+        self.validate_locations(account)?;
+        if self.new_location == crate::draft_location::Location::Working
+            && (!self.working_registered(account)?
+                || !private_directory_exists(&self.draft_root.join(".locations"))?
+                || !private_directory_exists(&self.location_root(self.new_location))?
+                || !private_directory_exists(
+                    &self
+                        .location_root(self.new_location)
+                        .join(owner_hash(account)),
+                )?)
+        {
+            return Err(location_unavailable());
+        }
+        Ok(())
+    }
+
+    fn ensure_location_owner(
+        &self,
+        account: &str,
+        location: crate::draft_location::Location,
+    ) -> Result<PathBuf, DraftError> {
+        if location == crate::draft_location::Location::Working
+            && (!private_directory_exists(&self.draft_root.join(".locations"))?
+                || !private_directory_exists(&self.location_root(location))?)
+        {
+            return Err(location_unavailable());
+        }
+        let owner = self.location_root(location).join(owner_hash(account));
+        create_private_directory(&owner)?;
+        if location == crate::draft_location::Location::Working {
+            atomic::sync_directory(&owner)?;
+            atomic::sync_directory(&self.location_root(location))?;
+            atomic::sync_directory(&self.draft_root.join(".locations"))?;
+        }
+        atomic::sync_directory(&self.draft_root)?;
+        Ok(owner)
     }
 
     /// Returns the per-user draft directory derived from the canonical username.
@@ -243,166 +525,98 @@ impl FileDraftStore {
             .join(draft_id)
     }
 
-    fn metadata_path(&self, canonical_username: &str, draft_id: &str) -> PathBuf {
-        self.draft_dir_for_username_and_id(canonical_username, draft_id)
+    /// Non-mutating immutable recovery read. Caller owns publication coordination;
+    /// this does not run expiry cleanup, legacy recovery, or create a record.
+    pub(crate) fn read_immutable(
+        &self,
+        account: &str,
+        id: &str,
+    ) -> Result<Option<DraftRecord>, DraftError> {
+        validate_canonical_username(account)?;
+        validate_draft_id(id)?;
+        let Some(directory) = self.resolved_draft_dir(account, id)? else {
+            return Ok(None);
+        };
+        self.read_record_from_metadata(account, &directory.join(DRAFT_METADATA_FILE))
+    }
+
+    #[cfg(test)]
+    fn metadata_path(&self, account: &str, id: &str) -> PathBuf {
+        self.draft_dir_for_username_and_id(account, id)
             .join(DRAFT_METADATA_FILE)
     }
 
-    fn lock_path(&self) -> PathBuf {
-        self.draft_root.join(DRAFT_STORE_LOCK_FILE)
-    }
-
-    fn acquire_exclusive_lock(&self) -> Result<DraftFileLock, DraftError> {
-        fs::create_dir_all(&self.draft_root).map_err(|error| DraftError {
-            reason: format!("failed to create draft root {:?}: {error}", self.draft_root),
-        })?;
-        set_dir_permissions(&self.draft_root)?;
-
-        let lock_path = self.lock_path();
-        let mut options = OpenOptions::new();
-        options.read(true).write(true).create(true);
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::OpenOptionsExt as _;
-            options.mode(0o600);
-        }
-        let file = options.open(&lock_path).map_err(|error| DraftError {
-            reason: format!("failed to open draft store lock {lock_path:?}: {error}"),
-        })?;
-        #[cfg(unix)]
-        crate::openbsd::advisory_file_lock_exclusive(&file).map_err(|error| DraftError {
-            reason: format!("failed to acquire draft store lock {lock_path:?}: {error}"),
-        })?;
-        #[cfg(not(unix))]
-        return Err(DraftError {
-            reason: "file-backed draft locking requires a Unix-like target".to_string(),
-        });
-
-        Ok(DraftFileLock { file })
-    }
-
-    fn ensure_owner_dir(&self, canonical_username: &str) -> Result<PathBuf, DraftError> {
-        let owner_dir = self.owner_dir_for_username(canonical_username);
-        fs::create_dir_all(&owner_dir).map_err(|error| DraftError {
-            reason: format!(
-                "failed to create draft owner directory {:?}: {error}",
-                owner_dir
-            ),
-        })?;
-        set_dir_permissions(&owner_dir)?;
-        Ok(owner_dir)
-    }
-
-    fn write_staged_record(
+    fn acquire_exclusive_lock(
         &self,
-        record: &DraftRecord,
-        staging_dir: &Path,
-    ) -> Result<(), DraftError> {
-        fs::create_dir(staging_dir).map_err(|error| DraftError {
-            reason: format!("failed to create draft staging directory {staging_dir:?}: {error}"),
-        })?;
-        set_dir_permissions(staging_dir)?;
+        account: &str,
+    ) -> Result<crate::private_account_file::LockedAccountFile, DraftError> {
+        self.acquire_location_qualification_lock(account, false)
+    }
 
-        for (index, attachment) in record.request.attachments.iter().enumerate() {
-            let final_path = staging_dir.join(attachment_body_file_name(index));
-            let tmp_path = staging_dir.join(format!(
-                ".{}.{}.{}.tmp",
-                attachment_body_file_name(index),
-                std::process::id(),
-                NEXT_DRAFT_TEMP_FILE_ID.fetch_add(1, Ordering::Relaxed)
-            ));
-            write_file_atomic(&tmp_path, &final_path, &attachment.body)?;
-        }
-
-        let metadata_path = staging_dir.join(DRAFT_METADATA_FILE);
-        let tmp_metadata_path = staging_dir.join(format!(
-            ".metadata.{}.{}.tmp",
-            std::process::id(),
-            NEXT_DRAFT_TEMP_FILE_ID.fetch_add(1, Ordering::Relaxed)
-        ));
-        write_file_atomic(
-            &tmp_metadata_path,
-            &metadata_path,
-            serialize_draft_metadata(record).as_bytes(),
+    fn acquire_location_qualification_lock(
+        &self,
+        account: &str,
+        initialize_working: bool,
+    ) -> Result<crate::private_account_file::LockedAccountFile, DraftError> {
+        let guard = crate::private_account_file::PrivateAccountFile::new(
+            self.draft_root.clone(),
+            "draft-v5",
+            0,
         )
-    }
-
-    fn replace_with_staged_record(
-        &self,
-        final_dir: &Path,
-        staging_dir: &Path,
-        backup_dir: &Path,
-    ) -> Result<(), DraftError> {
-        if !final_dir.exists() {
-            return fs::rename(staging_dir, final_dir).map_err(|error| DraftError {
-                reason: format!("failed to finalize new draft directory {final_dir:?}: {error}"),
-            });
-        }
-
-        fs::rename(final_dir, backup_dir).map_err(|error| DraftError {
-            reason: format!("failed to stage existing draft directory {final_dir:?}: {error}"),
+        .lock(account)
+        .map_err(|error| DraftError {
+            reason: if error.kind() == std::io::ErrorKind::WouldBlock {
+                "draft store busy".into()
+            } else {
+                "draft store lock unavailable".into()
+            },
         })?;
-        if let Err(error) = fs::rename(staging_dir, final_dir) {
-            let restore_result = fs::rename(backup_dir, final_dir);
-            return Err(DraftError {
-                reason: match restore_result {
-                    Ok(()) => {
-                        format!("failed to finalize replacement draft {final_dir:?}: {error}")
-                    }
-                    Err(restore_error) => format!(
-                        "failed to finalize replacement draft {final_dir:?}: {error}; failed to restore prior draft: {restore_error}"
-                    ),
-                },
-            });
+        let owners = self.checked_owners_for_qualification(account, initialize_working)?;
+        for owner in owners {
+            self.recover_legacy_backups_in(account, &owner)?;
         }
-        remove_draft_dir(backup_dir)
+        self.checked_owners_for_qualification(account, initialize_working)?;
+        Ok(guard)
     }
 
-    fn cleanup_expired_unlocked(
-        &self,
-        canonical_username: &str,
-        now: u64,
-    ) -> Result<usize, DraftError> {
-        let owner_dir = self.owner_dir_for_username(canonical_username);
-        if !owner_dir.exists() {
-            return Ok(0);
-        }
-
+    fn cleanup_expired_unlocked(&self, account: &str, now: u64) -> Result<usize, DraftError> {
+        let records = self.records_for_owner(account)?;
         let mut removed = 0;
-        for entry in fs::read_dir(&owner_dir).map_err(|error| DraftError {
-            reason: format!(
-                "failed to read draft owner directory {:?}: {error}",
-                owner_dir
-            ),
-        })? {
-            let entry = entry.map_err(|error| DraftError {
-                reason: format!("failed to read draft directory entry: {error}"),
-            })?;
-            if !entry
-                .file_type()
-                .map_err(|error| DraftError {
-                    reason: format!("failed to inspect draft directory entry: {error}"),
-                })?
-                .is_dir()
-            {
-                continue;
-            }
-            let draft_id = entry.file_name().to_string_lossy().to_string();
-            if validate_draft_id(&draft_id).is_err() {
-                continue;
-            }
-            let metadata_path = entry.path().join(DRAFT_METADATA_FILE);
-            if let Some(record) =
-                self.read_record_from_metadata(canonical_username, &metadata_path)?
-            {
-                if record.expires_at <= now {
-                    remove_draft_dir(entry.path())?;
-                    removed += 1;
-                }
+        for (directory, record, _) in records {
+            if record.expires_at <= now {
+                remove_draft_dir(directory)?;
+                removed += 1;
             }
         }
-
         Ok(removed)
+    }
+
+    fn records_for_owner(
+        &self,
+        account: &str,
+    ) -> Result<Vec<(PathBuf, DraftRecord, u64)>, DraftError> {
+        let mut records = Vec::new();
+        for owner in self.checked_owners(account)? {
+            for entry in fs::read_dir(owner).map_err(|_| location_unavailable())? {
+                let entry = entry.map_err(|_| location_unavailable())?;
+                if entry
+                    .file_name()
+                    .to_str()
+                    .is_none_or(|id| validate_draft_id(id).is_err())
+                {
+                    continue;
+                }
+                let path = entry.path().join(DRAFT_METADATA_FILE);
+                let record = self
+                    .read_record_from_metadata(account, &path)?
+                    .ok_or_else(location_unavailable)?;
+                let size = fs::metadata(&path)
+                    .map_err(|_| location_unavailable())?
+                    .len();
+                records.push((entry.path(), record, size));
+            }
+        }
+        Ok(records)
     }
 
     fn read_record_from_metadata(
@@ -410,68 +624,43 @@ impl FileDraftStore {
         canonical_username: &str,
         metadata_path: &Path,
     ) -> Result<Option<DraftRecord>, DraftError> {
-        if !metadata_path.exists() {
+        let directory = metadata_path.parent().ok_or_else(|| DraftError {
+            reason: "invalid draft metadata directory".into(),
+        })?;
+        if !private_directory_exists(directory)? {
             return Ok(None);
         }
-        let metadata = fs::metadata(metadata_path).map_err(|error| DraftError {
-            reason: format!("failed to stat draft metadata {:?}: {error}", metadata_path),
-        })?;
-        if metadata.len() > self.policy.metadata_max_bytes {
-            return Err(DraftError {
-                reason: "draft metadata exceeded maximum size".to_string(),
-            });
-        }
-
-        let content = fs::read_to_string(metadata_path).map_err(|error| DraftError {
-            reason: format!("failed to read draft metadata {:?}: {error}", metadata_path),
+        let Some(bytes) = crate::private_account_file::read_record(
+            metadata_path,
+            self.policy.metadata_max_bytes as usize,
+        )
+        .map_err(|_| DraftError {
+            reason: "draft metadata is unsafe or exceeded maximum size".into(),
+        })?
+        else {
+            return Ok(None);
+        };
+        let content = String::from_utf8(bytes).map_err(|_| DraftError {
+            reason: "invalid draft metadata encoding".into(),
         })?;
         parse_draft_metadata(self.policy, canonical_username, metadata_path, &content)
     }
 
-    fn list_records_for_owner(
+    fn list_summaries_for_owner(
         &self,
         canonical_username: &str,
         now: u64,
-    ) -> Result<Vec<DraftRecord>, DraftError> {
+    ) -> Result<Vec<DraftSummary>, DraftError> {
+        let all = self.records_for_owner(canonical_username)?;
         let mut records = Vec::new();
-        let owner_dir = self.owner_dir_for_username(canonical_username);
-        if !owner_dir.exists() {
-            return Ok(records);
-        }
-
-        for entry in fs::read_dir(&owner_dir).map_err(|error| DraftError {
-            reason: format!(
-                "failed to read draft owner directory {:?}: {error}",
-                owner_dir
-            ),
-        })? {
-            let entry = entry.map_err(|error| DraftError {
-                reason: format!("failed to read draft directory entry: {error}"),
-            })?;
-            if !entry
-                .file_type()
-                .map_err(|error| DraftError {
-                    reason: format!("failed to inspect draft directory entry: {error}"),
-                })?
-                .is_dir()
-            {
+        for (directory, record, metadata_bytes) in all {
+            if record.expires_at <= now {
+                remove_draft_dir(directory)?;
                 continue;
             }
-
-            let draft_id = entry.file_name().to_string_lossy().to_string();
-            if validate_draft_id(&draft_id).is_err() {
-                continue;
-            }
-            let metadata_path = entry.path().join(DRAFT_METADATA_FILE);
-            if let Some(record) =
-                self.read_record_from_metadata(canonical_username, &metadata_path)?
-            {
-                if record.expires_at <= now {
-                    remove_draft_dir(entry.path())?;
-                    continue;
-                }
-                records.push(record);
-            }
+            let mut summary = record.summary();
+            summary.storage_bytes = metadata_bytes + summary.total_attachment_bytes as u64;
+            records.push(summary);
         }
 
         records.sort_by_key(|record| Reverse(record.updated_at));
@@ -483,21 +672,49 @@ impl DraftStore for FileDraftStore {
     fn save(&self, record: &DraftRecord, now: u64) -> Result<(), DraftError> {
         validate_draft_id(&record.draft_id)?;
         validate_canonical_username(&record.canonical_username)?;
-        validate_compose_request(self.policy.compose_policy, &record.request)?;
+        record
+            .request
+            .validate(self.policy.compose_policy)
+            .map_err(|error| DraftError {
+                reason: error.reason,
+            })?;
         if let Some(source) = record.source_attachments.clone() {
             validate_source_attachments(self.policy, source)?;
         }
-        let _lock = self.acquire_exclusive_lock()?;
+        validate_combined_attachment_count(
+            self.policy,
+            &record.request,
+            record.source_attachments.as_ref(),
+        )?;
+        let _lock = self.acquire_exclusive_lock(&record.canonical_username)?;
+        if record.revision.is_none() {
+            self.require_new_location(&record.canonical_username)?;
+        }
 
         self.cleanup_expired_unlocked(&record.canonical_username, now)?;
 
-        let draft_dir =
-            self.draft_dir_for_username_and_id(&record.canonical_username, &record.draft_id);
-        let is_new = !draft_dir.exists();
+        let resolved = self.resolved_draft_dir(&record.canonical_username, &record.draft_id)?;
+        let existing = resolved
+            .as_ref()
+            .map(|directory| {
+                self.read_record_from_metadata(
+                    &record.canonical_username,
+                    &directory.join(DRAFT_METADATA_FILE),
+                )
+            })
+            .transpose()?
+            .flatten();
+        let is_new = existing.is_none();
+        if existing.as_ref().and_then(|current| current.revision) != record.revision
+            || is_new != record.revision.is_none()
+        {
+            return Err(DraftError {
+                reason: "draft revision is stale".into(),
+            });
+        }
+        let summaries = self.list_summaries_for_owner(&record.canonical_username, now)?;
         if is_new {
-            let existing_count = self
-                .list_records_for_owner(&record.canonical_username, now)?
-                .len();
+            let existing_count = summaries.len();
             if existing_count >= self.policy.max_drafts_per_user {
                 return Err(DraftError {
                     reason: "draft quota exceeded".to_string(),
@@ -505,30 +722,59 @@ impl DraftStore for FileDraftStore {
             }
         }
 
-        let owner_dir = self.ensure_owner_dir(&record.canonical_username)?;
-        let transaction_id = NEXT_DRAFT_TEMP_FILE_ID.fetch_add(1, Ordering::Relaxed);
-        let staging_dir = owner_dir.join(format!(
-            ".{}.{}.{}.staging",
-            record.draft_id,
-            std::process::id(),
-            transaction_id
-        ));
-        let backup_dir = owner_dir.join(format!(
-            ".{}.{}.{}.backup",
-            record.draft_id,
-            std::process::id(),
-            transaction_id
-        ));
-        if let Err(error) = self.write_staged_record(record, &staging_dir) {
-            let _ = remove_draft_dir(&staging_dir);
-            return Err(error);
+        let mut updated = record.clone();
+        updated.created_at = existing
+            .as_ref()
+            .map(|saved| saved.created_at)
+            .unwrap_or(now);
+        updated.updated_at = now;
+        updated.expires_at = now.saturating_add(self.policy.max_age_seconds);
+        updated.revision =
+            Some(
+                record
+                    .revision
+                    .unwrap_or(0)
+                    .checked_add(1)
+                    .ok_or_else(|| DraftError {
+                        reason: "draft revision exhausted".into(),
+                    })?,
+            );
+        let metadata_bytes = serialize_draft_metadata(&updated).len() as u64;
+        if metadata_bytes > self.policy.metadata_max_bytes {
+            return Err(DraftError {
+                reason: "draft metadata exceeded maximum size".into(),
+            });
         }
-        if let Err(error) = self.replace_with_staged_record(&draft_dir, &staging_dir, &backup_dir) {
-            let _ = remove_draft_dir(&staging_dir);
-            return Err(error);
+        let used = summaries
+            .iter()
+            .filter(|summary| summary.draft_id != record.draft_id)
+            .try_fold(updated.summary().storage_bytes, |total, summary| {
+                total.checked_add(summary.storage_bytes)
+            })
+            .ok_or_else(|| DraftError {
+                reason: "draft storage quota exceeded".into(),
+            })?;
+        if used > self.policy.storage_max_bytes {
+            return Err(DraftError {
+                reason: "draft storage quota exceeded".into(),
+            });
         }
 
-        Ok(())
+        let directory = match resolved {
+            Some(directory) => directory,
+            None => self
+                .ensure_location_owner(&record.canonical_username, self.new_location)?
+                .join(&record.draft_id),
+        };
+        let result = self.publish_atomic_record_in(&updated, existing.as_ref(), &directory);
+        if is_new
+            && result
+                .as_ref()
+                .is_err_and(|error| error.reason != atomic::SAVE_UNCONFIRMED)
+        {
+            let _ = remove_draft_dir(&directory);
+        }
+        result
     }
 
     fn load(
@@ -539,15 +785,18 @@ impl DraftStore for FileDraftStore {
     ) -> Result<Option<DraftRecord>, DraftError> {
         validate_canonical_username(canonical_username)?;
         validate_draft_id(draft_id)?;
-        let _lock = self.acquire_exclusive_lock()?;
+        let _lock = self.acquire_exclusive_lock(canonical_username)?;
 
-        let metadata_path = self.metadata_path(canonical_username, draft_id);
+        let Some(directory) = self.resolved_draft_dir(canonical_username, draft_id)? else {
+            return Ok(None);
+        };
+        let metadata_path = directory.join(DRAFT_METADATA_FILE);
         let Some(record) = self.read_record_from_metadata(canonical_username, &metadata_path)?
         else {
             return Ok(None);
         };
         if record.expires_at <= now {
-            remove_draft_dir(self.draft_dir_for_username_and_id(canonical_username, draft_id))?;
+            remove_draft_dir(directory)?;
             return Ok(None);
         }
 
@@ -556,24 +805,37 @@ impl DraftStore for FileDraftStore {
 
     fn list(&self, canonical_username: &str, now: u64) -> Result<Vec<DraftSummary>, DraftError> {
         validate_canonical_username(canonical_username)?;
-        let _lock = self.acquire_exclusive_lock()?;
+        let _lock = self.acquire_exclusive_lock(canonical_username)?;
         let summaries = self
-            .list_records_for_owner(canonical_username, now)?
+            .list_summaries_for_owner(canonical_username, now)?
             .into_iter()
             .take(self.policy.max_summary_rows)
-            .map(|record| record.summary())
             .collect();
         Ok(summaries)
     }
 
-    fn delete(&self, canonical_username: &str, draft_id: &str) -> Result<bool, DraftError> {
+    fn delete(
+        &self,
+        canonical_username: &str,
+        draft_id: &str,
+        expected_revision: u64,
+    ) -> Result<bool, DraftError> {
         validate_canonical_username(canonical_username)?;
         validate_draft_id(draft_id)?;
-        let _lock = self.acquire_exclusive_lock()?;
+        let _lock = self.acquire_exclusive_lock(canonical_username)?;
 
-        let draft_dir = self.draft_dir_for_username_and_id(canonical_username, draft_id);
-        if !draft_dir.exists() {
+        let Some(draft_dir) = self.resolved_draft_dir(canonical_username, draft_id)? else {
             return Ok(false);
+        };
+        let current = self
+            .read_record_from_metadata(canonical_username, &draft_dir.join(DRAFT_METADATA_FILE))?
+            .ok_or_else(|| DraftError {
+                reason: "draft revision is stale".into(),
+            })?;
+        if current.revision != Some(expected_revision) {
+            return Err(DraftError {
+                reason: "draft revision is stale".into(),
+            });
         }
         remove_draft_dir(draft_dir)?;
         Ok(true)
@@ -581,21 +843,8 @@ impl DraftStore for FileDraftStore {
 
     fn cleanup_expired(&self, canonical_username: &str, now: u64) -> Result<usize, DraftError> {
         validate_canonical_username(canonical_username)?;
-        let _lock = self.acquire_exclusive_lock()?;
+        let _lock = self.acquire_exclusive_lock(canonical_username)?;
         self.cleanup_expired_unlocked(canonical_username, now)
-    }
-}
-
-struct DraftFileLock {
-    file: fs::File,
-}
-
-impl Drop for DraftFileLock {
-    fn drop(&mut self) {
-        #[cfg(unix)]
-        {
-            let _ = crate::openbsd::advisory_file_unlock(&self.file);
-        }
     }
 }
 
@@ -608,7 +857,7 @@ pub fn generate_draft_id() -> Result<String, DraftError> {
     Ok(hex_lower(&bytes))
 }
 
-fn validate_draft_id(draft_id: &str) -> Result<(), DraftError> {
+pub(crate) fn validate_draft_id(draft_id: &str) -> Result<(), DraftError> {
     if draft_id.len() != DRAFT_ID_HEX_LEN {
         return Err(DraftError {
             reason: format!("draft id must be exactly {DRAFT_ID_HEX_LEN} hex characters"),
@@ -639,23 +888,19 @@ fn validate_canonical_username(canonical_username: &str) -> Result<(), DraftErro
     Ok(())
 }
 
-fn validate_compose_request(
-    compose_policy: ComposePolicy,
-    request: &ComposeRequest,
+fn validate_combined_attachment_count(
+    policy: DraftPolicy,
+    content: &DraftContent,
+    source: Option<&DraftSourceAttachments>,
 ) -> Result<(), DraftError> {
-    ComposeRequest::new_with_routing(
-        compose_policy,
-        request.recipients.join(", "),
-        request.cc_recipients.join(", "),
-        request.bcc_recipients.join(", "),
-        request.subject.clone(),
-        request.body.clone(),
-        request.attachments.clone(),
-    )
-    .map(|_| ())
-    .map_err(|error| DraftError {
-        reason: error.reason,
-    })
+    if content.attachments.len() + source.map_or(0, |source| source.part_paths.len())
+        > policy.compose_policy.max_attachments
+    {
+        return Err(DraftError {
+            reason: "draft attachment count exceeded maximum".into(),
+        });
+    }
+    Ok(())
 }
 
 fn validate_source_attachments(
@@ -682,6 +927,19 @@ fn validate_source_attachments(
             reason: "draft source UID must be positive".to_string(),
         });
     }
+    let version = if let Some(version) = &source.version {
+        Some(
+            crate::message_metadata::MessageVersion::new(
+                version.mailbox_guid.clone(),
+                version.message_guid.clone(),
+            )
+            .map_err(|_| DraftError {
+                reason: "draft source identity was invalid".into(),
+            })?,
+        )
+    } else {
+        None
+    };
     if source.part_paths.is_empty() {
         return Err(DraftError {
             reason: "draft source attachment selection must not be empty".to_string(),
@@ -717,13 +975,16 @@ fn validate_source_attachments(
     Ok(DraftSourceAttachments {
         mailbox_name: source.mailbox_name,
         uid: source.uid,
+        version,
         part_paths: validated,
     })
 }
 
 fn serialize_draft_metadata(record: &DraftRecord) -> String {
     let mut content = format!(
-        "version=3\n\
+        "version={}\n\
+revision={}\n\
+starred={}\n\
 draft_id={}\n\
 canonical_username_hex={}\n\
 created_at={}\n\
@@ -734,20 +995,89 @@ cc_hex={}\n\
 bcc_hex={}\n\
 subject_hex={}\n\
 body_hex={}\n\
+body_format={}\n\
 attachment_count={}\n",
+        if record.request.sender_identity.sender().is_some() {
+            if record.request.protection == crate::send::ProtectionIntent::default() {
+                13
+            } else {
+                14
+            }
+        } else if record.request.sender_identity
+            == crate::identity_preferences::IdentityPreferences::default()
+        {
+            if record.request.protection == crate::send::ProtectionIntent::default() {
+                9
+            } else {
+                11
+            }
+        } else {
+            if record.request.protection == crate::send::ProtectionIntent::default() {
+                10
+            } else {
+                12
+            }
+        },
+        record.revision.unwrap_or(0),
+        u8::from(record.starred),
         record.draft_id,
         hex_lower(record.canonical_username.as_bytes()),
         record.created_at,
         record.updated_at,
         record.expires_at,
-        hex_lower(record.request.recipients.join(", ").as_bytes()),
-        hex_lower(record.request.cc_recipients.join(", ").as_bytes()),
-        hex_lower(record.request.bcc_recipients.join(", ").as_bytes()),
+        hex_lower(record.request.recipients_text.as_bytes()),
+        hex_lower(record.request.cc_text.as_bytes()),
+        hex_lower(record.request.bcc_text.as_bytes()),
         hex_lower(record.request.subject.as_bytes()),
         hex_lower(record.request.body.as_bytes()),
+        record.request.body_format.as_str(),
         record.request.attachments.len()
     );
 
+    if record.request.protection != crate::send::ProtectionIntent::default() {
+        let intent = record.request.protection;
+        content.push_str(&format!(
+            "pgp_sign={}\npgp_encrypt={}\npgp_self={}\npgp_binding_revision={}\n",
+            u8::from(intent.sign),
+            u8::from(intent.encrypt),
+            u8::from(intent.encrypt_to_self),
+            intent
+                .binding_revision
+                .map(|revision| revision.to_string())
+                .unwrap_or_else(|| "none".into())
+        ));
+    }
+
+    if record.request.sender_identity != crate::identity_preferences::IdentityPreferences::default()
+    {
+        content.push_str(&format!(
+            "identity_name_hex={}\nidentity_reply_to_hex={}\n",
+            hex_lower(record.request.sender_identity.display_name().as_bytes()),
+            hex_lower(
+                record
+                    .request
+                    .sender_identity
+                    .reply_to()
+                    .unwrap_or("")
+                    .as_bytes()
+            )
+        ));
+    }
+    if let Some(sender) = record.request.sender_identity.sender() {
+        content.push_str(&format!(
+            "sender_id_hex={}\nsender_address_hex={}\n",
+            hex_lower(sender.id().as_bytes()),
+            hex_lower(sender.address().as_bytes())
+        ));
+    }
+    if let Some(thread) = &record.request.reply_thread {
+        content.push_str(&format!(
+            "reply_parent_hex={}\nreply_references_hex={}\nreply_shortened={}\n",
+            hex_lower(thread.in_reply_to().unwrap_or_default().as_bytes()),
+            hex_lower(thread.references().as_bytes()),
+            u8::from(thread.shortened())
+        ));
+    }
     for (index, attachment) in record.request.attachments.iter().enumerate() {
         content.push_str(&format!(
             "attachment_{index}_filename_hex={}\n\
@@ -757,7 +1087,7 @@ attachment_{index}_body_file={}\n",
             hex_lower(attachment.filename.as_bytes()),
             hex_lower(attachment.content_type.as_bytes()),
             attachment.size_bytes(),
-            attachment_body_file_name(index)
+            atomic::blob_name(&attachment.body)
         ));
     }
 
@@ -774,6 +1104,13 @@ attachment_{index}_body_file={}\n",
                 hex_lower(part_path.as_bytes())
             ));
         }
+        if let Some(version) = &source.version {
+            content.push_str(&format!(
+                "source_mailbox_guid_hex={}\nsource_message_guid_hex={}\n",
+                hex_lower(version.mailbox_guid.as_bytes()),
+                hex_lower(version.message_guid.as_bytes())
+            ));
+        }
     } else {
         content.push_str("source_attachment_count=0\n");
     }
@@ -788,6 +1125,8 @@ fn parse_draft_metadata(
     content: &str,
 ) -> Result<Option<DraftRecord>, DraftError> {
     let mut version = None;
+    let mut revision = None;
+    let mut starred = None;
     let mut draft_id = None;
     let mut canonical_username = None;
     let mut created_at = None;
@@ -798,12 +1137,27 @@ fn parse_draft_metadata(
     let mut bcc_recipients = None;
     let mut subject = None;
     let mut body = None;
+    let mut body_format = None;
+    let mut pgp_sign = None;
+    let mut pgp_encrypt = None;
+    let mut pgp_self = None;
+    let mut pgp_binding_revision = None;
+    let mut identity_name = None;
+    let mut identity_reply_to = None;
+    let mut sender_id = None;
+    let mut sender_address = None;
     let mut attachment_count = None;
     let mut attachment_fields = Vec::<AttachmentMetadataFields>::new();
     let mut source_mailbox = None;
     let mut source_uid = None;
+    let mut source_mailbox_guid = None;
+    let mut source_message_guid = None;
     let mut source_attachment_count = None;
     let mut source_part_paths = Vec::<Option<String>>::new();
+    let mut reply_parent = None;
+    let mut reply_references = None;
+    let mut reply_shortened = None;
+    let mut seen_fields = std::collections::BTreeSet::new();
 
     for raw_line in content.lines() {
         let line = raw_line.trim();
@@ -816,8 +1170,59 @@ fn parse_draft_metadata(
             });
         };
 
+        let canonical_key = if key == "recipients_hex" {
+            "to_hex"
+        } else {
+            key
+        };
+        if !seen_fields.insert(canonical_key) {
+            return Err(DraftError {
+                reason: "duplicate draft metadata field".into(),
+            });
+        }
         match key {
+            "pgp_sign" | "pgp_encrypt" | "pgp_self" => {
+                let value = match value {
+                    "0" => false,
+                    "1" => true,
+                    _ => {
+                        return Err(DraftError {
+                            reason: "invalid stored protection selection".into(),
+                        })
+                    }
+                };
+                match key {
+                    "pgp_sign" => pgp_sign = Some(value),
+                    "pgp_encrypt" => pgp_encrypt = Some(value),
+                    _ => pgp_self = Some(value),
+                }
+            }
+            "pgp_binding_revision" => {
+                pgp_binding_revision = Some(if value == "none" {
+                    None
+                } else {
+                    let revision = parse_u64_field("pgp_binding_revision", value)?;
+                    if revision.to_string() != value {
+                        return Err(DraftError {
+                            reason: "invalid protection revision".into(),
+                        });
+                    }
+                    Some(revision)
+                });
+            }
             "version" => version = Some(value.to_string()),
+            "revision" => revision = Some(parse_u64_field("revision", value)?),
+            "starred" => {
+                starred = Some(match value {
+                    "0" => false,
+                    "1" => true,
+                    _ => {
+                        return Err(DraftError {
+                            reason: "invalid draft star state".into(),
+                        })
+                    }
+                })
+            }
             "draft_id" => draft_id = Some(value.to_string()),
             "canonical_username_hex" => canonical_username = Some(decode_hex_string(value)?),
             "created_at" => created_at = Some(parse_u64_field("created_at", value)?),
@@ -829,20 +1234,52 @@ fn parse_draft_metadata(
             "bcc_hex" => bcc_recipients = Some(decode_hex_string(value)?),
             "subject_hex" => subject = Some(decode_hex_string(value)?),
             "body_hex" => body = Some(decode_hex_string(value)?),
+            "identity_name_hex" => identity_name = Some(decode_hex_string(value)?),
+            "identity_reply_to_hex" => identity_reply_to = Some(decode_hex_string(value)?),
+            "sender_id_hex" => sender_id = Some(decode_hex_string(value)?),
+            "sender_address_hex" => sender_address = Some(decode_hex_string(value)?),
+            "body_format" => {
+                body_format = Some(crate::compose_format::BodyFormat::parse(value).ok_or_else(
+                    || DraftError {
+                        reason: "unsupported draft body format".into(),
+                    },
+                )?)
+            }
+            "reply_parent_hex" => reply_parent = Some(decode_hex_string(value)?),
+            "reply_references_hex" => reply_references = Some(decode_hex_string(value)?),
+            "reply_shortened" => {
+                reply_shortened = Some(match value {
+                    "0" => false,
+                    "1" => true,
+                    _ => {
+                        return Err(DraftError {
+                            reason: "invalid reply shortening metadata".into(),
+                        })
+                    }
+                })
+            }
             "attachment_count" => {
                 attachment_count = Some(parse_usize_field("attachment_count", value)?)
             }
             "source_mailbox_hex" => source_mailbox = Some(decode_hex_string(value)?),
             "source_uid" => source_uid = Some(parse_u64_field("source_uid", value)?),
+            "source_mailbox_guid_hex" => source_mailbox_guid = Some(decode_hex_string(value)?),
+            "source_message_guid_hex" => source_message_guid = Some(decode_hex_string(value)?),
             "source_attachment_count" => {
                 source_attachment_count = Some(parse_usize_field("source_attachment_count", value)?)
             }
-            _ if key.starts_with("source_attachment_") => {
-                parse_source_attachment_metadata_field(key, value, &mut source_part_paths)?
-            }
-            _ if key.starts_with("attachment_") => {
-                parse_attachment_metadata_field(key, value, &mut attachment_fields)?
-            }
+            _ if key.starts_with("source_attachment_") => parse_source_attachment_metadata_field(
+                key,
+                value,
+                &mut source_part_paths,
+                policy.compose_policy.max_attachments,
+            )?,
+            _ if key.starts_with("attachment_") => parse_attachment_metadata_field(
+                key,
+                value,
+                &mut attachment_fields,
+                policy.compose_policy.max_attachments,
+            )?,
             _ => {
                 return Err(DraftError {
                     reason: format!("unsupported draft metadata key {key}"),
@@ -854,13 +1291,125 @@ fn parse_draft_metadata(
     if draft_id.is_none() {
         return Ok(None);
     }
-    if !matches!(version.as_deref(), Some("1") | Some("2") | Some("3")) {
+    if !matches!(
+        version.as_deref(),
+        Some("1")
+            | Some("2")
+            | Some("3")
+            | Some("4")
+            | Some("5")
+            | Some("6")
+            | Some("7")
+            | Some("8")
+            | Some("9")
+            | Some("10")
+            | Some("11")
+            | Some("12")
+            | Some("13")
+            | Some("14")
+    ) {
         return Err(DraftError {
             reason: "unsupported draft metadata version".to_string(),
         });
     }
 
     let draft_id = required_field("draft_id", draft_id)?;
+    let revision = match (version.as_deref(), revision) {
+        (Some("5" | "6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14"), Some(value))
+            if value > 0 =>
+        {
+            value
+        }
+        (Some("1" | "2" | "3" | "4"), None) => 0,
+        _ => {
+            return Err(DraftError {
+                reason: "invalid or incompatible draft revision".into(),
+            })
+        }
+    };
+    let starred = match (version.as_deref(), starred) {
+        (Some("6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14"), Some(value)) => value,
+        (Some("1" | "2" | "3" | "4" | "5"), None) => false,
+        _ => {
+            return Err(DraftError {
+                reason: "invalid or incompatible draft star state".into(),
+            })
+        }
+    };
+    let body_format = match (version.as_deref(), body_format) {
+        (Some("9" | "10" | "11" | "12" | "13" | "14"), Some(value)) => value,
+        (Some("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8"), None) => {
+            crate::compose_format::BodyFormat::Plain
+        }
+        _ => {
+            return Err(DraftError {
+                reason: "missing or incompatible draft body format".into(),
+            })
+        }
+    };
+    let mut sender_identity = match (version.as_deref(), identity_name, identity_reply_to) {
+        (Some("10" | "12" | "13" | "14"), Some(name), Some(reply)) => {
+            crate::identity_preferences::IdentityPreferences::new(&name, Some(&reply)).map_err(
+                |_| DraftError {
+                    reason: "invalid stored sender presentation".into(),
+                },
+            )?
+        }
+        (Some("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "11"), None, None) => {
+            crate::identity_preferences::IdentityPreferences::default()
+        }
+        _ => {
+            return Err(DraftError {
+                reason: "missing or incompatible sender presentation".into(),
+            })
+        }
+    };
+    match (version.as_deref(), sender_id, sender_address) {
+        (Some("13" | "14"), Some(id), Some(address)) => {
+            if address == required_field("canonical_username", canonical_username.clone())? {
+                return Err(DraftError {
+                    reason: "invalid captured sender".into(),
+                });
+            }
+            sender_identity =
+                sender_identity
+                    .with_sender(&id, &address)
+                    .map_err(|_| DraftError {
+                        reason: "invalid captured sender".into(),
+                    })?;
+        }
+        (Some("13" | "14"), _, _) | (_, Some(_), _) | (_, _, Some(_)) => {
+            return Err(DraftError {
+                reason: "missing or incompatible captured sender".into(),
+            })
+        }
+        _ => {}
+    }
+    let reply_thread = match (reply_parent, reply_references, reply_shortened) {
+        (None, None, None) => None,
+        (Some(parent), Some(references), Some(shortened))
+            if matches!(
+                version.as_deref(),
+                Some("4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14")
+            ) =>
+        {
+            Some(
+                crate::reply_thread::ReplyThread::from_stored(
+                    (!parent.is_empty()).then_some(parent.as_str()),
+                    &references,
+                    shortened,
+                )
+                .map_err(|_| DraftError {
+                    reason: "invalid stored reply metadata".into(),
+                })?,
+            )
+        }
+        _ => {
+            return Err(DraftError {
+                reason: "incomplete or incompatible stored reply metadata".into(),
+            })
+        }
+    };
     validate_draft_id(&draft_id)?;
     let canonical_username = required_field("canonical_username", canonical_username)?;
     validate_canonical_username(&canonical_username)?;
@@ -869,16 +1418,27 @@ fn parse_draft_metadata(
     }
 
     let attachment_count = required_field("attachment_count", attachment_count)?;
-    if attachment_count > policy.compose_policy.max_attachments {
+    if attachment_count > policy.compose_policy.max_attachments
+        || attachment_fields.len() != attachment_count
+    {
         return Err(DraftError {
             reason: "draft attachment metadata exceeded maximum count".to_string(),
         });
     }
-    attachment_fields.resize_with(attachment_count, AttachmentMetadataFields::default);
-
     let draft_dir = metadata_path.parent().ok_or_else(|| DraftError {
         reason: "draft metadata path did not have a parent directory".to_string(),
     })?;
+    let directory_name = draft_dir
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or_default();
+    if directory_name != draft_id
+        && atomic::legacy_backup_id(directory_name) != Some(draft_id.as_str())
+    {
+        return Err(DraftError {
+            reason: "draft metadata identity does not match its directory".into(),
+        });
+    }
     let mut attachments = Vec::new();
     for (index, fields) in attachment_fields.into_iter().enumerate() {
         let filename = required_field("attachment filename", fields.filename)?;
@@ -886,22 +1446,44 @@ fn parse_draft_metadata(
         let size_bytes = required_field("attachment size", fields.size_bytes)?;
         let body_file = required_field("attachment body file", fields.body_file)?;
         let expected_body_file = attachment_body_file_name(index);
-        if body_file != expected_body_file {
+        if if matches!(
+            version.as_deref(),
+            Some("8" | "9" | "10" | "11" | "12" | "13" | "14")
+        ) {
+            !atomic::is_blob_name(&body_file)
+        } else {
+            body_file != expected_body_file
+        } {
             return Err(DraftError {
                 reason: "draft attachment body file name was not generated".to_string(),
             });
         }
 
-        let body_path = draft_dir.join(body_file);
-        let body = fs::read(&body_path).map_err(|error| DraftError {
-            reason: format!(
-                "failed to read draft attachment body {:?}: {error}",
-                body_path
-            ),
-        })?;
+        let body_path = draft_dir.join(&body_file);
+        if size_bytes > policy.compose_policy.attachment_max_bytes {
+            return Err(DraftError {
+                reason: "draft attachment exceeded maximum size".into(),
+            });
+        }
+        let body = crate::private_account_file::read_record(&body_path, size_bytes)
+            .map_err(|_| DraftError {
+                reason: "draft attachment is unsafe or exceeded maximum size".into(),
+            })?
+            .ok_or_else(|| DraftError {
+                reason: "draft attachment body missing".into(),
+            })?;
         if body.len() != size_bytes {
             return Err(DraftError {
                 reason: "draft attachment body size did not match metadata".to_string(),
+            });
+        }
+        if matches!(
+            version.as_deref(),
+            Some("8" | "9" | "10" | "11" | "12" | "13" | "14")
+        ) && atomic::blob_name(&body) != body_file
+        {
+            return Err(DraftError {
+                reason: "draft attachment content identity mismatch".into(),
             });
         }
         attachments.push(
@@ -913,7 +1495,7 @@ fn parse_draft_metadata(
         );
     }
 
-    let request = ComposeRequest::new_with_routing(
+    let mut request = DraftContent::new(
         policy.compose_policy,
         required_field("recipients", recipients)?,
         cc_recipients.unwrap_or_default(),
@@ -925,12 +1507,90 @@ fn parse_draft_metadata(
     .map_err(|error| DraftError {
         reason: error.reason,
     })?;
+    request.reply_thread = reply_thread;
+    request.body_format = body_format;
+    request.sender_identity = sender_identity;
+    request.protection = match (
+        version.as_deref(),
+        pgp_sign,
+        pgp_encrypt,
+        pgp_self,
+        pgp_binding_revision,
+    ) {
+        (
+            Some("11" | "12" | "14"),
+            Some(sign),
+            Some(encrypt),
+            Some(encrypt_to_self),
+            Some(binding_revision),
+        ) => crate::send::ProtectionIntent {
+            sign,
+            encrypt,
+            encrypt_to_self,
+            binding_revision,
+        },
+        (
+            Some("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "13"),
+            None,
+            None,
+            None,
+            None,
+        ) => crate::send::ProtectionIntent::default(),
+        _ => {
+            return Err(DraftError {
+                reason: "missing or incompatible stored protection selection".into(),
+            })
+        }
+    };
+    if !matches!(
+        version.as_deref(),
+        Some("5" | "6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14")
+    ) {
+        crate::send::ComposeRequest::new_with_routing(
+            policy.compose_policy,
+            &request.recipients_text,
+            &request.cc_text,
+            &request.bcc_text,
+            &request.subject,
+            &request.body,
+            Vec::new(),
+        )
+        .map_err(|error| DraftError {
+            reason: error.reason,
+        })?;
+    }
+    let source_version = match (source_mailbox_guid, source_message_guid) {
+        (None, None) => None,
+        (Some(mailbox), Some(message))
+            if matches!(
+                version.as_deref(),
+                Some("7" | "8" | "9" | "10" | "11" | "12" | "13" | "14")
+            ) =>
+        {
+            Some(
+                crate::message_metadata::MessageVersion::new(mailbox, message).map_err(|_| {
+                    DraftError {
+                        reason: "invalid stored source identity".into(),
+                    }
+                })?,
+            )
+        }
+        _ => {
+            return Err(DraftError {
+                reason: "incomplete or incompatible stored source identity".into(),
+            })
+        }
+    };
     let source_attachments = if version.as_deref() == Some("1") {
         None
     } else {
         let count = required_field("source_attachment_count", source_attachment_count)?;
         if count == 0 {
-            if source_mailbox.is_some() || source_uid.is_some() || !source_part_paths.is_empty() {
+            if source_mailbox.is_some()
+                || source_uid.is_some()
+                || source_version.is_some()
+                || !source_part_paths.is_empty()
+            {
                 return Err(DraftError {
                     reason: "draft source metadata was inconsistent".to_string(),
                 });
@@ -951,18 +1611,27 @@ fn parse_draft_metadata(
                 DraftSourceAttachments {
                     mailbox_name: required_field("source mailbox", source_mailbox)?,
                     uid: required_field("source UID", source_uid)?,
+                    version: source_version,
                     part_paths,
                 },
             )?)
         }
     };
 
+    if matches!(
+        version.as_deref(),
+        Some("7" | "8" | "9" | "10" | "11" | "12" | "13" | "14")
+    ) {
+        validate_combined_attachment_count(policy, &request, source_attachments.as_ref())?;
+    }
     Ok(Some(DraftRecord {
         draft_id,
         canonical_username,
         created_at: required_field("created_at", created_at)?,
         updated_at: required_field("updated_at", updated_at)?,
         expires_at: required_field("expires_at", expires_at)?,
+        revision: Some(revision),
+        starred,
         request,
         source_attachments,
     }))
@@ -980,6 +1649,7 @@ fn parse_attachment_metadata_field(
     key: &str,
     value: &str,
     attachment_fields: &mut Vec<AttachmentMetadataFields>,
+    max_count: usize,
 ) -> Result<(), DraftError> {
     let key = key.strip_prefix("attachment_").ok_or_else(|| DraftError {
         reason: "invalid attachment metadata key".to_string(),
@@ -990,6 +1660,11 @@ fn parse_attachment_metadata_field(
         });
     };
     let index = parse_usize_field("attachment index", index_text)?;
+    if index >= max_count || index.to_string() != index_text {
+        return Err(DraftError {
+            reason: "draft attachment index exceeded maximum or was invalid".into(),
+        });
+    }
     if attachment_fields.len() <= index {
         attachment_fields.resize_with(index + 1, AttachmentMetadataFields::default);
     }
@@ -1012,6 +1687,7 @@ fn parse_source_attachment_metadata_field(
     key: &str,
     value: &str,
     part_paths: &mut Vec<Option<String>>,
+    max_count: usize,
 ) -> Result<(), DraftError> {
     let key = key
         .strip_prefix("source_attachment_")
@@ -1029,6 +1705,11 @@ fn parse_source_attachment_metadata_field(
         });
     }
     let index = parse_usize_field("source attachment index", index_text)?;
+    if index >= max_count || index.to_string() != index_text {
+        return Err(DraftError {
+            reason: "draft source attachment index exceeded maximum or was invalid".into(),
+        });
+    }
     if part_paths.len() <= index {
         part_paths.resize(index + 1, None);
     }
@@ -1095,10 +1776,10 @@ fn write_file_atomic(tmp_path: &Path, final_path: &Path, bytes: &[u8]) -> Result
     file.write_all(bytes).map_err(|error| DraftError {
         reason: format!("failed to write draft temp file {:?}: {error}", tmp_path),
     })?;
+    set_file_permissions(tmp_path)?;
     file.sync_all().map_err(|error| DraftError {
         reason: format!("failed to sync draft temp file {:?}: {error}", tmp_path),
     })?;
-    set_file_permissions(tmp_path)?;
     fs::rename(tmp_path, final_path).map_err(|error| DraftError {
         reason: format!("failed to finalize draft file {:?}: {error}", final_path),
     })
@@ -1117,20 +1798,36 @@ fn set_file_permissions(path: &Path) -> Result<(), DraftError> {
     Ok(())
 }
 
-fn set_dir_permissions(path: &Path) -> Result<(), DraftError> {
+fn create_private_directory(path: &Path) -> Result<(), DraftError> {
+    let mut builder = fs::DirBuilder::new();
     #[cfg(unix)]
     {
-        use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(path, fs::Permissions::from_mode(0o700)).map_err(|error| {
-            DraftError {
-                reason: format!(
-                    "failed to set draft directory permissions {:?}: {error}",
-                    path
-                ),
-            }
-        })?;
+        use std::os::unix::fs::DirBuilderExt as _;
+        builder.mode(0o700);
     }
+    match builder.create(path) {
+        Ok(()) => (),
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => (),
+        Err(_) => {
+            return Err(DraftError {
+                reason: "draft directory creation failed".into(),
+            })
+        }
+    }
+    crate::private_account_file::check_directory(path).map_err(|_| DraftError {
+        reason: "draft directory is unsafe".into(),
+    })?;
     Ok(())
+}
+
+fn private_directory_exists(path: &Path) -> Result<bool, DraftError> {
+    match crate::private_account_file::check_directory(path) {
+        Ok(()) => Ok(true),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(_) => Err(DraftError {
+            reason: "draft directory is unsafe".into(),
+        }),
+    }
 }
 
 fn hex_lower(bytes: &[u8]) -> String {
@@ -1176,9 +1873,30 @@ fn hex_value(byte: u8) -> Result<u8, DraftError> {
 
 static NEXT_DRAFT_TEMP_FILE_ID: AtomicU64 = AtomicU64::new(0);
 
+fn location_unavailable() -> DraftError {
+    DraftError {
+        reason: "draft location unavailable".into(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod protection_tests {
+        include!("draft_protection_tests.rs");
+    }
+    mod preservation {
+        include!("draft_preservation_tests.rs");
+    }
+    mod locations_tests {
+        include!("draft_multi_location_tests.rs");
+    }
+    mod atomic_tests {
+        include!("draft_atomic_tests.rs");
+    }
+    mod storage_usage_tests {
+        include!("draft_storage_usage_tests.rs");
+    }
 
     fn temp_dir(label: &str) -> PathBuf {
         let mut path = std::env::temp_dir();
@@ -1270,6 +1988,245 @@ mod tests {
     }
 
     #[test]
+    fn formatted_draft_preserves_unfinished_notation_attachments_and_cas_star_edits() {
+        use crate::compose_format::BodyFormat;
+        let dir = temp_dir("osmap-draft-body-format");
+        let store = FileDraftStore::new(&dir, DraftPolicy::default());
+        let mut draft = record(&draft_id(29), "alice@example.com", 100);
+        let unfinished = "**Unfinished formatting\n[link not finished](https://example.test/";
+        draft.request.body = unfinished.into();
+        draft.request.body_format = BodyFormat::Formatted;
+        draft
+            .request
+            .attachments
+            .push(attachment(b"synthetic attachment"));
+        store.save(&draft, 100).unwrap();
+        let mut loaded = store
+            .load("alice@example.com", &draft.draft_id, 100)
+            .unwrap()
+            .unwrap();
+        assert_eq!(loaded.request, draft.request);
+        let stale = loaded.clone();
+        loaded.starred = true;
+        store.save(&loaded, 101).unwrap();
+        assert!(store.save(&stale, 102).is_err());
+        let mut updated = store
+            .load("alice@example.com", &draft.draft_id, 102)
+            .unwrap()
+            .unwrap();
+        assert!(updated.starred);
+        assert_eq!(updated.revision, Some(2));
+        assert_eq!(updated.request.body, unfinished);
+        assert_eq!(updated.request.body_format, BodyFormat::Formatted);
+        assert_eq!(updated.request.attachments, draft.request.attachments);
+
+        // V8 already used content-addressed attachment blobs, but no format mode.
+        let path = store.metadata_path("alice@example.com", &draft.draft_id);
+        let metadata = fs::read_to_string(&path).unwrap();
+        let legacy = metadata
+            .replace("version=9\n", "version=8\n")
+            .replace("body_format=formatted\n", "");
+        let v8 = parse_draft_metadata(DraftPolicy::default(), "alice@example.com", &path, &legacy)
+            .unwrap()
+            .unwrap();
+        assert_eq!(v8.request.body_format, BodyFormat::Plain);
+        assert_eq!(v8.request.body, unfinished);
+        assert_eq!(v8.request.attachments, updated.request.attachments);
+
+        updated.request.body_format = BodyFormat::Plain;
+        store.save(&updated, 103).unwrap();
+        let plain = store
+            .load("alice@example.com", &draft.draft_id, 103)
+            .unwrap()
+            .unwrap();
+        assert_eq!(plain.request.body_format, BodyFormat::Plain);
+        assert_eq!(plain.request.body, unfinished);
+        assert_eq!(plain.request.attachments, updated.request.attachments);
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn identity_v10_is_strict_and_legacy_v9_keeps_canonical_identity() {
+        let dir = temp_dir("identity-v10");
+        let store = FileDraftStore::new(&dir, DraftPolicy::default());
+        let mut record = DraftRecord::new(
+            DraftPolicy::default(),
+            input(
+                &draft_id(14),
+                "alice@example.com",
+                100,
+                "Synthetic",
+                "Body",
+                vec![attachment(b"exact")],
+            ),
+        )
+        .unwrap();
+        store.save(&record, 100).unwrap();
+        let path = store.metadata_path("alice@example.com", &record.draft_id);
+        let legacy = fs::read_to_string(&path).unwrap();
+        assert!(legacy.starts_with("version=9\n"));
+        assert!(!legacy.contains("identity_"));
+        record = store
+            .load("alice@example.com", &record.draft_id, 100)
+            .unwrap()
+            .unwrap();
+        record.request.sender_identity = crate::identity_preferences::IdentityPreferences::new(
+            "Zoë 🦊",
+            Some("reply@example.test"),
+        )
+        .unwrap();
+        store.save(&record, 101).unwrap();
+        let metadata = fs::read_to_string(&path).unwrap();
+        assert!(metadata.starts_with("version=10\n"));
+        let loaded = FileDraftStore::new(&dir, DraftPolicy::default())
+            .load("alice@example.com", &record.draft_id, 101)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            loaded.request.sender_identity,
+            record.request.sender_identity
+        );
+        assert_eq!(loaded.request.attachments, record.request.attachments);
+        for invalid in [
+            metadata.replace("version=10\n", "version=9\n"),
+            metadata
+                .lines()
+                .filter(|l| !l.starts_with("identity_name_hex="))
+                .collect::<Vec<_>>()
+                .join("\n"),
+            format!("{metadata}identity_name_hex=61\n"),
+            metadata.replace("identity_name_hex=", "unknown_name_hex="),
+            metadata.replace("identity_reply_to_hex=", "identity_reply_to_hex=0a"),
+        ] {
+            assert!(parse_draft_metadata(
+                DraftPolicy::default(),
+                "alice@example.com",
+                &path,
+                &invalid
+            )
+            .is_err());
+        }
+        let old = parse_draft_metadata(DraftPolicy::default(), "alice@example.com", &path, &legacy)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            old.request.sender_identity,
+            crate::identity_preferences::IdentityPreferences::default()
+        );
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn legacy_draft_versions_read_as_plain_and_body_format_metadata_is_strict() {
+        use crate::compose_format::BodyFormat;
+        let dir = temp_dir("osmap-draft-legacy-body-format");
+        let store = FileDraftStore::new(&dir, DraftPolicy::default());
+        let mut draft = record(&draft_id(30), "alice@example.com", 100);
+        draft.request.body = "**This remains literal legacy text [unfinished".into();
+        assert_eq!(draft.request.body_format, BodyFormat::Plain);
+        store.save(&draft, 100).unwrap();
+        let path = store.metadata_path("alice@example.com", &draft.draft_id);
+        let metadata = fs::read_to_string(&path).unwrap();
+        let parse = |value: &str| {
+            parse_draft_metadata(DraftPolicy::default(), "alice@example.com", &path, value)
+        };
+        assert!(metadata.starts_with("version=9\n"));
+        assert!(metadata.contains("\nbody_format=plain\n"));
+        for version in 1..=8 {
+            let mut legacy = metadata
+                .replace("version=9\n", &format!("version={version}\n"))
+                .replace("body_format=plain\n", "");
+            if version < 5 {
+                legacy = legacy.replace("revision=1\n", "");
+            }
+            if version < 6 {
+                legacy = legacy.replace("starred=0\n", "");
+            }
+            let loaded = parse(&legacy).unwrap().unwrap();
+            assert_eq!(
+                loaded.request.body_format,
+                BodyFormat::Plain,
+                "version {version}"
+            );
+            assert_eq!(loaded.request.body, draft.request.body, "version {version}");
+        }
+        for invalid in [
+            metadata.replace("body_format=plain\n", ""),
+            metadata.replace("body_format=plain", "body_format=unknown"),
+            metadata.replace("body_format=plain", "body_format=Formatted"),
+            metadata.replace("version=9\n", "version=8\n"),
+            metadata.replace("version=9\n", "version=10\n"),
+            format!("{metadata}body_format=plain\n"),
+        ] {
+            assert!(parse(&invalid).is_err());
+        }
+        assert_eq!(fs::read_to_string(&path).unwrap(), metadata);
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn draft_reply_metadata_survives_storage_and_refuses_corrupt_or_downgraded_fields() {
+        let dir = temp_dir("osmap-draft-reply-thread");
+        let store = FileDraftStore::new(&dir, DraftPolicy::default());
+        let mut draft = record(&draft_id(28), "alice@example.com", 100);
+        draft.request.reply_thread = Some(
+            crate::reply_thread::ReplyThread::from_original(
+                "Message-ID: <parent@example.test>\nReferences: <root@example.test>\n",
+            )
+            .unwrap(),
+        );
+        store.save(&draft, 100).unwrap();
+        draft.revision = Some(1);
+        assert_eq!(
+            store
+                .load("alice@example.com", &draft.draft_id, 100)
+                .unwrap()
+                .unwrap(),
+            draft
+        );
+        let path = store.metadata_path("alice@example.com", &draft.draft_id);
+        let metadata = fs::read_to_string(&path).unwrap();
+        let parse = |value: &str| {
+            parse_draft_metadata(DraftPolicy::default(), "alice@example.com", &path, value)
+        };
+        assert!(parse(
+            &metadata
+                .replace("version=9", "version=3")
+                .replace("body_format=plain\n", "")
+                .replace("starred=0\n", "")
+                .replace("revision=1\n", "")
+        )
+        .is_err());
+        assert!(parse(&format!("{metadata}reply_shortened=0\n")).is_err());
+        assert!(parse(&metadata.replace("reply_shortened=0\n", "")).is_err());
+        assert!(parse(&metadata.replace("reply_shortened=0", "reply_shortened=2")).is_err());
+        assert!(parse(&metadata.replace(
+            &hex_lower(b"<parent@example.test>"),
+            &hex_lower(b"<parent@example.test>\r\nBcc: hidden@example.test")
+        ))
+        .is_err());
+        assert!(parse(&format!(
+            "{metadata}recipients_hex={}\n",
+            hex_lower(b"changed@example.test")
+        ))
+        .is_err());
+        draft.request.reply_thread = None;
+        let legacy = serialize_draft_metadata(&draft)
+            .replace("version=9", "version=3")
+            .replace("body_format=plain\n", "")
+            .replace("starred=0\n", "")
+            .replace("revision=1\n", "");
+        draft.revision = Some(0);
+        assert_eq!(parse(&legacy).unwrap().unwrap(), draft);
+        assert_eq!(
+            fs::read_to_string(&path).unwrap(),
+            metadata,
+            "invalid reads never alter the saved draft"
+        );
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
     fn file_draft_store_round_trips_text_and_attachments() {
         let dir = temp_dir("osmap-draft-round-trip");
         let store = FileDraftStore::new(&dir, DraftPolicy::default());
@@ -1296,9 +2253,15 @@ mod tests {
             .expect("load should succeed")
             .expect("draft should exist");
 
-        assert_eq!(loaded, draft);
-        assert_eq!(loaded.request.cc_recipients, vec!["carol@example.net"]);
-        assert_eq!(loaded.request.bcc_recipients, vec!["dana@example.org"]);
+        assert_eq!(
+            loaded,
+            DraftRecord {
+                revision: Some(1),
+                ..draft
+            }
+        );
+        assert_eq!(loaded.request.cc_text, "carol@example.net");
+        assert_eq!(loaded.request.bcc_text, "dana@example.org");
         assert_eq!(loaded.request.attachments[0].body, b"attachment bytes");
     }
 
@@ -1310,6 +2273,7 @@ mod tests {
         draft.source_attachments = Some(DraftSourceAttachments {
             mailbox_name: "INBOX".to_string(),
             uid: 9,
+            version: None,
             part_paths: vec!["1.2".to_string()],
         });
 
@@ -1323,6 +2287,7 @@ mod tests {
                 .expect("metadata should be readable");
 
         assert_eq!(loaded.source_attachments, draft.source_attachments);
+        assert_eq!(loaded.summary().attachment_count, 1);
         assert!(metadata.contains("source_attachment_count=1"));
         assert!(!metadata.contains("attachment bytes"));
         assert!(!metadata.contains("%PDF"));
@@ -1343,6 +2308,7 @@ mod tests {
         duplicate.source_attachments = Some(DraftSourceAttachments {
             mailbox_name: "INBOX".to_string(),
             uid: 9,
+            version: None,
             part_paths: vec!["1.2".to_string(), "1.2".to_string()],
         });
         assert!(DraftRecord::new(DraftPolicy::default(), duplicate)
@@ -1354,6 +2320,7 @@ mod tests {
         control.source_attachments = Some(DraftSourceAttachments {
             mailbox_name: "INBOX\nJunk".to_string(),
             uid: 9,
+            version: None,
             part_paths: vec!["1.2".to_string()],
         });
         assert!(DraftRecord::new(DraftPolicy::default(), control)
@@ -1365,6 +2332,7 @@ mod tests {
         oversized.source_attachments = Some(DraftSourceAttachments {
             mailbox_name: "M".repeat(DEFAULT_DRAFT_SOURCE_MAILBOX_MAX_LEN + 1),
             uid: 9,
+            version: None,
             part_paths: vec!["1.2".to_string()],
         });
         assert!(DraftRecord::new(DraftPolicy::default(), oversized)
@@ -1435,7 +2403,7 @@ mod tests {
         assert!(draft_dir.exists());
 
         assert!(store
-            .delete("alice@example.com", &draft.draft_id)
+            .delete("alice@example.com", &draft.draft_id, 1)
             .expect("delete should succeed"));
         assert!(!draft_dir.exists());
     }
@@ -1488,6 +2456,10 @@ mod tests {
             .expect_err("new draft over quota should fail");
         assert!(error.reason.contains("quota"));
 
+        first = store
+            .load("alice@example.com", &first.draft_id, 101)
+            .unwrap()
+            .unwrap();
         first.updated_at = 101;
         first.request.body = "updated body".to_string();
         store
@@ -1538,35 +2510,6 @@ mod tests {
         assert_eq!(listed.len(), 1);
     }
 
-    #[cfg(unix)]
-    #[test]
-    fn failed_directory_swap_restores_the_previous_draft() {
-        let dir = temp_dir("osmap-draft-swap-rollback");
-        let store = FileDraftStore::new(&dir, DraftPolicy::default());
-        let draft = record(&draft_id(22), "alice@example.com", 100);
-        store
-            .save(&draft, 100)
-            .expect("initial save should succeed");
-
-        let final_dir = store.draft_dir_for_username_and_id("alice@example.com", &draft.draft_id);
-        let owner_dir = store.owner_dir_for_username("alice@example.com");
-        let missing_staging_dir = owner_dir.join(".missing-staging");
-        let backup_dir = owner_dir.join(".rollback-backup");
-        let error = store
-            .replace_with_staged_record(&final_dir, &missing_staging_dir, &backup_dir)
-            .expect_err("missing staged replacement should fail");
-
-        assert!(error.reason.contains("failed to finalize replacement"));
-        assert!(final_dir.exists());
-        assert!(!backup_dir.exists());
-        assert_eq!(
-            store
-                .load("alice@example.com", &draft.draft_id, 100)
-                .expect("restored draft should load"),
-            Some(draft)
-        );
-    }
-
     #[test]
     fn metadata_rejects_non_generated_attachment_body_file() {
         let dir = temp_dir("osmap-draft-bad-body-file");
@@ -1588,7 +2531,7 @@ mod tests {
         let metadata_path = store.metadata_path("alice@example.com", &draft.draft_id);
         let mut metadata = fs::read_to_string(&metadata_path).expect("metadata should be readable");
         metadata = metadata.replace(
-            "attachment_0_body_file=attachment-0.body",
+            &format!("attachment_0_body_file={}", atomic::blob_name(b"body")),
             "attachment_0_body_file=../attachment-0.body",
         );
         fs::write(&metadata_path, metadata).expect("metadata fixture should be writable");
@@ -1659,4 +2602,5 @@ mod tests {
             DEFAULT_TOTAL_ATTACHMENT_MAX_BYTES
         );
     }
+    include!("draft_sender_tests.rs");
 }

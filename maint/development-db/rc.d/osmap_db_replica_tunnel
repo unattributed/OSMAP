@@ -1,0 +1,14 @@
+#!/bin/ksh
+# Persistent owner of the dedicated replica SSH transport, never a SQL actor.
+# Install the root-owned wrapper before this service; see ../README.md.
+# rc.subr consumes these variables.
+# shellcheck disable=SC2034
+daemon="/bin/ksh"
+daemon_user="_osmaprepl"
+daemon_flags="/usr/local/libexec/osmap-db-replica/osmap-db-replica-tunnel-run.ksh"
+rc_bg=YES
+rc_reload=NO
+# shellcheck source=/dev/null
+. /etc/rc.d/rc.subr
+pexp="/bin/ksh /usr/local/libexec/osmap-db-replica/osmap-db-replica-tunnel-run\\.ksh"
+rc_cmd "$1"

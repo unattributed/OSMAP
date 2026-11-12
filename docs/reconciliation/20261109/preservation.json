@@ -1,0 +1,44 @@
+{
+  "source_base": "6c509a542dfc30129e23b838b1faf7cd01608f4e",
+  "source_branch": "feat/ux-completion-20260929",
+  "purpose": "Exact reversible preservation before authorized S05 retirement and startup-fix integration; all S08 work excluded.",
+  "files": {
+    "docs/README.md": "7aedd2074692475637cb29b7ebd39c2e732ba9da8b9641d44951d6465c7d7884",
+    "docs/UX_EXECUTION_LEDGER.md": "f0852528c576b99d18d485d7bff4700ce9231f77af83d7e05db541f0713c0da5",
+    "maint/account-runtime/rc.d/osmap_account_password": "437c333c019fa18620d5a8a5a03bd3054ec035beba92547d672dc257873a81c7",
+    "maint/security/v10-claims-boundary.json": "ea2df7fb6d50a73db20f96c83f181685bbcf79318cb4e1cbebc7579e3d4e228e",
+    "maint/security/v10-fail-closed-remediation.json": "084f03d2af6123088c122b275441a06fc268191b3fb62c982efcaa0aa9730d62",
+    "maint/security/v10-rust-assumption-audit.json": "8e95df4ac5d48536f74a1447b2c6eb6ff5b7e24bde18aeeadf3d94eddded57c3",
+    "src/key_inventory_ui.rs": "874a70102e8332c8759cb4f8bf367009dda1bb797288d0e505790cf1dfbf897f",
+    "docs/UX_SLICE_S05_02.md": "9c1178811ea6c72e40233b547da55eb247508af6ceb9b636dff577333737a071"
+  },
+  "modes": {
+    "docs/README.md": "0o664",
+    "docs/UX_EXECUTION_LEDGER.md": "0o664",
+    "maint/account-runtime/rc.d/osmap_account_password": "0o755",
+    "maint/security/v10-claims-boundary.json": "0o664",
+    "maint/security/v10-fail-closed-remediation.json": "0o664",
+    "maint/security/v10-rust-assumption-audit.json": "0o664",
+    "src/key_inventory_ui.rs": "0o664",
+    "docs/UX_SLICE_S05_02.md": "0o664"
+  },
+  "patches": {
+    "superseded-s05.patch": "a28e3604197fb5f86529982731ce8ec1401b59e765f502c4465fca054b73591b",
+    "original-startup-repair.patch": "69e2aebc204a8896e823971a9549a83b8551b453525d33f6e2e866db10824e1e"
+  },
+  "reconstruction": "PASS: both read-back patches applied to original committed file blobs reproduce all eight working files byte-for-byte.",
+  "storage": {
+    "superseded-s05.patch.gz": {
+      "encoding": "gzip",
+      "sha256": "5e433a8e04d87115bcfe42c2a76f9319d814aad972b1dbdfb90353b408981f1b",
+      "decoded_patch": "superseded-s05.patch",
+      "decoded_sha256": "a28e3604197fb5f86529982731ce8ec1401b59e765f502c4465fca054b73591b"
+    },
+    "original-startup-repair.patch.gz": {
+      "encoding": "gzip",
+      "sha256": "08febe88ec6e85a8f953adcd65be0d1658a42ce4bfff4c6f22092f69bf742f88",
+      "decoded_patch": "original-startup-repair.patch",
+      "decoded_sha256": "69e2aebc204a8896e823971a9549a83b8551b453525d33f6e2e866db10824e1e"
+    }
+  }
+}

@@ -118,6 +118,51 @@ class RunnerBehaviorTests(unittest.TestCase):
             server.server_close()
             thread.join(timeout=2)
 
+    def test_form_post_uses_target_origin_unless_probe_overrides_it(self) -> None:
+        cfg = config("https://mail.example.test:8443", "mail.example.test", self.root)
+        runner = WSTG.Runner(cfg, self.mapping, self.root / "form-origin")
+        response = WSTG.HttpEvidence("login", 401, "Unauthorized", [], b"")
+        with mock.patch.object(runner, "request", return_value=response) as request:
+            runner.form_post("login", "/login", {"username": "fixture"})
+            self.assertEqual(request.call_args.kwargs["headers"]["Origin"], cfg.origin)
+            runner.form_post(
+                "foreign_login",
+                "/login",
+                {"username": "fixture"},
+                headers={"Origin": "https://foreign.example"},
+            )
+            self.assertEqual(
+                request.call_args.kwargs["headers"]["Origin"],
+                "https://foreign.example",
+            )
+
+    def test_login_input_tampering_reaches_parser_guard(self) -> None:
+        cfg = config("https://mail.example.test", "mail.example.test", self.root)
+        runner = WSTG.Runner(cfg, self.mapping, self.root / "input-tampering")
+        statuses = {
+            "http_inpv04_login_json_content_type": 400,
+            "http_inpv04_duplicate_login_field": 400,
+        }
+        calls = []
+
+        def response(label: str, method: str, path: str, **kwargs: object) -> object:
+            calls.append((label, method, path, kwargs))
+            return WSTG.HttpEvidence(label, statuses.get(label, 403), "Rejected", [], b"")
+
+        with mock.patch.object(runner, "request", side_effect=response), mock.patch.object(
+            runner, "write_http_input_tampering_static_evidence", return_value=True
+        ):
+            result = runner.test_http_input_tampering()
+            self.assertEqual(result.status, WSTG.STATUS_PASS)
+            for label in statuses:
+                headers = next(args[3]["headers"] for args in calls if args[0] == label)
+                self.assertEqual(headers["Origin"], cfg.origin)
+
+            statuses["http_inpv04_duplicate_login_field"] = 403
+            result = runner.test_http_input_tampering()
+            self.assertEqual(result.status, WSTG.STATUS_FAIL)
+            self.assertEqual(result.details["failures"]["http_inpv04_duplicate_login_field"], 403)
+
     def test_connection_and_response_deadlines_are_independent(self) -> None:
         cfg = replace(
             config("http://example.test", "example.test", self.root),
@@ -277,6 +322,45 @@ class RunnerBehaviorTests(unittest.TestCase):
         valid, findings = runner.write_attack_surface_inventory_evidence()
         self.assertTrue(valid, findings)
 
+    def test_browser_attack_surface_requires_each_alternative_method(self) -> None:
+        inventory = json.loads(WSTG.ATTACK_SURFACE_PATH.read_text(encoding="utf-8"))
+        inventory["routes"] = [
+            row for row in inventory["routes"]
+            if (row["method"], row["path"]) != ("POST", "/settings/folders/bin")
+        ]
+        original_read = Path.read_text
+        def read(path, *args, **kwargs):
+            return (json.dumps(inventory) if path == WSTG.ATTACK_SURFACE_PATH
+                    else original_read(path, *args, **kwargs))
+        runner = WSTG.Runner(
+            config("https://example.test", "example.test", self.root),
+            self.mapping, self.root / "missing-alternative",
+        )
+        with mock.patch.object(Path, "read_text", autospec=True, side_effect=read):
+            valid, findings = runner.write_attack_surface_inventory_evidence()
+        self.assertFalse(valid)
+        self.assertIn(
+            ("POST", "/settings/folders/bin"), findings["missing_from_inventory"]
+        )
+
+    def test_browser_attack_surface_refuses_unknown_method_alternative(self) -> None:
+        runtime_path = REPO_ROOT / "src" / "http_runtime.rs"
+        original_read = Path.read_text
+        runtime = original_read(runtime_path, encoding="utf-8").replace(
+            'HttpMethod::Get | HttpMethod::Post, "/settings/folders/bin"',
+            'HttpMethod::Get | HttpMethod::Delete, "/settings/folders/bin"',
+        )
+        def read(path, *args, **kwargs):
+            return runtime if path == runtime_path else original_read(path, *args, **kwargs)
+        runner = WSTG.Runner(
+            config("https://example.test", "example.test", self.root),
+            self.mapping, self.root / "unknown-alternative",
+        )
+        with mock.patch.object(Path, "read_text", autospec=True, side_effect=read):
+            valid, findings = runner.write_attack_surface_inventory_evidence()
+        self.assertFalse(valid)
+        self.assertIn("unsupported_runtime_method_pattern", findings)
+
     def test_webmail_static_evidence_scans_draft_persistence(self) -> None:
         runner = WSTG.Runner(
             config("https://example.test", "example.test", self.root),
@@ -284,6 +368,23 @@ class RunnerBehaviorTests(unittest.TestCase):
             self.root / "webmail-static",
         )
         self.assertTrue(runner.write_webmail_input_validation_static_evidence())
+
+    def test_webmail_static_evidence_requires_the_current_address_parser(self) -> None:
+        runner = WSTG.Runner(
+            config("https://example.test", "example.test", self.root),
+            self.mapping,
+            self.root / "webmail-static-missing-parser",
+        )
+        original = Path.read_text
+
+        def without_address_guards(path, *args, **kwargs):
+            content = original(path, *args, **kwargs)
+            if path.name == "mail_address.rs":
+                return content.replace("recipient contained control characters", "guard removed")
+            return content
+
+        with mock.patch.object(Path, "read_text", without_address_guards):
+            self.assertFalse(runner.write_webmail_input_validation_static_evidence())
 
     def test_nonzero_ssh_exit_is_explicitly_incomplete(self) -> None:
         runner = WSTG.Runner(
