@@ -45,7 +45,9 @@
     "maint/security/v10-fail-closed-remediation.json",
     "maint/security/v10-claims-boundary.json",
     "docs/UX_PLAN_AMENDMENT_R5_PROPOSED.md",
-    "docs/README.md"
+    "docs/README.md",
+    "docs/UX_PLAN_AMENDMENT_R5.md",
+    "docs/UX_PLAN_SHA256SUMS"
   ],
   "related_slices": [
     "S09-02",
@@ -59,7 +61,7 @@
       "requirement_ids": [],
       "frontend_backend_outcome": "Reconcile final UX visuals, interaction and accessibility against the accepted references and actual authenticated route contracts across S09-01 through S09-04.",
       "essential_qa": "Focused source-browser checks, matching native and installed UX checks, independent accessibility review and separate owner usability acceptance.",
-      "next_action": "Owner states all S09 UAT complete. Reconcile PAGE-18 frozen controls; R2-18-003 remains unavailable in product. Proposed R5 scope decision pending; no S09 closure until approved change or implementation plus matching evidence.",
+      "next_action": "Owner approved R5. Admit the separate signed R5 planning supplement and reconcile S09 UI evidence; retain all ten PAGE-18 security controls as S10/epic/release blockers.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -312,7 +314,7 @@
     "status": "PASS",
     "reference": "2026-11-12 owner UAT PASS for installed login, mailbox page and personal-key access grant; owner explicitly confirmed keyboard and screen-reader checks. Private screenshot/statement receipt SHA256 094570051e20b54fcf136f1577aa36f07a025222efaf15877f85079a9f455df7. No actual signing/encryption operation claimed. Owner subsequently states all S09 UAT has been completed; this supersedes the earlier limited human-UAT scope statement, while screenshots themselves remain limited to the two shown pages."
   },
-  "next_action": "Review proposed R5 for PAGE-18; obtain explicit operator decision on no-bypass policy and S10 transfer, then complete applicable evidence and signed closure. If rejected, implement original per-message exception and tests before S09 closure."
+  "next_action": "Admit the approved R5 plan anchor, reconcile S09 UI/legacy evidence, then record bounded S09 closure. All ten PAGE-18 security controls remain open for S10-01/02 and epic/release."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -60990,6 +60992,17 @@ approves the reviewed amendment and a separate signed plan anchor is admitted.
 Independent architecture review gave proposal-only GO for its exact SHA256
 `e4cf065f0c354204523ac0494ad1b791042b4ecf1dc903467bbb6f9316ab6653`;
 that review does not approve the change or pass any PAGE-18 control.
+
+**R5 operator approval and planning admission, 2026-11-12.** The owner replied
+“Approve R5 proposal” to the exact question describing the disabled
+per-message remote-content exception, S09 UI closure after evidence
+reconciliation, and all ten PAGE-18 security tests remaining in S10 before
+epic/release acceptance. The historical proposal SHA256 is
+`e4cf065f0c354204523ac0494ad1b791042b4ecf1dc903467bbb6f9316ab6653`.
+The separate `docs/UX_PLAN_AMENDMENT_R5.md` supplement and new plan-manifest
+entries record that approval. This paragraph records authority, not a S09
+functional PASS or a PAGE-18 security PASS. Admission still requires the
+signed planning commit, manifest readback and independent review.
 
 
 ## Historical accepted S08-07 active order before S09 focus
