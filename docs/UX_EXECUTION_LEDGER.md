@@ -43,7 +43,9 @@
     "src/welcome_ui.rs",
     "maint/security/v10-rust-assumption-audit.json",
     "maint/security/v10-fail-closed-remediation.json",
-    "maint/security/v10-claims-boundary.json"
+    "maint/security/v10-claims-boundary.json",
+    "docs/UX_PLAN_AMENDMENT_R5_PROPOSED.md",
+    "docs/README.md"
   ],
   "related_slices": [
     "S09-02",
@@ -57,7 +59,7 @@
       "requirement_ids": [],
       "frontend_backend_outcome": "Reconcile final UX visuals, interaction and accessibility against the accepted references and actual authenticated route contracts across S09-01 through S09-04.",
       "essential_qa": "Focused source-browser checks, matching native and installed UX checks, independent accessibility review and separate owner usability acceptance.",
-      "next_action": "Complete agent-owned installed Inbox/Drafts/error-route and independent accessibility reconciliation; owner reported keyboard/screen-reader UAT PASS for login, mailbox page and key-access unlock.",
+      "next_action": "Owner states all S09 UAT complete. Reconcile PAGE-18 frozen controls; R2-18-003 remains unavailable in product. Proposed R5 scope decision pending; no S09 closure until approved change or implementation plus matching evidence.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
@@ -91,7 +93,7 @@
     "owner": "/root",
     "functional_exit": "Changed and inherited UX routes remain readable and keyboard-operable on the installed candidate; independent review and separate human acceptance complete S09.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "S08 accepted results reused. Earlier S09 effort UNKNOWN; current focused checks began before this work-order reconciliation. Initial Drafts nowrap retest refused keyboard horizontal-scroll check; CSS column correction retest passed. At that local-source stage no host deployment or account mutation had occurred. Independent QA found and reviewed intermediate-width collisions and shared-header squeeze; final 1024/1025 transition and header source/synthetic GO. V14 full gate stopped at pre-existing reader literal, not a product failure. Mandatory security-check then stopped at unchanged V11 generated inventory hash; existing V10 generators refreshed audit/remediation registers and two derived claims hashes with unchanged counts/classifications, then V10 governance checks passed. Signed source 09d880f pushed with fresh origin equality. First native fixture-test build failed at rustc allocator SIGABRT with cause unconfirmed; private log retained, no live change. Independent reassessment approved focused build2 using measured earlier-supported soft data limit, which produced matching binary 4c1f573b; native tests NOT_RUN. Installer method positive/wrong-digest/post-replacement recovery passed; independent architecture GO. First independent installed readback refused root Git dubious ownership before functional checks; command-local safe.directory correction reran PASS. Web-only install and fresh identity/HTTPS/protected-state readback PASS; agent-owned authenticated page checks remained pending. Owner later reported UAT PASS for login, mailbox page, key-access unlock and explicitly included keyboard/screen-reader use; message crypto operations and installed Inbox/Drafts/error paths remain unqualified. First owner-UAT documentation security gate refused an attempted immutable UX17-003 evidence edit; edit removed, failure log retained and full acceptance validator passed with 110 legacy cases unchanged.",
+    "history_reference": "S08 accepted results reused. Earlier S09 effort UNKNOWN; current focused checks began before this work-order reconciliation. Initial Drafts nowrap retest refused keyboard horizontal-scroll check; CSS column correction retest passed. At that local-source stage no host deployment or account mutation had occurred. Independent QA found and reviewed intermediate-width collisions and shared-header squeeze; final 1024/1025 transition and header source/synthetic GO. V14 full gate stopped at pre-existing reader literal, not a product failure. Mandatory security-check then stopped at unchanged V11 generated inventory hash; existing V10 generators refreshed audit/remediation registers and two derived claims hashes with unchanged counts/classifications, then V10 governance checks passed. Signed source 09d880f pushed with fresh origin equality. First native fixture-test build failed at rustc allocator SIGABRT with cause unconfirmed; private log retained, no live change. Independent reassessment approved focused build2 using measured earlier-supported soft data limit, which produced matching binary 4c1f573b; native tests NOT_RUN. Installer method positive/wrong-digest/post-replacement recovery passed; independent architecture GO. First independent installed readback refused root Git dubious ownership before functional checks; command-local safe.directory correction reran PASS. Web-only install and fresh identity/HTTPS/protected-state readback PASS; agent-owned authenticated page checks remained pending. Owner later reported UAT PASS for login, mailbox page, key-access unlock and explicitly included keyboard/screen-reader use; message crypto operations and installed Inbox/Drafts/error paths remain unqualified. First owner-UAT documentation security gate refused an attempted immutable UX17-003 evidence edit; edit removed, failure log retained and full acceptance validator passed with 110 legacy cases unchanged. Owner subsequently declared all S09 UAT complete. Independent closure review dropped a duplicate agent login requirement under the operator simplification ruling, but ten PAGE-18 controls remain unaccepted and R2-18-003 is actually disabled; proposed R5 amendment pending, not active.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
@@ -291,7 +293,8 @@
         "expected": "Separate explicit owner PASS or actionable deviation.",
         "status": "PASS",
         "evidence": [
-          "Owner UAT PASS in current chat, clarified to include keyboard and screen-reader use; /home/foo/Downloads/osmap-ux-s09/owner-uat/owner-uat-result.json SHA256 094570051e20b54fcf136f1577aa36f07a025222efaf15877f85079a9f455df7. Scope: login, mailbox page, personal-key access grant."
+          "Owner UAT PASS in current chat, clarified to include keyboard and screen-reader use; /home/foo/Downloads/osmap-ux-s09/owner-uat/owner-uat-result.json SHA256 094570051e20b54fcf136f1577aa36f07a025222efaf15877f85079a9f455df7. Scope: login, mailbox page, personal-key access grant.",
+          "Owner subsequently states all S09 UAT has been completed; screenshot scope remains bounded. This is human acceptance, not control-specific hostile-content security proof."
         ],
         "outcome_ids": [
           "s09-final-ux"
@@ -307,9 +310,9 @@
   },
   "human_acceptance": {
     "status": "PASS",
-    "reference": "2026-11-12 owner UAT PASS for installed login, mailbox page and personal-key access grant; owner explicitly confirmed keyboard and screen-reader checks. Private screenshot/statement receipt SHA256 094570051e20b54fcf136f1577aa36f07a025222efaf15877f85079a9f455df7. No actual signing/encryption operation claimed."
+    "reference": "2026-11-12 owner UAT PASS for installed login, mailbox page and personal-key access grant; owner explicitly confirmed keyboard and screen-reader checks. Private screenshot/statement receipt SHA256 094570051e20b54fcf136f1577aa36f07a025222efaf15877f85079a9f455df7. No actual signing/encryption operation claimed. Owner subsequently states all S09 UAT has been completed; this supersedes the earlier limited human-UAT scope statement, while screenshots themselves remain limited to the two shown pages."
   },
-  "next_action": "Complete agent-owned installed authenticated Inbox/Drafts and negative-state checks plus independent accessibility audit; reconcile remaining legacy S09 acceptance rows before closure."
+  "next_action": "Review proposed R5 for PAGE-18; obtain explicit operator decision on no-bypass policy and S10 transfer, then complete applicable evidence and signed closure. If rejected, implement original per-message exception and tests before S09 closure."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -60960,6 +60963,33 @@ retains that first failure. The proposed acceptance edit was removed; the
 owner result remains in this execution ledger and private UAT receipt. Full
 `validate_acceptance.py` then passed with all 110 legacy cases and 403 approved
 cases unchanged. This was a record-boundary failure, not a product failure.
+
+
+**S09 closure audit, 2026-11-12.** The owner subsequently stated “all S09
+UAT has been completed.” This is accepted as the complete human-UAT result; the
+two screenshots still prove only the pages they show. Independent reassessment
+found that repeating an authenticated owner session for S09-P3 would add an
+agent-created prerequisite: the exact installed Web binary and 75 source-backed
+route captures already tie the owner UAT to the changed UX. S10-01 retains full
+actual-helper integration. This does not turn owner UAT into adversarial
+security-test evidence.
+
+The frozen S09-03 PAGE-18 control inventory has ten `NOT_YET_ACCEPTED`,
+`executed:false` entries, R2-18-001 through R2-18-010. Nine have candidate
+implementation/source evidence but still lack control-specific positive and
+negative execution; one is a demonstrated product gap: R2-18-003 requires a
+per-message exception action, while `src/settings_privacy_ui.rs` deliberately
+disables the switch and says the exception is unavailable. UX09-007, UX09-008
+and UX17-003 also need current-evidence reconciliation without rewriting their
+immutable legacy rows. S09 cannot be reported closed against the active signed
+plan on this record. `docs/UX_PLAN_AMENDMENT_R5_PROPOSED.md` is a proposed,
+not active, alternative: retain the no-bypass policy and move required
+adversarial PAGE-18 execution to S10-01/S10-02 while preserving epic/release
+blocks. The original criteria remain in force unless the operator explicitly
+approves the reviewed amendment and a separate signed plan anchor is admitted.
+Independent architecture review gave proposal-only GO for its exact SHA256
+`e4cf065f0c354204523ac0494ad1b791042b4ecf1dc903467bbb6f9316ab6653`;
+that review does not approve the change or pass any PAGE-18 control.
 
 
 ## Historical accepted S08-07 active order before S09 focus

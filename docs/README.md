@@ -1,5 +1,6 @@
 # Documentation
 
+- `UX_PLAN_AMENDMENT_R5_PROPOSED.md` — [proposed S09/S10 boundary amendment](UX_PLAN_AMENDMENT_R5_PROPOSED.md): owner reports all S09 UAT complete; ten PAGE-18 security controls remain open. This proposal is pending operator approval and does not close S09 or change the frozen plan.
 - `OSMAP_CHECKOUT_RECONCILIATION_20261109.md` — [2026-11-09 checkout reconciliation](OSMAP_CHECKOUT_RECONCILIATION_20261109.md): preserved superseded S05 deltas and account-service startup recovery; ongoing S08 work excluded.
 
 ## S08 acceptance and extensions
