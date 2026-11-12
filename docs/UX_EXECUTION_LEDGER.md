@@ -60064,3 +60064,46 @@ No credential, POST, account/mail/service/configuration mutation was used;
 cleanup was not needed. The five results establish only their selected
 unauthenticated predicates and local static-source assertions. They do not
 qualify installed binary parity, authenticated UX, broader WSTG or Top 10.
+
+### S10-02 authoritative-route correction and sensitive-path packet04 — 2026-11-11
+
+The operator supplied the exact key-only obsd1 SSH route. A fresh read-only
+connection with that route returned hostname `obsd1.blackbagsecurity.com`,
+OpenBSD, and `osmap_serve(ok)`. Inspection of the active obsd1 auth/mailbox
+relay configuration showed Toronto as the authoritative backend at provider
+IPv4 `216.128.179.75`. Direct bounded SSH to that address with strict host-key
+checking returned hostname `mail.blackbagsecurity.com` and principal `foo`.
+The previous timeout against the split-DNS `10.44.0.1` route remains historical;
+it is no longer an access blocker. Read-only Toronto inspection found an active
+PostfixAdmin/Dovecot domain and no existing rows or maildirs for the proposed
+two S10-02 disposable identities. No account, password or TOTP factor has yet
+been created. Account creation and exact-owned cleanup require the reviewed
+installed schema/utility recipe; they are distinct from this read-only check.
+
+Independent WSTG recipe review conditionally approved one HTTPS-only
+`OSMAP-WSTG-CONF-008` packet: 16 GETs to fixed environment, source, key,
+configuration, backup and archive paths, with no POST, SSH, subprocess or
+redirect following. The existing runner can retain up to 256 KiB per response
+and cannot stop after the first exposed file, so all raw evidence remains in
+the private 0700 S10 root. A clean process environment, exact obsd1 HTTPS
+Host/SNI with only its DNS resolution pinned to `192.168.1.44`,
+`--unauthenticated --no-host`, one selected test ID, and a 600-second outer
+deadline were used. A nonzero result, timeout or unexpected exposure would
+stop further packets; no automatic retry is authorized.
+
+Packet04 ran once and exited 0. Private summary readback reports exactly
+`CONF-008`: one PASS, zero FAIL/SKIP/WARNING, with all 16 fixed path probes
+returning HTTP 404. The wrapper SHA256 is
+`a7eb0eff6eb98b07f0e47e5e821da3124465b4ab27066a2c6884ca93c868d1a1`;
+process-log SHA256 is
+`8286b05ebc6eba62c6634474f67a9dbcdde9a914d67e1865aec0a6a6e122bbc0`.
+The private summary at
+`/home/foo/Downloads/osmap-ux-s10/wstg-unauth-20261111-packet04/osmap-wstg-20261111-223754/summary.json`
+has SHA256 `c25bc274f368f7945d325c70334f354e4536382dc82a8ad0d243a9c34a362867`;
+the report SHA256 is
+`e2b98c309f0448b8dea5b4e192d8e600ace294a2d339f0d4d65e7ed5bad1ff82`.
+Summary and directories had owner-only permissions on readback. No account,
+mail or service mutation occurred; cleanup was unnecessary. This proves the
+selected public path responses and local static assertion only, not installed
+binary identity, authenticated UX or Top 10 clearance. Actual elapsed time was
+not recorded and remains UNKNOWN.
