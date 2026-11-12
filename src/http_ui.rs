@@ -1675,9 +1675,9 @@ fn render_message_flag_form(
         if flag == MessageFlag::Seen {
             text
         } else if current {
-            "Unstar message"
+            "Unstar"
         } else {
-            "Star message"
+            "Star"
         },
         if flag == MessageFlag::Seen {
             if current {
@@ -1886,7 +1886,7 @@ fn render_message_card(
             "<span class=\"message-date\" title=\"{}\">{}</span>",
             "{subject_control}<span class=\"message-body-preview\" dir=\"auto\">{}</span></div>",
             "<div class=\"message-card-footer message-preview-meta\"><span class=\"message-mailbox\">{}</span><div class=\"message-star-cell\">{star}</div>{}{labels}{protection}",
-            "<details class=\"message-more\"><summary aria-label=\"More for message #{} in {}\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More message actions</span></summary>",
+            "<details class=\"message-more\"><summary aria-label=\"More for message #{} in {}\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More</span></summary>",
             "<div class=\"message-more-content\"><p class=\"muted\">Message #{} · {} bytes</p><p><strong>{party_label}:</strong> {}</p><p><strong>Subject:</strong> {}</p>{attachment_details}{read_action}{}</div></details></div></li>"
         ),
         if has_flag(message.flags, "\\Seen") { "" } else { " message-unread" },
@@ -3626,7 +3626,7 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
                 "<td><span class=\"badge\">Draft</span></td>",
                 "<td><time datetime=\"{}\">{}</time></td>",
                 "<td>",
-                "<details class=\"draft-discard\" name=\"draft-actions\"><summary aria-label=\"Draft actions\" title=\"Draft actions\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More actions</span></summary><div class=\"draft-action-menu\"><a class=\"draft-resume\" href=\"{}\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Resume</span></a><p>Discard this saved draft?</p>",
+                "<details class=\"draft-discard\" name=\"draft-actions\"><summary aria-label=\"Draft actions\" title=\"Draft actions\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More</span></summary><div class=\"draft-action-menu\"><a class=\"draft-resume\" href=\"{}\"><span class=\"presentation-icon presentation-icon-compose\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Resume</span></a><p>Discard this saved draft?</p>",
                 "<form method=\"post\" action=\"/drafts/delete\">",
                 "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
                 "<input type=\"hidden\" name=\"draft_id\" value=\"{}\">",
@@ -3639,7 +3639,7 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
             ),
             escape_html(&draft.draft_id), draft.revision, escape_html(if draft.subject.is_empty() { "(No subject)" } else { &draft.subject }),
             escape_html(model.csrf_token), escape_html(&draft.draft_id), draft.revision, u8::from(!draft.starred), render_draft_list_state(model.view),
-            if draft.starred { "Unstar draft" } else { "Star draft" }, draft.starred, if draft.starred { "Unstar draft" } else { "Star draft" }, presentation_label(if draft.starred { "Unstar draft" } else { "Star draft" }, "star"),
+            if draft.starred { "Unstar draft" } else { "Star draft" }, draft.starred, if draft.starred { "Unstar draft" } else { "Star draft" }, presentation_label(if draft.starred { "Unstar" } else { "Star" }, "star"),
             escape_html(&sender_initials(draft.recipient_preview.as_deref())),
             escape_html(draft.recipient_preview.as_deref().unwrap_or(if draft.recipient_count == 0 { "No recipients yet" } else { "Undisclosed recipients" })),
             escape_html(&resume_href),
@@ -3760,8 +3760,8 @@ fn render_locked_draft_row(
             escape_html(title)
         )
     };
-    format!(concat!("<tr data-draft-state=\"{kind}\"><td class=\"draft-select\">{selection}</td><td class=\"draft-star\"><button disabled aria-label=\"Star unavailable\">{star}<span class=\"presentation-label\">Star unavailable</span></button></td>",
-        "<td class=\"draft-recipient\"><div class=\"draft-recipient-person\"><span class=\"sender-avatar\" aria-hidden=\"true\">{initials}</span><span>{recipient}</span></div></td><td class=\"draft-subject\"><strong dir=\"auto\">{title}</strong>{primary_link}<span class=\"muted\">{explanation}</span></td><td>{files}</td><td><span class=\"badge\">{label}</span></td><td><time datetime=\"{utc}\">{time}</time></td><td><details class=\"draft-discard\"><summary aria-label=\"Draft actions\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More actions</span></summary><div class=\"draft-action-menu\">{links}{discard}</div></details></td></tr>"),kind=kind,selection=selection,primary_link=if matches!(state, Some(State::Scheduled { .. })) {links.as_str()} else {""},title=escape_html(title),star=if draft.starred {"★"} else {"☆"},initials=escape_html(&sender_initials(draft.recipient_preview.as_deref())),recipient=escape_html(draft.recipient_preview.as_deref().unwrap_or("No visible recipients")),explanation=explanation,files=if draft.attachment_count>0 {format!("{} files",draft.attachment_count)} else {"—".into()},label=label,utc=crate::logging::format_unix_timestamp_utc(draft.updated_at),time=crate::logging::format_unix_timestamp_utc(draft.updated_at).replace('T'," ").replace('Z'," UTC"),links=links,discard=discard)
+    format!(concat!("<tr data-draft-state=\"{kind}\"><td class=\"draft-select\">{selection}</td><td class=\"draft-star\"><span role=\"img\" aria-label=\"Star unavailable\" title=\"Star unavailable\">{star}</span></td>",
+        "<td class=\"draft-recipient\"><div class=\"draft-recipient-person\"><span class=\"sender-avatar\" aria-hidden=\"true\">{initials}</span><span>{recipient}</span></div></td><td class=\"draft-subject\"><strong dir=\"auto\">{title}</strong>{primary_link}<span class=\"muted\">{explanation}</span></td><td>{files}</td><td><span class=\"badge\">{label}</span></td><td><time datetime=\"{utc}\">{time}</time></td><td><details class=\"draft-discard\"><summary aria-label=\"Draft actions\"><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">More</span></summary><div class=\"draft-action-menu\">{links}{discard}</div></details></td></tr>"),kind=kind,selection=selection,primary_link=if matches!(state, Some(State::Scheduled { .. })) {links.as_str()} else {""},title=escape_html(title),star=if draft.starred {"★"} else {"☆"},initials=escape_html(&sender_initials(draft.recipient_preview.as_deref())),recipient=escape_html(draft.recipient_preview.as_deref().unwrap_or("No visible recipients")),explanation=explanation,files=if draft.attachment_count>0 {format!("{} files",draft.attachment_count)} else {"—".into()},label=label,utc=crate::logging::format_unix_timestamp_utc(draft.updated_at),time=crate::logging::format_unix_timestamp_utc(draft.updated_at).replace('T'," ").replace('Z'," UTC"),links=links,discard=discard)
 }
 fn render_draft_storage(usage: &crate::http::BrowserDraftStorageUsage) -> String {
     let size = |bytes: u64| {

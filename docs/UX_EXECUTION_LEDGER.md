@@ -6,10 +6,10 @@
 ```json
 {
   "version": 1,
-  "slice": "S01-01",
-  "original_requirement": "Theme tokens, persistent preference, system default; define authenticated versus pre-login storage and precedence",
-  "source_baseline": "9daba33f9d3b9d0d620d5112afafad20a86ce003",
-  "state": "ACCEPTED",
+  "slice": "S09-01",
+  "original_requirement": "Whole-site theme/responsiveness and persisted preference audit including every new page",
+  "source_baseline": "414fbf8dac35d318fdd289e8606235f151fef4b9",
+  "state": "IN_PROGRESS",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -19,226 +19,205 @@
       "/root"
     ],
     "developers": [
-      "/root",
-      "/root/s08_scrum",
-      "/root/web_designer_review"
+      "/root"
     ],
     "qa": [
-      "/root/s08_delivery_review"
+      "/root/baseline_audit"
     ],
     "security_review": [
-      "/root/s08_delivery_review"
+      "/root/baseline_audit"
     ],
     "technical_writer": [
       "/root"
     ]
   },
   "allowed_paths": [
-    "src/http/archive_ui.rs",
-    "src/http_ui.rs",
-    "src/http/routes_mail.rs",
-    "src/http/shell_tests.rs",
-    "src/http/ux_fixtures.rs",
-    "src/http/approved.css",
-    "docs/UX_SLICE_S08_07.md",
     "docs/UX_EXECUTION_LEDGER.md",
-    "docs/UX_DECISIONS.md",
     "docs/CURRENT_PROJECT_STATUS.md",
-    "docs/README.md",
+    "maint/ux/acceptance.json",
+    "src/http/approved.css",
+    "src/http/drafts.css",
+    "src/http_ui.rs",
+    "src/welcome_ui.rs",
     "maint/security/v10-rust-assumption-audit.json",
     "maint/security/v10-fail-closed-remediation.json",
-    "maint/security/v10-claims-boundary.json",
-    "src/http.rs",
-    "src/http/bin_folder_tests.rs",
-    "src/http_ui_sent_role_tests.rs",
-    "maint/ux/presentation_workflows.py"
+    "maint/security/v10-claims-boundary.json"
   ],
   "related_slices": [
-    "S08-07 Junk in Archive / Bin"
+    "S09-02",
+    "S09-03",
+    "S09-04"
   ],
   "outcomes": [
     {
-      "id": "junk-in-archive-bin",
+      "id": "s09-final-ux",
       "owner": "/root",
-      "requirement_ids": [
-        "UX02-001",
-        "R2-11-006",
-        "R2-12-001",
-        "R2-12-002",
-        "R2-12-003",
-        "R2-12-004"
-      ],
-      "frontend_backend_outcome": "Existing account-owned Junk appears as a third Archive/Bin view with true received dates and normal bounded move controls.",
-      "essential_qa": "Focused authenticated route/render/move checks, matching native build, installed Web and owner UAT.",
-      "next_action": "S08-07 closed; retain owner UAT and prior slice states.",
+      "requirement_ids": [],
+      "frontend_backend_outcome": "Reconcile final UX visuals, interaction and accessibility against the accepted references and actual authenticated route contracts across S09-01 through S09-04.",
+      "essential_qa": "Focused source-browser checks, matching native and installed UX checks, independent accessibility review and separate owner usability acceptance.",
+      "next_action": "Complete native and installed checks for corrected source, then independent and owner review.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PASS",
-        "deployed_qa": "PASS",
-        "independent_review": "PASS",
-        "recovery": "PASS"
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
       },
       "evidence": [
         {
           "stage": "implementation",
-          "reference": "Current scoped Archive/Bin/Junk renderer and left navigation diff; independent source/security review GO in current chat; no backend or mail-service change."
+          "reference": "Current S09 source diff and focused retest in the 2026-11-12 S09 ledger section."
         },
         {
           "stage": "source_tests",
-          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-07/source-result2.json SHA256 aa9a482bbc99c49140c6696162cd094ec3fcfaae7a100138b80817a1ced04973; Rust5/0 and browser26/cleanupPASS."
-        },
-        {
-          "stage": "native_tests",
-          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/native1-result.json SHA256 b81302dc5791065563a20b031aa058d8c19d19a8db3835b04f76371b0b1f044f; source18962ce, compiler inputs598 parity, five native-compiled Junk casesPASS5/0, synthetic BrowserApp move; no new live backend claim."
-        },
-        {
-          "stage": "deployed_qa",
-          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/install-evidence1-result.json SHA256 8e9b71d8fb641519094bfe99a68bc70c88890a9efccaffe08683a50cca571989; loaded Web10e2c283, protected snapshots equal, obsd1 HTTPS200; owner authenticated page pending UAT."
-        },
-        {
-          "stage": "independent_review",
-          "reference": "/root/s08_delivery_review independent source, method, native and installed evidence GO in current chat; exact hashes and five cases reviewed; owner UAT separate."
-        },
-        {
-          "stage": "recovery",
-          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/install-evidence1-result.json SHA256 8e9b71d8fb641519094bfe99a68bc70c88890a9efccaffe08683a50cca571989; exact old Web backup retained, no rollback invoked; startup 502 then200 resolved within bound, protected state unchanged."
+          "reference": "Final source: /home/foo/Downloads/osmap-ux-s09/retest-header-capture/capture.json SHA256 483ba1cc2ad97a61096d6f20ba652acc1bf9904b330502a94d04484e04da3c77; /home/foo/Downloads/osmap-ux-s09/retest-breakpoint-capture/capture.json SHA256 c7e54654dd34f2f37893821d78b9c49e47630e870a3e6df6a5d30ab6ca306c70; final-zoom and final-forced-colors reports in S09 ledger section."
         }
       ]
     }
   ],
   "accountability": {
     "owner": "/root",
-    "functional_exit": "Junk is a truthful, usable third view on Archive / Bin, preserving Bin-only destructive authority.",
+    "functional_exit": "Changed and inherited UX routes remain readable and keyboard-operable on the installed candidate; independent review and separate human acceptance complete S09.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Owner explicitly requested S08-07 and supplied Archive/Bin screenshot. Original S08 and S08-05 accepted; S08-06 original owner check and responsive/autosave R07 pending. Prior S08-07 effort UNKNOWN. Existing Junk literal and owned move capability inspected; no backend operation or host action yet. Independent source review found confirmed Sent/Junk role collision and vacuous no-delete fixture; fixed with role precedence and metadata-bearing Junk row, retaining original source candidate. Shell label aligned to three-view contract. Mechanical work-order parent remains S01-01 and reuses its original mapped IDs; S08-07 is the related extension, not a frozen-scope amendment. Browser1 Python dependency refused before fixture; browser2 first Archive view absent because saved role unset; browser3 guessed literal Archive option absent. Browser2/3 cleanup PASS and exact receipts retained. Combined independent reviews approved existing INBOX.Projects through actual Copies form; browser4 PASS26/cleanupPASS/external0/send0. Focused Rust5/0 and independent source/security GO. Native/installed/owner remain pending. V10 generated registers refreshed after test line movement; initial one new test-only unwrap briefly raised current count13283, replaced by direct valid fixture identity so current/refined counts remain13282 and high-after0. V10 check PASS; historical high-before claims unchanged. Focused Rust5/0 rerun after this fixture-only change, durable result2. Source commit18962ce signed/verified. First normal push security-checkPASS but SSH transport closed before transfer (exit141; precise cause UNKNOWN); second normal hook with keepalivesPASS and fresh parity1 clean0/0. Method producer/consumer integrationPASS including real wrong-source pre-host refusal; no host effect from that probe. Native source archive inputs598/readbackPASS, five native-compiled Junk casesPASS, main binary10e2c283. Reviewed Web-only installPASS with exact old backup, unchanged protected state and public mail PIDs; bounded startup502 then200, explicit peerHTTPS200. Independent delivery/security GO for owner UAT; no owner authenticated Junk view/move exercised by agents. No full release claim. Owner later reported S08-07 UAT = PASS after moving one message Archive-to-Junk without issue; screenshot shows authenticated Junk tab and one received-dated row. Acceptance is limited to this observation; no new agent mail test or host action.",
+    "history_reference": "S08 accepted results reused. Earlier S09 effort UNKNOWN; current focused checks began before this work-order reconciliation. Initial Drafts nowrap retest refused keyboard horizontal-scroll check; CSS column correction retest passed. No host deployment or account mutation yet. Independent QA found and reviewed intermediate-width collisions and shared-header squeeze; final 1024/1025 transition and header source/synthetic GO. V14 full gate stopped at pre-existing reader literal, not a product failure. Mandatory security-check then stopped at unchanged V11 generated inventory hash; existing V10 generators refreshed audit/remediation registers and two derived claims hashes with unchanged counts/classifications, then V10 governance checks passed.",
     "investigation": {
       "owner": "/root",
-      "timebox_seconds": 7200,
-      "started_at": "2026-11-11T15:22:51Z",
-      "elapsed_status": "MEASURED",
-      "elapsed_seconds": 2495.519
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-12T08:44:48Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
     },
     "attempts": [],
     "next_attempt": null
   },
   "slice_contract": {
     "version": 1,
-    "slice": "S01-01",
+    "slice": "S09-01",
     "specification": {
-      "path": "docs/UX_SLICE_S08_07.md",
-      "sha256": "cc2dcd4334e4f5a13de7b3abee8b4e82a7748c46d7a934af6652156b62ca150c"
+      "path": "docs/UX_FULL_FUNCTIONAL_SLICES.md",
+      "sha256": "ed089c99a939a7c2625d9e6f22ef2566ea7553db21882262127bef0a24432bd5"
     },
     "design": {
-      "journey": "Existing account-owned Junk is a third Archive/Bin view.",
-      "frontend": "Finite Junk tab and truthful received date; same search/reader/list.",
-      "backend": "Existing account-owned literal Junk mailbox and generic move; no spam or deletion authority change.",
-      "interfaces": "Authenticated /mailbox?name=Junk and existing move form; preserve CSRF, identity and return context.",
-      "persistence": "Existing mailbox backend only; no new store or schema.",
-      "security": "No owner mail mutation or public mail service changes; Bin-only destructive controls unchanged.",
-      "failure_recovery": "Bounded diagnostics, exact-owned synthetic cleanup and existing Web rollback."
+      "journey": "Move through mail, Drafts, Settings and login across responsive and error states.",
+      "frontend": "Use approved page references and accessible text and focus behavior at required viewport and theme states.",
+      "backend": "Keep existing authenticated route and unavailable-state facts; no mail backend change.",
+      "interfaces": "Use current HTML, CSS and HTTPS routes with existing account-scoped state and CSRF boundaries.",
+      "persistence": "Keep established per-account appearance settings; S09 adds no persistence.",
+      "security": "Preserve authentication and mail authority while testing with synthetic data and read-only installed views.",
+      "failure_recovery": "Retain first failure and exact source evidence; preserve installed old Web binary for bounded rollback."
     },
     "tests": [
       {
-        "id": "J01",
-        "outcome_ids": [
-          "junk-in-archive-bin"
-        ],
+        "id": "S09-P1",
         "kind": "positive",
         "level": "source",
-        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
-        "action": "Render authenticated Archive, Trash and Junk views plus tab navigation.",
-        "expected": "Correct active tab, truthful date and folder context.",
-        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
-        "owner": "/root",
-        "reviewer": "/root/s08_delivery_review",
+        "action": "Render changed Welcome, Inbox and Drafts and representative login, security and error routes at required themes and widths, with 200% reflow and forced colours.",
+        "expected": "Readable labels, long content, focus and contrast with no page overflow or unexplained reference deviation.",
         "status": "PASS",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s08/s08-07/source-result2.json SHA256 aa9a482bbc99c49140c6696162cd094ec3fcfaae7a100138b80817a1ced04973"
-        ]
+          "/home/foo/Downloads/osmap-ux-s09/retest-header-capture/capture.json; /home/foo/Downloads/osmap-ux-s09/retest-breakpoint-capture/capture.json; /home/foo/Downloads/osmap-ux-s09/final-zoom/capture.json; /home/foo/Downloads/osmap-ux-s09/final-forced-colors/capture.json; Edge visual review in S09 ledger section."
+        ],
+        "outcome_ids": [
+          "s09-final-ux"
+        ],
+        "prerequisites": "Accepted frozen plan and reviewed synthetic or installed source as applicable; no owner mail data used.",
+        "preserved": "Owner accounts, mail, keys, settings and all public mail services.",
+        "owner": "/root",
+        "reviewer": "/root/baseline_audit"
       },
       {
-        "id": "J02",
-        "outcome_ids": [
-          "junk-in-archive-bin"
-        ],
+        "id": "S09-N1",
         "kind": "negative",
         "level": "source",
-        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
-        "action": "Exercise missing/denied/foreign Junk list refusal, confirmed Sent precedence and Junk no-delete boundary.",
-        "expected": "Fail closed without invented folder or unauthorized write.",
-        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
-        "owner": "/root",
-        "reviewer": "/root/s08_delivery_review",
+        "action": "Render unavailable activity, locked Drafts, long headers and login error; exercise Drafts action menu from keyboard.",
+        "expected": "Unavailable facts stay explicit; error and control text remain readable and accessible.",
         "status": "PASS",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s08/s08-07/source-result2.json SHA256 aa9a482bbc99c49140c6696162cd094ec3fcfaae7a100138b80817a1ced04973"
-        ]
+          "/home/foo/Downloads/osmap-ux-s09/retest-header-capture/capture.json; /home/foo/Downloads/osmap-ux-s09/retest-breakpoint-capture/capture.json; Edge accessibility snapshot named image and keyboard disclosure in S09 ledger section."
+        ],
+        "outcome_ids": [
+          "s09-final-ux"
+        ],
+        "prerequisites": "Accepted frozen plan and reviewed synthetic or installed source as applicable; no owner mail data used.",
+        "preserved": "Owner accounts, mail, keys, settings and all public mail services.",
+        "owner": "/root",
+        "reviewer": "/root/baseline_audit"
       },
       {
-        "id": "J03",
-        "outcome_ids": [
-          "junk-in-archive-bin"
-        ],
+        "id": "S09-P2",
         "kind": "positive",
         "level": "native",
-        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
-        "action": "Build matching source and exercise native-compiled Junk renderer and synthetic BrowserApp move boundary.",
-        "expected": "Five Junk cases pass on OpenBSD with exact source and readback; no new backend persistence claim.",
-        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
+        "action": "Build matching OpenBSD candidate and read back binary and source identity before Web-only install.",
+        "expected": "Native candidate matches reviewed source and preserves the installed rollback binary.",
+        "status": "NOT_RUN",
+        "evidence": [],
+        "outcome_ids": [
+          "s09-final-ux"
+        ],
+        "prerequisites": "Accepted frozen plan and reviewed synthetic or installed source as applicable; no owner mail data used.",
+        "preserved": "Owner accounts, mail, keys, settings and all public mail services.",
         "owner": "/root",
-        "reviewer": "/root/s08_delivery_review",
-        "status": "PASS",
-        "evidence": [
-          "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/native1-result.json SHA256 b81302dc5791065563a20b031aa058d8c19d19a8db3835b04f76371b0b1f044f"
-        ]
+        "reviewer": "/root/baseline_audit"
       },
       {
-        "id": "J04",
-        "outcome_ids": [
-          "junk-in-archive-bin"
-        ],
+        "id": "S09-P3",
         "kind": "positive",
         "level": "deployed",
-        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
-        "action": "Reviewed Web-only installation and readback.",
-        "expected": "Loaded Web and public mail/owner state preserved.",
-        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
+        "action": "Check corrected Welcome, Inbox and Drafts on installed obsd1 UX without mail mutation.",
+        "expected": "Matching installed UX renders changed pages and HTTPS login while public mail remains available.",
+        "status": "NOT_RUN",
+        "evidence": [],
+        "outcome_ids": [
+          "s09-final-ux"
+        ],
+        "prerequisites": "Accepted frozen plan and reviewed synthetic or installed source as applicable; no owner mail data used.",
+        "preserved": "Owner accounts, mail, keys, settings and all public mail services.",
         "owner": "/root",
-        "reviewer": "/root/s08_delivery_review",
-        "status": "PASS",
-        "evidence": [
-          "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/install-evidence1-result.json SHA256 8e9b71d8fb641519094bfe99a68bc70c88890a9efccaffe08683a50cca571989"
-        ]
+        "reviewer": "/root/baseline_audit"
       },
       {
-        "id": "J05",
+        "id": "S09-N2",
+        "kind": "negative",
+        "level": "deployed",
+        "action": "Check installed login error and unavailable account activity without account mutation.",
+        "expected": "Error and unavailable states remain legible and fail safely.",
+        "status": "NOT_RUN",
+        "evidence": [],
         "outcome_ids": [
-          "junk-in-archive-bin"
+          "s09-final-ux"
         ],
+        "prerequisites": "Accepted frozen plan and reviewed synthetic or installed source as applicable; no owner mail data used.",
+        "preserved": "Owner accounts, mail, keys, settings and all public mail services.",
+        "owner": "/root",
+        "reviewer": "/root/baseline_audit"
+      },
+      {
+        "id": "S09-H1",
         "kind": "usability",
         "level": "human",
-        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
-        "action": "Owner reviews Junk tab and disposable message.",
-        "expected": "Separate explicit UAT PASS.",
-        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
+        "action": "Owner performs minimal keyboard, screen-reader and usability judgment on the installed UX.",
+        "expected": "Separate explicit owner PASS or actionable deviation.",
+        "status": "NOT_RUN",
+        "evidence": [],
+        "outcome_ids": [
+          "s09-final-ux"
+        ],
+        "prerequisites": "Accepted frozen plan and reviewed synthetic or installed source as applicable; no owner mail data used.",
+        "preserved": "Owner accounts, mail, keys, settings and all public mail services.",
         "owner": "/root",
-        "reviewer": "/root/s08_delivery_review",
-        "status": "PASS",
-        "evidence": [
-          "Owner chat 2026-11-11: UAT = PASS after Archive-to-Junk message move; supplied screenshot shows authenticated Junk tab selected with one received-dated message."
-        ]
+        "reviewer": "/root/baseline_audit"
       }
     ],
-    "engineering_exit": "Focused source and native/installed journey plus independent review and normal signed GitHub preservation.",
-    "human_exit": "Owner accepts the installed Junk view after reviewing third tab and a disposable message."
+    "engineering_exit": "Matching source, native and installed UX checks plus independent audit and signed GitHub synchronization.",
+    "human_exit": "Separate owner keyboard, assistive-technology and usability acceptance on installed UX."
   },
   "human_acceptance": {
-    "status": "PASS",
-    "reference": "Owner chat 2026-11-11 explicitly reports UAT = PASS; Archive-to-Junk move worked; supplied Junk screenshot. No owner Junk-to-Inbox/search/reader claim."
+    "status": "PENDING",
+    "reference": ""
   },
-  "next_action": "S08-07 accepted and closed; preserve separate pending S08-06 checks."
+  "next_action": "Complete native and installed UX reconciliation; request minimal owner usability result only after independent GO."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -60710,3 +60689,353 @@ establish an external ACME challenge path, renew any certificate, change
 public DNS/router settings, or prove absence of historical direct clients.
 The cumulative agent-work duration was not precisely metered and remains
 UNKNOWN within the recorded action chronology; no allowance is reset.
+
+## 2026-11-12 — S09 final UX and accessibility reconciliation
+
+**Operator outcome:** close the four S09 visual, interaction and accessibility
+slices on the current UX branch using accepted matching evidence and the smallest
+checks for uncovered product behavior. This action does not change the frozen
+plan, reopen accepted S08 slices, or qualify S10 security/WSTG or S11 release.
+The operator's explicit S09 focus takes priority over ongoing S10-02 work;
+its incomplete results and cumulative history remain unchanged.
+
+**Source and scope:** clean signed branch
+`414fbf8dac35d318fdd289e8606235f151fef4b9`; accepted signed R2 anchor
+`6b3ce8fff27ca3dabf87039d54098bd9967a2e42` and both plan/reference
+manifests verified. Owner removal of Documents from the working UX scope applies.
+Root owns integration, browser/source checks, Git and the single host queue.
+Independent QA reviews the actual coverage and focused results. Allowed tracked
+edits are this ledger, current acceptance records and only demonstrated UX
+defects. No account or mail mutation or public mail-service operation is planned.
+A reviewed, rollback-capable Web-only build/install of these corrections is
+planned after signed source delivery; the currently installed binary remains
+the read-only comparison baseline. Private
+screenshots, credentials, cookies and message content remain outside Git.
+Initial cumulative effort allowance is 4 hours of agent work, not an authority
+expiry. Two failures at the same functional boundary stop retries for combined
+reassessment; preserve first failure and cleanup/uncertainty separately.
+
+| Task | Prerequisite and action | Expected result | State |
+| --- | --- | --- | --- |
+| S09-T01 | Inspect accepted S08/current source and map S09-01 through S09-04 against exact evidence. | Reuse each matching result; name only uncovered checks and deviations. | PASS — scope below |
+| S09-T02 | Exercise uncovered current-source visual, theme, viewport, focus, contrast, route/error and crypto-state boundaries with the existing synthetic browser and accepted reference bundle. | No unexplained layout/control/accessibility failure; all requests synthetic and bounded. | PASS — local only |
+| S09-T03 | Read-only current installed obsd1 identity and HTTPS login check; reconcile source changes since accepted S08. | Running candidate provenance and changed login presentation explicit; no account/mail effect. | PASS — baseline only |
+| S09-T04 | Independently review corrections, install matching Web candidate with bounded recovery, then obtain minimal owner usability/accessibility judgment. | Matching installed QA and independent GO before owner result; missing owner observation remains PENDING, never inferred. | IN_PROGRESS |
+| S09-T05 | Reconcile S09-linked acceptance rows and ledger, independently review claims, sign and normally synchronize public-safe records. | Exact source/scope, retained failures, signature and fresh GitHub SHA equality; S09 closure only after all exits. | NOT_RUN |
+
+**Observed S09 source result.** Frozen plan/reference checks and Shopkeeper
+anchor passed. Accepted S08 visual/browser evidence was reused for unchanged
+routes; source after S08-07 changed only login submission and private search
+logging before this S09 correction. The local synthetic capture compared all 75
+current route states to the approved reference set; focused changed routes then
+passed 30/30 light/dark captures at 1024, 1025, 1100, 1101 and 1440 px, 12/12
+Drafts breakpoint captures, 10/10 200% reflow captures and 10/10 forced-colour
+captures. All final capture reports recorded zero document overflow, measured
+contrast failures and outside requests. Edge keyboard exercise opened the Drafts
+More disclosure, confirmed focus styling, and exposed the locked Star as a named
+image. AppearanceStore browser workflow passed six account-specific checks.
+The 200% result is a CSS-viewport reflow simulation, not native zoom or a
+screen-reader result. Retained reports: `page-review/capture.json` SHA256
+`31a487aa46c56e44ffadbd494adeedd31b486362a4ee7f0011585e835b541497`,
+`retest-header-capture/capture.json` SHA256
+`483ba1cc2ad97a61096d6f20ba652acc1bf9904b330502a94d04484e04da3c77`,
+`retest-breakpoint-capture/capture.json` SHA256
+`c7e54654dd34f2f37893821d78b9c49e47630e870a3e6df6a5d30ab6ca306c70`,
+`final-zoom/capture.json` SHA256
+`b969fa5997f2d82b50bf5e4b023efcaa5be7e21ab6bdeeac1eb29c3d43fe58f7`,
+and `final-forced-colors/capture.json` SHA256
+`59162781ffded705a2986c1685b0071f5d845f5fbe11ad32818ea60902c537da`;
+all paths are beneath private `/home/foo/Downloads/osmap-ux-s09/`.
+
+**Failures and corrections.** Initial visual inspection found Welcome's activity
+fallback in a one-character grid column, Inbox controls wrapping vertically,
+and Drafts controls wrapping vertically. The first Drafts nowrap retest failed
+the keyboard horizontal-scroll assertion because a fixed table overflowed
+while its container deliberately allowed visible menus. Intermediate-width
+inspection then found Recipient/Subject and Status/Saved collisions at 768/801
+px; independent QA refused GO, inspected each corrected transition, and
+reassessed the same boundary without resetting effort. The final card-to-table
+transition is 1024/1025 px with sufficient status width. That retest exposed
+the independent shared-header search squeeze at 1025 px; the focused second-row
+header correction passed across Welcome, long Inbox and Drafts. The first
+failure and each later observation remain in the retained captures; cleanup
+was local fixture-server shutdown only, and no host action occurred.
+
+**Current installed comparison.** Read-only SSH identified
+`obsd1.blackbagsecurity.com`; installed `/usr/local/bin/osmap` SHA256
+`fa600c0f3d5a07b5421808eaebe204632d7fa2ad4deb6ed3df18ddcadb15cb0e`,
+`osmap_serve` and `osmap_mailbox_helper` both reported `ok`, and TLS-verified
+`/login` returned 200. Host checkout was clean at
+`d5ca7e13bc82a1047913eb6a1424b8b7237af44c`; it does not yet contain the
+S09 corrections. This baseline cannot qualify the corrected installed UX.
+Independent QA gave GO for source/synthetic visual scope only. The immutable
+legacy S09 rows UX09-007, UX09-008 and UX17-003 remain respectively
+NOT_YET_ACCEPTED, NOT_YET_ACCEPTED and PARTIALLY_VERIFIED; no acceptance is
+inferred from this local evidence.
+
+**Gate boundary.** `cargo test --lib ux_synthetic_route_baselines`, focused
+Drafts Rust test, `cargo fmt --check`, and the standalone V14 accessibility and
+responsive gate passed. `make v14-check` passed the
+acceptance validator, its 56 unit tests and the first three V14 gates, then
+stopped at a pre-existing reader-trust-strip text assertion: the gate expects
+`future decrypted content must still pass protected rendering` in
+`src/http_ui.rs`, while the baseline source already says `All displayed message
+content passes protected rendering.` The S09 correction did not remove that
+phrase. The full V14 gate is therefore not claimed; this literal assertion is
+not a product finding. Installed QA remains queued.
+The first mandatory `make security-check` then passed its Rust, Python,
+dependency and earlier security stages but stopped at the unchanged V11 check
+because the generated V10 inventory hashes drifted with Rust source line
+movement. The existing V10 audit and remediation generators refreshed only
+their current hashes, line positions and timestamps; assumption totals and
+classifications stayed unchanged. The two derived hash pointers in
+`v10-claims-boundary.json` were aligned, and both generated checks plus the
+V10 governance gate passed. The superseding complete `make security-check`
+passed, including V11 and the required release-guard regressions; private
+`security-check-final.log` SHA256
+`f9a4941c1599f45855a98ea16f7fe56628f3e3e7529814059a32fcd5aa09ed96`.
+The first stop remains a failure record. This developer gate is not a release
+qualification or installed UX result.
+
+
+## Historical accepted S08-07 active order before S09 focus
+
+```json
+{
+  "version": 1,
+  "slice": "S01-01",
+  "original_requirement": "Theme tokens, persistent preference, system default; define authenticated versus pre-login storage and precedence",
+  "source_baseline": "9daba33f9d3b9d0d620d5112afafad20a86ce003",
+  "state": "ACCEPTED",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s08_scrum",
+      "/root/web_designer_review"
+    ],
+    "qa": [
+      "/root/s08_delivery_review"
+    ],
+    "security_review": [
+      "/root/s08_delivery_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/http/archive_ui.rs",
+    "src/http_ui.rs",
+    "src/http/routes_mail.rs",
+    "src/http/shell_tests.rs",
+    "src/http/ux_fixtures.rs",
+    "src/http/approved.css",
+    "docs/UX_SLICE_S08_07.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/UX_DECISIONS.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/README.md",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-claims-boundary.json",
+    "src/http.rs",
+    "src/http/bin_folder_tests.rs",
+    "src/http_ui_sent_role_tests.rs",
+    "maint/ux/presentation_workflows.py"
+  ],
+  "related_slices": [
+    "S08-07 Junk in Archive / Bin"
+  ],
+  "outcomes": [
+    {
+      "id": "junk-in-archive-bin",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX02-001",
+        "R2-11-006",
+        "R2-12-001",
+        "R2-12-002",
+        "R2-12-003",
+        "R2-12-004"
+      ],
+      "frontend_backend_outcome": "Existing account-owned Junk appears as a third Archive/Bin view with true received dates and normal bounded move controls.",
+      "essential_qa": "Focused authenticated route/render/move checks, matching native build, installed Web and owner UAT.",
+      "next_action": "S08-07 closed; retain owner UAT and prior slice states.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Current scoped Archive/Bin/Junk renderer and left navigation diff; independent source/security review GO in current chat; no backend or mail-service change."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-07/source-result2.json SHA256 aa9a482bbc99c49140c6696162cd094ec3fcfaae7a100138b80817a1ced04973; Rust5/0 and browser26/cleanupPASS."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/native1-result.json SHA256 b81302dc5791065563a20b031aa058d8c19d19a8db3835b04f76371b0b1f044f; source18962ce, compiler inputs598 parity, five native-compiled Junk casesPASS5/0, synthetic BrowserApp move; no new live backend claim."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/install-evidence1-result.json SHA256 8e9b71d8fb641519094bfe99a68bc70c88890a9efccaffe08683a50cca571989; loaded Web10e2c283, protected snapshots equal, obsd1 HTTPS200; owner authenticated page pending UAT."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/root/s08_delivery_review independent source, method, native and installed evidence GO in current chat; exact hashes and five cases reviewed; owner UAT separate."
+        },
+        {
+          "stage": "recovery",
+          "reference": "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/install-evidence1-result.json SHA256 8e9b71d8fb641519094bfe99a68bc70c88890a9efccaffe08683a50cca571989; exact old Web backup retained, no rollback invoked; startup 502 then200 resolved within bound, protected state unchanged."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Junk is a truthful, usable third view on Archive / Bin, preserving Bin-only destructive authority.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Owner explicitly requested S08-07 and supplied Archive/Bin screenshot. Original S08 and S08-05 accepted; S08-06 original owner check and responsive/autosave R07 pending. Prior S08-07 effort UNKNOWN. Existing Junk literal and owned move capability inspected; no backend operation or host action yet. Independent source review found confirmed Sent/Junk role collision and vacuous no-delete fixture; fixed with role precedence and metadata-bearing Junk row, retaining original source candidate. Shell label aligned to three-view contract. Mechanical work-order parent remains S01-01 and reuses its original mapped IDs; S08-07 is the related extension, not a frozen-scope amendment. Browser1 Python dependency refused before fixture; browser2 first Archive view absent because saved role unset; browser3 guessed literal Archive option absent. Browser2/3 cleanup PASS and exact receipts retained. Combined independent reviews approved existing INBOX.Projects through actual Copies form; browser4 PASS26/cleanupPASS/external0/send0. Focused Rust5/0 and independent source/security GO. Native/installed/owner remain pending. V10 generated registers refreshed after test line movement; initial one new test-only unwrap briefly raised current count13283, replaced by direct valid fixture identity so current/refined counts remain13282 and high-after0. V10 check PASS; historical high-before claims unchanged. Focused Rust5/0 rerun after this fixture-only change, durable result2. Source commit18962ce signed/verified. First normal push security-checkPASS but SSH transport closed before transfer (exit141; precise cause UNKNOWN); second normal hook with keepalivesPASS and fresh parity1 clean0/0. Method producer/consumer integrationPASS including real wrong-source pre-host refusal; no host effect from that probe. Native source archive inputs598/readbackPASS, five native-compiled Junk casesPASS, main binary10e2c283. Reviewed Web-only installPASS with exact old backup, unchanged protected state and public mail PIDs; bounded startup502 then200, explicit peerHTTPS200. Independent delivery/security GO for owner UAT; no owner authenticated Junk view/move exercised by agents. No full release claim. Owner later reported S08-07 UAT = PASS after moving one message Archive-to-Junk without issue; screenshot shows authenticated Junk tab and one received-dated row. Acceptance is limited to this observation; no new agent mail test or host action.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 7200,
+      "started_at": "2026-11-11T15:22:51Z",
+      "elapsed_status": "MEASURED",
+      "elapsed_seconds": 2495.519
+    },
+    "attempts": [],
+    "next_attempt": null
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S01-01",
+    "specification": {
+      "path": "docs/UX_SLICE_S08_07.md",
+      "sha256": "cc2dcd4334e4f5a13de7b3abee8b4e82a7748c46d7a934af6652156b62ca150c"
+    },
+    "design": {
+      "journey": "Existing account-owned Junk is a third Archive/Bin view.",
+      "frontend": "Finite Junk tab and truthful received date; same search/reader/list.",
+      "backend": "Existing account-owned literal Junk mailbox and generic move; no spam or deletion authority change.",
+      "interfaces": "Authenticated /mailbox?name=Junk and existing move form; preserve CSRF, identity and return context.",
+      "persistence": "Existing mailbox backend only; no new store or schema.",
+      "security": "No owner mail mutation or public mail service changes; Bin-only destructive controls unchanged.",
+      "failure_recovery": "Bounded diagnostics, exact-owned synthetic cleanup and existing Web rollback."
+    },
+    "tests": [
+      {
+        "id": "J01",
+        "outcome_ids": [
+          "junk-in-archive-bin"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
+        "action": "Render authenticated Archive, Trash and Junk views plus tab navigation.",
+        "expected": "Correct active tab, truthful date and folder context.",
+        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/s08-07/source-result2.json SHA256 aa9a482bbc99c49140c6696162cd094ec3fcfaae7a100138b80817a1ced04973"
+        ]
+      },
+      {
+        "id": "J02",
+        "outcome_ids": [
+          "junk-in-archive-bin"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
+        "action": "Exercise missing/denied/foreign Junk list refusal, confirmed Sent precedence and Junk no-delete boundary.",
+        "expected": "Fail closed without invented folder or unauthorized write.",
+        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/s08-07/source-result2.json SHA256 aa9a482bbc99c49140c6696162cd094ec3fcfaae7a100138b80817a1ced04973"
+        ]
+      },
+      {
+        "id": "J03",
+        "outcome_ids": [
+          "junk-in-archive-bin"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
+        "action": "Build matching source and exercise native-compiled Junk renderer and synthetic BrowserApp move boundary.",
+        "expected": "Five Junk cases pass on OpenBSD with exact source and readback; no new backend persistence claim.",
+        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/native1-result.json SHA256 b81302dc5791065563a20b031aa058d8c19d19a8db3835b04f76371b0b1f044f"
+        ]
+      },
+      {
+        "id": "J04",
+        "outcome_ids": [
+          "junk-in-archive-bin"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
+        "action": "Reviewed Web-only installation and readback.",
+        "expected": "Loaded Web and public mail/owner state preserved.",
+        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s08/s08-07/native_method1/install-evidence1-result.json SHA256 8e9b71d8fb641519094bfe99a68bc70c88890a9efccaffe08683a50cca571989"
+        ]
+      },
+      {
+        "id": "J05",
+        "outcome_ids": [
+          "junk-in-archive-bin"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Reviewed current source and account-owned fixture; no owner credentials or mail mutation.",
+        "action": "Owner reviews Junk tab and disposable message.",
+        "expected": "Separate explicit UAT PASS.",
+        "preserved": "Owner mail/keys/preferences and public mail; prior accepted/pending slice states.",
+        "owner": "/root",
+        "reviewer": "/root/s08_delivery_review",
+        "status": "PASS",
+        "evidence": [
+          "Owner chat 2026-11-11: UAT = PASS after Archive-to-Junk message move; supplied screenshot shows authenticated Junk tab selected with one received-dated message."
+        ]
+      }
+    ],
+    "engineering_exit": "Focused source and native/installed journey plus independent review and normal signed GitHub preservation.",
+    "human_exit": "Owner accepts the installed Junk view after reviewing third tab and a disposable message."
+  },
+  "human_acceptance": {
+    "status": "PASS",
+    "reference": "Owner chat 2026-11-11 explicitly reports UAT = PASS; Archive-to-Junk move worked; supplied Junk screenshot. No owner Junk-to-Inbox/search/reader claim."
+  },
+  "next_action": "S08-07 accepted and closed; preserve separate pending S08-06 checks."
+}
+
+```

@@ -15,7 +15,7 @@
 .drafts-page .draft-action-menu a { display:block;padding:.3rem 0; }
 .drafts-page .draft-action-menu button:disabled,.drafts-page .draft-star button:disabled { color:var(--muted);cursor:not-allowed; }
 .draft-storage-status { font-size:.8rem;line-height:1.5;margin:.4rem 0 1rem; }
-@media(max-width:800px) {
+@media(max-width:1024px) {
  .drafts-page .draft-list td { height:auto;width:auto; }
  .drafts-page .draft-list tr { padding:.8rem;border-bottom:1px solid var(--line); }
  .drafts-page .draft-list td { padding:.35rem 0;border:0; }
@@ -39,15 +39,16 @@
 .drafts-page .draft-recipient-person>span:last-child{font-weight:700}
 .drafts-page .draft-subject>a{text-decoration:none}
 .drafts-page .draft-subject>a:hover{text-decoration:underline}
-@media(min-width:801px){
+@media(min-width:1025px){
  .drafts-page .draft-list table{table-layout:fixed;width:100%}
- .drafts-page .draft-list th:nth-child(1){width:3.75%}.drafts-page .draft-list th:nth-child(2){width:5%}.drafts-page .draft-list th:nth-child(3){width:28.6%}.drafts-page .draft-list th:nth-child(4){width:26.9%}.drafts-page .draft-list th:nth-child(5){width:11.6%}.drafts-page .draft-list th:nth-child(6){width:8.7%}.drafts-page .draft-list th:nth-child(7){width:10.45%}.drafts-page .draft-list th:nth-child(8){width:5%}
+ .drafts-page .draft-list th:nth-child(1){width:3.75%}.drafts-page .draft-list th:nth-child(2){width:6.5%}.drafts-page .draft-list th:nth-child(3){width:25.45%}.drafts-page .draft-list th:nth-child(4){width:23.75%}.drafts-page .draft-list th:nth-child(5){width:11.6%}.drafts-page .draft-list th:nth-child(6){width:12%}.drafts-page .draft-list th:nth-child(7){width:10.45%}.drafts-page .draft-list th:nth-child(8){width:6.5%}
  .drafts-page .draft-list th{padding:.5rem .75rem;height:2.3rem}
  .drafts-page .draft-list td{height:3.625rem;padding:.4rem .75rem}
  .drafts-page .draft-recipient,.drafts-page .draft-subject{width:auto}
  .drafts-page .draft-recipient-person>span:last-child,.drafts-page .draft-subject>a,.drafts-page .draft-subject>strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  .drafts-page .draft-list time{font-size:.8rem;line-height:1.35;overflow-wrap:anywhere}
- .drafts-page .draft-star button{font-size:1rem}
+ .drafts-page .draft-star button{font-size:.8rem;padding:.15rem}
+ .drafts-page .draft-discard>summary{font-size:.8rem;padding:.25rem .2rem}
 }
 
 .drafts-page .draft-selection-menu{position:relative;flex-shrink:0;margin:0}

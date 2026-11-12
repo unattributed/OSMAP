@@ -302,7 +302,9 @@ fn notice_activity(
 ) -> String {
     let mut html = String::from("<p class=\"welcome-activity-scope\">Recent recorded account events. Submission acceptance does not confirm delivery.</p><ul class=\"welcome-activity-rows\">");
     match notices {
-        None => html.push_str("<li>Account activity could not be loaded.</li>"),
+        None => html.push_str(
+            "<li class=\"welcome-activity-empty-row\">Account activity could not be loaded.</li>",
+        ),
         Some((inbox, preference)) => {
             let mut rows: Vec<_> = inbox
                 .events
