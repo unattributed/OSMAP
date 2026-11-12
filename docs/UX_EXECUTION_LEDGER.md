@@ -57,15 +57,15 @@
       "requirement_ids": [],
       "frontend_backend_outcome": "Reconcile final UX visuals, interaction and accessibility against the accepted references and actual authenticated route contracts across S09-01 through S09-04.",
       "essential_qa": "Focused source-browser checks, matching native and installed UX checks, independent accessibility review and separate owner usability acceptance.",
-      "next_action": "Authenticated installed Welcome, Inbox, Drafts and unavailable/error checks plus separate owner keyboard/screen-reader UAT; Web identity and anonymous login have independent GO.",
+      "next_action": "Complete agent-owned installed Inbox/Drafts/error-route and independent accessibility reconciliation; owner reported keyboard/screen-reader UAT PASS for login, mailbox page and key-access unlock.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "NOT_RUN; matching OpenBSD binary build PASS",
-        "deployed_qa": "PARTIAL; Web identity and anonymous login PASS, authenticated UX PENDING",
-        "independent_review": "PARTIAL; source/method/installed identity GO, authenticated UX PENDING",
-        "recovery": "METHOD_PASS; installed rollback NOT_INVOKED"
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
       },
       "evidence": [
         {
@@ -91,7 +91,7 @@
     "owner": "/root",
     "functional_exit": "Changed and inherited UX routes remain readable and keyboard-operable on the installed candidate; independent review and separate human acceptance complete S09.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "S08 accepted results reused. Earlier S09 effort UNKNOWN; current focused checks began before this work-order reconciliation. Initial Drafts nowrap retest refused keyboard horizontal-scroll check; CSS column correction retest passed. No host deployment or account mutation yet. Independent QA found and reviewed intermediate-width collisions and shared-header squeeze; final 1024/1025 transition and header source/synthetic GO. V14 full gate stopped at pre-existing reader literal, not a product failure. Mandatory security-check then stopped at unchanged V11 generated inventory hash; existing V10 generators refreshed audit/remediation registers and two derived claims hashes with unchanged counts/classifications, then V10 governance checks passed. Signed source 09d880f pushed with fresh origin equality. First native fixture-test build failed at rustc allocator SIGABRT with cause unconfirmed; private log retained, no live change. Independent reassessment approved focused build2 using measured earlier-supported soft data limit, which produced matching binary 4c1f573b; native tests NOT_RUN. Installer method positive/wrong-digest/post-replacement recovery passed; independent architecture GO. First independent installed readback refused root Git dubious ownership before functional checks; command-local safe.directory correction reran PASS. Web-only install and fresh identity/HTTPS/protected-state readback PASS; authenticated pages and owner UAT remain PENDING.",
+    "history_reference": "S08 accepted results reused. Earlier S09 effort UNKNOWN; current focused checks began before this work-order reconciliation. Initial Drafts nowrap retest refused keyboard horizontal-scroll check; CSS column correction retest passed. At that local-source stage no host deployment or account mutation had occurred. Independent QA found and reviewed intermediate-width collisions and shared-header squeeze; final 1024/1025 transition and header source/synthetic GO. V14 full gate stopped at pre-existing reader literal, not a product failure. Mandatory security-check then stopped at unchanged V11 generated inventory hash; existing V10 generators refreshed audit/remediation registers and two derived claims hashes with unchanged counts/classifications, then V10 governance checks passed. Signed source 09d880f pushed with fresh origin equality. First native fixture-test build failed at rustc allocator SIGABRT with cause unconfirmed; private log retained, no live change. Independent reassessment approved focused build2 using measured earlier-supported soft data limit, which produced matching binary 4c1f573b; native tests NOT_RUN. Installer method positive/wrong-digest/post-replacement recovery passed; independent architecture GO. First independent installed readback refused root Git dubious ownership before functional checks; command-local safe.directory correction reran PASS. Web-only install and fresh identity/HTTPS/protected-state readback PASS; agent-owned authenticated page checks remained pending. Owner later reported UAT PASS for login, mailbox page, key-access unlock and explicitly included keyboard/screen-reader use; message crypto operations and installed Inbox/Drafts/error paths remain unqualified. First owner-UAT documentation security gate refused an attempted immutable UX17-003 evidence edit; edit removed, failure log retained and full acceptance validator passed with 110 legacy cases unchanged.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
@@ -105,21 +105,75 @@
         "result": "FAIL",
         "first_failure": "RUSTC_ALLOCATOR_SIGABRT",
         "cleanup": "NO_WEB_EFFECT; private log and stage retained",
-        "functional": "NOT_QUALIFIED"
+        "functional": "NOT_QUALIFIED",
+        "boundary": "s09-final-ux",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "reference": "/home/foo/Downloads/osmap-ux-s09/native-fixture-test.private.log SHA256 1f1198a2c0790dc59a8c391bcedc373b64cea997e23b04151985ad02494822c2; first build failed before installed effect",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "09d880f1657cb2753fee3605859220ad46eaec8b",
+        "change_reference": "Initial two-test native fixture-build recipe; allocator failure retained",
+        "success_chain_review": {
+          "reviewer": "/root/architecture_review",
+          "reference": "Independent failure/reassessment in S09 ledger; build2 review checked producer, cleanup and result consumer.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        }
       },
       {
         "id": "s09-native-build2",
         "result": "PASS",
         "first_failure": "NONE",
         "cleanup": "NOT_REQUIRED",
-        "functional": "MATCHING_BINARY_BUILD_ONLY; NATIVE_TESTS_NOT_RUN"
+        "functional": "MATCHING_BINARY_BUILD_ONLY; NATIVE_TESTS_NOT_RUN",
+        "boundary": "s09-final-ux",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "reference": "/home/foo/Downloads/osmap-ux-s09/native-build2-result.json SHA256 9df5b3245be48c9a46a455a1b006e6e5aa6d5ff1eb48247db8e9c97a9bdc1eec",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "09d880f1657cb2753fee3605859220ad46eaec8b",
+        "change_reference": "Changed to build-only fresh stage and measured earlier-supported soft data limit after fixture compiler failure",
+        "success_chain_review": {
+          "reviewer": "/root/architecture_review",
+          "reference": "Independent architecture review GO for focused build2 source, cleanup and result.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        }
       },
       {
         "id": "s09-web-install1",
         "result": "PASS",
         "first_failure": "NONE",
         "cleanup": "NOT_REQUIRED",
-        "functional": "WEB_IDENTITY_AND_ANONYMOUS_LOGIN_ONLY"
+        "functional": "WEB_IDENTITY_AND_ANONYMOUS_LOGIN_ONLY",
+        "boundary": "s09-final-ux",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "reference": "/home/foo/Downloads/osmap-ux-s09/install-web-result.json SHA256 36174f73150c6e8e2cafa546f4a54ac0d120cf6f0040efcceee95d8c0c7157db; readback log SHA256 4b373aa252f58fd27a0eab2776aa4a9000931fef4ceb4b740528cbf22375be30",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "source_revision": "09d880f1657cb2753fee3605859220ad46eaec8b",
+        "change_reference": "Reviewed Web-only installer and digest-safe dispatcher following matching native build",
+        "success_chain_review": {
+          "reviewer": "/root/architecture_review",
+          "reference": "Independent architecture review GO for installer producer, rollback and result consumer, then installed readback reconciliation.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        }
       }
     ],
     "next_attempt": null
@@ -183,7 +237,7 @@
         "level": "native",
         "action": "Build matching OpenBSD candidate and read back binary and source identity before Web-only install.",
         "expected": "Native candidate matches reviewed source and preserves the installed rollback binary.",
-        "status": "PASS_BUILD_ONLY_NATIVE_TESTS_NOT_RUN",
+        "status": "PASS",
         "evidence": [
           "/home/foo/Downloads/osmap-ux-s09/native-build2-result.json SHA256 9df5b3245be48c9a46a455a1b006e6e5aa6d5ff1eb48247db8e9c97a9bdc1eec; matching binary and retained old backup."
         ],
@@ -201,7 +255,7 @@
         "level": "deployed",
         "action": "Check corrected Welcome, Inbox and Drafts on installed obsd1 UX without mail mutation.",
         "expected": "Matching installed UX renders changed pages and HTTPS login while public mail remains available.",
-        "status": "PARTIAL_ANONYMOUS_LOGIN_ONLY",
+        "status": "PARTIAL",
         "evidence": [
           "/home/foo/Downloads/osmap-ux-s09/installed-readback.log SHA256 4b373aa252f58fd27a0eab2776aa4a9000931fef4ceb4b740528cbf22375be30; installed-login-browser/result.json SHA256 19ab05d4a52529a5dc887df911f4f32e0b23b3aa0b326c1f674ec29cb2416171; authenticated views NOT_RUN."
         ],
@@ -235,8 +289,10 @@
         "level": "human",
         "action": "Owner performs minimal keyboard, screen-reader and usability judgment on the installed UX.",
         "expected": "Separate explicit owner PASS or actionable deviation.",
-        "status": "NOT_RUN",
-        "evidence": [],
+        "status": "PASS",
+        "evidence": [
+          "Owner UAT PASS in current chat, clarified to include keyboard and screen-reader use; /home/foo/Downloads/osmap-ux-s09/owner-uat/owner-uat-result.json SHA256 094570051e20b54fcf136f1577aa36f07a025222efaf15877f85079a9f455df7. Scope: login, mailbox page, personal-key access grant."
+        ],
         "outcome_ids": [
           "s09-final-ux"
         ],
@@ -250,10 +306,10 @@
     "human_exit": "Separate owner keyboard, assistive-technology and usability acceptance on installed UX."
   },
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": ""
+    "status": "PASS",
+    "reference": "2026-11-12 owner UAT PASS for installed login, mailbox page and personal-key access grant; owner explicitly confirmed keyboard and screen-reader checks. Private screenshot/statement receipt SHA256 094570051e20b54fcf136f1577aa36f07a025222efaf15877f85079a9f455df7. No actual signing/encryption operation claimed."
   },
-  "next_action": "Ask owner for a brief authenticated installed UX session or owner-performed UAT; complete pending installed checks, then reconcile acceptance rows."
+  "next_action": "Complete agent-owned installed authenticated Inbox/Drafts and negative-state checks plus independent accessibility audit; reconcile remaining legacy S09 acceptance rows before closure."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -60756,7 +60812,7 @@ reassessment; preserve first failure and cleanup/uncertainty separately.
 | S09-T01 | Inspect accepted S08/current source and map S09-01 through S09-04 against exact evidence. | Reuse each matching result; name only uncovered checks and deviations. | PASS — scope below |
 | S09-T02 | Exercise uncovered current-source visual, theme, viewport, focus, contrast, route/error and crypto-state boundaries with the existing synthetic browser and accepted reference bundle. | No unexplained layout/control/accessibility failure; all requests synthetic and bounded. | PASS — local only |
 | S09-T03 | Read-only current installed obsd1 identity and HTTPS login check; reconcile source changes since accepted S08. | Running candidate provenance and changed login presentation explicit; no account/mail effect. | PASS — baseline only |
-| S09-T04 | Independently review corrections, install matching Web candidate with bounded recovery, then obtain minimal owner usability/accessibility judgment. | Matching installed QA and independent GO before owner result; missing owner observation remains PENDING, never inferred. | PARTIAL — Web identity/anonymous login PASS; authenticated UX and owner UAT pending |
+| S09-T04 | Independently review corrections, install matching Web candidate with bounded recovery, then obtain minimal owner usability/accessibility judgment. | Matching installed QA and independent GO before owner result; missing owner observation remains PENDING, never inferred. | PARTIAL — Web identity/anonymous login PASS; owner UAT PASS for reported scope; agent-owned authenticated QA pending |
 | S09-T05 | Reconcile S09-linked acceptance rows and ledger, independently review claims, sign and normally synchronize public-safe records. | Exact source/scope, retained failures, signature and fresh GitHub SHA equality; S09 closure only after all exits. | IN_PROGRESS — source checkpoint 09d880f synced; final records pending |
 
 **Observed S09 source result.** Frozen plan/reference checks and Shopkeeper
@@ -60875,8 +60931,35 @@ with no page overflow and keyboard focus outside BODY; report SHA256
 `19ab05d4a52529a5dc887df911f4f32e0b23b3aa0b326c1f674ec29cb2416171`.
 Independent review GO is limited to installed Web identity and anonymous login.
 Authenticated Welcome/Inbox/Drafts/error journeys, native tests, owner
-screen-reader/usability acceptance, S10 WSTG and S11 release remain unqualified.
-The three legacy S09 acceptance rows remain unchanged.
+screen-reader/usability acceptance, S10 WSTG and S11 release were unqualified
+at this checkpoint. The three legacy S09 acceptance rows remained unchanged.
+
+**Owner UAT continuation, 2026-11-12.** The owner reported `UAT = PASS` for
+login without issue, viewing the authenticated mailbox page and unlocking
+personal-key access for signing and decryption. The owner explicitly clarified
+that this UAT included keyboard-only navigation and a screen-reader check.
+Two private screenshots were retained under the S09 sprint root: mailbox page
+SHA256 `39e7922ef834cdbff2a6e0b7fb30b28272ed73ebcb6fe74a6ce324494fea9efa`
+and key-management page SHA256
+`4a41e8c4024aba6bf87a54bb44bc7ebaa1698f83e857a23e7de38d414c28a044`.
+A sanitized owner-result receipt SHA256
+`094570051e20b54fcf136f1577aa36f07a025222efaf15877f85079a9f455df7`
+records the reported scope and limitations. The screenshots support an
+authenticated mailbox page and a browser-session key-access grant; they do not
+show an emitted signature, encrypted message, Inbox/Drafts route walkthrough
+or error-state exercise. The exact screen-reader tool/spoken output was not
+independently observed. The owner human result is PASS for the reported scope;
+agent-owned installed route QA and independent accessibility reconciliation
+remain open, so S09 is not yet closed.
+
+The first owner-UAT documentation `make security-check` stopped at the legacy
+acceptance semantic hash because a proposed UX17-003 evidence/note update
+changed immutable case content. Private gate log SHA256
+`55b4b6001a2cc009a3c89aed7f1104728ae0f89511bc1cf2282339d53277368a`
+retains that first failure. The proposed acceptance edit was removed; the
+owner result remains in this execution ledger and private UAT receipt. Full
+`validate_acceptance.py` then passed with all 110 legacy cases and 403 approved
+cases unchanged. This was a record-boundary failure, not a product failure.
 
 
 ## Historical accepted S08-07 active order before S09 focus
