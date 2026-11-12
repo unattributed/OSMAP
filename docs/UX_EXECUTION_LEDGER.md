@@ -1,3 +1,5 @@
+2026-11-12 — **Toronto deployment observation; S10 and release remain OPEN.** Main source `43d547569543d9db004031d819d65dc10df8fcd3` and the Toronto/obsd1 byte-identical OSMAP binary were installed on the Toronto mail host. Owner password-plus-TOTP login, Inbox, personal-key unlock and decrypted reader passed on Toronto after correcting two host installation permissions. The first helper restart failed because the helper log was inaccessible through `/var/log/osmap`; corrected directory group and verified helper socket and owner Inbox. Two key unlock submissions then returned `Unavailable`; source and independent review identified the Toronto session directory's `0750` mode as a deterministic refusal before crypto dispatch; changing only that directory to `0700` yielded one confirmed unlock and decrypted message. These failures remain historical and cleanup/service health was not treated as functional PASS. This is deployment journey evidence, not S10, whole-application security, storage, account-control, or release acceptance.
+
 2026-11-12 — **S09 final UX and accessibility PASS / ACCEPTED / CLOSED under R5.** Owner all-S09 UAT, final reader Settings link, source-backed routes, actual 200% Edge zoom, signed source and matching obsd1 Web readback passed. All ten PAGE-18 security controls remain open for S10 and block epic/release acceptance. See the S09 closeout below.
 
 ## Current OSMAP-UX slice status — 2026-11-12
@@ -61362,3 +61364,65 @@ readback failures and UNKNOWN elapsed/cost fields remain retained.
 }
 
 ```
+
+## 2026-11-13 — Toronto recovery-contact activation for Duncan
+
+Operator explicitly authorizes completing recovery-contact functionality for
+the selected owner account on `mail.blackbagsecurity.com`, followed by signed,
+commented delivery synchronized to origin main. This is the immediate production
+repair; broader independent-host portability work remains open.
+
+Outcome: fresh own-account login can open an editable contact form and complete
+add/proof/verified persistence through the existing native admission, Web store
+and fixed mail submission path. Root owns integration, host/Git queue and writing;
+`/root/recovery_delivery_review` independently reviews source, dispatch and results.
+Source baseline main43d5475 / current740da6a has matching executable code; accepted
+R2/R5 signatures and current frozen hashes verified. Toronto identity and actual
+Dovecot cache0/%Lu/stock sockets/schema checked read-only; five required mailbox
+columns and active owner row observed without exporting credentials or hashes.
+No account-service configuration/key/SQL role file is currently installed.
+
+Scope: one existing native account service, distinct protected purpose keys,
+Duncan-only rollout, recovery-contact delivery configuration, minimum installed
+QA with a disposable controlled account and exact-owned disposition. Existing
+legacy Duncan sessions may require fresh login. Complete paired runtime also
+exposes related account controls; no owner password/factor mutation or reset
+configuration is authorized by this operation. Public Dovecot/Postfix/MariaDB
+lifecycle/configuration, obsd1 state migration, and portability redesign excluded.
+Use existing installer/service and the smallest configuration correction.
+
+Initial work allowance: 2 hours, measured from this resumption; previous review
+cost UNKNOWN and not represented as native execution. Two failures at a functional
+boundary stop retries for combined reassessment. Native actions retain fixed
+application/transport/cleanup bounds and durable sanitized results. No artificial
+operator-authority expiry is imposed. Planned checks NOT_RUN: configuration/keys
+custody and ready pair; controlled login and actual contact proof roundtrip;
+CSRF/wrong-password/replay/stale refusal; persistence and exact-owned QA cleanup;
+Duncan read-only admission readiness; independent final review; normal signed
+commit/hooks and exact origin-main equality. Owner contact change/receipt remains
+separate from controlled QA and uses fresh owner factors privately.
+
+Provisioning source checkpoint: six focused actual-filesystem/result-consumer tests
+PASS, including existing/symlink refusal, partial-birth retention, same-byte inode
+substitution and foreign-directory preservation. Independent review GO for source
+SHA2561570add5adaca958402e2b83d2cb7aa659cfac1a60f767eb45fa47bcddba6336
+and one bounded provisioning/native startup discriminator. Earlier source-review
+findings were corrected before any host dispatch. SQL writer/reset authority
+remains absent; missing-leaf native sealing is explicitly NOT_RUN. Existing
+obsd1 helper9041720B/SHA2567182a804dfc9584a517980906149272a10fe1559c84c1e5679edc5cef94e3b17
+was read-only copied with original root/single-link custody checked and local
+private0600/hash readback verified. It matches the unchanged executable source;
+no new product binary build or qualification is inferred.
+
+Normal push attempt1 failed at publication hygiene after the developer suite and
+preceding gates passed: the added source/instructions contained the real primary
+mailbox literal. No remote update occurred. Keep signed local1a91a2c on its original
+branch as retained failed-checkpoint history. A fresh delivery branch from main
+preserves all eligible code/docs, with the selected account supplied privately to
+the root-only provisioner and canonical syntax checked in public code. This avoids
+publishing the rejected parent; no published history was rewritten or hook bypassed.
+
+Publication-safe candidate8d6b51f uses a root-selected canonical account supplied
+privately at dispatch; source/instructions no longer contain the primary mailbox.
+No root authority or file-custody check was relaxed. All six focused tests and
+publication hygiene pass. Native dispatch still awaits normal signed delivery.
