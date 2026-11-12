@@ -1,3 +1,5 @@
+2026-11-12 — **S09 final UX and accessibility PASS / ACCEPTED / CLOSED under R5.** Owner all-S09 UAT, final reader Settings link, source-backed routes, actual 200% Edge zoom, signed source and matching obsd1 Web readback passed. All ten PAGE-18 security controls remain open for S10 and block epic/release acceptance. See the S09 closeout below.
+
 2026-11-11 — **S08-07 Junk PASS / ACCEPTED / CLOSED.** Owner explicitly reports “UAT = PASS” after moving one message from Archive to Junk without issue; screenshot shows selected Junk tab and one received-dated message. Prior source/browser/native/installed/independent GO reused; documentation-only acceptance, no new host or mail operation. Owner Junk-to-Inbox move, search and reader opening are not claimed. Prior S08/S08-05 acceptance and S08-06 pending checks preserved.
 
 2026-11-11 — **Owner panel-control correction PASS / ACCEPTED / CLOSED.** Owner explicitly states “UAT PASS” and “UAT approves” for the installed correction. Existing source, browser, native, installed and independent-review results are reused; documentation-only acceptance. Other slice and historical acceptance records remain unchanged.
@@ -9,7 +11,7 @@
   "slice": "S09-01",
   "original_requirement": "Whole-site theme/responsiveness and persisted preference audit including every new page",
   "source_baseline": "414fbf8dac35d318fdd289e8606235f151fef4b9",
-  "state": "IN_PROGRESS",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -62,16 +64,16 @@
       "owner": "/root",
       "requirement_ids": [],
       "frontend_backend_outcome": "Reconcile final UX visuals, interaction and accessibility against the accepted references and actual authenticated route contracts across S09-01 through S09-04.",
-      "essential_qa": "Focused source-browser checks, matching native and installed UX checks, independent accessibility review and separate owner usability acceptance.",
-      "next_action": "R5 signed planning anchor d88793b admitted. Add the missing reader-local OpenPGP Settings link and one focused real 200% browser-zoom check, then reconcile S09 UI evidence. Ten PAGE-18 security controls remain S10/epic/release blockers.",
+      "essential_qa": "Focused source-browser checks, scoped native candidate build/readback (Rust native library tests NOT_RUN), matching installed Web identity, independent accessibility review and separate owner usability acceptance.",
+      "next_action": "S09 closed under signed R5 after owner UAT and matching installed Web readback. S10-01/02 own all ten open PAGE-18 security controls; no epic or release acceptance is claimed.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -89,6 +91,26 @@
         {
           "stage": "deployed_qa",
           "reference": "Web-only install receipt /home/foo/Downloads/osmap-ux-s09/install-web-result.json SHA256 36174f73150c6e8e2cafa546f4a54ac0d120cf6f0040efcceee95d8c0c7157db; installed readback log SHA256 4b373aa252f58fd27a0eab2776aa4a9000931fef4ceb4b740528cbf22375be30; Edge anonymous login 4/4 SHA256 19ab05d4a52529a5dc887df911f4f32e0b23b3aa0b326c1f674ec29cb2416171."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "I14 actual wrapper/component/renderer focused tests PASS; native Edge 200% zoom on four current-source synthetic routes PASS, /home/foo/Downloads/osmap-ux-s09/zoom200-native/result.json SHA256 64c7991c0677972f167dba12009d579219d9a6827ab42d8e086c3436c83a6d97."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "S09-P2 scoped native candidate build/readback PASS: /home/foo/Downloads/osmap-ux-s09/native-build3-i14-result.json SHA256 545fe7a8d824f96a348381d569d27ba46c830100da4b1eca57a28087a6060fed; candidate 201c154090effe61209ae8aa510646567a375838111f0b9e5ac10cb9fd6372c5. Rust native library tests NOT_RUN; R5 does not require a duplicate fixture-test build for this UX closure."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Web-only I14 install receipt /home/foo/Downloads/osmap-ux-s09/install-web-i14-result.json SHA256 891f784bd831b53e2956cb1eaf7f0a8e4805734f6b0b022cc854ce00fbb501d6; independent loaded-inode/protected-snapshot/service/pinned-HTTPS readback /home/foo/Downloads/osmap-ux-s09/installed-readback-i14.log SHA256 afb6486656a7284ccc1b87cb5cad834becd6e66f921b8bb066d3def7498bd106. Owner reports all installed S09 UAT complete; agent-authenticated route replay NOT_RUN."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Independent baseline audit and architecture review GO for R5 UI closure, direct I14 link, actual 200% browser zoom, exact source and Web-only install method; see 2026-11-12 S09 ledger closeout. No PAGE-18 adversarial security PASS inferred."
+        },
+        {
+          "stage": "recovery",
+          "reference": "One-off installer actual-script method result /home/foo/Downloads/osmap-ux-s09/oneoff-install-method-i14-result.json SHA256 7c1318565b3cb9647787a2df007e2d4f1afd99dc6a77518d4393f8ef2f48a9cd: positive, wrong-digest pre-effect refusal and post-replacement old-Web recovery PASS. Real install succeeded; rollback was not needed."
         }
       ]
     }
@@ -97,7 +119,7 @@
     "owner": "/root",
     "functional_exit": "Changed and inherited UX routes remain readable and keyboard-operable on the installed candidate; independent review and separate human acceptance complete S09.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "S08 accepted results reused. Earlier S09 effort UNKNOWN; current focused checks began before this work-order reconciliation. Initial Drafts nowrap retest refused keyboard horizontal-scroll check; CSS column correction retest passed. At that local-source stage no host deployment or account mutation had occurred. Independent QA found and reviewed intermediate-width collisions and shared-header squeeze; final 1024/1025 transition and header source/synthetic GO. V14 full gate stopped at pre-existing reader literal, not a product failure. Mandatory security-check then stopped at unchanged V11 generated inventory hash; existing V10 generators refreshed audit/remediation registers and two derived claims hashes with unchanged counts/classifications, then V10 governance checks passed. Signed source 09d880f pushed with fresh origin equality. First native fixture-test build failed at rustc allocator SIGABRT with cause unconfirmed; private log retained, no live change. Independent reassessment approved focused build2 using measured earlier-supported soft data limit, which produced matching binary 4c1f573b; native tests NOT_RUN. Installer method positive/wrong-digest/post-replacement recovery passed; independent architecture GO. First independent installed readback refused root Git dubious ownership before functional checks; command-local safe.directory correction reran PASS. Web-only install and fresh identity/HTTPS/protected-state readback PASS; agent-owned authenticated page checks remained pending. Owner later reported UAT PASS for login, mailbox page, key-access unlock and explicitly included keyboard/screen-reader use; message crypto operations and installed Inbox/Drafts/error paths remain unqualified. First owner-UAT documentation security gate refused an attempted immutable UX17-003 evidence edit; edit removed, failure log retained and full acceptance validator passed with 110 legacy cases unchanged. Owner subsequently declared all S09 UAT complete. Independent closure review dropped a duplicate agent login requirement under the operator simplification ruling, but ten PAGE-18 controls remain unaccepted and R2-18-003 is actually disabled; proposed R5 amendment pending, not active.",
+    "history_reference": "S08 accepted results reused. Earlier S09 effort UNKNOWN; current focused checks began before this work-order reconciliation. Initial Drafts nowrap retest refused keyboard horizontal-scroll check; CSS column correction retest passed. At that local-source stage no host deployment or account mutation had occurred. Independent QA found and reviewed intermediate-width collisions and shared-header squeeze; final 1024/1025 transition and header source/synthetic GO. V14 full gate stopped at pre-existing reader literal, not a product failure. Mandatory security-check then stopped at unchanged V11 generated inventory hash; existing V10 generators refreshed audit/remediation registers and two derived claims hashes with unchanged counts/classifications, then V10 governance checks passed. Signed source 09d880f pushed with fresh origin equality. First native fixture-test build failed at rustc allocator SIGABRT with cause unconfirmed; private log retained, no live change. Independent reassessment approved focused build2 using measured earlier-supported soft data limit, which produced matching binary 4c1f573b; native tests NOT_RUN. Installer method positive/wrong-digest/post-replacement recovery passed; independent architecture GO. First independent installed readback refused root Git dubious ownership before functional checks; command-local safe.directory correction reran PASS. Web-only install and fresh identity/HTTPS/protected-state readback PASS; agent-owned authenticated page checks remained pending. Owner later reported UAT PASS for login, mailbox page, key-access unlock and explicitly included keyboard/screen-reader use; message crypto operations and installed Inbox/Drafts/error paths remain unqualified. First owner-UAT documentation security gate refused an attempted immutable UX17-003 evidence edit; edit removed, failure log retained and full acceptance validator passed with 110 legacy cases unchanged. Owner subsequently declared all S09 UAT complete. Independent closure review dropped a duplicate agent login requirement under the operator simplification ruling, but ten PAGE-18 controls remain unaccepted and R2-18-003 is actually disabled; proposed R5 amendment pending, not active. Approved R5 signed anchor d88793b; I14 source 2cf48d8 signed and synced; native candidate 201c1540 and matching installed readback PASS. Prior S09-P3 PARTIAL and S09-N2 NOT_RUN were superseded by the R5 source-backed/installed-identity closure boundary, not retroactively passed as direct installed agent tests. All ten PAGE-18 security controls remain open for S10.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
@@ -182,7 +204,8 @@
         }
       }
     ],
-    "next_attempt": null
+    "next_attempt": null,
+    "engineering_exit": "R5 source-backed visual and negative routes, focused native candidate identity, matching installed Web readback, independent review and signed GitHub delivery; no duplicate authenticated agent session required."
   },
   "slice_contract": {
     "version": 1,
@@ -259,11 +282,11 @@
         "id": "S09-P3",
         "kind": "positive",
         "level": "deployed",
-        "action": "Check corrected Welcome, Inbox and Drafts on installed obsd1 UX without mail mutation.",
-        "expected": "Matching installed UX renders changed pages and HTTPS login while public mail remains available.",
-        "status": "PARTIAL",
+        "action": "Bind source-backed Welcome, Inbox and Drafts UX to the exact installed obsd1 Web binary and owner-reported S09 UAT, without mail mutation.",
+        "expected": "Installed Web identity, HTTPS and owner UX acceptance match the reviewed source; public mail remains available.",
+        "status": "PASS",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s09/installed-readback.log SHA256 4b373aa252f58fd27a0eab2776aa4a9000931fef4ceb4b740528cbf22375be30; installed-login-browser/result.json SHA256 19ab05d4a52529a5dc887df911f4f32e0b23b3aa0b326c1f674ec29cb2416171; authenticated views NOT_RUN."
+          "I14 independent readback /home/foo/Downloads/osmap-ux-s09/installed-readback-i14.log SHA256 afb6486656a7284ccc1b87cb5cad834becd6e66f921b8bb066d3def7498bd106; exact source-backed route captures and owner statement all S09 UAT complete. No agent-authenticated route replay claimed."
         ],
         "outcome_ids": [
           "s09-final-ux"
@@ -276,11 +299,13 @@
       {
         "id": "S09-N2",
         "kind": "negative",
-        "level": "deployed",
-        "action": "Check installed login error and unavailable account activity without account mutation.",
-        "expected": "Error and unavailable states remain legible and fail safely.",
-        "status": "NOT_RUN",
-        "evidence": [],
+        "level": "source",
+        "action": "Check source-backed login error and unavailable account activity against the matching installed Web source identity.",
+        "expected": "Error and unavailable states remain legible, keyboard-accessible and truthful at the R5 UI boundary.",
+        "status": "PASS",
+        "evidence": [
+          "Source-backed login-error and unavailable route captures, including native Edge 200% zoom /home/foo/Downloads/osmap-ux-s09/zoom200-native/result.json SHA256 64c7991c0677972f167dba12009d579219d9a6827ab42d8e086c3436c83a6d97; matching installed binary readback. Prior direct installed negative test remained NOT_RUN and was superseded by approved R5 boundary."
+        ],
         "outcome_ids": [
           "s09-final-ux"
         ],
@@ -316,7 +341,7 @@
     "status": "PASS",
     "reference": "2026-11-12 owner UAT PASS for installed login, mailbox page and personal-key access grant; owner explicitly confirmed keyboard and screen-reader checks. Private screenshot/statement receipt SHA256 094570051e20b54fcf136f1577aa36f07a025222efaf15877f85079a9f455df7. No actual signing/encryption operation claimed. Owner subsequently states all S09 UAT has been completed; this supersedes the earlier limited human-UAT scope statement, while screenshots themselves remain limited to the two shown pages."
   },
-  "next_action": "Admit the approved R5 plan anchor, reconcile S09 UI/legacy evidence, then record bounded S09 closure. All ten PAGE-18 security controls remain open for S10-01/02 and epic/release."
+  "next_action": "S09 PASS / ACCEPTED / CLOSED under R5. Start S10-01 actual-helper PAGE-18 controlled-account tests and S10-02 independent security review before epic/release acceptance."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -61039,6 +61064,48 @@ reconciliation, not new product or native qualification. The first gate
 failure remains historical. The superseding full `make security-check` passed;
 private log SHA256
 `c52b38b6082377066306481fcc9f55dedeef885a73e48f3dd76b34c0d49230d9`.
+
+
+**S09 R5 closeout, 2026-11-12 — PASS / ACCEPTED / CLOSED.** The owner reports
+all S09 UAT complete, including keyboard and screen-reader use. Signed R5
+planning commit `d88793b` and source commit `2cf48d8` are synchronized.
+The final Web-only obsd1 install reports PASS; independent readback SHA256
+`afb6486656a7284ccc1b87cb5cad834becd6e66f921b8bb066d3def7498bd106`
+confirms binary `201c154090effe61209ae8aa510646567a375838111f0b9e5ac10cb9fd6372c5`
+loaded in Web PID 82165, with prior binary backed up, protected installer
+snapshots equal, required services healthy and pinned HTTPS login 200. The
+native build receipt SHA256 is
+`545fe7a8d824f96a348381d569d27ba46c830100da4b1eca57a28087a6060fed`;
+native Rust library tests remained NOT_RUN. The exact install receipt SHA256 is
+`891f784bd831b53e2956cb1eaf7f0a8e4805734f6b0b022cc854ce00fbb501d6`.
+The local installer method passed positive, wrong-digest refusal and
+post-replacement rollback; real rollback was not needed. The optional
+`validate_acceptance.py --work-order-only --pre-action` refused because it is
+specific to historical S04-02; `--work-order-only` passed for S09, and the
+reviewed installer bound source, candidate, old binary and host independently.
+No mail service was restarted or account/message mutation performed.
+
+Current evidence mapping for the immutable historical rows is bounded:
+UX09-007 has a readonly selectable full fingerprint and a “Select fingerprint”
+anchor on the installed source; the anchor navigates to the field and does not
+automatically copy or select text. UX09-008 now has truthful assessed, refused
+and unassessed reader states plus a direct authenticated OpenPGP Settings link,
+covered by focused wrapper/component tests and the matching installed Web
+source. UX17-003 has source-backed focus/reflow/forced-colour checks and the
+owner's reported keyboard and screen-reader UAT; exact spoken output was not
+independently recorded. The two owner screenshots cover only the shown pages.
+These mappings do not rewrite the 110 immutable legacy cases or claim message
+signing/encryption operations. R5 supersedes the old planned direct installed
+agent replay for S09-P3/N2 with source-backed route negatives, exact installed
+binary identity and owner UAT; those prior PARTIAL/NOT_RUN records remain in
+signed history, without retrospective direct-test PASS.
+
+All ten R2-18-001 through R2-18-010 PAGE-18 results remain
+`NOT_YET_ACCEPTED`, `executed:false`, and required in S10-01 actual-helper
+positive/negative testing plus S10-02 independent security review. R2-18-003
+uses R5's approved disabled no-bypass policy. S09 closure is not a WSTG,
+whole-application security, epic or release PASS. Earlier allocator, gate and
+readback failures and UNKNOWN elapsed/cost fields remain retained.
 
 
 ## Historical accepted S08-07 active order before S09 focus
