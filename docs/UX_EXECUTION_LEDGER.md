@@ -61444,3 +61444,31 @@ which passed every frozen hash. No functional test or public service was run by 
 Normal push3 completed its full gate and preserved the source branch, but main
 rejected a direct update under branch protection. Draft PR82 is the ordinary main
 promotion route. No force or protection/hook bypass is authorized or used.
+
+Installed continuation: installer2 PASS, standard rc publication complete. Earlier
+rc start/check0 results observed a born process, not completed startup; three
+starts later exited before serving. Correct the earlier readiness inference.
+Controlled HTTP run1 FAIL at primary login with CONTROLLED_LOGIN_REFUSED and no
+contact request or verification email. Existing helper was down and both sockets
+absent; all three startup failures retain primary_fstat_parent_prepare_unknown.
+One independently reviewed no-request diagnostic exited1 at5.030s with
+metadata_parent_sql_closure_unknown; private stderr243B hash
+927f7bd1ec340367fe9c1f0879d528eb8da7a83b9f8c6bb15d72a2d4e86bd321.
+Actual fixed SQL closure observation:14files/32068328B, no per-file/total cap
+violation, read+optimized SHA observation0.254s. The original Rust five-second
+startup deadline includes dependency resolution and repeated hashing; the precise
+rejected public-file predicate is not observable from the retained coarse tag.
+No credential retry was dispatched to diagnose startup. Web remains on the
+controlled-only rollout; owner login uses its prior path pending final activation.
+
+Combined reassessment: use one finite30-second startup budget for all hosts,
+without changing request deadlines, confinement, file admission or credential
+semantics. Build only optimized account-passwd on the existing OpenBSD builder
+from an independently reviewed signed source checkpoint; fixed cargo offline/
+locked/release command, one job, compiler450s and outer510s. Preserve actual
+compiler exit/counts/profile/artifact hash and source readback. No native test or
+service runs on the builder. Install only the exact resulting executable through
+the existing reviewed installer on Toronto, then require completed startup,
+stable endpoints and actual admission before repeating the controlled login once.
+No artificial RAM/release-number prerequisites, backend restart/configuration,
+owner credential operation or broader workflow qualification is introduced.
