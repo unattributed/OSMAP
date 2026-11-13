@@ -1,7 +1,7 @@
 {
   "cargo_baseline": {
-    "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
-    "cargo_toml_sha256": "ee4a425aab038b596fda739e129c615a25f3873611f22d055d8986fc7168d5b8",
+    "cargo_lock_sha256": "10a2ce67818cd6a4059acc4d25887fdc628bfc3b6455717b7a84e955e0bf0df8",
+    "cargo_toml_sha256": "20b2fdc8e1a8eb2486fa07c775a6b37f9f829c06927c619b4a51181bd8264c6d",
     "locked_package_count": 83
   },
   "dependencies": [
@@ -27,39 +27,39 @@
         "status": "registry_and_lockfile_provenance"
       },
       "maintenance_status": {
-        "rationale": "Compatible locked4.1.8 fixes RUSTSEC-2026-0373 case-insensitive CSS url function, official Oct16advisory. Cargo.toml ~4.1.7, features and all transitive versions unchanged. Exact source review and normal refreshed gate required.",
+        "rationale": "Ammonia 4.1.9 is the smallest patched supported 4.1 release for RUSTSEC-2026-0533, confirmed against RustSec and upstream v4.1.9. No API, feature or transitive dependency change.",
         "status": "security_patch_reviewed"
       },
       "name": "ammonia",
       "openbsd_compatibility": {
-        "rationale": "Actual0eacfd9 obsd1 source455pins/freshapplication build29.295s and installation39.306s PASS; installedapp65391473cb062137b52ff2d5cad0614fb50be256cde613580d363f7127b47f20. Lockedammonia4.1.8 fetched normally, sourceparity preserved. This establishes nativebuild/installation only; prior4.1.7 nine native sanitizer tests remain historical, not reattributed to4.1.8. Local1770library and normalsecuritygate pass. Receipt execution-787d1a8b222befc2/RESULT.json under S04settingscloseout bundle.",
-        "status": "matching_native_build_and_installation_passed"
+        "rationale": "Previous 4.1.8 native build/installation evidence remains historical. The 4.1.9 patch changes namespace checks without changing APIs, dependencies or platform requirements. This publication is validated locally on Linux; no native OpenBSD test, deployment or installed qualification is claimed.",
+        "status": "unchanged_api_native_requalification_not_claimed"
       },
       "optional": false,
       "purpose": "Sanitise untrusted HTML email content to OSMAP's narrow browser-safe subset.",
       "removal_analysis": "Removal would require disabling HTML rendering or implementing and maintaining equivalent standards-aware sanitisation locally.",
       "replacement_analysis": "Replace only with a smaller, actively maintained HTML5-aware sanitizer that passes the complete hostile-content corpus.",
-      "requirement": "~4.1.7",
+      "requirement": "~4.1.9",
       "sbom_effect": {
-        "rationale": "This previously admitted dependency is unchanged. S04-04 adds only qrcodegen1.8.0: nine direct declarations/83 locked packages, no new transitives. Earlier native evidence remains scoped to its original artifact.",
-        "status": "unchanged_dependency_with_leaf_addition"
+        "rationale": "Only ammonia changes from 4.1.8 to 4.1.9. Nine direct declarations and 83 locked packages; all transitive versions, dependency features and sources remain unchanged.",
+        "status": "compatible_security_patch_no_graph_expansion"
       },
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "cargo_lock_sha256": "10a2ce67818cd6a4059acc4d25887fdc628bfc3b6455717b7a84e955e0bf0df8",
         "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
       },
       "trust_boundary_justification": "Processes attacker-controlled message HTML immediately before server-rendered browser output.",
-      "trusted_computing_base_effect": "Updates the existing HTML sanitizer for upstream CSS URL escaping and SVG animation filtering vulnerabilities. OSMAP narrow allowlist and all runtime features remain unchanged.",
+      "trusted_computing_base_effect": "Updates the existing HTML sanitizer for mixed SVG/MathML namespace mutation XSS. The production allowlist, full SVG/MathML subtree removal, URL policy, typed HTML boundary and reader CSP remain unchanged.",
       "unsafe_code_assessment": {
-        "rationale": "Exact4.1.7\u21924.1.8 local crate review finds one production CSS URL eq_ignore_ascii_case guard and one upstream regression; no new unsafe/API/dependency/feature. Independentc8fe8acf sourceCLEAR; not a complete transitive audit.",
+        "rationale": "Reviewed exact downloaded 4.1.8 to 4.1.9 src/lib.rs diff against upstream tags: two namespace-transition guards and two regressions; no added unsafe code, public API, dependency or feature. This is not a complete transitive audit.",
         "status": "changed_upstream_source_reviewed"
       },
       "vulnerability_review": {
-        "rationale": "Normal refreshed RustSec gate refused4.1.7 RUSTSEC-2026-0373; advisory lists >=4.1.8,<4.2 as patched. Normal mandatory refreshed gate remains required; no advisoryignore.",
+        "rationale": "Refreshed RustSec audit reproduced RUSTSEC-2026-0533 on 4.1.8. RustSec lists >=4.1.9,<4.2.0 as patched. The new upstream-policy regression fails on 4.1.8; the strict OSMAP policy already rejects the known preconditions. Mandatory refreshed audit and normal delivery gates remain required, with no ignores.",
         "status": "patched_rustsec_gate_required"
       }
     },
@@ -105,7 +105,7 @@
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "cargo_lock_sha256": "10a2ce67818cd6a4059acc4d25887fdc628bfc3b6455717b7a84e955e0bf0df8",
         "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
@@ -163,7 +163,7 @@
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "cargo_lock_sha256": "10a2ce67818cd6a4059acc4d25887fdc628bfc3b6455717b7a84e955e0bf0df8",
         "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
@@ -221,7 +221,7 @@
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "cargo_lock_sha256": "10a2ce67818cd6a4059acc4d25887fdc628bfc3b6455717b7a84e955e0bf0df8",
         "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
@@ -290,7 +290,7 @@
         "published_archive_cached_source_parity": "PASS"
       },
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "cargo_lock_sha256": "10a2ce67818cd6a4059acc4d25887fdc628bfc3b6455717b7a84e955e0bf0df8",
         "locked_package_count": 83,
         "rationale": "Upstream declares no dependencies. Adds only the direct leaf qrcodegen; prior locked package versions/checksums unchanged.",
         "status": "bound_to_reviewed_lockfile"
@@ -350,7 +350,7 @@
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "cargo_lock_sha256": "10a2ce67818cd6a4059acc4d25887fdc628bfc3b6455717b7a84e955e0bf0df8",
         "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
@@ -408,7 +408,7 @@
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "cargo_lock_sha256": "10a2ce67818cd6a4059acc4d25887fdc628bfc3b6455717b7a84e955e0bf0df8",
         "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
@@ -466,7 +466,7 @@
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "cargo_lock_sha256": "10a2ce67818cd6a4059acc4d25887fdc628bfc3b6455717b7a84e955e0bf0df8",
         "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"
@@ -524,7 +524,7 @@
       "scope": "dependencies",
       "source": "crates.io",
       "transitive_dependency_inventory": {
-        "cargo_lock_sha256": "1ed8960aefce1d75126c703bb1d9d7a124302c7c99dedd9cb22bf9bb76bdb44c",
+        "cargo_lock_sha256": "10a2ce67818cd6a4059acc4d25887fdc628bfc3b6455717b7a84e955e0bf0df8",
         "locked_package_count": 83,
         "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
         "status": "bound_to_reviewed_lockfile"

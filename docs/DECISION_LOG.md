@@ -1,3 +1,22 @@
+2026-11-13 (Asia/Bangkok) — Complete OSMAP-ADMIN PR #84 publication while
+preserving signed documentation commits `fd9cf268` and `b205ce0d` and the
+original checkout's unrelated staged work. The refreshed RustSec gate reproduced
+RUSTSEC-2026-0533 on ammonia 4.1.8; select the smallest patched supported release,
+4.1.9, and raise the compatible manifest floor to `~4.1.9`. The exact upstream
+source delta changes two namespace-transition guards, adds two regressions and
+adds no API, feature, unsafe code or transitive dependency. The existing OSMAP
+policy excludes the known exploit prerequisites; this is dependency remediation,
+not evidence of a demonstrated OSMAP XSS exploit. Keep the strict production
+allowlist, full SVG/MathML subtree removal, URL policy and reader CSP. Root owns
+integration, QA and writing; separate read-only agents investigate the boundary
+and review the candidate. Exit requires the upstream trigger to fail on 4.1.8
+and pass on 4.1.9, product-policy and normal formatting/link tests, hostile-content
+assurance, the no-JavaScript gate, refreshed supply-chain checks, normal signed
+commit/push hooks and exact GitHub parity. Use the existing protected publication
+worktree with private home-directory test scratch. Stop on custody/history drift,
+unresolved review or a mandatory gate failure. No host/deployment/native release
+qualification is included; prior OpenBSD evidence retains its original scope.
+
 2026-11-09 (Asia/Bangkok) — Authorized checkout reconciliation excludes all ongoing S08 code, documentation and acceptance owned by the separate Codex chat. Preserve the exact older S05 and startup-repair deltas with SHA-256 and reconstruction proof; retire superseded S05 working edits, fast-forward the older UX checkout, and deliver only the account-service volatile-directory startup repair with named-group custody. Root owns integration/writing, independent reviewer owns security/QA review. Source-only exit: focused safe/refusal checks, preserved preimages, normal signed hooks/push and fresh remote parity; no deployment or new native qualification. Stop on changed source/custody, unresolved review or mandatory gate failure. See [scope, evidence and disposition](OSMAP_CHECKOUT_RECONCILIATION_20261109.md).
 
 2026-11-02 — S06 operator-tool repair: use GPG stdout with an existing discarded descriptor instead of naming /dev/null; preserve Pinentry/TTY/key custody and publish warm success only after both operations. Replace optimization-sensitive operational assertions in retained provisioning tools with explicit guards and include their tests in the ordinary delivery gate. Actual fixed-UID Rust GPG output test and installed-interpreter suite qualify the change without replaying an owner secret. Retain unrelated relay profile/lifecycle observations as separately scoped follow-ups, not live failures.
