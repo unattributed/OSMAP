@@ -210,7 +210,7 @@ fn stopped_connection_refuses_before_frame_parsing_or_worker_admission() {
 pub(crate) fn serve_hold_child() {
     let root = PathBuf::from(std::env::var_os("OSMAP_CRYPTO_SERVICE_FIXTURE_ROOT").unwrap());
     assert!(
-        root.starts_with("/tmp")
+        root.parent() == Some(std::env::temp_dir().as_path())
             && root
                 .file_name()
                 .unwrap()

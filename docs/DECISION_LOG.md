@@ -1,3 +1,16 @@
+2026-11-13 (Asia/Bangkok) — The publication gate exposed two local test-environment
+failures: the first home-directory scratch path exceeded Unix-socket path limits;
+shortening it resolved those failures. The remaining crypto lifecycle fixture
+created its root through `TMPDIR` but its child hard-coded `/tmp`, aborting before
+worker startup. Combined independent reassessment confirmed this mismatch.
+Correct only that test child to require the selected temporary directory as its
+exact parent, retaining the fixture-name, canonical-path and private-directory
+checks. Keep this essential test portability correction in a separate signed
+commit after the immutable dependency remediation. Requalify the actual helper
+startup, SIGTERM and worker-cleanup test under a short private home-directory
+root before another normal full gate. Preserve both failed gate logs; no
+production runtime, custody policy or hook is changed.
+
 2026-11-13 (Asia/Bangkok) — Complete OSMAP-ADMIN PR #84 publication while
 preserving signed documentation commits `fd9cf268` and `b205ce0d` and the
 original checkout's unrelated staged work. The refreshed RustSec gate reproduced
