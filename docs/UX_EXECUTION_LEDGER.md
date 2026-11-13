@@ -61472,3 +61472,22 @@ the existing reviewed installer on Toronto, then require completed startup,
 stable endpoints and actual admission before repeating the controlled login once.
 No artificial RAM/release-number prerequisites, backend restart/configuration,
 owner credential operation or broader workflow qualification is introduced.
+
+Source delivery e554811 normal pre-commit PASS / Good Shopkeeper; normal push4
+FAIL at the existing refined Rust inventory hash because four comment lines move
+later test assumptions. Actual scanner comparison proves counts, classifications
+and summary unchanged; refresh only that location digest and its claims reference
+6ed28dcb to6ad9ced0. No guard or classification was removed or bypassed.
+
+Builder attempt1 FAIL21.978s/compiler101: the minimal archive omitted two existing
+non-test compile-time includes. Source spans1127/2495 identify those includes;
+no Rust compiler defect is claimed. Corrected archive includes both signed files.
+Builder attempt2 FAIL34.697s/compiler101: rustc SIGABRT6 with memory-allocation
+failure, no error-code diagnostic, only ten dead-code warnings. Observed builder
+soft DATA limit1572864KiB; free target filesystem202GB. Both failures retained
+under private immutable source roots, receipts respectively
+68c1962c52b8e88e2452ab3be57b55f6ae854a81466ac4076307c3127e1c16d2 and
+940b2f10b4ee1c9b8b4679c08cb0dc312a858a5b55b81c75a959caae822ea187.
+Combined reassessment precedes further compilation. Proposed correction is the
+existing child-only4GiB DATA cap, within actual hard limit, with one job and the
+same compiler450s bound. This is no free-memory admission rule or host mutation.
