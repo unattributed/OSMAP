@@ -61586,3 +61586,35 @@ bundle1131f93db31340abc25117fbea2b2ed452a31d01808afafd659f5ab06b3f9f48,
 verified actual receipt hashes and scoped claims, and reviewed the six-file
 closeout diff. Signed normal-hook checkpoint and ordinary protected-main PR
 promotion follow; no new native operation or owner acceptance is inferred.
+
+
+### 2026-11-13 (Asia/Bangkok) — Owner recovery-contact UAT accepted
+
+Owner explicitly reports: “UAT of the functionality is approved and PASS”. The
+supplied final screenshot shows the current recovery contact as Verified on
+Toronto after the owner completed the contact proof. Accept the installed owner
+contact-verification journey; earlier engineering, refusal, persistence, cleanup
+and independent-review evidence is reused. Agent QA did not change the owner
+contact; the subsequent owner action and acceptance are separate actual outcomes.
+Do not retain screenshot copies, authenticator values, proof tokens, passwords or
+the private recovery address in this public record.
+
+The accompanying all-users question is answered by a fresh read-only production
+configuration observation: admission accounts1, mutation accounts1, both allowlists
+exactly the selected owner, Web rollout selector restricted to that same owner,
+global rollout false. No configuration or service was changed by this check.
+The shared code correction is on main bdcbe2612eea1fb6555ef3b9086e2c401cec0f79
+via PR82, but this production activation remains Duncan-only. Other users and
+other installations are not enabled or qualified by the owner's PASS. A future
+all-user rollout must handle per-account enrollment/state and new-account
+onboarding, preserve account isolation and qualify multiple distinct accounts;
+removing only the Web selector is insufficient while backend enrollment is scoped.
+
+Documentation-only closeout outcome: record owner PASS/APPROVED/ACCEPTED and the
+actual rollout boundary, without live mutation or repeating the accepted journey.
+Root owns records/Git delivery; recovery_delivery_review independently reviews the
+scope and source. Minimum checks are the actual read-only enrollment observation,
+record/scope diff review, whitespace, normal signed commit/push hooks and fresh
+protected-main synchronization. Broader account writers/reset, boot readiness,
+portability and general release acceptance remain open. No raw screenshot or
+reusable authentication material is introduced into Git.
