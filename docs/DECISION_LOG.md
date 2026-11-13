@@ -14229,3 +14229,16 @@ Owner approves the proposed T01–T09 infrastructure matrix. Reuse S05-01/S05-03
 Both reproduced lifecycle defects are corrected through existing Rust machinery: retain process-group ownership/require group absence, and stop inventory admission then join at most2 requests under their original10second deadline. Root/independent combined reassessment precedes the second changed action. Final native runtime source4c041501, process3/runtime8 testsPASS, distinct-principal fixtures21/9BooleanchecksPASS with real prior-candidate-prior restore and admin restart/replay. Existing C/protocol/dependencies/capability flags are preserved. Only inventory6853a100 is installed; current loadedidentity, authenticated publicinventory, eightroles/HTTPS200, unchanged otherartifacts and protectedcutoverstate are verified. Temporary principals/agents/scratch/probe are removed afterdurableevidence. Consumer-only no-stalesocket prerequisite refusal remains recorded and is not a functional failure. Independent installed review896c65f4GO; qualification limits and ownerT09 remain separate. Normal signed GitHub hooks/parity precede readiness notification; no whole-epic or production approval inferred.
 
 2026-11-02 — S06 stored protected transport: an actual disposable Dovecot/helper/Runtime case verified a transformed invalid-byte entity instead of the stored entity. Enforce a seven-bit stored protected body profile at the existing gateway, preserving positively unprotected UTF8, outer UTF8 and decrypted inner UTF8. Generated protected text/attachments already use base64 with ASCII-safe MIME fields. Keep generic Processor/parser bytes and global command decoding unchanged. Native RED11.30s and matching GREEN11.05s, source controls and independent review are retained in S06-01; consolidate the final installed qualification after dependent S06 work. No owner key/credential/policy or public mail-service change.
+
+## 2026-11-13 — Toronto recovery-contact activation
+
+Complete the existing admission/mutation client pair with locally born distinct
+private keys and selected-owner enrollment; preserve unavailable-state refusal.
+Use an optimized native helper and finite 30-second pre-request startup budget.
+Actual signed readiness must precede Web's one-time client capture, followed by
+TLS entry readiness and the real contact journey. Preserve preparation/compiler/
+startup/login failures separately from cleanup and owner UAT. Controlled local
+mail proof, restart persistence, refusal controls and exact-owned disposition pass;
+owner-only signed admission and public-mail preservation pass. Owner contact change,
+other account writers/reset, reboot readiness, portability and general release
+acceptance remain separate. See the active production-repair ledger record.

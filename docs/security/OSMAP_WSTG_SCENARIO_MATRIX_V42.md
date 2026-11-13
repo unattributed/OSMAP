@@ -1489,3 +1489,14 @@ Secure, HttpOnly, SameSite=Strict and contains no passphrase/key data. Native GP
 cache and server key custody remain separate. Execution results belong in the
 current ledger. These scoped regressions do not constitute complete OWASP WSTG,
 Daybreak Blue review, cross-platform UAT or production release qualification.
+
+## 2026-11-13 Toronto recovery-contact deployment correction
+
+Scoped installed observations: real password/TOTP login and epoch admission;
+editable recovery form; CSRF/wrong-password/consumed-TOTP403 and stale-revision409;
+one accepted verification submission, actual local-mail proof verification and
+verified reload; persistence after Web restart with a fresh login; owner/fixture
+isolation and exact-owned cleanup. Failure diagnostics retain bounded status,
+process and stream accounting without credentials, cookies, proof or mail bodies.
+These results are in the active execution ledger. They do not replace the full
+credential-backed WSTG release pack, owner contact-change UAT or reboot testing.

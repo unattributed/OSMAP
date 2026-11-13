@@ -61491,3 +61491,98 @@ under private immutable source roots, receipts respectively
 Combined reassessment precedes further compilation. Proposed correction is the
 existing child-only4GiB DATA cap, within actual hard limit, with one job and the
 same compiler450s bound. This is no free-memory admission rule or host mutation.
+
+Final installed outcome — engineering PASS / selected-owner UAT_READY; owner
+contact change and general production-release acceptance remain separate.
+
+Preserved preparation failure: controlled profile1 replaced ENV bytes with a
+root:wheel0600 temporary, losing original root:Web-group0640 readability. Web
+start failed; a same-writer original-byte restore also failed. Startup stderr was
+not available in the application log because the launcher failed before opening
+that log. Existing installed backup metadata and actual principal observation
+identified the missing readability. Exact-inode0640/group restoration returned
+ordinary Web availability (receipt418a72090b882709f1366ce62ab7881244c0f408eae31eaf2f657425f54d7db6).
+The reviewed writer now preserves original metadata and verifies source and
+replacement identities. Real protected writer-to-Web reader check PASS
+0816d0947ead19b8c4949f0d3af2376666b8b1b060297b343f7c3dff188dfe3b;
+existing-fixture profile2 PASS3913d0d45fb12ee0647c756a5baed7c9120e22960525ceb90f1f8da707d290e8.
+No fixture creation or owner credential operation was replayed.
+
+Optimized native build3 PASS200.794s with child DATA4GiB, source e554811,
+archive78721f182a3ecd0bcb1fa4d60e38bee50984e29679723c60abf82f9f1e1bd69f,
+release opt3/debug0 and explicit source readback. New helper3171760B has SHA256
+fbeec2325efd26c769197e01af92b63176b6a8cdf5bcc2a5b2db62bd123a9905;
+build receipt0f0a928071defc9b9361aa8e58b46d5f303ed083b208cbfd3c5533db36efdd43.
+The earlier reused artifact's optimization profile is not established by its hash;
+do not uniquely attribute its failure to CPU capacity or the five-second budget.
+Installer3 PASS with old artifact/rc hashes bound and rollback retained; receipt
+5b3bebbe478dbdc7c943ce9ed0909966b25272b39d024974d9f158287a756fd6.
+One actual signed fixture epoch0 response and stable service after the full
+startup interval PASS4bc432c2c6e092cbb978863a5613847556cb8953d331c2cef4aef4f29d01aa86.
+The small private observer used the actual Rust admission producer/consumer;
+framing, modified MAC, validly re-signed wrong account, wrong epoch, replay and
+oversize refusals passed locally and on the OpenBSD selftest. This is not a new
+product service or native credential operation.
+
+Controlled run2 FAIL401 before any contact request, receipt
+127a2f73ce8433fe9e8648d9b386b6d3581a737dc4a687541bb16ee9f57ab059.
+Web had been restored before the helper's final start, retaining its one-time
+ConfiguredUnavailable capability. Source and two fixed constructor observations
+Canonicalize/Absent support this ordering defect; the helper log had no new
+request failure. Combined reassessment preceded Web-only restart after actual
+signed readiness. New-log-offset construction failures0; receipt
+fbb8486d811cc24a93ed730a74b3ba2ea319a6b370e4ae795d374d4edd20d26f.
+The first startup diagnostic receipt retains only its coarse ParentPrepare code;
+the finer SQL-closure tag was observed by a later whitelist read of the same
+retained243B private stream, not by that original codes array.
+
+Controlled run3 PASS26.298s: real password/TOTP login303, editable contact GET200,
+CSRF403, wrong-password403, stale-revision409, exactly one begin200, consumed-code
+replay403, actual fixed-mail submission/local delivery/proof verify200 and verified
+reload200. Receiptfe3f75177778ab5d3026fdac3ab813d28ab1733ab1e87ef4ca08a4d8a3df8687.
+First persistence continuation FAIL502 immediately after rc start/check, receipt
+caded6e0ee2bc1f26b5a9b19c3c57ea925c364dda87f586819a7f4486cfab7cc;
+the unique historical upstream cause is not proved. Actual TLS login entry200
+then same-restart persistence2 PASS1.230s: fresh login303 and verified contact200,
+with no further service restart or contact submission. Receipt
+d7918a370d2e89ba8c9b4429fa4547d82d49b9cf9f5bef8c3881d925424268ca.
+HTTP diagnostics now retain attempted-dispatch certainty before sending, status
+before body parsing and bounded byte counts; no bodies, cookies or factors exported.
+Independent reviewer opened the actual sanitized bundle SHA256
+073a2c1147f5b64ea404ffa4323c8ea45e3792f456c35def3aa854dae2547156
+and confirmed these scoped results, preserving all earlier failures.
+
+Actual queue JSON consumer PASS/empty and fixture mail-tree consumer PASS12entries.
+One exact-owned cleanup PASS0.731s, receipt
+3fac75b07c3c2848bf43670f1b01c69ec834a3dc34bfed6de3271aad532a7b46:
+CAS-deleted only the synthetic SQL row; removed12 owned factor/epoch/session/store
+files and its Maildir; restored original owner-only allowlists and ENV metadata;
+removed private fixture credentials last after durable result readback/hash.
+Cleanup success is distinct from the preceding functional success.
+
+Final selected-owner activation PASS35.905s, receipt
+437a65d301ff713b06134097ba66324ec4b33718fb50f77578e8a894713b5ccd.
+Helper enabled persistently and placed immediately before Web, with every other
+service's relative order and all unrelated rc settings preserved. Completed helper
+startup and actual signed owner epoch0 admission precede Web startup. Public TLS
+entry observed502 then200 during bounded GET-only startup observation. Web/helper,
+Dovecot/Postfix/MariaDB checks pass; no public mail-service lifecycle/config change.
+Final preservation PASS661b108e76b6a3290f9bd4ef98cc4facea2242de8bbbe2f68108e23d3af117c9:
+public Dovecot/Postfix configuration and Web binary hashes unchanged, three distinct
+private root/Web purpose-key pairs match, fixture SQL/files/mail/credentials absent,
+and the temporary readiness executable removed. Empty protected staging and
+private source/diagnostic/rollback evidence remain retained.
+
+Duncan must sign in freshly to obtain an epoch-bearing session. No owner password,
+factor or recovery contact was changed by agent QA. SQL writer/reset authority
+remains absent and separately unqualified. Full WSTG/release, other application
+journeys, independent-host installation and reboot readiness remain OPEN. Existing
+helper rc_check is process-only, so persistent enablement/order is not boot
+qualification; future startup work must prove ready authority before Web captures
+its clients. Do not weaken the unavailable form to bypass that dependency.
+
+Final independent result/source GO: reviewer read the precleanup bundle and final
+bundle1131f93db31340abc25117fbea2b2ed452a31d01808afafd659f5ab06b3f9f48,
+verified actual receipt hashes and scoped claims, and reviewed the six-file
+closeout diff. Signed normal-hook checkpoint and ordinary protected-main PR
+promotion follow; no new native operation or owner acceptance is inferred.

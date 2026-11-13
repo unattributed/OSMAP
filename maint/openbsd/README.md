@@ -213,3 +213,18 @@ configuration. Those operations remain separately unqualified; a visible related
 account form is not evidence that its backend operation is ready. Public mail
 services and their configuration are preserved. Test actual native startup and
 recovery-contact submission before claiming contact readiness.
+
+Use the reviewed optimized helper artifact. Its one-time installed-library
+verification has a finite 30-second startup budget; request deadlines are unchanged.
+A born process, early `rcctl check` or newly bound socket alone is not readiness.
+Verify a real signed account-admission response before starting Web, then require
+the public TLS login entry200 before a credential-backed journey. Web captures
+account client capability at startup; after replacing/restarting its account
+helper, restart Web only after that authority is ready.
+
+Retain the env file's root ownership, Web-readable group and 0640 mode when
+replacing it; private Web key copies remain Web-owned 0600. Enable the OSMAP account
+service and preserve all other service order while placing it immediately before
+Web. The current process-only rc check does not prove reboot readiness. This
+repair's installed contact/persistence results qualify its controlled current-host
+journey, not boot sequencing or an independent-host installation.
