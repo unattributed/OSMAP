@@ -187,3 +187,44 @@ and the host-side checkout is already `~/OSMAP`, the repo also provides
 `maint/live/osmap-run-v1-closeout-over-ssh.sh` to invoke the current
 authoritative V1 closeout wrapper remotely and fetch the resulting summary
 report back to the local machine.
+
+## Bounded Toronto recovery-contact activation
+
+`provision-recovery-contact.py` prepares the existing native account pair for the
+explicitly authorized Duncan rollout on Toronto. It is an operational repair
+method, not the independent-host installer (that portability work remains open).
+Run its read-only preflight first with `--expected-host mail.blackbagsecurity.com
+--account "$RECOVERY_ACCOUNT"`; `--apply` then creates previously absent
+root/Web purpose-key copies, matched enrollment, epoch-zero state and the dedicated
+hash identity. Existing state refuses before publication. Retain its structured
+receipt on the host, read it back and hash it before removing any staged source.
+Partial births remain retained for exact-owned recovery.
+
+Install the matching reviewed `account-passwd` and existing rc entry separately.
+Start and verify the account service before appending complete Web client settings,
+the Duncan-only rollout selector and recovery-contact delivery configuration.
+Restart OSMAP Web only. A fresh Duncan password-plus-TOTP login is required because
+legacy sessions have no account epoch. No owner password/factor/contact is changed
+by provisioning, and no obsd1 record or key is copied. Controlled installed QA and
+owner contact proof are separate outcomes.
+
+This contact rollout creates neither SQL writer credentials nor factor-reset
+configuration. Those operations remain separately unqualified; a visible related
+account form is not evidence that its backend operation is ready. Public mail
+services and their configuration are preserved. Test actual native startup and
+recovery-contact submission before claiming contact readiness.
+
+Use the reviewed optimized helper artifact. Its one-time installed-library
+verification has a finite 30-second startup budget; request deadlines are unchanged.
+A born process, early `rcctl check` or newly bound socket alone is not readiness.
+Verify a real signed account-admission response before starting Web, then require
+the public TLS login entry200 before a credential-backed journey. Web captures
+account client capability at startup; after replacing/restarting its account
+helper, restart Web only after that authority is ready.
+
+Retain the env file's root ownership, Web-readable group and 0640 mode when
+replacing it; private Web key copies remain Web-owned 0600. Enable the OSMAP account
+service and preserve all other service order while placing it immediately before
+Web. The current process-only rc check does not prove reboot readiness. This
+repair's installed contact/persistence results qualify its controlled current-host
+journey, not boot sequencing or an independent-host installation.

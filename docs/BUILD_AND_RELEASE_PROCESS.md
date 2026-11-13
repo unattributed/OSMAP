@@ -376,3 +376,13 @@ operator credentials are preserved. Fresh recovery disposition is required.
 Do not infer a password update from successful root fixture provisioning or
 private profile construction. The wrapper's cross-session getsid model was
 invalid on OpenBSD and must not authorize cleanup or historical PID signals.
+
+## 2026-11-13 — Scoped Toronto recovery-contact repair evidence
+
+The active ledger records optimized account-helper source/artifact binding,
+installed signed admission, actual HTTPS contact proof and refusal controls,
+restart persistence, exact-owned fixture cleanup and final owner-only activation.
+All source commits require normal hooks, Shopkeeper signatures and ordinary
+protected-main PR delivery. This evidence supports the selected-account contact
+repair, not a full strict-release gate, boot qualification, other account controls
+or independent-host support. No owner credential or contact mutation is inferred.

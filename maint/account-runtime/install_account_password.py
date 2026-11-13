@@ -270,9 +270,11 @@ def require_helper_absent(images, end):
                 'active_account_helper_or_worker')
     raw = fixed_observation('fstat', end)
     lines = raw.splitlines()
-    require(lines and lines[0].split() ==
-            [b'USER', b'CMD', b'PID', b'FD', b'DEV', b'INUM', b'MODE', b'R/W', b'SZ|DV', b'NAME'],
-            'installation_fstat_header')
+    # Numeric fstat may omit the optional pathname column. Executable custody
+    # uses DEV/INUM below; require their ordered columns independently of NAME.
+    header = lines[0].split() if lines else []
+    numeric = [b'USER', b'CMD', b'PID', b'FD', b'DEV', b'INUM', b'MODE', b'R/W', b'SZ|DV']
+    require(header in (numeric, numeric + [b'NAME']), 'installation_fstat_header')
     for line in lines[1:]:
         fields = line.split()
         require(len(fields) >= 4 and fields[2].isdigit(), 'installation_fstat_shape')

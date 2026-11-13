@@ -287,7 +287,11 @@ fn run_operator_service_with_trace(
     if !crate::openbsd::password_native_authority() {
         return Err(Error::Unavailable);
     }
-    let startup_deadline = Instant::now() + Duration::from_secs(5);
+    // Capture and verify the installed SQL/hash library closures before sealing.
+    // This happens once, before accepting requests, and can exceed five seconds
+    // on a supported host. Keep startup finite without spending a request's
+    // authentication or mutation deadline on this shared preparation.
+    let startup_deadline = Instant::now() + Duration::from_secs(30);
     trace.set(Op::ServiceDumps);
     crate::openbsd::disable_core_dumps().map_err(|e| {
         trace.io(&e);
