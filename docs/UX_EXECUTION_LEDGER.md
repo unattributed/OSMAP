@@ -1,3 +1,88 @@
+## 2026-11-14 — Ammonia remediation on Toronto and obsd1
+
+The operator explicitly requests immediate updates to both servers for
+RUSTSEC-2026-0533. This standalone security work does not reopen accepted UX
+slices. Root owns source, Git, native build and serialized deployment;
+`ammonia_boundary` independently checks the sanitizer boundary, `docs_review`
+checks deployment/recovery, and a fresh candidate reviewer checks the final diff.
+
+Outcome: both hosts load an exact-source OSMAP Web binary built with ammonia
+4.1.9; the advisory trigger and ordinary HTML rendering pass on OpenBSD, and
+configuration, account/key state, helper and public mail service identities are
+preserved. Integrate the already published PR #84 security/test/inventory files
+into main without importing the separate OSMAP-ADMIN proposal. Preserve the
+signed README/decision-log rewrite and the earlier audit-blocked push.
+
+Fresh prerequisites: expected hostnames confirmed at Toronto at 216.128.179.75 and
+obsd1 at 192.168.1.44; both current installed Web digests are `201c1540`, both source
+lockfiles select 4.1.8. Source/local checks and matching native build/tests precede
+installation. Installed private state is compared by protected hashes, never
+exported. Use the existing atomic Web installer/readback/recovery method, with
+per-host admission, saved original, loaded-executable identity and verified TLS
+login. Restart OSMAP Web only; no Dovecot/Postfix/MariaDB lifecycle or configuration
+change, owner credential/key/message operation, or new release acceptance.
+
+Minimum checks: focused sanitizer (11) and rendering (32), existing normal delivery
+hooks, source/hash-verified OpenBSD build, actual native sanitizer/rendering
+cases, per-host candidate and backup readback, Web loaded-image/TLS entry and
+fresh preservation readback. Build bound 600s per compiler action; installation
+bound 360s including bounded rollback, with retained diagnostics and stage on
+uncertainty. Two failures at one boundary require independent reassessment;
+no unchanged retry or invented memory/release prerequisite. Prior preparation
+cost UNKNOWN; actual invocations retain measured elapsed outcomes. All new
+native/build/install results remain NOT_RUN until recorded below.
+
+### 2026-11-14 — Actual both-host security update result
+
+**Remediation installed on Toronto and obsd1; PR/main publication remains a
+separate pending delivery step.** The reviewed signed source is
+`cf7d226fdb091d46ced22acecdcd73d0281d0d9b`. Its OpenBSD build and selected
+native sanitizer11/rendering32 cases passed in195.030s, with the1519 source
+hashes verified before/after and the previous installed Web unchanged during
+qualification. The qualified Web binary is29100400 bytes, SHA-256
+`b0fa8955b4e3a86013923214bea8e5d9efc943d77f57e8bb9484ccd840814b1d`.
+
+obsd1 installation PASS3.622s and independent fresh readback PASS0.767s.
+Toronto installation3 PASS9.187s and independent fresh readback PASS4.877s.
+Both actual Web text mappings match the installed candidate; verified TLS login
+returns200. Configuration, purpose/private-key/account state, GPG agents,
+account/mailbox helpers and Dovecot/Postfix/MariaDB process identities are
+preserved. Only OSMAP Web was restarted. No owner credential, private-key,
+message, SMTP or account mutation was used to qualify this dependency update.
+These are sanitizer/rendering and installation results, not full authenticated
+journey, WSTG, epic or general-release acceptance.
+
+Retain actual failures separately: Toronto1 refused before Web changes because
+an optional retention file was absent. Toronto2 passed binary/preservation
+checks, failed HTTPS against an incorrect peer, restored the original executable,
+and reported rollback HTTPS UNKNOWN. Fresh read-only observation then confirmed
+the restored old Web, all six preservation categories and healthy roles; current
+DNS/listeners and TLS200 exposed the administrative-SSH/public-HTTPS address
+difference. Independent combined review approved only the corrected peer and
+fresh Toronto3 stage. Neither original failure becomes PASS. Failed stages and
+verified original binary/environment rollback copies remain private on-host.
+
+Local method failures also remain: missing Linux interpreter translation,
+obsolete report consumer, then a compound-guard refusal status. Explicit refusal
+checks and the corrected consumer passed the existing positive/wrong-digest/
+post-replacement rollback cases. These checks qualify the method only. Source
+publication retains the original ammonia-audit refusal, subsequent full gate
+PASS/SSH transport141, and full gate PASS/protected-main refusal requiring a PR
+and `local-ci / verified`; no hooks or branch protection were bypassed.
+
+Execution-log SHA-256 values: native
+`347257d0c1046af42a5cf5118fdf4b47d4ad34f5ebf68bd36b14911e5107c718`,
+obsd1 independent readback
+`4d684281f025c99fa54520694193d91f8b4e837915bce0ea8cd61f9b6242b0a6`,
+Toronto independent readback
+`e7ef2955b71903501ab2ba76897414938714a2dac58bec59f28c48a88e44dc02`.
+These identify the private execution logs; raw logs, configuration, keys and
+browser tokens are excluded from Git. Local retained evidence is under the
+stable `osmap-ammonia-20261114` sprint root. Root now integrates the already
+requested README/history and PR #84 documents through the existing PR branch,
+preserving both signed histories and the new chronology during conflict
+resolution. Final merge/fresh remote equality will be reported separately.
+
 2026-11-12 — **Toronto deployment observation; S10 and release remain OPEN.** Main source `43d547569543d9db004031d819d65dc10df8fcd3` and the Toronto/obsd1 byte-identical OSMAP binary were installed on the Toronto mail host. Owner password-plus-TOTP login, Inbox, personal-key unlock and decrypted reader passed on Toronto after correcting two host installation permissions. The first helper restart failed because the helper log was inaccessible through `/var/log/osmap`; corrected directory group and verified helper socket and owner Inbox. Two key unlock submissions then returned `Unavailable`; source and independent review identified the Toronto session directory's `0750` mode as a deterministic refusal before crypto dispatch; changing only that directory to `0700` yielded one confirmed unlock and decrypted message. These failures remain historical and cleanup/service health was not treated as functional PASS. This is deployment journey evidence, not S10, whole-application security, storage, account-control, or release acceptance.
 
 2026-11-12 — **S09 final UX and accessibility PASS / ACCEPTED / CLOSED under R5.** Owner all-S09 UAT, final reader Settings link, source-backed routes, actual 200% Edge zoom, signed source and matching obsd1 Web readback passed. All ten PAGE-18 security controls remain open for S10 and block epic/release acceptance. See the S09 closeout below.

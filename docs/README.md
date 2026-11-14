@@ -1,5 +1,21 @@
 # Documentation
 
+## OSMAP-ADMIN design and acceptance specifications
+
+Proposed OSMAP-ADMIN implementation references. These documents do not
+authorize production migration, deployment or PostfixAdmin retirement.
+
+- [`OSMAP_ADMIN_SYSTEM_ARCHITECTURE.md`](OSMAP_ADMIN_SYSTEM_ARCHITECTURE.md): Rust service boundaries and trust model.
+- [`OSMAP_ADMIN_DATABASE_DESIGN.md`](OSMAP_ADMIN_DATABASE_DESIGN.md): MariaDB schema, grants and writer ownership.
+- [`OSMAP_ADMIN_IDENTITY_LIFECYCLE.md`](OSMAP_ADMIN_IDENTITY_LIFECYCLE.md): Account, credential, TOTP and retirement workflows.
+- [`OSMAP_ADMIN_SECURITY_MODEL.md`](OSMAP_ADMIN_SECURITY_MODEL.md): Admin authentication, authorization, audit and threats.
+- [`OSMAP_ADMIN_UX_SPECIFICATION.md`](OSMAP_ADMIN_UX_SPECIFICATION.md): Administrative pages using the existing OSMAP UX.
+- [`OSMAP_ADMIN_INSTALLATION_AND_UPGRADE.md`](OSMAP_ADMIN_INSTALLATION_AND_UPGRADE.md): OpenBSD installation, upgrades and recovery.
+- [`OSMAP_ADMIN_MIGRATION_AND_ROLLBACK.md`](OSMAP_ADMIN_MIGRATION_AND_ROLLBACK.md): PostfixAdmin migration, cutover and rollback.
+- [`OSMAP_ADMIN_TEST_AND_ACCEPTANCE_PLAN.md`](OSMAP_ADMIN_TEST_AND_ACCEPTANCE_PLAN.md): Functional, WSTG, recovery and release acceptance.
+
+
+- `OSMAP_ADMIN_PROJECT_PLAN.md` — [OSMAP-ADMIN project plan](OSMAP_ADMIN_PROJECT_PLAN.md): proposed Rust control-plane architecture, fresh-install bootstrap, migration, enrollment, phased delivery, and acceptance gates. Documentation only; no production change or PostfixAdmin retirement.
 - `UX_PLAN_AMENDMENT_R5.md` — [approved S09/S10 privacy boundary](UX_PLAN_AMENDMENT_R5.md): operator approved the exact historical `UX_PLAN_AMENDMENT_R5_PROPOSED.md` [proposal](UX_PLAN_AMENDMENT_R5_PROPOSED.md) on November 12. S09 UI/UAT closure is separate from ten PAGE-18 security controls retained as S10 and epic/release blockers.
 - `OSMAP_CHECKOUT_RECONCILIATION_20261109.md` — [2026-11-09 checkout reconciliation](OSMAP_CHECKOUT_RECONCILIATION_20261109.md): preserved superseded S05 deltas and account-service startup recovery; ongoing S08 work excluded.
 
