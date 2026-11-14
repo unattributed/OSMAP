@@ -1356,3 +1356,15 @@ retain active-frontend credential/session theft as residual risk. Align the
 architecture, lifecycle, installation, UX and acceptance documents with those
 boundaries. This corrects a proposed design; it implements no ADMIN service or
 mail/database migration and changes neither deployed Web binary.
+
+### Same day — Link the companion mail-platform bootstrap
+
+The operator identifies the missing relationship between OSMAP installation and
+[openbsd-mailstack](https://github.com/unattributed/openbsd-mailstack). Link its
+published new-host installation, phased configuration/verification and backend
+operations path before OSMAP-specific setup. Keep the existing-host path and
+OSMAP's current helper/authentication/configuration contracts explicit. Its wider
+Roundcube/PostfixAdmin application set does not become an OSMAP browser runtime
+prerequisite, and its dated integration observations do not replace current
+OSMAP procedures. This is a two-file documentation correction; no bootstrap,
+host operation, service change or new installation qualification is performed.
