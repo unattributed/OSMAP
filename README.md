@@ -47,8 +47,9 @@ The UX work was
 promoted to `main` on 2026-11-12. Installed and owner-accepted journeys exist on
 the documented OpenBSD hosts, but independent-host installation, broader account
 enrollment, and whole-application security/release qualification remain open.
-The 2026-11-13 Toronto recovery-contact acceptance covers one selected account;
-it does not enable every account-management operation for all users.
+The 2026-11-13 recovery-contact acceptance on the production mail host covers
+one selected pilot account; it does not enable every account-management
+operation for all users.
 
 Feature availability depends on the installed helpers, account enrollment, keys,
 and configuration. Consult [current project status](docs/CURRENT_PROJECT_STATUS.md)
@@ -242,8 +243,8 @@ Enroll controlled accounts through the [TOTP provisioning procedure](docs/TOTP_O
 Account operations require the separately configured [account runtime](maint/account-runtime/).
 OpenPGP requires the [native preparation and key-custody procedure](maint/openpgp-runtime/deployment.md)
 and later [personal-key workflow](docs/UX_SLICE_S07_04.md).
-The [Toronto recovery-contact procedure](maint/openbsd/README.md#bounded-toronto-recovery-contact-activation)
-covers a selected-account repair.
+The [production-host recovery-contact procedure](maint/openbsd/README.md#bounded-production-host-recovery-contact-activation)
+covers a repair for the selected pilot account.
 
 Before enabling OSMAP at boot with `rcctl enable`, verify the complete dependency
 startup order and reboot behavior on that host. Account admission must be ready
