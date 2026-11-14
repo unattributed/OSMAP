@@ -82,12 +82,14 @@ SCHEDULED_TEST_ONLY_REGISTRATIONS = {
 }
 
 
-# Operator-approved fixed password SQL adapter. Admission covers CWE-89 only;
+# Independently reviewed fixed SQL adapters. Admission covers CWE-89 only;
 # every byte change requires renewed source review, even without a regex hit.
 # Other production rules continue to scan the entire file.
 REVIEWED_SQL_RUST_PATHS = {
     "src/account_password_backend.rs":
         "31f6fd1f8b2a4b4b53235d98ad9490053eeaf25757da662e528922c8b709e1ba",
+    "src/admin_postfixadmin.rs":
+        "8d4bc9429f77da838b878d245c6a86fac151f8f95931518522cf5cedd0c869a0",
 }
 
 
@@ -248,7 +250,7 @@ def scan_rust(root: Path) -> list[Finding]:
             if not reviewed_sql:
                 findings.append(Finding(
                     "CWE-89", "reviewed SQL boundary changed; renewed source review required",
-                    Path(rel), 1, "fixed password adapter digest differs",
+                    Path(rel), 1, "reviewed SQL adapter digest differs",
                 ))
         for line_number, line in production_rust_lines(path):
             for rule in PRODUCTION_RULES:

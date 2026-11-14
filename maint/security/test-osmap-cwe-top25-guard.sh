@@ -167,6 +167,12 @@ path.write_text(source.replace("LIMIT 2;", "LIMIT 3;", 1))
 PYCODE
 assert_fails_with "$reviewed_sql_repo" "reviewed SQL boundary changed"
 
+reviewed_admin_repo=$(make_repo reviewed_admin_sql)
+cp "$repo_root/src/admin_postfixadmin.rs" "$reviewed_admin_repo/src/admin_postfixadmin.rs"
+assert_passes "$reviewed_admin_repo"
+printf '\n' >> "$reviewed_admin_repo/src/admin_postfixadmin.rs"
+assert_fails_with "$reviewed_admin_repo" "reviewed SQL boundary changed"
+
 unknown_sql_repo=$(make_repo unknown_production_sql)
 cat > "$unknown_sql_repo/src/mailbox.rs" <<'EOF'
 pub fn unreviewed_query() -> &'static str { "SELECT password FROM mailbox" }
