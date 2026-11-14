@@ -10,6 +10,12 @@ mail storage configuration. Those services remain authoritative for mail deliver
 authentication, and storage. The design prioritizes least privilege, bounded work,
 safe message rendering, and recoverable operations.
 
+The companion [openbsd-mailstack](https://github.com/unattributed/openbsd-mailstack)
+project provides the OpenBSD mail-platform bootstrap, configuration, and operations
+framework for the backend services OSMAP uses. It gives new-host operators a
+documented path to prepare that foundation before OSMAP's application and helper
+integration.
+
 [Getting started](#getting-started) · [Installation](#openbsd-installation) ·
 [Operations](#operations-and-monitoring) · [Development](#development) ·
 [Decision history](docs/DECISION_LOG.md)
@@ -136,6 +142,23 @@ Installation currently requires administrator integration. There is no qualified
 general-purpose installer. The procedures below describe the existing host
 layout; adapt paths, identities, hostname, and backend topology before use on
 another host.
+
+### Prepare the mail backend
+
+For a new OpenBSD mail host, start with the companion
+[openbsd-mailstack install guide](https://github.com/unattributed/openbsd-mailstack/blob/main/docs/install/README.md)
+and [phased installation sequence](https://github.com/unattributed/openbsd-mailstack/blob/main/docs/install/09-install-order-and-phase-sequence.md).
+They cover operator-supplied domains, networking and secrets, configuration
+rendering, QEMU validation, phased deployment, and post-install verification.
+The project also supplies backend backup, monitoring, and maintenance guidance.
+
+Once the backend is working, continue with OSMAP's service identities, Dovecot
+listeners, helper grants, TOTP enrollment, and nginx integration below. For an
+existing mail host, verify those interfaces against its current configuration.
+The companion's wider stack includes Roundcube and PostfixAdmin; those web
+applications are not prerequisites for OSMAP's browser mail interface. Its
+[2026-06-28 OSMAP integration record](https://github.com/unattributed/openbsd-mailstack/blob/main/docs/production-mail-blackbagsecurity.md)
+explains the relationship; use this repository's current procedures for OSMAP.
 
 ### Prerequisites and configuration
 
