@@ -188,10 +188,11 @@ and the host-side checkout is already `~/OSMAP`, the repo also provides
 authoritative V1 closeout wrapper remotely and fetch the resulting summary
 report back to the local machine.
 
-## Bounded Toronto recovery-contact activation
+## Bounded production-host recovery-contact activation
 
 `provision-recovery-contact.py` prepares the existing native account pair for the
-explicitly authorized Duncan rollout on Toronto. It is an operational repair
+explicitly authorized rollout for the selected pilot account on the production
+mail host. It is an operational repair
 method, not the independent-host installer (that portability work remains open).
 Run its read-only preflight first with `--expected-host mail.blackbagsecurity.com
 --account "$RECOVERY_ACCOUNT"`; `--apply` then creates previously absent
@@ -202,8 +203,9 @@ Partial births remain retained for exact-owned recovery.
 
 Install the matching reviewed `account-passwd` and existing rc entry separately.
 Start and verify the account service before appending complete Web client settings,
-the Duncan-only rollout selector and recovery-contact delivery configuration.
-Restart OSMAP Web only. A fresh Duncan password-plus-TOTP login is required because
+the selected-account rollout selector and recovery-contact delivery configuration.
+Restart OSMAP Web only. The selected account must sign in again with password
+and TOTP because
 legacy sessions have no account epoch. No owner password/factor/contact is changed
 by provisioning, and no obsd1 record or key is copied. Controlled installed QA and
 owner contact proof are separate outcomes.

@@ -36,7 +36,7 @@ Public branch coverage at reconstruction:
 
 | Ref | Recorded tip | Treatment |
 | --- | --- | --- |
-| `origin/main` | [`14a5250`](https://github.com/unattributed/OSMAP/commit/14a5250f41b880bf924357743f888d58ddcb58da) | Published project baseline, including UX promotion and Toronto recovery repair/acceptance. |
+| `origin/main` | [`14a5250`](https://github.com/unattributed/OSMAP/commit/14a5250f41b880bf924357743f888d58ddcb58da) | Published project baseline, including UX promotion and production-host recovery repair/acceptance. |
 | `origin/feat/ux-completion-20260929` | [`6809c6a`](https://github.com/unattributed/OSMAP/commit/6809c6a861428760ec67446ab12caa3c9f313cd0) | Detailed UX development history; promoted to main through [`43d5475`](https://github.com/unattributed/OSMAP/commit/43d547569543d9db004031d819d65dc10df8fcd3). |
 | `origin/bbs/toronto-recovery-contact` | [`accaeb5`](https://github.com/unattributed/OSMAP/commit/accaeb5cfa9daf7f105b3efccd5752e42cb10e9d) | Detailed repair history; published through PR #82. |
 | `origin/bbs/toronto-recovery-uat` | [`6be6a8d`](https://github.com/unattributed/OSMAP/commit/6be6a8dce5dfdea358bd739f9614afbb7811c528) | Scoped owner acceptance; published through PR #83. |
@@ -699,9 +699,9 @@ actual native observations. Public-key UI activation is not private-key unlock,
 arbitrary correspondent authority or complete encrypted-mail acceptance.
 Sources: [`edfb2f0`](https://github.com/unattributed/OSMAP/commit/edfb2f03466976390bd4aaaa6d6ab8d985334852), [`ab4c11f`](https://github.com/unattributed/OSMAP/commit/ab4c11fbfe81fc279212d0a98c2e207cab5db67c), [`a03467d`](https://github.com/unattributed/OSMAP/commit/a03467da04c32f3b9d2a8a55d4b5c0398e7824d3), [`3cb6c8a`](https://github.com/unattributed/OSMAP/commit/3cb6c8adcac8aec2eac81a300dbc54ebfd3dfd87), [`ab405ce`](https://github.com/unattributed/OSMAP/commit/ab405ce95ba57d7826e8a639156d5746756d4ec3), [`73e630e`](https://github.com/unattributed/OSMAP/commit/73e630e151d6ad8834c4b0d50022a6334f4f65b7).
 
-## 2026-10-02 — Keep Toronto authoritative and make protected-send refusal usable
+## 2026-10-02 — Keep the production mail host authoritative and make protected-send refusal usable
 
-Connect obsd1's UX to the authoritative Toronto backend through the reviewed
+Connect obsd1's UX to the authoritative production mail backend through the reviewed
 restricted bridge, rather than synchronize independent local mailbox contents.
 Repair late-start helper recovery, mailbox Pinentry and form navigation.
 Persist compose protection choices/defaults and allow explicit current-key
@@ -972,13 +972,13 @@ without granting settings access or another mutation. Resolve Dovecot modules,
 protected MariaDB aliases and Postdrop loader context through observed native
 contracts.
 
-Install the ordinary obsd1 path and isolate its development profile from Toronto
+Install the ordinary obsd1 path and isolate its development profile from production
 credential authority. The owner's known no-write refusal reveals stock raw
 bcrypt storage: accept only well-formed supported unprefixed bcrypt alongside
 scheme-prefixed representations, without normalizing the stored snapshot.
 Controlled conditional update, old/new credential and session witnesses then
 pass. Owner successful login/change/replacement-login closes S04-02 T09 for the
-selected local development scope. It does not qualify Toronto production or
+selected local development scope. It does not qualify the production host or
 all accounts. Earlier startup, parser and failed workflow evidence remains.
 Sources: [`efb8c75`](https://github.com/unattributed/OSMAP/commit/efb8c754e36351424a3f94441f4b317ef7e7edb0), [`25cb317`](https://github.com/unattributed/OSMAP/commit/25cb31717258fe32ef9f203a90f7cdc8ec5b0adb), [`8b27d33`](https://github.com/unattributed/OSMAP/commit/8b27d33a25d9de01f8973bdcd615e40e65b33cc6), [`769784b`](https://github.com/unattributed/OSMAP/commit/769784bd64d9414b57addd30a687c09ae782f2f3), [`16d7bf4`](https://github.com/unattributed/OSMAP/commit/16d7bf4d0126e2f3186390234ffcf26ab14ad3a4), [`0c9f699`](https://github.com/unattributed/OSMAP/commit/0c9f699793d3911aa8472694462b14ade992cda9),
 [`703ed2e`](https://github.com/unattributed/OSMAP/commit/703ed2eed8ccd1d74db084f1b7ee86ad5837683c), [`a740272`](https://github.com/unattributed/OSMAP/commit/a740272427cb2ebc92f90ee3cbc8e2db4c82b4aa), [`8f3ce62`](https://github.com/unattributed/OSMAP/commit/8f3ce62a0ed14eb0351b6e9813d0f71fff7d0763), [`67148da`](https://github.com/unattributed/OSMAP/commit/67148da77971da244618d5f6f89a717af7b322c4), [`e4b2164`](https://github.com/unattributed/OSMAP/commit/e4b21648eba5028d6f4199e371b92d02f3eb3dfc), [`b94eacb`](https://github.com/unattributed/OSMAP/commit/b94eacb9a583f0cc1a999504285dbd813763202e);
@@ -1224,7 +1224,7 @@ Sources: [`4a6eae5`](https://github.com/unattributed/OSMAP/commit/4a6eae5fa29911
 [`18962ce`](https://github.com/unattributed/OSMAP/commit/18962ce66bcd2e38287639a8b9168fdf0eafbbff), [`0c1e287`](https://github.com/unattributed/OSMAP/commit/0c1e2876ace85a8b0f0b996ab5fe243dec2541a5), [`4c91ff3`](https://github.com/unattributed/OSMAP/commit/4c91ff3cf1cedcd7e3812f13f2c07f83b83d0a4b), [`b0a594f`](https://github.com/unattributed/OSMAP/commit/b0a594f9c40403d7d719f0836cd070bca7296498), [`99cb01f`](https://github.com/unattributed/OSMAP/commit/99cb01fd341db7a288d9ffc3e4faaf89dd45e269), [`7ba9b72`](https://github.com/unattributed/OSMAP/commit/7ba9b72656e4935ea061c3a2a1a6c9506a4c9cf3),
 [`1b01351`](https://github.com/unattributed/OSMAP/commit/1b01351a0a0a3b353a691210b6729b3308219735), [`d0989fe`](https://github.com/unattributed/OSMAP/commit/d0989fee42e9602a1671d8137b30f85fb1f5aab2), [`d5ca7e1`](https://github.com/unattributed/OSMAP/commit/d5ca7e13bc82a1047913eb6a1424b8b7237af44c).
 
-## 2026-11-12 — Close S09 under R5, promote UX and repair Toronto installation
+## 2026-11-12 — Close S09 under R5, promote UX and repair production installation
 
 The operator-approved R5 amendment keeps per-message remote-content exceptions
 disabled and requires truthful unavailable controls. Close S09 UX/accessibility
@@ -1238,10 +1238,10 @@ accepted source tree but does not make all source commits ancestors of main;
 this is why the branch history is included here. The promotion title does not
 close S10 or the complete release.
 
-Record the failed and corrected binary cutover/ACME scope, then Toronto owner
-login/Inbox/key-unlock/decrypted-reader evidence. Helper log-directory traversal
+Record the failed and corrected binary cutover/ACME scope, then the owner's
+login/Inbox/key-unlock/decrypted-reader evidence on the production host. Helper log-directory traversal
 and session-directory mode were concrete installation defects; correct those
-permissions and preserve the earlier failures. Toronto journey evidence does
+permissions and preserve the earlier failures. Production-host journey evidence does
 not establish all-account storage/control portability or reboot readiness.
 Recovery-contact repair is published through PR #82; detailed activation and
 owner acceptance are dated November13.
@@ -1251,15 +1251,16 @@ Sources: [`d4d48f8`](https://github.com/unattributed/OSMAP/commit/d4d48f8d9b259c
 [R5 amendment](UX_PLAN_AMENDMENT_R5.md),
 [deployment/acceptance ledger](UX_EXECUTION_LEDGER.md).
 
-## 2026-11-13 — Accept Duncan-only Toronto recovery and retain branch-only proposals
+## 2026-11-13 — Accept selected-account production recovery and retain branch-only proposals
 
-- **Toronto:** complete native admission/mutation clients with distinct locally
+- **Production mail host:** complete native admission/mutation clients with distinct locally
   born purpose keys and selected-owner enrollment. Require actual signed helper
   readiness before the Web captures clients. Use the optimized helper's finite
   30-second startup budget and support numeric `fstat` headers with/without names.
   Controlled HTTPS contact verification, refusal, restart persistence and
   exact-owned disposition pass. Record the owner's verified-contact UAT through
-  PR #83. Both native allowlists and the Web selector remain **Duncan-only**;
+  PR #83. Both native allowlists and the Web selector remain restricted to the
+  **selected pilot account**;
   all-user enrollment, other writers/reset, reboot readiness, independent-host
   portability and general release qualification remain separate.
 - **OSMAP-ADMIN proposal:** publish the project plan and design/acceptance
@@ -1305,7 +1306,7 @@ entry is not evidence that an unexecuted check passed.
 ### Same day — Authorize both-host sanitizer dependency remediation
 
 After the documentation push fails its existing ammonia4.1.8 dependency audit,
-the operator explicitly requests immediate updates on Toronto and obsd1. Carry
+the operator explicitly requests immediate updates on the production mail host and obsd1. Carry
 the published4.1.9 manifest/lock, namespace regressions and matching test/inventory
 corrections from PR #84 into main, retaining the independent ADMIN proposal on its
 branch. The product's strict HTML policy already excludes known prerequisite
@@ -1327,7 +1328,7 @@ Fresh loaded-image, configuration/key/account/process-preservation and TLS login
 checks pass. Restart only Web and retain original binary/environment rollback
 copies. No owner mail or credential operation and no full release claim.
 
-Preserve Toronto's optional-file preflight refusal and later incorrect-HTTPS-peer
+Preserve the production host's optional-file preflight refusal and later incorrect-HTTPS-peer
 failure/rollback as separate failed attempts. Read actual configuration semantics,
 DNS/listeners and current recovery before the independently reviewed changed
 attempt; avoid treating an administrative SSH address as the public TLS endpoint.

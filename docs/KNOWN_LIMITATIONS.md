@@ -4,7 +4,7 @@ Current S04-04 boundary: obsd1 runs matching installed code and the selected
 owner account is now enabled by the native rollout selector for local browser
 UAT. This does not complete recovery qualification or authorize changing the
 owner's credentials. Current LOCAL auth/mailbox routing is unchanged and does
-not qualify Toronto mailbox synchronization. The old two-terminal fixture flow
+not qualify production-mailbox synchronization. The old two-terminal fixture flow
 is withdrawn and disabled; its fixture-specific cleanup/signing actors must not
 be reused for owner state. Full T04/T05/T08/T09 remain NOT_RUN. The historical
 fixture/preparation details below predate the owner-selector change.
@@ -127,7 +127,7 @@ See [the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md) and
 
 ## Historical account and protected-mail snapshot — 2026-10-17
 
-S04-02 password change has no installed obsd1-to-Toronto workflow PASS. The
+S04-02 password change has no installed obsd1-to-production-host workflow PASS. The
 then-latest changed integration HTTP25 failed at the initial controlled Bob login
 with401; no mutation was reached and the underlying cause is unknown. A
 separate stock private-auth component passed8 controls. These results do not
@@ -172,11 +172,11 @@ inventory and administration helpers. PAGE21 exposes authenticated public-key
 inspection, import/removal, binding and policy controls. Their browser mutations
 still require human acceptance; the deployed read-only confined client probe
 does not establish that acceptance. Import alone never establishes account
-binding or recipient trust. The Duncan mailbox private key was imported into
+binding or recipient trust. The selected pilot account's mailbox private key was imported into
 its isolated obsd1 helper home. The repaired terminal Pinentry handoff has now
 passed real-account signing/verification, tamper refusal, self-encryption/
 decryption and Proton public-key encryption through the authenticated native
-helper. Duncan's account binding is present at revision 2. A real encrypted
+helper. That account's binding is present at revision 2. A real encrypted
 Proton delivery round trip and browser acceptance remain unqualified. The
 isolated agent cache remains bounded at 300 seconds. The crypto service is
 running on obsd1; automatic startup is tracked separately in the ledger.
@@ -188,9 +188,9 @@ readiness. See `UX_EXECUTION_LEDGER.md` for the exact assessed commit and host
 evidence.
 
 The authoritative-backend continuation keeps the browser on obsd1 and bridges
-password authentication and the account-bound Rust mailbox helper to Toronto.
+password authentication and the account-bound Rust mailbox helper to the production host.
 This deployment preserves obsd1 TOTP/OpenPGP custody and its existing outbound
-SMTP relay. It does not put a public OSMAP frontend on Toronto, supply mailbox
+SMTP relay. It does not put a public OSMAP frontend on the production host, supply mailbox
 passwords, or qualify encrypted Proton delivery. Live native checks established
 authoritative reads in the confined web and synthetic remote append/search/view/
 flag/move/folder operations. The HTTP check used a disposable synthetic session;

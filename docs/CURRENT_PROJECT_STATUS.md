@@ -1,10 +1,10 @@
-2026-11-14 — **Ammonia 4.1.9 installed on Toronto and obsd1.** Signed source `cf7d226fdb091d46ced22acecdcd73d0281d0d9b` produced the source-verified OpenBSD Web binary `b0fa8955b4e3a86013923214bea8e5d9efc943d77f57e8bb9484ccd840814b1d`. Eleven native sanitizer and32 rendering cases passed on obsd1; that same qualified binary's loaded-image, fresh preservation and verified TLS login200 checks passed on both hosts. Only OSMAP Web restarted; configuration, account/key state, helper/GPG and public mail processes are preserved. The reported dependency advisory is remediated in those Web deployments; an OSMAP exploit was not demonstrated. Failed local methods, both earlier Toronto attempts and publication failures remain in the [execution ledger](UX_EXECUTION_LEDGER.md). Source/PR publication and whole-application release/WSTG acceptance remain separate.
+2026-11-14 — **Ammonia 4.1.9 installed on the production mail host and obsd1.** Signed source `cf7d226fdb091d46ced22acecdcd73d0281d0d9b` produced the source-verified OpenBSD Web binary `b0fa8955b4e3a86013923214bea8e5d9efc943d77f57e8bb9484ccd840814b1d`. Eleven native sanitizer and32 rendering cases passed on obsd1; that same qualified binary's loaded-image, fresh preservation and verified TLS login200 checks passed on both hosts. Only OSMAP Web restarted; configuration, account/key state, helper/GPG and public mail processes are preserved. The reported dependency advisory is remediated in those Web deployments; an OSMAP exploit was not demonstrated. Failed local methods, both earlier production-host attempts and publication failures remain in the [execution ledger](UX_EXECUTION_LEDGER.md). Source/PR publication and whole-application release/WSTG acceptance remain separate.
 
-2026-11-13 (Asia/Bangkok) — **Toronto recovery contact owner UAT PASS / APPROVED / ACCEPTED; rollout remains Duncan-only.** The owner explicitly states that functionality UAT is approved and PASS; the supplied final screenshot shows the recovery contact verified on `mail.blackbagsecurity.com`. This accepts the installed owner contact-verification journey following the existing engineering and independent-review passes. Read-only live scope verification finds one account in each native service allowlist, both matching the selected owner, and the Web rollout selector still restricted to that owner. This is not all-user enablement or independent-host acceptance. This documentation closeout changes no account, contact, credential, key, configuration or service. Screenshot proof/authenticator values are excluded from retained project evidence.
+2026-11-13 (Asia/Bangkok) — **Production-host recovery contact owner UAT PASS / APPROVED / ACCEPTED; rollout remains limited to the selected pilot account.** The owner explicitly states that functionality UAT is approved and PASS; the supplied final screenshot shows the recovery contact verified on the production browser endpoint. This accepts the installed owner contact-verification journey following the existing engineering and independent-review passes. Read-only live scope verification finds one account in each native service allowlist, both matching the selected owner, and the Web rollout selector still restricted to that owner. This is not all-user enablement or independent-host acceptance. This documentation closeout changes no account, contact, credential, key, configuration or service. Screenshot proof/authenticator values are excluded from retained project evidence.
 
-2026-11-13 — **Toronto recovery contact ENGINEERING PASS / Duncan UAT_READY.** The missing native account-service configuration, private purpose keys and selected-account rollout are installed on `mail.blackbagsecurity.com`. Reviewed optimized helper `fbeec232` uses a finite 30-second startup budget; the standard installer accepts numeric fstat headers with or without optional NAME. Actual controlled HTTPS login, editable form, one verification-mail/proof roundtrip, refusal controls and verified persistence after Web restart PASS. Exact-owned synthetic account/mail/factor/session/credential cleanup PASS; owner-only enrollment and signed epoch0 admission PASS. Helper is enabled before Web, with unrelated service order/configuration and public mail preserved. Duncan needs a fresh login; no owner password/factor/contact was changed. Other account operations, general portability, reboot readiness and full release acceptance remain OPEN. Failed preparations/startups/logins/builds and the immediate post-restart502 remain in the active ledger.
+2026-11-13 — **Production-host recovery contact ENGINEERING PASS / pilot-account UAT_READY.** The missing native account-service configuration, private purpose keys and selected-account rollout are installed on the production mail host. Reviewed optimized helper `fbeec232` uses a finite 30-second startup budget; the standard installer accepts numeric fstat headers with or without optional NAME. Actual controlled HTTPS login, editable form, one verification-mail/proof roundtrip, refusal controls and verified persistence after Web restart PASS. Exact-owned synthetic account/mail/factor/session/credential cleanup PASS; owner-only enrollment and signed epoch0 admission PASS. Helper is enabled before Web, with unrelated service order/configuration and public mail preserved. The owner needs a fresh login; no owner password/factor/contact was changed. Other account operations, general portability, reboot readiness and full release acceptance remain OPEN. Failed preparations/startups/logins/builds and the immediate post-restart502 remain in the active ledger.
 
-2026-11-12 — **Toronto UX deployment: login, Inbox, and protected reading PASS; full application acceptance OPEN.** `origin/main` at `43d547569543d9db004031d819d65dc10df8fcd3` has the same executable tree as the accepted UX branch; Toronto's installed OSMAP binary SHA-256 is `201c154090effe61209ae8aa510646567a375838111f0b9e5ac10cb9fd6372c5`, byte-identical to obsd1's. The owner signed in to `mail.blackbagsecurity.com` with the saved password and TOTP, opened Inbox, unlocked the personal key, and displayed a decrypted incoming message. Two Toronto installation defects were found and repaired: the mailbox helper could not restart while its existing log was inaccessible through `/var/log/osmap` (directory group corrected to `vmail`, helper/socket and owner Inbox retested), and two personal-key unlock attempts returned `Unavailable` because `/var/lib/osmap/sessions` was mode `0750` while guarded actions require `0700` (mode corrected with owner and inode unchanged; one subsequent owner unlock and decrypt passed). The original failures remain in the host logs. Dovecot, Postfix, and MariaDB were not restarted for these repairs. Storage reporting, other account controls, and the open S10 security obligations are not qualified by these journey results.
+2026-11-12 — **Production-host UX deployment: login, Inbox, and protected reading PASS; full application acceptance OPEN.** `origin/main` at `43d547569543d9db004031d819d65dc10df8fcd3` has the same executable tree as the accepted UX branch; the production host's installed OSMAP binary SHA-256 is `201c154090effe61209ae8aa510646567a375838111f0b9e5ac10cb9fd6372c5`, byte-identical to obsd1's. The owner signed in to the production browser endpoint with the saved password and TOTP, opened Inbox, unlocked the personal key, and displayed a decrypted incoming message. Two production-host installation defects were found and repaired: the mailbox helper could not restart while its existing log was inaccessible through `/var/log/osmap` (directory group corrected to `vmail`, helper/socket and owner Inbox retested), and two personal-key unlock attempts returned `Unavailable` because `/var/lib/osmap/sessions` was mode `0750` while guarded actions require `0700` (mode corrected with owner and inode unchanged; one subsequent owner unlock and decrypt passed). The original failures remain in the host logs. Dovecot, Postfix, and MariaDB were not restarted for these repairs. Storage reporting, other account controls, and the open S10 security obligations are not qualified by these journey results.
 
 2026-11-12 — **S09 final UX and accessibility PASS / ACCEPTED / CLOSED under R5.** Owner all-S09 UAT, final reader Settings link, source-backed routes, actual 200% Edge zoom, signed source and matching obsd1 Web readback passed. All ten PAGE-18 security controls remain open for S10 and block epic/release acceptance. See the S09 closeout below.
 
@@ -48,7 +48,7 @@
 
 2026-11-06 — **Account-generic storage UAT ACCEPTED / PASS.** Owner explicitly states “UAT = PASS” and “UAT approved” after reviewing the signed-in storage screenshots and the presentation explanation. Dashboard and General Settings show matching 165.1 MiB message usage and 200.0 MiB configured quota; other pages intentionally offer View storage without an extra query. This accepts the current storage correction. Fresh credential entry is not separately asserted. Documents remains removed; remaining S08-03 checks and whole-sprint acceptance are unchanged. Documentation-only record; no host, mailbox, quota or runtime changes.
 
-2026-11-06 — **Account-generic mail storage correction installed; engineering PASS, owner UAT ready.** The mail stack resolves each account's existing maildir/quota. The named storage service and fstab entries are retired after exact preservation of469messages,28mailbox identities and26subscriptions. Original image,old home and external metadata retained. Two independent native accounts with different paths/limits pass local saves,over-quota refusal and signed helper reports; foreign reports/grants refuse. Matching Web f0a0564b installed, current signed admission PASS, credentials/TOTP/epoch/GPG preserved and public mail masters uninterrupted. Documents routes/UI dependencies removed; data retained. Toronto unchanged. Signed4b794e2/5e6889d published normally; fresh origin equality0/0. Full normal developer gate passes2335Rust library tests,0failures,90explicit ignores plus integration,Clippy,formatting and repository checks; reported local nginx/credential skips remain unclaimed. Fresh owner login/storage UAT and previous S08-03 pending checks remain separate. See UX_SLICE_S08_01.md.
+2026-11-06 — **Account-generic mail storage correction installed; engineering PASS, owner UAT ready.** The mail stack resolves each account's existing maildir/quota. The named storage service and fstab entries are retired after exact preservation of469messages,28mailbox identities and26subscriptions. Original image,old home and external metadata retained. Two independent native accounts with different paths/limits pass local saves,over-quota refusal and signed helper reports; foreign reports/grants refuse. Matching Web f0a0564b installed, current signed admission PASS, credentials/TOTP/epoch/GPG preserved and public mail masters uninterrupted. Documents routes/UI dependencies removed; data retained. The production host was unchanged. Signed4b794e2/5e6889d published normally; fresh origin equality0/0. Full normal developer gate passes2335Rust library tests,0failures,90explicit ignores plus integration,Clippy,formatting and repository checks; reported local nginx/credential skips remain unclaimed. Fresh owner login/storage UAT and previous S08-03 pending checks remain separate. See UX_SLICE_S08_01.md.
 
 2026-11-06 — **Trash selective-deletion UAT ACCEPTED / PASS.** Owner reports selective testing and explicitly approves UAT. The supplied result records seven confirmed deletions, zero refusals, zero unconfirmed results and zero unattempted messages, with absence confirmed for every deleted item. This records the owner-tested Trash correction; it does not assert that every new Trash action was individually exercised or close remaining S08 scheduling, cancellation, Snooze or Drafts acceptance. No further mailbox action accompanied this record.
 
@@ -66,7 +66,7 @@
 
 2026-11-05 — **Owner scope correction: Documents removed; development and UAT stopped.** Earlier Documents records below preserve execution history, not current approval or acceptance. This follow-up adds only the owner-requested **Delete all notifications** beside **Mark all as read** under S08-04, reusing Rust account-private dismissal/CAS; no mailbox, quota, Documents or mail-service configuration changes, and no silent rollback. Notification bulk-delete engineering is **UAT_READY**: local53/0 and matching OpenBSD53/0 with one separate opt-in ignore, strict all-target Clippy and independent source/native/installed review pass. WebPID67146 loads matching main20b5185e; account/helper/GPG/configuration unchanged, nine checked roles healthy and HTTPS login200. Owner acceptance and ordinary signed delivery receipts remain separate.
 
-2026-11-05 — **S08-01 installed Documents lifecycle verified; owner acceptance pending.** Duncan’s obsd1 mailbox is on its approved 200 MiB shared native filesystem. Cutover parity preserves all 26 mailboxes, 475 messages, 26 subscriptions, native identities/raw bytes and Sieve; original home and archives are retained. Fresh isolated first-use and actual installed Runtime/helper upload, exact binary download, Bin refusal, restore and generated-ID deletion pass. Existing records/folders, signed epoch, configuration and service availability remain preserved. Earlier installed15/17 lookup refusals are retained with historical cause UNKNOWN; diagnostic-only main18 verifies the current lifecycle and does not establish a causal fix. Main18 SHA256 is6cb784557bfbbcd7edd503aecd9825cdf84bd333704334cbad043cc9d2f6a9db. Notification bulk-read/delete/save feedback is installed and already signed at88c6b5f. Signed delivery is checked separately from engineering qualification; full owner HTTP/T09 acceptance remains pending. Toronto was not contacted or changed; no reboot was performed. Earlier entries below are historical.
+2026-11-05 — **S08-01 installed Documents lifecycle verified; owner acceptance pending.** The selected pilot account’s obsd1 mailbox is on its approved 200 MiB shared native filesystem. Cutover parity preserves all 26 mailboxes, 475 messages, 26 subscriptions, native identities/raw bytes and Sieve; original home and archives are retained. Fresh isolated first-use and actual installed Runtime/helper upload, exact binary download, Bin refusal, restore and generated-ID deletion pass. Existing records/folders, signed epoch, configuration and service availability remain preserved. Earlier installed15/17 lookup refusals are retained with historical cause UNKNOWN; diagnostic-only main18 verifies the current lifecycle and does not establish a causal fix. Main18 SHA256 is6cb784557bfbbcd7edd503aecd9825cdf84bd333704334cbad043cc9d2f6a9db. Notification bulk-read/delete/save feedback is installed and already signed at88c6b5f. Signed delivery is checked separately from engineering qualification; full owner HTTP/T09 acceptance remains pending. The production host was not contacted or changed; no reboot was performed. Earlier entries below are historical.
 
 2026-11-05 — **S08-03 and S08-04 installed engineering UAT_READY; owner T09 pending.** Normal signed source681ab5e is published with fresh exact branch equality and0/0 after2317RustPASS/0FAIL/89explicit ignores and the full normal delivery path. Actual ordinary post-seal background dispatch, exact Sent/typed receipt, subsequent-pass duplicate suppression, foreign-state preservation and cleanup pass; independent result review is GO. Test-only scan classification corrections preserve production Rust and installed Webdb383665. S08-02 stays accepted. S08-01 reports the selected200MiB quota; full Documents activation awaits the explicit obsd1-only mailbox cutover decision. Whole S08 remains open.
 
@@ -78,7 +78,7 @@
 
 2026-11-05 — **S08-03 installed engineering ready; owner T09 pending. S08-04 implementation begins.** Signed sourceba6c49b is synchronized with fresh0/0; normal2294RustPASS/0FAIL/89explicitignores and matching native/installed checks pass. Web93a16702 is loaded; helper/account/agents/configuration preserved, HTTPS200/nine roles and current signed account admission pass. Notification work reuses existing stores/producers with explicit browser consent. S08-01 Documents enforcement remains OPEN; S08-02 stays accepted.
 
-2026-11-05 — **Owner-selected200MiB quota applied on obsd1; full S08 remains IN_PROGRESS.** Duncan's configured quota and prepared unused Documents filesystem now both report209715200bytes. Actual installed Rust signed admission/storage report passes with172605611messagebytes; credential/epoch/mapping/configuration remain unchanged. Native unused-profile quota readback and rc check pass, fstab is restored and checked mail services run; no owner mailbox migration or Toronto change occurred. Documents filename search remains installed through the existing owner-private index and isolated download routes. Full installed Documents lifecycle/enforcement acceptance remains open; S08-02 is accepted, S08-03/04 remain open. See UX_SLICE_S08_01.md for preserved failures and exact qualification boundaries.
+2026-11-05 — **Owner-selected200MiB quota applied on obsd1; full S08 remains IN_PROGRESS.** The selected pilot account's configured quota and prepared unused Documents filesystem now both report209715200bytes. Actual installed Rust signed admission/storage report passes with172605611messagebytes; credential/epoch/mapping/configuration remain unchanged. Native unused-profile quota readback and rc check pass, fstab is restored and checked mail services run; no owner mailbox migration or production-host change occurred. Documents filename search remains installed through the existing owner-private index and isolated download routes. Full installed Documents lifecycle/enforcement acceptance remains open; S08-02 is accepted, S08-03/04 remain open. See UX_SLICE_S08_01.md for preserved failures and exact qualification boundaries.
 2026-11-05 — **S08-03 engineering in progress; isolated native scheduled delivery PASS, installation and owner acceptance open.** Reused Rust stores, journal, prepared-send pipeline, SMTP and Sent path support bounded captured scheduled jobs and authenticated native HTML create/list/edit/cancel controls. Focused scheduler34, source-attachment6, codec-accounting4, Runtime4 and UI6 cases pass within their source scope, with overlap between suites. The Schedule/contact-action refusal is corrected; selected attachments are captured without a later source-message dependency. The matching OpenBSD actor passes actual protected submission, signature/decryption/content checks, scoped real Sent, locked-key and changed controlled-epoch refusals, lost-final-acknowledgement Unknown and replay suppression; disposable cleanup and independent result review pass. The actual confined Serve worker separately passes its enforced-seal, persisted-claim and safe-unavailable-service refusal check in1.23seconds; the existing browser protected-send native regression passes in6.11seconds with fresh keys. These checks do not qualify the actual account DB or positive post-seal SMTP. Ordinary signed delivery and matching installation continue. S08-02 remains accepted; full S08-01 Documents integration and S08-04 notifications remain open.
 
 2026-11-05 (Asia/Bangkok) — **Storage sidebar UAT PASS; accepted.** The owner explicitly confirms `UAT = PASS` and directs continuing unfinished S08. Installed Web17a1395f matches signed implementation1af693c, delivered through normal gates with2235 Rust tests passing, zero failures,87 explicit native/external ignores and fresh exact GitHub equality. Existing scoped Runtime/helper/signed-admission/both-rail/foreign tests and independent review pass; owner acceptance now closes this storage presentation correction. Full Documents shared-quota, scheduled send/snooze and remaining notification obligations stay open; accepted S08-02 is reused. See UX_SLICE_S08_01.md.
@@ -89,7 +89,7 @@
 
 2026-11-04 historical engineering checkpoint — Native mixed-writer FFS quota, complete Store lifecycle, two-pass mailbox migration rehearsal, actual sealed helper worker and corrected authenticated 10-MiB helper journey passed within their recorded fixture/source scope. The unused profile remains separate from the owner's active mailbox. These results are retained evidence, not current installed reporting or complete Documents acceptance. No owner mailbox migration was performed.
 
-2026-11-04 previous checkpoint — **S08-01 was BLOCKED on shared native quota authority; not ready for UAT.** Rust storage summaries and account-specific dashboard/General wiring pass. Isolated native upload/download/Bin/restore/expunge pass, then simultaneous saves admit86016bytes under65536, with native counter and actual stored bytes agreeing. The safety correction refuses Documents writes for all unqualified drivers; no native driver is yet qualified. Current obsd1 SQL maps all mailboxes to UID/GID2000, so a simple filesystem quota cannot isolate Duncan. A bounded native hard-quota/storage design and any necessary public-configuration authority are required; increasing Duncan's numeric quota alone is insufficient. Public services/account/quota/config remain unchanged, and S07 remains accepted. Source delivery is a safety checkpoint, not slice completion. See UX_SLICE_S08_01.md.
+2026-11-04 previous checkpoint — **S08-01 was BLOCKED on shared native quota authority; not ready for UAT.** Rust storage summaries and account-specific dashboard/General wiring pass. Isolated native upload/download/Bin/restore/expunge pass, then simultaneous saves admit86016bytes under65536, with native counter and actual stored bytes agreeing. The safety correction refuses Documents writes for all unqualified drivers; no native driver is yet qualified. Current obsd1 SQL maps all mailboxes to UID/GID2000, so a simple filesystem quota cannot isolate the selected pilot account. A bounded native hard-quota/storage design and any necessary public-configuration authority are required; increasing the selected pilot account's numeric quota alone is insufficient. Public services/account/quota/config remain unchanged, and S07 remains accepted. Source delivery is a safety checkpoint, not slice completion. See UX_SLICE_S08_01.md.
 
 2026-11-04 (Asia/Bangkok) — **Remembered personal-key access UAT PASS; ACCEPTED and APPROVED.** The owner explicitly reports: “UAT is PASS / UAT accepted, and approved”, following the fixed-deadline fresh-sign-in check and the requested ordinary Sign out check. The supplied fresh-sign-in screenshot shows both current-session and remembered access expiring at the unchanged 2026-11-04 18:29:58 UTC deadline. This closes the remembered-key follow-up to the accepted S07 result. It records owner functional acceptance of the installed result; broader epic and production-release security obligations remain separate. Implementation and installed qualification are retained below.
 
@@ -101,7 +101,7 @@
 
 2026-11-03 (Asia/Bangkok) — **S07 ACCEPTED; all four slices S07-01–04 closed with T01–T09 PASS within sprint scope.** Owner reported personal-key unlock success and supplied Sent evidence of a cryptographically valid signature/public certificate, followed by Hotmail receipt with readable content and openpgp-public-key.asc. Owner explicitly states: Record your successful UAT = PASS “S07 accepted” (2026-11-03, Asia/Bangkok). Sprint functional acceptance only; earlier failures retained. No new full visual/keyboard/reference-matrix, cross-platform or production-release security qualification. Optional 24-hour unlock remains proposed; current eight-hour policy unchanged. Existing engineering/native/installed proof reused; records-only closeout. Next planned sprint: S08.
 
-2026-11-03 — **Personal-key import and browser unlock/lock installed on obsd1; ready for owner UAT.** Personal private keys are separate from contacts' public certificates. Existing Rust Runtime/helper paths now provide matching-key import, transient passphrase unlock, session/epoch-bound signing/decryption and account-wide lock. Source/native QA and ordinary delivery checks pass:2187 Rust passes/0 failures/87 explicit native skips, with the required native personal and real SMTP/Sent cases separately executed and passing. Signed sourcee99455d is published to the UX branch with fresh0/0. Loaded Web0d70f98b/helper1cd78ec6, exact tested worker7ab4facd/engine12d7b21b and Duncan-only opt-in are verified. HTTPS200, nine roles, protected account/key/session/config files and owner agent preservation pass. Actual Web-principal Status confirms Duncan's existing protected key,28800-second policy and no diagnostic-session grant; no owner private cryptographic operation occurred. Owner can use Settings → Keys → Your personal key → Unlock, then sign to a new recipient with encryption off. Owner signed-send/T09 remains unaccepted; arbitrary primary rotation/private export are excluded.
+2026-11-03 — **Personal-key import and browser unlock/lock installed on obsd1; ready for owner UAT.** Personal private keys are separate from contacts' public certificates. Existing Rust Runtime/helper paths now provide matching-key import, transient passphrase unlock, session/epoch-bound signing/decryption and account-wide lock. Source/native QA and ordinary delivery checks pass:2187 Rust passes/0 failures/87 explicit native skips, with the required native personal and real SMTP/Sent cases separately executed and passing. Signed sourcee99455d is published to the UX branch with fresh0/0. Loaded Web0d70f98b/helper1cd78ec6, exact tested worker7ab4facd/engine12d7b21b and opt-in limited to the selected pilot account are verified. HTTPS200, nine roles, protected account/key/session/config files and owner agent preservation pass. Actual Web-principal Status confirms the selected pilot account's existing protected key,28800-second policy and no diagnostic-session grant; no owner private cryptographic operation occurred. Owner can use Settings → Keys → Your personal key → Unlock, then sign to a new recipient with encryption off. Owner signed-send/T09 remains unaccepted; arbitrary primary rotation/private export are excluded.
 
 2026-11-03 — **Owner-selected eight-hour obsd1 UAT policy installed for the next native unlock.** Root-owned utility7ebeaac6 now sets both cache limits28800; Rust/native actual-agent flags and recovered-signature proof pass, with five actual native cases/cleanupPASS. Utility-only installation preserves keys/config/current agent34227 and nine roles; no services restarted or owner key warmed. Existing live agent retains old policy until a successful native unlock. Final in-app Unlock/Lock and session authorisation remain unimplemented; owner signed-send/T09 stillFAIL/unaccepted.
 
@@ -250,7 +250,7 @@ the delivery receipt; whole-epic and production release remain separate. See
 ASC import reads certificate emails and resolves recipients without a separate
 manual binding step. New matches default Off; saved policies are preserved and
 cross-key ambiguity blocks automatic selection. Readonly policy editors cannot
-introduce unrelated addresses. Trusted Duncan-only crypto opt-in permits usable
+introduce unrelated addresses. Trusted crypto opt-in for the selected pilot account permits usable
 local imported primaries while private grants remain pinned. Finalsend checks
 public inventory freshness under the existing policy lock. Rustsource5e8f44c/
 Web91a0c8 plus case-corrected workers710485 pass current native/installed checks.
@@ -354,7 +354,7 @@ and LOCAL auth/mailbox routing are unchanged. Only OSMAP Web restarted. Returned
 native state stayed owner Active3/original factor/no case and fixture unchanged;
 no credential or session-revocation operation was performed. A fresh normal
 login may be needed under native admission. This is installed/configured
-readiness for a browser walkthrough, not full recovery or Toronto mailbox-sync
+readiness for a browser walkthrough, not full recovery or production-mailbox synchronization
 qualification. T04/T05/T08/T09 remain NOT_RUN. The two-terminal fixture procedure
 was withdrawn, its entrypoints disabled and its owned processes stopped. Its
 failures remain preserved; no new fixture procedure is approved. S05-02 remains
@@ -484,7 +484,7 @@ settings views consistent, and a separate control account preserved.
 Both native policy files were restored exactly to their seven-account baseline,
 with the updated helper and ordinary Web running. Prior SQL, epoch, uncertainty,
 factor/replay/key and session-authority witnesses passed preservation. The
-controlled fixture remains retained outside policy enrollment. Duncan's current
+controlled fixture remains retained outside policy enrollment. The selected pilot account's current
 password and TOTP were not changed or replayed in qualification. The previous
 owner refusal remains a known no-write historical result; the operator's login
 and password-page access are confirmed, while their new change and human T09
@@ -492,8 +492,8 @@ acceptance remain pending. Source tests, native artifact, functional transaction
 restoration and owner acceptance remain separate evidence. See the
 [compatibility record](UX_S04_02_LOCAL_DEVELOPMENT_20261025.md).
 
-2026-10-25 UTC — **Duncan login is owner-confirmed; stock bcrypt password-change compatibility is being corrected.**
-At the operator's request the writable local Duncan row received the current mail
+2026-10-25 UTC — **Selected pilot account login is owner-confirmed; stock bcrypt password-change compatibility is being corrected.**
+At the operator's request the writable local selected-account row received the current mail
 password hash once, with byte-exact source/target readback, epoch 1, one old
 browser session revoked, other accounts preserved and original TOTP enrollment
 restored to the active local profile. The operator then confirmed successful
@@ -506,7 +506,7 @@ stock PostfixAdmin/Dovecot row stores a valid unprefixed 60-byte bcrypt value.
 The authoritative hash/time and active epoch 1 remained unchanged, with no
 uncertainty marker. This is a compatibility defect before replacement hashing
 or SQL UPDATE, not a password-length refusal. No candidate credential is retained
-in public source or evidence, and the operation is not repeated against Duncan.
+in public source or evidence, and the operation is not repeated against the selected pilot account.
 
 The Rust backend and Python compatibility mirror now recognize bounded raw
 bcrypt syntax while preserving exact original bytes for CAS. Actual Dovecot
@@ -524,7 +524,7 @@ synthetic Inbox. Security and Authentication & Recovery both opened the enabled,
 empty password form; all three visibility controls and Cancel passed. No password
 change was submitted in this onboarding/browser check. Separate protected
 onboarding material supplies the development login; keep it separate from the
-Toronto production entry in the password manager.
+production-host entry in the password manager.
 
 Ordinary Web `2678b730…` is the source-bound native build06 from signed `8f3ce62`;
 the qualified native helper remains `0f95a68b…`. The new helper RC `766c175c…`
@@ -543,23 +543,23 @@ and 51 protected files passed preservation. The new account remains active at
 epoch 0, with an ordinary consumed TOTP counter and no uncertainty marker.
 The original real-account authority-split failure remains a failed historical
 case. Controlled T03–T05 credential/epoch/session evidence is reused at its
-existing local scope; it is not a Toronto password-change result.
+existing local scope; it is not a production-host password-change result.
 **Human T09 is pending and S04-02 is not ACCEPTED.** See the
 [local-development report](UX_S04_02_LOCAL_DEVELOPMENT_20261025.md) and
 [short owner review](UX_S04_02_T09_ACCEPTANCE_20261025.md).
 
 2026-10-25 UTC — **Real-account readiness withdrawn; fully local UX development migration active.**
 The operator's public password-change request was unconfirmed, and the latest
-Toronto/PostfixAdmin credential failed while the old local credential worked.
+The production-host PostfixAdmin credential failed while the old local credential worked.
 Investigation confirmed independent databases: enabling global native account
-handling replaced the original Toronto authentication relay with obsd1's local
+handling replaced the original production-host authentication relay with obsd1's local
 Dovecot/SQL. Preserving the old environment strings had not preserved authority.
 The exact original environment was restored without changing credentials,
 factors, epochs or sessions. The earlier public real-account readiness claim is
 withdrawn; controlled local successes remain evidence for their actual scope.
 
 The operator now explicitly requires the complete OSMAP UX development stack on
-obsd1. A separate, read-only MariaDB baseline instance on obsd1 mirrors Toronto;
+obsd1. A separate, read-only MariaDB baseline instance on obsd1 mirrors the production host;
 the existing writable local `postfixadmin` remains isolated and unchanged.
 Replication threads, lag/error checks, all 17 table checksums and restricted
 read-only access passed. One planned source MariaDB restart enabled ROW logging;
@@ -1964,7 +1964,7 @@ publication, loaded C-plugin race qualification, paired complete native journey
 and ordinary installed Runtime remain unfinished. Actual frontend/backend
 material observations `38113943/002d813e` prove both account-purpose SSH keys,
 forced entries and connectors are absent. Frontend web identity is1001/1001
-with groups1001,1002,1003; it differs from the historical Toronto fixture drop.
+with groups1001,1002,1003; it differs from the historical production-host fixture drop.
 Implement the missing reversible purpose transports and correct current test
 consumer using existing patterns; ordinary keys remain untouched. Isolated
 bootstrap/HTTP/plugin source is not qualified by the admission pass.
@@ -2572,7 +2572,7 @@ Its structural PASS cannot establish a working application or evidence truth.
 The current verified signed synchronized baseline is
 `557b668a990df775af6665185380ccece6722673`. Normal commit/push passed1764
 Rust library cases and620 account Python cases, with48 explicit native ignores.
-Good Shopkeeper signature, fresh origin equality and source-only Toronto checkout
+Good Shopkeeper signature, fresh origin equality and source-only production-host checkout
 synchronization pass. The original missing-TMPDIR gate failure is retained.
 
 On17October the separate stock private-auth component20 passed8 controls,
@@ -2698,7 +2698,7 @@ Rust/0failed/48native ignores and597 account Python cases. Initial commit gate
 failed after Make warned that root's configured TMPDIR was absent and fell back
 to /tmp. Retain all30 private-fixture failures; unchanged source passed with a
 fresh verified short0700 directory, without a test/permission/deadline waiver.
-Standard Toronto checkout is source-only clean fast-forwarded to13572.
+Standard production-host checkout is source-only clean fast-forwarded to13572.
 
 One required matching native build passes (root81.097s/native79.787s, freshfalse,
 1256 source files unchanged, owned group gone). Artifacte6961b/54353984 bytes
@@ -2796,7 +2796,7 @@ Existing deployment documentation maps the paired fixed-purpose services without
 adding another installer or enabling the production password form.
 
 Signed source adds the missing purpose-exclusive admission transport
-from obsd1 to the authoritative Toronto helper and corrects the successful-SSH
+from obsd1 to the authoritative production-host helper and corrects the successful-SSH
 reap race in both admission and mutation transports. These paths remain disabled
 until their actual cross-host, confinement and installation requirements pass.
 The controlled HTTP successor corrects original-deadline waits and preserves
@@ -2916,7 +2916,7 @@ actual Enforce Serve seal; it handles ten real loopback wire requests. Its
 source compiles warning-free and two new refusal controls pass. Reviewc6376276
 is source-only; the exact nonroot producer, born-root guardian and closed
 HTTP/backend/cleanup consumer are being completed. Real role1001/_osmap and
-GID1003/_osmap are freshly observed on Toronto. No transaction PASS follows
+GID1003/_osmap are freshly observed on the production host. No transaction PASS follows
 from an HTTP count or source build. A new matching native binary is required;
 older5c20 does not qualify these entries. Full S04-02/installed UAT remain OPEN.
 
@@ -2972,8 +2972,8 @@ metadata executor adds extra inventories/hashes per command.
 
 Next: reuse accepted components and qualify the actual factory executors,
 browser session/epoch and IMAP/SMTP/cache
-containment together in the installed controlled password workflow. No Duncan
-password action is required. Exact source/native/failed/retained-state evidence
+containment together in the installed controlled password workflow. No password action on the selected pilot account
+is required. Exact source/native/failed/retained-state evidence
 and next owners remain in UX_EXECUTION_LEDGER.md and DECISION_LOG.md. The dated
 records below preserve historical checkpoints; they do not supersede this state.
 
@@ -2981,7 +2981,7 @@ records below preserve historical checkpoints; they do not supersede this state.
 
 Latest signed/synchronized source is `ef757944dfb223241347fdd6b2d4490c23ce0ade`:
 normal commit/push1732 Rust/539 account Python PASS, fresh origin equality and
-clean source-only standard Toronto parity. Installed pair324b is unchanged.
+clean source-only standard production-host parity. Installed pair324b is unchanged.
 Primary5 now measures first-input EPIPE after one confined private child; its
 source kills/reaps that child before result parsing. The earlier child failure
 cause remains unknown. Current retained
@@ -3016,13 +3016,13 @@ does not diagnose the historical first-input failure. No password form activatio
 
 Latest password source `a22fee6f97ca9c63040397889a2da3a505c31f10` is signed and
 synchronized; both normal gates pass1732 Rust/537 account Python cases, fresh
-origin equality/clean0/0 and source-only standard Toronto parity are verified.
+origin equality/clean0/0 and source-only standard production-host parity are verified.
 Installed pair324b remains unchanged and the password form unavailable. Fresh
 retained test-state cleanup passes independently with exact public-record/socket
 preservation. Subsequent primary3 authentication fails with underlying cause
 UNKNOWN; fixture cleanup passes, only its root code stage remains retained.
 Closed failure instrumentation, restricted SQL qualification and actual shared
-native SMTP broker startup remain in active S04-02. No Duncan action is needed
+native SMTP broker startup remain in active S04-02. No action on the selected pilot account is needed
 until the installed controlled workflow and independent audit pass. Detailed
 dated paragraphs below retain earlier checkpoints rather than superseding this
 current outcome.
@@ -3106,7 +3106,7 @@ The installed folder/label application baseline is signed source
 zero failures,44 explicit native ignores and519 account Python passes. Fresh
 origin equality and all three local branch heads are verified. Matching application
 `324b1cb90a7d8d86ea0290dcff953118e5e26f2ac49fc4f9a7ab0c267be5261e`
-is installed helper-first on authoritative Toronto, then obsd1 web. All481
+is installed helper-first on authoritative production host, then obsd1 web. All481
 compiled inputs exactly match signed source with no exclusions. Configuration,
 key agents, retention, completion records and unrelated services are preserved.
 
@@ -3192,7 +3192,7 @@ cross-account restrictions remain. One matching confined OpenBSD case passes
 populated Rename and Move with folder/message identity, exact content,
 Label/Snooze continuity, account isolation, uncertain-result recovery and current
 fixture cleanup. The matching application9685ba07 is now installed helper-first
-on Toronto and then web on obsd1, with configuration, completion state, key
+on the production host and then web on obsd1, with configuration, completion state, key
 agents and unrelated services preserved. One installed configured-peer Move
 now passes finite preparation, stale refusal, current-parent/folder identity
 and authoritative complete MIME/attachment/UID/message-GUID preservation.
@@ -3294,7 +3294,7 @@ human acceptance remain separate; this does not close S07 or the epic.
 Signed source `90461aa1f6530ce16f0c86bdc6e456d80f19dc17` is synchronized on
 `feat/ux-completion-20260929`. Matching image
 `11085bca5ecaf7f382426098e4cecc939ad0fc54a5688dfa40a0f92994074814` is installed
-on the authoritative Toronto mailbox helper and obsd1 development web. This
+on the authoritative production host mailbox helper and obsd1 development web. This
 supersedes the source-only/deployment statements in the older checkpoints below.
 
 The reproduced ordinary Pre-send refusal on unavailable unused public-key
@@ -3711,7 +3711,7 @@ The distinct stock private-auth component17 failed before authentication dispatc
 
 ### 2026-10-16 — signed device repair; actual private-primary commands now pass
 
-Source557b668 is signed with a verified Good Shopkeeper signature and synchronized to the UX branch with fresh origin equality. Both normal hooks pass1764 Rust cases/0fail/48 explicit native ignores and620 account Python cases; full commit255.214s/push259.558s wall-clock is retained. Toronto standard checkout source-only fast-forwarded d1f50 to557b668 clean in4.106s; no installed service/binary/form activation.
+Source557b668 is signed with a verified Good Shopkeeper signature and synchronized to the UX branch with fresh origin equality. Both normal hooks pass1764 Rust cases/0fail/48 explicit native ignores and620 account Python cases; full commit255.214s/push259.558s wall-clock is retained. The production-host standard checkout was fast-forwarded from d1f50 to557b668, source-only and clean in4.106s; no installed service/binary/form activation.
 
 The changed stock18 component executes all three guarded native primary commands successfully in their expected scopes: correct password accepted under the account lock, wrong password rejected, foreign canonical identity refused. All three private-ID/kernel/null-device proofs pass. Full component remains FAIL at a later unreported ProductRefused before the separate ordinary-auth command; unique reached guard remains UNKNOWN. Six controls, root17.441s/native10.344s. All born children/daemon/groups/scratch/socket/fixture namespace are gone, purpose identity removed/public records restored, standard socket preserved; root evidence stage6aa22a3c retained. Local after-parity passed; root after-parity was not reached.
 
