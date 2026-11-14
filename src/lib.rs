@@ -30,6 +30,9 @@ mod account_mutation_continuity;
 pub mod account_recovery;
 #[cfg(unix)]
 pub mod account_recovery_operator;
+#[cfg(unix)]
+#[allow(dead_code)] // Internal adapter awaits a separately authorized admin service caller.
+pub(crate) mod admin_postfixadmin;
 pub mod after_archive;
 pub mod appearance;
 pub mod archive_event;
