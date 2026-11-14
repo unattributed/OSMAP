@@ -1301,3 +1301,17 @@ and non-forced push to `origin/main` with fresh SHA equality. Runtime, live-host
 cryptographic and broad Rust qualification are outside this documentation task.
 Validation and publication results are reported with the delivered commit; this
 entry is not evidence that an unexecuted check passed.
+
+### Same day — Authorize both-host sanitizer dependency remediation
+
+After the documentation push fails its existing ammonia4.1.8 dependency audit,
+the operator explicitly requests immediate updates on Toronto and obsd1. Carry
+the published4.1.9 manifest/lock, namespace regressions and matching test/inventory
+corrections from PR #84 into main, retaining the independent ADMIN proposal on its
+branch. The product's strict HTML policy already excludes known prerequisite
+tags; an OSMAP exploit is unproven. Qualify the real OpenBSD sanitizer/rendering
+boundary, then use the existing atomic Web-only install and rollback method on
+both hosts. Preserve public mail, private account/key/configuration state and
+all earlier failed outcomes. The [remediation work order](UX_EXECUTION_LEDGER.md)
+records the bounded tests and deployment contract; source publication and actual
+installed results remain separate observations.

@@ -376,6 +376,59 @@ mod tests {
     }
 
     #[test]
+    fn ammonia_rejects_cross_namespace_mutation_payloads() {
+        // RUSTSEC-2026-0533: exercise the upstream vulnerable configurations
+        // without widening OSMAP's production allowlist.
+        for (fragment, tags, expected) in [
+            (
+                "<math><mi><svg><iframe><!--</iframe><img src onerror=alert(1)>-->",
+                ["math", "mi", "iframe"],
+                "<math><mi></mi></math>",
+            ),
+            (
+                "<svg><foreignObject><math><iframe><!--</iframe><img src onerror=alert(1)>-->",
+                ["svg", "foreignObject", "iframe"],
+                "<svg><foreignObject></foreignObject></svg>",
+            ),
+        ] {
+            let cleaned = Builder::default()
+                .add_tags(&tags)
+                .strip_comments(false)
+                .clean(fragment)
+                .to_string();
+            assert_eq!(cleaned, expected);
+        }
+    }
+
+    #[test]
+    fn strips_cross_namespace_mutation_payloads_preserving_safe_html() {
+        // Both namespace-switch directions, including all MathML text
+        // integration points, must remain inert under the product policy.
+        for fragment in [
+            "<math><mi><svg><iframe><!--</iframe><img src onerror=alert(1)>-->",
+            "<math><mo><svg><iframe><!--</iframe><img src onerror=alert(1)>-->",
+            "<math><mn><svg><iframe><!--</iframe><img src onerror=alert(1)>-->",
+            "<math><ms><svg><iframe><!--</iframe><img src onerror=alert(1)>-->",
+            "<math><mtext><svg><iframe><!--</iframe><img src onerror=alert(1)>-->",
+            "<svg><foreignObject><math><iframe><!--</iframe><img src onerror=alert(1)>-->",
+        ] {
+            let safe_html = "<p>Hello <strong>team</strong>.</p>";
+            let sanitized = sanitize_html_body(
+                HtmlRenderingPolicy::default(),
+                &format!("{safe_html}{fragment}"),
+                None,
+                16 * 1024,
+            )
+            .expect("sanitization should succeed")
+            .expect("safe formatting should remain");
+            assert_eq!(
+                sanitized.body_html.as_str(),
+                format!("<div class=\"message-html\">{safe_html}</div>")
+            );
+        }
+    }
+
+    #[test]
     fn strips_svg_animation_url_rewrite_payloads() {
         let sanitized = sanitize_html_body(
             HtmlRenderingPolicy::default(),
