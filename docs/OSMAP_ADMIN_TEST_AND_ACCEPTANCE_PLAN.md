@@ -143,9 +143,9 @@ Each table row is an independently identifiable test. Tests involving mail-accou
 | ID | Action and expected product result |
 | --- | --- |
 | F-01 | Local fresh install with empty MariaDB authority creates `osmap_mail` using the reviewed migrator, version/grant records and no PostfixAdmin/PHP dependency. |
-| F-02 | Offline first-admin bootstrap is available before a mailbox/domain exists; disabled admin becomes active only after verified own password and TOTP possession. |
+| F-02 | Offline first-admin bootstrap is available before a mailbox/domain exists; pending admin becomes active only after verified own password and TOTP possession; enrollment cannot reactivate an administratively disabled identity. |
 | F-03 | A repeated, interrupted or concurrent first-admin bootstrap does not create a second uncontrolled superuser or expose a web bootstrap endpoint. |
-| F-04 | Separate administrator password+TOTP login issues an admin-scoped session; wrong/absent factor denies access and leaves no privileged session. |
+| F-04 | Account/auth-service verification of separate administrator password+TOTP issues an admin-scoped session; wrong/absent factor, a forged Web-owned session record or a Web-only signing key cannot issue privileged authority. |
 | F-05 | Add, inspect, modify and disable a hosted domain; the relevant Postfix domain projection changes as expected, including after restart. |
 | F-06 | Duplicate or canonically equivalent domain names are rejected without a second row, alias collision or misleading UI receipt. |
 | F-07 | Domain admin can list and manage assigned domains only; foreign domain detail, count and search filters do not leak data. |

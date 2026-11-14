@@ -306,7 +306,7 @@ flowchart TD
 
 | Workflow ID | User journey | UI success and refusal conditions |
 | --- | --- | --- |
-| UX-WF-01 | Private admin sign-in | Password and TOTP verified in admin namespace; new admin session. Generic failure, bounded throttle and no subject enumeration. |
+| UX-WF-01 | Private admin sign-in | Account/auth service verifies password and TOTP in the admin namespace and issues the authoritative session; Web relays proof and handles. Generic failure, bounded throttle and no subject enumeration. |
 | UX-WF-02 | First-admin bootstrap | Offline operator procedure, then separate admin login. No `Create first administrator` public route. |
 | UX-WF-03 | Create domain | Review canonical name and policy; native Postfix recognition verified; duplicate/stale/unsupported states refused. |
 | UX-WF-04 | Create mailbox | Scoped domain, credential, quota, alias and native readback; browser enrollment pending, not falsely active. |

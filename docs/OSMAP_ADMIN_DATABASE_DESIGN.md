@@ -32,7 +32,7 @@ The **single-writer rule includes the existing OSMAP password-change helper**, P
 2. Postfix/Dovecot authenticate and route through their **actual configured SQL queries**; no SMTP, LMTP, IMAP, or submission decision depends on the OSMAP-ADMIN HTTP process.
 3. Do not create a competing OSMAP mailbox-password table. The authoritative Dovecot-compatible password hash is stored only in the selected mail-account authority. Admin-only credentials are a separate identity domain.
 4. Postfix and Dovecot receive **read-only, projection-specific** database grants, not grants to the general account or administrative tables.
-5. A browser process receives **no mail-account table write grants, DDL privileges, or protected TOTP directory access**. Only the local Rust account service makes runtime account writes; only the separately invoked local migrator makes DDL/grant changes.
+5. OSMAP-ADMIN Web receives **no mail-account table write grants, DDL privileges, or protected TOTP directory access**. Preserve the existing public OSMAP verifier's reviewed access to user-factor files and its separate replay store; relocating that boundary requires a separate reviewed integration. Only the local Rust account service makes runtime account writes; only the separately invoked local migrator makes DDL/grant changes.
 6. Preserve the installed password scheme and encoded hash *byte-for-byte* on migration; do not rehash, decrypt, normalize, or silently change hash prefixes. Preserve account canonicalization, maildir values, flags, and quota meaning.
 7. TOTP seeds and accepted counters remain in OSMAP's protected **file-backed factor** and **separate replay** stores. SQL may hold an enrollment status and opaque factor reference, **never a factor seed, OTP, replay counter, reset secret, or raw setup token**.
 8. Every mutation uses validated canonical identities, server-side authorization, an expected revision, an idempotency identity, a writer epoch, and an audited result. Stale, uncertain, mismatched, or partially applied state **fails closed**.
@@ -483,7 +483,7 @@ sequenceDiagram
     M->>DB: Record version/checksum and verified receipt
     M-->>O: Non-secret bootstrap receipt
     O->>M: One-shot bootstrap-admin via trusted console
-    M->>A: Create disabled admin + factor enrollment
+    M->>A: Create pending admin + factor enrollment
     A-->>O: Trusted local pending MFA proof
     O->>A: Confirm fresh code and no-overwrite store
     A-->>O: Admin active after verified readback
@@ -496,7 +496,7 @@ Fresh bootstrap requirements:
 3. Create `osmap_mail` only on an empty intended target. Apply numbered, checksummed scripts; after each DDL step verify exact schema shape and record a durable receipt **outside the transaction assumption**.
 4. Securely create separate SQL accounts, apply narrowly scoped permissions and verify each by logging in as that principal. The migrator remains the only DDL/grant actor and drops its active capability after completion.
 5. Render Postfix/Dovecot lookup configuration **for review**; validate queries and recipient/auth/userdb/quota behavior using isolated fixtures. **Activation of mailstack configuration is a separate authorized deployment step.**
-6. Create first disabled independent system-admin identity via one-shot *local* bootstrap. Install and verify its protected factor with a fresh code on a trusted local path before activation. Refuse concurrent, repeated or incomplete bootstrap; never expose an unauthenticated browser bootstrap route.
+6. Create first pending independent system-admin identity via one-shot *local* bootstrap. Install and verify its protected factor with a fresh code on a trusted local path before activation. Refuse concurrent, repeated or incomplete bootstrap; never expose an unauthenticated browser bootstrap route.
 7. Activate the private admin service only after schema/grant/factor/bootstrap readback. Domain and mailbox creation proceed through the scoped writer, not through the migrator.
 
 ## 9. Migration sequencing and backward compatibility

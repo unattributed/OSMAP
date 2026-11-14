@@ -1,243 +1,304 @@
 # OSMAP
 
-**2026-11-02: Owner unlock-tool failure corrected and installed.** Actual GPG named-output failure is reproduced; stdout signing/decryption and native Python-interpreter tests pass. Operational guards in the two preparation utilities now survive optimization, with normal regression coverage added. Owner private unlock/body UAT remains pending. See [the repair and audit limits](docs/UX_SLICE_S06_04.md#owner-unlock-failure-and-python-tooling-repair-2026-11-02).
+**OpenBSD Secure Mail Access Platform** is a security-focused webmail application
+for administrators who run their own OpenBSD mail infrastructure. It provides
+browser access to existing mailboxes through a Rust application, a server-rendered
+interface, and narrowly scoped local helpers.
 
-**2026-11-02: S06-01–04 source/native and consolidated installed qualification pass within scope.** The guarded obsd1 update installs the qualified Web and crypto worker. Real public encryption, typed private `Locked` refusal, current signed account-epoch admission, HTTPS and account/key/configuration/state preservation pass. Owner private-key unlock and successful encrypted-body/source/download UAT remain pending; normal signed GitHub delivery is in progress. See [the consolidated S06 result and UAT](docs/UX_SLICE_S06_04.md).
+OSMAP integrates with Dovecot, Postfix, nginx, and the host's existing account and
+mail storage configuration. Those services remain authoritative for mail delivery,
+authentication, and storage. The design prioritizes least privilege, bounded work,
+safe message rendering, and recoverable operations.
 
-**2026-11-02: S05-04 accepted — T01–T09 PASS.** The owner explicitly accepts the completed infrastructure result. Restored login, native Rust crypto/inventory/admin qualification, account-state preservation, cleanup and signed engineering delivery are recorded in the [slice acceptance](docs/UX_SLICE_S05_04.md#owner-t09-acceptance--2026-11-02). This closure updates acceptance records only.
+[Getting started](#getting-started) · [Installation](#openbsd-installation) ·
+[Operations](#operations-and-monitoring) · [Development](#development) ·
+[Decision history](docs/DECISION_LOG.md)
 
-**2026-11-02: Account-relative Welcome status repair accepted.** The owner has accepted the installed dashboard, with account-specific mailbox/public-key/session observations and expanded details. F3-T01–T09 PASS; broader host monitoring and backup/update integrations remain separate. See [F3 owner acceptance](docs/UX_FOLLOWUP_F3_ACCOUNT_STATUS.md#owner-acceptance--2026-11-02).
+## Capabilities
 
-**2026-11-01: S05-03 accepted — T01–T09 PASS.** The owner reports `S05-03 T09 = PASS` after a three-recipient functional test, with recipient-side screenshots and successful relay-submission evidence. Runtime lifecycle engineering, native recovery, matching installed QA and normal signed delivery pass. See [S05-03 acceptance and evidence](docs/UX_SLICE_S05_03.md#owner-t09-acceptance--2026-11-01).
+The current source includes:
 
-**2026-11-01: People-style Contacts owner UAT PASS on obsd1.** The people sidebar icon opens a searchable table of saved contacts and imported-key email identities, their effective encryption policies and practical Write/Add name/Edit actions. Focused source, browser, native and installed checks pass; the owner has accepted the Contacts/Compose handoff with `UAT = PASS`. See the [Contacts delivery record](docs/UX_SLICE_S05_02.md#people-style-contacts-installed--2026-11-01).
+- **Mail:** mailbox browsing, account-wide search, conversation views, reply and
+  forward, attachments, drafts and autosave, Sent copies, scheduled sending, and
+  an Outbox with recovery controls for unsent messages.
+- **Organization:** folders, Archive, Bin/Trash and Junk, message moves, labels,
+  snooze, account storage reporting, and notifications.
+- **Account and interface:** password-plus-TOTP login, session management,
+  account preferences, light/dark/system appearance, responsive layouts,
+  keyboard controls, and icon or text-label presentation.
+- **OpenPGP:** public-key inventory and import, account/recipient bindings,
+  contacts, signing and encryption, protected reading and downloads, and
+  session-bound personal-key controls through native GPGME/GnuPG helpers.
+- **Security boundaries:** CSRF and origin checks, strict HTTP/Host handling,
+  authentication and submission throttles, worker budgets, sanitized message
+  HTML, blocked remote content, and OpenBSD confinement.
 
-**2026-10-17: S04-01 complete (R4 narrowed scope).** Settings/sessions engineering, matching installed QA, independent audit and operator `S04_01_UAT=PASS` are recorded in the [slice checklist](docs/UX_SLICE_S04_01.md). Eleven required follow-up controls remain open; Sprint S04 and the epic are incomplete. Password change, TOTP management and recovery are separate work. All other stopped slices remain stopped. See [current status](docs/CURRENT_PROJECT_STATUS.md).
+## Project status
 
-**OpenBSD Secure Mail Access Platform** is a small, security-focused webmail
-application for hardened OpenBSD mail hosts.
+OSMAP is under active development; the crate version is `0.1.0`. It is
+operator-integrated software, not a turnkey general-availability release.
+The UX work was
+promoted to `main` on 2026-11-12. Installed and owner-accepted journeys exist on
+the documented OpenBSD hosts, but independent-host installation, broader account
+enrollment, and whole-application security/release qualification remain open.
+The 2026-11-13 Toronto recovery-contact acceptance covers one selected account;
+it does not enable every account-management operation for all users.
 
-OSMAP gives users browser access to an existing mail system without replacing
-nginx, Dovecot, Postfix, Rspamd, PF, TLS, or native mail clients. It is written
-in Rust, renders its interface on the server, uses narrowly scoped local scripts where implemented, and
-keeps privileged mailbox access behind a local helper boundary.
+Feature availability depends on the installed helpers, account enrollment, keys,
+and configuration. Consult [current project status](docs/CURRENT_PROJECT_STATUS.md)
+and the linked slice records for exact acceptance scope. The
+[known limitations](docs/KNOWN_LIMITATIONS.md) and
+[security model](docs/SECURITY_MODEL.md) describe the wider constraints. Historical
+V1–V15 records describe their assessed versions; later UX records cover the
+subsequent runtime OpenPGP and mail workflows.
 
-The project deliberately favors a narrow attack surface, least privilege,
-bounded resource use, safe message rendering, and reversible operations over
-feature breadth or complete Roundcube parity.
+The release history includes these bounded assurance milestones:
 
-## What OSMAP provides
+| Milestone | Assessed scope | Record |
+| --- | --- | --- |
+| V13 | Reviewed production deployment, credentialed WSTG assurance, and adversarial validation closeout | [V13 assurance](docs/V13_WSTG_ASSURANCE_INTEGRITY_AND_ADVERSARIAL_VALIDATION.md) |
+| V14 | Authenticated WebUI modernization, accessibility, and OpenPGP state UX | [V14 UX](docs/V14_STREAMLINE_WEBUI_OPENPGP_UX.md) |
+| V15 | Deployed HTTP edge/origin parser assurance | [V15 HTTP assurance](docs/V15_HTTP_DIFFERENTIAL_ASSURANCE.md) |
 
-- password-and-TOTP login, bounded sessions, logout, and session revocation;
-- mailbox and message browsing, bounded search, reply, forward, drafts,
-  attachments, local submission, and basic folder operations;
-- plain-text fallback and allowlist-sanitized HTML with remote content blocked;
-- CSRF, same-origin, Host, request parsing, throttling, and worker-budget
-  controls;
-- a server-rendered, responsive, keyboard-accessible interface with no
-  frontend framework or external asset dependency;
-- a split OpenBSD runtime: an unprivileged web process and a narrowly scoped
-  mailbox helper connected by a permissioned Unix socket; and
-- repository-owned security, regression, deployment, rollback, and evidence
-  gates.
-
-OSMAP is a webmail access layer, not a mail server. It does not replace the
-existing transport, mailbox, filtering, or TLS services.
+Across these records, the current release evidence is still bounded;
+complete Roundcube replacement, general hostile-email safety, universal
+production readiness, and full ASVS verification are not claimed. The later
+runtime decrypt, verify, sign, encrypt, PGP/MIME, and key-management
+capabilities retain their individual configuration and acceptance boundaries.
 
 ## Architecture
 
 ```text
-Browser
-   |
-   v
-nginx TLS edge
-   |
-   v
-OSMAP web service (loopback, unprivileged)
-   |                    |
-   | Unix socket        | local submission
-   v                    v
-mailbox helper       Postfix / sendmail
-   |
-   v
-Dovecot and existing mail storage
+Browser ── HTTPS ── nginx ── loopback HTTP ── OSMAP Web (_osmap)
+                                               │
+                                  authenticated local Unix sockets
+                                               │
+                     ┌─────────────────────────┼────────────────────────┐
+                     ▼                         ▼                        ▼
+              Mailbox helper            Account services         OpenPGP helpers
+                 (vmail)                  (configured)             (_osmapgpg)
+                     │                         │                        │
+              Dovecot / mail store      Account/epoch state       GPGME / GnuPG
+
+OSMAP Web ── local sendmail → Postfix → delivery
 ```
 
-The public network boundary ends at nginx. Production `serve` mode is
-loopback-only, and mailbox authority stays outside the browser-facing process.
-See the [architecture](docs/ARCHITECTURE.md) and
-[security model](docs/SECURITY_MODEL.md) for the complete trust boundaries.
+The Web service binds to loopback in production. The mailbox helper authenticates
+the local peer and authenticated request grants; the Web identity does not need direct mailbox
+ownership. Account and OpenPGP services have separate grants and configuration.
+A deployment may use the documented restricted backend bridge when mail storage
+is on another host. See [architecture](docs/ARCHITECTURE.md),
+[mailbox helper](docs/MAILBOX_READ_HELPER_MODEL.md), and
+[backend integration](maint/mail-backend/) for the boundaries and topology.
 
-## Project status
+## Getting started
 
-The operator requested a full-functional UX implementation plan covering the
-approved mockups, every-page light/dark mode, missing account/mail capabilities,
-and runtime OpenPGP. The [epic](docs/UX_FULL_FUNCTIONAL_EPIC.md) defines 12
-sprints and 48 slices with decision and security gates. Autonomous engineering
-started on 2026-09-29: intake now records the exact reference controls, real
-route baselines, architecture decisions and acceptance cases. S01 now implements
-persistent light/dark/system appearance, a native navigation rail and account
-menu, compact settings/security disclosures and responsive shared components.
-Local route, browser, persistence and accessibility-oriented checks are recorded;
-native-host qualification, independent human acceptance and deployment remain
-separate. Follow the
-[execution ledger](docs/UX_EXECUTION_LEDGER.md) for signed slice deliveries.
-That historical intake did not qualify runtime cryptography; current bounded
-OpenPGP outcomes and their remaining acceptance are recorded in
-[Current Project Status](docs/CURRENT_PROJECT_STATUS.md).
-The operator reports Roundcube removed; this epic is not a retirement project.
-
-The earlier TOTP lifecycle sprint is administratively closed with controlled
-recovery and live-account cleanup residuals. Recovery requires a short-lived
-signed human operator approval. See the [sprint record](docs/TOTP_LIFECYCLE_SPRINT.md).
-The mail host has migrated to Vultr; historical on-premises validation does not
-establish qualification of that instance.
-The earlier TOTP sprint selected obsd1 at `192.168.1.44` for its validation;
-its historical evidence does not qualify the current authoritative Vultr host.
-
-S08-02 folder/label engineering is delivered on the signed UX branch with
-matching installed helper/web application324b1cb9. Authoritative Inbox hierarchy,
-Create/Rename/Move, complete-email attachment-preserving Move, reviewed Bin/Restore,
-confirmed empty Delete, labels/reloaded badges and finite menus have scoped
-functional evidence and independent review. The repaired public Bin and Restore
-responses complete within the existing10s bound. Historical failures stay
-retained. The operator's defined human Folders usability and attachment-download
-checks PASS; independent review closes S08-02 functional acceptance. S04-02
-authoritative password change remains incomplete; development is stopped. S09 final-reference visual acceptance,
-broader S08 and epic/release completion remain separate and open. See the
-[execution ledger](docs/UX_EXECUTION_LEDGER.md) for the exact evidence and limits.
-
-OSMAP is security-sensitive; development is currently stopped. The crate is currently
-version `0.1.0`. The repository contains production-validated and deployed
-slices, but those results are bounded to the documented OpenBSD host,
-configuration, test corpus, and selected user cohort. Treat OSMAP as
-operator-integrated software, not a turnkey general-availability release.
-
-| Milestone | Brief status |
-|---|---|
-| V13 | Reviewed production deployment, credentialed WSTG assurance, and adversarial validation closeout |
-| V14 | Authenticated WebUI modernization, accessibility, and OpenPGP state UX; no JavaScript or runtime cryptography added |
-| V15 | Deployed HTTP edge/origin parser assurance; the fixed 37-case offline and live corpus passed with no policy or request-cardinality failures |
-
-The [current project status](docs/CURRENT_PROJECT_STATUS.md) and latest
-[V15 assurance record](docs/V15_HTTP_DIFFERENTIAL_ASSURANCE.md) contain the
-precise evidence and claim boundaries. Historical version documents remain
-useful as provenance, not as competing statements of current status.
-
-Important limits:
-
-- the current release evidence is still bounded;
-- complete Roundcube replacement, general hostile-email safety, universal
-  production readiness, and full ASVS verification are not claimed;
-- runtime decrypt, verify, sign, encrypt, PGP/MIME, and key-management
-  operations retain their individual implementation and acceptance limits.
-  Bounded native implementation and October14 encrypted-provider receipt/
-  decryption evidence exist; complete protected round-trip, signatures, key
-  lifecycle and readable encrypted Sent acceptance remain open; and
-- calendars, groupware, plugins, SaaS hosting, multi-tenancy, and attachment
-  preview are outside the current scope.
-
-Read [known limitations](docs/KNOWN_LIMITATIONS.md) before evaluating or
-deploying the project.
-
-## Get started
-
-The reviewed toolchain is pinned in `rust-toolchain.toml`. With Rust and the
-native build prerequisites installed:
+Use the toolchain in [`rust-toolchain.toml`](rust-toolchain.toml). The Rust language
+minimum is declared separately in [`Cargo.toml`](Cargo.toml). OpenBSD is the
+runtime target; Debian-family Linux is also used for development.
 
 ```sh
 git clone https://github.com/unattributed/OSMAP.git
 cd OSMAP
-
-cargo build
-cargo test
-make security-check
+cargo build --locked --bin osmap
 ```
 
-To validate the default development configuration without starting a service:
-
-```sh
-OSMAP_STATE_DIR=/tmp/osmap cargo run -- bootstrap
-```
-
-To preview the local browser surface:
-
-```sh
-OSMAP_STATE_DIR=/tmp/osmap cargo run -- serve
-```
-
-This listens on `127.0.0.1:8080` by default. The login page is available
-locally, but real authentication and mailbox workflows require the Dovecot,
-helper, state, and submission integration described in the deployment docs.
-Do not expose the development listener directly to a network.
-
-On Debian-family development systems, the repository can install and verify
-its reviewed workstation prerequisites:
+On a Debian-family workstation, the repository supplies a package/toolchain
+bootstrap and read-only verifier:
 
 ```sh
 bash maint/development/bootstrap-debian.sh
 make verify-debian
 ```
 
-The bootstrap uses `sudo` for APT operations. Review the
-[Debian development bootstrap](docs/DEBIAN_DEVELOPMENT_BOOTSTRAP.md) before
-running it.
+Review the [workstation guide](docs/DEBIAN_DEVELOPMENT_BOOTSTRAP.md) first; the
+bootstrap uses `sudo` for package installation.
 
-## Run modes and configuration
-
-OSMAP is configured through environment variables; the complete documented
-baseline is in [`config/osmap.env.example`](config/osmap.env.example).
-
-| Command | Purpose |
-|---|---|
-| `osmap bootstrap` | Validate configuration, report non-secret runtime settings, and exit |
-| `osmap serve` | Run the loopback HTTP and browser service |
-| `osmap mailbox-helper` | Run the local privileged mailbox helper |
-
-Production uses separate environment files and service accounts for `serve`
-and `mailbox-helper`. Start the helper first, keep the HTTP service on loopback,
-and place nginx at the TLS edge.
-
-## Deploy on OpenBSD
-
-OSMAP is not a single-command deployment. It integrates with security-sensitive
-host services and must be installed with explicit users, paths, socket
-permissions, Dovecot listeners, nginx policy, logging, validation, and rollback.
-
-Start with:
-
-- [OpenBSD deployment guide](docs/DEPLOYMENT_OPENBSD.md)
-- [OpenBSD service examples](maint/openbsd/README.md)
-- [Hardening guide](docs/HARDENING_GUIDE.md)
-- [Build and release process](docs/BUILD_AND_RELEASE_PROCESS.md)
-- [Internet exposure checklist](docs/INTERNET_EXPOSURE_CHECKLIST.md)
-
-## Development and validation
-
-Use `make security-check` as the normal developer and CI gate. A broader local
-run is available through `make acceptance-check` and `make v14-check`.
-
-The strict release gate is evidence-dependent:
+For an isolated local configuration check and login-page preview:
 
 ```sh
-OSMAP_SECURITY_PROFILE=release make release-check
+umask 077
+export OSMAP_ENV=development
+export OSMAP_STATE_DIR="$(mktemp -d /tmp/osmap-preview.XXXXXXXX)"
+export OSMAP_LISTEN_ADDR=127.0.0.1:8080
+export OSMAP_ALLOWED_HOSTS=localhost:8080,127.0.0.1:8080
+cargo run --locked --bin osmap -- bootstrap
+cargo run --locked --bin osmap -- serve
 ```
 
-It intentionally fails closed when required live-host, authenticated WSTG,
-TLS, supply-chain, resource-control, or sanitized evidence is missing or stale.
-A local source check is not a release claim.
+Open `http://127.0.0.1:8080/login`; stop the process with Ctrl-C. This preview
+provides no test mailbox or default login. Authentication and mail operations
+require the Dovecot, TOTP, helper, and submission integration below.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), the
-[test strategy](docs/TEST_STRATEGY.md), and the
-[documentation index](docs/README.md) to contribute.
+## OpenBSD installation
+
+Installation currently requires administrator integration. There is no qualified
+general-purpose installer. The procedures below describe the existing host
+layout; adapt paths, identities, hostname, and backend topology before use on
+another host.
+
+### Prerequisites and configuration
+
+Provide a working Dovecot/Postfix mail system, nginx with a valid TLS certificate,
+the reviewed Rust toolchain, `ksh`, `doas`, and dedicated service identities.
+The baseline uses `_osmap` for Web, `vmail` for the mailbox helper, and `osmaprt`
+for socket traversal. Discover the actual Web UID with `id -u _osmap`; replace
+example numeric UIDs with the observed value.
+
+Prepare separate Web and helper environment files from
+[`maint/openbsd/`](maint/openbsd/README.md). The
+[configuration example](config/osmap.env.example) documents the baseline;
+[`src/config.rs`](src/config.rs) defines validation and optional service settings.
+
+| Setting or resource | Required integration |
+| --- | --- |
+| `OSMAP_ENV`, `OSMAP_LISTEN_ADDR` | `production`, with a loopback listener such as `127.0.0.1:8080` |
+| `OSMAP_ALLOWED_HOSTS` | The browser-facing hostname, matching nginx and origin policy |
+| Dovecot listeners | Dedicated auth and userdb sockets; set `OSMAP_DOVEADM_AUTH_SOCKET_PATH` and helper `OSMAP_DOVEADM_USERDB_SOCKET_PATH` |
+| Trusted Web peer | Helper `OSMAP_TRUSTED_WEB_RUNTIME_UID` matches `_osmap` and the auth-socket owner |
+| Helper socket | Both services use the same `OSMAP_MAILBOX_HELPER_SOCKET_PATH`; restrict traversal and socket access to their runtime identities |
+| Helper grants | At least 32 random bytes, identical in separate service-readable `0600` files; configure each service's own `OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH` |
+| State and secrets | Separate Web/helper roots, private TOTP/key directories, and Web sessions `0700` for guarded account/key actions |
+| Confinement | `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce` for the qualified OpenBSD runtime |
+
+The generic Web example points at the helper's grant path: change it to a
+Web-owned copy, such as `/var/lib/osmap/secrets/mailbox-helper-grant.key`.
+Keep the helper's copy under `/var/lib/osmap-helper/secrets/`. Grant files
+must not be group-readable.
+
+### Install and start the services
+
+Use these procedures in order from a reviewed checkout on the target. Each
+rehearsal prepares staged files, apply/restore scripts, and a session report.
+The scripts carry host-specific settings; review the staged environment before
+applying them.
+
+| Step | Rehearsal command | Installation and rollback instructions |
+| --- | --- | --- |
+| 1. Build and stage `/usr/local/bin/osmap` | `ksh maint/live/osmap-live-rehearse-binary-deployment.ksh` | [Binary deployment](docs/MAIL_HOST_BINARY_DEPLOYMENT_SOP.md) |
+| 2. Establish the socket group | `ksh maint/live/osmap-live-rehearse-runtime-group-provisioning.ksh` | [Runtime group](docs/MAIL_HOST_RUNTIME_GROUP_PROVISIONING_SOP.md) |
+| 3. Stage env, launchers, rc scripts and logs | `ksh maint/live/osmap-live-rehearse-service-artifacts.ksh` | [Service artifacts](docs/MAIL_HOST_SERVICE_ARTIFACTS_SOP.md) |
+| 4. Prepare state and start helper, then Web | `ksh maint/live/osmap-live-rehearse-service-activation.ksh` | [Service activation](docs/MAIL_HOST_SERVICE_ACTIVATION_SOP.md) |
+
+For each step, review and adapt the staged files and generated scripts, then
+execute that session's generated apply script. For example:
+
+```sh
+# Replace <session> with the directory printed by the rehearsal.
+sh "$HOME/osmap-service-artifacts/<session>/scripts/apply-service-artifacts.sh"
+```
+
+Reinvoking the rehearsal wrapper with `--mode apply` regenerates staged files
+from repository defaults; it does not preserve adaptations made only to staging.
+These older wrappers install the baseline pair. They do not provision TOTP,
+grant keys, account services, or OpenPGP. The activation wrapper also sets the
+Web session directory to `0750`; reconcile it to the required `0700` before
+testing guarded workflows. Preserve existing environment settings and secrets
+during upgrades rather than replacing them with examples.
+
+Once the configured pair is installed, the service commands are:
+
+```sh
+doas rcctl configtest osmap_mailbox_helper
+doas rcctl configtest osmap_serve
+doas rcctl start osmap_mailbox_helper
+doas rcctl check osmap_mailbox_helper
+doas rcctl start osmap_serve
+doas rcctl check osmap_serve
+ksh maint/live/osmap-live-validate-service-enablement.ksh
+```
+
+Configure nginx to proxy the HTTPS hostname to the loopback listener with matching
+Host/origin policy. Read the [deployment guide](docs/DEPLOYMENT_OPENBSD.md) and
+[internet exposure checklist](docs/INTERNET_EXPOSURE_CHECKLIST.md).
+The [existing edge artifacts](maint/openbsd/mail.blackbagsecurity.com/README.md)
+contain deployment-specific addresses and private control routes; adapt them
+explicitly for a new host.
+
+Enroll controlled accounts through the [TOTP provisioning procedure](docs/TOTP_OPERATOR_PROVISIONING_SOP.md).
+Account operations require the separately configured [account runtime](maint/account-runtime/).
+OpenPGP requires the [native preparation and key-custody procedure](maint/openpgp-runtime/deployment.md)
+and later [personal-key workflow](docs/UX_SLICE_S07_04.md).
+The [Toronto recovery-contact procedure](maint/openbsd/README.md#bounded-toronto-recovery-contact-activation)
+covers a selected-account repair.
+
+Before enabling OSMAP at boot with `rcctl enable`, verify the complete dependency
+startup order and reboot behavior on that host. Account admission must be ready
+before Web starts; an rc process check alone does not prove readiness.
+
+## Operations and monitoring
+
+Check both services and the actual browser entry path:
+
+```sh
+doas rcctl check osmap_mailbox_helper osmap_serve
+OSMAP_LOGIN_HOST=mail.example.org \
+  ksh maint/openbsd/libexec/osmap-login-availability.ksh --check-only
+```
+
+Replace `mail.example.org` with the configured hostname. The entry check expects
+`GET /` to redirect to `/login` with `303`, and `GET /login` to return `200`.
+Also check the public HTTPS URL to cover nginx and TLS. After deployment, verify
+a controlled password-plus-TOTP login, mailbox read, and send/receipt journey.
+An available login page does not prove backend authentication or mail delivery.
+
+| Evidence | Default location or command |
+| --- | --- |
+| Web startup and application events | `/var/log/osmap/serve.log` |
+| Mailbox-helper events | `/var/log/osmap/mailbox-helper.log` |
+| Public edge access/errors | `/var/log/nginx/osmap.public.access.log`, `/var/log/nginx/osmap.public.error.log` |
+| Runtime/socket/env checks | `ksh maint/live/osmap-live-validate-service-enablement.ksh` |
+| Browser availability recovery | Installed `osmap-login-availability.ksh --recover`, under the documented bounded cron wrapper |
+
+Review authentication failures, session activity, submission errors, backend
+refusals, timeouts, and crash loops. Separate public OSMAP logs from private
+administration logs, rotate them, and exclude credentials, message contents,
+search terms, and one-use proofs from shared evidence. Metrics and alerting
+expectations are in [observability and monitoring](docs/OBSERVABILITY_AND_MONITORING.md).
+
+Back up configuration, TOTP and purpose keys, account epochs, settings, drafts,
+and OpenPGP custody under appropriate access controls, alongside the mail
+system's authoritative backups. Retain a matching binary/configuration rollback
+set and state needed to recover pending operations. After an authorized Dovecot
+configuration change, refresh the dependent account service before Web and
+recheck signed admission and fresh login, as described in the
+[service guidance](maint/openbsd/README.md#account-authority-after-dovecot-configuration-changes).
+Use the [incident response plan](docs/INCIDENT_RESPONSE_PLAN.md) for failures.
+
+## Development
+
+| Path | Responsibility |
+| --- | --- |
+| `src/http*`, `src/http/`, `src/*_ui.rs` | HTTP parser, routes, Runtime composition, and server-rendered interface |
+| `src/auth*`, `src/session*`, `src/account_*` | Authentication, sessions, account admission and guarded operations |
+| `src/mailbox*`, `src/mime.rs`, `src/rendering*` | Mail backends/helper protocol, MIME processing and safe rendering |
+| `src/send*`, `src/draft*`, `src/scheduled*` | Submission, persistence, scheduling and recovery |
+| `src/openpgp*`, `src/protected*`, `src/bin/` | OpenPGP clients, policies, protected workflows and service binaries |
+| `maint/openbsd/`, `maint/account-runtime/`, `maint/openpgp-runtime/` | OpenBSD service artifacts and native integrations |
+| `maint/security/`, `maint/ux/`, `.github/workflows/` | Regression, security, acceptance and CI tooling |
+| `docs/` | Architecture, decisions, operator procedures and scoped delivery evidence |
+
+Use focused tests for changed behavior. The normal developer gate is:
+
+```sh
+make security-check
+```
+
+It covers Rust checks/tests, available Clippy/rustfmt, and repository security
+guards. `make install-hooks` installs the shared commit/push hooks. Documentation
+changes need content, link, and diff review; live and native qualification remain
+separate. The evidence-dependent release gate is
+`OSMAP_SECURITY_PROFILE=release make release-check`; missing live or authenticated
+evidence prevents a release claim.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md), [test strategy](docs/TEST_STRATEGY.md),
+and [build/release process](docs/BUILD_AND_RELEASE_PROCESS.md) before submitting
+changes. The [decision log](docs/DECISION_LOG.md) explains the design chronology;
+the [documentation index](docs/README.md) links the detailed records.
 
 ## Security, support, and license
 
-Report suspected vulnerabilities privately through
-[SECURITY.md](SECURITY.md), not a public issue. General support guidance is in
-[SUPPORT.md](SUPPORT.md), and community expectations are in
-[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
-
-OSMAP is distributed under the [ISC License](LICENSE), without warranty.
-Operators remain responsible for deployment, configuration, monitoring,
-backup, recovery, legal compliance, and risk acceptance.
+Report suspected vulnerabilities privately through [SECURITY.md](SECURITY.md).
+Use [SUPPORT.md](SUPPORT.md) for support and
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for collaboration expectations.
+OSMAP is licensed under the [ISC License](LICENSE).

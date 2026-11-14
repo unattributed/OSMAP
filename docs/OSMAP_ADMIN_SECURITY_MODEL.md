@@ -73,8 +73,8 @@ This document adds **security properties, attacker assumptions, and tests** to t
 | Mailbox user | Canonical mailbox resolved by existing Dovecot/OSMAP browser path | Own OSMAP mail and explicitly permitted self-service only |
 | System administrator | Stable `admin_identities.id` plus active `admin_system_grants` row | Installation-wide approved administration, never implicit mail-body access |
 | Domain administrator | Stable admin ID plus explicit `admin_domain_grants` records | Approved domain-scoped administration, not cross-domain/system grants |
-| Admin web process | Dedicated unprivileged OpenBSD service identity | Render UI, authenticate admin, manage bounded session and invoke typed local socket |
-| Rust account service | Distinct OpenBSD service identity and scoped SQL writer | Server-side policy, revision/fence checks and authorized account mutations |
+| Admin web process | Dedicated unprivileged OpenBSD service identity | Render sign-in/UI, relay bounded proof and opaque session handles, maintain CSRF/UI state, invoke typed local socket |
+| Rust account/auth service | Distinct OpenBSD service identity and scoped SQL writer | Independent admin credential/MFA verification, authoritative session issuance/revocation, server-side policy and authorized account mutations |
 | Rust factor coordinator | Separate protected service identity | Subject-scoped enrollment, verification, rotation/revocation and replay access |
 | Audit writer/custodian | Restricted service or approved facility | Append/forward non-secret audit events, verify integrity |
 | Privileged bootstrap/migrator | Local, explicitly authorized operator process | Initial schema/grants and one-time first-admin bootstrap; not a web API |
@@ -198,6 +198,10 @@ The Rust account service is the **policy enforcement point** for every privilege
 
 The account service must not trust a `role`, `admin_id`, `domain_id`, `auth_time`, or `step_up=true` string supplied in the request body. Session authority must be resolved from a trusted server-side session record or a separately designed, audience-bound, short-lived signed capability that is validated end-to-end. If the socket crosses a privilege boundary, relying solely on the peer UID authenticates a **process**, not the individual browser administrator. The service must retrieve or independently validate the bound human session and its current epoch/grants.
 
+**Authority ownership:** the planned account/auth service verifies admin credentials and delegates proof/replay checks to the protected factor verifier. It owns authoritative session issuance, revocation state and any capability-signing key, outside Web's writable/readable secret authority. Web may relay proof and opaque bearer handles and keep non-authoritative UI/CSRF state; changing that state cannot create a trusted human session. A socket request-signing key shared with Web proves transport/process custody only. Exact storage and module choices remain Phase 0 work; no additional service is implied. Service-side tests must refuse forged Web session records, actor/epoch claims and capabilities signed only with a Web-readable key.
+
+A compromised frontend can still steal or relay credentials and bearer handles during an active administrator interaction. This boundary limits forgery and privilege expansion; it does not claim to prevent every action using a stolen valid session. Independent verification, short lifetimes, action-bound step-up and revocation reduce that residual risk.
+
 ### 5.2 Authorization matrix
 
 | Operation | System admin | Domain admin | Mailbox user via public OSMAP |
@@ -283,8 +287,8 @@ Use OpenBSD `pledge(2)` and `unveil(2)` where compatible with observed runtime/l
 
 | Process | Network/socket | SQL | Filesystem/secret | Forbidden escalation |
 | --- | --- | --- | --- | --- |
-| Admin web | Private loopback-bound HTTP, permitted account socket | None | Read-only templates/config required for rendering, own session access | No SQL DML/DDL, factor files, shell, mail data, privileged configuration |
-| Account service | Protected local socket, selected MariaDB endpoint | Narrow account writes and approved reads | Non-secret operation state and authorized audit path | No schema DDL, general DB admin, factor seed read/write, Maildir/private keys |
+| Admin web | Private loopback-bound HTTP, permitted account socket | None | Read-only templates/config, bounded non-authoritative UI/CSRF state and opaque session handles | No SQL DML/DDL, factor files, shell, mail data, privileged configuration |
+| Account/auth service | Protected local socket, selected MariaDB endpoint | Narrow account writes and approved admin-auth reads | Protected authoritative session/signing state, bounded operation state and authorized audit path | No schema DDL, general DB admin, factor seed read/write, Maildir/private keys |
 | Factor coordinator | Private typed service boundary only | No mail authority; narrow metadata path if specifically approved | Protected factor seeds and replay state under separate confinement | No domain/mailbox table write or general host control |
 | Postfix | Configured native submission/routing flow | Read-only effective maps | Its existing native spool/config ownership | No admin identity or factor lookup |
 | Dovecot | Configured native auth/IMAP/LMTP flow | Read-only passdb/userdb/quota | Existing mail storage under native policy | No admin identity or factor write grants |

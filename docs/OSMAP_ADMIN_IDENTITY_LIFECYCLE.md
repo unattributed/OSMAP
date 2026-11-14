@@ -353,7 +353,7 @@ These operation-journal terms must map to the concrete `operation_journal.state`
 
 ### 11.1 Create system/domain administrator
 
-1. Require active system administrator with fresh step-up, or first-install local bootstrap when **no** prior active system admin exists.
+1. Require active system administrator with fresh step-up, or first-install local bootstrap only with an **empty admin registry and verified unused one-shot bootstrap state**. An existing pending, disabled, locked or retiring administrator, or a partial/consumed bootstrap, requires the recovery/reconciliation procedure in §10.3; absence of an active administrator never reopens bootstrap.
 2. Allocate unique stable admin ID and canonical login in the *admin-only* namespace. Do not require creation of a mailbox.
 3. Store separate admin password hash; begin `pending` without active admin sessions.
 4. Assign narrowly reviewed system grant or domain grants, recorded with actor/operation/target and required confirmation.
@@ -432,7 +432,7 @@ flowchart LR
 ```
 
 - Private management access is loopback/WireGuard-gated, separate from public OSMAP authentication, cookie and Host/origin policy.
-- Neither browser process accesses mail-account SQL write credentials or raw factor files.
+- Neither browser process receives mail-account SQL write credentials. OSMAP-ADMIN Web cannot access raw factor files; preserve the existing public OSMAP verifier's reviewed user-factor read and separate replay-store access until a separately reviewed integration changes that boundary.
 - Factor coordinator must authenticate/authorize the specific *service* caller and subject operation; a Unix socket file mode alone does not bind a browser actor to a domain scope.
 - The webmail owner's established password-change path must be routed through the designated writer or safely fenced during handoff, not duplicated as a second password authority.
 - Service audit records capture `actor`, `actor_namespace`, `operation_id`, `target`, `expected_revision`, `observed_revision`, `writer_epoch`, `result`, and sanitized effect receipts. Do not include seed, password, hash, code, setup token, private messages, or recovery identity documents.

@@ -222,7 +222,7 @@ The first administrator can be created **before any domain or mailbox exists**. 
 Required journey:
 
 1. Confirm installed schema version, selected writer epoch, empty admin registry and authorized operator execution context.
-2. Create an initially disabled **system administrator** identity, independent of any mailbox address, with a verified password-hash scheme and protected credential entry.
+2. Create a `pending` **system administrator** identity, independent of any mailbox address, with a verified password-hash scheme and protected credential entry.
 3. Generate a distinct, protected admin TOTP secret in the separate admin factor namespace. Present the enrollment material **only** via the trusted local setup session; do not persist it in terminal logs, URL, repository or audit.
 4. Require a fresh TOTP proof, then atomically or through explicit recoverable steps activate the admin identity. Do not reset replay state or overwrite an existing factor.
 5. Close and invalidate the one-shot bootstrap privilege, verify that a second bootstrap attempt refuses, and record non-secret audit correlation.
