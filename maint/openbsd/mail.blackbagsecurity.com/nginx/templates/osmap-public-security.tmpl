@@ -1,0 +1,10 @@
+# Public-only transport and administrative-route boundary for OSMAP.
+# Include this in the WAN HTTPS server before osmap-public-root.tmpl.
+
+add_header Strict-Transport-Security "max-age=31536000" always;
+
+# PostfixAdmin remains available only from the separately configured private
+# WireGuard/loopback server.  Do not proxy public administrative paths to the
+# OSMAP catch-all or reveal whether a private application is installed.
+location = /postfixadmin { return 404; }
+location ^~ /postfixadmin/ { return 404; }
