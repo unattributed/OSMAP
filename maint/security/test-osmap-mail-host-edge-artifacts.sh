@@ -7,6 +7,7 @@ artifact_root="${repo_root}/maint/openbsd/mail.blackbagsecurity.com"
 main_ssl="${artifact_root}/nginx/sites-enabled/main-ssl.conf"
 osmap_root="${artifact_root}/nginx/templates/osmap-root.tmpl"
 osmap_public_root="${artifact_root}/nginx/templates/osmap-public-root.tmpl"
+osmap_public_security="${artifact_root}/nginx/templates/osmap-public-security.tmpl"
 osmap_edge_http="${artifact_root}/nginx/conf-enabled/10-osmap-public-edge.conf"
 osmap_newsyslog="${artifact_root}/newsyslog/osmap-public.conf"
 pf_macros="${artifact_root}/pf.anchors/macros.pf"
@@ -37,6 +38,7 @@ for required_path in \
   "${main_ssl}" \
   "${osmap_root}" \
   "${osmap_public_root}" \
+  "${osmap_public_security}" \
   "${osmap_edge_http}" \
   "${osmap_newsyslog}" \
   "${pf_macros}" \
@@ -52,6 +54,7 @@ assert_contains_file "${main_ssl}" "listen 127.0.0.1:443 ssl;"
 assert_contains_file "${main_ssl}" "listen 10.44.0.1:443 ssl;"
 assert_contains_file "${main_ssl}" "listen 192.168.1.44:443 ssl;"
 assert_contains_file "${main_ssl}" "include /etc/nginx/templates/osmap-public-root.tmpl;"
+assert_contains_file "${main_ssl}" "include /etc/nginx/templates/osmap-public-security.tmpl;"
 assert_contains_file "${main_ssl}" 'if ($host != "mail.blackbagsecurity.com") {'
 assert_contains_file "${main_ssl}" 'if ($host !~ ^(mail\.blackbagsecurity\.com|10\.44\.0\.1|127\.0\.0\.1)$) {'
 assert_not_contains_file "${main_ssl}" "include /etc/nginx/templates/roundcube.tmpl;"
@@ -88,6 +91,11 @@ assert_contains_file "${osmap_public_root}" 'proxy_set_header Host $host;'
 assert_contains_file "${osmap_public_root}" 'proxy_set_header X-Real-IP $remote_addr;'
 assert_contains_file "${osmap_public_root}" "keepalive_timeout 0;"
 assert_contains_file "${osmap_public_root}" "osmap.differential.access.log osmap_differential_security"
+
+assert_contains_file "${osmap_public_security}" 'add_header Strict-Transport-Security "max-age=31536000" always;'
+assert_contains_file "${osmap_public_security}" "location = /postfixadmin { return 404; }"
+assert_contains_file "${osmap_public_security}" "location ^~ /postfixadmin/ { return 404; }"
+assert_not_contains_file "${osmap_public_root}" "location = /postfixadmin"
 
 assert_contains_file "${osmap_edge_http}" "log_format osmap_public_security"
 assert_contains_file "${osmap_edge_http}" 'uri="$uri"'
