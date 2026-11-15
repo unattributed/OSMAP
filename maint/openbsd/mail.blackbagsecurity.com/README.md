@@ -16,6 +16,7 @@ The current artifact set is:
 - `nginx/conf-enabled/10-osmap-public-edge.conf`
 - `nginx/templates/osmap-root.tmpl`
 - `nginx/templates/osmap-public-root.tmpl`
+- `nginx/templates/osmap-public-security.tmpl`
 - `newsyslog/osmap-public.conf`
 - `pf.anchors/macros.pf`
 - `pf.anchors/selfhost.pf`
@@ -39,6 +40,9 @@ the private/control listeners:
   pipelined bytes cannot create a second origin request
 - public requests have conservative per-source request and connection limits;
   application throttling remains authoritative for authentication decisions
+- the public HTTPS server emits HSTS and returns `404` for both the exact
+  `/postfixadmin` path and every `/postfixadmin/` descendant, while the private
+  WireGuard/loopback server retains its separately configured PostfixAdmin route
 
 Do not merge those listeners back into one server block. PF can only open TCP
 `443`; nginx is the path-level boundary that keeps public HTTPS limited to
