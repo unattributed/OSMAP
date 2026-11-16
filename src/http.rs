@@ -28,6 +28,8 @@ mod notification_badge;
 pub(crate) mod notification_delivery;
 #[path = "http/personal_key_ui.rs"]
 mod personal_key_ui;
+#[path = "http/proxy_auth.rs"]
+mod proxy_auth;
 #[path = "http/remembered_key.rs"]
 mod remembered_key;
 mod routes_after_archive;

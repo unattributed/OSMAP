@@ -142,8 +142,7 @@ impl RuntimeBrowserGateway {
         }
     }
 
-    /// Records a non-fatal throttle-store failure so operators can diagnose
-    /// missing abuse resistance without crashing the login path.
+    /// Records a throttle-store failure before refusing browser authentication.
     pub(super) fn build_login_throttle_store_error_event(
         &self,
         action: &'static str,
@@ -178,12 +177,23 @@ impl RuntimeBrowserGateway {
                     };
                 }
             }
-            Err(error) => audit_events.push(self.build_login_throttle_store_error_event(
-                "login_throttle_check_failed",
-                "login throttle check failed",
-                context,
-                &error,
-            )),
+            Err(error) => {
+                audit_events.push(self.build_login_throttle_store_error_event(
+                    "login_throttle_check_failed",
+                    "login throttle check failed",
+                    context,
+                    &error,
+                ));
+                return BrowserLoginOutcome {
+                    decision: BrowserLoginDecision::Denied {
+                        public_reason: normalized_login_public_reason(
+                            PublicFailureReason::TemporarilyUnavailable,
+                        )
+                        .to_string(),
+                    },
+                    audit_events,
+                };
+            }
         }
 
         let captured_admission = std::sync::Arc::new(std::sync::Mutex::new(None));
@@ -209,6 +219,10 @@ impl RuntimeBrowserGateway {
                             }
                         }
                         Err(error) => {
+                            effective_public_reason = normalized_login_public_reason(
+                                PublicFailureReason::TemporarilyUnavailable,
+                            )
+                            .to_string();
                             audit_events.push(self.build_login_throttle_store_error_event(
                                 "login_throttle_record_failed",
                                 "login throttle failure recording failed",
@@ -252,6 +266,10 @@ impl RuntimeBrowserGateway {
                                     }
                                 }
                                 Err(error) => {
+                                    effective_public_reason = normalized_login_public_reason(
+                                        PublicFailureReason::TemporarilyUnavailable,
+                                    )
+                                    .to_string();
                                     audit_events.push(self.build_login_throttle_store_error_event(
                                         "login_throttle_record_failed",
                                         "login throttle failure recording failed",
@@ -270,6 +288,26 @@ impl RuntimeBrowserGateway {
                         }
                     }
                     AuthenticationDecision::AuthenticatedPendingSession { canonical_username } => {
+                        match throttle_service.clear_success(context, username) {
+                            Ok(events) => audit_events.extend(events),
+                            Err(error) => {
+                                audit_events.push(self.build_login_throttle_store_error_event(
+                                    "login_throttle_clear_failed",
+                                    "login throttle clear failed after successful authentication",
+                                    context,
+                                    &error,
+                                ));
+                                return BrowserLoginOutcome {
+                                    decision: BrowserLoginDecision::Denied {
+                                        public_reason: normalized_login_public_reason(
+                                            PublicFailureReason::TemporarilyUnavailable,
+                                        )
+                                        .to_string(),
+                                    },
+                                    audit_events,
+                                };
+                            }
+                        }
                         let authenticated_epoch = captured_admission.lock().ok().and_then(|v| {
                             v.as_ref()
                                 .filter(|a| a.account == canonical_username)
@@ -283,19 +321,6 @@ impl RuntimeBrowserGateway {
                         ) {
                             Ok(issued_session) => {
                                 audit_events.push(issued_session.audit_event.clone());
-                                match throttle_service.clear_success(context, username) {
-                                    Ok(throttle_audit_events) => {
-                                        audit_events.extend(throttle_audit_events)
-                                    }
-                                    Err(error) => audit_events.push(
-                                        self.build_login_throttle_store_error_event(
-                                            "login_throttle_clear_failed",
-                                            "login throttle clear failed after successful authentication",
-                                            context,
-                                            &error,
-                                        ),
-                                    ),
-                                }
                                 let presentation = AppearanceStore::new(&self.settings_dir)
                                     .load_settings(&canonical_username)
                                     .unwrap_or_else(|_| {
@@ -706,6 +731,150 @@ fn session_device_label(user_agent: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn login_throttle_check_failures_stop_before_primary_backend() {
+        for failure in ["cache_file", "lock_directory", "corrupt", "oversized"] {
+            let root = std::env::temp_dir().join(format!(
+                "osmap-login-throttle-{failure}-{}",
+                crate::draft::generate_draft_id().unwrap()
+            ));
+            std::fs::create_dir(&root).unwrap();
+            let mut gateway = RuntimeBrowserGateway::for_test(&root);
+            gateway.doveadm_path =
+                accepted_legacy_primary_fixture(&root, "alice@example.test", "alice@example.test");
+            let context = AuthenticationContext {
+                request_id: "throttle-failure".into(),
+                remote_addr: "127.0.0.1".into(),
+                user_agent: "public fixture".into(),
+            };
+            if failure == "cache_file" {
+                std::fs::create_dir_all(gateway.login_throttle_dir.parent().unwrap()).unwrap();
+                std::fs::write(&gateway.login_throttle_dir, "unavailable").unwrap();
+            } else {
+                std::fs::create_dir_all(&gateway.login_throttle_dir).unwrap();
+                if failure == "lock_directory" {
+                    std::fs::create_dir(gateway.login_throttle_dir.join(".throttle-store.lock"))
+                        .unwrap();
+                } else {
+                    let key = crate::throttle::LoginThrottleKey::new(
+                        "alice@example.test",
+                        &context.remote_addr,
+                    );
+                    std::fs::write(
+                        gateway
+                            .login_throttle_dir
+                            .join(format!("{}.throttle", key.key_id)),
+                        if failure == "corrupt" {
+                            "broken".to_string()
+                        } else {
+                            "x".repeat(1025)
+                        },
+                    )
+                    .unwrap();
+                }
+            }
+            let outcome = gateway.login(
+                &context,
+                "alice@example.test",
+                "public synthetic credential",
+                "123456",
+            );
+            assert!(matches!(
+                outcome.decision,
+                BrowserLoginDecision::Denied { .. }
+            ));
+            assert_eq!(outcome.audit_events.len(), 1);
+            assert_eq!(
+                outcome.audit_events[0].action,
+                "login_throttle_check_failed"
+            );
+            assert!(!root.join("accepted-primary").exists());
+            assert!(!gateway.session_dir.exists());
+            std::fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn login_throttle_persistence_failures_never_issue_sessions() {
+        use crate::totp::TimeProvider;
+        use hmac::{Hmac, Mac};
+        use std::os::unix::fs::PermissionsExt;
+        for failure in ["primary", "factor", "clear"] {
+            let root = std::env::temp_dir().join(format!(
+                "osmap-login-throttle-persist-{failure}-{}",
+                crate::draft::generate_draft_id().unwrap()
+            ));
+            std::fs::create_dir(&root).unwrap();
+            let mut gateway = RuntimeBrowserGateway::for_test(&root);
+            gateway.doveadm_path =
+                accepted_legacy_primary_fixture(&root, "alice@example.test", "alice@example.test");
+            let executable = std::fs::read_to_string(&gateway.doveadm_path).unwrap();
+            let lock =
+                serde_json::to_string(&gateway.login_throttle_dir.join(".throttle-store.lock"))
+                    .unwrap();
+            // The real primary process makes persistence unavailable only after
+            // the initial store check has succeeded.
+            let output = if failure == "primary" {
+                "print('auth failed')\nsys.exit(77)\n"
+            } else {
+                ""
+            };
+            let executable = executable.replace(
+                "print('passdb:",
+                &format!("Path({lock}).unlink()\nPath({lock}).mkdir()\n{output}print('passdb:"),
+            );
+            std::fs::write(&gateway.doveadm_path, executable).unwrap();
+            std::fs::create_dir_all(&gateway.totp_secret_dir).unwrap();
+            let secret = FileTotpSecretStore::new(&gateway.totp_secret_dir)
+                .secret_path_for_username("alice@example.test");
+            std::fs::write(&secret, "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n").unwrap();
+            std::fs::set_permissions(&secret, std::fs::Permissions::from_mode(0o600)).unwrap();
+            let counter = SystemTimeProvider.unix_timestamp() / 30;
+            let mut mac = Hmac::<sha1::Sha1>::new_from_slice(b"12345678901234567890").unwrap();
+            mac.update(&counter.to_be_bytes());
+            let digest = mac.finalize().into_bytes();
+            let offset = usize::from(digest[19] & 15);
+            let number =
+                u32::from_be_bytes(digest[offset..offset + 4].try_into().unwrap()) & 0x7fff_ffff;
+            let code = format!(
+                "{:06}",
+                (number % 1_000_000 + u32::from(failure == "factor")) % 1_000_000
+            );
+            let context = AuthenticationContext {
+                request_id: "throttle-persist-failure".into(),
+                remote_addr: "127.0.0.1".into(),
+                user_agent: "public fixture".into(),
+            };
+            let outcome = gateway.login(
+                &context,
+                "alice@example.test",
+                "public synthetic credential",
+                &code,
+            );
+            assert!(matches!(
+                outcome.decision,
+                BrowserLoginDecision::Denied { .. }
+            ));
+            assert!(root.join("accepted-primary").exists());
+            let expected = if failure == "clear" {
+                "login_throttle_clear_failed"
+            } else {
+                "login_throttle_record_failed"
+            };
+            assert!(
+                outcome
+                    .audit_events
+                    .iter()
+                    .any(|event| event.action == expected),
+                "missing expected persistence refusal: {failure}"
+            );
+            assert!(!gateway.session_dir.exists());
+            std::fs::remove_dir_all(root).unwrap();
+        }
+    }
 
     #[cfg(unix)]
     fn accepted_legacy_primary_fixture(
