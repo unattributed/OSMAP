@@ -128,7 +128,7 @@ mod tests {
         use std::os::unix::fs::{symlink, PermissionsExt as _};
         let root = std::env::temp_dir().join(format!(
             "osmap-proxy-auth-{}-{}",
-            std::process::id(),
+            crate::draft::generate_draft_id().expect("random fixture id"),
             NEXT.fetch_add(1, Ordering::Relaxed)
         ));
         fs::create_dir(&root).unwrap();

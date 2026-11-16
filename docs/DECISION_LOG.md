@@ -48,6 +48,44 @@ independent check and V11 closure gate pass. Native compilation first reached th
 login class's 1.5 GiB per-process data limit and aborted; preserve that diagnostic
 and rebuild with an explicitly raised process data limit and one Cargo job.
 
+Installed result: the first attempted limit increase was rejected by the user's
+hard limit and compilation again aborted. Independent reassessment approved a
+launcher that sets a 4 GiB inherited data limit while privileged, drops groups,
+GID and UID to the build user, reads back UID/limits, then execs Cargo. The native
+optimized build completed in 9m47s as UID 1000. No system login-class limit or
+mail-service configuration was changed. The Rust compiler package was installed
+to supply the missing native build toolchain.
+
+The first Web cutover restored its exact backups after an immediate readiness
+probe failed; that probe did not retain its HTTP status, so its precise response
+remains unknown. The corrected bounded readiness loop passed after one retry.
+The installed Web reports source `909b95292e7a7fa9f6468ad4ad02162f9649129c` and
+SHA-256 `071f075e8084e3f0c8050b23f6a10b15c0141907ccce96e450ec6d5c05231b0a`.
+Subsequent commits change documentation, generated test inventory and the proxy
+test's temporary-name generator only; deployed runtime code is unchanged.
+
+Production acceptance: nginx login 200; missing and incorrect origin proof 403;
+all six formerly successful forged-address privileged login attempts now 403
+with zero primary-auth audit events for their unique marker. A browser-supplied
+forged proof is overwritten by nginx and the normal login form still returns200.
+The authenticated synthetic-message reader returns200, shows the persistent
+phishing/download warning, removes every tested active construct and preserves
+destination disclosure. HTML and SVG downloads return200 with octet-stream,
+attachment disposition and nosniff. Temporary test sessions were removed.
+
+The initial authenticated check identified a stopped account service and absent
+admission socket. Its earlier stock-admission/loop-guard failure had no timestamp
+or uniquely established cause; do not attribute it to the Web patch. Starting the
+existing account service restored its socket; Web was restarted to capture ready
+authority. The same reader/attachment check then passed. Postfix, Dovecot, Rspamd,
+ClamAV, nginx, mailbox helper, Web and account service all pass fresh rcctl checks.
+No password, factor, mailbox content or mail-backend configuration was changed.
+Rollback copies remain private under `/var/backups/osmap-redteam-20261116-ready`.
+
+The late V12 gate initially mistook the inline proxy test's process-ID reference
+for native OpenPGP authority. Reuse the existing random fixture-ID generator;
+the focused tests and remaining V12 checks pass without weakening that guard.
+
 OSMAP's engineering history, in ascending date order. Each day records the
 problem, the decision and its consequences, with links to the source changes
 and supporting records. This is a design history for maintainers and operators;
