@@ -206,3 +206,197 @@ Private logs are under `Downloads/osmap-admin-adapter/admin-access-native/`.
 Initial failed local synthetic-fixture roots were retained by the test harness;
 their exact names were not emitted, so local failed-fixture cleanup is UNKNOWN.
 Native cleanup is separately confirmed. Full delivery-gate results remain pending.
+
+## Toronto compatibility slice — 2026-11-16
+
+Outcome: qualify development against Toronto's observed credential/schema/role
+contracts and execute the changed Rust backend on Toronto, not infer portability
+from obsd1 alone. Read-only observations find active `$2y$10$` credentials,
+consistent `superadmin=1` plus active `ALL`, supported login/grant bounds and
+missing `/etc/osmap/admin-read-mariadb.cnf`. Preserve source hash bytes; adapt only
+a verification copy of the documented equivalent bcrypt marker in memory. Admit
+costs 10–12 and refuse ambiguous/unsupported markers and excessive work factors.
+System domain reads require both active role indicators; either alone refuses.
+
+Root owns source, both native queues and Git; the independent adapter reviewer
+owns source/result review. First tests must fail on the observed hash/role gaps.
+Then qualify wrong passwords, unsupported costs/markers, inconsistent roles,
+demotion/reinstatement refusal, TOTP replay and persisted sessions. Reuse existing
+Rust/native fixtures. Use an independently generated synthetic `$2y$10$` hash,
+never a production hash/password/factor. Validate the actual fixed SELECT contract
+read-only against Toronto with a NULL predicate that cannot return an account. Execute the
+backend on obsd1, then on Toronto against its installed MariaDB binary in a
+temporary separate Unix-socket-only instance with production-shaped schema and
+restricted fixture grants. Do not change production databases/users, installed
+configuration, services, mail accounts or factors. Commit a private-client/grant
+example for later deployment; do not describe it as installed configuration.
+
+Use signed reviewed source before transfer, one-job/debug0 native compilation
+bounded to 600 seconds per host and fixture phases bounded to 120 seconds.
+Toronto's build-user hard data limit needs the previously proven privileged
+limit setup followed by dropping groups/GID/UID before Cargo. The temporary
+database has no TCP listener and uses explicit small buffers and connection
+bounds. Retain/read back sanitized diagnostics and hashes before exact-owned
+cleanup. Two failures at one boundary stop retries for independent reassessment;
+the investigation checkpoint is four hours without automatic allowance growth.
+Focused checks precede normal signed delivery hooks, independent result review,
+exact-head status and protected integration. Results remain NOT RUN until observed.
+
+Source observations: both new hash/role regressions fail against the prior code.
+The correction passes 12 focused tests, with nine gated native tests still
+ignored locally, plus formatting, strict Clippy, exact-source guard regression,
+inventory validation and independent source review. The exact fixed SELECT runs
+on Toronto's installed schema with NULL binding, exit 0 and zero stdout/stderr
+bytes; this is schema compatibility, not successful production authentication.
+Independent Linux libcrypt vectors use explicit `$2y$10$` and `$2b$12$` settings,
+including UTF-8 input. An initial generator-default assumption produced a
+different marker and was refused before use; the explicit setting corrects the
+fixture method. The Toronto standard Cargo-cache preflight refuses before
+compilation because that cache is absent; a private locked fetch supplies the
+same dependencies. No new product dependency is added. An initial documentation
+check names an absent program (exit 2); the existing shell governance guard then
+passes. These preparation failures are separate from product qualification.
+
+### Native compatibility results
+
+Both hosts compile and execute signed source
+`e799b36b7bb44a31f510a2fa3d27c697d0ff0600`, archived as
+`5242aed6c96d4245ab8d2fd8b7cf524fc884a3b5feb4b4d7ad67b1648ce8e89d`.
+The root private retained evidence directory is
+`/home/foo/Downloads/osmap-admin-adapter/toronto-compatibility/`.
+All 17 entries in each host's `evidence.sha256` are read back and verified locally.
+
+| Actual result | obsd1 | Toronto |
+| --- | --- | --- |
+| One-job/debug0 native library-test compilation | PASS, 2m59s | PASS, 9m40s |
+| Focused source regressions | 12 PASS, 9 gated tests ignored | 12 PASS, 9 gated tests ignored |
+| Independently generated ASCII/UTF-8 `$2y$10$` and `$2b$12$` vectors, correct/wrong password, unchanged hash bytes | PASS | PASS |
+| Password + independent TOTP, replay denial, exact domain read/cross-domain refusal, second-process session read | PASS | PASS |
+| Both system indicators, foreign-domain read and second-process session read | PASS | PASS |
+| Flag-only and ALL-only fresh login refusal | PASS | PASS |
+| Observed demotion and restored-role old-session refusal; restored fresh TOTP login/read | PASS | PASS |
+| Exact permitted SQL columns; factor/mailbox-secret/update denied; confirmed foreign-UID private-profile refusal | PASS | PASS |
+| Separate private socket/datadir/fresh server PID; networking disabled | PASS | PASS |
+
+Each host runs 12 native test invocations, including repeated refusal cases;
+these are functional phase observations, not 12 distinct native test functions.
+Coarse role-state receipts distinguish baseline `0,0`, system `1,1`, flag-only
+`1,0`, ALL-only `0,1` and restored `1,1`. The explicit-domain revoke/restore
+sequence also refuses the old token; final database readback confirms its grant
+is present. Do not infer historical grant-state snapshots from identical test
+markers alone. The prior authenticated-read slice retains the separate grant
+restoration evidence.
+
+The host evidence-index SHA-256 values are
+`d7b5bbec3318d273f351a839dbb105f583567e3e16e8de24e5b813f4a13df513`
+(obsd1) and
+`6173c51ef0d3433cdd36485a728203c72963d0e1ed6f55ab43eaaeb4c25fa653`
+(Toronto). Toronto's contract receipt is
+`aa61b9ce49b346010072cbf2fc4b469396131990bf734265771c5c192a0aa0c3`.
+Native libtest SHA-256 values remain in the matching retained identity receipts;
+different native artifacts need not be byte-identical to qualify their shared
+source contract. Whole-slice elapsed/token/monetary cost is UNKNOWN; the actual
+compiler elapsed observations above are retained without resetting failure or
+cumulative effort history. The four-hour investigation checkpoint is unchanged.
+
+Independent source and both-host result review PASS. Both exact private servers
+shut down; fresh PID/socket/process observations confirm absence. Shutdown
+receipts are downloaded and hash-read back before removal, then each exact-owned
+scratch root is removed and absence confirmed. The shared shutdown-receipt hash
+is `286c676e0896492b85051fad0f0dd052e8d8d4a95802f5be55238874daa1ee6a`.
+Earlier unnamed local RED-test fixture cleanup remains UNKNOWN, as retained in
+the preceding slice; do not infer its cleanup from these two native cleanups.
+Final evidence-only signing, the normal pre-push developer gate and protected
+GitHub integration remain pending. Production SQL-profile installation remains
+unimplemented.
+These results qualify the internal Rust backend against Toronto's observed
+contracts and installed native utilities. They do not authenticate a live admin,
+install a service, expose a network entry, qualify an admin UI or refresh a
+strict-release claim. Existing public MariaDB/Postfix/Dovecot services,
+configuration, databases, accounts and factors are not changed.
+
+Delivery gate follow-up: the first normal push is refused by the full Rust suite
+(2395 PASS, two FAIL, 100 ignored), before remote synchronization. The failed
+configured-auth fallback test passes its one isolated discriminator; its original
+missed-marker cause is UNKNOWN because the old assertion retains neither case
+nor source-owned audit action codes and removes its fixture before asserting.
+The scheduled-outbox test uses a fixture-start timestamp to validate a restored
+draft stamped by a later runtime wall clock, allowing `InvalidIntent` on a second
+boundary. The bounded correction is test-only: validate restored state at the saved
+draft timestamp and deliberately separate source/runtime timestamps; add fixed
+case/action diagnostics to the auth assertion without changing expectations.
+Minimum checks are the two affected test groups, formatting/Clippy/guard and the
+normal push gate. The changed scheduling and auth groups PASS (12 and eight
+tests), with formatting, strict library/tests Clippy and source review. Auth
+failures now preserve the exact private fixture and fixed boolean case/action
+codes; scheduled panics also emit their exact retained synthetic fixture root.
+The earlier failed scheduled fixture root was not emitted, so its cleanup stays
+UNKNOWN. Arbitrary event fields and native output remain private. Independently
+review this correction; do not change runtime auth, scheduling or any native-qualified admin source, or rerun matching native
+qualifications. Preserve the first full-gate log and initial missing observation.
+
+The second normal push passes the full Rust suite (2397 PASS, 100 ignored),
+strict Clippy and supply-chain checks, then refuses one of 642 Python account
+regressions. Independent reassessment identifies a fixture mode assumption:
+`mkdir(mode=0750)` under the push's private-artifact `umask 077` creates `0700`;
+the real startup custody guard correctly refuses it. Correct only the existing
+directory fixture with explicit `chmod(0750)`; all four module tests PASS under
+both umasks 077 and 022 before a reviewed normal gate retry. Preserve the second
+gate; no runtime custody policy, native qualification or allowance is changed.
+
+### Operator-requested Argon2id investigation — 2026-11-16
+
+The operator additionally requests investigation of Argon2id for stronger email
+password storage. This is read-only research and a bounded synthetic native
+discriminator, not migration or permission to change a stored credential.
+Toronto's installed Dovecot advertises ARGON2ID. Aggregate-only SQL finds 14
+active mailbox rows: one Argon2id and 13 bcrypt; the one active admin is bcrypt.
+No hash, account name or factor is retained. Its SQL default is BLF-CRYPT;
+Dovecot's explicit `{ARGON2ID}` per-row prefix overrides that default. Merely
+changing the default would not convert existing bcrypt hashes and can break
+bare bcrypt rows.
+
+The existing Rust mailbox password backend already calls fixed `doveadm -O pw
+-s ARGON2ID` and admits newly generated `m=65536,t=3,p=1` replacements. This is
+source capability, not proof that all installed password-writing paths use it.
+A synthetic long-input generate/verify/final-byte-negative discriminator on
+Toronto returns 0/0/75 with those parameters (64 MiB, three passes, one lane),
+approximately 328/338/330 ms during the compatibility build. These are three
+single samples, not a latency/concurrency capacity benchmark or live login.
+The first investigation shell wrapper refused dollar expansion before SQL;
+the unprivileged scheme list also reported a stats-socket permission failure.
+The corrected fixed Python stdin SQL and privileged read-only scheme listing
+succeed. No account authentication or credential write was dispatched.
+
+[OWASP prefers Argon2id](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
+for new password storage; bcrypt cost 10 meets its legacy minimum. Argon2id's
+memory cost improves resistance to offline guessing after a hash leak; it does
+not replace TLS, TOTP or online abuse controls. This recommendation is not an
+independently established compliance obligation for this installation.
+[Dovecot documents mixed schemes through explicit prefixes](https://doc.dovecot.org/2.3/configuration_manual/authentication/password_schemes/).
+
+Proposed next bounded implementation: qualify independent admin Argon2id
+verification while retaining legacy bcrypt verification, using an established
+Rust implementation or reviewed native library rather than custom cryptography.
+The current OpenBSD `crypt_checkpass` admin path is bcrypt-only and will refuse
+Argon2id until changed. Keep admin identity/factors separate from mailbox
+authentication; adding PHP or depending on the predecessor application is not
+required. Admit bounded PHC parameters before allocating memory, address uniform
+unknown-user work and throttle identity, and test native known vectors, wrong
+passwords, long UTF-8 tail changes, malformed/excessive parameters and mixed
+legacy sessions on both hosts. No dependency or verifier is added by this
+investigation.
+
+Before any migration, inventory each installed verifier and password writer
+(IMAP, SMTP SASL, OSMAP login, password reset/change, admin enrollment/reset and
+provisioning); qualify the actual SQL prefix handling and long-input contract.
+Benchmark chosen parameters and concurrent authentication on Toronto within
+existing service limits. Reuse the existing 64 MiB/three-pass candidate if that
+evidence supports it; do not turn it into a fixed host-memory prerequisite.
+Preserve mixed-scheme reads and choose exactly one coordinated writer. Generate
+Argon2id only when the actual password is supplied during an authorized
+change/reset or a separately designed authenticated rehash; a bcrypt hash cannot
+be converted into the corresponding Argon2id hash. The read-only admin slice
+must not acquire an implicit login-time write. Use exact conditional updates,
+session revocation and recovery evidence, and ensure rollback software still
+verifies Argon2id rows. Migration and production acceptance remain unimplemented.

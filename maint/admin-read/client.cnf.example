@@ -1,0 +1,7 @@
+# Install as /etc/osmap/admin-read-mariadb.cnf only in a reviewed deployment.
+# Root/service-readable private file; provision authentication outside Git.
+[client]
+user=osmap_admin_read
+protocol=SOCKET
+socket=/var/run/mysql/mysql.sock
+# password=<privately provisioned SQL credential, if required by chosen auth>

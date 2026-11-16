@@ -1563,3 +1563,60 @@ the earlier local synthetic-fixture failures separately; their cleanup is
 unconfirmed because the failed tests did not emit their random root names.
 This qualifies the internal/local backend, not an admin network endpoint,
 production credential scheme, installed configuration or broader Phase 1 exit.
+
+### Same day — Qualify development against the authoritative Toronto contracts
+
+The operator requests demonstrated Toronto compatibility after read-only checks
+show that the first fixture's `$2b$12$` domain admin did not match the active
+`$2y$10$` system-admin setup. Inspect only scheme labels, role consistency and
+schema metadata; retain no live hashes, usernames or factors. Toronto's flag and
+active `ALL` grant agree, and its login/grant bounds fit the backend. The required
+private SQL client profile is absent, so installed authentication remains open.
+
+First regressions reproduce the hash and role refusals. Admit bounded bcrypt
+costs 10–12 and verify the documented equivalent `$2y$` marker through an in-memory
+`$2b$` copy without changing stored bytes or authority fingerprints. Require both
+active system indicators for installation-wide reads, reject disagreement and
+retain explicit domain-admin scope. Reuse generation/epoch checks so a role
+change requires fresh authentication. Provide restricted client/grant examples
+for a later reviewed deployment. Execute the actual fixed SELECT read-only on
+Toronto with a NULL predicate, returning no account rows; compile and exercise
+the changed backend on both hosts using private Unix-socket MariaDB fixtures.
+Both native builds and the compatible password/TOTP/scope/session sequence now
+pass on obsd1 and Toronto. Retained role-state receipts distinguish disagreement,
+demotion and restoration; old tokens remain refused and fresh authentication
+works after restoration. Exact-column grants deny factor/mailbox secrets and
+writes, and foreign-UID profile reads refuse. Retain verified host evidence
+before exact-owned cleanup; reconcile independent review and signed delivery in
+the [compatibility work order](OSMAP_ADMIN_PROJECT_PLAN.md#toronto-compatibility-slice--2026-11-16).
+This establishes internal backend compatibility, not installed admin sign-in.
+
+During this slice the operator also requests an Argon2id investigation. Read-only
+Toronto counts find one Argon2id and 13 bcrypt active mailbox hashes, with the
+active admin still bcrypt. Installed Dovecot supports Argon2id and a synthetic
+long-password/final-byte-negative probe passes; the existing Rust mailbox
+password writer already generates Argon2id. Prefer it for new credentials and
+qualified password changes, retaining mixed-scheme verification during migration.
+The independent admin verifier still needs Argon2id support; no dependency or
+password writer is added here. Actual writer/verifier inventory, bounded cost
+tests, coordinated conditional updates, revocation and compatible rollback must
+precede a production migration. Do not convert hashes blindly, change the bare
+hash default, or give the read-only admin backend implicit login-time writes.
+
+The first normal delivery gate refuses two tests outside the admin change.
+Correct the outbox regression's stale fixture clock using the restored draft's
+actual timestamp and force the time difference without sleeping. The auth
+fallback regression passes in isolation, but its historical failure cause stays
+UNKNOWN; retain fixed case/action codes and the exact failed fixture before
+cleanup if it recurs. Keep all expectations and runtime behavior unchanged.
+The affected scheduling and auth groups pass (12 and eight tests), strict Clippy
+passes and the existing inventory is regenerated before independent review and
+normal delivery-gate retry. Do not discard the first failed gate or substitute
+these local passes for the required full gate.
+
+The next gate passes all 2397 Rust tests, then refuses a Python startup fixture
+created under the push's restrictive umask. Independent reassessment confirms
+the real rc custody guard correctly rejects its accidentally masked `0700`
+directory. Set only that fixture's intended `0750` explicitly; its four-test
+module passes under both umasks 077 and 022. Preserve the failed gate and keep
+the production custody guard unchanged before normal delivery retry.
