@@ -171,8 +171,8 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Active product implementation slice | **NONE**; maximum one at a time |
-| Selected next product slice | **ADM-S01-01**, private admin sign-in; NOT_STARTED |
+| Active product implementation slice | **ADM-S01-01**, private admin sign-in: DELIVERED; isolated development and mail qualification PASS for the cases below; operator acceptance NOT_ACCEPTED |
+| Selected next product slice | ADM-S01-02 after ADM-S01-01's required boundary; NOT_STARTED |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
 | Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
 
@@ -438,11 +438,289 @@ to rerun every unchanged passing workflow at each slice.
   No production account, factor, SQL grant, public service or configuration
   mutation is admitted by this planning work. A future bounded execution recipe
   records exact target, authority, runtime/cleanup bounds and recovery before use.
-- **Results/status:** implementation NOT_STARTED; mapped integration/native/
+- **Results/status:** implementation IN_PROGRESS; mapped integration/native/
   browser cases NOT_RUN separately in development and on mail; operator
   acceptance NOT_ACCEPTED. No new admin UI is
   running. Future known gaps name a concrete owner/next action without hiding
   completed useful work or marking a declaration as a result.
+
+### ADM-S01-01 implementation work order — 2026-11-17
+
+The operator starts Sprint ADM-S01 with its first slice. Source baseline is
+`ed816927cd8ea8c6dead1afb1f9d14655364d3fe`. At the start, implementation was
+IN_PROGRESS and native/browser cases were NOT_RUN. The qualified result below
+updates those engineering fields; operator acceptance remains NOT_ACCEPTED. Earlier planning-only restrictions
+describe those completed documentation changes, not a renewed source hold.
+
+**One observable outcome:** a real browser reaches private HTTPS, submits a
+seeded synthetic admin password and TOTP, sees server-derived current scope,
+resumes after the trusted service restarts and logs out. Complete this actual
+browser -> private web -> trusted service -> isolated SQL/factor/session path
+on obsd1 development and mail separately; no result substitutes for the other.
+
+**Owners/files:** `/root` is accountable for project/Scrum coordination, backend
+changes, native confinement, integration, documentation and the sole Git/host
+queue. `/root/admin_ui_engineer` owns the new presentation module and its focused
+tests; `/root/admin_transport_engineer` owns the bounded typed transport/config
+and tests under the agreed interface. They are activated only by concrete
+dispatch. `/root/adapter_review` independently reviews source, prerequisites,
+functional evidence and delivery; it does not approve its own code. Preserve
+the current public OSMAP UI/routes/session authority and unrelated state.
+
+**Inspected prerequisites:** fresh SSH readback identifies
+`obsd1.blackbagsecurity.com` and `mail.blackbagsecurity.com`, native OpenBSD,
+MariaDB/Python/Cargo/nginx/OpenSSL/user-management tools and noninteractive
+privileged setup. Both production admin SQL profiles are absent. Toronto's
+build-user hard data limit needs the previously demonstrated privileged limit
+setup followed by dropping groups/GID/UID before Cargo. Observed versions/limits
+are evidence, not release-string or fixed-free-memory predicates. Reuse the
+reviewed schema/query and private fixture setup contracts from ADM-F02/F03;
+verify current native command, socket, owner/mode and parser/consumer contracts
+before dependent execution. Python Playwright is absent from the default system
+interpreter; use or prepare an isolated test environment with the existing UX
+workflow style and installed browser, not a new product dependency/framework.
+
+**Smallest composition:** a separate `osmap-admin` Rust entry has private web
+and trusted-service modes. Reuse the bounded HTTP/form parser, escaping/CSP/CSS,
+private record/session/TOTP/throttle code and deadline-framed Unix transport.
+Private nginx terminates TLS and connects only to a custody-checked web Unix
+socket; web authenticates the proxy peer UID before accepting its overwritten
+single-client-address header. Never inherit the public webmail parser's generic
+loopback forwarded-header trust. Web and service have separate OS identities,
+while the isolated nginx and Web share one dedicated unprivileged Web UID;
+configuration rejects a different proxy UID because its socket is private 0600.
+Neither Web inputs nor cookies can assert grants or a serialized session.
+The service authenticates Web's Unix UID, owns per-login/per-peer throttling and one bounded global worker,
+resolves current scope on every landing/resume, and validates bounded fixed
+login/scope/logout operations. HTTP cookies are admin-only, Secure, HttpOnly and
+SameSite with exact Host/Origin checks and login/logout CSRF. No JS dependency,
+mailbox route, SQL privilege or protected factor access is given to Web.
+
+**Changed backend boundary:** add current-scope session readback, trusted peer
+context and bounded equivalent bcrypt work across supported costs for known and
+unknown users. Keep stored credentials unchanged. The isolated candidate uses
+a protected operator/service-selected SQL profile and database through the same
+fixed queries/command runner; a request cannot choose SQL, programs or paths.
+The narrow SQL and native execution guard changes require exact independent
+source review. OpenBSD service/web sealing must match the actually reachable
+program/dependency/socket paths; qualification is withheld until those paths
+and UID separation are exercised natively.
+
+**Progressive checks:** establish a distinguishing RED boundary first; use
+focused Rust HTTP/RPC/session/peer/CSRF/denial-work tests, then one exact-source
+native browser journey per host. Positive sign-in/scope/persistence/logout and
+negative wrong/replayed factor, mailbox-cookie crossover, forged actor/peer/
+forwarded headers, foreign Host/Origin, CSRF, expiry, changed grants and missing
+SQL/factor/service are the mapped S01-01 cases. Inspect actual installed custody
+and confinement as well as UI results. Diagnostics export only fixed source
+codes/outcomes/stream counts; never retain credentials, factor codes, bearer or
+CSRF values in public evidence. Keep failed owned resources and actionable
+private diagnostics until durable sanitized readback/hash allows exact cleanup.
+
+**Execution and preservation:** use independent private SQL/nginx/socket/state
+instances and temporary role identities only. No public service is stopped,
+restarted, reloaded or reconfigured, no live account/factor or production grant
+changes, and no fixture reaches a reference replica. Root owns setup/cleanup;
+source review and verified Shopkeeper checkpoint precede native transfer. Each
+native compile is bounded to 600 seconds, each focused probe to 120 seconds and
+each browser journey to 300 seconds, with a finite 120-second disposition phase.
+The cumulative first investigation checkpoint is four hours, retaining actual
+elapsed work, UNKNOWN preparation cost and every failure across workers; no
+automatic allowance increase. Two failures at one boundary stop retries for
+combined independent reassessment. Authority does not expire by an invented
+ledger clock. Run full suites only through normal delivery gates after focused
+passes; verify remote exact-head equality and protected integration. Retained
+artifacts use `/home/foo/Downloads/osmap-admin-s01/` throughout this sprint.
+
+**Progressive source results:** the first distinguishing scope/resume test was
+RED because the backend operation did not exist. Two subsequent compilation
+attempts exposed UI formatting and byte-slice helper integration errors. Their
+combined independent reassessment approved the exact source corrections before
+the next compile; no test or native execution occurred in those failures. The
+first executed focused suite compiled and passed 66 cases, with two failures and
+12 native-only cases ignored. One failure exposed the real parser/router
+contract: `/admin/` is not normalized. Reuse the parser unchanged and make the
+landing path `/admin`; a distinguishing real-parser regression checks both
+paths. The other failure counted shared CSS rather than the actual navigation;
+scope the assertion to navigation markup. These are retained source results,
+not native qualification. Focused logs remain under the sprint artifact root;
+native/browser results and independent final review are still outstanding.
+
+The corrected focused run passes **73 cases, zero failures, 12 native-only
+cases ignored**, in 11.37 seconds. Strict non-test/all-target Clippy passes in
+13.37 seconds after promoting the existing effective-GID getter from test-only
+to Unix runtime visibility. Preserve the intermediate compilation failure from
+an overlapping transport edit and the non-test getter refusal separately; an
+independent combined reassessment approved those bounded corrections. Static
+guard refusals exposed inert forbidden-option and program-path test literals;
+retain them and change only those counterexample values, preserving strict
+guards. Reviewed source has no remaining executable-source blocker. Added two
+OpenBSD-only ignored tests apply the exact Web/service seals in separate
+processes and check allowed namespace access against unrelated readable paths;
+their native results remain NOT_RUN at this source checkpoint.
+
+The first signed source checkpoint is
+`f027e0626d412111922001b13fae9bf44cdd1285`. Its normal pre-push hook refused a
+formatting difference in the last inert test-fixture edit; no remote update
+occurred. Apply the formatter and regenerate inventory in a separate signed
+follow-up, preserving the original checkpoint and refusal. Native dispatch
+remains pending the corrected exact source/archive admission and reviewed
+private recipes. This formatting refusal is not a native/product failure.
+
+The corrected checkpoint `d525058370083788df4c30c9faaa58a317566336` passed
+formatting; its second normal push stopped at the existing V15 manifest-digest
+gate. The new binary target did not change dependencies, features or lockfile.
+Refresh only the existing manifest baseline and target review, after combined
+independent reassessment of both hook refusals. The exact V15 gate and regression
+pass. One signed metadata follow-up and normal push retry are approved; no
+hook bypass, history rewrite or allowance reset follows. Native candidate builds
+assess d525's exact executable source; subsequent metadata/evidence-only commits
+must prove the executable/configuration sources remain byte-identical before
+reusing those results.
+
+**Native progression and retained failures:** d525 builds on obsd1 (executable
+61.856 s; selected-test binary 93.078 s) and mail (executable 198.326 s after a
+locked cache fetch; selected-test binary 300.808 s). Mail's first offline attempt
+refused a missing local `ammonia` index entry before compilation; its original
+receipt/log remain separate from the passing retry. The first private obsd1
+setup exposed the installed help command's successful-capability exit status 1,
+then inherited SQL child NOFILE 128 versus the working operator profile 512.
+The remaining read-only system-table refusal was retained rather than attributed
+uniquely to that warning. A narrow OpenBSD discriminator proved `getcwd` failed
+under the root-owned 0711 ancestor and passed under protected 0755; fresh SQL
+initialization then passed. Original failed data and probe results were archived,
+read back and hashed before exact owned principal/namespace disposition.
+
+Reuse the now-working isolated SQL, profiles and certificate. Private nginx needs
+all compiled-module temporary directories placed under its own prefix; repair
+that boundary without recreating the database. Mail's existing loopback 18443
+listener remains untouched: use verified-free remote 18445 with local 18443
+forwarded to it, preserving the selected browser Host/origin. These are observed
+candidate contracts, not host-version or blanket resource-floor requirements.
+
+The first actual Rust service start reached its locked native READY boundary.
+The plain-pipe controller then received stdin EOF and requested shutdown; the
+service exited 1 with its owned socket retained. The specific leaf's `rw` unveil
+rule overrides its parent's `rwc` and lacks removal authority. Correct only the
+service-owned leaf to `rwc`, keep peer/SQL socket grants unchanged, distinguish
+stat/unlink diagnostics, and add a native disposable-endpoint removal regression
+under the exact seal. Web intentionally retains its endpoint for root disposition;
+the controller must observe that actual contract and must not require an invented
+Web READY string. A local PTY producer/consumer check passes for the next bounded
+interactive controller. No authentication, browser or product acceptance result
+is promoted by these startup/build/prerequisite observations.
+
+The corrected obsd1 source `cca12d172a56480cdda6e1c6e428e5b0b8a456cb`
+builds its executable in 40.417 s and selected-test binary in 94.104 s. Both
+native confinement probes pass, including removal of the disposable service
+endpoint. Controlled Web/service shutdown returns zero, and the service removes
+its own endpoint. The retained Web endpoint is matched to its born identity;
+its metadata is durably read back and hashed before exact passive removal.
+These are native lifecycle results, not an authenticated browser PASS.
+
+Two custom mail source transfers stop at 60/120 s; standard SFTP also stops at
+120 s with a retained partial file. Fresh readback proves its 9,139,200-byte
+prefix matches the source. The reason for the earlier transport completion
+failures is unobserved; no bandwidth or EOF cause is asserted. Independent
+combined reassessment approves a prefix-verified bounded resume, but that resume
+is not run: the browser finding below requires newer source. Preserve the
+partial and all failures. For the next signed source, archive the complete
+build inputs (`Cargo.toml`, `Cargo.lock`, `build.rs`, `rust-toolchain.toml`,
+`LICENSE`, `src`, `maint`, `tests`), omitting unrelated delivery documents and
+images. The sizing archive is 3,822,408 bytes; all 218 literal includes resolve
+inside it. Keep exact commit/archive admission and extracted-file verification.
+
+The first obsd1 browser attempt proves strict TLS and foreign-origin rejection,
+then stops before authentication at the Host probe. Node's overridden Host does
+not supply an HTTP observation. A changed probe keeps the trusted TLS identity,
+sends a credential-free foreign HTTP Host and observes native HTTP 403. The
+second browser attempt then stops at normal form submission: wrong-password
+submission returns 403 before its expected authentication-denial result.
+A secret-free actual-browser discriminator proves `no-referrer` sends opaque
+`Origin: null`, whereas `same-origin` sends the required origin. Its first
+fixture failure and the passing RED/GREEN observations are retained separately.
+Change only admin document/redirect referrer policy; preserve exact-origin
+admission, including explicit null-origin refusal before RPC. Browser sign-in,
+restart and logout remain unqualified until the corrected path runs on each
+host. No accepted TOTP or session is claimed from these stopped attempts.
+
+### ADM-S01-01 qualified result — 2026-11-17
+
+**Implementation DELIVERED; isolated development qualification PASS; isolated
+mail qualification PASS; operator acceptance NOT_ACCEPTED.** Assessed product
+source is signed `e685f9080dede9acc6e1bcd927ba23135a9965a0`. This is a working
+private sign-in/scope/logout slice, not completion of Sprint ADM-S01, an installed
+production admin service, mailbox management or predecessor retirement.
+
+The final native executable is 5,230,832 bytes, SHA-256
+`da45db21021a10fe3a164c9d516ff3b1545ef4ef684f011005c028968e0f4627`.
+Its compiled revision and root-owned single-link installed bytes are verified on
+both hosts. The prior source builds independently on both hosts with identical
+executable/test hashes. The final one-line Rust brand-layout change builds on
+obsd1 in 39.21 s; copy that exact artifact to mail and qualify its actual native
+execution. No host-version assumption or additional native test build substitutes
+for the separately observed mail journey. Unchanged confinement/backend evidence
+is reused with its actual source identity.
+
+| Observed boundary | obsd1 | mail.blackbagsecurity.com |
+| --- | --- | --- |
+| Actual browser: private TLS -> password/TOTP -> authorized scope | PASS | PASS |
+| Service restart preserves session; logout rejects old session | PASS | PASS |
+| Foreign Host/Origin, CSRF and mailbox-cookie crossover | PASS | PASS |
+| Generic wrong-password/wrong-TOTP denial and accepted-factor replay refusal | PASS | PASS |
+| Secure admin cookie policy; readable current scope and full brand at 1440 px | PASS | PASS |
+| Wrong Unix UID and unknown actor fields | PASS | PASS |
+| Grant revoke/restore and factor loss/restore do not revive old authority | PASS | PASS |
+| SQL loss returns unavailable; restoration preserves the eligible session | PASS | PASS |
+| Matching unchanged native confinement probes | PASS | PASS |
+| Product shutdown, passive endpoint disposition and private fixture cleanup | PASS | PASS |
+
+Each final browser result contains 12 checks: obsd1 41.622 s, mail 66.136 s.
+Both screenshots have SHA-256
+`a9bb342b8dd710e5ef1508c4ed75236e9a861993e9d4744f4ad01142c869fed6`.
+Independent review verifies the rendered full brand after the first screenshot
+exposed clipping under the rail; a single admin-only Rust style correction fixes
+it. Each native authority/refusal result has six passing checks, confirmed
+restoration of its own effects and no retained uncertainty. Obsd1's earlier
+passing refusal result is reused across that presentation-only change. The
+unavailable-service HTTP branch and expiry behavior also have focused Rust
+regressions; the table does not claim every negative permutation was repeated
+through the installed browser or that the full WSTG/release programme passed.
+
+Browser result hashes are respectively
+`9ccfe6b82f8bedb091da06d242b515ac96d8377914dd8ee365882095fb31c44a`
+and `72f90a8bf856df0aa14183837f0066f5f7297d815b4d45e307b95095f3286efe`.
+Both fixed native-refusal outputs hash to
+`728bd767ab5f970df92652a6c8684e09305ce015a544dd7a8a7aa5fe7b8e3395`.
+Raw evidence stays private under `Downloads/osmap-admin-s01/`.
+
+Preserve all earlier failures. Further local carrier syntax/stage refusals occur
+before transfer; native `timeout` refuses session-leader process-group setup
+before compilation, then works as a shell child. A raw executable transfer stops
+at 120 s; a fresh standard gzip/SCP transfer succeeds and the decompressed bytes
+match the signed-source artifact. No failed partial is executed. After the
+operator's simplification direction, write no additional Python: keep product
+changes in Rust and reuse existing tools plus standard native commands.
+
+The cleanup helper refuses its nginx process-title comparison before daemon
+mutation because native `ps` appends `(nginx)`. Preserve that refusal, then use
+fresh exact private UID/argv/pidfile checks and native nginx quit. Verify the
+private SQL datadir/socket/networking identity before shutdown. Both hosts prove
+private process/endpoint absence, exact temporary principal/group removal and
+root-only retained namespace custody after physical tree checks. The working
+data/source namespaces remain retained; they are not claimed deleted. Evidence
+archives are read back and hashed independently. Toronto's public Dovecot,
+Postfix, MariaDB and nginx checks remain PASS, matching the pre-action baseline;
+no public service/configuration, live account or factor is changed.
+
+The first retained artifact is at 18:48 UTC; both functional journeys, refusal
+cases and owned fixture disposition finish by 22:46 UTC. Earlier preparation
+cost is UNKNOWN and all attempts remain cumulative. The four-hour investigation
+checkpoint closes with no further product investigation or allowance increase;
+only bounded evidence, review and mandatory signed Git delivery remain. Normal
+delivery hooks are separate from native product qualification. ADM-S01-02 is
+the next selected slice and remains NOT_STARTED; the first mailbox-management
+milestone and the other three ADM-S01 slices remain incomplete.
 
 ### One active slice, work orders and delivery
 

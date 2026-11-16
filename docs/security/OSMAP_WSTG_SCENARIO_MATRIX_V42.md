@@ -1,5 +1,44 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+2026-11-17 ADM-S01-01 isolated qualification: actual browser password/TOTP,
+current authorized scope, restart continuity and logout pass separately on
+obsd1 and mail at e685f908. Both final browsers pass 12 checks, including strict
+TLS, Host/Origin/CSRF, cookie-purpose, wrong proof and replay; each native
+authority/refusal run passes six cases. Matching unchanged confinement evidence
+is reused, and final rendering shows the full brand. Exact-owned private daemon,
+endpoint and temporary-principal disposition is confirmed; Toronto public mail
+services remain running. See the qualified-result record in the admin project
+plan for source/artifact hashes, limits and retained failures. This is scoped
+agent-owned qualification, not full WSTG/release, production or owner acceptance.
+
+2026-11-17 ADM-S01-01 browser Origin correction: the isolated obsd1 browser
+proves strict TLS, foreign Origin/Host and CSRF refusal and mailbox-cookie
+isolation, but a normal form receives 403 before authentication. A secret-free
+browser RED/GREEN probe identifies `no-referrer` producing `Origin: null`.
+Admin-only `same-origin` referrer policy preserves normal POST Origin; strict
+admission remains, with explicit null-origin refusal before RPC. Fifteen focused
+UI/Web tests pass. The corrected authenticated native journey on both hosts
+remains pending; no full WSTG, production release or owner acceptance is claimed.
+
+2026-11-17 ADM-S01-01 native lifecycle correction: both hosts compile the
+candidate. Isolated obsd1 startup reaches the locked service boundary, but owned
+socket removal fails under the specific rw unveil rule. Add creation/removal
+permission only for the service-owned leaf and qualify the exact seal with a
+native disposable socket. Keep first failure, root disposition and functional
+status separate. SQL/getcwd and nginx/listener prerequisites are retained in
+the active admin work order; browser/refusal/installed acceptance remain pending.
+
+2026-11-17 ADM-S01-01 source boundary: a separate private Rust admin entry
+adds password/TOTP, admin-purpose sessions, current-scope readback and logout.
+The active admin work order maps F-04, SEC-01–06/08/11 and the selected
+integration/UX cases. Focused source regressions cover parser/routing, strict
+framed peer transport, Host/origin/CSRF, cookie purpose, current authority,
+persistent account throttling and bounded credential work. Strict Clippy passes.
+These are E0 source results, not installed WSTG or release qualification. Native
+private browser/service/SQL, restart, denial, confinement and cleanup results
+must be recorded independently on obsd1 and mail before acceptance. No public
+mail service/configuration or production credential change is authorized.
+
 2026-10-24 helper/admission native01: buildPASS, ParentPrepareUnknown failure
 at5.00s beforeR1seal/readiness; clientdoasrefusal/bodyNOTRUN, soR2unqualified.
 OriginalSSHcollectionfailures retained; reviewed singlearchive recovery matches

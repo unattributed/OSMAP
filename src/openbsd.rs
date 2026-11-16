@@ -1275,6 +1275,111 @@ pub struct OpenbsdConfinementPlan {
     dependency_error: Option<String>,
 }
 
+/// The private admin Web process has no SQL, factor, Maildir or Internet grant.
+pub(crate) fn seal_admin_web(socket: &Path, service: &Path) -> io::Result<()> {
+    let mut rules = BTreeMap::new();
+    add_rule(
+        &mut rules,
+        socket.parent().ok_or(io::ErrorKind::InvalidInput)?,
+        "rwc",
+    );
+    add_rule(&mut rules, socket, "rw");
+    add_rule(
+        &mut rules,
+        service.parent().ok_or(io::ErrorKind::InvalidInput)?,
+        "r",
+    );
+    add_rule(&mut rules, service, "rw");
+    apply_admin_plan(
+        rules,
+        "stdio rpath wpath cpath fattr unix unveil",
+        "stdio rpath wpath cpath fattr unix",
+    )
+}
+
+/// Only the trusted service can read factors or invoke the fixed SQL client.
+pub(crate) fn seal_admin_service(
+    state: &Path,
+    socket: &Path,
+    profile: &Path,
+    sql: &Path,
+) -> io::Result<()> {
+    let mut rules = BTreeMap::new();
+    add_rule(&mut rules, state, "rwc");
+    add_rule(
+        &mut rules,
+        socket.parent().ok_or(io::ErrorKind::InvalidInput)?,
+        "rwc",
+    );
+    // The explicit leaf overrides its parent. The owner must be able to remove
+    // this exact endpoint on shutdown; peer sockets remain connect-only.
+    add_rule(&mut rules, socket, "rwc");
+    add_rule(&mut rules, profile, "r");
+    add_rule(
+        &mut rules,
+        sql.parent().ok_or(io::ErrorKind::InvalidInput)?,
+        "r",
+    );
+    add_rule(&mut rules, sql, "rw");
+    #[cfg(target_os = "openbsd")]
+    {
+        let program = Path::new("/usr/local/bin/mariadb");
+        let dependencies = installed_library_paths_before(
+            program,
+            std::time::Instant::now() + std::time::Duration::from_secs(5),
+        )
+        .map_err(|_| {
+            eprintln!("ADMIN_SEAL_DEPENDENCY_REFUSED observation=loader_resolution");
+            io::Error::from(io::ErrorKind::PermissionDenied)
+        })?;
+        add_rule(&mut rules, program, "rx");
+        for dependency in dependencies {
+            add_rule(&mut rules, &dependency, "r");
+        }
+        add_rule(&mut rules, Path::new("/usr/libexec/ld.so"), "rx");
+        add_rule(&mut rules, Path::new("/var/run/ld.so.hints"), "r");
+        add_rule(&mut rules, Path::new("/dev/null"), "rw");
+        add_if_exists(&mut rules, Path::new("/etc/localtime"), "r");
+    }
+    apply_admin_plan(
+        rules,
+        "stdio rpath wpath cpath fattr flock unix proc exec unveil",
+        "stdio rpath wpath cpath fattr flock unix proc exec",
+    )
+}
+
+fn apply_admin_plan(
+    rules: BTreeMap<PathBuf, String>,
+    before: &'static str,
+    after: &'static str,
+) -> io::Result<()> {
+    let plan = OpenbsdConfinementPlan {
+        promises_before_lock: before,
+        promises_after_lock: after,
+        dependency_error: None,
+        unveil_rules: rules
+            .into_iter()
+            .map(|(path, permissions)| OpenbsdUnveilRule { path, permissions })
+            .collect(),
+    };
+    #[cfg(target_os = "openbsd")]
+    {
+        imp::apply_plan_detailed(&plan).map_err(|failure| {
+            // Never export the underlying path-bearing native error text.
+            if let Ok(line) = serde_json::to_string(&failure.diagnostic) {
+                eprintln!("ADMIN_SEAL_REFUSED {line}");
+            }
+            io::Error::from(io::ErrorKind::PermissionDenied)
+        })
+    }
+    #[cfg(not(target_os = "openbsd"))]
+    {
+        let _ = plan;
+        eprintln!("ADMIN_SEAL_UNSUPPORTED_PLATFORM");
+        Err(io::Error::from(io::ErrorKind::Unsupported))
+    }
+}
+
 /// Admission's Rust supervisor only. The fixed worker starts without inherited
 /// pledge/unveil (unset exec promises); its separate native command policy and
 /// full workflow qualification remain required. Never grant the supervisor
@@ -2127,7 +2232,7 @@ pub(crate) fn disable_ffs_fixture_quota(data: &Path) -> io::Result<()> {
     Ok(())
 }
 
-#[cfg(all(unix, test))]
+#[cfg(unix)]
 pub(crate) fn effective_gid() -> u32 {
     // SAFETY: getegid has no pointer or ownership precondition.
     unsafe { libc::getegid() }

@@ -29,3 +29,7 @@ path = "src/bin/account_recovery.rs"
 [[bin]]
 name = "storage-quota"
 path = "src/bin/storage_quota.rs"
+
+[[bin]]
+name = "osmap-admin"
+path = "src/bin/osmap_admin.rs"

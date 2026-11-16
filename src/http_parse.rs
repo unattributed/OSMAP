@@ -6,8 +6,7 @@
 
 use std::collections::BTreeMap;
 use std::io::ErrorKind;
-use std::io::Read as _;
-use std::net::{IpAddr, SocketAddr, TcpStream};
+use std::net::{IpAddr, SocketAddr};
 
 use crate::http::{
     HttpMethod, HttpPolicy, HttpRequest, HttpRequestError, HttpRequestErrorKind,
@@ -64,8 +63,8 @@ fn normalize_forwarded_ip(value: &str) -> Option<String> {
 }
 
 /// Reads one bounded HTTP request from the supplied stream.
-pub(crate) fn read_http_request(
-    stream: &mut TcpStream,
+pub(crate) fn read_http_request<R: std::io::Read>(
+    stream: &mut R,
     policy: &HttpPolicy,
 ) -> Result<HttpRequest, HttpRequestError> {
     let mut buffer = Vec::new();

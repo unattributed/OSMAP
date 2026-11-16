@@ -404,3 +404,26 @@ new browser-runner disposition or credential-backed HTTP WSTG PASS. A network
 entry still needs verified per-client throttle identity, a reviewed factor
 enrollment path, private service custody and matching installed journey tests.
 Normal developer delivery checks do not refresh historical strict-release tuples.
+
+## 2026-11-17 — ADM-S01-01 candidate delivery boundary
+
+The first private admin sign-in implementation is a separate `osmap-admin`
+executable with peer-checked Web/service modes; see the
+[active work order](OSMAP_ADMIN_PROJECT_PLAN.md#adm-s01-01-implementation-work-order--2026-11-17)
+and [candidate setup contract](OSMAP_ADMIN_INSTALLATION_AND_UPGRADE.md#32-adm-s01-01-private-sign-in-candidate).
+Focused source results and strict Clippy do not establish installed readiness.
+Require matching private browser/service/SQL positive, refusal, restart and
+logout evidence on both obsd1 and mail, exact source/binary identity, independent
+review and exact-owned cleanup. Retain failures and source/native/installed/UAT
+status separately. Normal signed hooks and GitHub preservation apply; this
+candidate is not the native installer, production handover or a complete first
+mailbox-management milestone.
+
+The ADM-S01-01 qualified-result record now binds signed product source e685f908
+and its native executable hash to separate passing browser journeys on obsd1
+and mail, matching security refusals, independent review and exact-owned private
+fixture disposition. Reuse unchanged backend/confinement evidence across the
+one-line Rust presentation correction; verify the copied artifact's exact bytes
+and actual mail execution. Normal signed source/evidence delivery hooks remain
+mandatory. Their PASS is not a refreshed strict-release tuple, public production
+deployment, operator acceptance or completion of Sprint ADM-S01.

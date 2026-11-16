@@ -1692,3 +1692,92 @@ existing plan, acceptance catalogue, identity-lifecycle reference and this
 decision entry. Independent review, focused documentation checks and normal
 signed delivery follow; no implementation, credential mutation, host action or
 migration is authorized by this documentation change.
+
+### 2026-11-17 — Start ADM-S01-01 as the first connected admin journey
+
+The operator starts the first OSMAP-ADMIN sprint and slice using the established
+S05 method. Keep ADM-S01-01 as the single active product objective: private
+password-plus-TOTP sign-in, service-derived scope, restart persistence and logout.
+Mailbox listing and creation remain the next distinct functional boundaries;
+standalone admin Argon2id remains scheduled within ADM-S04-02.
+
+Compose a separate Rust admin entry from existing HTTP presentation/parser,
+admin authority, TOTP replay, session/epoch and bounded command primitives.
+Private nginx and the Web process share one dedicated unprivileged identity;
+the trusted service uses a separate identity and owns factors, sessions,
+current grants and a read-only SQL profile. Authenticated bounded Unix messages
+carry fixed login, scope and logout operations. Web cannot select SQL, role,
+paths or grants. Preserve generic denial work, account-level throttling, exact
+Host/origin and login/logout CSRF. Reuse strict normalized HTTP paths with
+`/admin` as the landing path, rather than weakening the shared parser.
+
+The existing project-plan work order records prerequisites, ownership, positive
+and refusal cases, runtime bounds, cumulative failure history and the single
+native/Git queue. Qualify a real browser-to-service-to-isolated-authority journey
+on both obsd1 and mail; an obsd1 result or library-only mail test cannot establish
+mail acceptance. Temporary private SQL, identities, sockets and TLS candidates
+must preserve public mail services, live accounts and production configuration.
+No PHP dependency or predecessor application runtime is introduced. Source
+checks, independently reviewed signed source delivery, native qualification and
+operator acceptance remain separate results; implementation is in progress.
+
+### Same day — Correct native admin endpoint shutdown after sealing
+
+The first isolated Rust service startup passed on obsd1, but the controlled
+shutdown left its socket and returned failure. The explicit socket `rw` unveil
+rule overrides the parent's `rwc`; OpenBSD requires `c` for removal. Add `c` only
+to the service's own endpoint, retaining the peer/SQL socket and profile grants.
+Preserve the held identity check and distinguish stat from unlink refusal with
+fixed codes and bounded errno. A native disposable-endpoint test exercises the
+same seal and removal without touching the running service endpoint.
+
+Keep the first startup/stop diagnostic and exact socket identity before owned
+recovery. Web's root-disposition contract remains; adjust the private controller
+to observe its bound endpoint and retained socket rather than invent a startup
+log or self-unlink requirement. Native SQL, nginx, process and browser evidence
+remain distinct. Build/prerequisite passes do not qualify sign-in; both hosts
+still require the actual browser and refusal journeys before acceptance.
+
+### Same day — Preserve browser Origin on private admin form submissions
+
+The connected obsd1 browser reaches private HTTPS and passes foreign Origin,
+Host, CSRF and mailbox-cookie refusal checks, then a normal form POST returns
+403 before password verification. A separate secret-free browser discriminator
+shows the shared `no-referrer` policy makes that POST's Origin opaque (`null`).
+With `same-origin`, the browser sends the exact configured Origin. Retain the
+original stopped browser attempts and fixture failure separately from this
+observed RED/GREEN boundary.
+
+Set `Referrer-Policy: same-origin` on admin documents and redirects only. Reuse
+the existing HTML helper and replace its policy value without a duplicate.
+Keep strict Host/Origin and CSRF checks; explicitly test that null Origin still
+refuses before service dispatch. Public OSMAP presentation policy is unchanged.
+This fixes the browser's request contract rather than admitting an opaque
+origin. Both hosts still need corrected native sign-in, scope, restart and
+logout evidence; source and lifecycle passes alone do not qualify that journey.
+
+### Same day — Qualify the first private admin journey on both hosts
+
+The real browser journey now passes independently on obsd1 and mail using signed
+Rust source `e685f9080dede9acc6e1bcd927ba23135a9965a0` and byte-identical
+native executables. Password plus TOTP reaches current authorized scope, a
+service restart preserves the session, and logout revokes it. Both hosts also
+pass the mapped proof, peer, grant, dependency-loss and replay refusals. A
+one-line admin-only layout correction makes the full brand visible; the final
+screenshots match. Independent review reads the actual results rather than
+promoting build or fixture status into acceptance.
+
+Record the slice's implementation and isolated development/mail qualification
+as complete. Keep operator acceptance NOT_ACCEPTED, production installation and
+cutover separate, and ADM-S01-02 selected but not started. The code remains Rust;
+no additional Python is written after the operator's simplification ruling.
+Reuse matching passing evidence and standard native tools for the final bounded
+disposition. Preserve all failures and UNKNOWN preparation cost, with no
+allowance reset or further product investigation at the four-hour checkpoint.
+
+Private candidate processes and temporary identities are removed after exact
+identity and endpoint checks. Evidence is durably read back and hashed; offline
+private namespaces remain root-protected for retention. Toronto's original mail
+services remain running and production accounts/configuration are unchanged.
+This delivers the first functional slice, not mailbox management, completion of
+Sprint ADM-S01, the native installer, a full release or predecessor retirement.

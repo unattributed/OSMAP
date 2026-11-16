@@ -109,7 +109,9 @@ impl<E: CommandExecutor> Authority<E> {
         if !valid_login(login) {
             return Err(Error::Invalid);
         }
-        private_root(&self.root)?;
+        // Full ancestry/canonical custody is checked by trusted construction
+        // before sealing. The running role can stat only its unveiled leaf.
+        private_root_metadata(&self.root)?;
         let input = format!("SET @admin_login=CONVERT(0x{} USING utf8mb4); PREPARE admin_read FROM '{}'; EXECUTE admin_read USING @admin_login;\n", upper_hex(login.as_bytes()), ADMIN_QUERY);
         let args = ARGS.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>();
         let output = self
@@ -331,6 +333,13 @@ pub(crate) struct Service<E, T, P = NativePassword> {
     clock: T,
     password: P,
 }
+/// Current authority only; no stored hash, factor, bearer or caller-supplied grant.
+pub(crate) struct Summary {
+    pub(crate) login: String,
+    pub(crate) system: bool,
+    pub(crate) domains: Vec<String>,
+    pub(crate) csrf: String,
+}
 impl<
         E: CommandExecutor + Clone + Send + Sync + 'static,
         T: TimeProvider + Clone,
@@ -340,7 +349,14 @@ impl<
     /// Trusted composition only. No request chooses executor, verifier or path.
     pub(crate) fn new(executor: E, clock: T, password: P, root: PathBuf) -> Result<Self, Error> {
         private_root(&root)?;
-        for child in ["factors", "replay", "sessions", "throttle", "epochs"] {
+        for child in [
+            "factors",
+            "replay",
+            "sessions",
+            "throttle",
+            "account-throttle",
+            "epochs",
+        ] {
             let path = root.join(child);
             if !path.exists() {
                 use std::os::unix::fs::DirBuilderExt as _;
@@ -373,15 +389,32 @@ impl<
         (sessions, failure)
     }
     fn context() -> AuthenticationContext {
-        // Internal/local backend for this slice. A future authenticated transport
-        // must supply its own verified peer binding, not an HTTP forwarded field.
+        // Legacy local/native backend context. Live RPC uses login_from with
+        // the peer-authenticated Web context, never a generic forwarded header.
         AuthenticationContext {
             request_id: "admin-local".into(),
             remote_addr: format!("local-uid-{}", crate::openbsd::real_uid()),
             user_agent: "admin-backend".into(),
         }
     }
+    fn account_context(login: &str) -> AuthenticationContext {
+        let mut context = Self::context();
+        // Both keys in this store are per-account. Never turn its remote-only
+        // key into a cheap, installation-wide lockout of unrelated admins.
+        context.remote_addr = format!("{:x}", Sha256::digest(login.as_bytes()))[..40].into();
+        context
+    }
     pub(crate) fn login(&self, login: &str, password: &str, code: &str) -> Result<Token, Error> {
+        self.login_from(&Self::context(), login, password, code)
+    }
+    /// Context is supplied by the peer-authenticated service, never HTTP headers.
+    pub(crate) fn login_from(
+        &self,
+        context: &AuthenticationContext,
+        login: &str,
+        password: &str,
+        code: &str,
+    ) -> Result<Token, Error> {
         if !valid_login(login)
             || password.is_empty()
             || password.len() > 72
@@ -396,22 +429,57 @@ impl<
             self.clock.clone(),
             LoginThrottlePolicy::default(),
         );
-        let context = Self::context();
-        if throttle
-            .check(&context, login)
+        // A server-derived account source survives client-address rotation.
+        // The separate client store retains the peer-wide failure bound.
+        let account_context = Self::account_context(login);
+        let account_throttle = LoginThrottleService::new(
+            FileLoginThrottleStore::new(self.authority.root.join("account-throttle")),
+            self.clock.clone(),
+            LoginThrottlePolicy::default(),
+        );
+        if account_throttle
+            .check(&account_context, login)
             .map_err(|_| Error::Unavailable)?
             .decision
             != LoginThrottleDecision::Allowed
         {
             return Err(Error::Denied);
         }
-        let admin = self.authority.lookup(login, true)?;
-        let dummy = "$2b$12$.....................................................";
-        let hash = admin.as_ref().map_or(dummy, |a| a.hash.as_str());
-        let matched = self.password.verify(password, hash)?;
+        if throttle
+            .check(context, login)
+            .map_err(|_| Error::Unavailable)?
+            .decision
+            != LoginThrottleDecision::Allowed
+        {
+            return Err(Error::Denied);
+        }
+        // Disagreement/unsupported credentials deny with the same bounded
+        // bcrypt schedule as an unknown identity. Dependency failures stay
+        // unavailable; their private diagnostics are not authentication detail.
+        let (admin, unavailable) = match self.authority.lookup(login, true) {
+            Ok(admin) => (admin, false),
+            Err(Error::Denied | Error::Unsupported) => (None, false),
+            Err(_) => (None, true),
+        };
+        let mut matched = false;
+        for cost in ["10", "11", "12"] {
+            let dummy = format!("$2b${cost}${}", ".".repeat(53));
+            let real = admin.as_ref().filter(|a| &a.hash[4..6] == cost);
+            let hash = real.map_or(dummy.as_str(), |a| a.hash.as_str());
+            let result = self.password.verify(password, hash)?;
+            if real.is_some() {
+                matched = result;
+            }
+        }
+        if unavailable {
+            return Err(Error::Unavailable);
+        }
         let Some(admin) = admin.filter(|a| a.active && matched) else {
             throttle
-                .record_failure(&context, login)
+                .record_failure(context, login)
+                .map_err(|_| Error::Unavailable)?;
+            account_throttle
+                .record_failure(&account_context, login)
                 .map_err(|_| Error::Unavailable)?;
             return Err(Error::Denied);
         };
@@ -428,17 +496,23 @@ impl<
         .map_err(|_| Error::Unavailable)?;
         if factor != SecondFactorVerdict::Accept {
             throttle
-                .record_failure(&context, login)
+                .record_failure(context, login)
+                .map_err(|_| Error::Unavailable)?;
+            account_throttle
+                .record_failure(&account_context, login)
                 .map_err(|_| Error::Unavailable)?;
             return Err(Error::Denied);
         }
         throttle
-            .clear_success(&context, login)
+            .clear_success(context, login)
+            .map_err(|_| Error::Unavailable)?;
+        account_throttle
+            .clear_success(&account_context, login)
             .map_err(|_| Error::Unavailable)?;
         let (sessions, failure) = self.sessions();
         let session = sessions
             .issue_with_epoch(
-                &context,
+                context,
                 &admin.subject(),
                 RequiredSecondFactor::Totp,
                 Some(admin.epoch),
@@ -448,6 +522,42 @@ impl<
                 e => e,
             })?;
         Ok(Token(format!("{PREFIX}{}", session.token.as_str())))
+    }
+    pub(crate) fn scope(
+        &self,
+        token: &Token,
+        context: &AuthenticationContext,
+    ) -> Result<Summary, Error> {
+        let (sessions, failure) = self.sessions();
+        let session = sessions
+            .validate(context, &token.session()?)
+            .map_err(|_| admission_failure(&failure))?;
+        let epoch = session.record.account_epoch.ok_or(Error::Denied)?;
+        let admin = self
+            .authority
+            .bound(&session.record.canonical_username, epoch)?;
+        Ok(Summary {
+            login: admin.login,
+            system: admin.system,
+            domains: admin.domains,
+            csrf: session.record.csrf_token,
+        })
+    }
+    pub(crate) fn logout_from(
+        &self,
+        token: &Token,
+        csrf: &str,
+        context: &AuthenticationContext,
+    ) -> Result<(), Error> {
+        let summary = self.scope(token, context)?;
+        if !crate::http_support::constant_time_eq(summary.csrf.as_bytes(), csrf.as_bytes()) {
+            return Err(Error::Denied);
+        }
+        self.sessions()
+            .0
+            .revoke_by_token(context, &token.session()?)
+            .map(|_| ())
+            .map_err(|_| Error::Denied)
     }
     pub(crate) fn domain(&self, token: &Token, domain: &str) -> Result<Option<Domain>, Error> {
         let (sessions, failure) = self.sessions();
@@ -488,10 +598,16 @@ impl<
     }
 }
 fn private_root(path: &Path) -> Result<(), Error> {
+    private_root_metadata(path)?;
+    if path.canonicalize().map_err(|_| Error::Unavailable)? != path {
+        return Err(Error::Unavailable);
+    }
+    Ok(())
+}
+fn private_root_metadata(path: &Path) -> Result<(), Error> {
     use std::os::unix::fs::MetadataExt as _;
     let m = std::fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
     if !path.is_absolute()
-        || path.canonicalize().map_err(|_| Error::Unavailable)? != path
         || !m.is_dir()
         || m.uid() != crate::openbsd::effective_uid()
         || m.mode() & 0o7777 != 0o700

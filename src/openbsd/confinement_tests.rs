@@ -435,3 +435,59 @@ fn serve_confinement_diagnostic_emitter() {
     failure.emit_native_fixture_diagnostic();
     panic!("HTTP fixture actual Serve confinement refused");
 }
+
+#[cfg(target_os = "openbsd")]
+#[test]
+#[ignore = "isolated ADM-S01 native Web identity and reviewed private fixture only"]
+fn native_private_admin_web_seal_denies_outside_namespace() {
+    disable_core_dumps().unwrap();
+    let config =
+        crate::admin_config::load_web(Path::new("/var/osmap-adm-s01/config/web.json")).unwrap();
+    seal_admin_web(&config.socket, &config.service_socket).unwrap();
+    assert!(fs::read_dir(config.socket.parent().unwrap()).is_ok());
+    for path in [
+        "/etc/passwd",
+        "/usr/local/bin/mariadb",
+        "/var/osmap-adm-s01/profiles/reader.cnf",
+        "/var/osmap-adm-s01/state/factors",
+    ] {
+        assert!(fs::File::open(path).is_err());
+    }
+    assert!(
+        std::os::unix::net::UnixStream::connect("/var/osmap-adm-s01/sql-run/mysql.sock").is_err()
+    );
+    println!("ADMIN_WEB_NATIVE_SEAL_ALLOWED_PARENT_AND_REFUSED_PRIVATE_PATHS");
+}
+
+#[cfg(target_os = "openbsd")]
+#[test]
+#[ignore = "isolated ADM-S01 native service identity and reviewed private fixture only"]
+fn native_private_admin_service_seal_denies_outside_namespace() {
+    disable_core_dumps().unwrap();
+    let base = Path::new("/var/osmap-adm-s01");
+    // A distinct owned leaf exercises the exact production permission rule
+    // without unlinking the service currently serving the private candidate.
+    let endpoint = base.join("service-run/native-cleanup-probe.sock");
+    let listener = std::os::unix::net::UnixListener::bind(&endpoint).unwrap();
+    seal_admin_service(
+        &base.join("state"),
+        &endpoint,
+        &base.join("profiles/reader.cnf"),
+        &base.join("sql-run/mysql.sock"),
+    )
+    .unwrap();
+    assert!(fs::read_dir(base.join("state")).is_ok());
+    assert!(fs::File::open(base.join("profiles/reader.cnf")).is_ok());
+    for path in [
+        "/etc/passwd",
+        "/bin/ls",
+        "/var/osmap-adm-s01/sql/bootstrap.cnf",
+        "/var/osmap-adm-s01/data",
+    ] {
+        assert!(fs::File::open(path).is_err());
+    }
+    fs::remove_file(&endpoint).unwrap();
+    drop(listener);
+    println!("ADMIN_SERVICE_NATIVE_SEAL_ALLOWED_STATE_AND_REFUSED_UNRELATED_PATHS");
+    println!("ADMIN_SERVICE_NATIVE_OWN_ENDPOINT_UNLINK_PASS");
+}
