@@ -1526,3 +1526,25 @@ rename or migrate the mail-account authority. Fixed queries, command arguments,
 scope checks and result projections remain unchanged. Refresh the existing
 source inventory for the renamed path, and retain prior isolated SQL evidence
 within its original limits. See the [bounded naming correction](OSMAP_ADMIN_PROJECT_PLAN.md#read-only-compatibility-adapter-slice--2026-11-14).
+
+### Same day — Bind the first ADMIN read to independent authentication and scope
+
+Build an internal Rust backend for a separately seeded domain administrator,
+using fixed reads of admin credentials/current grants and the existing OSMAP
+directory adapter. Reuse private TOTP replay, opaque sessions, throttling and
+atomic records. Verify a bounded bcrypt hash with OpenBSD's native API, keep
+admin factors and sessions in separate owner-only roots, and derive permitted
+domains in the backend. System-admin and legacy `ALL` authority remain refused.
+No network listener, GUI, database writer or production installation is added.
+
+The first test fails before implementation. Initial tests then reveal an invalid
+fixture secret-file format and missing explicit `ALL` refusal. Independent review
+finds snapshot-only session revival and generation-record loss; replace the
+snapshot-only binding with persistent random generation identity and a monotonic
+epoch. Preserve observed removal/restoration refusals, real mailbox-token denial,
+factor replay, expiry/logout and fixed backend errors in focused regressions.
+Eight source tests, formatting, strict Clippy, guard/inventory consumers and
+independent source review pass; native qualification remains pending. Local UID
+throttling is limited to this internal/local entry, and a later writer must
+advance revocation synchronously for changes that may be reversed between reads.
+See the [bounded implementation and result record](OSMAP_ADMIN_PROJECT_PLAN.md#authenticated-domain-read-slice--2026-11-16).
