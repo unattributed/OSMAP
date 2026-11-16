@@ -32,6 +32,16 @@ mandatory hooks; fresh independent review; native build and production nginx
 reader plus non-proxy refusal. Restore only exact backed-up Web artifacts on a
 cutover regression. Record actual results below; planned checks are not passes.
 
+Source results: fresh independent review GO after repairing the full-capacity
+plus crash-remnant recovery case. Focused proxy tests 2/2, throttle tests 23/23,
+runtime fault tests 5/5 and reader standalone/preview test pass. The normal
+pre-push run passed 2,381 library tests (91 platform/native cases ignored), all
+portable integration tests, hostile-content corpus and clippy. Its later document
+inventory check refused the newly added operations document because its index
+entry was missing; the index was corrected and that check passed independently.
+An earlier new-test expected 500 seconds rather than policy-derived 800; the
+test expectation was corrected and existing lockout behaviour remained fixed.
+
 OSMAP's engineering history, in ascending date order. Each day records the
 problem, the decision and its consequences, with links to the source changes
 and supporting records. This is a design history for maintainers and operators;
