@@ -168,9 +168,9 @@ PYCODE
 assert_fails_with "$reviewed_sql_repo" "reviewed SQL boundary changed"
 
 reviewed_admin_repo=$(make_repo reviewed_admin_sql)
-cp "$repo_root/src/admin_postfixadmin.rs" "$reviewed_admin_repo/src/admin_postfixadmin.rs"
+cp "$repo_root/src/admin_directory.rs" "$reviewed_admin_repo/src/admin_directory.rs"
 assert_passes "$reviewed_admin_repo"
-printf '\n' >> "$reviewed_admin_repo/src/admin_postfixadmin.rs"
+printf '\n' >> "$reviewed_admin_repo/src/admin_directory.rs"
 assert_fails_with "$reviewed_admin_repo" "reviewed SQL boundary changed"
 
 unknown_sql_repo=$(make_repo unknown_production_sql)
