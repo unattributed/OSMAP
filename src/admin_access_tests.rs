@@ -27,6 +27,8 @@ impl PasswordVerifier for Password {
 }
 struct State {
     grants: Vec<String>,
+    system: bool,
+    hash: String,
     active: bool,
     unavailable: bool,
     directory_reads: usize,
@@ -68,18 +70,24 @@ impl CommandExecutor for Sql {
                 .into_iter()
                 .map(|grant| {
                     format!(
-                        "{}\t{}\t{}\t{}\t0\t{}\n",
+                        "{}\t{}\t{}\t{}\t{}\t{}\n",
                         upper_hex(LOGIN.as_bytes()),
-                        upper_hex(format!("$2b$12${}", ".".repeat(53)).as_bytes()),
+                        upper_hex(state.hash.as_bytes()),
                         u8::from(state.active),
                         upper_hex(b"2026-11-16 00:00:00"),
+                        u8::from(state.system),
                         grant
                     )
                 })
                 .collect::<String>()
         } else {
             state.directory_reads += 1;
-            format!("{}\t1\t4\t5\t100\t200\t0\n", upper_hex(b"example.test"))
+            let domain = if query.contains(&upper_hex(b"foreign.test")) {
+                "foreign.test"
+            } else {
+                "example.test"
+            };
+            format!("{}\t1\t4\t5\t100\t200\t0\n", upper_hex(domain.as_bytes()))
         };
         Ok(CommandExecution {
             status_code: 0,
@@ -129,6 +137,8 @@ impl Fixture {
             root,
             sql: Sql(Arc::new(Mutex::new(State {
                 grants: vec!["example.test".into()],
+                system: false,
+                hash: format!("$2b$12${}", ".".repeat(53)),
                 active: true,
                 unavailable: false,
                 directory_reads: 0,
@@ -153,6 +163,9 @@ impl Drop for Fixture {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             std::fs::remove_dir_all(&self.root).unwrap();
+        } else {
+            // Private test output names the exact synthetic fixture for recovery.
+            eprintln!("ADMIN_TEST_FIXTURE_RETAINED root={}", self.root.display());
         }
     }
 }
@@ -458,4 +471,201 @@ fn factor_change_then_restoration_cannot_revive_old_session() {
     assert_eq!(f.service().domain(&old, "example.test"), Err(Error::Denied));
     install_factor(&f.root);
     assert_eq!(f.service().domain(&old, "example.test"), Err(Error::Denied));
+}
+
+#[test]
+fn toronto_hash_format_is_supported_without_rewriting_stored_value() {
+    let f = Fixture::new();
+    let stored = format!("$2y$10${}", ".".repeat(53));
+    f.sql.0.lock().unwrap().hash = stored.clone();
+    assert!(bcrypt(&stored));
+    let token = f.login().unwrap();
+    assert!(f
+        .service()
+        .domain(&token, "example.test")
+        .unwrap()
+        .is_some());
+    assert_eq!(f.sql.0.lock().unwrap().hash, stored);
+}
+#[test]
+fn system_scope_requires_both_indicators() {
+    let f = Fixture::new();
+    f.sql.0.lock().unwrap().system = true;
+    assert!(matches!(f.login(), Err(Error::Denied)));
+    f.sql.0.lock().unwrap().grants.push("ALL".into());
+    let token = f.login().unwrap();
+    assert_eq!(
+        f.service()
+            .domain(&token, "foreign.test")
+            .unwrap()
+            .unwrap()
+            .name,
+        "foreign.test"
+    );
+    f.sql.0.lock().unwrap().system = false;
+    assert_eq!(
+        f.service().domain(&token, "foreign.test"),
+        Err(Error::Denied)
+    );
+    f.sql.0.lock().unwrap().system = true;
+    assert_eq!(
+        f.service().domain(&token, "foreign.test"),
+        Err(Error::Denied)
+    );
+}
+
+#[test]
+fn bcrypt_compatibility_policy_has_bounded_cost_and_unambiguous_markers() {
+    for marker in ["2b", "2y"] {
+        for cost in ["10", "11", "12"] {
+            assert!(bcrypt(&format!("${marker}${cost}${}", ".".repeat(53))));
+        }
+    }
+    for (marker, cost) in [("2a", "10"), ("2x", "10"), ("2b", "09"), ("2y", "31")] {
+        assert!(!bcrypt(&format!("${marker}${cost}${}", ".".repeat(53))));
+    }
+    assert!(!bcrypt(&format!("$2y$10${}", "é".repeat(26))));
+}
+#[test]
+fn system_role_upgrade_requires_fresh_authentication() {
+    let f = Fixture::new();
+    let domain_session = f.login().unwrap();
+    {
+        let mut state = f.sql.0.lock().unwrap();
+        state.system = true;
+        state.grants.push("ALL".into());
+    }
+    assert_eq!(
+        f.service().domain(&domain_session, "foreign.test"),
+        Err(Error::Denied)
+    );
+    f.clock.0.fetch_add(30, Ordering::SeqCst);
+    let fresh = f.login().unwrap();
+    assert_eq!(
+        f.service()
+            .domain(&fresh, "foreign.test")
+            .unwrap()
+            .unwrap()
+            .name,
+        "foreign.test"
+    );
+    assert_eq!(f.service().domain(&fresh, "bad'.test"), Err(Error::Invalid));
+}
+fn save_token(root: &Path, name: &str, token: &Token) {
+    use std::io::Write as _;
+    use std::os::unix::fs::OpenOptionsExt as _;
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(root.join(name))
+        .unwrap();
+    file.write_all(token.as_str().as_bytes()).unwrap();
+    file.sync_all().unwrap();
+}
+#[test]
+#[ignore = "operator-run native independently generated bcrypt compatibility vectors"]
+fn native_bcrypt_compatibility_vectors() {
+    let (root, _, _) = native();
+    for (name, password) in [
+        ("ascii-2y.hash", PASSWORD),
+        ("utf8-2y.hash", "synthetic-café-password"),
+        ("ascii-2b.hash", PASSWORD),
+    ] {
+        let original = std::fs::read_to_string(root.join(name)).unwrap();
+        let hash = original.trim();
+        assert!(crate::openbsd::admin_password_matches(password, hash).unwrap());
+        assert!(
+            !crate::openbsd::admin_password_matches("incorrect-synthetic-password", hash).unwrap()
+        );
+        assert_eq!(std::fs::read_to_string(root.join(name)).unwrap(), original);
+    }
+    println!("NATIVE_BCRYPT_COMPATIBILITY_VECTORS_PASS");
+}
+#[test]
+#[ignore = "operator-run after enabling both isolated fixture system indicators"]
+fn native_compatibility_system_read() {
+    let (root, service, clock) = native();
+    clock.0.fetch_add(30, Ordering::SeqCst);
+    let before = service.authority.lookup(LOGIN, true).unwrap().unwrap().hash;
+    assert!(before.starts_with("$2y$10$"));
+    let token = service.login(LOGIN, PASSWORD, &code(&clock)).unwrap();
+    assert_eq!(
+        service
+            .domain(&token, "foreign.test")
+            .unwrap()
+            .unwrap()
+            .name,
+        "foreign.test"
+    );
+    assert!(matches!(
+        service.login(LOGIN, PASSWORD, &code(&clock)),
+        Err(Error::Denied)
+    ));
+    assert_eq!(
+        service
+            .authority
+            .lookup(LOGIN, false)
+            .unwrap()
+            .unwrap()
+            .hash,
+        before
+    );
+    save_token(&root, "system.token", &token);
+    println!("NATIVE_TORONTO_SHAPED_SYSTEM_READ_PASS");
+}
+#[test]
+#[ignore = "operator-run second process for compatible system-admin read"]
+fn native_compatibility_system_resume() {
+    let (root, service, clock) = native();
+    clock.0.fetch_add(30, Ordering::SeqCst);
+    let text = std::fs::read_to_string(root.join("system.token")).unwrap();
+    let token = Token::presented(&text).unwrap();
+    assert_eq!(
+        service
+            .domain(&token, "foreign.test")
+            .unwrap()
+            .unwrap()
+            .name,
+        "foreign.test"
+    );
+    println!("NATIVE_SYSTEM_SESSION_RESTART_PASS");
+}
+#[test]
+#[ignore = "operator-run after isolated system role disagreement or restoration"]
+fn native_compatibility_system_refuses() {
+    let (root, service, clock) = native();
+    clock.0.fetch_add(30, Ordering::SeqCst);
+    let text = std::fs::read_to_string(root.join("system.token")).unwrap();
+    let token = Token::presented(&text).unwrap();
+    assert_eq!(service.domain(&token, "foreign.test"), Err(Error::Denied));
+    println!("NATIVE_SYSTEM_DEMOTION_OLD_SESSION_REFUSED");
+}
+
+#[test]
+#[ignore = "operator-run fresh proof against one inconsistent fixture role indicator"]
+fn native_compatibility_role_disagreement_login() {
+    let (_, service, clock) = native();
+    clock.0.fetch_add(60, Ordering::SeqCst);
+    assert!(matches!(
+        service.login(LOGIN, PASSWORD, &code(&clock)),
+        Err(Error::Denied)
+    ));
+    println!("NATIVE_INCONSISTENT_ROLE_LOGIN_REFUSED");
+}
+#[test]
+#[ignore = "operator-run fresh authentication after restoring both fixture role indicators"]
+fn native_compatibility_restored_role_fresh_login() {
+    let (_, service, clock) = native();
+    clock.0.fetch_add(60, Ordering::SeqCst);
+    let fresh = service.login(LOGIN, PASSWORD, &code(&clock)).unwrap();
+    assert_eq!(
+        service
+            .domain(&fresh, "foreign.test")
+            .unwrap()
+            .unwrap()
+            .name,
+        "foreign.test"
+    );
+    println!("NATIVE_RESTORED_SYSTEM_ROLE_FRESH_PROOF_PASS");
 }

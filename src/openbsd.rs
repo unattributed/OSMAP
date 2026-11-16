@@ -18,21 +18,28 @@ use std::path::{Path, PathBuf};
 use crate::config::{AppConfig, LogLevel, OpenbsdConfinementMode};
 use crate::logging::{EventCategory, LogEvent, Logger};
 
-/// Independent admin bcrypt verification, never a Dovecot/mailbox auth request.
-/// A fixed work factor bounds CPU and avoids accepting empty hash/password pairs.
-pub(crate) fn admin_password_matches(password: &str, hash: &str) -> io::Result<bool> {
-    if password.is_empty()
-        || password.len() > 72
-        || hash.len() != 60
-        || !hash.starts_with("$2b$12$")
-        || !hash.as_bytes()[7..]
+/// Bounded verification policy for the installed and newly seeded admin hashes.
+pub(crate) fn admin_bcrypt_hash_supported(hash: &str) -> bool {
+    let bytes = hash.as_bytes();
+    bytes.len() == 60
+        && (bytes.starts_with(b"$2b$") || bytes.starts_with(b"$2y$"))
+        && matches!(&bytes[4..7], b"10$" | b"11$" | b"12$")
+        && bytes[7..]
             .iter()
             .all(|b| b.is_ascii_alphanumeric() || b"./".contains(b))
-    {
+}
+
+/// Independent admin bcrypt verification, never a Dovecot/mailbox auth request.
+/// Openwall defines 2y and 2b as equivalent. OpenBSD accepts 2b, so adapt only a
+/// temporary verification copy; preserve the stored hash and authority digest.
+pub(crate) fn admin_password_matches(password: &str, hash: &str) -> io::Result<bool> {
+    if password.is_empty() || password.len() > 72 || !admin_bcrypt_hash_supported(hash) {
         return Err(io::ErrorKind::InvalidInput.into());
     }
     let password = std::ffi::CString::new(password).map_err(|_| io::ErrorKind::InvalidInput)?;
-    let hash = std::ffi::CString::new(hash).map_err(|_| io::ErrorKind::InvalidInput)?;
+    let mut verification = hash.as_bytes().to_vec();
+    verification[2] = b'b';
+    let hash = std::ffi::CString::new(verification).map_err(|_| io::ErrorKind::InvalidInput)?;
     #[cfg(target_os = "openbsd")]
     {
         unsafe extern "C" {

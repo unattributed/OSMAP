@@ -1563,3 +1563,24 @@ the earlier local synthetic-fixture failures separately; their cleanup is
 unconfirmed because the failed tests did not emit their random root names.
 This qualifies the internal/local backend, not an admin network endpoint,
 production credential scheme, installed configuration or broader Phase 1 exit.
+
+### Same day — Qualify development against the authoritative Toronto contracts
+
+The operator requests demonstrated Toronto compatibility after read-only checks
+show that the first fixture's `$2b$12$` domain admin did not match the active
+`$2y$10$` system-admin setup. Inspect only scheme labels, role consistency and
+schema metadata; retain no live hashes, usernames or factors. Toronto's flag and
+active `ALL` grant agree, and its login/grant bounds fit the backend. The required
+private SQL client profile is absent, so installed authentication remains open.
+
+First regressions reproduce the hash and role refusals. Admit bounded bcrypt
+costs 10–12 and verify the documented equivalent `$2y$` marker through an in-memory
+`$2b$` copy without changing stored bytes or authority fingerprints. Require both
+active system indicators for installation-wide reads, reject disagreement and
+retain explicit domain-admin scope. Reuse generation/epoch checks so a role
+change requires fresh authentication. Provide restricted client/grant examples
+for a later reviewed deployment. Execute the actual fixed SELECT read-only on
+Toronto with a NULL predicate, returning no account rows; compile and exercise
+the changed backend on both hosts using private Unix-socket MariaDB fixtures.
+Native and delivery results remain pending in the
+[compatibility work order](OSMAP_ADMIN_PROJECT_PLAN.md#toronto-compatibility-slice--2026-11-16).

@@ -206,3 +206,49 @@ Private logs are under `Downloads/osmap-admin-adapter/admin-access-native/`.
 Initial failed local synthetic-fixture roots were retained by the test harness;
 their exact names were not emitted, so local failed-fixture cleanup is UNKNOWN.
 Native cleanup is separately confirmed. Full delivery-gate results remain pending.
+
+## Toronto compatibility slice — 2026-11-16
+
+Outcome: qualify development against Toronto's observed credential/schema/role
+contracts and execute the changed Rust backend on Toronto, not infer portability
+from obsd1 alone. Read-only observations find active `$2y$10$` credentials,
+consistent `superadmin=1` plus active `ALL`, supported login/grant bounds and
+missing `/etc/osmap/admin-read-mariadb.cnf`. Preserve source hash bytes; adapt only
+a verification copy of the documented equivalent bcrypt marker in memory. Admit
+costs 10–12 and refuse ambiguous/unsupported markers and excessive work factors.
+System domain reads require both active role indicators; either alone refuses.
+
+Root owns source, both native queues and Git; the independent adapter reviewer
+owns source/result review. First tests must fail on the observed hash/role gaps.
+Then qualify wrong passwords, unsupported costs/markers, inconsistent roles,
+demotion/reinstatement refusal, TOTP replay and persisted sessions. Reuse existing
+Rust/native fixtures. Use an independently generated synthetic `$2y$10$` hash,
+never a production hash/password/factor. Validate the actual fixed SELECT contract
+read-only against Toronto with a NULL predicate that cannot return an account. Execute the
+backend on obsd1, then on Toronto against its installed MariaDB binary in a
+temporary separate Unix-socket-only instance with production-shaped schema and
+restricted fixture grants. Do not change production databases/users, installed
+configuration, services, mail accounts or factors. Commit a private-client/grant
+example for later deployment; do not describe it as installed configuration.
+
+Use signed reviewed source before transfer, one-job/debug0 native compilation
+bounded to 600 seconds per host and fixture phases bounded to 120 seconds.
+Toronto's build-user hard data limit needs the previously proven privileged
+limit setup followed by dropping groups/GID/UID before Cargo. The temporary
+database has no TCP listener and uses explicit small buffers and connection
+bounds. Retain/read back sanitized diagnostics and hashes before exact-owned
+cleanup. Two failures at one boundary stop retries for independent reassessment;
+the investigation checkpoint is four hours without automatic allowance growth.
+Focused checks precede normal signed delivery hooks, independent result review,
+exact-head status and protected integration. Results remain NOT RUN until observed.
+
+Source observations: both new hash/role regressions fail against the prior code.
+The correction passes 12 focused tests, with nine gated native tests still
+ignored locally, plus formatting, strict Clippy, exact-source guard regression,
+inventory validation and independent source review. The exact fixed SELECT runs
+on Toronto's installed schema with NULL binding, exit 0 and zero stdout/stderr
+bytes; this is schema compatibility, not successful production authentication.
+Independent Linux libcrypt vectors use explicit `$2y$10$` and `$2b$12$` settings,
+including UTF-8 input. An initial generator-default assumption produced a
+different marker and was refused before use; the explicit setting corrects the
+fixture method. Native results and production profile installation remain open.

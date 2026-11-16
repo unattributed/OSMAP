@@ -60,6 +60,7 @@ struct Admin {
     epoch: u64,
     generation: String,
     domains: Vec<String>,
+    system: bool,
     active: bool,
 }
 impl Admin {
@@ -150,6 +151,7 @@ impl<E: CommandExecutor> Authority<E> {
         }
         let mut identity: Option<Vec<String>> = None;
         let mut domains = Vec::new();
+        let mut has_all = false;
         for line in &rows {
             let parts = line.split('\t').map(str::to_owned).collect::<Vec<_>>();
             if parts.len() != 6
@@ -166,15 +168,18 @@ impl<E: CommandExecutor> Authority<E> {
             }
             if parts[5] != "NULL" {
                 let domain = unhex(&parts[5])?;
-                // This slice admits explicit domain grants only. ALL is never authority.
                 if domain == "ALL" {
-                    return Err(Error::Denied);
+                    if has_all {
+                        return Err(Error::Unavailable);
+                    }
+                    has_all = true;
+                } else {
+                    Scope::domains(&[&domain]).map_err(|_| Error::Denied)?;
+                    if domains.contains(&domain) {
+                        return Err(Error::Unavailable);
+                    }
+                    domains.push(domain);
                 }
-                Scope::domains(&[&domain]).map_err(|_| Error::Denied)?;
-                if domains.contains(&domain) {
-                    return Err(Error::Unavailable);
-                }
-                domains.push(domain);
             }
             identity = Some(parts);
         }
@@ -182,9 +187,10 @@ impl<E: CommandExecutor> Authority<E> {
         if unhex(&identity[0])? != login {
             return Err(Error::Unavailable);
         }
-        // System-admin semantics need their own reviewed rule; do not infer them
-        // from superadmin or a historical ALL grant.
-        if identity[4] != "0" {
+        // Compatibility requires the current flag and active legacy grant to
+        // agree. Neither indicator alone can grant installation-wide reads.
+        let system = identity[4] == "1";
+        if system != has_all {
             return Err(Error::Denied);
         }
         let hash = unhex(&identity[1])?;
@@ -201,6 +207,7 @@ impl<E: CommandExecutor> Authority<E> {
             epoch,
             generation,
             domains,
+            system,
             active: identity[2] == "1",
         }))
     }
@@ -308,11 +315,7 @@ fn admission_failure(failure: &AdmissionFailure) -> Error {
 }
 
 fn bcrypt(hash: &str) -> bool {
-    hash.len() == 60
-        && hash.starts_with("$2b$12$")
-        && hash.as_bytes()[7..]
-            .iter()
-            .all(|b| b.is_ascii_alphanumeric() || b"./".contains(b))
+    crate::openbsd::admin_bcrypt_hash_supported(hash)
 }
 pub(crate) trait PasswordVerifier {
     fn verify(&self, password: &str, hash: &str) -> Result<bool, Error>;
@@ -455,8 +458,18 @@ impl<
         let admin = self
             .authority
             .bound(&session.record.canonical_username, epoch)?;
-        let names = admin.domains.iter().map(String::as_str).collect::<Vec<_>>();
-        let scope = Scope::domains(&names).map_err(|_| Error::Denied)?;
+        let names = if admin.system {
+            vec![domain]
+        } else {
+            admin.domains.iter().map(String::as_str).collect::<Vec<_>>()
+        };
+        let scope = Scope::domains(&names).map_err(|_| {
+            if admin.system {
+                Error::Invalid
+            } else {
+                Error::Denied
+            }
+        })?;
         // Validate before dispatching any directory query, including existence.
         Adapter::new(self.authority.executor.clone())
             .domain(&scope, domain)
