@@ -504,7 +504,7 @@ pub(crate) fn app_header_with_storage(
         "<a class=\"brand\" href=\"/mailboxes\" aria-label=\"OSMAP mailboxes\"><span class=\"brand-mark\" aria-hidden=\"true\">{}</span>{brand_copy}</a>",
         "{}",
         "<div class=\"status-row auth-status\" aria-label=\"Session status and identity\">",
-        "<details class=\"protection-menu\" name=\"toolbar-menu\"><summary>Protected by Default</summary><div class=\"account-menu-panel\"><p>Remote images and active content are blocked. These protections do not encrypt a message or verify its sender.</p><p class=\"shell-session-chip\">Your browser session was authenticated with two factors.</p></div></details>",
+        "<details class=\"protection-menu\" name=\"toolbar-menu\"><summary>Rendering protection</summary><div class=\"account-menu-panel\"><p>Remote images and active content are blocked. Rendering protection does not encrypt a message, verify its sender or links, or scan downloads for malware.</p><p class=\"shell-session-chip\">Your browser session was authenticated with two factors.</p></div></details>",
         "{notification_link}",
         "<details class=\"account-menu\" name=\"toolbar-menu\"><summary class=\"identity-chip\"><span class=\"account-avatar\" aria-hidden=\"true\">{}</span><span class=\"account-name\" title=\"{}\">{}</span>{}</summary>",
         "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings?section=appearance\">Appearance</a><a href=\"/contacts\"><span class=\"presentation-icon presentation-icon-people\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Contacts</span></a><a href=\"/sessions\"><span class=\"presentation-icon presentation-icon-sessions\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Manage sessions</span></a>{}</div>",
@@ -2656,7 +2656,7 @@ pub(crate) fn render_message_view_page_with_context(
         ),
     );
     TrustedHtml::from_template(format!(
-        "{}<main id=\"main-content\" class=\"page-shell standalone-reader\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Message Reader</h1><p>Protected reading with message details, isolated attachments and source view.</p></div>{}</main>",
+        "{}<main id=\"main-content\" class=\"page-shell standalone-reader\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Message Reader</h1><p>Message details, downloads and source view with rendering protection.</p></div>{}</main>",
         header,
         render_reader_fragment(csrf_token, rendered, ReaderFolders { timezone: context.timezone, account: canonical_username, labels: context.labels.as_ref(), archive: archive_mailbox_name, bin: bin_mailbox_name, mailboxes: user_visible_mailboxes }, &back, &current, Some(neighbours))))
 }
@@ -2745,7 +2745,7 @@ fn render_reader_fragment(
                 })
                 .unwrap_or_default();
             attachments.push_str(&format!(
-                "<li class=\"attachment-item\"><div class=\"attachment-description\"><strong>{}</strong><p class=\"muted\">Isolated download</p><details class=\"reader-file-details\"><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">File details</span></summary><p>Encoded size hint: {} bytes. Part {}. {}, {}{}</p></details></div><a class=\"button-link\" href=\"{}\"><span class=\"presentation-icon presentation-icon-download\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Download</span></a></li>",
+                "<li class=\"attachment-item\"><div class=\"attachment-description\"><strong>{}</strong><p class=\"muted\">Download only · not scanned for malware</p><details class=\"reader-file-details\"><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">File details</span></summary><p>Encoded size hint: {} bytes. Part {}. {}, {}{}</p></details></div><a class=\"button-link\" href=\"{}\"><span class=\"presentation-icon presentation-icon-download\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Download</span></a></li>",
                 escape_html(attachment.filename.as_deref().unwrap_or("<unnamed>")),
                 attachment.size_hint_bytes,
                 escape_html(&attachment.part_path),
@@ -2822,8 +2822,8 @@ fn render_reader_fragment(
     };
     let protected_reader_strip = format!(
         concat!(
-            "<details class=\"protected-trust-strip\" aria-label=\"Protected by Default reader trust strip\"><summary><strong>Protected by Default</strong><span>Remote content blocked</span></summary>",
-            "<div><strong>Protected by Default</strong><p>Verified signatures do not make content safe. All displayed message content passes protected rendering.</p></div>",
+            "<details class=\"protected-trust-strip\" aria-label=\"Reader rendering protection\"><summary><strong>Rendering protection</strong><span>Remote content blocked</span></summary>",
+            "<div><strong>Rendering protection</strong><p>Active content and remote images are removed. Verified signatures do not make message content, links or downloads safe.</p></div>",
             "<div class=\"trust-strip-badges\" aria-label=\"Reader protection states\">",
             "<span class=\"badge badge-ok\">Remote content blocked</span>",
             "<span class=\"badge\">{} rendering</span>",
@@ -2867,10 +2867,10 @@ fn render_reader_fragment(
             "<header class=\"message-heading\"><div class=\"reader-message-top\"><h2 id=\"message-title\" dir=\"auto\">{}</h2><p class=\"muted reader-date\">{} · {}</p></div><div class=\"reader-message-person\"><span class=\"message-avatar\" aria-hidden=\"true\">{}</span><div><p class=\"message-from\" dir=\"auto\">From: {}</p><p class=\"muted reader-to\" dir=\"auto\">To: {}</p></div></div></header>",
             "<div class=\"reader-status\">{}{}{}</div>",
             "<span id=\"reading-title\" class=\"sr-only\">Reading Pane</span>",
-            "<div class=\"reader-section-heading sr-only\" data-protected-body-panel=\"true\"><span class=\"badge badge-ok\">Protected rendering</span></div><p class=\"notice reader-boundary-note\">Message content is displayed with active content and remote images removed.</p><section class=\"body-panel\"><h2 class=\"sr-only\">Body</h2>{}</section>",
+            "<div class=\"reader-section-heading sr-only\" data-protected-body-panel=\"true\"><span class=\"badge badge-ok\">Protected rendering</span></div><p class=\"notice reader-boundary-note\"><strong>Check before trusting:</strong> Rendering protection does not verify the sender or link destinations. Links can lead to phishing sites, and downloads may contain malware. Confirm unexpected requests through a trusted channel before following links, sharing information or opening files.</p><section class=\"body-panel\"><h2 class=\"sr-only\">Body</h2>{}</section>",
             "<section class=\"panel reader-attachments\"><h2>{}</h2><ul class=\"attachment-list\">{}</ul></section>",
             "<div class=\"toolbar reader-primary-actions\" aria-label=\"Message actions\">{}{}{}</div>",
-            "<details class=\"reader-details\"><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Message details</span></summary>{}{}{}<dl class=\"message-meta reader-meta\"><dt>Subject</dt><dd dir=\"auto\">{}</dd><dt>From</dt><dd dir=\"auto\">{}</dd><dt>To</dt><dd dir=\"auto\">{}</dd><dt>Cc</dt><dd dir=\"auto\">{}</dd><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd><dt>Protection</dt><dd>Protected by Default</dd><dt>Remote Content</dt><dd>{}</dd></dl></details>",
+            "<details class=\"reader-details\"><summary><span class=\"presentation-icon presentation-icon-info\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Message details</span></summary>{}{}{}<dl class=\"message-meta reader-meta\"><dt>Subject</dt><dd dir=\"auto\">{}</dd><dt>From</dt><dd dir=\"auto\">{}</dd><dt>To</dt><dd dir=\"auto\">{}</dd><dt>Cc</dt><dd dir=\"auto\">{}</dd><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd><dt>Protection</dt><dd>Active content and remote images removed</dd><dt>Remote Content</dt><dd>{}</dd></dl></details>",
             "</article>"
         ),
         escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")),
@@ -3804,7 +3804,7 @@ mod v7_rendering_regression_tests {
 
     #[test]
     fn ui_message_view_surfaces_truthful_rendering_labels() {
-        let rendered = RenderedMessageView {
+        let mut rendered = RenderedMessageView {
             openpgp: None,
             metadata: None,
             flags: Vec::new(),
@@ -3858,6 +3858,9 @@ mod v7_rendering_regression_tests {
         assert!(page.contains("Safe rendered body"));
         assert!(page.contains("data-openpgp-reader-states=\"unassessed\""));
         assert!(page.contains("OpenPGP not assessed for this message"));
+        assert!(!page.contains("Protected by Default"));
+        assert!(page.contains("Download only · not scanned for malware"));
+        assert_reader_phishing_warning(&page);
         for obsolete in [
             "OpenPGP unavailable",
             "UI-only",
@@ -3867,6 +3870,42 @@ mod v7_rendering_regression_tests {
         ] {
             assert!(!page.contains(obsolete), "ordinary reader cannot infer account capability or describe obsolete implementation");
         }
+
+        // The warning belongs to the shared reader, including plain-text mail
+        // and the coordinated preview, independently of HTML sanitization.
+        rendered.rendering_mode = RenderingMode::PlainTextPreformatted;
+        rendered.body_source = MimeBodySource::SinglePartPlainText;
+        rendered.contains_html_body = false;
+        rendered.body_html = TrustedHtml::from_sanitized("<pre>Plain body</pre>".into());
+        rendered.attachments.clear();
+        let preview = render_reader_fragment(
+            "csrf-token-placeholder",
+            &rendered,
+            ReaderFolders {
+                timezone: crate::timezone::FixedOffset::default(),
+                account: "alice@example.com",
+                labels: None,
+                archive: None,
+                bin: None,
+                mailboxes: &mailboxes,
+            },
+            "/mailbox?name=INBOX",
+            "/message?mailbox=INBOX&uid=42",
+            None,
+        );
+        assert_reader_phishing_warning(&preview);
+    }
+
+    fn assert_reader_phishing_warning(page: &str) {
+        let warning = page
+            .find("<p class=\"notice reader-boundary-note\">")
+            .expect("reader has a persistent boundary warning");
+        let body = page.find("<section class=\"body-panel\">").unwrap();
+        let warning_html = &page[warning..body];
+        assert!(warning_html.contains("does not verify the sender or link destinations"));
+        assert!(warning_html.contains("Links can lead to phishing sites"));
+        assert!(warning_html.contains("downloads may contain malware"));
+        assert!(!warning_html.contains("<details"));
     }
 }
 

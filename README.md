@@ -39,6 +39,12 @@ The current source includes:
   authentication and submission throttles, worker budgets, sanitized message
   HTML, blocked remote content, and OpenBSD confinement.
 
+Message rendering removes active content and remote images. It does not verify
+senders or link destinations, detect phishing sites, or scan downloaded files
+for malware. The reader displays this boundary before the message body and
+identifies attachment downloads as unscanned. OpenPGP signature results do not
+establish that message content, links, or files are safe.
+
 ## Project status
 
 OSMAP is under active development; the crate version is `0.1.0`. It is

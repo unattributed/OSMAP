@@ -9,6 +9,14 @@ use std::env;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
+    if env::args().nth(1).as_deref() == Some("--version") {
+        println!(
+            "OSMAP {} git_commit={}",
+            env!("CARGO_PKG_VERSION"),
+            env!("OSMAP_BUILD_REVISION")
+        );
+        return ExitCode::SUCCESS;
+    }
     if let Err(message) = apply_cli_run_mode_override() {
         eprintln!("{message}");
         return ExitCode::FAILURE;

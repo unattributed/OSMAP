@@ -7,7 +7,7 @@
 
 use std::fs;
 use std::fs::OpenOptions;
-use std::io::Write as _;
+use std::io::{Read as _, Write as _};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -76,6 +76,9 @@ pub const TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON: &str = "too_many_message_moves";
 
 static THROTTLE_TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 const THROTTLE_LOCK_FILE: &str = ".throttle-store.lock";
+/// Hard limit on persisted buckets in each throttle directory.
+pub const MAX_THROTTLE_RECORDS: usize = 4096;
+const MAX_THROTTLE_RECORD_BYTES: u64 = 1024;
 
 /// Policy controlling how the current login-throttle slice behaves.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -460,6 +463,17 @@ pub trait LoginThrottleStore {
     fn load(&self, key_id: &str) -> Result<Option<LoginThrottleRecord>, LoginThrottleError>;
     fn save(&self, key_id: &str, record: &LoginThrottleRecord) -> Result<(), LoginThrottleError>;
     fn remove(&self, key_id: &str) -> Result<(), LoginThrottleError>;
+
+    /// Reclaims expired buckets and verifies that all potentially written keys
+    /// fit. The service calls this while holding its existing transaction lock.
+    fn prepare_capacity(
+        &self,
+        _now: u64,
+        _window_seconds: u64,
+        _key_ids: &[&str],
+    ) -> Result<(), LoginThrottleError> {
+        Ok(())
+    }
 }
 
 /// File-backed throttle store rooted under the configured cache tree.
@@ -490,6 +504,92 @@ impl FileLoginThrottleStore {
 
     fn lock_path(&self) -> PathBuf {
         self.throttle_dir.join(THROTTLE_LOCK_FILE)
+    }
+
+    fn record_keys(&self) -> Result<Vec<String>, LoginThrottleError> {
+        let entries =
+            fs::read_dir(&self.throttle_dir).map_err(|_| LoginThrottleError::StoreFailure {
+                reason: "failed to enumerate throttle directory".into(),
+            })?;
+        let mut keys = Vec::new();
+        let mut inspected = 0;
+        for entry in entries {
+            let entry = entry.map_err(|_| LoginThrottleError::StoreFailure {
+                reason: "failed to read throttle directory entry".into(),
+            })?;
+            let name = entry.file_name();
+            if name == THROTTLE_LOCK_FILE {
+                continue;
+            }
+            // Bound both live buckets and crash remnants independently. A
+            // remnant must not make a directory at the record cap unrecoverable.
+            if inspected == MAX_THROTTLE_RECORDS * 2 {
+                return Err(LoginThrottleError::StoreFailure {
+                    reason: "throttle store capacity exceeded".into(),
+                });
+            }
+            inspected += 1;
+            if let Some(parts) = name.to_str().and_then(|name| name.strip_suffix(".tmp")) {
+                let mut parts = parts.rsplitn(3, '.');
+                let counter = parts.next().unwrap_or_default();
+                let pid = parts.next().unwrap_or_default();
+                let key = parts.next().unwrap_or_default();
+                if !counter.is_empty()
+                    && counter.bytes().all(|ch| ch.is_ascii_digit())
+                    && !pid.is_empty()
+                    && pid.bytes().all(|ch| ch.is_ascii_digit())
+                    && !key.is_empty()
+                    && key.len() <= 64
+                    && key
+                        .bytes()
+                        .all(|ch| ch.is_ascii_alphanumeric() || ch == b'-' || ch == b'_')
+                    && entry.file_type().is_ok_and(|kind| kind.is_file())
+                {
+                    fs::remove_file(entry.path()).map_err(|_| {
+                        LoginThrottleError::StoreFailure {
+                            reason: "failed to reclaim throttle temporary file".into(),
+                        }
+                    })?;
+                    continue;
+                }
+            }
+            let key = name
+                .to_str()
+                .and_then(|name| name.strip_suffix(".throttle"));
+            let Some(key) = key.filter(|key| {
+                !key.is_empty()
+                    && key.len() <= 64
+                    && key
+                        .bytes()
+                        .all(|ch| ch.is_ascii_alphanumeric() || ch == b'-' || ch == b'_')
+            }) else {
+                return Err(LoginThrottleError::StoreFailure {
+                    reason: "unexpected throttle directory entry".into(),
+                });
+            };
+            if keys.len() == MAX_THROTTLE_RECORDS {
+                return Err(LoginThrottleError::StoreFailure {
+                    reason: "throttle store capacity exceeded".into(),
+                });
+            }
+            keys.push(key.to_owned());
+        }
+        Ok(keys)
+    }
+
+    fn check_writable(&self) -> Result<(), LoginThrottleError> {
+        let path = self.temp_path("health");
+        let mut file = create_throttle_temp_file(&path)?;
+        let result = file
+            .write_all(b"throttle-store-check\n")
+            .and_then(|()| file.sync_data());
+        let removed = fs::remove_file(&path);
+        if result.is_err() || removed.is_err() {
+            return Err(LoginThrottleError::StoreFailure {
+                reason: "throttle store write check failed".into(),
+            });
+        }
+        Ok(())
     }
 
     fn acquire_exclusive_lock(&self) -> Result<ThrottleFileLock, LoginThrottleError> {
@@ -563,14 +663,38 @@ impl LoginThrottleStore for FileLoginThrottleStore {
     fn load(&self, key_id: &str) -> Result<Option<LoginThrottleRecord>, LoginThrottleError> {
         let path = self.record_path(key_id);
 
-        if !path.exists() {
-            return Ok(None);
+        let mut options = OpenOptions::new();
+        options.read(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt as _;
+            options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
         }
-
-        let content =
-            fs::read_to_string(&path).map_err(|error| LoginThrottleError::StoreFailure {
-                reason: format!("failed to read login throttle record {:?}: {error}", path),
+        let file = match options.open(&path) {
+            Ok(file) => file,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(_) => {
+                return Err(LoginThrottleError::StoreFailure {
+                    reason: "failed to open login throttle record".into(),
+                })
+            }
+        };
+        if !file.metadata().is_ok_and(|metadata| metadata.is_file()) {
+            return Err(LoginThrottleError::StoreFailure {
+                reason: "login throttle record is not a regular file".into(),
+            });
+        }
+        let mut content = String::new();
+        file.take(MAX_THROTTLE_RECORD_BYTES + 1)
+            .read_to_string(&mut content)
+            .map_err(|_| LoginThrottleError::StoreFailure {
+                reason: "failed to read login throttle record".into(),
             })?;
+        if content.len() as u64 > MAX_THROTTLE_RECORD_BYTES {
+            return Err(LoginThrottleError::StoreFailure {
+                reason: "login throttle record exceeds size limit".into(),
+            });
+        }
 
         parse_throttle_record(&content)
     }
@@ -586,26 +710,36 @@ impl LoginThrottleStore for FileLoginThrottleStore {
         })?;
 
         let path = self.record_path(key_id);
+        let keys = self.record_keys()?;
+        if !keys.iter().any(|key| key == key_id) && keys.len() == MAX_THROTTLE_RECORDS {
+            return Err(LoginThrottleError::StoreFailure {
+                reason: "throttle store capacity exhausted".into(),
+            });
+        }
         let tmp_path = self.temp_path(key_id);
         let content = serialize_throttle_record(record);
 
         let mut file = create_throttle_temp_file(&tmp_path)?;
-        file.write_all(content.as_bytes())
+        let result = file
+            .write_all(content.as_bytes())
             .map_err(|error| LoginThrottleError::StoreFailure {
                 reason: format!(
                     "failed to write login throttle temp file {:?}: {error}",
                     tmp_path
                 ),
-            })?;
-
-        fs::rename(&tmp_path, &path).map_err(|error| LoginThrottleError::StoreFailure {
-            reason: format!(
-                "failed to finalize login throttle record {:?}: {error}",
-                path
-            ),
-        })?;
-
-        Ok(())
+            })
+            .and_then(|()| {
+                fs::rename(&tmp_path, &path).map_err(|error| LoginThrottleError::StoreFailure {
+                    reason: format!(
+                        "failed to finalize login throttle record {:?}: {error}",
+                        path
+                    ),
+                })
+            });
+        if result.is_err() {
+            let _ = fs::remove_file(&tmp_path);
+        }
+        result
     }
 
     fn remove(&self, key_id: &str) -> Result<(), LoginThrottleError> {
@@ -618,6 +752,45 @@ impl LoginThrottleStore for FileLoginThrottleStore {
         fs::remove_file(&path).map_err(|error| LoginThrottleError::StoreFailure {
             reason: format!("failed to remove login throttle record {:?}: {error}", path),
         })
+    }
+
+    fn prepare_capacity(
+        &self,
+        now: u64,
+        window_seconds: u64,
+        key_ids: &[&str],
+    ) -> Result<(), LoginThrottleError> {
+        let keys = self.record_keys()?;
+        self.check_writable()?;
+        let missing = key_ids
+            .iter()
+            .filter(|id| !keys.iter().any(|key| key == **id))
+            .count();
+        if keys.len().saturating_add(missing) <= MAX_THROTTLE_RECORDS {
+            return Ok(());
+        }
+        let mut remaining = keys.len();
+        for key in &keys {
+            let Some(record) = self.load(key)? else {
+                continue;
+            };
+            let expired = now >= record.window_started_at.saturating_add(window_seconds)
+                && record.locked_until.is_none_or(|until| until <= now);
+            if expired {
+                self.remove(key)?;
+                remaining -= 1;
+            }
+        }
+        let missing = key_ids
+            .iter()
+            .filter(|id| !self.record_path(id).exists())
+            .count();
+        if remaining.saturating_add(missing) > MAX_THROTTLE_RECORDS {
+            return Err(LoginThrottleError::StoreFailure {
+                reason: "throttle store capacity exhausted".into(),
+            });
+        }
+        Ok(())
     }
 }
 
@@ -802,6 +975,11 @@ where
             LoginThrottleKey::for_remote_addr(submitted_username, &context.remote_addr),
         ];
         let now = self.time_provider.unix_timestamp();
+        self.store.prepare_capacity(
+            now,
+            self.policy.failure_window_seconds,
+            &[&keys[0].key_id, &keys[1].key_id],
+        )?;
         let mut retry_after_seconds = None;
         let mut audit_events = Vec::new();
 
@@ -864,6 +1042,11 @@ where
             LoginThrottleKey::for_remote_addr(submitted_username, &context.remote_addr),
         ];
         let now = self.time_provider.unix_timestamp();
+        self.store.prepare_capacity(
+            now,
+            self.policy.failure_window_seconds,
+            &[&keys[0].key_id, &keys[1].key_id],
+        )?;
         let mut lockout_engaged = false;
         let mut audit_events = Vec::new();
 
@@ -872,6 +1055,13 @@ where
                 .store
                 .load(&key.key_id)?
                 .unwrap_or_else(LoginThrottleRecord::empty);
+
+            // A concurrent attempt may have engaged the lock after the initial
+            // check. Rejected attempts must never move its expiry forward.
+            if record.locked_until.is_some_and(|until| until > now) {
+                lockout_engaged = true;
+                continue;
+            }
 
             let lockout_expired = record.locked_until.is_some_and(|until| until <= now);
             let outside_window = record.failure_count == 0
@@ -1058,6 +1248,14 @@ where
         keys: &[SubmissionThrottleKey],
     ) -> Result<SubmissionThrottleCheck, LoginThrottleError> {
         let now = self.time_provider.unix_timestamp();
+        self.store.prepare_capacity(
+            now,
+            self.policy.submission_window_seconds,
+            &keys
+                .iter()
+                .map(|key| key.key_id.as_str())
+                .collect::<Vec<_>>(),
+        )?;
         let mut retry_after_seconds = None;
         let mut audit_events = Vec::new();
 
@@ -1119,6 +1317,14 @@ where
         keys: &[SubmissionThrottleKey],
     ) -> Result<SubmissionThrottleRecord, LoginThrottleError> {
         let now = self.time_provider.unix_timestamp();
+        self.store.prepare_capacity(
+            now,
+            self.policy.submission_window_seconds,
+            &keys
+                .iter()
+                .map(|key| key.key_id.as_str())
+                .collect::<Vec<_>>(),
+        )?;
         let mut lockout_engaged = false;
         let mut audit_events = Vec::new();
 
@@ -1127,6 +1333,11 @@ where
                 .store
                 .load(&key.key_id)?
                 .unwrap_or_else(LoginThrottleRecord::empty);
+
+            if record.locked_until.is_some_and(|until| until > now) {
+                lockout_engaged = true;
+                continue;
+            }
 
             let lockout_expired = record.locked_until.is_some_and(|until| until <= now);
             let outside_window = record.failure_count == 0
@@ -1211,6 +1422,11 @@ where
             MessageMoveThrottleKey::for_remote_addr(canonical_username, &context.remote_addr),
         ];
         let now = self.time_provider.unix_timestamp();
+        self.store.prepare_capacity(
+            now,
+            self.policy.move_window_seconds,
+            &[&keys[0].key_id, &keys[1].key_id],
+        )?;
         let mut retry_after_seconds = None;
         let mut audit_events = Vec::new();
 
@@ -1273,6 +1489,11 @@ where
             MessageMoveThrottleKey::for_remote_addr(canonical_username, &context.remote_addr),
         ];
         let now = self.time_provider.unix_timestamp();
+        self.store.prepare_capacity(
+            now,
+            self.policy.move_window_seconds,
+            &[&keys[0].key_id, &keys[1].key_id],
+        )?;
         let mut lockout_engaged = false;
         let mut audit_events = Vec::new();
 
@@ -1281,6 +1502,11 @@ where
                 .store
                 .load(&key.key_id)?
                 .unwrap_or_else(LoginThrottleRecord::empty);
+
+            if record.locked_until.is_some_and(|until| until > now) {
+                lockout_engaged = true;
+                continue;
+            }
 
             let lockout_expired = record.locked_until.is_some_and(|until| until <= now);
             let outside_window = record.failure_count == 0
@@ -1512,6 +1738,7 @@ fn parse_throttle_record(content: &str) -> Result<Option<LoginThrottleRecord>, L
     let mut window_started_at = None;
     let mut last_failure_at = None;
     let mut locked_until = None;
+    let mut locked_until_seen = false;
 
     for raw_line in content.lines() {
         if raw_line.trim().is_empty() {
@@ -1525,16 +1752,17 @@ fn parse_throttle_record(content: &str) -> Result<Option<LoginThrottleRecord>, L
         };
 
         match key {
-            "failure_count" => {
+            "failure_count" if failure_count.is_none() => {
                 failure_count = Some(parse_u64_field("failure_count", value)?);
             }
-            "window_started_at" => {
+            "window_started_at" if window_started_at.is_none() => {
                 window_started_at = Some(parse_u64_field("window_started_at", value)?);
             }
-            "last_failure_at" => {
+            "last_failure_at" if last_failure_at.is_none() => {
                 last_failure_at = Some(parse_u64_field("last_failure_at", value)?);
             }
-            "locked_until" => {
+            "locked_until" if !locked_until_seen => {
+                locked_until_seen = true;
                 if !value.trim().is_empty() {
                     locked_until = Some(parse_u64_field("locked_until", value)?);
                 }
@@ -1548,7 +1776,9 @@ fn parse_throttle_record(content: &str) -> Result<Option<LoginThrottleRecord>, L
     }
 
     match (failure_count, window_started_at, last_failure_at) {
-        (Some(failure_count), Some(window_started_at), Some(last_failure_at)) => {
+        (Some(failure_count), Some(window_started_at), Some(last_failure_at))
+            if locked_until_seen =>
+        {
             Ok(Some(LoginThrottleRecord {
                 failure_count,
                 window_started_at,
@@ -1556,7 +1786,6 @@ fn parse_throttle_record(content: &str) -> Result<Option<LoginThrottleRecord>, L
                 locked_until,
             }))
         }
-        (None, None, None) => Ok(None),
         _ => Err(LoginThrottleError::StoreFailure {
             reason: "login throttle record was missing required fields".to_string(),
         }),
@@ -1731,6 +1960,151 @@ mod tests {
             .expect("record should exist");
 
         assert_eq!(loaded, record);
+    }
+
+    #[test]
+    fn file_store_rejects_oversized_empty_and_ambiguous_records() {
+        let dir = temp_dir("osmap-throttle-bounded-read");
+        let store = FileLoginThrottleStore::new(&dir);
+        for content in [
+            "x".repeat(MAX_THROTTLE_RECORD_BYTES as usize + 1),
+            String::new(),
+            "failure_count=1\nwindow_started_at=10\nlast_failure_at=10\nlocked_until=20\nlocked_until=\n".into(),
+        ] {
+            fs::write(store.record_path("corrupt"), content).unwrap();
+            assert!(store.load("corrupt").is_err());
+        }
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn file_store_recovers_crashed_temporary_write_under_transaction_lock() {
+        let dir = temp_dir("osmap-throttle-crash-recovery");
+        let store = FileLoginThrottleStore::new(&dir);
+        let abandoned = dir.join("abc123.123.456.tmp");
+        fs::write(&abandoned, "incomplete").unwrap();
+        let service = LoginThrottleService::new(
+            store,
+            FixedTimeProvider::new(1000),
+            LoginThrottlePolicy::default(),
+        );
+        assert_eq!(
+            service
+                .check(&test_context(), "alice@example.com")
+                .unwrap()
+                .decision,
+            LoginThrottleDecision::Allowed
+        );
+        assert!(!abandoned.exists());
+        assert_eq!(fs::read_dir(&dir).unwrap().count(), 1);
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn capacity_reclaims_only_expired_records_and_refuses_new_live_buckets() {
+        let dir = temp_dir("osmap-throttle-capacity");
+        let store = FileLoginThrottleStore::new(&dir);
+        let active = LoginThrottleRecord {
+            failure_count: 1,
+            window_started_at: 1000,
+            last_failure_at: 1000,
+            locked_until: Some(2000),
+        };
+        for index in 0..MAX_THROTTLE_RECORDS {
+            let record = if index < MAX_THROTTLE_RECORDS - 2 {
+                active.clone()
+            } else {
+                LoginThrottleRecord {
+                    window_started_at: 100,
+                    last_failure_at: 100,
+                    locked_until: if index == MAX_THROTTLE_RECORDS - 1 {
+                        Some(999)
+                    } else {
+                        None
+                    },
+                    ..active.clone()
+                }
+            };
+            fs::write(
+                store.record_path(&format!("bucket{index}")),
+                serialize_throttle_record(&record),
+            )
+            .unwrap();
+        }
+        let abandoned = dir.join("health.123.456.tmp");
+        fs::write(&abandoned, "interrupted health check").unwrap();
+        let service = LoginThrottleService::new(
+            store.clone(),
+            FixedTimeProvider::new(1000),
+            LoginThrottlePolicy::default(),
+        );
+        assert_eq!(
+            service
+                .check(&test_context(), "alice@example.com")
+                .unwrap()
+                .decision,
+            LoginThrottleDecision::Allowed
+        );
+        assert!(!abandoned.exists());
+        service
+            .record_failure(&test_context(), "alice@example.com")
+            .unwrap();
+        assert_eq!(store.record_keys().unwrap().len(), MAX_THROTTLE_RECORDS);
+        assert_eq!(store.load("bucket0").unwrap(), Some(active));
+        assert!(service.check(&test_context(), "bob@example.com").is_err());
+        assert!(store
+            .save("overflow", &LoginThrottleRecord::empty())
+            .is_err());
+        assert_eq!(store.record_keys().unwrap().len(), MAX_THROTTLE_RECORDS);
+        // Reopening the same persisted directory after both the window and
+        // lockout expire permits fresh buckets without an in-memory reset.
+        let reopened = LoginThrottleService::new(
+            FileLoginThrottleStore::new(&dir),
+            FixedTimeProvider::new(2300),
+            LoginThrottlePolicy::default(),
+        );
+        assert_eq!(
+            reopened
+                .check(&test_context(), "bob@example.com")
+                .unwrap()
+                .decision,
+            LoginThrottleDecision::Allowed
+        );
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn rejected_failure_does_not_extend_active_lockout() {
+        let dir = temp_dir("osmap-throttle-fixed-lockout");
+        let store = FileLoginThrottleStore::new(&dir);
+        let policy = LoginThrottlePolicy {
+            credential_max_failures: 1,
+            remote_addr_max_failures: 1,
+            ..LoginThrottlePolicy::default()
+        };
+        LoginThrottleService::new(store.clone(), FixedTimeProvider::new(1000), policy)
+            .record_failure(&test_context(), "alice@example.com")
+            .unwrap();
+        let key = LoginThrottleKey::new("alice@example.com", &test_context().remote_addr);
+        let before = store.load(&key.key_id).unwrap();
+        let later = LoginThrottleService::new(store.clone(), FixedTimeProvider::new(1100), policy);
+        assert!(
+            later
+                .record_failure(&test_context(), "alice@example.com")
+                .unwrap()
+                .lockout_engaged
+        );
+        assert_eq!(store.load(&key.key_id).unwrap(), before);
+        assert_eq!(
+            later
+                .check(&test_context(), "alice@example.com")
+                .unwrap()
+                .decision,
+            LoginThrottleDecision::Throttled {
+                retry_after_seconds: policy.lockout_seconds - 100
+            }
+        );
+        fs::remove_dir_all(dir).unwrap();
     }
 
     #[cfg(unix)]

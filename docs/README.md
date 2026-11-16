@@ -1,5 +1,7 @@
 # Documentation
 
+- `REDTEAM_REMEDIATION_20261116.md` — [red-team remediation and deployment contract](REDTEAM_REMEDIATION_20261116.md): authenticated proxy hop, bounded fail-closed throttling, truthful reader warnings and build identity.
+
 ## OSMAP-ADMIN design and acceptance specifications
 
 Proposed OSMAP-ADMIN implementation references. These documents do not

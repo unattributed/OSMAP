@@ -516,6 +516,8 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
         return Ok(());
     }
 
+    super::proxy_auth::initialize(config.environment)?;
+
     // Only account custody needs the complete protected ancestry before seal.
     // The rest of gateway startup retains its existing postconfinement order.
     let account_runtime = RuntimeBrowserGateway::prepare_account_runtime(config);
@@ -996,9 +998,27 @@ fn handle_client_stream_with_write_tracking<G>(
 
     let (handled, request_completion, request_write_context) =
         match read_http_request(stream, app.policy()) {
-            Ok(request) => {
-                let effective_request_remote_addr = effective_remote_addr(&request, &remote_addr);
-                let handled = app.handle_request(&request, &remote_addr);
+            Ok(mut request) => {
+                let authenticated_proxy = super::proxy_auth::authenticate(&mut request);
+                let effective_request_remote_addr = if authenticated_proxy {
+                    effective_remote_addr(&request, &remote_addr)
+                } else {
+                    remote_addr.clone()
+                };
+                let handled = if authenticated_proxy {
+                    app.handle_request(&request, &remote_addr)
+                } else {
+                    HandledHttpResponse {
+                        response: plain_text_response(403, "Forbidden", "Forbidden\n"),
+                        audit_events: vec![LogEvent::new(
+                            LogLevel::Warn,
+                            EventCategory::Http,
+                            "http_proxy_auth_rejected",
+                            "http request rejected before routing: proxy authentication failed",
+                        )
+                        .with_field("transport_peer", remote_addr.clone())],
+                    }
+                };
                 let status_code = handled.response.status_code;
                 let response_bytes = handled.response.to_http_bytes();
                 (
@@ -1283,14 +1303,17 @@ pub(super) fn build_successful_response_events(
     let mut events = Vec::new();
 
     if let Some(completion_context) = request_completion {
-        events.push(build_request_completion_event(
-            &completion_context.remote_addr,
-            completion_context.method,
-            &completion_context.path,
-            completion_context.status_code,
-            completion_context.response_bytes,
-            duration,
-        ));
+        events.push(
+            build_request_completion_event(
+                &completion_context.remote_addr,
+                completion_context.method,
+                &completion_context.path,
+                completion_context.status_code,
+                completion_context.response_bytes,
+                duration,
+            )
+            .with_field("transport_peer", fallback_remote_addr),
+        );
     }
 
     let recovery_remote_addr = request_completion
