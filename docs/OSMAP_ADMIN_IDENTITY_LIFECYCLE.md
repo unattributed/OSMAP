@@ -188,6 +188,7 @@ Where the installed source creates a protected mailbox-local alias/delivery row,
 ### 6.2 Admin credentials
 
 - Use a separate admin hash and verifier; admin password login does **not** authenticate as a Dovecot mailbox.
+- Planned [ADM-S04-02 Argon2id feature](OSMAP_ADMIN_PROJECT_PLAN.md#adm-s04-02-feature--argon2id-administrator-credentials), acceptance case F-35: new/enrolled or explicitly changed admin credentials use qualified Argon2id while supported bcrypt verification remains available. No implicit login-time rewrite or bulk migration; qualify development and mail-host behaviour before acceptance. This is not an ADM-S01 dependency or a claim of implemented support.
 - First bootstrap and later admin invitations start `admin_identities.state=pending` with no interactive authority until admin factor verification completes.
 - Admin password change/reset increments `auth_epoch`, invalidates private admin sessions, rejects old credential, verifies new credential, and requires a separately authorized recovery path if MFA is unavailable.
 - Never allow an active domain administrator to set or reset the password of a system administrator; system-admin grant changes require fresh high-privilege step-up and an audit record.

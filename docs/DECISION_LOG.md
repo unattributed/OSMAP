@@ -1668,3 +1668,27 @@ focused documentation checks and normal signed delivery follow. This planning
 change does not implement or deploy the private UI, create an account, enable a
 writer or authorize host/configuration changes. Final delivery is recorded by
 the exact signed checkpoint and protected PR receipt.
+
+### Same day — Assign admin Argon2id credentials to ADM-S04-02
+
+The operator requests that the standalone admin Argon2id enhancement be included
+as a feature in the appropriate ADM slice. Schedule it within ADM-S04-02's
+administrator enrollment and credential lifecycle, with explicit acceptance case
+F-35. Keep the existing seven sprints and 22 slices, the selected ADM-S01-01
+implementation target and the first mailbox-management milestone unchanged.
+
+Newly enrolled or explicitly changed admin credentials will use qualified
+Argon2id, with supported legacy bcrypt verification retained. Preserve independent
+admin identity/TOTP/session authority, bounded hash parameters and full-input
+verification; no PHP dependency, silent login-time rewrite or bulk migration is
+introduced. Credential change and interrupted-write/recovery tests must prove
+old-password rejection, revocation and compatible rollback. First-admin bootstrap
+in ADM-S05-02 consumes the qualified facility after ADM-S04-02.
+
+Require development and matching mail-host functional evidence before acceptance,
+including wrong-password, long-input tail, replay and malformed/excessive-cost
+refusals. The feature is planned, NOT_STARTED/NOT_RUN/NOT_ACCEPTED. Amend only the
+existing plan, acceptance catalogue, identity-lifecycle reference and this
+decision entry. Independent review, focused documentation checks and normal
+signed delivery follow; no implementation, credential mutation, host action or
+migration is authorized by this documentation change.
