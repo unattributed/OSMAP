@@ -1737,3 +1737,21 @@ to observe its bound endpoint and retained socket rather than invent a startup
 log or self-unlink requirement. Native SQL, nginx, process and browser evidence
 remain distinct. Build/prerequisite passes do not qualify sign-in; both hosts
 still require the actual browser and refusal journeys before acceptance.
+
+### Same day — Preserve browser Origin on private admin form submissions
+
+The connected obsd1 browser reaches private HTTPS and passes foreign Origin,
+Host, CSRF and mailbox-cookie refusal checks, then a normal form POST returns
+403 before password verification. A separate secret-free browser discriminator
+shows the shared `no-referrer` policy makes that POST's Origin opaque (`null`).
+With `same-origin`, the browser sends the exact configured Origin. Retain the
+original stopped browser attempts and fixture failure separately from this
+observed RED/GREEN boundary.
+
+Set `Referrer-Policy: same-origin` on admin documents and redirects only. Reuse
+the existing HTML helper and replace its policy value without a duplicate.
+Keep strict Host/Origin and CSRF checks; explicitly test that null Origin still
+refuses before service dispatch. Public OSMAP presentation policy is unchanged.
+This fixes the browser's request contract rather than admitting an opaque
+origin. Both hosts still need corrected native sign-in, scope, restart and
+logout evidence; source and lifecycle passes alone do not qualify that journey.

@@ -1,5 +1,14 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+2026-11-17 ADM-S01-01 browser Origin correction: the isolated obsd1 browser
+proves strict TLS, foreign Origin/Host and CSRF refusal and mailbox-cookie
+isolation, but a normal form receives 403 before authentication. A secret-free
+browser RED/GREEN probe identifies `no-referrer` producing `Origin: null`.
+Admin-only `same-origin` referrer policy preserves normal POST Origin; strict
+admission remains, with explicit null-origin refusal before RPC. Fifteen focused
+UI/Web tests pass. The corrected authenticated native journey on both hosts
+remains pending; no full WSTG, production release or owner acceptance is claimed.
+
 2026-11-17 ADM-S01-01 native lifecycle correction: both hosts compile the
 candidate. Isolated obsd1 startup reaches the locked service boundary, but owned
 socket removal fails under the specific rw unveil rule. Add creation/removal

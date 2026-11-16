@@ -109,6 +109,9 @@ Web authenticates the proxy UID before parsing HTTP and checks exact HTTPS
 origin/Host. Routes are GET/POST `/admin/login`, GET `/admin` and POST
 `/admin/logout`. Admin cookies are separate `__Host-` cookies with Secure,
 HttpOnly, SameSite=Strict and Path=/; both state-changing forms require CSRF.
+Admin documents and redirects use `Referrer-Policy: same-origin` so normal
+browser form submissions retain the exact Origin required by admission;
+opaque/null and foreign origins still refuse before service dispatch.
 The landing page shows current service-derived scope, including a truthful
 no-grants state. It exposes no mailbox operations yet.
 

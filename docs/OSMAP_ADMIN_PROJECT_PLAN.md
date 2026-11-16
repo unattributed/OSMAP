@@ -610,6 +610,40 @@ Web READY string. A local PTY producer/consumer check passes for the next bounde
 interactive controller. No authentication, browser or product acceptance result
 is promoted by these startup/build/prerequisite observations.
 
+The corrected obsd1 source `cca12d172a56480cdda6e1c6e428e5b0b8a456cb`
+builds its executable in 40.417 s and selected-test binary in 94.104 s. Both
+native confinement probes pass, including removal of the disposable service
+endpoint. Controlled Web/service shutdown returns zero, and the service removes
+its own endpoint. The retained Web endpoint is matched to its born identity;
+its metadata is durably read back and hashed before exact passive removal.
+These are native lifecycle results, not an authenticated browser PASS.
+
+Two custom mail source transfers stop at 60/120 s; standard SFTP also stops at
+120 s with a retained partial file. Fresh readback proves its 9,139,200-byte
+prefix matches the source. The reason for the earlier transport completion
+failures is unobserved; no bandwidth or EOF cause is asserted. Independent
+combined reassessment approves a prefix-verified bounded resume, but that resume
+is not run: the browser finding below requires newer source. Preserve the
+partial and all failures. For the next signed source, archive the complete
+build inputs (`Cargo.toml`, `Cargo.lock`, `build.rs`, `rust-toolchain.toml`,
+`LICENSE`, `src`, `maint`, `tests`), omitting unrelated delivery documents and
+images. The sizing archive is 3,822,408 bytes; all 218 literal includes resolve
+inside it. Keep exact commit/archive admission and extracted-file verification.
+
+The first obsd1 browser attempt proves strict TLS and foreign-origin rejection,
+then stops before authentication at the Host probe. Node's overridden Host does
+not supply an HTTP observation. A changed probe keeps the trusted TLS identity,
+sends a credential-free foreign HTTP Host and observes native HTTP 403. The
+second browser attempt then stops at normal form submission: wrong-password
+submission returns 403 before its expected authentication-denial result.
+A secret-free actual-browser discriminator proves `no-referrer` sends opaque
+`Origin: null`, whereas `same-origin` sends the required origin. Its first
+fixture failure and the passing RED/GREEN observations are retained separately.
+Change only admin document/redirect referrer policy; preserve exact-origin
+admission, including explicit null-origin refusal before RPC. Browser sign-in,
+restart and logout remain unqualified until the corrected path runs on each
+host. No accepted TOTP or session is claimed from these stopped attempts.
+
 ### One active slice, work orders and delivery
 
 Only the selected product slice may transition to IN_PROGRESS. Its concrete

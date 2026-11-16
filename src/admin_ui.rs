@@ -4,6 +4,24 @@ use crate::html::TrustedHtml;
 use crate::http::HttpResponse;
 use crate::http_support::{escape_html, html_response};
 
+fn admin_html_response(
+    status: u16,
+    reason: &'static str,
+    title: &str,
+    body: TrustedHtml,
+) -> HttpResponse {
+    let mut response = html_response(status, reason, title, body);
+    // A no-referrer document makes normal browser form POST Origin opaque.
+    // Preserve the value required by the private admin router; cross-origin
+    // requests still receive no referrer.
+    for (name, value) in &mut response.headers {
+        if name.eq_ignore_ascii_case("Referrer-Policy") {
+            *value = "same-origin".into();
+        }
+    }
+    response
+}
+
 /// Display the combined password/TOTP form without retaining submitted values.
 pub(crate) fn login_page(csrf: &str, denied: bool) -> HttpResponse {
     let notice = if denied {
@@ -29,7 +47,7 @@ pub(crate) fn login_page(csrf: &str, denied: bool) -> HttpResponse {
         csrf = escape_html(csrf),
         notice = notice,
     ));
-    html_response(
+    admin_html_response(
         if denied { 401 } else { 200 },
         if denied { "Unauthorized" } else { "OK" },
         "OSMAP Admin — Sign in",
@@ -79,7 +97,7 @@ pub(crate) fn scope_page(
         csrf = escape_html(csrf),
         scope = scope,
     ));
-    html_response(200, "OK", "OSMAP Admin — Current scope", body)
+    admin_html_response(200, "OK", "OSMAP Admin — Current scope", body)
 }
 
 /// Use fixed user-facing messages; native diagnostics never cross this API.
@@ -116,7 +134,7 @@ pub(crate) fn error_page(status: u16) -> HttpResponse {
             "Administration is temporarily unavailable. Try again later.",
         ),
     };
-    html_response(
+    admin_html_response(
         status,
         reason,
         title,
@@ -158,7 +176,7 @@ mod tests {
                 "Content-Security-Policy",
                 crate::http_support::browser_csp(),
             ),
-            ("Referrer-Policy", "no-referrer"),
+            ("Referrer-Policy", "same-origin"),
             ("X-Content-Type-Options", "nosniff"),
             ("X-Frame-Options", "DENY"),
         ] {
@@ -166,6 +184,29 @@ mod tests {
                 .headers
                 .iter()
                 .any(|(name, value)| (name.as_str(), value.as_str()) == header));
+        }
+    }
+
+    #[test]
+    fn form_documents_preserve_same_origin_for_strict_browser_post_admission() {
+        for response in [
+            login_page("public-csrf", false),
+            login_page("public-csrf", true),
+            scope_page(
+                "operator@example.test",
+                false,
+                &["example.test".into()],
+                "public-csrf",
+            ),
+        ] {
+            let policies = response
+                .headers
+                .iter()
+                .filter(|(name, _)| name.eq_ignore_ascii_case("Referrer-Policy"))
+                .map(|(_, value)| value.as_str())
+                .collect::<Vec<_>>();
+            assert_eq!(policies, ["same-origin"]);
+            assert!(body(&response).contains("method=\"post\""));
         }
     }
 

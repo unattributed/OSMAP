@@ -120,7 +120,7 @@ fn redirect(path: &'static str) -> HttpResponse {
             "Content-Security-Policy",
             crate::http_support::browser_csp(),
         )
-        .with_header("Referrer-Policy", "no-referrer")
+        .with_header("Referrer-Policy", "same-origin")
         .with_header("X-Content-Type-Options", "nosniff")
         .with_header("X-Frame-Options", "DENY")
 }
@@ -490,6 +490,7 @@ mod tests {
         let response = handle(&config(), &login_request(), &fake);
         assert_eq!(response.status_code, 303);
         assert_eq!(header(&response, "Location"), Some("/admin"));
+        assert_eq!(header(&response, "Referrer-Policy"), Some("same-origin"));
         assert!(header(&response, "Set-Cookie")
             .unwrap()
             .starts_with(&format!("{SESSION_COOKIE}=osmap-admin1.")));
@@ -537,6 +538,7 @@ mod tests {
         for kind in [
             "host",
             "origin",
+            "null_origin",
             "missing_origin",
             "csrf",
             "duplicate_cookie",
@@ -554,6 +556,9 @@ mod tests {
                     request
                         .headers
                         .insert("origin".into(), "https://foreign.example.test".into());
+                }
+                "null_origin" => {
+                    request.headers.insert("origin".into(), "null".into());
                 }
                 "missing_origin" => {
                     request.headers.remove("origin");
