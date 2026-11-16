@@ -1,5 +1,16 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+2026-11-17 ADM-S01-01 isolated qualification: actual browser password/TOTP,
+current authorized scope, restart continuity and logout pass separately on
+obsd1 and mail at e685f908. Both final browsers pass 12 checks, including strict
+TLS, Host/Origin/CSRF, cookie-purpose, wrong proof and replay; each native
+authority/refusal run passes six cases. Matching unchanged confinement evidence
+is reused, and final rendering shows the full brand. Exact-owned private daemon,
+endpoint and temporary-principal disposition is confirmed; Toronto public mail
+services remain running. See the qualified-result record in the admin project
+plan for source/artifact hashes, limits and retained failures. This is scoped
+agent-owned qualification, not full WSTG/release, production or owner acceptance.
+
 2026-11-17 ADM-S01-01 browser Origin correction: the isolated obsd1 browser
 proves strict TLS, foreign Origin/Host and CSRF refusal and mailbox-cookie
 isolation, but a normal form receives 403 before authentication. A secret-free

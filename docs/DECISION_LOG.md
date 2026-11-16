@@ -1755,3 +1755,29 @@ refuses before service dispatch. Public OSMAP presentation policy is unchanged.
 This fixes the browser's request contract rather than admitting an opaque
 origin. Both hosts still need corrected native sign-in, scope, restart and
 logout evidence; source and lifecycle passes alone do not qualify that journey.
+
+### Same day — Qualify the first private admin journey on both hosts
+
+The real browser journey now passes independently on obsd1 and mail using signed
+Rust source `e685f9080dede9acc6e1bcd927ba23135a9965a0` and byte-identical
+native executables. Password plus TOTP reaches current authorized scope, a
+service restart preserves the session, and logout revokes it. Both hosts also
+pass the mapped proof, peer, grant, dependency-loss and replay refusals. A
+one-line admin-only layout correction makes the full brand visible; the final
+screenshots match. Independent review reads the actual results rather than
+promoting build or fixture status into acceptance.
+
+Record the slice's implementation and isolated development/mail qualification
+as complete. Keep operator acceptance NOT_ACCEPTED, production installation and
+cutover separate, and ADM-S01-02 selected but not started. The code remains Rust;
+no additional Python is written after the operator's simplification ruling.
+Reuse matching passing evidence and standard native tools for the final bounded
+disposition. Preserve all failures and UNKNOWN preparation cost, with no
+allowance reset or further product investigation at the four-hour checkpoint.
+
+Private candidate processes and temporary identities are removed after exact
+identity and endpoint checks. Evidence is durably read back and hashed; offline
+private namespaces remain root-protected for retention. Toronto's original mail
+services remain running and production accounts/configuration are unchanged.
+This delivers the first functional slice, not mailbox management, completion of
+Sprint ADM-S01, the native installer, a full release or predecessor retirement.

@@ -171,7 +171,7 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Active product implementation slice | **ADM-S01-01**, private admin sign-in; IN_PROGRESS under the 2026-11-17 implementation work order below |
+| Active product implementation slice | **ADM-S01-01**, private admin sign-in: DELIVERED; isolated development and mail qualification PASS for the cases below; operator acceptance NOT_ACCEPTED |
 | Selected next product slice | ADM-S01-02 after ADM-S01-01's required boundary; NOT_STARTED |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
 | Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
@@ -447,9 +447,9 @@ to rerun every unchanged passing workflow at each slice.
 ### ADM-S01-01 implementation work order — 2026-11-17
 
 The operator starts Sprint ADM-S01 with its first slice. Source baseline is
-`ed816927cd8ea8c6dead1afb1f9d14655364d3fe`. Implementation is IN_PROGRESS;
-development/mail native and browser cases remain NOT_RUN until observed, and
-operator acceptance remains NOT_ACCEPTED. Earlier planning-only restrictions
+`ed816927cd8ea8c6dead1afb1f9d14655364d3fe`. At the start, implementation was
+IN_PROGRESS and native/browser cases were NOT_RUN. The qualified result below
+updates those engineering fields; operator acceptance remains NOT_ACCEPTED. Earlier planning-only restrictions
 describe those completed documentation changes, not a renewed source hold.
 
 **One observable outcome:** a real browser reaches private HTTPS, submits a
@@ -643,6 +643,84 @@ Change only admin document/redirect referrer policy; preserve exact-origin
 admission, including explicit null-origin refusal before RPC. Browser sign-in,
 restart and logout remain unqualified until the corrected path runs on each
 host. No accepted TOTP or session is claimed from these stopped attempts.
+
+### ADM-S01-01 qualified result — 2026-11-17
+
+**Implementation DELIVERED; isolated development qualification PASS; isolated
+mail qualification PASS; operator acceptance NOT_ACCEPTED.** Assessed product
+source is signed `e685f9080dede9acc6e1bcd927ba23135a9965a0`. This is a working
+private sign-in/scope/logout slice, not completion of Sprint ADM-S01, an installed
+production admin service, mailbox management or predecessor retirement.
+
+The final native executable is 5,230,832 bytes, SHA-256
+`da45db21021a10fe3a164c9d516ff3b1545ef4ef684f011005c028968e0f4627`.
+Its compiled revision and root-owned single-link installed bytes are verified on
+both hosts. The prior source builds independently on both hosts with identical
+executable/test hashes. The final one-line Rust brand-layout change builds on
+obsd1 in 39.21 s; copy that exact artifact to mail and qualify its actual native
+execution. No host-version assumption or additional native test build substitutes
+for the separately observed mail journey. Unchanged confinement/backend evidence
+is reused with its actual source identity.
+
+| Observed boundary | obsd1 | mail.blackbagsecurity.com |
+| --- | --- | --- |
+| Actual browser: private TLS -> password/TOTP -> authorized scope | PASS | PASS |
+| Service restart preserves session; logout rejects old session | PASS | PASS |
+| Foreign Host/Origin, CSRF and mailbox-cookie crossover | PASS | PASS |
+| Generic wrong-password/wrong-TOTP denial and accepted-factor replay refusal | PASS | PASS |
+| Secure admin cookie policy; readable current scope and full brand at 1440 px | PASS | PASS |
+| Wrong Unix UID and unknown actor fields | PASS | PASS |
+| Grant revoke/restore and factor loss/restore do not revive old authority | PASS | PASS |
+| SQL loss returns unavailable; restoration preserves the eligible session | PASS | PASS |
+| Matching unchanged native confinement probes | PASS | PASS |
+| Product shutdown, passive endpoint disposition and private fixture cleanup | PASS | PASS |
+
+Each final browser result contains 12 checks: obsd1 41.622 s, mail 66.136 s.
+Both screenshots have SHA-256
+`a9bb342b8dd710e5ef1508c4ed75236e9a861993e9d4744f4ad01142c869fed6`.
+Independent review verifies the rendered full brand after the first screenshot
+exposed clipping under the rail; a single admin-only Rust style correction fixes
+it. Each native authority/refusal result has six passing checks, confirmed
+restoration of its own effects and no retained uncertainty. Obsd1's earlier
+passing refusal result is reused across that presentation-only change. The
+unavailable-service HTTP branch and expiry behavior also have focused Rust
+regressions; the table does not claim every negative permutation was repeated
+through the installed browser or that the full WSTG/release programme passed.
+
+Browser result hashes are respectively
+`9ccfe6b82f8bedb091da06d242b515ac96d8377914dd8ee365882095fb31c44a`
+and `72f90a8bf856df0aa14183837f0066f5f7297d815b4d45e307b95095f3286efe`.
+Both fixed native-refusal outputs hash to
+`728bd767ab5f970df92652a6c8684e09305ce015a544dd7a8a7aa5fe7b8e3395`.
+Raw evidence stays private under `Downloads/osmap-admin-s01/`.
+
+Preserve all earlier failures. Further local carrier syntax/stage refusals occur
+before transfer; native `timeout` refuses session-leader process-group setup
+before compilation, then works as a shell child. A raw executable transfer stops
+at 120 s; a fresh standard gzip/SCP transfer succeeds and the decompressed bytes
+match the signed-source artifact. No failed partial is executed. After the
+operator's simplification direction, write no additional Python: keep product
+changes in Rust and reuse existing tools plus standard native commands.
+
+The cleanup helper refuses its nginx process-title comparison before daemon
+mutation because native `ps` appends `(nginx)`. Preserve that refusal, then use
+fresh exact private UID/argv/pidfile checks and native nginx quit. Verify the
+private SQL datadir/socket/networking identity before shutdown. Both hosts prove
+private process/endpoint absence, exact temporary principal/group removal and
+root-only retained namespace custody after physical tree checks. The working
+data/source namespaces remain retained; they are not claimed deleted. Evidence
+archives are read back and hashed independently. Toronto's public Dovecot,
+Postfix, MariaDB and nginx checks remain PASS, matching the pre-action baseline;
+no public service/configuration, live account or factor is changed.
+
+The first retained artifact is at 18:48 UTC; both functional journeys, refusal
+cases and owned fixture disposition finish by 22:46 UTC. Earlier preparation
+cost is UNKNOWN and all attempts remain cumulative. The four-hour investigation
+checkpoint closes with no further product investigation or allowance increase;
+only bounded evidence, review and mandatory signed Git delivery remain. Normal
+delivery hooks are separate from native product qualification. ADM-S01-02 is
+the next selected slice and remains NOT_STARTED; the first mailbox-management
+milestone and the other three ADM-S01 slices remain incomplete.
 
 ### One active slice, work orders and delivery
 

@@ -418,3 +418,12 @@ review and exact-owned cleanup. Retain failures and source/native/installed/UAT
 status separately. Normal signed hooks and GitHub preservation apply; this
 candidate is not the native installer, production handover or a complete first
 mailbox-management milestone.
+
+The ADM-S01-01 qualified-result record now binds signed product source e685f908
+and its native executable hash to separate passing browser journeys on obsd1
+and mail, matching security refusals, independent review and exact-owned private
+fixture disposition. Reuse unchanged backend/confinement evidence across the
+one-line Rust presentation correction; verify the copied artifact's exact bytes
+and actual mail execution. Normal signed source/evidence delivery hooks remain
+mandatory. Their PASS is not a refreshed strict-release tuple, public production
+deployment, operator acceptance or completion of Sprint ADM-S01.
