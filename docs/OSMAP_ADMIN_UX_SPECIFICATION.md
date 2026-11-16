@@ -513,6 +513,18 @@ A UX PASS requires a functioning bounded journey, negative-path evidence, actual
 
 ## 14. Delivery sequencing and dependencies
 
+The [project-plan execution roadmap](OSMAP_ADMIN_PROJECT_PLAN.md#execution-roadmap--2026-11-17)
+is the canonical sprint/slice order and current status. The UX-A catalogue below
+continues to define UX scope and dependencies; it is not a second active backlog.
+The first existing-schema lab milestone connects private sign-in, authorized
+mailbox inventory, controlled creation and native authentication/delivery.
+Fresh-install UX-A4 remains required for the separate clean-install path; no
+writer, identity, security or acceptance gate is waived by this ordering.
+Each functional slice additionally needs its matching installed candidate
+journey on `mail.blackbagsecurity.com` (mail) before acceptance. obsd1-only UI
+results or native fixture checks do not establish the mail browser/service
+journey; record the actual selected data authority and qualification scope.
+
 | Slice | Work | Dependency / gate |
 | --- | --- | --- |
 | UX-A0 | Inventory live OSMAP UX files, current approved page states, accessible components and chosen admin origin | Existing UX reference lock and documented architecture |

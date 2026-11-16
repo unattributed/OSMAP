@@ -1620,3 +1620,51 @@ the real rc custody guard correctly rejects its accidentally masked `0700`
 directory. Set only that fixture's intended `0750` explicitly; its four-test
 module passes under both umasks 077 and 022. Preserve the failed gate and keep
 the production custody guard unchanged before normal delivery retry.
+
+## 2026-11-17 — Schedule OSMAP-ADMIN around working replacement journeys
+
+The operator requests named sprints and slices, mapped tests, dependencies,
+environment and actual implementation/qualification/acceptance status in the
+existing project plan. Backend compatibility and the Argon2id investigation have
+not yet produced an admin application that can manage a mailbox. Prioritize
+private admin sign-in, authorized mailbox inventory, controlled mailbox creation,
+then observed native authentication and Postfix-to-Dovecot delivery. Keep the
+standalone admin Argon2id verifier outside that milestone's critical path.
+
+Use the [existing project plan](OSMAP_ADMIN_PROJECT_PLAN.md#execution-roadmap--2026-11-17)
+as the one execution index and current work-order location; map existing UX-A,
+UX-WF and acceptance IDs without creating another design set, ledger or test
+framework. Index the three delivered backend/native records with their actual
+limits; future product slices remain NOT_STARTED/NOT_RUN/NOT_ACCEPTED. No product
+implementation is active in this documentation task; ADM-S01-01 is selected next.
+Subsequent sprints cover domain/mailbox management, aliases, identity/retention,
+native installation, parity/operations, and separately authorized cutover and
+retirement. Carry every issue #85 feature into a named owner, including P0 CLI,
+audit, backup/restore and lifecycle obligations.
+
+Distinguish an isolated existing-schema lab with a seeded admin from a clean
+installation. The former can exercise the first working journey; the latter
+still requires the native migrator and offline first-admin bootstrap. A lab
+writer trial is not production Path A handover; Path B migration remains a
+separate choice. Preserve private entry, verified peer identity, service-held
+authority, narrow grants, writer fencing, factor/replay custody, native effects
+and failure/recovery requirements. Source delivery cannot stand in for installed
+QA or operator acceptance, and public mail downtime is not a test prerequisite.
+
+The operator additionally requires development to work on
+`mail.blackbagsecurity.com` (mail/Toronto), not only obsd1. Make matching mail-host
+functional evidence a condition of each slice's acceptance, with development
+and mail results recorded separately. A native library fixture alone does not
+prove the installed browser/service journey. An explicitly isolated private
+candidate on mail may qualify that declared product journey; Toronto live-account
+authority still needs the later authorized production handover and smoke tests.
+Missing mail qualification leaves the slice unaccepted, while useful source
+delivery can continue. This acceptance condition grants no immediate deployment,
+account mutation or public-service change.
+
+Update only this roadmap, its existing UX/test cross-references and this decision
+record. Independent review checks mappings, dependency and authority boundaries;
+focused documentation checks and normal signed delivery follow. This planning
+change does not implement or deploy the private UI, create an account, enable a
+writer or authorize host/configuration changes. Final delivery is recorded by
+the exact signed checkpoint and protected PR receipt.

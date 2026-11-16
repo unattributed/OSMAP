@@ -12,7 +12,7 @@ This document defines how to prove that OSMAP-ADMIN works as a secure administra
 
 The following OSMAP repository documents define the design contracts. When implementation changes one of them, reconcile this plan instead of silently weakening an expected outcome:
 
-1. `docs/OSMAP_ADMIN_PROJECT_PLAN.md`, on the approved project-plan branch and tracked for integration into the repository.
+1. `docs/OSMAP_ADMIN_PROJECT_PLAN.md`, including its current sprint/slice execution roadmap and scoped implementation records.
 2. `docs/OSMAP_ADMIN_SYSTEM_ARCHITECTURE.md`.
 3. `docs/OSMAP_ADMIN_DATABASE_DESIGN.md`.
 4. `docs/OSMAP_ADMIN_IDENTITY_LIFECYCLE.md`.
@@ -23,7 +23,14 @@ The following OSMAP repository documents define the design contracts. When imple
 9. `docs/ADMINISTRATIVE_USER_MANAGEMENT_ENGINEERING_REQUEST.md`, `docs/TOTP_SECRET_MANAGEMENT_MODEL.md`, `docs/UX_FULL_FUNCTIONAL_EPIC.md`, `docs/UX_DECISIONS.md` and the locked UX reference bundle.
 10. PostfixAdmin functional parity and acceptance inventory in OSMAP GitHub issue #85.
 
-These seven preceding OSMAP-ADMIN files are locally authored design artifacts. Their repository destinations are intended paths, not proof that they have already been committed. The plan must be reconciled to the exact committed source revision before engineering tests begin.
+The referenced OSMAP-ADMIN design files are committed specifications, not proof
+that their features or test cases have been implemented or accepted. The
+[project-plan execution roadmap](OSMAP_ADMIN_PROJECT_PLAN.md#execution-roadmap--2026-11-17)
+maps these case IDs to named sprints/slices and records current implementation,
+native qualification and operator acceptance separately. Reconcile the exact
+selected source and evidence before engineering tests; reuse matching results
+without promoting an internal backend PASS into a complete browser journey.
+The 2026-11-13 acceptance baseline below retains its original requirements.
 
 **Primary cross-project boundary:** `openbsd-mailstack` provides components, configuration patterns, maintenance and public-safe installer examples. `openbsd-self-hosting` provides private deployment-specific context. OSMAP owns the existing browser, credential and factor integrations. OSMAP-ADMIN owns a new private administrative service and, only after explicit cutover, administrative account mutations. The installed OpenBSD, package and schema capabilities determine compatibility; historical release numbers do not.
 
@@ -102,6 +109,20 @@ Do not add artificial memory limits, fixed patch-level requirements, expired cal
 | `E5` Production after separately authorized installation/cutover | Limited synthetic smoke, actual readback, monitoring and rollback readiness | Production acceptance for selected mode | Explicit scoped authorization, controlled fixtures, retained recovery capability. |
 
 Capture the actual host role in every record. **obsd1 is not Toronto**. A PASS on obsd1, on a read-only reference replica, in an HTTP mock, or against a legacy sample schema is not proof about the Toronto production writer. Never route development write traffic to a production-referenced SQL identity.
+
+**Operator acceptance requirement, 2026-11-17:** every functional OSMAP-ADMIN
+slice needs its matching installed candidate journey demonstrated on
+`mail.blackbagsecurity.com` (mail/Toronto), as well as development qualification.
+Record source/binary/configuration, actual data authority, positive/refusal
+observations and cleanup separately for each host. An explicitly isolated
+private product installation on mail, with native services/configuration/sockets
+isolated from public daemons and live account authority, can establish that journey;
+backend libtests alone cannot. That evidence does not qualify Toronto's live
+account authority, which requires separately authorized E5 handover/smoke tests.
+Absent mail evidence keeps the slice NOT_ACCEPTED. The
+[execution roadmap](OSMAP_ADMIN_PROJECT_PLAN.md#environment-and-dependency-rules)
+records the target rule and pending results; this paragraph authorizes no host
+or account change.
 
 ### 3.1 Fixtures and identities
 
