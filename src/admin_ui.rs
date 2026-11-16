@@ -85,7 +85,7 @@ pub(crate) fn scope_page(
             "<a class=\"skip-link\" href=\"#main-content\">Skip to current scope</a>",
             "<aside class=\"app-rail\" aria-label=\"Admin navigation\"><nav class=\"rail-links\" aria-label=\"Primary navigation\">",
             "<a class=\"rail-link selected\" href=\"/admin\" aria-current=\"page\"><span class=\"presentation-icon presentation-icon-shield\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Overview</span></a></nav></aside>",
-            "<header class=\"topbar\" aria-label=\"OSMAP Admin\"><a class=\"brand\" href=\"/admin\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>OSMAP Admin</a>",
+            "<header class=\"topbar\" aria-label=\"OSMAP Admin\"><a class=\"brand\" href=\"/admin\" style=\"flex-basis:auto;white-space:nowrap\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>OSMAP Admin</a>",
             "<div class=\"status-row auth-status\"><span>Signed in as <strong>{login}</strong></span>",
             "<form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{csrf}\"><button type=\"submit\">Sign out</button></form></div></header>",
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Administration</h1><p>Your current administrator scope is shown below.</p></div>",
