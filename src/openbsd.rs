@@ -18,6 +18,40 @@ use std::path::{Path, PathBuf};
 use crate::config::{AppConfig, LogLevel, OpenbsdConfinementMode};
 use crate::logging::{EventCategory, LogEvent, Logger};
 
+/// Independent admin bcrypt verification, never a Dovecot/mailbox auth request.
+/// A fixed work factor bounds CPU and avoids accepting empty hash/password pairs.
+pub(crate) fn admin_password_matches(password: &str, hash: &str) -> io::Result<bool> {
+    if password.is_empty()
+        || password.len() > 72
+        || hash.len() != 60
+        || !hash.starts_with("$2b$12$")
+        || !hash.as_bytes()[7..]
+            .iter()
+            .all(|b| b.is_ascii_alphanumeric() || b"./".contains(b))
+    {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    let password = std::ffi::CString::new(password).map_err(|_| io::ErrorKind::InvalidInput)?;
+    let hash = std::ffi::CString::new(hash).map_err(|_| io::ErrorKind::InvalidInput)?;
+    #[cfg(target_os = "openbsd")]
+    {
+        unsafe extern "C" {
+            fn crypt_checkpass(
+                password: *const libc::c_char,
+                hash: *const libc::c_char,
+            ) -> libc::c_int;
+        }
+        // SAFETY: both C strings are NUL-terminated and live across this call;
+        // the native function reads them without retaining or modifying them.
+        Ok(unsafe { crypt_checkpass(password.as_ptr(), hash.as_ptr()) } == 0)
+    }
+    #[cfg(not(target_os = "openbsd"))]
+    {
+        let _ = (password, hash);
+        Err(io::ErrorKind::Unsupported.into())
+    }
+}
+
 /// Restore the foreground Crypto helper's native rc.subr stop signal.
 /// Exec preserves inherited ignored dispositions; call before serving requests.
 #[cfg(unix)]

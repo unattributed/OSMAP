@@ -173,6 +173,13 @@ assert_passes "$reviewed_admin_repo"
 printf '\n' >> "$reviewed_admin_repo/src/admin_directory.rs"
 assert_fails_with "$reviewed_admin_repo" "reviewed SQL boundary changed"
 
+reviewed_admin_access_repo=$(make_repo reviewed_admin_access_sql)
+cp "$repo_root/src/admin_access.rs" "$reviewed_admin_access_repo/src/admin_access.rs"
+cp "$repo_root/src/admin_access_tests.rs" "$reviewed_admin_access_repo/src/admin_access_tests.rs"
+assert_passes "$reviewed_admin_access_repo"
+printf '\n' >> "$reviewed_admin_access_repo/src/admin_access.rs"
+assert_fails_with "$reviewed_admin_access_repo" "reviewed SQL boundary changed"
+
 unknown_sql_repo=$(make_repo unknown_production_sql)
 cat > "$unknown_sql_repo/src/mailbox.rs" <<'EOF'
 pub fn unreviewed_query() -> &'static str { "SELECT password FROM mailbox" }

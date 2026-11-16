@@ -127,3 +127,82 @@ Verify the installed PostfixAdmin feature set and effective SQL contracts; choos
 - **PR #88 reconciliation, 2026-11-16:** Integrate `main` at `18cde0f` into the existing published branch and regenerate the sole conflicting V10 inventory from the combined source. Root owns integration/Git; the independent adapter reviewer checks the final delta and delivery evidence. The six-file adapter delta preserves the Toronto edge work already merged through #89 and the later #90/#91 work. Adapter bytes and existing command execution sources match the tested adapter commit, so the isolated obsd1 SQL evidence is retained. Four Rust adapter tests, formatting, strict Clippy, the CWE guard regression and V11 inventory consumer pass; independent reconciliation review finds no blocker. Exit requires normal signed commit/push hooks, the required status on the exact published head and protected linear integration. GitHub squash integration preserves the Shopkeeper-signed source commits on the PR branch and yields a separate GitHub-signed linear commit on `main`. Two failures at the same boundary require reassessment; no native action or new fixture is planned. Full delivery and merge results remain pending until executed.
 - **Signing stop:** The first reconciliation commit attempt passed the normal pre-commit check but exited 128 because the configured Shopkeeper GPG agent could not sign noninteractively (`No pinentry`). No commit or remote update was created. The operator subsequently completed the native agent warm-up and reported successful cached signing checks; delivery resumes through normal signing without bypass.
 - **OSMAP naming, 2026-11-16:** At the operator's direction, name the internal Rust component `admin_directory`, describing its OSMAP responsibility rather than the predecessor application. Root owns the module/guard rename and signed delivery; independent review checks that executable statements and fixed SQL remain identical. Retain the actual existing database selector as a connection contract until a separately reviewed migration. Refresh the existing exact-source guard and generated inventory for the new path. The minimum checks are the four renamed module tests, formatting, Clippy, guard and inventory consumers, independent review and normal delivery hooks. Reuse prior native SQL evidence because queries, command arguments and execution are unchanged. Two failures at the same boundary stop retries for reassessment; no host action or database rename is included.
+
+## Authenticated domain-read slice — 2026-11-16
+
+Root owns the single source/native/Git queue; the independent adapter reviewer
+checks implementation, native evidence and delivery. Exit: an internal Rust
+backend verifies an independently seeded admin password plus TOTP, issues an
+admin-only session, resolves current grants and returns one authorized domain
+through `admin_directory`. Wrong/replayed factors, mailbox tokens, expired or
+revoked sessions and removed/foreign grants must refuse. Client inputs never
+contain role grants or allowed-domain lists. Reuse TOTP replay, sessions and login
+throttling; use only fixed SELECTs on the existing admin, domain_admins and domain
+tables. No listener, UI, writer, bootstrap, production operation or schema
+migration is included. Separate trusted backend construction and private state
+roots are exercised by Rust tests, not represented as an installed admin daemon.
+
+obsd1 read-only metadata confirms separate admin credentials and domain-grant
+columns. OpenBSD `crypt_checkpass` is the native password boundary; admit a bounded
+bcrypt work factor, keep credentials in memory and reuse no mailbox password.
+The first tests cover successful authentication/read and cross-domain refusal;
+then exercise replay, current-grant removal, expiry/revocation, input limits and
+safe backend failures. Validate actual SQL/password/TOTP/session composition on
+one disposable obsd1 database with restricted SELECT grants and private state,
+retaining sanitized outcomes before exact-owned cleanup. Native compilation is
+bounded to 600 seconds and fixture execution to 120 seconds. The investigation
+checkpoint is four hours; two failures at the same boundary stop retries for
+independent reassessment, with no automatic allowance increase. Focused source
+checks precede a signed native checkpoint; normal hooks, final independent review
+and verified GitHub delivery follow. All results are NOT RUN until observed.
+
+Source progression: the initial boundary test refuses to compile before the
+implementation exists. The first implemented run reveals a fixture TOTP-file
+format error and a missing explicit legacy `ALL` refusal; their distinguishing
+retests pass. Independent review then identifies snapshot-only session revival.
+Reuse `PrivateAccountFile` to persist a monotonically increasing generation for
+each observed credential/grant/factor snapshot, and bind it through the existing
+session epoch authority. Removal observed by a request followed by restoration
+cannot revive an old token. Unobserved external changes restored between reads
+cannot be detected by this read-only slice; later controlled writers must advance
+revocation state synchronously. Use the OS real UID for this local backend's
+throttle source; a future remote entry must provide independently verified peer
+context. Per-call fixed diagnostics preserve backend unavailability through the
+generic session consumer. Native results remain pending. Password verification
+currently admits only independently seeded bcrypt cost 12; it does not qualify
+unknown existing admin hash schemes or system-admin/legacy `ALL` semantics.
+
+Eight focused source tests pass; three separately ignored tests await the native
+fixture. Formatting, strict Clippy, exact-source CWE guard regression, generated
+inventory/V11 consumer and documentation governance pass. Independent source
+review approves the bounded internal scope. The generation record includes a
+random instance ID so loss followed by recreation cannot revive an old session;
+validation never initializes missing generation state. These passes qualify the
+local composition only; native password and SQL results remain NOT RUN.
+
+Native qualification at signed source
+[`3fc3f16`](https://github.com/unattributed/OSMAP/commit/3fc3f163fac09243cdfac1cbfec1aaedfdb6af95)
+passes on obsd1. Cargo reports 2m59s for the isolated test-profile build; the
+libtest SHA-256 is
+`ed629abb6dbdbfa5447e0367d39a6d328ec13413959933baee85acd080290893`.
+Eight focused native tests pass with the three separately gated fixture tests
+ignored in that run. Explicit fixture invocations then pass real bcrypt/TOTP,
+authorized SQL read, unknown/wrong-password and replay/foreign-domain refusals,
+session validation in a second process, grant removal refusal, and continued
+old-session refusal after the grant is restored. The test-only executor selects
+the isolated database/config; the actual prepared queries and system command
+runner execute unchanged. This does not qualify the production configuration.
+
+Agent-executed permission checks confirm an allowed SELECT and specific MariaDB
+1142/1143 refusals for the factor column, mailbox password and UPDATE. A verified
+foreign OS UID cannot read the private connection file. Independent review
+reads the native result logs and sanitized permission receipt before exact-owned
+cleanup. Database/account absence and native scratch removal are read back.
+Permission receipt SHA-256:
+`65c1cded5776757585f7ee0860ad846a61bf7e802b7ee18c592c1d64b5123f27`;
+cleanup receipt:
+`2fbef09880b13dd387e60d2f7658a69d1b951d237823284a790dd8ca631209b6`.
+Private logs are under `Downloads/osmap-admin-adapter/admin-access-native/`.
+Initial failed local synthetic-fixture roots were retained by the test harness;
+their exact names were not emitted, so local failed-fixture cleanup is UNKNOWN.
+Native cleanup is separately confirmed. Full delivery-gate results remain pending.

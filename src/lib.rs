@@ -31,6 +31,9 @@ pub mod account_recovery;
 #[cfg(unix)]
 pub mod account_recovery_operator;
 #[cfg(unix)]
+#[allow(dead_code)] // Internal admin backend; no public web route.
+mod admin_access;
+#[cfg(unix)]
 #[allow(dead_code)] // Internal adapter awaits a separately authorized admin service caller.
 pub(crate) mod admin_directory;
 pub mod after_archive;
