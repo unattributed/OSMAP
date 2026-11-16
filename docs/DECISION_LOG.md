@@ -42,6 +42,12 @@ entry was missing; the index was corrected and that check passed independently.
 An earlier new-test expected 500 seconds rather than policy-derived 800; the
 test expectation was corrected and existing lockout behaviour remained fixed.
 
+The second delivery-hook pass exposed expected generated V10 test-inventory drift
+from the new regressions. Regenerate the existing fail-closed register; its
+independent check and V11 closure gate pass. Native compilation first reached the
+login class's 1.5 GiB per-process data limit and aborted; preserve that diagnostic
+and rebuild with an explicitly raised process data limit and one Cargo job.
+
 OSMAP's engineering history, in ascending date order. Each day records the
 problem, the decision and its consequences, with links to the source changes
 and supporting records. This is a design history for maintainers and operators;
