@@ -1,5 +1,37 @@
 # Design and technical decision log
 
+## 2026-11-16 — Red-team remediation work order
+
+The operator authorized fixes, signed main delivery and deployment to the
+authoritative mail host. Root owns integration and the single production queue;
+independent agents investigate boundaries, implement throttle/reader corrections,
+and review the frozen patch. Exit: authenticate the nginx hop before forwarded
+identity; refuse login when throttle state is unavailable; bound and reclaim
+persistent counters; show residual phishing/download risk in every reader; embed
+source identity in the deployed binary. Preserve ordinary browser/mailbox/MFA
+behaviour and public mail availability. Normal delivery hooks remain required.
+
+The preceding assessment ran 140 focused tests and bounded production probes.
+A non-proxy service UID forged client addresses on the loopback HTTP listener,
+evading login aggregation. Fault injection proved throttle errors reached primary
+authentication. A small corpus added 14 persistent counters without reclamation.
+Hostile-content tests confirmed removal of scripts, handlers, remote fetches,
+forms, iframes and SVG plus forced-download attachment isolation. The mail gateway
+rejected a hostile spam corpus and EICAR. A deceptive HTTPS link survived without
+a scam warning, while Thunderbird warned on the same synthetic message.
+
+Choose a random authenticated nginx-to-origin proof as the narrow compatible
+transport fix. Keep proof bytes outside Git, overwrite the header at nginx, load
+before confinement, remove it before routing, and record immutable transport peer
+separately. Unix sockets remain a possible later transport improvement. Rendering
+containment establishes neither phishing detection nor safe downloaded files.
+
+Minimum validation: proxy positive/negative and unsafe-file tests; throttle fault,
+capacity/expiry/concurrency controls; standalone and preview reader regressions;
+mandatory hooks; fresh independent review; native build and production nginx
+reader plus non-proxy refusal. Restore only exact backed-up Web artifacts on a
+cutover regression. Record actual results below; planned checks are not passes.
+
 OSMAP's engineering history, in ascending date order. Each day records the
 problem, the decision and its consequences, with links to the source changes
 and supporting records. This is a design history for maintainers and operators;
