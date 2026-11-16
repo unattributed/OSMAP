@@ -1,91 +1,5 @@
 # Design and technical decision log
 
-## 2026-11-16 — Red-team remediation work order
-
-The operator authorized fixes, signed main delivery and deployment to the
-authoritative mail host. Root owns integration and the single production queue;
-independent agents investigate boundaries, implement throttle/reader corrections,
-and review the frozen patch. Exit: authenticate the nginx hop before forwarded
-identity; refuse login when throttle state is unavailable; bound and reclaim
-persistent counters; show residual phishing/download risk in every reader; embed
-source identity in the deployed binary. Preserve ordinary browser/mailbox/MFA
-behaviour and public mail availability. Normal delivery hooks remain required.
-
-The preceding assessment ran 140 focused tests and bounded production probes.
-A non-proxy service UID forged client addresses on the loopback HTTP listener,
-evading login aggregation. Fault injection proved throttle errors reached primary
-authentication. A small corpus added 14 persistent counters without reclamation.
-Hostile-content tests confirmed removal of scripts, handlers, remote fetches,
-forms, iframes and SVG plus forced-download attachment isolation. The mail gateway
-rejected a hostile spam corpus and EICAR. A deceptive HTTPS link survived without
-a scam warning, while Thunderbird warned on the same synthetic message.
-
-Choose a random authenticated nginx-to-origin proof as the narrow compatible
-transport fix. Keep proof bytes outside Git, overwrite the header at nginx, load
-before confinement, remove it before routing, and record immutable transport peer
-separately. Unix sockets remain a possible later transport improvement. Rendering
-containment establishes neither phishing detection nor safe downloaded files.
-
-Minimum validation: proxy positive/negative and unsafe-file tests; throttle fault,
-capacity/expiry/concurrency controls; standalone and preview reader regressions;
-mandatory hooks; fresh independent review; native build and production nginx
-reader plus non-proxy refusal. Restore only exact backed-up Web artifacts on a
-cutover regression. Record actual results below; planned checks are not passes.
-
-Source results: fresh independent review GO after repairing the full-capacity
-plus crash-remnant recovery case. Focused proxy tests 2/2, throttle tests 23/23,
-runtime fault tests 5/5 and reader standalone/preview test pass. The normal
-pre-push run passed 2,381 library tests (91 platform/native cases ignored), all
-portable integration tests, hostile-content corpus and clippy. Its later document
-inventory check refused the newly added operations document because its index
-entry was missing; the index was corrected and that check passed independently.
-An earlier new-test expected 500 seconds rather than policy-derived 800; the
-test expectation was corrected and existing lockout behaviour remained fixed.
-
-The second delivery-hook pass exposed expected generated V10 test-inventory drift
-from the new regressions. Regenerate the existing fail-closed register; its
-independent check and V11 closure gate pass. Native compilation first reached the
-login class's 1.5 GiB per-process data limit and aborted; preserve that diagnostic
-and rebuild with an explicitly raised process data limit and one Cargo job.
-
-Installed result: the first attempted limit increase was rejected by the user's
-hard limit and compilation again aborted. Independent reassessment approved a
-launcher that sets a 4 GiB inherited data limit while privileged, drops groups,
-GID and UID to the build user, reads back UID/limits, then execs Cargo. The native
-optimized build completed in 9m47s as UID 1000. No system login-class limit or
-mail-service configuration was changed. The Rust compiler package was installed
-to supply the missing native build toolchain.
-
-The first Web cutover restored its exact backups after an immediate readiness
-probe failed; that probe did not retain its HTTP status, so its precise response
-remains unknown. The corrected bounded readiness loop passed after one retry.
-The installed Web reports source `909b95292e7a7fa9f6468ad4ad02162f9649129c` and
-SHA-256 `071f075e8084e3f0c8050b23f6a10b15c0141907ccce96e450ec6d5c05231b0a`.
-Subsequent commits change documentation, generated test inventory and the proxy
-test's temporary-name generator only; deployed runtime code is unchanged.
-
-Production acceptance: nginx login 200; missing and incorrect origin proof 403;
-all six formerly successful forged-address privileged login attempts now 403
-with zero primary-auth audit events for their unique marker. A browser-supplied
-forged proof is overwritten by nginx and the normal login form still returns200.
-The authenticated synthetic-message reader returns200, shows the persistent
-phishing/download warning, removes every tested active construct and preserves
-destination disclosure. HTML and SVG downloads return200 with octet-stream,
-attachment disposition and nosniff. Temporary test sessions were removed.
-
-The initial authenticated check identified a stopped account service and absent
-admission socket. Its earlier stock-admission/loop-guard failure had no timestamp
-or uniquely established cause; do not attribute it to the Web patch. Starting the
-existing account service restored its socket; Web was restarted to capture ready
-authority. The same reader/attachment check then passed. Postfix, Dovecot, Rspamd,
-ClamAV, nginx, mailbox helper, Web and account service all pass fresh rcctl checks.
-No password, factor, mailbox content or mail-backend configuration was changed.
-Rollback copies remain private under `/var/backups/osmap-redteam-20261116-ready`.
-
-The late V12 gate initially mistook the inline proxy test's process-ID reference
-for native OpenPGP authority. Reuse the existing random fixture-ID generator;
-the focused tests and remaining V12 checks pass without weakening that guard.
-
 OSMAP's engineering history, in ascending date order. Each day records the
 problem, the decision and its consequences, with links to the source changes
 and supporting records. This is a design history for maintainers and operators;
@@ -1455,3 +1369,97 @@ Roundcube/PostfixAdmin application set does not become an OSMAP browser runtime
 prerequisite, and its dated integration observations do not replace current
 OSMAP procedures. This is a two-file documentation correction; no bootstrap,
 host operation, service change or new installation qualification is performed.
+
+## 2026-11-16 — Close verified red-team findings and clarify reader protection
+
+A source review, 140 focused tests and bounded production probes establish
+three authentication weaknesses: a non-proxy service can forge client addresses
+through the loopback HTTP listener, throttle-store failures continue into primary
+authentication, and attacker-selected identities create persistent counters
+without a global bound or expiry reclamation. Six rotated-address attempts reach
+the privileged account's password verifier; the controlled corpus adds 14 counter
+files. The operator authorizes fixes, signed main integration and deployment to
+the authoritative mail host.
+
+Authenticate the nginx-to-Web hop before accepting forwarded identity or routing
+requests. Keep the random proof outside Git, overwrite its header at nginx, load
+it before confinement and remove it before application dispatch. Record the
+transport peer separately from the asserted browser address. This retains the
+existing TCP integration; a peer-credential-checked Unix socket remains a later
+transport option. Refuse authentication when throttle admission is unavailable,
+check writable persistence before password verification and complete successful
+counter cleanup before issuing a session. Cap each throttle directory at 4,096
+records, bound reads and enumeration, reclaim expired records and interrupted
+writes, and preserve active lockouts.
+
+The same assessment verifies removal of tested scripts, handlers, remote fetches,
+forms, iframes and SVG, plus forced-download HTML/SVG isolation. The surrounding
+mail gateway rejects the hostile spam corpus and EICAR. However, OSMAP preserves
+the deceptive HTTPS link without a scam warning while Thunderbird warns on that
+message. Replace the broad **Protected by Default** label with **Rendering
+protection** and show persistent sender/link and download warnings in the reader.
+Rendering containment does not establish phishing detection, URL reputation or
+safe downloaded documents; retain those limits explicitly.
+
+### Same day — Qualify the fixes and preserve delivery failures
+
+Independent review identifies and resolves recovery with a full counter store
+and an abandoned temporary file. The final focused checks pass: two proxy tests,
+23 throttle tests, five runtime fault tests and the standalone/preview reader
+regression. The normal delivery gate passes 2,381 library tests, portable
+integration tests, hostile-content assurance, clippy, supply-chain and boundary
+checks; 91 platform/native library cases remain explicitly ignored in that run.
+
+Preserve the earlier test expectation error, missing documentation-index entry,
+generated V10 inventory drift and V12 false match on the proxy test's process-ID
+reference. Correct the expectation to derive the remaining lockout from policy,
+index the operations guide, refresh the existing register and reuse the random
+fixture-ID generator. These corrections leave the security assertions and normal
+delivery hooks intact. They are source-delivery evidence, not installed proof.
+
+### Same day — Deploy and verify the production boundary
+
+Install the missing native Rust toolchain. Two optimized-build attempts abort at
+the build user's 1.5 GiB data limit; the attempted increase remains constrained by
+that user's hard limit. After independent reassessment, set a 4 GiB inherited
+limit while privileged, drop supplementary groups, GID and UID to the build user,
+verify the resulting identity/limits and execute Cargo with one job. The optimized
+build completes in 9m47s as UID 1000 without changing the system login-class limit.
+
+The first Web cutover rolls back after an immediate readiness probe fails. Its
+HTTP status was not retained, so the precise response remains unknown. Use bounded
+startup polling; the corrected cutover passes after one retry. The installed Web
+identifies signed source
+[`909b952`](https://github.com/unattributed/OSMAP/commit/909b95292e7a7fa9f6468ad4ad02162f9649129c)
+and binary SHA-256
+`071f075e8084e3f0c8050b23f6a10b15c0141907ccce96e450ec6d5c05231b0a`.
+
+Production checks return HTTP 403 for missing/incorrect origin proof and all six
+original forged-address login triggers, with no primary-authentication events
+for their unique marker. Nginx overwrites a browser-supplied forged proof and
+serves the ordinary login form with HTTP 200. The authenticated synthetic-message
+reader returns HTTP 200, displays the phishing/download warning, removes every
+tested active construct and preserves destination disclosure. HTML/SVG downloads
+return HTTP 200 with octet-stream typing, attachment disposition and `nosniff`.
+
+The first authenticated check also finds the account service stopped and its
+admission socket absent. Its earlier stock-admission/loop-guard failure has no
+timestamp or uniquely established cause. Restore the existing service and restart
+Web to capture ready authority; the reader and attachment checks then pass.
+Fresh service checks pass for the account service, Web, mailbox helper, nginx,
+Postfix, Dovecot, Rspamd and ClamAV. Remove temporary test sessions and retain
+private rollback copies under `/var/backups/osmap-redteam-20261116-ready`.
+No password, factor, mailbox content or mail-backend configuration is changed
+during remediation.
+
+Publish four GPG-signed source commits and integrate through
+[PR #90](https://github.com/unattributed/OSMAP/pull/90) into main
+[`10f22c7`](https://github.com/unattributed/OSMAP/commit/10f22c7b86fc19a67c7a41d0f0b5bea029e37a4c).
+Verify a clean checkout at exact `origin/main` parity. Later source commits alter
+documentation, generated inventory and test-only temporary naming; the deployed
+runtime code remains unchanged. This closes the three verified findings and the
+misleading reader wording, while retaining the stated phishing/document-safety
+limits and all unrelated release obligations.
+Sources: [deployment contract](REDTEAM_REMEDIATION_20261116.md),
+[installed verification](https://github.com/unattributed/OSMAP/pull/90#issuecomment-6905440397),
+[main integration receipt](https://github.com/unattributed/OSMAP/pull/90#issuecomment-6905464986).
