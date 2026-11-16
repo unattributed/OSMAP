@@ -1515,3 +1515,14 @@ SQL configuration, deployment and broader release acceptance remain separate.
 
 Sources: [merged PR #88 and final validation record](https://github.com/unattributed/OSMAP/pull/88),
 [slice reconciliation record](OSMAP_ADMIN_PROJECT_PLAN.md#read-only-compatibility-adapter-slice--2026-11-14).
+
+### Same day — Name new ADMIN components for their OSMAP responsibility
+
+The operator requests OSMAP-owned names instead of predecessor-application names
+in newly created code. Rename the internal read adapter to `admin_directory` and
+update its registration and reviewed-source guard. Retain the existing database
+selector as the actual connection target; changing a component name does not
+rename or migrate the mail-account authority. Fixed queries, command arguments,
+scope checks and result projections remain unchanged. Refresh the existing
+source inventory for the renamed path, and retain prior isolated SQL evidence
+within its original limits. See the [bounded naming correction](OSMAP_ADMIN_PROJECT_PLAN.md#read-only-compatibility-adapter-slice--2026-11-14).

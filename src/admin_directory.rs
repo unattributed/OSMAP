@@ -1,4 +1,4 @@
-//! Internal, read-only PostfixAdmin projection. A future trusted service must
+//! Internal, read-only OSMAP admin directory. A future trusted service must
 //! provide an authenticated domain scope; this module is not a web endpoint.
 use crate::auth::CommandExecutor;
 use std::time::Duration;

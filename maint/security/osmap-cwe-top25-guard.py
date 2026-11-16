@@ -88,8 +88,8 @@ SCHEDULED_TEST_ONLY_REGISTRATIONS = {
 REVIEWED_SQL_RUST_PATHS = {
     "src/account_password_backend.rs":
         "31f6fd1f8b2a4b4b53235d98ad9490053eeaf25757da662e528922c8b709e1ba",
-    "src/admin_postfixadmin.rs":
-        "8d4bc9429f77da838b878d245c6a86fac151f8f95931518522cf5cedd0c869a0",
+    "src/admin_directory.rs":
+        "f7bcb016c066f3a248d22b6deb6043f4b65b2e79a93565da288a1950395c594d",
 }
 
 

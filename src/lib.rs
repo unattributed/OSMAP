@@ -32,7 +32,7 @@ pub mod account_recovery;
 pub mod account_recovery_operator;
 #[cfg(unix)]
 #[allow(dead_code)] // Internal adapter awaits a separately authorized admin service caller.
-pub(crate) mod admin_postfixadmin;
+pub(crate) mod admin_directory;
 pub mod after_archive;
 pub mod appearance;
 pub mod archive_event;
