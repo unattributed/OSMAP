@@ -1370,6 +1370,31 @@ prerequisite, and its dated integration observations do not replace current
 OSMAP procedures. This is a two-file documentation correction; no bootstrap,
 host operation, service change or new installation qualification is performed.
 
+### Same day — Implement the first read-only ADMIN compatibility adapter
+
+Start the ADMIN implementation with an internal Rust projection of the existing
+PostfixAdmin authority. Reuse the bounded MariaDB command interface and fixed
+prepared reads for domains, mailboxes, aliases and alias-domain mappings. Require
+explicit domain scope before dispatch, preserve stored identities, paths, signed
+quota values and active flags, and exclude password hashes, factors and other
+secret-bearing columns. Keep the public browser outside the SQL boundary.
+
+Four focused Rust tests and a disposable obsd1 MariaDB fixture exercise the read
+projections and scope/refusal cases. Column-level SELECT grants deny password
+selection and UPDATE; remove the fixture database and SQL account and verify
+their absence. Independent review corrects signed-value handling and accepts
+uppercase canonical domains while retaining exact binary scope comparisons.
+Preserve the interrupted first broad gate, stale V10 inventory and initial CWE
+SQL-guard refusal; refresh the existing inventory and exact reviewed-source
+admission before the passing delivery gate. An idle SSH close and protected-main
+rejection precede successful signed topic-branch delivery through PR #88.
+This is adapter and isolated obsd1 evidence, not an authenticated admin service,
+GUI, Toronto deployment or Phase 1 acceptance.
+
+Sources: [initial signed adapter](https://github.com/unattributed/OSMAP/commit/caab07a57a6422b6e14d5996d832dc970482ed5a),
+[bounded slice and evidence](OSMAP_ADMIN_PROJECT_PLAN.md#read-only-compatibility-adapter-slice--2026-11-14),
+[PR #88](https://github.com/unattributed/OSMAP/pull/88).
+
 ## 2026-11-16 — Close verified red-team findings and clarify reader protection
 
 A source review, 140 focused tests and bounded production probes establish
@@ -1463,3 +1488,30 @@ limits and all unrelated release obligations.
 Sources: [deployment contract](REDTEAM_REMEDIATION_20261116.md),
 [installed verification](https://github.com/unattributed/OSMAP/pull/90#issuecomment-6905440397),
 [main integration receipt](https://github.com/unattributed/OSMAP/pull/90#issuecomment-6905464986).
+
+### Same day — Reconcile and integrate the read-only ADMIN adapter
+
+Merge current main into PR #88's published branch, preserving the Toronto edge
+changes already integrated through #89 and the later #90/#91 work. The sole
+conflict is the generated V10 assumption inventory; regenerate it from the
+combined source and execute its existing validator rather than select either
+branch's counts. Independent review confirms the final six-file adapter delta
+and unchanged adapter/command execution sources, retaining the prior isolated
+obsd1 SQL evidence. Four adapter tests, formatting, strict Clippy, guard and
+inventory checks pass; the normal pre-commit and full pre-push security gate pass.
+
+The first commit attempt passes its pre-commit checks but fails signing with
+`No pinentry`, creating no commit or remote update. After the operator warms the
+native GPG agent, create and verify Shopkeeper-signed reconciliation
+[`1f9ec45`](https://github.com/unattributed/OSMAP/commit/1f9ec45ad96db38f45b17bd2dc71991f116b126c).
+Publish `local-ci / verified` on that exact pushed head only after the gate passes,
+then use protected squash integration to satisfy main's linear-history rule.
+GitHub-signed main commit
+[`7a21eed`](https://github.com/unattributed/OSMAP/commit/7a21eed4aa66ec71f4b7205092659d81cb78a309)
+has the identical reviewed source tree; fresh fetch, clean main parity and
+independent final readback pass. Preserve the Shopkeeper-signed topic history.
+This completes source integration; admin identity/session binding, production
+SQL configuration, deployment and broader release acceptance remain separate.
+
+Sources: [merged PR #88 and final validation record](https://github.com/unattributed/OSMAP/pull/88),
+[slice reconciliation record](OSMAP_ADMIN_PROJECT_PLAN.md#read-only-compatibility-adapter-slice--2026-11-14).
