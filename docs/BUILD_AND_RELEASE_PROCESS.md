@@ -386,3 +386,21 @@ All source commits require normal hooks, Shopkeeper signatures and ordinary
 protected-main PR delivery. This evidence supports the selected-account contact
 repair, not a full strict-release gate, boot qualification, other account controls
 or independent-host support. No owner credential or contact mutation is inferred.
+
+## 2026-11-16 — Internal admin compatibility qualification
+
+The [admin compatibility work order](OSMAP_ADMIN_PROJECT_PLAN.md#toronto-compatibility-slice--2026-11-16)
+records the assessed signed source, actual Toronto schema SELECT, native host
+results, restricted SQL grants and cleanup. These are development/backend
+evidence. The fixed production SQL profile remains absent; the examples in
+`maint/admin-read/` are not installed provisioning or a production sign-in claim.
+
+The focused security evidence addresses the existing WSTG concerns for alternate
+authentication (ATHN-10), bypass/privilege/IDOR (ATHZ-02/03/04) and session
+termination (SESS-06): independent bcrypt vectors, password plus independent
+TOTP/replay checks, domain and dual-indicator system scope, disagreement refusal,
+and observed authority-change revocation across process restarts. This is not a
+new browser-runner disposition or credential-backed HTTP WSTG PASS. A network
+entry still needs verified per-client throttle identity, a reviewed factor
+enrollment path, private service custody and matching installed journey tests.
+Normal developer delivery checks do not refresh historical strict-release tuples.

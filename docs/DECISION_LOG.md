@@ -1582,5 +1582,23 @@ change requires fresh authentication. Provide restricted client/grant examples
 for a later reviewed deployment. Execute the actual fixed SELECT read-only on
 Toronto with a NULL predicate, returning no account rows; compile and exercise
 the changed backend on both hosts using private Unix-socket MariaDB fixtures.
-Native and delivery results remain pending in the
-[compatibility work order](OSMAP_ADMIN_PROJECT_PLAN.md#toronto-compatibility-slice--2026-11-16).
+Both native builds and the compatible password/TOTP/scope/session sequence now
+pass on obsd1 and Toronto. Retained role-state receipts distinguish disagreement,
+demotion and restoration; old tokens remain refused and fresh authentication
+works after restoration. Exact-column grants deny factor/mailbox secrets and
+writes, and foreign-UID profile reads refuse. Retain verified host evidence
+before exact-owned cleanup; reconcile independent review and signed delivery in
+the [compatibility work order](OSMAP_ADMIN_PROJECT_PLAN.md#toronto-compatibility-slice--2026-11-16).
+This establishes internal backend compatibility, not installed admin sign-in.
+
+During this slice the operator also requests an Argon2id investigation. Read-only
+Toronto counts find one Argon2id and 13 bcrypt active mailbox hashes, with the
+active admin still bcrypt. Installed Dovecot supports Argon2id and a synthetic
+long-password/final-byte-negative probe passes; the existing Rust mailbox
+password writer already generates Argon2id. Prefer it for new credentials and
+qualified password changes, retaining mixed-scheme verification during migration.
+The independent admin verifier still needs Argon2id support; no dependency or
+password writer is added here. Actual writer/verifier inventory, bounded cost
+tests, coordinated conditional updates, revocation and compatible rollback must
+precede a production migration. Do not convert hashes blindly, change the bare
+hash default, or give the read-only admin backend implicit login-time writes.
