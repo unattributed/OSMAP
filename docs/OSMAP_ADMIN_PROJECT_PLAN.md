@@ -169,11 +169,12 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 
 | Current work | Status and boundary |
 | --- | --- |
-| ADM-PLAN-01: this execution-roadmap reconciliation | Documentation-only work order below; no product implementation is started by this change |
+| ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
+| ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
 | Active product implementation slice | **NONE**; maximum one at a time |
 | Selected next product slice | **ADM-S01-01**, private admin sign-in; NOT_STARTED |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
-| Argon2id admin-verifier enhancement | DEFERRED improvement, outside the first milestone's critical path; existing bcrypt admin verification remains usable |
+| Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
 
 For future results maintain four separate fields per slice: **implementation**
 (`NOT_STARTED`, `IN_PROGRESS`, `DELIVERED`), **development qualification**,
@@ -289,11 +290,11 @@ prerequisite; required safety and interface dependencies are named separately.
 | **ADM-S03 Alias and routing administration**: required forwarding works without losing local delivery | **ADM-S03-01** alias list/create/edit/disable/remove and multi-recipient forwarding; depends on ADM-S01-03 writer and verified map/alias contracts; scheduled after ADM-S02-03; E2/E3 | UX-A3, UX-A5; UX-WF-07; T:F-18–19, T:F-21, T:INT-04–05, T:SEC-09, T:SEC-32, T:RES-01 | Native map expansion and bounded local delivery match source/destinations; loop, foreign-source edit, reserved/self-alias removal and conflicting revision refuse |
 | ADM-S03 | **ADM-S03-02** installed catch-all/alias-domain variants; depends on ADM-S03-01; E2/E3 | UX-A5, UX-A7; UX-WF-07; T:F-20–21, T:F-33, T:INT-03–05 | Enabled required variants have real routing proof; collisions/unsupported variants are refused, and any nonapplicability/deferment has explicit installed-feature disposition |
 | **ADM-S04 Identity and retention lifecycle**: users/admins enroll and recover safely; retirement preserves ownership | **ADM-S04-01** owner enrollment and first OSMAP login; depends on ADM-S01-03; normally scheduled here, brought forward before ADM-S01-04 if its pending-MFA policy requires; E2/E3 | UX-A6; UX-WF-05; T:F-09–12, T:F-34, T:INT-12–13, T:SEC-16–17, T:SEC-34, T:UX-12, T:RES-06–07 | Independently delivered single-use setup and user-held TOTP reach owned OSMAP Inbox; expired/replayed/cross-account setup and factor overwrite refuse |
-| ADM-S04 | **ADM-S04-02** administrator enrollment, grants and own credential lifecycle; depends on ADM-S01-01 and service-held writer/epoch contracts; scheduled after ADM-S04-01; E2/E3 | UX-A6; UX-WF-11, UX-WF-15; T:F-04, T:F-14, T:F-24–26, T:SEC-05, T:SEC-10–16, T:SEC-31, T:REC-09 | Separate domain admin enrolls, manages only its grants and loses authority when revoked; privilege escalation, last-admin lockout and old-session resurrection refuse |
+| ADM-S04 | **ADM-S04-02** administrator enrollment, grants and own credential lifecycle, including Argon2id; depends on ADM-S01-01 and service-held writer/epoch contracts; scheduled after ADM-S04-01; E2/E3 | UX-A6; UX-WF-11, UX-WF-15; T:F-04, T:F-14, T:F-24–26, T:F-35, T:SEC-05, T:SEC-10–16, T:SEC-31, T:REC-09 | New/explicitly changed admin credentials use qualified Argon2id with legacy bcrypt verification retained; domain grants and revocation work; wrong/unsupported hashes, excessive work, privilege escalation and old-session resurrection refuse |
 | ADM-S04 | **ADM-S04-03** factor rotation/revocation/recovery; depends on ADM-S04-02; E2/E3 | UX-A6; UX-WF-10; T:F-12, T:F-15, T:SEC-14–17, T:SEC-28, T:SEC-31, T:REC-05–09, T:RES-02, T:RES-06–08 | Approved transition has safe factor/replay/session readback; missing attestation, concurrent reset and interrupted follow-up stay refused or contained |
 | ADM-S04 | **ADM-S04-04** mailbox/domain retirement and address reissue; depends on ADM-S02-02, ADM-S03-02 and ADM-S04-03; E1/E2 synthetic retained mail | UX-A6, UX-A7; UX-WF-12; T:F-27–29, T:DB-05, T:INT-11, T:REC-10, T:REC-19 | Staged retirement preserves mail/history and reissue gives a new owner no prior access; dependent domains, unsafe purge and inherited identity refuse |
 | **ADM-S05 Standalone Rust installation**: clean installation reaches the same working admin/user journey without PHP | **ADM-S05-01** native schema/grants/migrations; requires reviewed DDL/grants/projections, actual MariaDB capabilities and restore; scheduled after ADM-S04-04; E1 empty disposable authority | UX-A4; T:F-01, T:DB-01–03, T:DB-08–11, T:DB-16–20, T:OPS-01–03, T:REC-02–04 | Vendor-initialized MariaDB plus Rust migrator produces correct native projections; populated/unknown/checksum-mismatched or interrupted schema refuses or restores |
-| ADM-S05 | **ADM-S05-02** offline first admin and clean first domain/mailbox/enrollment; depends on ADM-S05-01, ADM-S01-04, ADM-S02-01 and ADM-S04-01; E1 | UX-A4, UX-A6; UX-WF-02; T:F-02–04, T:F-08–12, T:INT-05–08, T:INT-12–14, T:OPS-03 | First admin exists before a mailbox; private UI then provisions/enrolls a working user; concurrent/repeated/partial bootstrap and public bootstrap route refuse |
+| ADM-S05 | **ADM-S05-02** offline first admin and clean first domain/mailbox/enrollment; depends on ADM-S05-01, ADM-S01-04, ADM-S02-01, ADM-S04-01 and ADM-S04-02; E1 | UX-A4, UX-A6; UX-WF-02; T:F-02–04, T:F-08–12, T:F-35, T:INT-05–08, T:INT-12–14, T:OPS-03 | First admin exists before a mailbox; private UI then provisions/enrolls a working user; concurrent/repeated/partial bootstrap and public bootstrap route refuse |
 | **ADM-S06 Replacement parity and operations**: every required feature and recovery path has a disposition and evidence | **ADM-S06-01** scoped audit/search, native CLI and installed conditional modules; depends on ADM-S02-03, ADM-S03-02 and ADM-S04-04 operations; scheduled after ADM-S05-02; E1/E2/E3 | UX-A7; UX-WF-13–15; T:F-26, T:F-30–34, T:SEC-25–28, T:UX-03–05, T:UX-13–14 | Browser and CLI reach the same scoped service; audit/journal distinguish known/uncertain effects; each required optional backend works; secret/foreign audit access and unsupported actions refuse |
 | ADM-S06 | **ADM-S06-02** backup/restore, service/upgrade and continuity; depends on ADM-S06-01 and ADM-S05-02; E1/E3 | UX-A7, UX-A8; T:DB-18, T:INT-15–26, T:REC-01–20, T:OPS-01–10, T:RES-09–16 | Actual isolated restore and maintenance preserve mail, factors, writer authority and public/native journeys; stale data, unknown compatibility and split authority prevent promotion |
 | ADM-S06 | **ADM-S06-03** release-candidate end-to-end/security/accessibility and owner UAT; depends on ADM-S06-02; E1/E3, E4 read-only | UX-A8 and all implemented UX-WF; T:UX-01–14, applicable T:SEC-01–36 and T:RES-01–16; test-plan G0–G5 | Applicable workflows, WSTG, direct-service negatives and accessible browser journey pass for the exact candidate; any required FAIL/NOT_RUN/UNCERTAIN blocks that release claim |
@@ -301,6 +302,74 @@ prerequisite; required safety and interface dependencies are named separately.
 | ADM-S07 | **ADM-S07-02** separately authorized Path A installation/cutover; depends on ADM-S07-01 and explicit production authority; E4 -> E5 | UX-A7, UX-A8; T:MIG-07–11, T:INT-15–26, T:PROD-01–18 | Exact installed Rust writer and private UI pass approved smoke/observation with one mail authority; any ambiguous writer, regression or unsafe rollback prevents acceptance |
 | ADM-S07 | **ADM-S07-03** optional Path B data-authority migration; depends on ADM-S06-03, ADM-S05-02 and explicit Path B selection; its own E2/E3 full rehearsal before authorized E5 | UX-A4, UX-A7, UX-A8; T:MIG-12–17, T:DB-12, T:REC-02–04, T:REC-11–12, T:PROD-01–18 | Reconciled native authority and every consumer converge with preserved mail/state; deltas, interrupted switches and unsafe downgrade refuse. Path B may replace ADM-S07-02 only under an explicit approved alternate cutover; retaining the existing database is valid Path A |
 | ADM-S07 | **ADM-S07-04** separately authorized retirement; depends on accepted ADM-S07-02, or selected/accepted ADM-S07-03, stable observation and retained recovery; E4 -> E5 | UX-A7, UX-A8; T:MIG-18–20, T:F-33, T:INT-24–25, T:PROD-16–18 | Required functions, jobs, grants and routes no longer depend on the old interface/PHP; only approved legacy components retire; remaining dependency, missing parity or unsafe recovery blocks retirement |
+
+### ADM-S04-02 feature — Argon2id administrator credentials
+
+The operator assigns the earlier standalone enhancement to the existing
+administrator enrollment, grants and own-credential lifecycle slice. It is a
+planned feature of ADM-S04-02, not a new slice, separate implementation objective
+or dependency of the first mailbox-management milestone. The roadmap remains
+seven product sprints and 22 slices; ADM-S01-01 remains selected next.
+
+**Observable outcome:** a newly enrolled admin, or an admin completing an
+authorized password change/reset, receives an Argon2id credential and can sign
+in with password plus independent TOTP. Existing supported bcrypt admins still
+sign in during mixed-scheme operation. Preserve imported credential bytes until
+an explicit credential transition; read-only login does not silently write or
+rehash them. Bulk migration is outside this feature and needs its own reviewed
+writer/reconciliation work order.
+
+Use an established reviewed Rust implementation or native cryptographic library,
+with admin identity, factor, session and hash authority separate from mailbox
+authentication. No PHP or predecessor application dependency is introduced.
+Define the admin's stored encoding and supported input limits explicitly; do not
+assume the mailbox's Dovecot scheme prefix is the admin encoding. The old
+bcrypt-only 72-byte input guard must not truncate a newly supported Argon2id
+password. Admit bounded PHC parameters before expensive allocation/work, with
+target measurements and concurrency bounds on obsd1 and mail; historical single
+samples or package scheme lists are not capacity qualification. Keep generic
+denials, verified-client throttling and bounded unknown-user work intact.
+
+**Acceptance mapping:** UX-A6, UX-WF-01, UX-WF-11, UX-WF-15;
+T:F-04, **T:F-35**, T:SEC-02–05, T:SEC-14–15, T:SEC-21,
+T:SEC-26–31, T:REC-09. P:SEC-01 and P:ADM-07–08 gain this explicit owner.
+Qualify these cases as part of ADM-S04-02, using the existing service, browser
+and native tests rather than another test framework:
+
+- Positive: Argon2id enrollment and explicit credential change, password + TOTP
+  sign-in, independently generated vectors and supported legacy bcrypt login.
+  Persist and resume the correct state through service restart.
+- Negative: wrong password/code, TOTP replay, changed final byte/codepoint of a
+  long ASCII/UTF-8 password, malformed/unsupported encoding and excessive PHC
+  parameters refuse without truncation, resource abuse or secret disclosure.
+- Mutation/recovery: authorized change accepts the new credential, rejects the
+  old credential and invalidates affected sessions through the writer/epoch
+  contract. Interrupted/unknown writes stay contained and are not retried
+  blindly; compatible rollback continues to verify retained Argon2id credentials.
+- Targets/results: development qualification and the matching installed private
+  candidate journey on **mail.blackbagsecurity.com (mail)** are both required
+  before acceptance. Implementation NOT_STARTED; all feature cases NOT_RUN in
+  development and on mail; operator acceptance NOT_ACCEPTED. No credentials are
+  changed by this planning amendment.
+
+Fresh-install ADM-S05-02 consumes the qualified admin credential facility from
+ADM-S04-02 for first-admin creation. This dependency does not move it ahead of
+ADM-S01 or authorize any live enrollment, reset, profile change or migration.
+
+ADM-PLAN-02 scope is this feature assignment and test/lifecycle/decision
+cross-references only, based on `a57edd3590972e3ec223f336a76139716e00f04c`.
+`/root` owns writing/integration/Git and `/root/adapter_review` independently
+checks placement, dependencies and acceptance claims. Minimum checks are mapped
+case references, unchanged slice/first-milestone order, local links, historical
+record preservation, documentation governance and normal hooks. One bounded
+documentation amendment and normal delivery are planned; retain failures/actual
+effort, and stop after two failures at a boundary for independent reassessment
+without automatic allowance growth. No runtime or host qualification is run.
+Documentation checks and independent placement/dependency review PASS: all 215
+acceptance cases and 82 parity IDs resolve, slice count remains 22, the selected
+ADM-S01-01 and historical result bytes are unchanged. Normal signed delivery
+and exact remote identity are recorded in the final PR receipt; feature tests
+remain NOT_RUN.
 
 ### Replacement coverage and completion accounting
 
@@ -314,7 +383,7 @@ disposition; P0 obligations cannot silently move to an enhancement backlog.
 | Parity IDs (P namespace) | Owning slices |
 | --- | --- |
 | P:DOM-01; P:USR-01; P:ADM-01–02, P:ADM-07, P:ADM-10 | ADM-S01-01–02; extend admin lifecycle in ADM-S04-02 |
-| P:USR-02–03, P:USR-15; P:SEC-01, P:SEC-09–10, P:SEC-13–14; P:ADM-09, P:SYS-05 | ADM-S01-03–04 and all later mutations; audit browsing in ADM-S06-01 |
+| P:USR-02–03, P:USR-15; P:SEC-01, P:SEC-09–10, P:SEC-13–14; P:ADM-09, P:SYS-05 | ADM-S01-03–04 and all later mutations; admin Argon2id credentials in ADM-S04-02; audit browsing in ADM-S06-01 |
 | P:DOM-02–03, P:DOM-05–09; P:USR-04–08, P:USR-10–11 | ADM-S02-01–03; conditional native support must be proven |
 | P:ALS-01–11 | ADM-S03-01–02, including required reserved/self-delivery aliases |
 | P:USR-09, P:USR-14; P:DOM-04; P:ADM-03–06, P:ADM-08; P:SEC-02–08 | ADM-S04-01–04; independent invitation channel and last-admin safety retained |
@@ -432,6 +501,7 @@ product/native/browser tests for the new slices remain NOT_RUN.
 
 The later Argon2id investigation is retained as history. Its suggested standalone
 verifier priority is superseded by this operator-directed product sequence.
+Its feature is now explicitly scheduled within ADM-S04-02 above.
 Argon2id generation for a new mailbox may reuse the existing qualified facility;
 adding admin Argon2id verification, migrating existing hashes, optional schema
 Path B and optional modules are not prerequisites invented for ADM-S01.

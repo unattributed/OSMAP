@@ -197,6 +197,12 @@ Each table row is an independently identifiable test. Tests involving mail-accou
 | F-32 | Read-only legacy compatibility mode permits inventory but refuses every direct or browser write path. |
 | F-33 | Every implemented optional PostfixAdmin-equivalent feature has positive, negative and native-consumer proof; omitted items have explicit operator disposition. |
 | F-34 | Mailbox self-service actions remain in OSMAP, not copied into privileged admin capabilities or converted into mail-content access. |
+| F-35 | ADM-S04-02 enrolls an admin or explicitly changes/resets its credential to qualified Argon2id; password+TOTP login and restart persistence work alongside supported legacy bcrypt logins. Full long ASCII/UTF-8 input is verified; wrong/tail-changed inputs, replay, malformed encoding and excessive PHC costs refuse safely. A credential transition rejects the old password and invalidates affected sessions; read-only login preserves legacy hashes, unknown writes remain contained, and compatible rollback still verifies Argon2id. Development and matching installed mail-host journey evidence are both required. |
+
+F-35 is a planned feature case, added 2026-11-17, with NOT_RUN results in both
+development and on mail. It belongs to ADM-S04-02 and is not a prerequisite for
+ADM-S01. The current acceptance catalogue contains 215 cases; the initial
+roadmap's 214-case validation receipt remains historical evidence.
 
 ## 6. Database and writer acceptance cases
 
