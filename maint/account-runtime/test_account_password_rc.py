@@ -79,6 +79,7 @@ rc_start
         def existing(paths):
             for path in paths:
                 path.mkdir(mode=0o750)
+                path.chmod(0o750)
                 (path / 'preserved').write_text('unchanged')
         for setup in [None, existing]:
             with self.subTest(existing=setup is not None):

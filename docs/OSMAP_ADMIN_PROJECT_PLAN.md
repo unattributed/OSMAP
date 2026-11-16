@@ -335,6 +335,15 @@ UNKNOWN. Arbitrary event fields and native output remain private. Independently
 review this correction; do not change runtime auth, scheduling or any native-qualified admin source, or rerun matching native
 qualifications. Preserve the first full-gate log and initial missing observation.
 
+The second normal push passes the full Rust suite (2397 PASS, 100 ignored),
+strict Clippy and supply-chain checks, then refuses one of 642 Python account
+regressions. Independent reassessment identifies a fixture mode assumption:
+`mkdir(mode=0750)` under the push's private-artifact `umask 077` creates `0700`;
+the real startup custody guard correctly refuses it. Correct only the existing
+directory fixture with explicit `chmod(0750)`; all four module tests PASS under
+both umasks 077 and 022 before a reviewed normal gate retry. Preserve the second
+gate; no runtime custody policy, native qualification or allowance is changed.
+
 ### Operator-requested Argon2id investigation — 2026-11-16
 
 The operator additionally requests investigation of Argon2id for stronger email

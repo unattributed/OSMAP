@@ -1613,3 +1613,10 @@ The affected scheduling and auth groups pass (12 and eight tests), strict Clippy
 passes and the existing inventory is regenerated before independent review and
 normal delivery-gate retry. Do not discard the first failed gate or substitute
 these local passes for the required full gate.
+
+The next gate passes all 2397 Rust tests, then refuses a Python startup fixture
+created under the push's restrictive umask. Independent reassessment confirms
+the real rc custody guard correctly rejects its accidentally masked `0700`
+directory. Set only that fixture's intended `0750` explicitly; its four-test
+module passes under both umasks 077 and 022. Preserve the failed gate and keep
+the production custody guard unchanged before normal delivery retry.
