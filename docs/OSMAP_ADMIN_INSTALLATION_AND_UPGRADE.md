@@ -66,6 +66,59 @@ The running host configuration and its authenticated service/process observation
 
 `openbsd-mailstack` stages operator render output under `.work/runtime/rootfs/` and keeps `services/generated/rootfs/` as a **sanitized tracked example**. Its current public phase 03 and phase 08 include PostfixAdmin and Roundcube assets. A **new native OSMAP profile must be implemented and validated** before any unattended clean-install phase runner can be claimed to provision a PostfixAdmin-free OSMAP-ADMIN host. Until then, stage and reconcile each applicable phase; do not run the full legacy profile blindly.
 
+### 3.2 ADM-S01-01 private sign-in candidate
+
+The first implementation slice adds `cargo build --bin osmap-admin` and two
+startup modes, `osmap-admin service /absolute/service.json` and
+`osmap-admin web /absolute/web.json`. These are a manually provisioned, isolated
+sign-in candidate, not the later installer, bootstrap or writer interface.
+Both modes require a non-root Unix identity and mandatory OpenBSD sealing;
+there is no unsealed fallback. Read qualification status in the current
+[slice work order](OSMAP_ADMIN_PROJECT_PLAN.md#adm-s01-01-implementation-work-order--2026-11-17)
+before treating a build as runnable or accepted.
+
+The root-owned startup JSON is at most 4096 bytes, mode 0640 with the
+role's primary group so that the non-root role can read it. A root-only 0600
+file is inaccessible and refuses at open. Unknown fields refuse. Service fields are `state`,
+`socket`, `web_uid`, `sql_profile`, `database`, `sql_socket` and
+`sql_socket_uid`. Web fields are `socket`, `proxy_uid`, `service_socket`,
+`service_uid` and `origin`. Paths must be canonical and protected against
+unrelated replacement; listeners must be absent before startup. State and its
+factor/session/replay/epoch/throttle children are service-owned 0700. The
+SQL server/bootstrap identity must differ from both service and Web. The
+service-owned 0600 SQL profile permits one `[client]` group and exactly `user`,
+`password`, `protocol=SOCKET` and the configured `socket`; it grants only the
+existing fixed admin/domain SELECT projections. The operator-selected
+`database` may retain the actual `postfixadmin` schema name.
+
+Private nginx and Web share one dedicated unprivileged UID. Its listener parent
+is private 0700 and the Web socket 0600. The trusted service has a distinct UID;
+its socket parent is service-owned, group Web, mode 0750, with a service-owned
+0660 socket. Only the service receives that Web supplementary group. Root
+provisions these identities and groups; neither request nor config admits a
+root principal or substitutes caller-provided authority.
+
+The isolated nginx TLS listener uses its own configuration, PID, logs and
+temporary paths. It connects to Web's Unix socket over HTTP/1.1, overwrites
+`Host` with the exact configured authority including any port, overwrites one
+`X-Real-IP` from `$remote_addr`, and removes untrusted forwarding metadata.
+Web authenticates the proxy UID before parsing HTTP and checks exact HTTPS
+origin/Host. Routes are GET/POST `/admin/login`, GET `/admin` and POST
+`/admin/logout`. Admin cookies are separate `__Host-` cookies with Secure,
+HttpOnly, SameSite=Strict and Path=/; both state-changing forms require CSRF.
+The landing page shows current service-derived scope, including a truthful
+no-grants state. It exposes no mailbox operations yet.
+
+Password verification supports the qualified legacy bcrypt costs without
+rewriting credentials. Per-login throttling survives client-address rotation;
+per-peer throttling and one sequential, deadline-bounded service worker bound
+work. This is not a distributed-flood rate guarantee. Core dumps are disabled
+before private state or requests are admitted. Operational failures return
+fixed unavailable messages and fixed diagnostic codes rather than native text.
+Isolated browser and refusal results are required on obsd1 and mail separately;
+public daemons, live accounts and production configuration are outside this
+candidate setup.
+
 ## 4. Release-aware discovery and compatibility gate
 
 OpenBSD has approximately semiannual release cycles; package updates follow the release/ports ecosystem and security and maintenance work. As of this document's date, OpenBSD **8.0** is the newly released stable generation (2026-10-20); the public mailstack repository still explicitly targets **7.9**. **Neither an 8.0 deployment pass nor a 7.9-to-8.0 in-place upgrade has been established for OSMAP-ADMIN.** Select support based on tests for the chosen target, not release-name matching.

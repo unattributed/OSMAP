@@ -404,3 +404,17 @@ new browser-runner disposition or credential-backed HTTP WSTG PASS. A network
 entry still needs verified per-client throttle identity, a reviewed factor
 enrollment path, private service custody and matching installed journey tests.
 Normal developer delivery checks do not refresh historical strict-release tuples.
+
+## 2026-11-17 — ADM-S01-01 candidate delivery boundary
+
+The first private admin sign-in implementation is a separate `osmap-admin`
+executable with peer-checked Web/service modes; see the
+[active work order](OSMAP_ADMIN_PROJECT_PLAN.md#adm-s01-01-implementation-work-order--2026-11-17)
+and [candidate setup contract](OSMAP_ADMIN_INSTALLATION_AND_UPGRADE.md#32-adm-s01-01-private-sign-in-candidate).
+Focused source results and strict Clippy do not establish installed readiness.
+Require matching private browser/service/SQL positive, refusal, restart and
+logout evidence on both obsd1 and mail, exact source/binary identity, independent
+review and exact-owned cleanup. Retain failures and source/native/installed/UAT
+status separately. Normal signed hooks and GitHub preservation apply; this
+candidate is not the native installer, production handover or a complete first
+mailbox-management milestone.

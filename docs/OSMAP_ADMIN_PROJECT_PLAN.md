@@ -171,8 +171,8 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Active product implementation slice | **NONE**; maximum one at a time |
-| Selected next product slice | **ADM-S01-01**, private admin sign-in; NOT_STARTED |
+| Active product implementation slice | **ADM-S01-01**, private admin sign-in; IN_PROGRESS under the 2026-11-17 implementation work order below |
+| Selected next product slice | ADM-S01-02 after ADM-S01-01's required boundary; NOT_STARTED |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
 | Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
 
@@ -438,11 +438,126 @@ to rerun every unchanged passing workflow at each slice.
   No production account, factor, SQL grant, public service or configuration
   mutation is admitted by this planning work. A future bounded execution recipe
   records exact target, authority, runtime/cleanup bounds and recovery before use.
-- **Results/status:** implementation NOT_STARTED; mapped integration/native/
+- **Results/status:** implementation IN_PROGRESS; mapped integration/native/
   browser cases NOT_RUN separately in development and on mail; operator
   acceptance NOT_ACCEPTED. No new admin UI is
   running. Future known gaps name a concrete owner/next action without hiding
   completed useful work or marking a declaration as a result.
+
+### ADM-S01-01 implementation work order — 2026-11-17
+
+The operator starts Sprint ADM-S01 with its first slice. Source baseline is
+`ed816927cd8ea8c6dead1afb1f9d14655364d3fe`. Implementation is IN_PROGRESS;
+development/mail native and browser cases remain NOT_RUN until observed, and
+operator acceptance remains NOT_ACCEPTED. Earlier planning-only restrictions
+describe those completed documentation changes, not a renewed source hold.
+
+**One observable outcome:** a real browser reaches private HTTPS, submits a
+seeded synthetic admin password and TOTP, sees server-derived current scope,
+resumes after the trusted service restarts and logs out. Complete this actual
+browser -> private web -> trusted service -> isolated SQL/factor/session path
+on obsd1 development and mail separately; no result substitutes for the other.
+
+**Owners/files:** `/root` is accountable for project/Scrum coordination, backend
+changes, native confinement, integration, documentation and the sole Git/host
+queue. `/root/admin_ui_engineer` owns the new presentation module and its focused
+tests; `/root/admin_transport_engineer` owns the bounded typed transport/config
+and tests under the agreed interface. They are activated only by concrete
+dispatch. `/root/adapter_review` independently reviews source, prerequisites,
+functional evidence and delivery; it does not approve its own code. Preserve
+the current public OSMAP UI/routes/session authority and unrelated state.
+
+**Inspected prerequisites:** fresh SSH readback identifies
+`obsd1.blackbagsecurity.com` and `mail.blackbagsecurity.com`, native OpenBSD,
+MariaDB/Python/Cargo/nginx/OpenSSL/user-management tools and noninteractive
+privileged setup. Both production admin SQL profiles are absent. Toronto's
+build-user hard data limit needs the previously demonstrated privileged limit
+setup followed by dropping groups/GID/UID before Cargo. Observed versions/limits
+are evidence, not release-string or fixed-free-memory predicates. Reuse the
+reviewed schema/query and private fixture setup contracts from ADM-F02/F03;
+verify current native command, socket, owner/mode and parser/consumer contracts
+before dependent execution. Python Playwright is absent from the default system
+interpreter; use or prepare an isolated test environment with the existing UX
+workflow style and installed browser, not a new product dependency/framework.
+
+**Smallest composition:** a separate `osmap-admin` Rust entry has private web
+and trusted-service modes. Reuse the bounded HTTP/form parser, escaping/CSP/CSS,
+private record/session/TOTP/throttle code and deadline-framed Unix transport.
+Private nginx terminates TLS and connects only to a custody-checked web Unix
+socket; web authenticates the proxy peer UID before accepting its overwritten
+single-client-address header. Never inherit the public webmail parser's generic
+loopback forwarded-header trust. Web and service have separate OS identities,
+while the isolated nginx and Web share one dedicated unprivileged Web UID;
+configuration rejects a different proxy UID because its socket is private 0600.
+Neither Web inputs nor cookies can assert grants or a serialized session.
+The service authenticates Web's Unix UID, owns per-login/per-peer throttling and one bounded global worker,
+resolves current scope on every landing/resume, and validates bounded fixed
+login/scope/logout operations. HTTP cookies are admin-only, Secure, HttpOnly and
+SameSite with exact Host/Origin checks and login/logout CSRF. No JS dependency,
+mailbox route, SQL privilege or protected factor access is given to Web.
+
+**Changed backend boundary:** add current-scope session readback, trusted peer
+context and bounded equivalent bcrypt work across supported costs for known and
+unknown users. Keep stored credentials unchanged. The isolated candidate uses
+a protected operator/service-selected SQL profile and database through the same
+fixed queries/command runner; a request cannot choose SQL, programs or paths.
+The narrow SQL and native execution guard changes require exact independent
+source review. OpenBSD service/web sealing must match the actually reachable
+program/dependency/socket paths; qualification is withheld until those paths
+and UID separation are exercised natively.
+
+**Progressive checks:** establish a distinguishing RED boundary first; use
+focused Rust HTTP/RPC/session/peer/CSRF/denial-work tests, then one exact-source
+native browser journey per host. Positive sign-in/scope/persistence/logout and
+negative wrong/replayed factor, mailbox-cookie crossover, forged actor/peer/
+forwarded headers, foreign Host/Origin, CSRF, expiry, changed grants and missing
+SQL/factor/service are the mapped S01-01 cases. Inspect actual installed custody
+and confinement as well as UI results. Diagnostics export only fixed source
+codes/outcomes/stream counts; never retain credentials, factor codes, bearer or
+CSRF values in public evidence. Keep failed owned resources and actionable
+private diagnostics until durable sanitized readback/hash allows exact cleanup.
+
+**Execution and preservation:** use independent private SQL/nginx/socket/state
+instances and temporary role identities only. No public service is stopped,
+restarted, reloaded or reconfigured, no live account/factor or production grant
+changes, and no fixture reaches a reference replica. Root owns setup/cleanup;
+source review and verified Shopkeeper checkpoint precede native transfer. Each
+native compile is bounded to 600 seconds, each focused probe to 120 seconds and
+each browser journey to 300 seconds, with a finite 120-second disposition phase.
+The cumulative first investigation checkpoint is four hours, retaining actual
+elapsed work, UNKNOWN preparation cost and every failure across workers; no
+automatic allowance increase. Two failures at one boundary stop retries for
+combined independent reassessment. Authority does not expire by an invented
+ledger clock. Run full suites only through normal delivery gates after focused
+passes; verify remote exact-head equality and protected integration. Retained
+artifacts use `/home/foo/Downloads/osmap-admin-s01/` throughout this sprint.
+
+**Progressive source results:** the first distinguishing scope/resume test was
+RED because the backend operation did not exist. Two subsequent compilation
+attempts exposed UI formatting and byte-slice helper integration errors. Their
+combined independent reassessment approved the exact source corrections before
+the next compile; no test or native execution occurred in those failures. The
+first executed focused suite compiled and passed 66 cases, with two failures and
+12 native-only cases ignored. One failure exposed the real parser/router
+contract: `/admin/` is not normalized. Reuse the parser unchanged and make the
+landing path `/admin`; a distinguishing real-parser regression checks both
+paths. The other failure counted shared CSS rather than the actual navigation;
+scope the assertion to navigation markup. These are retained source results,
+not native qualification. Focused logs remain under the sprint artifact root;
+native/browser results and independent final review are still outstanding.
+
+The corrected focused run passes **73 cases, zero failures, 12 native-only
+cases ignored**, in 11.37 seconds. Strict non-test/all-target Clippy passes in
+13.37 seconds after promoting the existing effective-GID getter from test-only
+to Unix runtime visibility. Preserve the intermediate compilation failure from
+an overlapping transport edit and the non-test getter refusal separately; an
+independent combined reassessment approved those bounded corrections. Static
+guard refusals exposed inert forbidden-option and program-path test literals;
+retain them and change only those counterexample values, preserving strict
+guards. Reviewed source has no remaining executable-source blocker. Added two
+OpenBSD-only ignored tests apply the exact Web/service seals in separate
+processes and check allowed namespace access against unrelated readable paths;
+their native results remain NOT_RUN at this source checkpoint.
 
 ### One active slice, work orders and delivery
 

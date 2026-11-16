@@ -1,5 +1,16 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+2026-11-17 ADM-S01-01 source boundary: a separate private Rust admin entry
+adds password/TOTP, admin-purpose sessions, current-scope readback and logout.
+The active admin work order maps F-04, SEC-01–06/08/11 and the selected
+integration/UX cases. Focused source regressions cover parser/routing, strict
+framed peer transport, Host/origin/CSRF, cookie purpose, current authority,
+persistent account throttling and bounded credential work. Strict Clippy passes.
+These are E0 source results, not installed WSTG or release qualification. Native
+private browser/service/SQL, restart, denial, confinement and cleanup results
+must be recorded independently on obsd1 and mail before acceptance. No public
+mail service/configuration or production credential change is authorized.
+
 2026-10-24 helper/admission native01: buildPASS, ParentPrepareUnknown failure
 at5.00s beforeR1seal/readiness; clientdoasrefusal/bodyNOTRUN, soR2unqualified.
 OriginalSSHcollectionfailures retained; reviewed singlearchive recovery matches

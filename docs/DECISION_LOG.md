@@ -1692,3 +1692,31 @@ existing plan, acceptance catalogue, identity-lifecycle reference and this
 decision entry. Independent review, focused documentation checks and normal
 signed delivery follow; no implementation, credential mutation, host action or
 migration is authorized by this documentation change.
+
+### 2026-11-17 — Start ADM-S01-01 as the first connected admin journey
+
+The operator starts the first OSMAP-ADMIN sprint and slice using the established
+S05 method. Keep ADM-S01-01 as the single active product objective: private
+password-plus-TOTP sign-in, service-derived scope, restart persistence and logout.
+Mailbox listing and creation remain the next distinct functional boundaries;
+standalone admin Argon2id remains scheduled within ADM-S04-02.
+
+Compose a separate Rust admin entry from existing HTTP presentation/parser,
+admin authority, TOTP replay, session/epoch and bounded command primitives.
+Private nginx and the Web process share one dedicated unprivileged identity;
+the trusted service uses a separate identity and owns factors, sessions,
+current grants and a read-only SQL profile. Authenticated bounded Unix messages
+carry fixed login, scope and logout operations. Web cannot select SQL, role,
+paths or grants. Preserve generic denial work, account-level throttling, exact
+Host/origin and login/logout CSRF. Reuse strict normalized HTTP paths with
+`/admin` as the landing path, rather than weakening the shared parser.
+
+The existing project-plan work order records prerequisites, ownership, positive
+and refusal cases, runtime bounds, cumulative failure history and the single
+native/Git queue. Qualify a real browser-to-service-to-isolated-authority journey
+on both obsd1 and mail; an obsd1 result or library-only mail test cannot establish
+mail acceptance. Temporary private SQL, identities, sockets and TLS candidates
+must preserve public mail services, live accounts and production configuration.
+No PHP dependency or predecessor application runtime is introduced. Source
+checks, independently reviewed signed source delivery, native qualification and
+operator acceptance remain separate results; implementation is in progress.

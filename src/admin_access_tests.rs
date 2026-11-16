@@ -56,7 +56,13 @@ impl CommandExecutor for Sql {
                 stderr: "private backend detail".into(),
             });
         }
-        let output = if query.contains("FROM admin a") {
+        let output = if query.contains("FROM admin a")
+            && !query.contains(&format!(
+                "SET @admin_login=CONVERT(0x{} USING",
+                upper_hex(LOGIN.as_bytes())
+            )) {
+            String::new()
+        } else if query.contains("FROM admin a") {
             let grants = if state.grants.is_empty() {
                 vec!["NULL".into()]
             } else {
@@ -668,4 +674,122 @@ fn native_compatibility_restored_role_fresh_login() {
         "foreign.test"
     );
     println!("NATIVE_RESTORED_SYSTEM_ROLE_FRESH_PROOF_PASS");
+}
+
+#[test]
+fn current_scope_survives_reconstruction_and_rechecks_authority() {
+    let f = Fixture::new();
+    let token = f.login().unwrap();
+    let context = Service::<Sql, Clock, Password>::context();
+    let scope = f.service().scope(&token, &context).unwrap();
+    assert_eq!(scope.login, LOGIN);
+    assert!(!scope.system);
+    assert_eq!(scope.domains, ["example.test"]);
+    assert_eq!(scope.csrf.len(), 64);
+    f.sql.0.lock().unwrap().grants.clear();
+    assert!(matches!(
+        f.service().scope(&token, &context),
+        Err(Error::Denied)
+    ));
+}
+
+#[test]
+fn supported_costs_each_perform_the_same_bounded_password_work() {
+    struct Work(Arc<Mutex<Vec<String>>>);
+    impl PasswordVerifier for Work {
+        fn verify(&self, password: &str, hash: &str) -> Result<bool, Error> {
+            self.0.lock().unwrap().push(hash[4..6].into());
+            Ok(password == PASSWORD)
+        }
+    }
+    for cost in ["10", "11", "12"] {
+        let f = Fixture::new();
+        f.sql.0.lock().unwrap().hash = format!("$2y${cost}${}", ".".repeat(53));
+        let work = Arc::new(Mutex::new(Vec::new()));
+        let service = Service::new(
+            f.sql.clone(),
+            f.clock.clone(),
+            Work(work.clone()),
+            f.root.clone(),
+        )
+        .unwrap();
+        let context = Service::<Sql, Clock, Work>::context();
+        let token = service
+            .login_from(&context, LOGIN, PASSWORD, &code(&f.clock))
+            .unwrap();
+        assert!(service.scope(&token, &context).is_ok());
+        assert_eq!(*work.lock().unwrap(), ["10", "11", "12"]);
+        work.lock().unwrap().clear();
+        assert!(matches!(
+            service.login_from(&context, "unknown@example.test", PASSWORD, &code(&f.clock)),
+            Err(Error::Denied)
+        ));
+        assert_eq!(*work.lock().unwrap(), ["10", "11", "12"]);
+    }
+}
+
+#[test]
+fn account_lockout_survives_client_rotation_and_service_reconstruction() {
+    let f = Fixture::new();
+    for n in 1..=5 {
+        let mut context = Service::<Sql, Clock, Password>::context();
+        context.remote_addr = format!("192.0.2.{n}");
+        assert!(matches!(
+            f.service()
+                .login_from(&context, LOGIN, "wrong", &code(&f.clock)),
+            Err(Error::Denied)
+        ));
+    }
+    let mut context = Service::<Sql, Clock, Password>::context();
+    context.remote_addr = "192.0.2.99".into();
+    assert!(matches!(
+        f.service()
+            .login_from(&context, LOGIN, PASSWORD, &code(&f.clock)),
+        Err(Error::Denied)
+    ));
+    let store = LoginThrottleService::new(
+        FileLoginThrottleStore::new(f.root.join("account-throttle")),
+        f.clock.clone(),
+        LoginThrottlePolicy::default(),
+    );
+    assert_eq!(
+        store
+            .check(
+                &Service::<Sql, Clock, Password>::account_context("other@example.test"),
+                "other@example.test"
+            )
+            .unwrap()
+            .decision,
+        LoginThrottleDecision::Allowed
+    );
+    assert!(matches!(
+        store
+            .check(
+                &Service::<Sql, Clock, Password>::account_context(LOGIN),
+                LOGIN
+            )
+            .unwrap()
+            .decision,
+        LoginThrottleDecision::Throttled { .. }
+    ));
+}
+
+#[test]
+fn logout_requires_session_csrf_then_persistently_revokes() {
+    let f = Fixture::new();
+    let token = f.login().unwrap();
+    let context = Service::<Sql, Clock, Password>::context();
+    let scope = f.service().scope(&token, &context).unwrap();
+    assert_eq!(
+        f.service().logout_from(&token, &"0".repeat(64), &context),
+        Err(Error::Denied)
+    );
+    assert!(f.service().scope(&token, &context).is_ok());
+    f.service()
+        .logout_from(&token, &scope.csrf, &context)
+        .unwrap();
+    assert!(matches!(
+        f.service().scope(&token, &context),
+        Err(Error::Denied)
+    ));
 }
