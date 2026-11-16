@@ -1,5 +1,13 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+2026-11-17 ADM-S01-01 native lifecycle correction: both hosts compile the
+candidate. Isolated obsd1 startup reaches the locked service boundary, but owned
+socket removal fails under the specific rw unveil rule. Add creation/removal
+permission only for the service-owned leaf and qualify the exact seal with a
+native disposable socket. Keep first failure, root disposition and functional
+status separate. SQL/getcwd and nginx/listener prerequisites are retained in
+the active admin work order; browser/refusal/installed acceptance remain pending.
+
 2026-11-17 ADM-S01-01 source boundary: a separate private Rust admin entry
 adds password/TOTP, admin-purpose sessions, current-scope readback and logout.
 The active admin work order maps F-04, SEC-01–06/08/11 and the selected

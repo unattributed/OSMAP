@@ -220,12 +220,29 @@ fn service(config: ServiceConfig) -> Result<(), &'static str> {
             Err(_) => return Err("ADMIN_SERVICE_ACCEPT"),
         }
     }
-    let after =
-        fs::symlink_metadata(&config.socket).map_err(|_| "ADMIN_SERVICE_SOCKET_RETAINED")?;
+    let after = fs::symlink_metadata(&config.socket).map_err(|error| {
+        eprintln!(
+            "ADMIN_SERVICE_SOCKET_STAT_REFUSED errno={}",
+            error
+                .raw_os_error()
+                .filter(|n| (1..=4095).contains(n))
+                .unwrap_or(0)
+        );
+        "ADMIN_SERVICE_SOCKET_STAT_UNCONFIRMED"
+    })?;
     if (identity.dev(), identity.ino(), identity.uid()) != (after.dev(), after.ino(), after.uid()) {
         return Err("ADMIN_SERVICE_SOCKET_CHANGED");
     }
-    fs::remove_file(&config.socket).map_err(|_| "ADMIN_SERVICE_SOCKET_RETAINED")?;
+    fs::remove_file(&config.socket).map_err(|error| {
+        eprintln!(
+            "ADMIN_SERVICE_SOCKET_UNLINK_REFUSED errno={}",
+            error
+                .raw_os_error()
+                .filter(|n| (1..=4095).contains(n))
+                .unwrap_or(0)
+        );
+        "ADMIN_SERVICE_SOCKET_UNLINK_UNCONFIRMED"
+    })?;
     eprintln!("ADMIN_SERVICE_STOPPED");
     Ok(())
 }

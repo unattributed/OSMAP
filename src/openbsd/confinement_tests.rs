@@ -465,9 +465,13 @@ fn native_private_admin_web_seal_denies_outside_namespace() {
 fn native_private_admin_service_seal_denies_outside_namespace() {
     disable_core_dumps().unwrap();
     let base = Path::new("/var/osmap-adm-s01");
+    // A distinct owned leaf exercises the exact production permission rule
+    // without unlinking the service currently serving the private candidate.
+    let endpoint = base.join("service-run/native-cleanup-probe.sock");
+    let listener = std::os::unix::net::UnixListener::bind(&endpoint).unwrap();
     seal_admin_service(
         &base.join("state"),
-        &base.join("service-run/service.sock"),
+        &endpoint,
         &base.join("profiles/reader.cnf"),
         &base.join("sql-run/mysql.sock"),
     )
@@ -482,5 +486,8 @@ fn native_private_admin_service_seal_denies_outside_namespace() {
     ] {
         assert!(fs::File::open(path).is_err());
     }
+    fs::remove_file(&endpoint).unwrap();
+    drop(listener);
     println!("ADMIN_SERVICE_NATIVE_SEAL_ALLOWED_STATE_AND_REFUSED_UNRELATED_PATHS");
+    println!("ADMIN_SERVICE_NATIVE_OWN_ENDPOINT_UNLINK_PASS");
 }

@@ -1720,3 +1720,20 @@ must preserve public mail services, live accounts and production configuration.
 No PHP dependency or predecessor application runtime is introduced. Source
 checks, independently reviewed signed source delivery, native qualification and
 operator acceptance remain separate results; implementation is in progress.
+
+### Same day — Correct native admin endpoint shutdown after sealing
+
+The first isolated Rust service startup passed on obsd1, but the controlled
+shutdown left its socket and returned failure. The explicit socket `rw` unveil
+rule overrides the parent's `rwc`; OpenBSD requires `c` for removal. Add `c` only
+to the service's own endpoint, retaining the peer/SQL socket and profile grants.
+Preserve the held identity check and distinguish stat from unlink refusal with
+fixed codes and bounded errno. A native disposable-endpoint test exercises the
+same seal and removal without touching the running service endpoint.
+
+Keep the first startup/stop diagnostic and exact socket identity before owned
+recovery. Web's root-disposition contract remains; adjust the private controller
+to observe its bound endpoint and retained socket rather than invent a startup
+log or self-unlink requirement. Native SQL, nginx, process and browser evidence
+remain distinct. Build/prerequisite passes do not qualify sign-in; both hosts
+still require the actual browser and refusal journeys before acceptance.

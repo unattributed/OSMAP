@@ -1311,7 +1311,9 @@ pub(crate) fn seal_admin_service(
         socket.parent().ok_or(io::ErrorKind::InvalidInput)?,
         "rwc",
     );
-    add_rule(&mut rules, socket, "rw");
+    // The explicit leaf overrides its parent. The owner must be able to remove
+    // this exact endpoint on shutdown; peer sockets remain connect-only.
+    add_rule(&mut rules, socket, "rwc");
     add_rule(&mut rules, profile, "r");
     add_rule(
         &mut rules,

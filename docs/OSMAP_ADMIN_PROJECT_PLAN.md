@@ -578,6 +578,38 @@ assess d525's exact executable source; subsequent metadata/evidence-only commits
 must prove the executable/configuration sources remain byte-identical before
 reusing those results.
 
+**Native progression and retained failures:** d525 builds on obsd1 (executable
+61.856 s; selected-test binary 93.078 s) and mail (executable 198.326 s after a
+locked cache fetch; selected-test binary 300.808 s). Mail's first offline attempt
+refused a missing local `ammonia` index entry before compilation; its original
+receipt/log remain separate from the passing retry. The first private obsd1
+setup exposed the installed help command's successful-capability exit status 1,
+then inherited SQL child NOFILE 128 versus the working operator profile 512.
+The remaining read-only system-table refusal was retained rather than attributed
+uniquely to that warning. A narrow OpenBSD discriminator proved `getcwd` failed
+under the root-owned 0711 ancestor and passed under protected 0755; fresh SQL
+initialization then passed. Original failed data and probe results were archived,
+read back and hashed before exact owned principal/namespace disposition.
+
+Reuse the now-working isolated SQL, profiles and certificate. Private nginx needs
+all compiled-module temporary directories placed under its own prefix; repair
+that boundary without recreating the database. Mail's existing loopback 18443
+listener remains untouched: use verified-free remote 18445 with local 18443
+forwarded to it, preserving the selected browser Host/origin. These are observed
+candidate contracts, not host-version or blanket resource-floor requirements.
+
+The first actual Rust service start reached its locked native READY boundary.
+The plain-pipe controller then received stdin EOF and requested shutdown; the
+service exited 1 with its owned socket retained. The specific leaf's `rw` unveil
+rule overrides its parent's `rwc` and lacks removal authority. Correct only the
+service-owned leaf to `rwc`, keep peer/SQL socket grants unchanged, distinguish
+stat/unlink diagnostics, and add a native disposable-endpoint removal regression
+under the exact seal. Web intentionally retains its endpoint for root disposition;
+the controller must observe that actual contract and must not require an invented
+Web READY string. A local PTY producer/consumer check passes for the next bounded
+interactive controller. No authentication, browser or product acceptance result
+is promoted by these startup/build/prerequisite observations.
+
 ### One active slice, work orders and delivery
 
 Only the selected product slice may transition to IN_PROGRESS. Its concrete

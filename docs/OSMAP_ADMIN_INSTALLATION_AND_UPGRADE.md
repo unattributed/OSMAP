@@ -91,7 +91,10 @@ service-owned 0600 SQL profile permits one `[client]` group and exactly `user`,
 existing fixed admin/domain SELECT projections. The operator-selected
 `database` may retain the actual `postfixadmin` schema name.
 
-Private nginx and Web share one dedicated unprivileged UID. Its listener parent
+Use a root-owned, nonwritable-by-others 0755 candidate ancestor: the installed
+MariaDB initializer needs readable ancestry for its native `getcwd` contract.
+Launch private processes with working directory `/`. Private nginx and Web
+share one dedicated unprivileged UID. Its listener parent
 is private 0700 and the Web socket 0600. The trusted service has a distinct UID;
 its socket parent is service-owned, group Web, mode 0750, with a service-owned
 0660 socket. Only the service receives that Web supplementary group. Root
