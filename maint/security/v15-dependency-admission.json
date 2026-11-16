@@ -1,7 +1,7 @@
 {
   "cargo_baseline": {
     "cargo_lock_sha256": "10a2ce67818cd6a4059acc4d25887fdc628bfc3b6455717b7a84e955e0bf0df8",
-    "cargo_toml_sha256": "20b2fdc8e1a8eb2486fa07c775a6b37f9f829c06927c619b4a51181bd8264c6d",
+    "cargo_toml_sha256": "9894519644d3b75da27dee3465001a7a25ad958ba3b31a6850f13668870645eb",
     "locked_package_count": 83
   },
   "dependencies": [
@@ -542,9 +542,9 @@
     }
   ],
   "manifest_target_review": {
-    "change": "Add the fixed read-only storage-quota binary target for S08-01. Cargo dependency declarations, features and Cargo.lock are unchanged; native FFS worker, confinement and HTTP composition qualify the new target separately.",
+    "change": "Retain the fixed storage-quota target and add the separate private osmap-admin Web/service binary for ADM-S01-01. Cargo dependency declarations, features and Cargo.lock are unchanged; peer transport, authority, confinement and native browser composition qualify the new target separately.",
     "dependency_graph_changed": false,
-    "reference": "docs/UX_SLICE_S08_01.md"
+    "reference": "docs/OSMAP_ADMIN_PROJECT_PLAN.md#adm-s01-01-implementation-work-order--2026-11-17"
   },
   "policy": {
     "admission_model": "risk_based",

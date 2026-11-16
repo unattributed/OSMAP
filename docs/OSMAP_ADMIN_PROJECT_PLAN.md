@@ -567,6 +567,17 @@ follow-up, preserving the original checkpoint and refusal. Native dispatch
 remains pending the corrected exact source/archive admission and reviewed
 private recipes. This formatting refusal is not a native/product failure.
 
+The corrected checkpoint `d525058370083788df4c30c9faaa58a317566336` passed
+formatting; its second normal push stopped at the existing V15 manifest-digest
+gate. The new binary target did not change dependencies, features or lockfile.
+Refresh only the existing manifest baseline and target review, after combined
+independent reassessment of both hook refusals. The exact V15 gate and regression
+pass. One signed metadata follow-up and normal push retry are approved; no
+hook bypass, history rewrite or allowance reset follows. Native candidate builds
+assess d525's exact executable source; subsequent metadata/evidence-only commits
+must prove the executable/configuration sources remain byte-identical before
+reusing those results.
+
 ### One active slice, work orders and delivery
 
 Only the selected product slice may transition to IN_PROGRESS. Its concrete
