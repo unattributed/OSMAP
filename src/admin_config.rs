@@ -428,7 +428,10 @@ mod tests {
     fn strict_config_schema_rejects_runtime_selected_host_or_commands() {
         let web = r#"{"socket":"/private/web.sock","proxy_uid":1001,"service_socket":"/private/service.sock","service_uid":1002,"origin":"https://localhost:8443"}"#;
         assert!(serde_json::from_str::<WebInput>(web).is_ok());
-        for field in [r#", "host":"attacker.test""#, r#", "command":"/usr/bin/false""#] {
+        for field in [
+            r#", "host":"attacker.test""#,
+            r#", "command":"/usr/bin/false""#,
+        ] {
             let raw = format!("{}{}{}", &web[..web.len() - 1], field, "}");
             assert!(serde_json::from_str::<WebInput>(&raw).is_err());
         }

@@ -559,6 +559,14 @@ OpenBSD-only ignored tests apply the exact Web/service seals in separate
 processes and check allowed namespace access against unrelated readable paths;
 their native results remain NOT_RUN at this source checkpoint.
 
+The first signed source checkpoint is
+`f027e0626d412111922001b13fae9bf44cdd1285`. Its normal pre-push hook refused a
+formatting difference in the last inert test-fixture edit; no remote update
+occurred. Apply the formatter and regenerate inventory in a separate signed
+follow-up, preserving the original checkpoint and refusal. Native dispatch
+remains pending the corrected exact source/archive admission and reviewed
+private recipes. This formatting refusal is not a native/product failure.
+
 ### One active slice, work orders and delivery
 
 Only the selected product slice may transition to IN_PROGRESS. Its concrete
