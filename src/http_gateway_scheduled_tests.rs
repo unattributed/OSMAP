@@ -5,7 +5,10 @@ use crate::send::{SubmissionBackend, SubmissionBackendError};
 const ACCOUNT: &str = "alice@example.com";
 #[test]
 fn outbox_trait_dispatch_returns_complete_editable_draft_without_rearming_source() {
-    let f = Fixture::new();
+    let mut f = Fixture::new();
+    // The runtime restores at its current time, after the source draft's clock.
+    // Exercise this distinction without depending on crossing a wall-clock second.
+    f.now -= 1;
     let original = f.draft();
     let source = f.source(&original);
     let id = f.schedule(&original);
@@ -33,7 +36,7 @@ fn outbox_trait_dispatch_returns_complete_editable_draft_without_rearming_source
         .unwrap();
     assert_eq!(composed(&restored), composed(&original));
     let journal = f.gateway.send_journal();
-    let guard = journal.account_guard(ACCOUNT, f.now).unwrap();
+    let guard = journal.account_guard(ACCOUNT, restored.updated_at).unwrap();
     assert!(guard.require_unconsumed(&source).is_err());
     let fresh = guard.draft_intent(&restored).unwrap();
     guard.require_unconsumed(&fresh).unwrap();
@@ -305,7 +308,14 @@ impl Fixture {
 }
 impl Drop for Fixture {
     fn drop(&mut self) {
-        if !std::thread::panicking() && self.root.exists() {
+        if std::thread::panicking() {
+            eprintln!(
+                "SCHEDULED_TEST_FIXTURE_RETAINED root={}",
+                self.root.display()
+            );
+            return;
+        }
+        if self.root.exists() {
             std::fs::remove_dir_all(&self.root).unwrap();
             assert!(!self.root.exists());
         }

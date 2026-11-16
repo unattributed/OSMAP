@@ -315,6 +315,26 @@ install a service, expose a network entry, qualify an admin UI or refresh a
 strict-release claim. Existing public MariaDB/Postfix/Dovecot services,
 configuration, databases, accounts and factors are not changed.
 
+Delivery gate follow-up: the first normal push is refused by the full Rust suite
+(2395 PASS, two FAIL, 100 ignored), before remote synchronization. The failed
+configured-auth fallback test passes its one isolated discriminator; its original
+missed-marker cause is UNKNOWN because the old assertion retains neither case
+nor source-owned audit action codes and removes its fixture before asserting.
+The scheduled-outbox test uses a fixture-start timestamp to validate a restored
+draft stamped by a later runtime wall clock, allowing `InvalidIntent` on a second
+boundary. The bounded correction is test-only: validate restored state at the saved
+draft timestamp and deliberately separate source/runtime timestamps; add fixed
+case/action diagnostics to the auth assertion without changing expectations.
+Minimum checks are the two affected test groups, formatting/Clippy/guard and the
+normal push gate. The changed scheduling and auth groups PASS (12 and eight
+tests), with formatting, strict library/tests Clippy and source review. Auth
+failures now preserve the exact private fixture and fixed boolean case/action
+codes; scheduled panics also emit their exact retained synthetic fixture root.
+The earlier failed scheduled fixture root was not emitted, so its cleanup stays
+UNKNOWN. Arbitrary event fields and native output remain private. Independently
+review this correction; do not change runtime auth, scheduling or any native-qualified admin source, or rerun matching native
+qualifications. Preserve the first full-gate log and initial missing observation.
+
 ### Operator-requested Argon2id investigation — 2026-11-16
 
 The operator additionally requests investigation of Argon2id for stronger email

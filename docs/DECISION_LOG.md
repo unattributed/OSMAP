@@ -1602,3 +1602,14 @@ password writer is added here. Actual writer/verifier inventory, bounded cost
 tests, coordinated conditional updates, revocation and compatible rollback must
 precede a production migration. Do not convert hashes blindly, change the bare
 hash default, or give the read-only admin backend implicit login-time writes.
+
+The first normal delivery gate refuses two tests outside the admin change.
+Correct the outbox regression's stale fixture clock using the restored draft's
+actual timestamp and force the time difference without sleeping. The auth
+fallback regression passes in isolation, but its historical failure cause stays
+UNKNOWN; retain fixed case/action codes and the exact failed fixture before
+cleanup if it recurs. Keep all expectations and runtime behavior unchanged.
+The affected scheduling and auth groups pass (12 and eight tests), strict Clippy
+passes and the existing inventory is regenerated before independent review and
+normal delivery-gate retry. Do not discard the first failed gate or substitute
+these local passes for the required full gate.

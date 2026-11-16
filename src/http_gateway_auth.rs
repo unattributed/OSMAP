@@ -1155,15 +1155,30 @@ mod tests {
                 .audit_events
                 .iter()
                 .any(|event| event.action == "login_mfa_required");
-            std::fs::remove_dir_all(&root).unwrap();
+            // Actions are fixed source-owned codes; omit arbitrary event fields
+            // and native output while retaining the failing case before cleanup.
+            let case = [
+                configured,
+                scope.is_some(),
+                scope == Some(submitted),
+                submitted == canonical,
+            ];
+            let actions: Vec<_> = outcome
+                .audit_events
+                .iter()
+                .map(|event| event.action)
+                .collect();
             assert_eq!(
                 called, expected_called,
-                "configured failure invoked legacy primary"
+                "configured failure invoked legacy primary: case={case:?} actions={actions:?} retained_fixture={}",
+                root.display()
             );
             assert_eq!(
                 accepted, expected_accepted,
-                "the Disabled control must accept actual legacy primary"
+                "the Disabled control must accept actual legacy primary: case={case:?} actions={actions:?} retained_fixture={}",
+                root.display()
             );
+            std::fs::remove_dir_all(&root).unwrap();
         }
     }
 
