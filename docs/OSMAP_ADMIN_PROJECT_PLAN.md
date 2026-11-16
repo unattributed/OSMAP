@@ -179,3 +179,30 @@ review approves the bounded internal scope. The generation record includes a
 random instance ID so loss followed by recreation cannot revive an old session;
 validation never initializes missing generation state. These passes qualify the
 local composition only; native password and SQL results remain NOT RUN.
+
+Native qualification at signed source
+[`3fc3f16`](https://github.com/unattributed/OSMAP/commit/3fc3f163fac09243cdfac1cbfec1aaedfdb6af95)
+passes on obsd1. Cargo reports 2m59s for the isolated test-profile build; the
+libtest SHA-256 is
+`ed629abb6dbdbfa5447e0367d39a6d328ec13413959933baee85acd080290893`.
+Eight focused native tests pass with the three separately gated fixture tests
+ignored in that run. Explicit fixture invocations then pass real bcrypt/TOTP,
+authorized SQL read, unknown/wrong-password and replay/foreign-domain refusals,
+session validation in a second process, grant removal refusal, and continued
+old-session refusal after the grant is restored. The test-only executor selects
+the isolated database/config; the actual prepared queries and system command
+runner execute unchanged. This does not qualify the production configuration.
+
+Agent-executed permission checks confirm an allowed SELECT and specific MariaDB
+1142/1143 refusals for the factor column, mailbox password and UPDATE. A verified
+foreign OS UID cannot read the private connection file. Independent review
+reads the native result logs and sanitized permission receipt before exact-owned
+cleanup. Database/account absence and native scratch removal are read back.
+Permission receipt SHA-256:
+`65c1cded5776757585f7ee0860ad846a61bf7e802b7ee18c592c1d64b5123f27`;
+cleanup receipt:
+`2fbef09880b13dd387e60d2f7658a69d1b951d237823284a790dd8ca631209b6`.
+Private logs are under `Downloads/osmap-admin-adapter/admin-access-native/`.
+Initial failed local synthetic-fixture roots were retained by the test harness;
+their exact names were not emitted, so local failed-fixture cleanup is UNKNOWN.
+Native cleanup is separately confirmed. Full delivery-gate results remain pending.

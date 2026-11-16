@@ -1548,3 +1548,18 @@ independent source review pass; native qualification remains pending. Local UID
 throttling is limited to this internal/local entry, and a later writer must
 advance revocation synchronously for changes that may be reversed between reads.
 See the [bounded implementation and result record](OSMAP_ADMIN_PROJECT_PLAN.md#authenticated-domain-read-slice--2026-11-16).
+
+Qualify signed source
+[`3fc3f16`](https://github.com/unattributed/OSMAP/commit/3fc3f163fac09243cdfac1cbfec1aaedfdb6af95)
+on an isolated obsd1 MariaDB fixture. The actual native password verifier, TOTP
+replay, file sessions, epoch checks and SQL runner pass an authorized domain read,
+unknown/wrong-password and replay/foreign-domain refusals, second-process session
+validation, and observed grant removal/restoration refusal for the old token.
+Eight focused native tests pass; three gated fixtures are executed separately,
+including an additional restored-grant check. Agent-executed column-level SQL
+and foreign-UID checks confirm restricted access. Independent result review
+precedes database/account/scratch cleanup and explicit absence readback. Retain
+the earlier local synthetic-fixture failures separately; their cleanup is
+unconfirmed because the failed tests did not emit their random root names.
+This qualifies the internal/local backend, not an admin network endpoint,
+production credential scheme, installed configuration or broader Phase 1 exit.
