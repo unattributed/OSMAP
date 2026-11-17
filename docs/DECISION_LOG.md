@@ -1857,3 +1857,28 @@ only the uploaded provisioning inputs after durable readback; intentionally
 retain the active candidate and owner account for the operator. This establishes
 owner access to the isolated candidate, not live mailbox administration, mail
 qualification, production installation or operator acceptance. Keep PR #99 draft.
+
+### Same day — Give admin domains and Settings the shared OSMAP experience
+
+The operator approves the function catalogue and prioritizes a domain overview,
+domain administration pages and Settings with OSMAP's familiar appearance.
+Replace the scope-only landing page with the existing welcome cards and domain
+table, and reuse the shared shell, responsive rail and appearance enums. The
+service derives domain enumeration from current administrator authority. Display
+actual configured mailbox and forwarding-source counts, including disabled
+records, separately from configured limits. Exclude empty and self-only forwarding
+destinations; count a mixed or multi-recipient source only once. Keep unknown
+creation dates explicit. The domain page exposes stored metadata and working
+mailbox navigation. Domain creation/editing remains planned writer functionality,
+with no enabled controls against the current SELECT-only database authority.
+
+Own appearance preferences use the existing locked private-account record and
+admin CSRF boundary, with a separate cosmetic admin cookie. No mailbox cookie
+or submitted role supplies admin authority. The initial RED, compile failure and
+five stale integration expectations are retained; independent reassessment
+approves the narrow corrections. Focused checks pass, including maximum wire
+shape, revoked/foreign scope and invalid preference/CSRF refusal. After a verified
+private table backup, the actual Rust-generated prepared queries pass through
+the installed restricted MariaDB reader. A narrow grant withdrawal refuses and
+restoration recovers the same counts. Installed application/browser results
+remain pending; source checks and SQL preflight alone do not qualify this UX.

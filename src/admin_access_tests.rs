@@ -88,6 +88,26 @@ impl CommandExecutor for Sql {
                     )
                 })
                 .collect::<String>()
+        } else if query.contains("FROM domain d WHERE") {
+            state.directory_reads += 1;
+            let mut names = if state.domain_missing {
+                vec![]
+            } else {
+                vec!["example.test"]
+            };
+            if query.contains("SET @osmap_system=1;") {
+                names.push("foreign.test");
+            }
+            names
+                .into_iter()
+                .map(|name| format!("{}\t1\t12\t2\tNULL\n", upper_hex(name.as_bytes())))
+                .collect()
+        } else if query.contains("SELECT HEX(CONVERT(description") {
+            format!(
+                "{}\tNULL\tNULL\t{}\n",
+                upper_hex(b"Development domain"),
+                upper_hex(b"virtual")
+            )
         } else if query.contains("FROM mailbox WHERE") {
             state.directory_reads += 1;
             (0..state.mailbox_rows)
@@ -856,6 +876,78 @@ fn current_scope_survives_reconstruction_and_rechecks_authority() {
     f.sql.0.lock().unwrap().grants.clear();
     assert!(matches!(
         f.service().scope(&token, &context),
+        Err(Error::Denied)
+    ));
+}
+
+#[test]
+fn domain_overview_and_preferences_use_current_admin_authority() {
+    let f = Fixture::new();
+    let token = f.login().unwrap();
+    let context = Service::<Sql, Clock, Password>::context();
+    let overview = f.service().overview_from(&token, &context, "", 1).unwrap();
+    assert_eq!(overview.rows.len(), 1);
+    assert_eq!(overview.rows[0].name, "example.test");
+    assert_eq!(overview.rows[0].mailboxes, 12);
+    assert_eq!(overview.rows[0].forwards, 2);
+    let dispatched = crate::admin_runtime::dispatch(
+        &f.service(),
+        crate::admin_transport::Request {
+            version: crate::admin_transport::VERSION,
+            client: "192.0.2.12".into(),
+            operation: crate::admin_transport::Operation::Overview {
+                token: token.as_str().into(),
+                query: "example".into(),
+                page: 1,
+            },
+        },
+    );
+    assert!(
+        matches!(dispatched,crate::admin_transport::Response::Overview {page} if page.rows.len()==1 && page.rows[0].mailboxes==12)
+    );
+    let settings = f.service().settings_from(&token, &context).unwrap();
+    assert_eq!(settings.preferences.theme, "system");
+    let mut preferences = settings.preferences;
+    preferences.theme = "dark".into();
+    assert!(matches!(
+        f.service()
+            .save_preferences_from(&token, &context, &"0".repeat(64), preferences.clone()),
+        Err(Error::Denied)
+    ));
+    let mut invalid = preferences.clone();
+    invalid.theme = "<script>".into();
+    assert!(matches!(
+        f.service()
+            .save_preferences_from(&token, &context, &settings.csrf, invalid),
+        Err(Error::Invalid)
+    ));
+    f.service()
+        .save_preferences_from(&token, &context, &settings.csrf, preferences)
+        .unwrap();
+    assert_eq!(
+        f.service()
+            .settings_from(&token, &context)
+            .unwrap()
+            .preferences
+            .theme,
+        "dark"
+    );
+    let id = &overview.rows[0].id;
+    assert_eq!(
+        f.service()
+            .domain_details_from(&token, &context, id)
+            .unwrap()
+            .description,
+        "Development domain"
+    );
+    let foreign = format!("{:x}", Sha256::digest(b"foreign.test"));
+    assert!(matches!(
+        f.service().domain_details_from(&token, &context, &foreign),
+        Err(Error::Missing)
+    ));
+    f.sql.0.lock().unwrap().grants.clear();
+    assert!(matches!(
+        f.service().overview_from(&token, &context, "", 1),
         Err(Error::Denied)
     ));
 }

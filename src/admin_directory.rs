@@ -73,12 +73,79 @@ pub(crate) struct AliasDomain {
     pub(crate) active: bool,
 }
 
+pub(crate) struct DomainRow {
+    pub(crate) name: String,
+    pub(crate) active: bool,
+    pub(crate) mailboxes: u64,
+    pub(crate) forwards: u64,
+    pub(crate) created: Option<String>,
+}
+
+pub(crate) struct DomainInfo {
+    pub(crate) domain: Domain,
+    pub(crate) description: String,
+    pub(crate) created: Option<String>,
+    pub(crate) modified: Option<String>,
+    pub(crate) transport: String,
+}
+
 pub(crate) struct Adapter<E> {
     executor: E,
 }
 impl<E: CommandExecutor> Adapter<E> {
     pub(crate) fn new(executor: E) -> Self {
         Self { executor }
+    }
+    /// Trusted service composition only: `system` and names come from current
+    /// administrator authority, never a browser-supplied scope declaration.
+    pub(crate) fn catalogue(
+        &self,
+        system: bool,
+        names: &[String],
+    ) -> Result<Vec<DomainRow>, Error> {
+        if !system && names.is_empty() {
+            return Ok(Vec::new());
+        }
+        if !names.is_empty() {
+            Scope::domains(&names.iter().map(String::as_str).collect::<Vec<_>>())?;
+        }
+        const QUERY: &str = "SELECT HEX(d.domain),d.active,(SELECT COUNT(*) FROM mailbox m WHERE BINARY m.domain=BINARY d.domain),(SELECT COUNT(*) FROM alias a WHERE BINARY a.domain=BINARY d.domain AND EXISTS (SELECT 1 FROM JSON_TABLE(CONCAT(CHAR(91),REPLACE(JSON_QUOTE(COALESCE(a.goto,SPACE(0))),CHAR(44),CONCAT(CHAR(34),CHAR(44),CHAR(34))),CHAR(93)),'$[*]' COLUMNS(target TEXT PATH '$')) t WHERE CHAR_LENGTH(TRIM(t.target))>0 AND BINARY TRIM(t.target)<>BINARY a.address)),HEX(CAST(d.created AS CHAR)) FROM domain d WHERE BINARY d.domain<>BINARY CHAR(65,76,76) AND (?=1 OR FIND_IN_SET(BINARY d.domain,BINARY ?)>0) ORDER BY BINARY d.domain LIMIT 101";
+        let value = if names.is_empty() {
+            "NULL".into()
+        } else {
+            format!(
+                "CONVERT(0x{} USING utf8mb4)",
+                upper_hex(names.join(",").as_bytes())
+            )
+        };
+        let input = format!("SET @osmap_domain={value}; SET @osmap_system={}; PREPARE osmap_read FROM '{}'; EXECUTE osmap_read USING @osmap_system,@osmap_domain;\n",u8::from(system),QUERY.replace('\'',"''"));
+        self.read_rows(&input, 5)?
+            .into_iter()
+            .map(|r| {
+                Ok(DomainRow {
+                    name: hex(&r[0])?,
+                    active: flag(&r[1])?,
+                    mailboxes: r[2].parse().map_err(|_| Error::Unsupported)?,
+                    forwards: r[3].parse().map_err(|_| Error::Unsupported)?,
+                    created: optional_hex(&r[4])?,
+                })
+            })
+            .collect()
+    }
+    pub(crate) fn domain_info(&self, scope: &Scope, name: &str) -> Result<DomainInfo, Error> {
+        let domain = self.domain(scope, name)?.ok_or(Error::Missing)?;
+        let rows = self.rows(scope, name, "SELECT HEX(CONVERT(description USING utf8mb4)),HEX(CAST(created AS CHAR)),HEX(CAST(modified AS CHAR)),HEX(transport) FROM domain WHERE BINARY domain=BINARY ? LIMIT 2",4)?;
+        if rows.len() != 1 {
+            return Err(Error::Unsupported);
+        }
+        let row = &rows[0];
+        Ok(DomainInfo {
+            domain,
+            description: optional_hex(&row[0])?.unwrap_or_default(),
+            created: optional_hex(&row[1])?,
+            modified: optional_hex(&row[2])?,
+            transport: optional_hex(&row[3])?.unwrap_or_default(),
+        })
     }
     pub(crate) fn domains(&self, scope: &Scope) -> Result<Vec<Domain>, Error> {
         scope
@@ -141,6 +208,9 @@ impl<E: CommandExecutor> Adapter<E> {
         scope.permits(domain)?;
         // Fixed prepared query. Domain bytes become a bound SQL value, never syntax.
         let input = format!("SET @osmap_domain=CONVERT(0x{} USING utf8mb4); PREPARE osmap_read FROM '{}'; EXECUTE osmap_read USING @osmap_domain;\n", upper_hex(domain.as_bytes()), query);
+        self.read_rows(&input, columns)
+    }
+    fn read_rows(&self, input: &str, columns: usize) -> Result<Vec<Vec<String>>, Error> {
         let args = ARGS.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>();
         let result = self
             .executor
@@ -183,6 +253,13 @@ impl<E: CommandExecutor> Adapter<E> {
                 Ok(fields)
             })
             .collect()
+    }
+}
+fn optional_hex(value: &str) -> Result<Option<String>, Error> {
+    if value == "NULL" {
+        Ok(None)
+    } else {
+        hex(value).map(Some)
     }
 }
 fn valid_domain(v: &str) -> bool {
@@ -232,6 +309,56 @@ mod tests {
     use super::*;
     use crate::auth::{CommandExecution, CommandExecutionError};
     struct Fixture;
+    #[test]
+    fn catalogue_prepared_queries_are_the_native_reader_recipes() {
+        use std::sync::{Arc, Mutex};
+        struct Capture(Arc<Mutex<Vec<String>>>);
+        impl CommandExecutor for Capture {
+            fn run_with_stdin_bytes(
+                &self,
+                program: &str,
+                args: &[String],
+                input: &[u8],
+            ) -> Result<CommandExecution, CommandExecutionError> {
+                assert_eq!(program, PROGRAM);
+                assert_eq!(args, ARGS.iter().map(|s| s.to_string()).collect::<Vec<_>>());
+                let query = std::str::from_utf8(input).unwrap();
+                self.0.lock().unwrap().push(query.into());
+                if query.contains("SELECT HEX(CONVERT(description") {
+                    return Ok(CommandExecution {
+                        status_code: 0,
+                        stdout: "\tNULL\tNULL\t7669727475616C\n".into(),
+                        stderr: String::new(),
+                    });
+                }
+                Fixture.run_with_stdin_bytes(program, args, input)
+            }
+        }
+        let queries = Arc::new(Mutex::new(Vec::new()));
+        let adapter = Adapter::new(Capture(queries.clone()));
+        assert!(adapter
+            .catalogue(false, &["example.test".into()])
+            .unwrap()
+            .is_empty());
+        assert!(adapter.catalogue(true, &[]).unwrap().is_empty());
+        assert_eq!(
+            adapter
+                .domain_info(&Scope::domains(&["example.test"]).unwrap(), "example.test")
+                .unwrap()
+                .transport,
+            "virtual"
+        );
+        let queries = queries.lock().unwrap();
+        assert!(queries[0].contains("SET @osmap_system=0"));
+        assert!(queries[1].contains("SET @osmap_system=1"));
+        assert!(queries[0].contains("''$[*]''"));
+        // Public synthetic recipe only; --nocapture is used once to exercise
+        // these exact producer bytes through the installed restricted reader.
+        println!(
+            "ADMIN_READ_RECIPES={}",
+            serde_json::to_string(&*queries).unwrap()
+        );
+    }
     impl CommandExecutor for Fixture {
         fn run_with_stdin_bytes(
             &self,

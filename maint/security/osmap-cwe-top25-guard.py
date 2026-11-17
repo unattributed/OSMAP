@@ -91,11 +91,11 @@ SCHEDULED_TEST_ONLY_REGISTRATIONS = {
 # Other production rules continue to scan the entire file.
 REVIEWED_SQL_RUST_PATHS = {
     "src/admin_access.rs":
-        "a3caf4fb1de5ef820739a4bbf2005efcf77807e7df5c9b537abd8a9a029f2079",
+        "40b870187b9187890e1e5bbac2a6eeaef6c0d82419582c9861fee12a7d96288e",
     "src/account_password_backend.rs":
         "31f6fd1f8b2a4b4b53235d98ad9490053eeaf25757da662e528922c8b709e1ba",
     "src/admin_directory.rs":
-        "f7bcb016c066f3a248d22b6deb6043f4b65b2e79a93565da288a1950395c594d",
+        "0ee54bea317ec47b33a5852d82a31c5be440b3dee1e1083e9770a96847cab466",
 }
 
 

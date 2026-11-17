@@ -5,16 +5,30 @@ use crate::html::TrustedHtml;
 use crate::http::HttpResponse;
 use crate::http_support::{escape_html, html_response, url_encode};
 
-fn admin_rail(inventory: bool) -> String {
+#[path = "admin_dashboard_ui.rs"]
+mod dashboard;
+pub(crate) use dashboard::{domain_page, overview_page, settings_page};
+
+fn admin_rail(current: &str) -> String {
+    let mut links = String::new();
+    for (key, label, href, icon) in [
+        ("overview", "Overview", "/admin", "shield"),
+        ("domains", "Domains", "/admin/domains", "folders"),
+        (
+            "mailboxes",
+            "Mailboxes",
+            "/admin/domains#domain-list",
+            "inbox",
+        ),
+        ("settings", "Settings", "/admin/settings", "settings"),
+    ] {
+        links.push_str(&format!("<a class=\"rail-link\" href=\"{href}\" aria-label=\"{label}\" title=\"{label}\"{}>{}<span class=\"rail-label\">{label}</span></a>",if key==current {" aria-current=\"page\""} else {""},crate::http_ui::shell_icon(icon)));
+    }
     format!(concat!(
         "<aside class=\"app-rail\" aria-label=\"Admin navigation\">",
         "<details class=\"rail-disclosure\"><summary title=\"Navigation labels\">{menu}<span class=\"sr-only rail-expand-label\">Expand navigation</span><span class=\"sr-only rail-collapse-label\">Collapse navigation</span></summary><p class=\"sr-only\">Navigation labels are expanded.</p></details>",
-        "<nav class=\"rail-links\" aria-label=\"Primary navigation\">",
-        "<a class=\"rail-link\" href=\"/admin\" aria-label=\"Overview\" title=\"Overview\"{overview_current}>{shield}<span class=\"rail-label\">Overview</span></a>",
-        "<a class=\"rail-link\" href=\"/admin#admin-domain-selection\" aria-label=\"Mailboxes\" title=\"Mailboxes\"{mailboxes_current}>{inbox}<span class=\"rail-label\">Mailboxes</span></a></nav></aside>"
-    ), menu = crate::http_ui::shell_icon("menu"), shield = crate::http_ui::shell_icon("shield"), inbox = crate::http_ui::shell_icon("inbox"),
-    overview_current = if inventory { "" } else { " aria-current=\"page\"" },
-    mailboxes_current = if inventory { " aria-current=\"page\"" } else { "" })
+        "<nav class=\"rail-links\" aria-label=\"Primary navigation\">{links}</nav></aside>"
+    ), menu = crate::http_ui::shell_icon("menu"), links=links)
 }
 
 fn admin_html_response(
@@ -91,24 +105,35 @@ pub(crate) fn scope_page(
         login = escape_html(login),
         csrf = escape_html(csrf),
         scope = scope,
-        rail = admin_rail(false),
+        rail = admin_rail("overview"),
     ));
     admin_html_response(200, "OK", "OSMAP Admin — Current scope", body)
 }
 
-fn inventory_shell(login: &str, csrf: &str, title: &str, content: String) -> HttpResponse {
+fn page_shell(
+    login: &str,
+    csrf: &str,
+    title: &str,
+    intro: &str,
+    current: &str,
+    content: String,
+) -> HttpResponse {
     let body = format!(concat!(
         "<a class=\"skip-link\" href=\"#main-content\">Skip to mailboxes</a>",
         "{}",
         "<header class=\"topbar\" aria-label=\"OSMAP Admin\"><a class=\"brand\" href=\"/admin\" style=\"flex-basis:auto;white-space:nowrap\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>OSMAP Admin</a><div class=\"status-row auth-status\"><span>Signed in as <strong>{}</strong></span><form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{}\"><button type=\"submit\">Sign out</button></form></div></header>",
-        "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>{}</h1><p><span class=\"badge\">Read-only</span> Configured mailbox metadata. Live authentication, delivery, usage and browser MFA have not been verified.</p></div>{}</main>"
-    ), admin_rail(true), escape_html(login), escape_html(csrf), escape_html(title), content);
+        "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>{}</h1><p>{}</p></div>{}</main>"
+    ), admin_rail(current), escape_html(login), escape_html(csrf), escape_html(title),escape_html(intro), content);
     admin_html_response(
         200,
         "OK",
-        "OSMAP Admin — Mailboxes",
+        &format!("OSMAP Admin — {title}"),
         TrustedHtml::from_template(body),
     )
+}
+
+fn inventory_shell(login: &str, csrf: &str, title: &str, content: String) -> HttpResponse {
+    page_shell(login,csrf,title,"Read-only mailbox metadata. Mailbox authentication, delivery, usage and browser MFA have not been verified.","mailboxes",content)
 }
 
 fn list_url(domain: &str, query: &str, page: u8, sort: &str) -> String {
@@ -197,6 +222,10 @@ pub(crate) fn capacity_page() -> HttpResponse {
     admin_html_response(503, "Service Unavailable", "Mailbox inventory limit", TrustedHtml::from_template("<main class=\"standalone-notice\"><section class=\"panel\"><h1>Mailbox inventory limit</h1><p>This read-only view supports at most 100 mailboxes per domain. No partial list has been displayed.</p><a href=\"/admin\">Return to overview</a></section></main>".into()))
 }
 
+pub(crate) fn domain_capacity_page() -> HttpResponse {
+    admin_html_response(503,"Service Unavailable","Domain inventory limit",TrustedHtml::from_template("<main class=\"standalone-notice\"><section class=\"panel\"><h1>Domain inventory limit</h1><p>This view supports at most 100 domains. No partial domain list has been displayed.</p><a href=\"/admin\">Return to overview</a></section></main>".into()))
+}
+
 /// Use fixed user-facing messages; native diagnostics never cross this API.
 pub(crate) fn error_page(status: u16) -> HttpResponse {
     let (status, reason, title, message) = match status {
@@ -256,7 +285,8 @@ mod tests {
         assert!(!html.contains("Return to mail"));
         assert!(!html.contains("href=\"/\""));
         for route in ["/mailbox?", "/settings", "/contacts", "/sessions"] {
-            assert!(!html.contains(route));
+            assert!(!html.contains(&format!("href=\"{route}")));
+            assert!(!html.contains(&format!("action=\"{route}")));
         }
         assert!(!html.contains("<script"));
         assert!(!html.contains("<link"));

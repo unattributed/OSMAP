@@ -281,6 +281,34 @@ where
                 Response::Denied
             }
         },
+        Operation::Overview { token, query, page } => match Token::presented(&token)
+            .and_then(|token| backend.overview_from(&token, &context, &query, page))
+        {
+            Ok(page) => Response::Overview { page },
+            Err(error) => inventory_error(error),
+        },
+        Operation::DomainDetails { token, id } => match Token::presented(&token)
+            .and_then(|token| backend.domain_details_from(&token, &context, &id))
+        {
+            Ok(page) => Response::DomainDetails { page },
+            Err(error) => inventory_error(error),
+        },
+        Operation::Settings { token } => match Token::presented(&token)
+            .and_then(|token| backend.settings_from(&token, &context))
+        {
+            Ok(page) => Response::Settings { page },
+            Err(error) => inventory_error(error),
+        },
+        Operation::SavePreferences {
+            token,
+            csrf,
+            preferences,
+        } => match Token::presented(&token)
+            .and_then(|token| backend.save_preferences_from(&token, &context, &csrf, preferences))
+        {
+            Ok(page) => Response::Settings { page },
+            Err(error) => inventory_error(error),
+        },
         Operation::Scope { token } => {
             match Token::presented(&token).and_then(|token| backend.scope(&token, &context)) {
                 Ok(scope) => Response::Scope {

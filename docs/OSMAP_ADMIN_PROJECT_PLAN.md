@@ -948,6 +948,64 @@ not cleanup PASS or a production installation. Prior failed results and UNKNOWN
 costs remain; no allowance or authority clock is reset. Mail qualification stays
 NOT_RUN, draft PR #99 remains unmerged, and ADM-S01-02 is not accepted.
 
+### Approved catalogue and priority-page refinement — 2026-11-17
+
+The operator approves the function catalogue and its explicit implementation
+statuses, and prioritizes Overview, Domain administration pages and Settings
+with the same feel as OSMAP. Continue ADM-S01-02 with one observable journey:
+owner sign-in -> permitted domain overview with actual mailbox/forward counts
+-> domain detail and mailbox navigation -> own Settings save and readback.
+Use existing welcome cards/tables, responsive admin shell, shared appearance
+enums and private atomic account records. Domain create/edit remains the
+catalogue's planned writer work; no enabled mutation control is invented for
+the currently read-only SQL authority. Preserve the owner account and its
+private registration, working sign-in, mailbox journey and public services.
+
+Root owns implementation/host/Git; adapter_review independently reviews source
+and results. Baseline is signed 47582e5. Relevant installed contracts are
+observed: the real domain schema has description/created/modified and the alias
+schema address/goto/domain/active; the selected private schema lacks those
+metadata columns and alias table. Extend only that exact private fixture and
+its SELECT projection to qualify these reads. Existing domain.mailboxes/aliases
+are limits, not counts. Count actual mailbox rows and non-self forwarding
+address records, once per source; do not infer counts from truncated lists.
+Preserve unknown creation metadata as unknown. Scope all queries in the service;
+system enumeration follows the existing two-indicator system authorization.
+
+Minimum checks are one distinguishing backend RED/GREEN, actual dispatch and
+bounded wire shape, foreign/revoked scope, zero-versus-unavailable, isolated
+own-preference save with CSRF/enum refusal, and the real browser journey with
+desktop/narrow rendering and a fresh-session preference readback. Reuse matching
+authentication/confinement evidence. No new dependency, Python logic or test
+framework. Retain artifacts under the existing sprint root's domain-overview
+directory. Native build remains 600 seconds and individual fixture actions
+120 seconds. Initial review checkpoint is two hours of this explicitly added
+scope, retaining prior failures/cost and UNKNOWN totals without automatic
+allowance growth; two failures at one boundary stop for combined reassessment.
+Qualify obsd1 first and record mail separately; no obsd1-only acceptance claim.
+Normal independent review, verified Shopkeeper signing/hooks/push and exact
+remote equality remain delivery requirements.
+
+The distinguishing backend test first failed because the new operations did not
+exist. The implementation then passed that test. Preserve the integrated compile
+failure and the five stale landing-page/navigation/logout assertions; combined
+independent reassessment approved their narrow correction and the self-only
+forwarding count. The corrected focused run passes 85 tests (12 native/explicit
+tests ignored), and the new maximum domain page fits and roundtrips within the
+existing 8192-byte RPC frame. Strict Clippy passes. These are source checks.
+
+Before fixture extension, verify the exact private root and SQL socket/datadir,
+then read back and hash the domain-table backup. Actual Rust-produced prepared
+queries execute as the installed restricted reader: example.test has 12 mailbox
+rows and two configured forwarding source addresses, while system enumeration
+has three domains and includes a genuine zero-count domain. Self-only duplicate
+destinations and empty destinations do not count; a mixed list and a disabled
+forward each count once. Core and nullable metadata projections pass. Temporarily
+removing only the private alias SELECT grant makes the same query refuse with
+exit 1 and zero stdout; restoring the exact grant restores the original result.
+No owner password, factor, role or mailbox data changes. Native application and
+browser qualification of this refinement remain NOT_RUN at this checkpoint.
+
 ### One active slice, work orders and delivery
 
 Only the selected product slice may transition to IN_PROGRESS. Its concrete

@@ -28,6 +28,10 @@ const PREFIX: &str = "osmap-admin1.";
 const MAX_LOGIN: usize = 96;
 const ADMIN_QUERY: &str = "SELECT HEX(a.username),HEX(a.password),a.active,HEX(CAST(a.modified AS CHAR)),a.superadmin,HEX(d.domain) FROM admin a LEFT JOIN domain_admins d ON BINARY d.username=BINARY a.username AND d.active=1 WHERE BINARY a.username=BINARY ? ORDER BY BINARY d.domain LIMIT 17";
 
+#[path = "admin_pages.rs"]
+pub(crate) mod pages;
+pub(crate) use pages::{AdminPreferences, DomainDetails, DomainOverview, SettingsPage};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Error {
     Denied,
@@ -431,6 +435,7 @@ impl<
             "throttle",
             "account-throttle",
             "epochs",
+            "preferences",
         ] {
             let path = root.join(child);
             if !path.exists() {

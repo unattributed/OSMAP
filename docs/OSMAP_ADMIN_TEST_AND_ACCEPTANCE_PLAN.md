@@ -751,3 +751,22 @@ The accepted system is one where a new domain/mailbox can be created, administer
 - Current OSMAP `AGENTS.md`, `Makefile`, `maint/security/`, `maint/ux/`, `maint/openbsd/MAIL_STORAGE.md`, `docs/UX_DECISIONS.md` and exact current source/test revisions.
 
 **Change discipline:** Update this plan whenever a supported feature, backend integration, authorization contract, risk treatment or recovery model changes. Preserve the mapping from claims to actual evidence. Proposed tests become accepted results only after execution on a named environment and review of the source-of-truth state.
+
+### ADM-S01-02 domain and own Settings checkpoint — 2026-11-17
+
+The approved priority-page refinement reuses the active slice's scope and the
+existing OSMAP presentation. Focused source checks cover actual domain counts,
+current/foreign/revoked authority, bounded RPC projections, own appearance
+save/readback, enum validation, CSRF, separate admin cookies and public-route
+isolation. These support WSTG authorization, session management, input validation
+and business-logic cases; they do not constitute credentialed release WSTG.
+The installed restricted reader executes the exact Rust-produced prepared
+catalogue/core/metadata queries against the extended private obsd1 fixture.
+Alias SELECT withdrawal refuses with no result rows; restoration returns the
+same counts. Fixture creation dates remain unknown rather than fabricated.
+
+Native binary, installed browser/persistence, independent result review and
+operator acceptance are pending at this source checkpoint. mail qualification
+remains NOT_RUN. Domain/forward writer actions and credential lifecycle settings
+remain planned catalogue functions, not accepted capabilities of this read-only
+candidate. The strict release gate and production readiness are not claimed.
