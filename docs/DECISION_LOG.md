@@ -2020,3 +2020,29 @@ pending text/icon owner acceptance. Production deployment, writers and full
 replacement remain unimplemented; first-domain creation is the next selected
 journey. The earlier GPG No-pinentry refusal created no commit; operator warm-up
 then permits verified signed checkpoint 7e594b2 and normal final delivery gates.
+
+## 2026-11-18
+
+### Controlled mailbox creation starts with an explicitly admitted lab writer
+
+The accepted admin pages could inspect accounts but could not create one. The
+operator explicitly commenced ADM-S01-03. Requiring the entire fresh-install and
+first-domain chain first would obstruct the existing-domain replacement journey.
+
+Implement the shared writer boundary needed for creation against an existing
+isolated domain. Retain the read-only credential and add a separate protected,
+opt-in writer profile with exact test administrators/domains and holder/epoch.
+The Rust service requires current authority, CSRF and fresh replay-protected TOTP,
+locks current grants/domain, and commits mailbox, self-delivery alias and operation
+journal together. A durable pending intent and exact committed projection readback
+prevent an uncertain submission from being blindly repeated. Reuse the existing
+bounded Argon2id hash runner and password policy, without adding dependencies or
+Python execution machinery. The exposed earlier owner fixture gains no writer
+access.
+
+Source review and the focused 99-test admin run passed; native schema, hash,
+transaction and browser qualification are still outstanding at this checkpoint.
+No production writer or public mail configuration is enabled. Fresh bootstrap,
+first-domain creation, actual authentication/delivery and owner MFA enrollment
+retain their planned slice outcomes. The work order and actual results live in
+[the existing admin project plan](OSMAP_ADMIN_PROJECT_PLAN.md).

@@ -320,7 +320,7 @@ fn decode_hash(encoded: &str) -> Option<String> {
     let value = String::from_utf8(bytes?).ok()?;
     value.is_ascii().then_some(value)
 }
-fn argon_hash(value: &str) -> bool {
+pub(crate) fn argon_hash(value: &str) -> bool {
     let Some(rest) = value.strip_prefix(ARGON_PREFIX) else {
         return false;
     };

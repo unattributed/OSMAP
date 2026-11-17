@@ -38,9 +38,9 @@ fn policy(config: &WebConfig) -> HttpPolicy {
         max_header_count: 24,
         max_header_value_bytes: 1024,
         max_query_fields: 4,
-        max_body_bytes: 2048,
-        max_upload_body_bytes: 2048,
-        max_form_fields: 5,
+        max_body_bytes: 8192,
+        max_upload_body_bytes: 8192,
+        max_form_fields: 10,
         allowed_hosts: vec![config.host.clone()],
         session_cookie_name: SESSION_COOKIE,
         secure_session_cookie: true,
@@ -98,6 +98,14 @@ fn cookie<'a>(request: &'a HttpRequest, name: &str) -> Result<Option<&'a str>, (
 }
 
 fn form(request: &HttpRequest, expected: &[&str]) -> Result<BTreeMap<String, String>, ()> {
+    bounded_form(request, expected, 2048)
+}
+
+fn bounded_form(
+    request: &HttpRequest,
+    expected: &[&str],
+    maximum_bytes: usize,
+) -> Result<BTreeMap<String, String>, ()> {
     if !request
         .headers
         .get("content-type")
@@ -105,7 +113,8 @@ fn form(request: &HttpRequest, expected: &[&str]) -> Result<BTreeMap<String, Str
     {
         return Err(());
     }
-    let values = parse_urlencoded_form(&request.body, expected.len(), 2048).map_err(|_| ())?;
+    let values =
+        parse_urlencoded_form(&request.body, expected.len(), maximum_bytes).map_err(|_| ())?;
     if values.len() != expected.len() || expected.iter().any(|key| !values.contains_key(*key)) {
         return Err(());
     }
@@ -320,6 +329,9 @@ fn handle_inner<C: Exchange>(
         (HttpMethod::Get, "/admin/mailboxes") => {
             mailbox_inventory(request, &client_addr, client, None)
         }
+        (HttpMethod::Get | HttpMethod::Post, "/admin/mailboxes/new") => {
+            mailbox_create(request, &client_addr, client)
+        }
         (HttpMethod::Get, path) if path.starts_with("/admin/mailboxes/") => mailbox_inventory(
             request,
             &client_addr,
@@ -478,6 +490,139 @@ fn dashboard<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) -> Http
         Ok(Response::Missing) => crate::admin_ui::error_page(404),
         Ok(Response::Capacity) => crate::admin_ui::domain_capacity_page(),
         _ => crate::admin_ui::error_page(503),
+    }
+}
+
+fn mailbox_create<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) -> HttpResponse {
+    use crate::admin_access::{CreateFailure, CreateMailbox};
+    let token = match cookie(request, SESSION_COOKIE) {
+        Ok(Some(value)) if bearer(value) => value,
+        Ok(_) => {
+            return redirect("/admin/login")
+                .with_header("Set-Cookie", clear_session_cookie(SESSION_COOKIE, true))
+        }
+        Err(_) => return crate::admin_ui::error_page(403),
+    };
+    let (operation, domain, operation_id, expected_username, expected_quota) =
+        if request.method == HttpMethod::Get {
+            if request.query_params.len() != 1 {
+                return crate::admin_ui::error_page(400);
+            }
+            let Some(domain) = request.query_params.get("domain") else {
+                return crate::admin_ui::error_page(400);
+            };
+            (
+                Operation::CreateMailboxForm {
+                    token: token.into(),
+                    domain: domain.clone(),
+                },
+                domain.clone(),
+                None,
+                None,
+                None,
+            )
+        } else {
+            if !request.query_params.is_empty() {
+                return crate::admin_ui::error_page(400);
+            }
+            let Ok(values) = bounded_form(
+                request,
+                &[
+                    "domain",
+                    "local_part",
+                    "display_name",
+                    "password",
+                    "confirmation",
+                    "totp",
+                    "csrf",
+                    "request_id",
+                    "quota_mib",
+                    "revision",
+                ],
+                8192,
+            ) else {
+                return crate::admin_ui::error_page(400);
+            };
+            let (Ok(quota_mib), Ok(revision)) = (
+                values["quota_mib"].parse::<u32>(),
+                values["revision"].parse::<u64>(),
+            ) else {
+                return crate::admin_ui::error_page(400);
+            };
+            let create = CreateMailbox {
+                domain: values["domain"].clone(),
+                local_part: values["local_part"].clone(),
+                display_name: values["display_name"].clone(),
+                password: values["password"].clone(),
+                confirmation: values["confirmation"].clone(),
+                totp: values["totp"].clone(),
+                csrf: values["csrf"].clone(),
+                request_id: values["request_id"].clone(),
+                quota_mib,
+                revision,
+            };
+            if !create.valid() {
+                return crate::admin_ui::error_page(400);
+            }
+            let domain = create.domain.clone();
+            let operation_id = create.request_id.clone();
+            let username = format!(
+                "{}@{}",
+                create.local_part.to_ascii_lowercase(),
+                create.domain
+            );
+            let quota = u64::from(create.quota_mib) * 1_048_576;
+            (
+                Operation::CreateMailbox {
+                    token: token.into(),
+                    request: create,
+                },
+                domain,
+                Some(operation_id),
+                Some(username),
+                Some(quota),
+            )
+        };
+    let rpc = Request {
+        version: VERSION,
+        client: addr.into(),
+        operation,
+    };
+    if rpc.validate().is_err() {
+        return crate::admin_ui::error_page(400);
+    }
+    let uncertain = || {
+        crate::admin_ui::create_failure_page(
+            if operation_id.is_some() {
+                CreateFailure::Unconfirmed
+            } else {
+                CreateFailure::Unavailable
+            },
+            &domain,
+            operation_id.as_deref(),
+        )
+    };
+    match client.exchange(&rpc) {
+        Ok(Response::CreateMailboxForm { page })
+            if operation_id.is_none() && page.domain == domain && page.valid() =>
+        {
+            crate::admin_ui::create_mailbox_page(&page)
+        }
+        Ok(Response::MailboxCreated { receipt })
+            if receipt.valid()
+                && Some(receipt.request_id.as_str()) == operation_id.as_deref()
+                && receipt.domain == domain
+                && Some(receipt.username.as_str()) == expected_username.as_deref()
+                && Some(receipt.quota) == expected_quota =>
+        {
+            crate::admin_ui::mailbox_created_page(&receipt)
+        }
+        Ok(Response::CreateMailboxFailed { reason }) => {
+            crate::admin_ui::create_failure_page(reason, &domain, operation_id.as_deref())
+        }
+        Ok(Response::Denied) => redirect("/admin/login")
+            .with_header("Set-Cookie", clear_session_cookie(SESSION_COOKIE, true)),
+        _ => uncertain(),
     }
 }
 
@@ -878,6 +1023,166 @@ mod tests {
                 smtp_active: false,
             }],
         }
+    }
+
+    fn creation_page() -> crate::admin_access::CreatePage {
+        crate::admin_access::CreatePage {
+            login: "operator@example.test".into(),
+            csrf: "c".repeat(64),
+            domain: "example.test".into(),
+            revision: 7,
+            request_id: "b".repeat(64),
+        }
+    }
+
+    fn creation_receipt() -> crate::admin_access::CreateReceipt {
+        crate::admin_access::CreateReceipt {
+            login: "operator@example.test".into(),
+            csrf: "c".repeat(64),
+            domain: "example.test".into(),
+            username: "alice@example.test".into(),
+            request_id: "b".repeat(64),
+            quota: 2 * 1_048_576,
+        }
+    }
+
+    fn creation_body(password: &str) -> String {
+        format!("domain=example.test&local_part=ALICE&display_name=Public%20Alice&password={}&confirmation={}&totp=123456&csrf={}&request_id={}&quota_mib=2&revision=7",
+            crate::http_support::url_encode(password),crate::http_support::url_encode(password),"c".repeat(64),"b".repeat(64))
+    }
+
+    fn creation_headers() -> String {
+        format!("Origin: https://admin.example.test\r\nContent-Type: application/x-www-form-urlencoded\r\nCookie: {SESSION_COOKIE}={}\r\n",token())
+    }
+
+    #[test]
+    fn create_form_route_precedes_opaque_detail_and_reports_disabled_writer() {
+        let fake = Fake::new(Response::CreateMailboxForm {
+            page: creation_page(),
+        });
+        let request = parse(
+            "GET",
+            "/admin/mailboxes/new?domain=example.test",
+            &creation_headers(),
+            "",
+        );
+        let response = handle(&config(), &request, &fake);
+        assert_eq!(response.status_code, 200);
+        assert!(
+            matches!(&fake.calls.borrow()[0].operation,Operation::CreateMailboxForm {domain,..} if domain=="example.test")
+        );
+        assert!(String::from_utf8(response.body)
+            .unwrap()
+            .contains("action=\"/admin/mailboxes/new\""));
+        let disabled = Fake::new(Response::CreateMailboxFailed {
+            reason: crate::admin_access::CreateFailure::WriterDisabled,
+        });
+        let response = handle(&config(), &request, &disabled);
+        assert_eq!(response.status_code, 503);
+        let html = String::from_utf8(response.body).unwrap();
+        assert!(html.contains("administration writer is disabled"));
+        assert!(!html.contains("<form"));
+    }
+
+    #[test]
+    fn create_post_preserves_private_unicode_proof_and_correlates_receipt() {
+        let password = "🦀".repeat(128);
+        let body = creation_body(&password);
+        assert!(body.len() > 2048);
+        let request = parse("POST", "/admin/mailboxes/new", &creation_headers(), &body);
+        let fake = Fake::new(Response::MailboxCreated {
+            receipt: creation_receipt(),
+        });
+        let response = handle(&config(), &request, &fake);
+        assert_eq!(response.status_code, 201);
+        assert!(
+            matches!(&fake.calls.borrow()[0].operation,Operation::CreateMailbox {request,..}
+            if request.password==password && request.confirmation==password && request.local_part=="ALICE"
+            && request.csrf=="c".repeat(64) && request.request_id=="b".repeat(64) && request.revision==7 && request.quota_mib==2)
+        );
+        let html = String::from_utf8(response.body).unwrap();
+        assert!(html.contains("alice@example.test"));
+        assert!(html.contains("have not yet been verified"));
+        assert!(!html.contains(&password));
+        assert!(!html.contains("123456"));
+        assert!(!html.contains(&token()));
+    }
+
+    #[test]
+    fn create_post_refuses_field_ambiguity_origin_and_public_cookie_before_rpc() {
+        let body = creation_body("public-mailbox-password");
+        for case in [
+            "extra",
+            "duplicate",
+            "quota_overflow",
+            "stale_shape",
+            "query",
+            "origin",
+            "public_cookie",
+        ] {
+            let fake = Fake::new(Response::Denied);
+            let mut request = parse("POST", "/admin/mailboxes/new", &creation_headers(), &body);
+            match case {
+                "extra" => request.body.extend_from_slice(b"&role=system"),
+                "duplicate" => request.body.extend_from_slice(b"&csrf=forged"),
+                "quota_overflow" => {
+                    request.body = body
+                        .replace("quota_mib=2", "quota_mib=4294967296")
+                        .into_bytes()
+                }
+                "stale_shape" => {
+                    request.body = body.replace("revision=7", "revision=0").into_bytes()
+                }
+                "query" => {
+                    request
+                        .query_params
+                        .insert("domain".into(), "foreign.test".into());
+                }
+                "origin" => {
+                    request.headers.insert("origin".into(), "null".into());
+                }
+                _ => {
+                    request
+                        .headers
+                        .insert("cookie".into(), format!("osmap_session={}", "a".repeat(64)));
+                }
+            }
+            let response = handle(&config(), &request, &fake);
+            assert!(matches!(response.status_code, 303 | 400 | 403));
+            assert!(fake.calls.borrow().is_empty());
+        }
+    }
+
+    #[test]
+    fn create_lost_or_mismatched_receipt_stays_unconfirmed_without_retry() {
+        let request = parse(
+            "POST",
+            "/admin/mailboxes/new",
+            &creation_headers(),
+            &creation_body("public-mailbox-password"),
+        );
+        let mut wrong = creation_receipt();
+        wrong.request_id = "d".repeat(64);
+        for response in [
+            Response::Unavailable,
+            Response::MailboxCreated { receipt: wrong },
+        ] {
+            let fake = Fake::new(response);
+            let response = handle(&config(), &request, &fake);
+            assert_eq!(response.status_code, 503);
+            assert_eq!(fake.calls.borrow().len(), 1);
+            let html = String::from_utf8(response.body).unwrap();
+            assert!(html.contains("Do not retry or resubmit this operation."));
+            assert!(html.contains(&"b".repeat(64)));
+            assert!(!html.contains("<form"));
+            assert!(!html.contains("public-mailbox-password"));
+            assert!(!html.contains("/admin/mailboxes/new"));
+        }
+        let fake = Fake::new(Response::CreateMailboxFailed {
+            reason: crate::admin_access::CreateFailure::StepUp,
+        });
+        assert_eq!(handle(&config(), &request, &fake).status_code, 403);
+        assert_eq!(fake.calls.borrow().len(), 1);
     }
 
     #[test]

@@ -1572,3 +1572,13 @@ isolation and exact-owned cleanup. Failure diagnostics retain bounded status,
 process and stream accounting without credentials, cookies, proof or mail bodies.
 These results are in the active execution ledger. They do not replace the full
 credential-backed WSTG release pack, owner contact-change UAT or reboot testing.
+
+### 2026-11-18 OSMAP-ADMIN controlled creation checkpoint
+
+ADM-S01-03 adds a separate opt-in lab writer after current admin session, CSRF,
+fresh TOTP and exact actor/domain admission. Source tests cover forged/foreign
+scope, factor replay, strict form/RPC fields and uncertain result handling; SQL
+source review covers typed values, locked grants, atomic account/alias/audit
+commit and post-commit verification. These are focused development results,
+not authenticated WSTG/release or production qualification. Installed creation
+and native projections remain pending in OSMAP_ADMIN_TEST_AND_ACCEPTANCE_PLAN.md.

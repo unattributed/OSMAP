@@ -190,7 +190,7 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
 | Current product slice | **ADM-S01-02**, read-only overview/domain/mailbox views and own display Settings: engineering DELIVERED; matching obsd1 and isolated mail native/browser qualification PASS for the bounded work order; independent result review PASS; obsd1 basic pages/final login owner-approved, separate text/icon owner acceptance pending. Normal obsd1 candidate ACTIVE; temporary mail candidate stopped and root-sealed. Full operator acceptance, production deployment and writers remain pending |
 | Previous product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; final login design owner-approved; whole-slice operator acceptance NOT_ACCEPTED |
-| Selected next product slice | **ADM-S02-01 domain creation from scratch**, selected by the operator after the text/icon refinement; NOT_STARTED. Execute ADM-S05-01a -> ADM-S05-02a -> ADM-S01-03a as its prerequisites, leaving their parent completion obligations later. Controlled mailbox creation follows. |
+| Selected active product slice | **ADM-S01-03 controlled mailbox creation**, explicitly commenced by the operator on 2026-11-18. Use an existing qualified isolated domain and implement the necessary ADM-S01-03a writer boundary. The fresh-authority bootstrap and first-domain sequence remains planned; it is not a prerequisite for this existing-domain journey. |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
 | Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
 | ADM-PLAN-03: integrated epic scope | Documentation-only integration of bootstrap, domain/virtual-address/admin management and all 18 security catalogue categories into the sprint/slice index below; no new product work is started or accepted by this amendment |
@@ -1772,3 +1772,61 @@ be converted into the corresponding Argon2id hash. The read-only admin slice
 must not acquire an implicit login-time write. Use exact conditional updates,
 session revocation and recovery evidence, and ensure rollback software still
 verifies Argon2id rows. Migration and production acceptance remain unimplemented.
+
+## ADM-S01-03 work order — 2026-11-18
+
+**State: IN_PROGRESS; functional/native/owner acceptance NOT_RUN.** Baseline
+`8e8294f939357c2e5c89409e03d2c3d181ec5a18`. The operator selected controlled
+mailbox creation. Root owns integration, implementation, documentation and the
+single host/Git queue; admin_ui_engineer owns the existing Web/RPC/presentation
+composition; adapter_review independently checks prerequisites, source and
+matching qualification. No new Python or general test machinery is authorized.
+
+**Outcome:** at the obsd1 development address, an authorized admin submits a
+mailbox form with fresh TOTP; the protected Rust service commits exactly one
+mailbox, its local-delivery alias and a durable operation/audit record, and the
+result matches database and installed Postfix/Dovecot lookup projections. Qualify
+the same reviewed build on mail against isolated authority. Actual authentication
+and message delivery remain ADM-S01-04. Browser access stays MFA pending. Native
+auth/delivery capability is permitted only in the isolated lab policy, without
+changing production enrollment policy. Do not reuse the previously exposed owner
+fixture credentials for writer access; controlled qualification uses fresh
+credentials and factors in private sprint storage.
+
+**Boundary:** existing isolated domain only; opt-in protected writer profile,
+explicit holder/epoch and domain admission, atomic journal, revisions and current
+actor checks. Reader credentials remain read-only. No production account writes,
+legacy-writer fencing/cutover, public mail configuration changes or backend
+restart/reload. Fresh bootstrap/first domain, enrollment and account edits retain
+their existing slice ownership. Preserve the approved login and display settings.
+
+**Prerequisites and tests:** verify real schema/defaults/unique keys/InnoDB,
+maildir and UID convention, quota units and native password scheme before dependent
+code. Test browser -> RPC -> service -> transaction -> post-commit readback, then
+native projections. Exercise duplicate/case collision, invalid quota, foreign or
+revoked scope, stale revision, missing CSRF/fresh factor, competing holder and
+ambiguous submission; no automatic replay or partial-success claim. Use existing
+Rust tests and mandatory delivery hooks, not repeated broad suites between
+milestones. Mappings remain the S01-03 row's T:F/DB/SEC/UX/RES cases. Planned tests
+remain NOT_RUN until observed.
+
+**Effort and stops:** retain actual measured command durations and failures under
+`/home/foo/Downloads/osmap-admin-s01/slice03/`; total elapsed and token cost are
+UNKNOWN until measured, with no invented authority clock or replenished allowance.
+Two failures at one functional boundary stop retries for combined independent
+reassessment. Preserve earliest sanitized failure separately from cleanup and
+uncertain submission. Close only after matching independent review, signed source
+and normal GitHub preservation; source delivery is separate from owner acceptance
+and production readiness.
+
+Source prerequisite result: production table metadata confirms InnoDB and the
+address unique key; installed Dovecot projects `domain/local/` under `/var/vmail`
+with UID/GID 2000 and advertises Argon2id. Read-only inspection of the installed
+legacy configuration and its domain/mailbox consumers confirms **1,024,000**
+bytes per domain-limit unit. This differs from MiB. The writer therefore requires
+an explicit adopted domain unit; the new form's MiB values become mailbox bytes
+and are compared to domain limits after conversion. No PHP code is executed or
+linked by OSMAP-ADMIN. The first private SQL preflight used an incorrect effective
+root principal for the existing foo socket-auth profile and refused; running as
+its intended foo principal succeeded. A missing remote `rg` was handled with
+native `awk`. These are retained preflight failures, not mailbox-create attempts.

@@ -921,6 +921,25 @@ fn run(
 ) -> Result<CommandExecution, CommandExecutionError> {
     run_with_cap(command, input, deadline, LIMIT)
 }
+/// Admin provisioning reuses the bounded native runner and the exact existing
+/// password-hash command, including CONFIG_FILE=/dev/null and no stats socket.
+/// This grants no account-password service authority or arbitrary command API.
+pub(crate) fn admin_hash(
+    input: &[u8],
+    deadline: Instant,
+) -> Result<CommandExecution, CommandExecutionError> {
+    if input.len() > 1026 || input.contains(&0) {
+        return Err(unavailable());
+    }
+    let args = crate::account_password_backend::HASH_ARGS
+        .iter()
+        .map(|s| (*s).into())
+        .collect::<Vec<_>>();
+    let command =
+        crate::auth::password_backend_command(crate::account_password_backend::HASH_PROGRAM, &args)
+            .map_err(|_| unavailable())?;
+    run(command, input, deadline)
+}
 fn run_with_cap(
     command: Command,
     input: &[u8],

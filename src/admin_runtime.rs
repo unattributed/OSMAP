@@ -22,6 +22,7 @@ struct Sql {
     database: String,
     digest: [u8; 32],
     deadline: Arc<Mutex<Instant>>,
+    writer: Option<(PathBuf, [u8; 32])>,
 }
 impl Sql {
     fn new(config: &ServiceConfig) -> Result<Self, &'static str> {
@@ -36,6 +37,14 @@ impl Sql {
             database: config.database.clone(),
             digest: Sha256::digest(&bytes).into(),
             deadline: Arc::new(Mutex::new(Instant::now())),
+            writer: config
+                .writer
+                .as_ref()
+                .map(|w| {
+                    let bytes = fs::read(&w.profile).map_err(|_| "ADMIN_WRITER_PROFILE_READ")?;
+                    Ok::<_, &'static str>((w.profile.clone(), Sha256::digest(&bytes).into()))
+                })
+                .transpose()?,
         })
     }
     fn refused() -> CommandExecutionError {
@@ -67,16 +76,50 @@ impl CommandExecutor for Sql {
         timeout: Duration,
         output_limit: usize,
     ) -> Result<CommandExecution, CommandExecutionError> {
+        let remaining = self
+            .deadline
+            .lock()
+            .map_err(|_| Self::refused())?
+            .checked_duration_since(Instant::now())
+            .ok_or_else(Self::refused)?
+            .min(timeout)
+            .min(Duration::from_secs(10));
+        if program == crate::account_password_backend::HASH_PROGRAM
+            && args
+                .iter()
+                .map(String::as_str)
+                .eq(crate::account_password_backend::HASH_ARGS.iter().copied())
+            && self.writer.is_some()
+            && output_limit == 4096
+        {
+            let result =
+                crate::account_password_process::admin_hash(input, Instant::now() + remaining);
+            if result
+                .as_ref()
+                .map_or(true, |o| o.status_code != 0 || !o.stderr.is_empty())
+            {
+                eprintln!(
+                    "ADMIN_CREATE_HASH_REFUSED cleanup_uncertain={}",
+                    crate::account_password_process::execution_quarantined()
+                );
+            }
+            return result;
+        }
+        let writing = args
+            .iter()
+            .map(String::as_str)
+            .eq(crate::admin_access::create::WRITER_ARGS.iter().copied());
         // These are the fixed readers' arguments, not request-selected programs.
         if program != "/usr/local/bin/mariadb"
-            || args
-                != [
-                    "--defaults-file=/etc/osmap/admin-read-mariadb.cnf",
-                    "--database=postfixadmin",
-                    "--batch",
-                    "--skip-column-names",
-                    "--raw",
-                ]
+            || (!writing
+                && args
+                    != [
+                        "--defaults-file=/etc/osmap/admin-read-mariadb.cnf",
+                        "--database=postfixadmin",
+                        "--batch",
+                        "--skip-column-names",
+                        "--raw",
+                    ])
             || input.len() > 16384
             || output_limit
                 > if input.starts_with(b"SET @osmap_domain=") {
@@ -88,28 +131,25 @@ impl CommandExecutor for Sql {
             eprintln!("ADMIN_SQL_FIXED_BOUNDARY_REFUSED");
             return Err(Self::refused());
         }
-        crate::admin_config::verify_sql_profile(&self.profile).map_err(|_| {
+        let (profile, digest) = if writing {
+            self.writer
+                .as_ref()
+                .map(|(p, d)| (p, d))
+                .ok_or_else(Self::refused)?
+        } else {
+            (&self.profile, &self.digest)
+        };
+        crate::admin_config::verify_sql_profile(profile).map_err(|_| {
             eprintln!("ADMIN_SQL_PROFILE_CUSTODY_REFUSED");
             Self::refused()
         })?;
-        let bytes = fs::read(&self.profile).map_err(|_| Self::refused())?;
-        if bytes.len() > 4096 || <[u8; 32]>::from(Sha256::digest(&bytes)) != self.digest {
+        let bytes = fs::read(profile).map_err(|_| Self::refused())?;
+        if bytes.len() > 4096 || <[u8; 32]>::from(Sha256::digest(&bytes)) != *digest {
             eprintln!("ADMIN_SQL_PROFILE_CHANGED");
             return Err(Self::refused());
         }
-        let remaining = self
-            .deadline
-            .lock()
-            .map_err(|_| Self::refused())?
-            .checked_duration_since(Instant::now())
-            .ok_or_else(|| {
-                eprintln!("ADMIN_SQL_DEADLINE_REFUSED");
-                Self::refused()
-            })?
-            .min(timeout)
-            .min(Duration::from_secs(10));
         let fixed = vec![
-            format!("--defaults-file={}", self.profile.display()),
+            format!("--defaults-file={}", profile.display()),
             format!("--database={}", self.database),
             "--batch".into(),
             "--skip-column-names".into(),
@@ -141,6 +181,10 @@ impl CommandExecutor for Sql {
 
 /// CLI-only role selection; no browser field supplies configuration or execution.
 pub fn run(arguments: &[OsString]) -> Result<(), &'static str> {
+    if arguments.len() == 1 && arguments[0] == "writer-schema" {
+        print!("{}", crate::admin_access::create::SCHEMA);
+        return Ok(());
+    }
     if arguments.len() != 2 || crate::openbsd::effective_uid() == 0 {
         return Err("ADMIN_ARGUMENTS_OR_PRINCIPAL");
     }
@@ -172,7 +216,8 @@ fn service(config: ServiceConfig) -> Result<(), &'static str> {
         NativePassword,
         config.state.clone(),
     )
-    .map_err(|_| "ADMIN_SERVICE_STATE")?;
+    .map_err(|_| "ADMIN_SERVICE_STATE")?
+    .with_writer(config.writer.clone());
     let listener = UnixListener::bind(&config.socket).map_err(|_| "ADMIN_SERVICE_BIND")?;
     let group = fs::symlink_metadata(
         config
@@ -195,6 +240,7 @@ fn service(config: ServiceConfig) -> Result<(), &'static str> {
         &config.socket,
         &config.sql_profile,
         &config.sql_socket,
+        config.writer.as_ref().map(|w| w.profile.as_path()),
     )
     .map_err(|_| "ADMIN_SERVICE_SEAL")?;
     eprintln!("ADMIN_SERVICE_READY");
@@ -264,6 +310,20 @@ where
         user_agent: "admin-private-web".into(),
     };
     match request.operation {
+        Operation::CreateMailboxForm { token, domain } => match Token::presented(&token)
+            .map_err(crate::admin_access::CreateFailure::from)
+            .and_then(|t| backend.create_mailbox_form_from(&t, &context, &domain))
+        {
+            Ok(page) => Response::CreateMailboxForm { page },
+            Err(reason) => Response::CreateMailboxFailed { reason },
+        },
+        Operation::CreateMailbox { token, request } => match Token::presented(&token)
+            .map_err(crate::admin_access::CreateFailure::from)
+            .and_then(|t| backend.create_mailbox_from(&t, &context, &request))
+        {
+            Ok(receipt) => Response::MailboxCreated { receipt },
+            Err(reason) => Response::CreateMailboxFailed { reason },
+        },
         Operation::Login {
             login,
             password,

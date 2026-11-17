@@ -880,3 +880,13 @@ deployment/cutover configuration and writer journeys remain future gates.
 Bounded development/mail qualification PASS does not supply text/icon owner
 acceptance, a complete broad T-case, full replacement or release acceptance.
 The catalogue remains 223 specifications; no new test machinery is introduced.
+
+## ADM-S01-03 execution opening — 2026-11-18
+
+The existing-domain controlled mailbox-creation work order is active in the
+project plan. Source qualification has 99 passing focused admin tests, including
+strict browser/RPC form composition, opt-in scope/CSRF/factor refusal and durable
+uncertain-intent refusal. Independent source review admits this candidate only
+for bounded isolated native qualification. Installed transaction/hash, browser
+creation and native recipient/userdb/passdb projection cases remain NOT_RUN.
+Authentication and delivery remain ADM-S01-04; no production/release PASS follows.
