@@ -1811,3 +1811,37 @@ The actual browser awaits the operator-required certificate-warning handoff;
 mail promotion, remaining native adverse cases and cleanup remain outstanding.
 The work order records the still-active exact private fixture. These partial
 native results do not establish browser, mail, release or operator acceptance.
+
+### Same day — Serve the isolated admin journey at the real obsd1 hostname
+
+The localhost handoff depends on an expired SSH forward and is unavailable to
+the operator. At the operator's request, reuse obsd1's existing valid hostname
+certificate and nginx listener for the isolated `/admin` route. Admit only the
+verified workstation LAN client and preserve prior configuration and resolution.
+Keep upstream TLS verification, the private proxy UID/socket custody and the
+strict canonical Host/Origin contract. No mail backend service or account is
+changed. The proxy reports its loopback TLS peer; this does not qualify external
+client-address propagation or production throttling.
+
+The actual hostname browser signs in and observes scoped list, pagination,
+filter, sort, detail, true empty and foreign-domain refusal. Private mailbox
+reader-permission loss displays unavailable and recovers after restoration;
+grant revocation ends the browser session and restoration does not restore its
+login. Non-admitted NAT clients refuse even with spoofed address headers, while
+the ordinary frontend and mail services stay healthy. All fixture grants are
+restored. Retain both narrow-navigation failures and the combined independent
+reassessment; reuse the main application's responsive rail instead of adding
+CSS or a test framework. Its native visual result, mail qualification, final
+fixture disposition and operator acceptance remain outstanding.
+
+The corrected shared rail is observed at 744 and 360 pixels, including disclosure
+and both navigation targets. The operator confirms ordinary mailbox sign-in
+succeeds and requests their own administrator identity and OSMAP's familiar
+appearance. Stop unrelated mailbox-auth diagnosis. Reuse the existing login
+renderer through fixed mailbox/admin entry points; retain the admin's separate
+action, fields, CSRF and credential/factor authority. Provision the requested
+owner only in the selected isolated admin authority, committing both system-role
+indicators and a new service-owned factor. Deliver the independent password and
+registration through an owner-only local artifact. Source checks and private
+role/factor readback pass; installed shared-login appearance and actual owner
+sign-in remain pending. No mailbox credential, factor or live authority changes.

@@ -171,7 +171,7 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Active product implementation slice | **ADM-S01-02**, authorized mailbox list: IN_PROGRESS; reviewed source delivered in draft PR #99, obsd1 native HTTP cases partially PASS, browser qualification awaits certificate handoff; mail qualification NOT_RUN; operator acceptance NOT_ACCEPTED |
+| Active product implementation slice | **ADM-S01-02**, authorized mailbox list: IN_PROGRESS; reviewed source in draft PR #99, obsd1 browser functional and responsive-rail cases PASS; shared-login presentation and requested owner-admin sign-in await final native observation; mail qualification NOT_RUN; operator acceptance NOT_ACCEPTED |
 | Previous product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; operator acceptance NOT_ACCEPTED |
 | Selected next product slice | ADM-S01-03 controlled mailbox creation; NOT_STARTED |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
@@ -877,6 +877,52 @@ producer and verify the real consumer before native dispatch. Commit e2a3c2e0's
 body incorrectly records that check as passing; retain this correction and the
 actual failed result rather than rewriting the signed commit. No native build
 uses the stale inventory.
+
+The corrected shared rail at `088d3f23` builds natively in 39.91 seconds,
+launcher exit 0, executable SHA-256
+`adb0823e624db93020ced98c40d22f07c60242b84b103b93e35d7c89ec107dca`.
+The actual browser shows usable collapsed icons and readable expanded labels at
+744 pixels; at 360 pixels the disclosure hides/shows the links and both overview
+and domain-selection navigation work. The viewport is restored. Resident backend
+source 428c9e04 is unchanged and its matching functional evidence is reused.
+
+Operator presentation correction: reuse the ordinary OSMAP login screen for
+`/admin/login`, changing admin copy while preserving the distinct admin form
+action/fields, CSRF, cookie purpose, credentials and factors. Reuse the existing
+Rust renderer through two fixed entry points, with no caller-selected routes or
+new framework. Ordinary login markup/contract remains the default; admin copy
+must make the separate administrator account clear and must not offer an
+unimplemented admin recovery link. Run the existing login/UI contract tests,
+strict Clippy and one installed browser sign-in after the presentation change;
+reuse unchanged list/backend/security observations. The screenshot's real
+mailbox credentials cannot authenticate the synthetic-only admin authority.
+Check the ordinary login's installed backend read-only and clarify which page
+failed; do not capture, replay or change the operator's password/TOTP.
+
+The operator subsequently confirms ordinary mailbox login succeeds and requests
+the owner address as an OSMAP-ADMIN administrator. Stop mailbox-login diagnosis.
+Provision only that new administrator in the currently selected isolated admin
+authority, with the two matching system-role indicators, an independently random
+password hashed by the installed native bcrypt utility, and a fresh independent
+TOTP factor under existing service custody. The verified private SQL datadir,
+socket and disabled networking must match before writing; refuse an existing
+principal/factor rather than reset it. Preserve native state/readback and qualify
+actual owner sign-in. Do not change mailbox credentials, factors, public SQL or
+mail services. Deliver password and authenticator registration only through an
+owner-only local setup artifact under the sprint root, never Git, command
+arguments, environment, logs or chat. The owner must import the new administrator
+factor into their authenticator; ordinary mailbox registration is not changed.
+This provides owner access to the isolated read-only candidate and its selected
+data; it does not promote the test authority to live mail administration.
+
+Owner provisioning observes private SQL admission, principal absence, native
+bcrypt cost 12, exact service-owned factor custody and a committed/read-back
+pair of system-role indicators. Password-hash and factor bytes are downloaded
+privately, compared and hash-read back before any source disposal. No secret is
+exported to Git, logs or chat. The shared login change passes seven admin UI cases, eleven Web cases,
+the existing shared-brand public-render case and strict all-target Clippy; the
+regenerated V10 record passes its real consumer. Actual owner login and installed
+shared-login screenshots remain pending at this source checkpoint.
 
 ### One active slice, work orders and delivery
 

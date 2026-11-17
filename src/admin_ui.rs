@@ -37,29 +37,7 @@ fn admin_html_response(
 
 /// Display the combined password/TOTP form without retaining submitted values.
 pub(crate) fn login_page(csrf: &str, denied: bool) -> HttpResponse {
-    let notice = if denied {
-        "<div class=\"notice notice-error\" role=\"alert\"><strong>Sign-in could not be completed.</strong> Check your details or try again later.</div>"
-    } else {
-        ""
-    };
-    let body = TrustedHtml::from_template(format!(
-        concat!(
-            "<a class=\"skip-link\" href=\"#main-content\">Skip to sign-in</a>",
-            "<main id=\"main-content\" class=\"login-page\" tabindex=\"-1\" aria-labelledby=\"admin-login-title\">",
-            "<section class=\"login-card\"><div class=\"login-brand\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>",
-            "<div><p class=\"muted\">Private administration</p><h1 id=\"admin-login-title\" class=\"login-title\">Sign in to OSMAP Admin</h1></div></div>",
-            "<p>Use your administrator password and a current authenticator code.</p>{notice}",
-            "<form method=\"post\" action=\"/admin/login\" class=\"login-form\">",
-            "<input type=\"hidden\" name=\"csrf\" value=\"{csrf}\">",
-            "<label for=\"admin-login\">Login</label><input id=\"admin-login\" type=\"text\" name=\"login\" autocomplete=\"username\" maxlength=\"96\" autocapitalize=\"none\" spellcheck=\"false\" required>",
-            "<label for=\"admin-password\">Password</label><input id=\"admin-password\" type=\"password\" name=\"password\" autocomplete=\"current-password\" maxlength=\"72\" required>",
-            "<label for=\"admin-totp\">TOTP code</label><input id=\"admin-totp\" type=\"text\" name=\"totp\" autocomplete=\"one-time-code\" inputmode=\"numeric\" pattern=\"[0-9]{{6}}\" minlength=\"6\" maxlength=\"6\" aria-describedby=\"admin-totp-help\" required>",
-            "<p id=\"admin-totp-help\" class=\"muted\">Enter the six-digit code from your authenticator.</p>",
-            "<button type=\"submit\" class=\"primary-button\">Sign in</button></form></section></main>"
-        ),
-        csrf = escape_html(csrf),
-        notice = notice,
-    ));
+    let body = crate::http_ui::render_admin_login_page(csrf, denied);
     admin_html_response(
         if denied { 401 } else { 200 },
         if denied { "Unauthorized" } else { "OK" },
@@ -330,9 +308,9 @@ mod tests {
         assert_eq!(response.status_code, 200);
         let html = body(&response);
         assert!(html.contains("method=\"post\" action=\"/admin/login\""));
-        assert!(html.contains("<label for=\"admin-login\">Login</label>"));
-        assert!(html.contains("<label for=\"admin-password\">Password</label>"));
-        assert!(html.contains("<label for=\"admin-totp\">TOTP code</label>"));
+        assert!(html.contains("<label for=\"login-username\">Administrator login</label>"));
+        assert!(html.contains("<label for=\"login-password\">Password</label>"));
+        assert!(html.contains("<label for=\"login-totp\">TOTP Code</label>"));
         assert!(html.contains("type=\"password\" name=\"password\""));
         assert!(html.contains("name=\"totp\""));
         assert!(html.contains("name=\"csrf\" value=\"public-synthetic-csrf\""));
@@ -341,6 +319,10 @@ mod tests {
         assert!(!html.contains("name=\"password\" value="));
         assert!(!html.contains("name=\"totp\" value="));
         assert!(!html.contains("name=\"token\""));
+        assert!(html.contains("class=\"login-decor login-decor-left\""));
+        assert!(html.contains("class=\"login-brand-text\""));
+        assert!(html.contains("Mailbox sign-in is separate."));
+        assert!(!html.contains("href=\"/recover\""));
     }
 
     #[test]

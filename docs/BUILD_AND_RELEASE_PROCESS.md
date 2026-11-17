@@ -435,8 +435,13 @@ unchanged auth/confinement results; qualify the new frontend/backend path on
 obsd1 before promoting the signed candidate to actual isolated mail execution.
 No additional Python or general QA framework is required. Candidate `428c9e04`
 passes the normal developer gate and partial installed obsd1 HTTP/SQL cases;
-draft PR #99 remains unmerged. Actual browser qualification awaits the required
-operator certificate-warning handoff. Mail promotion, remaining native adverse
-cases and cleanup remain pending as recorded in the existing work order. Normal
-signed delivery hooks still apply; partial HTTP results are not browser or
-release acceptance.
+draft PR #99 remains unmerged. The operator-requested hostname route resolves
+the expired-forward/certificate handoff. The actual obsd1 browser additionally
+observes the functional list journey, private reader loss/recovery and grant
+revocation/restoration. Preserve the restricted hostname routing and unchanged
+backend evidence with the assessed Web source. Shared-rail visual checks pass at
+744 and 360 pixels. The requested shared-login presentation and owner-admin
+account still need matching installed sign-in evidence; private role/factor
+readback and affected source checks pass. Mail qualification and fixture
+disposition remain pending in the existing work order. Normal signed delivery
+hooks still apply; this is not release acceptance.
