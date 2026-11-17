@@ -188,9 +188,10 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Current product slice | **ADM-S01-02**, read-only overview/domain/mailbox views and own display Settings: engineering DELIVERED; matching obsd1 and isolated mail native/browser qualification PASS for the bounded work order; independent result review PASS; obsd1 basic pages/final login owner-approved, separate text/icon owner acceptance pending. Normal obsd1 candidate ACTIVE; temporary mail candidate stopped and root-sealed. Full operator acceptance, production deployment and writers remain pending |
-| Previous product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; final login design owner-approved; whole-slice operator acceptance NOT_ACCEPTED |
-| Selected active product slice | **ADM-S01-03 controlled mailbox creation**, explicitly commenced by the operator on 2026-11-18. Use an existing qualified isolated domain and implement the necessary ADM-S01-03a writer boundary. The fresh-authority bootstrap and first-domain sequence remains planned; it is not a prerequisite for this existing-domain journey. |
+| Current product slice | **ADM-S01-03**, controlled mailbox creation: engineering and matching obsd1/mail isolated browser/native lookup qualification PASS; owner acceptance NOT_ACCEPTED and production writer NOT_DEPLOYED. Signed delivery and retained-candidate disposition are recorded in the current work-order closeout below. |
+| Previous product slice | ADM-S01-02 DELIVERED through [PR #99](https://github.com/unattributed/OSMAP/pull/99), main `8e8294f`; bounded development/isolated mail qualification PASS; basic pages approved, text/icon refinement owner acceptance NOT_ACCEPTED |
+| Earlier product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; final login design owner-approved; whole-slice operator acceptance NOT_ACCEPTED |
+| Selected slice / next boundary | ADM-S01-03 was explicitly commenced on 2026-11-18 against an existing isolated domain. ADM-S01-04 native authentication and delivery is next and NOT_STARTED. The fresh-authority bootstrap and first-domain sequence remains planned; it is not a prerequisite for the qualified existing-domain journey. |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
 | Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
 | ADM-PLAN-03: integrated epic scope | Documentation-only integration of bootstrap, domain/virtual-address/admin management and all 18 security catalogue categories into the sprint/slice index below; no new product work is started or accepted by this amendment |
@@ -345,7 +346,7 @@ all NOT_STARTED / NOT_RUN / NOT_ACCEPTED at this planning checkpoint.
 | --- | --- | --- | --- |
 | **ADM-S05-01a Authority initialization or adoption inspection** / ADM-S05-01 | Installed mailstack/OSMAP, actual MariaDB/socket/profile/lookup contracts; E1/E2/E3 | Actual mailstack bootstrap calls the Rust authority initializer: an empty target receives the complete reviewed schema/projections and narrow grants; populated authority is inspected/preserved, never silently reinitialized. Unknown/partial schema and rerun credential overwrite refuse or reconcile. | UX-A4; UX-WF-02; T:F-01, T:F-43, T:DB-01–03, T:DB-08–11, T:DB-16–20, T:REC-02–04 |
 | **ADM-S05-02a Independent first administrator** / ADM-S05-02 | ADM-S05-01a, protected credential/factor/session stores and a qualified verifier; E1/E2/E3 | Fresh empty authority establishes one administrator and MFA locally before any domain/mailbox, then private sign-in succeeds. Existing adoption uses the reviewed existing identity/enrollment path without overwriting credentials/factors. Concurrent/repeated bootstrap or an unauthenticated public bootstrap refuses. | UX-A4, UX-A6; UX-WF-01, UX-WF-02; T:F-02–04, T:F-43, T:INT-14, T:INT-19, T:INT-20, T:SEC-01–06, T:SEC-14–17 |
-| **ADM-S01-03a Shared account-writer foundation** / ADM-S01-03 | ADM-S05-01a, ADM-S05-02a and actual write/native/audit contracts; E2/E3, with representative populated adoption fixture | A designated protected writer, current authority, narrow SQL grants, revision/idempotency and durable result/recovery contracts support the domain operation. A competing writer, stale actor, duplicate request or uncertain submission refuses or remains explicitly unconfirmed. Production fencing stays in ADM-S07. | UX-A5, UX-A7; UX-WF-14, UX-WF-15; T:F-26, T:F-31, T:F-32, T:F-43, T:DB-04–15, T:DB-19, T:SEC-07, T:SEC-09, T:SEC-11–14, T:SEC-26–28, T:RES-03–05 |
+| **ADM-S01-03a Shared account-writer foundation** / ADM-S01-03 | Existing qualified authority/admin, or ADM-S05-01a and ADM-S05-02a for a fresh authority; actual write/native/audit contracts; E2/E3 | A designated protected writer, current authority, narrow SQL grants, revision/idempotency and durable result/recovery contracts support mailbox creation (qualified in ADM-S01-03) and the later domain operation (ADM-S02-01). A competing writer, stale actor, duplicate request or uncertain submission refuses or remains explicitly unconfirmed. Production fencing stays in ADM-S07. | UX-A5, UX-A7; UX-WF-14, UX-WF-15; T:F-26, T:F-31, T:F-32, T:F-43, T:DB-04–15, T:DB-19, T:SEC-07, T:SEC-09, T:SEC-11–14, T:SEC-26–28, T:RES-03–05 |
 
 Sub-slice delivery is not completion of its whole parent. In particular,
 ADM-S05-02's later mailbox/enrollment journey still needs ADM-S02-01,
@@ -1775,7 +1776,7 @@ verifies Argon2id rows. Migration and production acceptance remain unimplemented
 
 ## ADM-S01-03 work order — 2026-11-18
 
-**State: IN_PROGRESS; functional/native/owner acceptance NOT_RUN.** Baseline
+**Opening state: IN_PROGRESS; functional/native/owner acceptance NOT_RUN.** Baseline
 `8e8294f939357c2e5c89409e03d2c3d181ec5a18`. The operator selected controlled
 mailbox creation. Root owns integration, implementation, documentation and the
 single host/Git queue; admin_ui_engineer owns the existing Web/RPC/presentation
@@ -1830,3 +1831,108 @@ linked by OSMAP-ADMIN. The first private SQL preflight used an incorrect effecti
 root principal for the existing foo socket-auth profile and refused; running as
 its intended foo principal succeeded. A missing remote `rg` was handled with
 native `awk`. These are retained preflight failures, not mailbox-create attempts.
+
+### ADM-S01-03 engineering qualification — 2026-11-18
+
+**Engineering and isolated native/browser qualification: PASS. Owner acceptance:
+NOT_ACCEPTED. Production writer/cutover: NOT_DEPLOYED.** Runtime source
+`d40ad6494ff0d7bbba64c9b1a04177390594f615`; identical OpenBSD binary on both hosts:
+`bab7b8e024dad0d0b93a2e1bcd6ba88e9a9bfeb05db5d9d5eef0cdff72396ba1`.
+Source integration will be recorded by the associated protected PR/delivery
+receipt after delivery; this runtime pin identifies the assessed code,
+independently of later prose.
+
+The browser journey committed a controlled mailbox, its self-delivery alias and
+operation journal on obsd1 and on the isolated candidate actually running on
+mail. The latter retained the obsd1 HTTPS address, with strict upstream TLS and a
+fixed mail-fixture response marker proving the selected backend before sign-in.
+Copies of actual production table definitions, not production account data,
+qualified the adopted schema, collation and unique-key contracts.
+
+The first obsd1 operation committed but returned UNCONFIRMED because a native
+collation comparison refused during readback. The fixed byte comparison was
+independently reviewed and qualified. Reconciliation of the original operation
+returned its verified receipt without another transaction, row or revision
+increment. A fresh browser operation then configured 97 MiB / 101,711,872 bytes;
+98 MiB refused against the installed legacy maximum of 100 units at 1,024,000
+bytes/unit. Other native refusals covered CSRF, invalid quota, foreign scope,
+wrong/replayed TOTP, stale revision, canonical collision, competing holder and
+revoked authority. Restoring a grant did not resurrect the old session. A bounded
+native locking-read/concurrent-revocation discriminator retained the active grant
+and refused its competing update. Mail additionally exercised CSRF/factor replay,
+foreign scope and canonical collision against its own private authority.
+
+Installed Postfix mysql lookups returned the created mailbox path, protected
+self-delivery alias and active domain. The installed Dovecot SQL projections
+returned the compatible Argon2id shape privately, matching home/mail paths,
+UID/GID 2000 and stored quota bytes on both hosts. These are lookup/configuration
+results: actual native authentication, Postfix-to-LMTP delivery, quota enforcement
+and owner-held mailbox MFA are not inferred. ADM-S01-04 remains NOT_STARTED.
+
+Retain the two compiler allocation failures, first unconfirmed operation,
+preparation/refusal diagnostics and hostname certificate failures. The corrected
+compiler used the independently reviewed, measured process limit, not a memory
+admission floor. The userdb read-only probes also exposed a shell serialization
+mistake on both hosts; file/stdin dispatch passed, but it preceded independent
+reassessment. Preserve this sequencing deviation without retrospective admission
+or repetition of matching passes. Private evidence and status observations live
+under `/home/foo/Downloads/osmap-admin-s01/slice03/`; no credentials, factors,
+cookies or native SQL error text belong in Git.
+
+The operator chose restoration of the existing duncan login and retention of the
+qualified writer candidate for separate acceptance. The exposed earlier identity
+is not admitted as a writer. Runtime restoration/cleanup and normal signed GitHub
+delivery are recorded with their actual outcomes below; source qualification does
+not substitute for those results. The fresh-authority bootstrap/first-domain
+chain remains planned; this existing-domain slice does not complete it.
+
+### Final admin revision guard and retained-state disposition
+
+The final backend review found that `admin.modified` participates in session
+invalidation but was not part of the locked SQL actor predicate. The corrected
+runtime is **`a8b86483751102ec2c7025d82d5ab94cfeecd538`**, native binary
+**`09a73f45dc87367abdf319a2fff098287217d7687a48f4141ee1c7c4bfe9a869`**.
+It captures that value from the same authority lookup and compares it under the
+admin row lock. Focused access tests passed (24, with nine explicit native
+ignores); the native build passed in 50.44 seconds. The form, RPC, presentation,
+hash runner and native lookup code are byte unchanged from the browser-qualified
+revision, so those matching passes are reused.
+
+The final binary created accounts through the real Web/service/SQL path on both
+hosts (HTTP 201). A distinguishing native revocation test held an uncommitted
+metadata-only admin update, observed the actual writer admin SELECT in InnoDB
+LOCK WAIT, and then committed the metadata revision. Creation refused with 403;
+mailbox, alias and operation counts stayed 3/3/3 and writer revision stayed 4.
+The admin remained active with unchanged role. This tests the locked comparison,
+not an earlier session refusal. The existing DATETIME precision is shared with
+session fingerprinting; no stronger timestamp guarantee is claimed.
+
+The operator's original obsd1 Web configuration and original admin state are
+restored; `/admin/login` and ordinary `/login` return 200. The qualified writer
+is retained separately, stopped and protected by a root-only ancestor. No writer
+access was added to the exposed earlier identity. Temporary hostname routing and
+SSH forwards were removed. Mail qualification and root-sealed retained-state
+cleanup are recorded in the final delivery receipt; they do not imply production
+writer deployment or ADM-S01-04 authentication/delivery acceptance.
+
+Final disposition readback passed independently of functional qualification.
+On mail, all exact-owned private Web/service/nginx/SQL processes and sockets are
+absent; the retained namespace is root-owned mode 0700, files 0600, and temporary
+OS roles/groups are removed. Its final binary hash matches the qualified artifact.
+Public Postfix, Dovecot, MariaDB and nginx health checks pass. On obsd1, the
+original Web configuration and route hashes match the saved originals, temporary
+upstream trust is absent, and the new writer is stopped behind a root-only
+ancestor. The original reader's shared SQL/OS roles remain intact. Both temporary
+SSH control sockets are absent. Owner sign-in itself was not repeated.
+
+Cleanup history includes two admission-only serialization refusals, independent
+reassessment, and an additional unchanged-script refusal after a local edit
+builder failed without stopping its caller. The corrected producer/consumer
+probe passed, including a changed-value refusal. Cleanup then stopped the private
+processes, but OpenBSD rejected the combined `chown -Rh` flags. A finite seal-only
+resumption verified the exact retained anchor and process/socket absence, sealed
+the ancestor first, used the demonstrated `chown -R` contract, removed the
+temporary roles and obtained the final readback above. Preserve these failures
+and the sequencing deviation; no retrospective admission PASS or new functional
+retry is implied. Signed delivery uses the normal hook once for the final source;
+the final GitHub identity and gate result belong in the delivery receipt.

@@ -1582,3 +1582,14 @@ source review covers typed values, locked grants, atomic account/alias/audit
 commit and post-commit verification. These are focused development results,
 not authenticated WSTG/release or production qualification. Installed creation
 and native projections remain pending in OSMAP_ADMIN_TEST_AND_ACCEPTANCE_PLAN.md.
+
+### ADM-S01-03 qualified boundary update
+
+The final runtime `a8b8648` has scoped, fresh-TOTP, CSRF-protected creation with
+atomic account/self-alias/audit commit and uncertain-result reconciliation.
+Development and isolated mail tests exercised the real Web/service/SQL path and
+selected refusals; the metadata-only admin-revocation discriminator proved the
+locked revision comparison. Matching browser/RPC and lookup evidence from
+`d40ad64` is reused for byte-unchanged code. See the existing admin acceptance
+plan for exact results and retained failures. This does not mark authenticated
+WSTG, production writer/cutover or the native authentication/delivery slice PASS.
