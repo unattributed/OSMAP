@@ -871,6 +871,13 @@ build, while its launcher later returns 143 with no termination-source
 observation. Retain that UNKNOWN transport cause; fresh revision/hash readback
 confirms the resulting artifact without another build attempt.
 
+The rail source change passes seven UI tests and strict Clippy. Its first V10
+consumer check refuses source-digest drift; regenerate through the existing
+producer and verify the real consumer before native dispatch. Commit e2a3c2e0's
+body incorrectly records that check as passing; retain this correction and the
+actual failed result rather than rewriting the signed commit. No native build
+uses the stale inventory.
+
 ### One active slice, work orders and delivery
 
 Only the selected product slice may transition to IN_PROGRESS. Its concrete
