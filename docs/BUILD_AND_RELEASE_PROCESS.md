@@ -427,3 +427,23 @@ one-line Rust presentation correction; verify the copied artifact's exact bytes
 and actual mail execution. Normal signed source/evidence delivery hooks remain
 mandatory. Their PASS is not a refreshed strict-release tuple, public production
 deployment, operator acceptance or completion of Sprint ADM-S01.
+
+ADM-S01-02 extends only the qualified private admin path with read-only mailbox
+inventory. The active project-plan work order binds current-grant checks,
+bounded projection/filter/page/detail and observable empty/failure cases. Reuse
+unchanged auth/confinement results; qualify the new frontend/backend path on
+obsd1 before promoting the signed candidate to actual isolated mail execution.
+No additional Python or general QA framework is required. Candidate `428c9e04`
+passes the normal developer gate and partial installed obsd1 HTTP/SQL cases;
+draft PR #99 remains unmerged. The operator-requested hostname route resolves
+the expired-forward/certificate handoff. The actual obsd1 browser additionally
+observes the functional list journey, private reader loss/recovery and grant
+revocation/restoration. Preserve the restricted hostname routing and unchanged
+backend evidence with the assessed Web source. Shared-rail visual checks pass at
+744 and 360 pixels. Web candidate f21b0268 passes installed shared-login and
+owner password/TOTP sign-in, system-role scope and selected test-domain metadata.
+The resident 428c9e04 backend remains unchanged and separately identified. Private
+role/factor readback and affected source checks pass. Provisioning uploads are
+disposed of after readback; the owner account and isolated candidate are
+intentionally retained ACTIVE for operator access. Mail qualification remains
+NOT_RUN. Normal signed delivery hooks still apply; this is not release acceptance.

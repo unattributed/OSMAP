@@ -509,6 +509,48 @@ For **every mutable method**, cover an unauthenticated caller, a mailbox browser
 | Recovery of sole system administrator | Offline break-glass procedure and independent review | No web emergency bypass |
 | Address recycling/tombstone and factor-file naming | Identity lifecycle/security review | Reject reuse of retired addresses |
 
+### 13.1 Operator-requested security function catalogue — 2026-11-17
+
+This is the required product/control catalogue, not a statement that the current
+admin UI implements or that either host enforces every item. Reuse qualified
+OSMAP/mailstack capabilities. Status must identify the actual host, consumer,
+observation time and result; missing evidence stays unavailable/pending. Domain
+and service changes require fixed protected operations, preview, scoped authority
+and matching result/recovery evidence. Never expose a root command editor.
+
+The [epic security delivery crosswalk](OSMAP_ADMIN_PROJECT_PLAN.md#security-catalogue-to-sprintslice-crosswalk)
+assigns every category to named sprint/slice owners and acceptance cases,
+including ADM-S02-04–06 and ADM-S06-04–07. Bootstrap dependencies use the three
+named prerequisite sub-slices in that same epic. These schedules do not change
+the control definitions, make baseline controls optional, or start live work.
+
+| Protection | OSMAP-ADMIN function to provide | Required proof or limit |
+| --- | --- | --- |
+| Domain and routing readiness | Validate domain ownership/delegation and display MX, A/AAAA, PTR/HELO consistency, recipient lookup, postmaster/abuse routing and native delivery observations. Generate the DNS records needed for the chosen configuration; publish only through an explicitly configured authority. | DNS lookup alone does not prove authentication or delivery. Preserve unrelated records and distinguish a saved domain from a ready mail service. |
+| SPF | Generate/validate authorized sending sources, lookup budget and deployment policy; show actual receiver result. [RFC 7208](https://www.rfc-editor.org/rfc/rfc7208.html). | SPF checks the SMTP envelope/HELO identity; it does not encrypt mail or alone establish visible-From alignment. |
+| DKIM signing and verification | Per-domain selector/key generation, protected private-key custody, public DNS export/verification, signer configuration, staged rotation and retirement. Use qualified algorithms; RSA signing should use at least 2048 bits. [RFC 8301](https://www.rfc-editor.org/rfc/rfc8301.html), [Rspamd signing](https://docs.rspamd.com/modules/dkim_signing/). | Prove a real outbound signature verifies against published DNS. Never display/export the signing private key through Web or call DKIM encryption. |
+| DMARC | Alignment and reporting configuration, sender inventory, report review and deliberate none/quarantine/reject rollout; safe subdomain policy. Use current [RFC 9989](https://www.rfc-editor.org/rfc/rfc9989.html) semantics rather than assuming the older informational RFC is current. | Policy publication is not proof every legitimate sender aligns. Enforcement changes require observed sender compatibility and rollback. |
+| HTTPS and mail-client TLS | Certificate chain/hostname/expiry/renewal checks for OSMAP and native submission/access; require protected credentials in transit, prefer TLS 1.3 and support properly configured TLS 1.2 where needed. [RFC 8314](https://www.rfc-editor.org/rfc/rfc8314.html), [RFC 9325](https://www.rfc-editor.org/rfc/rfc9325.html). | Test actual HTTPS, IMAP and submission consumers. Browser MFA does not automatically protect a separate IMAP/SMTP authentication path. |
+| MTA-STS | Generate and verify the DNS policy ID and HTTPS policy, MX matching, testing/enforcement state and safe policy/certificate changes. [RFC 8461](https://www.rfc-editor.org/rfc/rfc8461.html). | Applies to supporting SMTP peers; do not claim universal transport confidentiality. |
+| TLS reporting | Publish TLS-RPT contact/policy, ingest bounded untrusted reports and show delivery/TLS failures. [RFC 8460](https://www.rfc-editor.org/rfc/rfc8460.html). | Reporting is observation, not enforcement; redact addresses and bound compressed/structured inputs. |
+| DNSSEC and DANE | Show delegation/validation state, TLSA records and certificate/key rollover consistency; generate correct records and verify with a validating resolver and the actual SMTP client. [RFC 7672](https://www.rfc-editor.org/rfc/rfc7672.html). | DANE requires authenticated DNSSEC data. DNS provider/registrar changes remain separate scoped authority. |
+| Per-message TLS requirement | Expose REQUIRETLS only if the installed submission/relay path supports and preserves it. [RFC 8689](https://www.rfc-editor.org/rfc/rfc8689.html). | Conditional capability; avoid a blanket SMTP policy that silently breaks ordinary incoming mail. |
+| Forwarding authentication | Loop/catch-all protections, source authorization and preserve-local-copy semantics; qualify SRS/ARC only where installed and required. [ARC, RFC 8617](https://www.rfc-editor.org/rfc/rfc8617.html). | A valid ARC chain does not itself establish a trusted sender or justify a general DMARC bypass. |
+| Message encryption and signatures | Reuse the qualified OSMAP OpenPGP workflow: recipient-key verification, encrypt/sign results, key expiry/revocation/rotation and recovery. S/MIME is a separate conditional capability, not an existing-support claim. [OpenPGP RFC 9580](https://www.rfc-editor.org/rfc/rfc9580.html), [S/MIME RFC 8551](https://www.rfc-editor.org/rfc/rfc8551.html). | Domain admin authority must not reveal users' private keys or mail. End-to-end claims require endpoint/key-custody proof; SMTP TLS and DKIM are different protections. |
+| Stored data and backup encryption | Surface encrypted storage/backup status, key custody, retention, independent recovery material and actual restore results; qualify any mailbox-encryption integration separately. | Server-side encryption with server-accessible keys is not zero-access storage. A backup file is not a tested restore. |
+| Account authentication and MFA | Password-plus-TOTP, replay prevention, bounded login work, protected enrollment/reset/recovery and session revocation. Qualify Argon2id for new/changed admin credentials with legacy verification retained. Phishing-resistant WebAuthn/passkeys are a later qualified identity enhancement. [RFC 9106](https://www.rfc-editor.org/rfc/rfc9106.html), [OWASP MFA](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html). | Do not migrate all mailbox hashes or claim native-client MFA from an admin setting. Freeze the currently approved login design; any later authenticator feature needs its own acceptance. |
+| Administrator least privilege | Exact domain grants, separate public Web/private admin/service principals, protected sockets, current authority checks, CSRF/step-up and safe last-admin recovery. | No implicit mailbox-to-admin promotion, arbitrary SQL/commands, shared all-privilege application account or stale grant cache authorizing writes. |
+| Mail abuse and content filtering | Scoped Rspamd spam/Bayes/reputation/phishing settings, authenticated submission authorization, relay refusal, rate/recipient/size limits and privacy-aware quarantine/release. Qualify installed antivirus integrations and signature updates. [Rspamd antivirus](https://docs.rspamd.com/modules/antivirus/). | Scanner availability and findings must be observable; a scan pass does not guarantee a harmless message or attachment. No private mail upload to third-party scanners without authority. |
+| Browser message safety and privacy | Reuse HTML/MIME containment, CSP, remote-content controls, tracking protection, attachment handling and trusted receiver-derived security indicators. | Sanitized rendering is not phishing detection or proof a downloaded document is safe. Do not trust message-supplied Authentication-Results as receiver evidence. |
+| Safe changes, audit and recovery | One writer, typed validation, atomic/idempotent operations, safe dependent-object retirement, scoped sanitized audit, backup/restore and upgrade/rollback checks. | Preserve uncertain outcomes and original failures. Never retry an uncertain credential/write operation blindly or expose secrets in audit. |
+| Operational assurance | Certificate/DNS/key expiry alerts, supported dependency updates, confinement and permission checks, resource/time bounds, public-service health and controlled native continuity tests. | Configuration and dashboards alone are not functional proof; qualify obsd1 and mail separately. |
+
+The full-stack installation gateway and optional WireGuard access are future,
+out-of-scope features. Current bootstrap integration must establish the admin
+authority and first administrator on an existing mailstack/OSMAP installation
+without an existing mailbox or legacy PHP setup. Basic page approval is not
+acceptance of these still-unimplemented management/security functions.
+
 ## 14. Standards and primary technical references
 
 The security controls above are **project design requirements**. Where industry guidance is cited, it is supporting input, not a claim of certification or automatic conformance.

@@ -1,5 +1,38 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+2026-11-17 ADM-S01-02 hostname continuation: the actual obsd1 browser at the
+operator-requested trusted HTTPS hostname observes password/TOTP, authorized
+list/page/filter/quota-sort/detail, true empty and foreign refusal. Withdrawing
+only the private mailbox reader grant displays unavailable, then recovers after
+restoration. Withdrawing the private domain grant ends the browser session;
+restoring it does not restore login. Both grants are restored. The LAN route
+admits only the workstation; NAT/spoofed forwarding headers refuse, and ordinary
+frontend/mail health passes. Functional source is 428c9e04; unchanged backend
+evidence is reused for the Web-only rail correction. Two visual failures are
+retained; the responsive-rail correction at 088d3f23 passes actual 744/360-pixel
+disclosure and navigation checks. The shared-login presentation and requested
+owner account pass their final installed sign-in observation on Web f21b0268:
+the owner authenticates with the new password/TOTP, receives system-admin scope
+and reads the chosen test-domain list. The backend remains unchanged 428c9e04.
+Source tests and private role/factor readback pass. Uploaded provisioning inputs
+are disposed of after readback; the candidate remains intentionally ACTIVE for
+operator access. Mail qualification and operator acceptance remain outstanding.
+No complete WSTG or strict-release PASS is claimed.
+
+2026-11-17 ADM-S01-02 source boundary: scoped mailbox list/filter/sort/page and
+digest-addressed detail revalidate current authority before the fixed reader.
+Projection excludes storage paths and credentials; foreign/missing responses are
+uniform, writes refuse, and empty/capacity/dependency states differ. Focused Rust
+coverage exercises the actual runtime delegate, frame bound, escaped input and
+query allowlist. Source review passes. Candidate 428c9e04 additionally observes
+scoped inventory/page/filter/sort/detail, empty/foreign states, invalid-session,
+duplicate-query and well-formed direct-write refusal through isolated native
+obsd1 HTTP/SQL. At that initial checkpoint, native backend-loss and live
+grant-revocation cases and the operator certificate handoff remain pending;
+the hostname continuation above records later observations. Mail qualification
+and final fixture disposition remain outstanding.
+Draft PR #99 is source preservation, not production mail or owner acceptance.
+
 2026-11-17 ADM-S01-01 isolated qualification: actual browser password/TOTP,
 current authorized scope, restart continuity and logout pass separately on
 obsd1 and mail at e685f908. Both final browsers pass 12 checks, including strict

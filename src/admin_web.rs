@@ -17,6 +17,7 @@ use std::time::{Duration, Instant};
 
 const SESSION_COOKIE: &str = "__Host-osmap_admin";
 const LOGIN_COOKIE: &str = "__Host-osmap_admin_login";
+const APPEARANCE_COOKIE: &str = "__Host-osmap_admin_appearance";
 const IO_LIMIT: Duration = Duration::from_secs(5);
 const RESPONSE_LIMIT: usize = 1024 * 1024;
 
@@ -36,10 +37,10 @@ fn policy(config: &WebConfig) -> HttpPolicy {
         max_request_target_bytes: 512,
         max_header_count: 24,
         max_header_value_bytes: 1024,
-        max_query_fields: 0,
+        max_query_fields: 4,
         max_body_bytes: 2048,
         max_upload_body_bytes: 2048,
-        max_form_fields: 4,
+        max_form_fields: 5,
         allowed_hosts: vec![config.host.clone()],
         session_cookie_name: SESSION_COOKIE,
         secure_session_cookie: true,
@@ -104,7 +105,7 @@ fn form(request: &HttpRequest, expected: &[&str]) -> Result<BTreeMap<String, Str
     {
         return Err(());
     }
-    let values = parse_urlencoded_form(&request.body, 4, 2048).map_err(|_| ())?;
+    let values = parse_urlencoded_form(&request.body, expected.len(), 2048).map_err(|_| ())?;
     if values.len() != expected.len() || expected.iter().any(|key| !values.contains_key(*key)) {
         return Err(());
     }
@@ -234,7 +235,8 @@ fn logout<C: Exchange>(request: &HttpRequest, client_addr: &str, client: &C) -> 
     match client.exchange(&rpc) {
         Ok(Response::SignedOut) => redirect("/admin/login")
             .with_header("Set-Cookie", clear_session_cookie(SESSION_COOKIE, true))
-            .with_header("Set-Cookie", clear_session_cookie(LOGIN_COOKIE, true)),
+            .with_header("Set-Cookie", clear_session_cookie(LOGIN_COOKIE, true))
+            .with_header("Set-Cookie", clear_session_cookie(APPEARANCE_COOKIE, true)),
         Ok(Response::Denied) | Ok(Response::Invalid) => crate::admin_ui::error_page(403),
         _ => crate::admin_ui::error_page(503),
     }
@@ -242,8 +244,45 @@ fn logout<C: Exchange>(request: &HttpRequest, client_addr: &str, client: &C) -> 
 
 /// Called only after the accepted Unix stream's proxy UID has been verified.
 fn handle<C: Exchange>(config: &WebConfig, request: &HttpRequest, client: &C) -> HttpResponse {
+    let mut response = handle_inner(config, request, client);
+    let supplied = response
+        .headers
+        .iter()
+        .filter(|(key, _)| key.eq_ignore_ascii_case("Set-Cookie"))
+        .find_map(|(_, value)| {
+            value
+                .strip_prefix(&format!("{APPEARANCE_COOKIE}="))
+                .and_then(|v| v.split(';').next())
+                .and_then(crate::admin_access::AdminPreferences::parse)
+        });
+    let preferences = supplied
+        .or_else(|| {
+            cookie(request, APPEARANCE_COOKIE)
+                .ok()
+                .flatten()
+                .and_then(crate::admin_access::AdminPreferences::parse)
+        })
+        .unwrap_or_default();
+    preferences.apply(&mut response);
+    if request.path != "/admin/login" {
+        preferences.apply_menus(&mut response);
+    }
+    response
+}
+fn handle_inner<C: Exchange>(
+    config: &WebConfig,
+    request: &HttpRequest,
+    client: &C,
+) -> HttpResponse {
+    let inventory =
+        request.path == "/admin/mailboxes" || request.path.starts_with("/admin/mailboxes/");
     if request.headers.get("host") != Some(&config.host)
-        || !request.query_params.is_empty()
+        || (!request.query_params.is_empty()
+            && !inventory
+            && !matches!(
+                request.path.as_str(),
+                "/admin" | "/admin/domains" | "/admin/settings"
+            ))
         || request
             .headers
             .get("origin")
@@ -268,10 +307,279 @@ fn handle<C: Exchange>(config: &WebConfig, request: &HttpRequest, client: &C) ->
     match (&request.method, request.path.as_str()) {
         (HttpMethod::Get, "/admin/login") => sign_in(false),
         (HttpMethod::Post, "/admin/login") => login(request, &client_addr, client),
-        (HttpMethod::Get, "/admin") => scope(request, &client_addr, client),
+        (HttpMethod::Get, "/admin" | "/admin/domains" | "/admin/settings") => {
+            dashboard(request, &client_addr, client)
+        }
+        (HttpMethod::Get, "/admin/account/scope") => scope(request, &client_addr, client),
+        (HttpMethod::Get, path) if path.starts_with("/admin/domains/") => {
+            dashboard(request, &client_addr, client)
+        }
+        (HttpMethod::Post, "/admin/settings/appearance") => {
+            dashboard(request, &client_addr, client)
+        }
+        (HttpMethod::Get, "/admin/mailboxes") => {
+            mailbox_inventory(request, &client_addr, client, None)
+        }
+        (HttpMethod::Get, path) if path.starts_with("/admin/mailboxes/") => mailbox_inventory(
+            request,
+            &client_addr,
+            client,
+            path.strip_prefix("/admin/mailboxes/"),
+        ),
+        _ if inventory => crate::admin_ui::error_page(405),
         (HttpMethod::Post, "/admin/logout") => logout(request, &client_addr, client),
-        (_, "/admin" | "/admin/logout") => crate::admin_ui::error_page(405),
+        (
+            _,
+            "/admin"
+            | "/admin/logout"
+            | "/admin/domains"
+            | "/admin/settings"
+            | "/admin/settings/appearance",
+        ) => crate::admin_ui::error_page(405),
+        (_, path) if path.starts_with("/admin/domains/") => crate::admin_ui::error_page(405),
         _ => crate::admin_ui::error_page(404),
+    }
+}
+
+fn appearance_cookie(preferences: &crate::admin_access::AdminPreferences) -> String {
+    format!(
+        "{APPEARANCE_COOKIE}={}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=31536000",
+        preferences.value()
+    )
+}
+fn dashboard<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) -> HttpResponse {
+    let token = match cookie(request, SESSION_COOKIE) {
+        Ok(Some(value)) if bearer(value) => value,
+        Ok(_) => {
+            return redirect("/admin/login")
+                .with_header("Set-Cookie", clear_session_cookie(SESSION_COOKIE, true))
+        }
+        Err(_) => return crate::admin_ui::error_page(403),
+    };
+    let path = request.path.as_str();
+    let mut section = "appearance";
+    let operation = match path {
+        "/admin" | "/admin/domains" => {
+            if request
+                .query_params
+                .iter()
+                .any(|(key, _)| !matches!(key.as_str(), "q" | "page"))
+            {
+                return crate::admin_ui::error_page(400);
+            }
+            let query = request.query_params.get("q").cloned().unwrap_or_default();
+            let page = match request.query_params.get("page") {
+                Some(value) => match value.parse::<u8>() {
+                    Ok(n) => n,
+                    Err(_) => return crate::admin_ui::error_page(400),
+                },
+                None => 1,
+            };
+            Operation::Overview {
+                token: token.into(),
+                query,
+                page,
+            }
+        }
+        "/admin/settings" => {
+            if request.query_params.iter().any(|(key, _)| key != "section") {
+                return crate::admin_ui::error_page(400);
+            }
+            section = request
+                .query_params
+                .get("section")
+                .map(String::as_str)
+                .unwrap_or("appearance");
+            if !matches!(section, "appearance" | "account" | "system") {
+                return crate::admin_ui::error_page(400);
+            }
+            Operation::Settings {
+                token: token.into(),
+            }
+        }
+        "/admin/settings/appearance" => {
+            let Ok(values) = form(
+                request,
+                &[
+                    "csrf",
+                    "theme",
+                    "density",
+                    "font_size",
+                    "presentation_style",
+                ],
+            ) else {
+                return crate::admin_ui::error_page(400);
+            };
+            Operation::SavePreferences {
+                token: token.into(),
+                csrf: values["csrf"].clone(),
+                preferences: crate::admin_access::AdminPreferences {
+                    theme: values["theme"].clone(),
+                    density: values["density"].clone(),
+                    font_size: values["font_size"].clone(),
+                    presentation_style: values["presentation_style"].clone(),
+                },
+            }
+        }
+        _ => Operation::DomainDetails {
+            token: token.into(),
+            id: path.strip_prefix("/admin/domains/").unwrap_or("").into(),
+        },
+    };
+    let rpc = Request {
+        version: VERSION,
+        client: addr.into(),
+        operation,
+    };
+    if rpc.validate().is_err() {
+        return crate::admin_ui::error_page(400);
+    }
+    match client.exchange(&rpc) {
+        Ok(Response::Overview { page })
+            if matches!(path, "/admin" | "/admin/domains") && page.valid() =>
+        {
+            let (query, requested) = match &rpc.operation {
+                Operation::Overview { query, page, .. } => (query.trim(), *page),
+                _ => return crate::admin_ui::error_page(503),
+            };
+            if page.query != query || page.page != requested.min(page.pages()) {
+                return crate::admin_ui::error_page(503);
+            }
+            crate::admin_ui::overview_page(&page, path == "/admin/domains")
+                .with_header("Set-Cookie", appearance_cookie(&page.preferences))
+        }
+        Ok(Response::DomainDetails { page })
+            if path.strip_prefix("/admin/domains/") == Some(page.domain.id.as_str())
+                && page.valid() =>
+        {
+            crate::admin_ui::domain_page(&page)
+                .with_header("Set-Cookie", appearance_cookie(&page.preferences))
+        }
+        Ok(Response::Settings { page })
+            if matches!(path, "/admin/settings" | "/admin/settings/appearance") && page.valid() =>
+        {
+            if path == "/admin/settings/appearance" {
+                let expected = match &rpc.operation {
+                    Operation::SavePreferences { preferences, .. } => preferences,
+                    _ => return crate::admin_ui::error_page(503),
+                };
+                if expected != &page.preferences {
+                    return crate::admin_ui::error_page(503);
+                }
+                crate::admin_ui::settings_page(&page, "appearance", true)
+                    .with_header("Set-Cookie", appearance_cookie(&page.preferences))
+            } else {
+                crate::admin_ui::settings_page(&page, section, false)
+                    .with_header("Set-Cookie", appearance_cookie(&page.preferences))
+            }
+        }
+        Ok(Response::Denied) => redirect("/admin/login")
+            .with_header("Set-Cookie", clear_session_cookie(SESSION_COOKIE, true)),
+        Ok(Response::Missing) => crate::admin_ui::error_page(404),
+        Ok(Response::Capacity) => crate::admin_ui::domain_capacity_page(),
+        _ => crate::admin_ui::error_page(503),
+    }
+}
+
+fn mailbox_inventory<C: Exchange>(
+    request: &HttpRequest,
+    addr: &str,
+    client: &C,
+    id: Option<&str>,
+) -> HttpResponse {
+    let token = match cookie(request, SESSION_COOKIE) {
+        Ok(Some(value)) if bearer(value) => value,
+        Ok(_) => {
+            return redirect("/admin/login")
+                .with_header("Set-Cookie", clear_session_cookie(SESSION_COOKIE, true))
+        }
+        Err(_) => return crate::admin_ui::error_page(403),
+    };
+    let keys = if id.is_some() {
+        &["domain"][..]
+    } else {
+        &["domain", "q", "page", "sort"][..]
+    };
+    if request
+        .query_params
+        .keys()
+        .any(|key| !keys.contains(&key.as_str()))
+    {
+        return crate::admin_ui::error_page(400);
+    }
+    let Some(domain) = request.query_params.get("domain") else {
+        return crate::admin_ui::error_page(400);
+    };
+    let query = request
+        .query_params
+        .get("q")
+        .map(String::as_str)
+        .unwrap_or("");
+    let page = match request
+        .query_params
+        .get("page")
+        .map(String::as_str)
+        .unwrap_or("1")
+        .parse::<u8>()
+    {
+        Ok(value) => value,
+        Err(_) => return crate::admin_ui::error_page(400),
+    };
+    let sort = request
+        .query_params
+        .get("sort")
+        .map(String::as_str)
+        .unwrap_or("address");
+    let operation = if let Some(id) = id {
+        Operation::Mailbox {
+            token: token.into(),
+            domain: domain.clone(),
+            id: id.into(),
+        }
+    } else {
+        Operation::Mailboxes {
+            token: token.into(),
+            domain: domain.clone(),
+            query: query.into(),
+            page,
+            sort: sort.into(),
+        }
+    };
+    let rpc = Request {
+        version: VERSION,
+        client: addr.into(),
+        operation,
+    };
+    if rpc.validate().is_err() {
+        return crate::admin_ui::error_page(400);
+    }
+    match client.exchange(&rpc) {
+        Ok(response) if response.validate().is_ok() => match response {
+            Response::Mailboxes { page: result }
+                if id.is_none()
+                    && result.domain == *domain
+                    && result.query == query
+                    && result.page == page
+                    && result.sort == sort =>
+            {
+                crate::admin_ui::mailboxes_page(&result)
+            }
+            Response::Mailbox {
+                login,
+                csrf,
+                domain: returned,
+                mailbox,
+            } if id == Some(mailbox.id.as_str()) && returned == *domain => {
+                crate::admin_ui::mailbox_page(&login, &csrf, domain, &mailbox)
+            }
+            Response::Denied => redirect("/admin/login")
+                .with_header("Set-Cookie", clear_session_cookie(SESSION_COOKIE, true)),
+            Response::Missing => crate::admin_ui::error_page(404),
+            Response::Capacity => crate::admin_ui::capacity_page(),
+            Response::Invalid => crate::admin_ui::error_page(400),
+            _ => crate::admin_ui::error_page(503),
+        },
+        _ => crate::admin_ui::error_page(503),
     }
 }
 
@@ -442,6 +750,96 @@ mod tests {
     fn token() -> String {
         format!("osmap-admin1.{}", "a".repeat(64))
     }
+    fn overview_model() -> crate::admin_access::DomainOverview {
+        crate::admin_access::DomainOverview {
+            login: "operator@example.test".into(),
+            csrf: "c".repeat(64),
+            system: true,
+            query: String::new(),
+            page: 1,
+            total: 0,
+            domain_total: 0,
+            mailbox_total: 0,
+            forward_total: 0,
+            rows: vec![],
+            preferences: Default::default(),
+        }
+    }
+
+    #[test]
+    fn menu_cookie_never_changes_the_approved_login_presentation() {
+        let fake = Fake::new(Response::Unavailable);
+        let response = handle(
+            &config(),
+            &parse(
+                "GET",
+                "/admin/login",
+                &format!("Cookie: {APPEARANCE_COOKIE}=system.comfortable.medium.icons\r\n"),
+                "",
+            ),
+            &fake,
+        );
+        assert_eq!(response.status_code, 200);
+        let body = std::str::from_utf8(&response.body).unwrap();
+        assert!(body.contains("Private Administration"));
+        assert!(!body
+            .split_once("<head>")
+            .unwrap()
+            .0
+            .contains("data-presentation-style="));
+        assert!(!body.contains("Presentation style"));
+        assert!(fake.calls.borrow().is_empty());
+    }
+
+    #[test]
+    fn settings_save_uses_admin_fields_cookie_and_shared_appearance_only() {
+        let preferences = crate::admin_access::AdminPreferences {
+            theme: "dark".into(),
+            density: "compact".into(),
+            font_size: "large".into(),
+            presentation_style: "icons".into(),
+        };
+        let fake = Fake::new(Response::Settings {
+            page: crate::admin_access::SettingsPage {
+                login: "operator@example.test".into(),
+                csrf: "c".repeat(64),
+                system: true,
+                preferences,
+            },
+        });
+        let headers=format!("Origin: https://admin.example.test\r\nContent-Type: application/x-www-form-urlencoded\r\nCookie: {SESSION_COOKIE}={}; osmap_appearance=light\r\n",token());
+        let response = handle(
+            &config(),
+            &parse(
+                "POST",
+                "/admin/settings/appearance",
+                &headers,
+                &format!(
+                    "csrf={}&theme=dark&density=compact&font_size=large&presentation_style=icons",
+                    "c".repeat(64)
+                ),
+            ),
+            &fake,
+        );
+        assert_eq!(response.status_code, 200);
+        let text = std::str::from_utf8(&response.body).unwrap();
+        assert!(text.contains("Appearance saved."));
+        assert!(text.contains("data-appearance=\"dark\""));
+        assert!(text.contains("data-density=\"compact\""));
+        assert!(text.contains("data-presentation-style=\"icons\""));
+        assert!(text.contains("Presentation style"));
+        assert!(response
+            .headers
+            .iter()
+            .any(|(key, value)| key == "Set-Cookie" && value.starts_with(APPEARANCE_COOKIE)));
+        assert!(!response
+            .headers
+            .iter()
+            .any(|(key, value)| key == "Set-Cookie" && value.starts_with("osmap_")));
+        assert!(
+            matches!(&fake.calls.borrow()[0].operation,Operation::SavePreferences {preferences,..} if preferences.theme=="dark")
+        );
+    }
     fn parse(method: &str, path: &str, headers: &str, body: &str) -> HttpRequest {
         let request = format!("{method} {path} HTTP/1.1\r\nHost: admin.example.test\r\nX-Real-IP: 192.0.2.10\r\n{headers}Content-Length: {}\r\n\r\n{body}", body.len());
         crate::http_parse::parse_http_request(&request, &policy(&config())).unwrap()
@@ -460,6 +858,161 @@ mod tests {
             .iter()
             .find(|(key, _)| key == name)
             .map(|(_, value)| value.as_str())
+    }
+
+    fn inventory_page() -> crate::admin_access::MailboxPage {
+        use sha2::{Digest, Sha256};
+        crate::admin_access::MailboxPage {
+            login: "operator@example.test".into(),
+            csrf: "b".repeat(64),
+            domain: "example.test".into(),
+            query: "".into(),
+            sort: "address".into(),
+            page: 1,
+            total: 1,
+            rows: vec![crate::admin_access::MailboxView {
+                id: format!("{:x}", Sha256::digest(b"alice@example.test")),
+                username: "alice@example.test".into(),
+                quota: 2048,
+                active: true,
+                smtp_active: false,
+            }],
+        }
+    }
+
+    #[test]
+    fn authorized_inventory_and_opaque_detail_render_only_public_projection() {
+        let page = inventory_page();
+        let id = page.rows[0].id.clone();
+        let fake = Fake::new(Response::Mailboxes { page });
+        let headers = format!("Cookie: {SESSION_COOKIE}={}\r\n", token());
+        let result = handle(
+            &config(),
+            &parse("GET", "/admin/mailboxes?domain=example.test", &headers, ""),
+            &fake,
+        );
+        assert_eq!(result.status_code, 200);
+        let html = String::from_utf8(result.body).unwrap();
+        assert!(html.contains("alice@example.test"));
+        assert!(html.contains(&format!("/admin/mailboxes/{id}?domain=")));
+        assert!(!html.contains("maildir"));
+        assert!(!html.contains("password"));
+        assert!(matches!(
+            &fake.calls.borrow()[0].operation,
+            Operation::Mailboxes { page: 1, .. }
+        ));
+        let row = inventory_page().rows.remove(0);
+        let fake = Fake::new(Response::Mailbox {
+            login: "operator@example.test".into(),
+            csrf: "b".repeat(64),
+            domain: "example.test".into(),
+            mailbox: row,
+        });
+        let result = handle(
+            &config(),
+            &parse(
+                "GET",
+                &format!("/admin/mailboxes/{id}?domain=example.test"),
+                &headers,
+                "",
+            ),
+            &fake,
+        );
+        assert_eq!(result.status_code, 200);
+        assert!(String::from_utf8(result.body)
+            .unwrap()
+            .contains("Not verified"));
+    }
+
+    #[test]
+    fn inventory_inputs_and_writes_refuse_before_rpc() {
+        let headers = format!(
+            "Origin: https://admin.example.test\r\nCookie: {SESSION_COOKIE}={}\r\n",
+            token()
+        );
+        for path in [
+            "/admin/mailboxes?domain=example.test&role=system",
+            "/admin/mailboxes?domain=example.test&page=0",
+            "/admin/mailboxes?domain=example.test&page=11",
+            "/admin/mailboxes?domain=example.test&sort=sql",
+            "/admin/mailboxes/short?domain=example.test",
+        ] {
+            let fake = Fake::new(Response::Unavailable);
+            assert_eq!(
+                handle(&config(), &parse("GET", path, &headers, ""), &fake).status_code,
+                400
+            );
+            assert!(fake.calls.borrow().is_empty());
+        }
+        let fake = Fake::new(Response::Unavailable);
+        assert_eq!(
+            handle(
+                &config(),
+                &parse("POST", "/admin/mailboxes?domain=example.test", &headers, ""),
+                &fake
+            )
+            .status_code,
+            405
+        );
+        assert!(fake.calls.borrow().is_empty());
+        let raw = format!("GET /admin/mailboxes?domain=example.test&%64omain=foreign.test HTTP/1.1\r\nHost: admin.example.test\r\nCookie: {SESSION_COOKIE}={}\r\n\r\n", token());
+        assert!(crate::http_parse::parse_http_request(&raw, &policy(&config())).is_err());
+    }
+
+    #[test]
+    fn empty_unavailable_capacity_and_foreign_missing_are_truthful() {
+        let headers = format!("Cookie: {SESSION_COOKIE}={}\r\n", token());
+        let request = parse("GET", "/admin/mailboxes?domain=example.test", &headers, "");
+        let mut page = inventory_page();
+        page.rows.clear();
+        page.total = 0;
+        let empty = handle(
+            &config(),
+            &request,
+            &Fake::new(Response::Mailboxes { page }),
+        );
+        assert_eq!(empty.status_code, 200);
+        assert!(String::from_utf8(empty.body)
+            .unwrap()
+            .contains("No mailboxes are configured"));
+        let unavailable = handle(&config(), &request, &Fake::new(Response::Unavailable));
+        assert_eq!(unavailable.status_code, 503);
+        assert!(!String::from_utf8(unavailable.body)
+            .unwrap()
+            .contains("No mailboxes"));
+        let capacity = handle(&config(), &request, &Fake::new(Response::Capacity));
+        assert_eq!(capacity.status_code, 503);
+        assert!(String::from_utf8(capacity.body)
+            .unwrap()
+            .contains("No partial list"));
+        let missing = handle(&config(), &request, &Fake::new(Response::Missing));
+        let foreign = handle(
+            &config(),
+            &parse("GET", "/admin/mailboxes?domain=foreign.test", &headers, ""),
+            &Fake::new(Response::Missing),
+        );
+        assert_eq!(
+            (missing.status_code, missing.body),
+            (foreign.status_code, foreign.body)
+        );
+        let mut page = inventory_page();
+        page.rows.clear();
+        page.total = 0;
+        page.query = "\"><script>".into();
+        let escaped = handle(
+            &config(),
+            &parse(
+                "GET",
+                "/admin/mailboxes?domain=example.test&q=%22%3E%3Cscript%3E",
+                &headers,
+                "",
+            ),
+            &Fake::new(Response::Mailboxes { page }),
+        );
+        assert_eq!(escaped.status_code, 200);
+        let html = String::from_utf8(escaped.body).unwrap();
+        assert!(html.contains("&quot;&gt;&lt;script&gt;"));
+        assert!(!html.contains("<script>"));
     }
 
     #[test]
@@ -505,11 +1058,8 @@ mod tests {
 
     #[test]
     fn canonical_landing_passes_real_parser_and_trailing_slash_refuses() {
-        let fake = Fake::new(Response::Scope {
-            login: "operator@example.test".into(),
-            system: true,
-            domains: Vec::new(),
-            csrf: "c".repeat(64),
+        let fake = Fake::new(Response::Overview {
+            page: overview_model(),
         });
         let request = parse(
             "GET",
@@ -521,7 +1071,7 @@ mod tests {
         assert_eq!(fake.calls.borrow().len(), 1);
         assert!(matches!(
             &fake.calls.borrow()[0].operation,
-            Operation::Scope { .. }
+            Operation::Overview { .. }
         ));
 
         let trailing =
@@ -604,11 +1154,8 @@ mod tests {
 
     #[test]
     fn public_cookie_cannot_reach_admin_scope_and_unavailable_service_keeps_session() {
-        let fake = Fake::new(Response::Scope {
-            login: "operator@example.test".into(),
-            system: true,
-            domains: Vec::new(),
-            csrf: "c".repeat(64),
+        let fake = Fake::new(Response::Overview {
+            page: overview_model(),
         });
         let public = parse(
             "GET",
@@ -648,14 +1195,18 @@ mod tests {
         assert!(
             matches!(&fake.calls.borrow()[0].operation, Operation::Logout {token: sent,csrf} if sent==&token() && csrf==&"c".repeat(64))
         );
-        assert!(
-            response
+        for cookie in [SESSION_COOKIE, LOGIN_COOKIE, APPEARANCE_COOKIE] {
+            assert!(response
                 .headers
                 .iter()
-                .filter(|(name, value)| name == "Set-Cookie" && value.contains("Max-Age=0"))
-                .count()
-                == 2
-        );
+                .any(|(name, value)| name == "Set-Cookie"
+                    && value.starts_with(&format!("{cookie}="))
+                    && value.contains("Max-Age=0")));
+        }
+        assert!(!response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Set-Cookie" && value.starts_with("osmap_")));
     }
 
     #[test]

@@ -344,7 +344,7 @@ pub(crate) fn presentation_label(label: &str, icon: &str) -> String {
     format!("<span class=\"presentation-icon presentation-icon-{icon}\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">{}</span>", escape_html(label))
 }
 
-fn shell_icon(name: &str) -> String {
+pub(crate) fn shell_icon(name: &str) -> String {
     let path = match name {
         "back" => "<path d=\"M20 12H4m6-6-6 6 6 6\"/>",
         "reply" => "<path d=\"m9 4-6 6 6 6M3 10h11c5 0 7 4 7 10\"/>",
@@ -774,9 +774,26 @@ pub(crate) fn render_message_source_page(
 
 /// Renders the current login page with an optional operator-safe error banner.
 pub(crate) fn render_login_page(error_message: Option<&str>) -> TrustedHtml {
+    render_login_page_for(error_message, None)
+}
+
+pub(crate) fn render_admin_login_page(csrf: &str, denied: bool) -> TrustedHtml {
+    render_login_page_for(
+        denied.then_some("Check your details or try again later."),
+        Some(csrf),
+    )
+}
+
+fn render_login_page_for(error_message: Option<&str>, admin_csrf: Option<&str>) -> TrustedHtml {
+    let admin = admin_csrf.is_some();
+    let failure = if admin {
+        "Sign-in could not be completed."
+    } else {
+        "Sign-in failed."
+    };
     let banner = match error_message {
         Some(error_message) => format!(
-            "<div class=\"notice notice-error\" role=\"alert\"><strong>Sign-in failed.</strong> {}</div>",
+            "<div class=\"notice notice-error\" role=\"alert\"><strong>{failure}</strong> {}</div>",
             escape_html(error_message)
         ),
         None => String::new(),
@@ -784,25 +801,25 @@ pub(crate) fn render_login_page(error_message: Option<&str>) -> TrustedHtml {
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main class=\"login-page\" aria-labelledby=\"login-title\">",
+            "{skip}<main{main_attributes} class=\"login-page\" aria-labelledby=\"login-title\">",
             "<div class=\"login-decor login-decor-left\" aria-hidden=\"true\"><svg viewBox=\"0 0 420 420\"><g fill=\"none\" stroke=\"currentColor\"><ellipse cx=\"190\" cy=\"315\" rx=\"190\" ry=\"42\" transform=\"rotate(-24 190 315)\" opacity=\".08\"/><circle cx=\"210\" cy=\"210\" r=\"130\" opacity=\".22\"/><circle cx=\"210\" cy=\"210\" r=\"165\" stroke-dasharray=\"2 7\" opacity=\".28\"/><path d=\"M210 98 296 132v74c0 62-31 104-86 132-55-28-86-70-86-132v-74l86-34Z\" opacity=\".14\"/><path d=\"M210 122 273 148v58c0 47-22 78-63 101-41-23-63-54-63-101v-58l63-26Z\" opacity=\".17\"/></g><rect x=\"172\" y=\"197\" width=\"76\" height=\"64\" rx=\"12\" fill=\"currentColor\" opacity=\".16\"/><path d=\"M184 198v-26a26 26 0 0 1 52 0v26\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"9\" opacity=\".18\"/><circle cx=\"210\" cy=\"225\" r=\"7\" fill=\"#fff\" opacity=\".85\"/><path d=\"M207 230h6l4 20h-14l4-20Z\" fill=\"#fff\" opacity=\".85\"/><circle cx=\"99\" cy=\"111\" r=\"5\" fill=\"currentColor\" opacity=\".38\"/><circle cx=\"314\" cy=\"102\" r=\"4\" fill=\"currentColor\" opacity=\".3\"/><circle cx=\"121\" cy=\"314\" r=\"4\" fill=\"currentColor\" opacity=\".38\"/><circle cx=\"331\" cy=\"290\" r=\"4\" fill=\"currentColor\" opacity=\".32\"/></svg></div>",
             "<div class=\"login-decor login-decor-right\" aria-hidden=\"true\"><svg viewBox=\"0 0 320 320\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M83 28 124 52v48l-41 24-41-24V52l41-24Z\" opacity=\".28\"/><path d=\"M165 78 206 102v48l-41 24-41-24v-48l41-24Z\" opacity=\".24\"/><path d=\"M247 78 288 102v48l-41 24-41-24v-48l41-24Z\" opacity=\".2\"/><path d=\"M83 170 124 194v48l-41 24-41-24v-48l41-24Z\" opacity=\".22\"/><path d=\"M165 220 206 244v48l-41 24-41-24v-48l41-24Z\" opacity=\".18\"/><path d=\"M247 220 288 244v48l-41 24-41-24v-48l41-24Z\" opacity=\".14\"/><path d=\"M124 76h41M206 126h41M124 218h41\" opacity=\".14\"/><path d=\"M288 22v80M42 52V5\" opacity=\".08\"/></g><g fill=\"currentColor\"><circle cx=\"83\" cy=\"28\" r=\"4\" opacity=\".32\"/><circle cx=\"124\" cy=\"52\" r=\"4\" opacity=\".28\"/><circle cx=\"165\" cy=\"78\" r=\"4\" opacity=\".26\"/><circle cx=\"206\" cy=\"102\" r=\"4\" opacity=\".22\"/><circle cx=\"247\" cy=\"78\" r=\"4\" opacity=\".2\"/><circle cx=\"288\" cy=\"102\" r=\"4\" opacity=\".18\"/><circle cx=\"83\" cy=\"266\" r=\"4\" opacity=\".2\"/><circle cx=\"165\" cy=\"316\" r=\"4\" opacity=\".14\"/></g></svg></div>",
             "<section class=\"login-card\">",
             "<div class=\"login-brand\">",
             "{brand_shield}",
-            "<div class=\"login-brand-text\"><h1 id=\"login-title\" class=\"login-title\">OSMAP</h1><p class=\"login-subtitle\">Secure Webmail</p></div>",
+            "<div class=\"login-brand-text\"><h1 id=\"login-title\" class=\"login-title\">{brand_name}</h1><p class=\"login-subtitle\">{subtitle}</p></div>",
             "</div>",
             "<div class=\"login-rule\" aria-hidden=\"true\"><svg viewBox=\"0 0 24 24\"><path d=\"M12 3 19 6v5c0 5-2.6 8.5-7 10-4.4-1.5-7-5-7-10V6l7-3Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"/></svg></div>",
             "<h2 class=\"login-kicker\">Sign in securely</h2>",
-            "<p class=\"login-helper\">Access your protected mailbox with two-factor authentication.</p>",
+            "<p class=\"login-helper\">{helper}</p>",
             "{}",
-            "<form class=\"login-form\" method=\"post\" action=\"/login\" aria-describedby=\"login-help\">",
-            "<div class=\"login-field\"><label for=\"login-username\">Username or Email</label><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M20 21a8 8 0 0 0-16 0\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><circle cx=\"12\" cy=\"7\" r=\"4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg><input id=\"login-username\" type=\"text\" name=\"username\" autocomplete=\"username\" placeholder=\"Enter your username or email\"></div>",
-            "<div class=\"login-field\"><label for=\"login-password\">Password</label><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><rect x=\"5\" y=\"10\" width=\"14\" height=\"10\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M8 10V7a4 4 0 0 1 8 0v3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg><input id=\"login-password\" type=\"password\" name=\"password\" autocomplete=\"current-password\" placeholder=\"Enter your password\"></div>",
-            "<div class=\"login-field\"><label for=\"login-totp\">TOTP Code</label><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M12 3 19 6v5c0 5-2.6 8.5-7 10-4.4-1.5-7-5-7-10V6l7-3Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"m9 12 2 2 4-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg><input id=\"login-totp\" type=\"text\" name=\"totp_code\" inputmode=\"numeric\" autocomplete=\"one-time-code\" placeholder=\"Enter 6-digit code from authenticator\"></div>",
+            "<form class=\"login-form\" method=\"post\" action=\"{action}\" aria-describedby=\"login-help\">{csrf_field}",
+            "<div class=\"login-field\"><label for=\"login-username\">{login_label}</label><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M20 21a8 8 0 0 0-16 0\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><circle cx=\"12\" cy=\"7\" r=\"4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg><input id=\"login-username\" type=\"text\" name=\"{login_field}\" autocomplete=\"username\" placeholder=\"{login_placeholder}\"{login_attributes}></div>",
+            "<div class=\"login-field\"><label for=\"login-password\">Password</label><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><rect x=\"5\" y=\"10\" width=\"14\" height=\"10\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M8 10V7a4 4 0 0 1 8 0v3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg><input id=\"login-password\" type=\"password\" name=\"password\" autocomplete=\"current-password\" placeholder=\"Enter your password\"{password_attributes}></div>",
+            "<div class=\"login-field\"><label for=\"login-totp\">TOTP Code</label><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M12 3 19 6v5c0 5-2.6 8.5-7 10-4.4-1.5-7-5-7-10V6l7-3Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"m9 12 2 2 4-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg><input id=\"login-totp\" type=\"text\" name=\"{totp_field}\" inputmode=\"numeric\" autocomplete=\"one-time-code\" placeholder=\"Enter 6-digit code from authenticator\"{totp_attributes}></div>",
             "<button class=\"primary-button\" type=\"submit\"><svg class=\"login-lock\" aria-hidden=\"true\" viewBox=\"0 0 24 24\"><rect x=\"5\" y=\"10\" width=\"14\" height=\"10\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M8 10V7a4 4 0 0 1 8 0v3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg>Sign In</button>",
             "<p id=\"login-help\" class=\"login-help\">Password and TOTP are both required.</p>",
-            "<p class=\"login-help\"><a href=\"/recover\">Forgot password or lost your authenticator?</a></p>",
+            "{recovery}",
             "</form>",
             "<div class=\"security-grid\" aria-label=\"Security indicators\">",
             "<div class=\"security-item\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><rect x=\"5\" y=\"10\" width=\"14\" height=\"10\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M8 10V7a4 4 0 0 1 8 0v3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg><div><strong>TLS Protected</strong><span>Encrypted in transit</span></div></div>",
@@ -815,6 +832,21 @@ pub(crate) fn render_login_page(error_message: Option<&str>) -> TrustedHtml {
         ),
         banner,
         brand_shield = OSMAP_BRAND_SHIELD,
+        skip = if admin { "<a class=\"skip-link\" href=\"#main-content\">Skip to sign-in</a>" } else { "" },
+        main_attributes = if admin { " id=\"main-content\" tabindex=\"-1\"" } else { "" },
+        brand_name = if admin { "OSMAP Admin" } else { "OSMAP" },
+        subtitle = if admin { "Private Administration" } else { "Secure Webmail" },
+        helper = if admin { "Use your administrator account and its authenticator. Mailbox sign-in is separate." } else { "Access your protected mailbox with two-factor authentication." },
+        action = if admin { "/admin/login" } else { "/login" },
+        csrf_field = admin_csrf.map(|csrf| format!("<input type=\"hidden\" name=\"csrf\" value=\"{}\">", escape_html(csrf))).unwrap_or_default(),
+        login_label = if admin { "Administrator login" } else { "Username or Email" },
+        login_field = if admin { "login" } else { "username" },
+        login_placeholder = if admin { "Enter your administrator login" } else { "Enter your username or email" },
+        login_attributes = if admin { " maxlength=\"96\" autocapitalize=\"none\" spellcheck=\"false\" required" } else { "" },
+        password_attributes = if admin { " maxlength=\"72\" required" } else { "" },
+        totp_field = if admin { "totp" } else { "totp_code" },
+        totp_attributes = if admin { " pattern=\"[0-9]{6}\" minlength=\"6\" maxlength=\"6\" required" } else { "" },
+        recovery = if admin { "" } else { "<p class=\"login-help\"><a href=\"/recover\">Forgot password or lost your authenticator?</a></p>" },
     ))
 }
 

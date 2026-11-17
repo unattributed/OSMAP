@@ -78,7 +78,12 @@ impl CommandExecutor for Sql {
                     "--raw",
                 ]
             || input.len() > 16384
-            || output_limit > 16384
+            || output_limit
+                > if input.starts_with(b"SET @osmap_domain=") {
+                    64 * 1024
+                } else {
+                    16384
+                }
         {
             eprintln!("ADMIN_SQL_FIXED_BOUNDARY_REFUSED");
             return Err(Self::refused());
@@ -247,7 +252,7 @@ fn service(config: ServiceConfig) -> Result<(), &'static str> {
     Ok(())
 }
 
-fn dispatch<E, T, P>(backend: &Service<E, T, P>, request: Request) -> Response
+pub(crate) fn dispatch<E, T, P>(backend: &Service<E, T, P>, request: Request) -> Response
 where
     E: CommandExecutor + Clone + Send + Sync + 'static,
     T: crate::totp::TimeProvider + Clone,
@@ -276,6 +281,34 @@ where
                 Response::Denied
             }
         },
+        Operation::Overview { token, query, page } => match Token::presented(&token)
+            .and_then(|token| backend.overview_from(&token, &context, &query, page))
+        {
+            Ok(page) => Response::Overview { page },
+            Err(error) => inventory_error(error),
+        },
+        Operation::DomainDetails { token, id } => match Token::presented(&token)
+            .and_then(|token| backend.domain_details_from(&token, &context, &id))
+        {
+            Ok(page) => Response::DomainDetails { page },
+            Err(error) => inventory_error(error),
+        },
+        Operation::Settings { token } => match Token::presented(&token)
+            .and_then(|token| backend.settings_from(&token, &context))
+        {
+            Ok(page) => Response::Settings { page },
+            Err(error) => inventory_error(error),
+        },
+        Operation::SavePreferences {
+            token,
+            csrf,
+            preferences,
+        } => match Token::presented(&token)
+            .and_then(|token| backend.save_preferences_from(&token, &context, &csrf, preferences))
+        {
+            Ok(page) => Response::Settings { page },
+            Err(error) => inventory_error(error),
+        },
         Operation::Scope { token } => {
             match Token::presented(&token).and_then(|token| backend.scope(&token, &context)) {
                 Ok(scope) => Response::Scope {
@@ -288,6 +321,33 @@ where
                 Err(_) => Response::Denied,
             }
         }
+        Operation::Mailboxes {
+            token,
+            domain,
+            query,
+            page,
+            sort,
+        } => {
+            match Token::presented(&token).and_then(|token| {
+                backend.mailboxes_from(&token, &context, &domain, &query, page, &sort)
+            }) {
+                Ok(page) => Response::Mailboxes { page },
+                Err(error) => inventory_error(error),
+            }
+        }
+        Operation::Mailbox { token, domain, id } => {
+            match Token::presented(&token)
+                .and_then(|token| backend.mailbox_from(&token, &context, &domain, &id))
+            {
+                Ok((summary, mailbox)) => Response::Mailbox {
+                    login: summary.login,
+                    csrf: summary.csrf,
+                    domain,
+                    mailbox,
+                },
+                Err(error) => inventory_error(error),
+            }
+        }
         Operation::Logout { token, csrf } => match Token::presented(&token)
             .and_then(|token| backend.logout_from(&token, &csrf, &context))
         {
@@ -295,6 +355,18 @@ where
             Err(crate::admin_access::Error::Unavailable) => Response::Unavailable,
             Err(_) => Response::Denied,
         },
+    }
+}
+
+fn inventory_error(error: crate::admin_access::Error) -> Response {
+    match error {
+        crate::admin_access::Error::Denied => Response::Denied,
+        crate::admin_access::Error::Forbidden | crate::admin_access::Error::Missing => {
+            Response::Missing
+        }
+        crate::admin_access::Error::Invalid => Response::Invalid,
+        crate::admin_access::Error::Capacity => Response::Capacity,
+        _ => Response::Unavailable,
     }
 }
 

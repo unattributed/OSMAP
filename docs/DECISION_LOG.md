@@ -1781,3 +1781,242 @@ private namespaces remain root-protected for retention. Toronto's original mail
 services remain running and production accounts/configuration are unchanged.
 This delivers the first functional slice, not mailbox management, completion of
 Sprint ADM-S01, the native installer, a full release or predecessor retirement.
+
+### Same day — Connect authorized mailbox inventory through the Rust service
+
+Private administrator sign-in is qualified, but its current scope page cannot
+yet inspect mailboxes. Reuse the working scoped directory reader and extend the
+existing service, RPC and browser routes. Validate the live session and current
+domain grant before every list or detail read. Expose only a dedicated metadata
+projection; keep credentials and private storage paths out of the response.
+
+Use the existing complete 100-row reader bound with ten-row filtered/sorted
+pages and stable, scope-checked digest detail locators. Return explicit capacity
+and dependency failures; preserve empty as a successful, distinct result.
+Configured flags are not live health, and quota units absent from the observed
+contract remain unverified. Admit the reader's existing 64 KiB output ceiling
+only for directory queries, retaining the 16 KiB identity/input and 8 KiB RPC
+bounds. No mailbox writer or new application dependency is added.
+
+Apply the operator's lean S05 direction: one implementation owner and independent
+reviewer, focused Rust tests, an early real browser journey on obsd1, then actual
+mail qualification. Reuse passing unchanged boundaries and existing native tools;
+write no additional Python or general test framework. The existing project plan
+holds the work order and failure history. Source review and 82 focused cases
+pass. Signed candidate `428c9e04` is saved in draft PR #99 after the normal
+developer gate. The installed obsd1 HTTP path proves scoped inventory,
+pagination/filter/sort/detail, empty/foreign states and direct-write refusal
+against private SQL. Preserve the expired-forward transport failures separately.
+The actual browser awaits the operator-required certificate-warning handoff;
+mail promotion, remaining native adverse cases and cleanup remain outstanding.
+The work order records the still-active exact private fixture. These partial
+native results do not establish browser, mail, release or operator acceptance.
+
+### Same day — Serve the isolated admin journey at the real obsd1 hostname
+
+The localhost handoff depends on an expired SSH forward and is unavailable to
+the operator. At the operator's request, reuse obsd1's existing valid hostname
+certificate and nginx listener for the isolated `/admin` route. Admit only the
+verified workstation LAN client and preserve prior configuration and resolution.
+Keep upstream TLS verification, the private proxy UID/socket custody and the
+strict canonical Host/Origin contract. No mail backend service or account is
+changed. The proxy reports its loopback TLS peer; this does not qualify external
+client-address propagation or production throttling.
+
+The actual hostname browser signs in and observes scoped list, pagination,
+filter, sort, detail, true empty and foreign-domain refusal. Private mailbox
+reader-permission loss displays unavailable and recovers after restoration;
+grant revocation ends the browser session and restoration does not restore its
+login. Non-admitted NAT clients refuse even with spoofed address headers, while
+the ordinary frontend and mail services stay healthy. All fixture grants are
+restored. Retain both narrow-navigation failures and the combined independent
+reassessment; reuse the main application's responsive rail instead of adding
+CSS or a test framework. Its native visual result, mail qualification, final
+fixture disposition and operator acceptance remain outstanding.
+
+The corrected shared rail is observed at 744 and 360 pixels, including disclosure
+and both navigation targets. The operator confirms ordinary mailbox sign-in
+succeeds and requests their own administrator identity and OSMAP's familiar
+appearance. Stop unrelated mailbox-auth diagnosis. Reuse the existing login
+renderer through fixed mailbox/admin entry points; retain the admin's separate
+action, fields, CSRF and credential/factor authority. Provision the requested
+owner only in the selected isolated admin authority, committing both system-role
+indicators and a new service-owned factor. Deliver the independent password and
+registration through an owner-only local artifact. Source checks and private
+role/factor readback pass; installed shared-login appearance and actual owner
+sign-in remain pending. No mailbox credential, factor or live authority changes.
+
+Web source f21b0268 builds and runs natively; the actual browser shows the shared
+OSMAP login appearance, authenticates the requested owner with the separate new
+password/TOTP and reports System administrator. The owner reads the selected
+test domain's mailbox list. Deliver the password and QR registration through
+owner-only local files for a distinct password-manager entry. Preserve the
+unchanged resident backend's 428c9e04 evidence separately from Web identity.
+Both login routes and normal mail/frontend health remain available. Dispose of
+only the uploaded provisioning inputs after durable readback; intentionally
+retain the active candidate and owner account for the operator. This establishes
+owner access to the isolated candidate, not live mailbox administration, mail
+qualification, production installation or operator acceptance. Keep PR #99 draft.
+
+### Same day — Give admin domains and Settings the shared OSMAP experience
+
+The operator approves the function catalogue and prioritizes a domain overview,
+domain administration pages and Settings with OSMAP's familiar appearance.
+Replace the scope-only landing page with the existing welcome cards and domain
+table, and reuse the shared shell, responsive rail and appearance enums. The
+service derives domain enumeration from current administrator authority. Display
+actual configured mailbox and forwarding-source counts, including disabled
+records, separately from configured limits. Exclude empty and self-only forwarding
+destinations; count a mixed or multi-recipient source only once. Keep unknown
+creation dates explicit. The domain page exposes stored metadata and working
+mailbox navigation. Domain creation/editing remains planned writer functionality,
+with no enabled controls against the current SELECT-only database authority.
+
+Own appearance preferences use the existing locked private-account record and
+admin CSRF boundary, with a separate cosmetic admin cookie. No mailbox cookie
+or submitted role supplies admin authority. The initial RED, compile failure and
+five stale integration expectations are retained; independent reassessment
+approves the narrow corrections. Focused checks pass, including maximum wire
+shape, revoked/foreign scope and invalid preference/CSRF refusal. After a verified
+private table backup, the actual Rust-generated prepared queries pass through
+the installed restricted MariaDB reader. A narrow grant withdrawal refuses and
+restoration recovers the same counts. Installed application/browser results
+remain pending; source checks and SQL preflight alone do not qualify this UX.
+
+The signed 4ca8757 native candidate establishes the actual owner journey:
+authorized domain counts and details, mailbox navigation, no-match search,
+Settings save and fresh-session persistence, and truthful unavailable/recovery
+under private reader-grant withdrawal. Restore the original appearance afterward.
+Visual review finds two missing shared markup wrappers; the independently
+reviewed e3a7ab4 correction reuses OSMAP's exact metric and Settings selectors.
+Rebuild natively and restart only Web, reusing the unchanged resident backend.
+Desktop and narrow viewport screenshots confirm the corrected appearance.
+Preserve the malformed full-page captures separately: measured element bounds
+and normal viewport captures distinguish their distortion from product layout.
+The own account label remains inside the narrow header. Both private services
+and the owner account remain ACTIVE for operator access; public mail/frontend
+services remain healthy. Keep mail qualification NOT_RUN, operator acceptance
+pending and PR #99 draft. Domain/forward writes remain planned catalogue work.
+
+### Same day — Record owner acceptance of the delivered admin functionality
+
+After delivery checkpoint 449ceef, the operator confirms, "this functionality
+works." Record owner acceptance PASS for the delivered obsd1 overview, domain
+information/mailbox navigation and Settings. This confirmation resolves the
+pending owner judgment for that delivered functionality; it does not represent
+an owner repetition of every agent-owned security/refusal test. Preserve the
+installed e3a7ab4 Web, unchanged 4ca8757 backend and active owner access.
+
+Update the existing project and acceptance records through normal signed source
+delivery, without another host action or discretionary test run. Mail
+qualification stays NOT_RUN, so ADM-S01-02 completion and production/release
+acceptance remain pending. Domain and forwarding writes remain planned work.
+Keep PR #99 draft until its outstanding qualification requirements are met.
+
+### Same day — Preserve approved pages and bring admin bootstrap before domains
+
+The operator approves basic functionality of the referenced pages and fully
+approves the login page in its final state. Reuse OSMAP's existing Text labels /
+Icons preference for authenticated admin menus, with old records defaulting to
+text labels and the approved login excluded from menu presentation changes.
+The new missing-field RED and the corrected root-tag assertion are retained;
+shared CSS, native authentication and SQL remain unchanged.
+
+The operator identifies the missing domain, virtual-address and administrator
+writers, selects domain creation from scratch next, and requires both a fresh
+mailstack/OSMAP installation and adoption of a populated installation. Bring
+the needed schema/grant/first-admin bootstrap portions forward: a mailbox or
+the old admin application cannot be required to create the first administrator
+or first domain. Inspect the existing mailstack bootstrap rather than wrapping
+its lab seeder: it lacks the Rust admin/grant and smtp_active projections and
+upserts mailbox credentials with broad SQL grants. Preserve existing authority
+and credentials on adoption/rerun, and fence the previous writer before Rust
+writes. Record field parity from installed handlers and a sourced security
+function catalogue as requirements, not implemented capability.
+
+The operator explicitly keeps the future full-stack installation gateway and
+optional WireGuard client access out of scope, while confirming that enhancing
+openbsd-mailstack's existing bootstrap is in scope. Keep that distinction in
+the existing project/acceptance records. Current code work is the text/icon
+refinement; bootstrap/domain writers remain the selected next implementation
+boundary. Neither the roadmap correction nor approved basic pages closes mail
+qualification, the replacement milestone or production retirement.
+
+Signed ba36030 builds natively and runs both private admin processes. The owner
+browser saves and switches text/icon menus, retains Icons after a fresh sign-in,
+and reaches the existing domain/mailbox pages. Keyboard focus exposes action
+names; narrow touch emulation retains visible labels. The approved login stays
+unchanged. Independent source and retained image/result review pass for this
+obsd1 refinement. Preserve the initial viewport setup observation and source
+assertion failure separately from corrected results. Restore browser emulation
+and retain the active candidate; leave requested Icons selected. Mail native
+qualification, owner acceptance of the new refinement and the bootstrap/domain
+writer remain outstanding; the basic-page approval is preserved.
+
+### Same day — Integrate the approved scope into the epic execution index
+
+The operator requests that bootstrap, complete domain/virtual-address/admin
+management and the security catalogue be incorporated into the epic's sprints
+and slices. Give these requirements delivery owners rather than leaving them
+only in supplemental prose. Retain seven sprint groups and all 22 original slice
+IDs; add seven security slices for a total of 29. Name three prerequisite
+sub-slices for authority initialization/adoption, independent first admin and
+the shared writer, then execute them before the selected first-domain outcome.
+Preserve the remaining parent-slice obligations and avoid a mailbox/first-admin
+dependency cycle.
+
+Map all 18 security categories to slices and existing or eight additional named
+acceptance cases; the test catalogue now contains 223 specifications. Require
+both empty-authority and populated-adoption paths, matching obsd1/mail evidence,
+and explicit conditional-feature dispositions before release. Preserve approved
+basic pages, final login and prior result/count receipts. Full-stack installation
+and optional WireGuard client provisioning remain deferred. This is a reviewed
+documentation integration, not implementation, runtime qualification, new test
+machinery or authority for host changes; all new slices/cases remain planned.
+
+### Same day — Bound ADM-S01-02 qualification and retain the production distinction
+
+The operator resumes the read-only slice and requires effective, focused work,
+then retains obsd1 as the development host/address and challenges the shallow
+product functionality and use of synthetic authority. Reuse the reviewed Rust
+binary and matching obsd1 results. Record the new isolated mail HTTP reader and
+refusal observations separately from browser qualification. Preserve the failed
+grant-order equality check, its independently reconciled restoration, and the
+private origin invocation whose exact failed command/status was not observed.
+Do not repeat completed mutations or promote later availability into an earlier
+PASS. The original obsd1 frontend route and public mail services stay intact.
+
+Read-only production inspection confirms real authority exists and has the
+required mailbox columns; it does not connect the development UI to it. Keep
+development, production data authority and production deployment distinct. A
+pending operator clarification selects real metadata reads or production use;
+it supplies no implicit production write, role or factor change. The existing
+pages remain an incomplete administration product, even where their read-only
+boundaries pass. Preserve their approved design and progress toward the real
+domain/mailbox writer journey rather than further presentation work. ADM-S01-02
+remains IN_PROGRESS; its mail browser result and acceptance remain pending.
+
+### Same day — Qualify the read-only slice on mail and preserve obsd1 development
+
+The operator clarifies that the aim is confidence in future deployment on mail
+and accepts retaining obsd1 as development with isolated qualification on mail.
+Keep production data out of the development dependency chain; production schema
+inspection remains a read-only preflight. The unchanged reviewed artifact now
+executes the scoped browser reader journey through the canonical obsd1 entry
+to the isolated mail service/SQL stack, and saves Icons across a fresh sign-in.
+Independent native/image/result review accepts that bounded engineering outcome.
+
+Preserve the two navigation-wait failures and the later 502. The failed local
+forward is absent and has exited zero without an observed cause; repair only
+that transport through one reviewed managed SSH connection, then resume only
+Settings/persistence. Do not rerun passing inventory tests or infer that a failed
+invocation passed. Restore the original obsd1 route, stop/remove only exact-owned
+q2 resources after evidence readback/hash, retain its root-sealed data, and close
+the forwards. Normal obsd1 login routes and public mail services remain available.
+
+Mark ADM-S01-02 engineering delivered and bounded development/isolated mail
+qualification PASS. Preserve approved basic pages/final login and separately
+pending text/icon owner acceptance. Production deployment, writers and full
+replacement remain unimplemented; first-domain creation is the next selected
+journey. The earlier GPG No-pinentry refusal created no commit; operator warm-up
+then permits verified signed checkpoint 7e594b2 and normal final delivery gates.

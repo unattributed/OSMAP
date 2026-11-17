@@ -6,6 +6,16 @@ Status: design baseline dated 2026-11-13, with the operator-requested execution 
 
 Build a separate, Rust-only OSMAP-ADMIN control plane for each OSMAP + OpenBSD Mailstack installation. It will eventually replace the administrative functions actually needed from PostfixAdmin while OSMAP remains the public webmail and user self-service application. Postfix and Dovecot continue to route, deliver, authenticate, and serve mail using their configured SQL lookups; they do not call either administrative web application at delivery time.
 
+**Epic acceptance has two required entry paths:** an already installed
+openbsd-mailstack/OSMAP system with empty account authority reaches independent
+first-admin, first-domain and first-mailbox operation; an existing populated
+installation reaches equivalent Rust administration with preserved mail,
+credentials/factors, one writer and proven continuity/rollback. Both consume the
+enhanced existing mailstack bootstrap. The future full-stack installation
+gateway and optional WireGuard client provisioning remain outside this epic's
+current delivery scope. Approved basic pages and the final login design are
+retained; missing write/security capabilities are scheduled below.
+
 The current engineering request in [ADMINISTRATIVE_USER_MANAGEMENT_ENGINEERING_REQUEST.md](ADMINISTRATIVE_USER_MANAGEMENT_ENGINEERING_REQUEST.md) remains the governing scope and retirement gate. [V3_IDENTITY_LIFECYCLE_EVIDENCE.md](V3_IDENTITY_LIFECYCLE_EVIDENCE.md) describes the present OSMAP browser as mailbox-user only; this project must keep administrative routes and sessions out of that public surface. The present TOTP file and replay stores are described in [TOTP_SECRET_MANAGEMENT_MODEL.md](TOTP_SECRET_MANAGEMENT_MODEL.md). Existing operator provisioning, rotation, revocation, and recovery are bounded interim workflows, not a browser factor-lifecycle service or production qualification for a new host. Historical host evidence must be rechecked against the selected installation before implementation or cutover.
 
 The Toronto `postfixadmin` database is the live mail-account authority in the documented topology. obsd1's writable `postfixadmin` development database is separate; its read-only Toronto reference replica is not selected by the application. Neither is a production migration target by implication. Keep Toronto authoritative and preserve the one-way reference boundary described in [the local development record](UX_S04_02_LOCAL_DEVELOPMENT_20261025.md) and [replica notes](../maint/development-db/README.md).
@@ -15,7 +25,7 @@ The Toronto `postfixadmin` database is the live mail-account authority in the do
 | Concern | Plan |
 | --- | --- |
 | Applications | One Rust workspace where practical, separate OSMAP and OSMAP-ADMIN processes, shared reviewed crates for identity normalization, validation, TOTP, session/CSRF patterns, rendering, and typed protocols. Extract rather than copy; select libraries after inspecting the current workspace. |
-| Administrative entry | Private loopback/WireGuard HTTPS listener by default, distinct host/path policy, origin/Host checks, independent admin login and session. No inheritance of webmail authority. Public OSMAP routing does not expose admin routes. |
+| Administrative entry | Private HTTPS on loopback or an existing operator-admitted private boundary, distinct host/path policy, origin/Host checks, independent admin login and session. No inheritance of webmail authority. Public OSMAP routing does not expose admin routes. Provisioning new WireGuard client access is deferred, not an installation prerequisite. |
 | Mail-account authority | Exactly one authoritative database and one designated administrative writer per installation at a time. Postfix and Dovecot receive narrow lookup grants; OSMAP receives no general account-table write or schema privilege. |
 | Fresh installation | Native `osmap_mail` MariaDB database, created and migrated by a local Rust bootstrap/migration utility after MariaDB itself is initialized by supported vendor tooling. No PHP or PostfixAdmin prerequisite. |
 | Existing installation | Start with a read-only PostfixAdmin-schema compatibility adapter and verified lookup contract; authorize writes only at a controlled single-writer gate. A later reviewed migration may move authority to `osmap_mail`. No independent parallel account database and no dual-write. |
@@ -97,6 +107,10 @@ Each phase produces a reviewable artifact and tests the smallest real changed bo
 
 P0: hosted domains and limits; mailboxes and compatible password hashes; aliases including multi-recipient forwarding and catch-all; quotas and active state; system/domain admins; audit; first-admin/user enrollment; password change/reset and factor lifecycle. P1, where installed: alias domains, vacation/Sieve, domain quotas, export/restore, CLI, DKIM metadata and protected key operations, forwarding self-service. P2, only with an installed backend and separate threat review: fetchmail, transport/backup-MX rules, application passwords, broadcast, and restricted API. Do not replicate permissive MFA bypass or legacy XML-RPC merely for apparent parity. Record installed version and enabled features as dated observations, not compatibility predicates.
 
+These are legacy-parity inventory priorities. The integrated security catalogue
+below adds its own baseline release requirements; a legacy module's P1/P2 label
+does not make an applicable baseline security control optional.
+
 ## Existing-install migration and rollback
 
 1. On an isolated, production-representative copy, inventory the source schema, constraints, rows, SQL views, grants, Postfix maps, Dovecot queries, and mailbox paths. Preserve private dumps and hashes outside the repository. Build a field-level mapping for domains, mailbox password hashes, alias multiplicity, quotas, active flags, administrators, and optional features. Mark unrepresentable data as a blocker rather than dropping it.
@@ -120,9 +134,11 @@ Verify the installed PostfixAdmin feature set and effective SQL contracts; choos
 
 ## Execution roadmap — 2026-11-17
 
-The operator prioritizes usable replacement functionality: **private admin
-sign-in -> authorized mailbox list -> create a controlled mailbox -> prove native
-authentication and message delivery**. This section is the single sprint/slice
+The operator prioritizes usable replacement functionality: **qualify the private
+admin pages -> initialize/adopt authority and bootstrap the first admin -> create
+a domain from scratch -> create a controlled mailbox -> prove native
+authentication and message delivery**, followed by the scheduled management,
+security and replacement gates below. This section is the single sprint/slice
 execution index and current work-order location for OSMAP-ADMIN. The phase table,
 architecture, UX catalogue and acceptance specification remain requirement
 sources; no second backlog, QA framework or execution ledger is introduced.
@@ -138,8 +154,9 @@ The roadmap maps the existing specifications rather than replacing them:
   keep the prefixes when recording results. UX-specification `UX-xx` assertions
   likewise differ from test-plan `T:UX-xx`; an unqualified ID is insufficient.
 
-Sprint numbers express delivery order, not dates, estimates or automatic live
-authority. A sprint closes on its defined product outcome and applicable adverse
+Sprint IDs are stable work groups, not a strict numeric execution order, dates,
+estimates or automatic live authority. The selected sequence and technical
+dependencies below control dispatch. A sprint closes on its defined product outcome and applicable adverse
 cases, matching native/browser evidence, independent review and separate operator
 acceptance. A source checkpoint, backend test or completed planning task cannot
 close a product sprint. Split a selected slice further only when its one outcome
@@ -171,10 +188,12 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Active product implementation slice | **ADM-S01-01**, private admin sign-in: DELIVERED; isolated development and mail qualification PASS for the cases below; operator acceptance NOT_ACCEPTED |
-| Selected next product slice | ADM-S01-02 after ADM-S01-01's required boundary; NOT_STARTED |
+| Current product slice | **ADM-S01-02**, read-only overview/domain/mailbox views and own display Settings: engineering DELIVERED; matching obsd1 and isolated mail native/browser qualification PASS for the bounded work order; independent result review PASS; obsd1 basic pages/final login owner-approved, separate text/icon owner acceptance pending. Normal obsd1 candidate ACTIVE; temporary mail candidate stopped and root-sealed. Full operator acceptance, production deployment and writers remain pending |
+| Previous product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; final login design owner-approved; whole-slice operator acceptance NOT_ACCEPTED |
+| Selected next product slice | **ADM-S02-01 domain creation from scratch**, selected by the operator after the text/icon refinement; NOT_STARTED. Execute ADM-S05-01a -> ADM-S05-02a -> ADM-S01-03a as its prerequisites, leaving their parent completion obligations later. Controlled mailbox creation follows. |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
 | Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
+| ADM-PLAN-03: integrated epic scope | Documentation-only integration of bootstrap, domain/virtual-address/admin management and all 18 security catalogue categories into the sprint/slice index below; no new product work is started or accepted by this amendment |
 
 For future results maintain four separate fields per slice: **implementation**
 (`NOT_STARTED`, `IN_PROGRESS`, `DELIVERED`), **development qualification**,
@@ -228,13 +247,14 @@ This requirement does not authorize deployment, account mutation or an outage;
 each future mail action still needs its bounded authorized execution recipe.
 
 Early **existing-schema lab** work and **fresh installation** have different
-dependencies. Phase 1 already permits a seeded test admin. Such a lab can reach
-the first mailbox journey without first building the native `osmap_mail`
-migrator. This delivery ordering uses the existing
+dependencies. The historical Phase 1 reader/sign-in lab permits a seeded test
+admin; retain its matching evidence. The selected empty-authority domain journey
+must instead consume the real schema/grant and first-admin bootstrap sub-slices
+below. It need not wait for every later migration/upgrade/restore obligation of
+ADM-S05 to finish. This ordering uses the existing
 [Path A / Path B distinction](OSMAP_ADMIN_MIGRATION_AND_ROLLBACK.md#3-two-independently-approvable-migration-paths).
-It does not waive Phase 2: native schema creation and offline first-admin
-bootstrap remain required for clean-install acceptance in ADM-S05 and the full
-replacement release. UX-A4's fresh-install gate is still enforced for that path.
+It does not waive Phase 2 or UX-A4's fresh-install gate; bring their required
+bootstrap implementation forward rather than substituting manual SQL seeding.
 
 Before any lab write, prove one designated lab writer, compatible SQL/native
 contracts, narrow grants, audit/revision/idempotency behaviour and recoverable
@@ -252,13 +272,15 @@ journey in development and on the matching installed private candidate on mail.
 The table's E1/E2/E3 targets describe development; mandatory mail qualification
 above also applies to each slice. Keep ordinary OSMAP browser
 access pending until owner-held TOTP enrollment; this milestone does not claim
-that later enrollment journey. Status: NOT_STARTED / NOT_RUN / NOT_ACCEPTED.
+that later enrollment journey. Sprint implementation is IN_PROGRESS with the
+partial qualified/accepted scope recorded above; the complete sprint journey,
+mail qualification and sprint acceptance remain incomplete.
 
 | Slice and dependency | Target and existing UX mapping | Observable positive result | Required adverse counterpart and acceptance mapping |
 | --- | --- | --- | --- |
 | **ADM-S01-01 Private admin sign-in**; reuse ADM-F02/F03, inspect selected entry/config contracts | E0 -> isolated E2/E3 private HTTPS/service; UX-A0, UX-A1, UX-A2; UX-WF-01, UX-WF-15 | Password + TOTP produces a service-authorized admin session, a scope-bearing landing page and working logout; private state persists across the relevant restart | Wrong/replayed factor, mailbox cookie, forged service actor, foreign origin and untrusted client-address headers refuse. T:F-04, T:SEC-01–06, T:SEC-08, T:SEC-11, T:INT-14, T:INT-17–20, T:INT-23, T:UX-01–04, T:UX-09 |
-| **ADM-S01-02 Authorized mailbox list**; depends on ADM-S01-01 | E2/E3 real reader + browser; UX-A3 | Choose an authorized existing domain; bounded list/filter/detail and truthful empty/unavailable states match authoritative metadata without password/hash exposure | Domain substitution, foreign counts/details, SQL/HTML inputs and read-only direct POST refuse; unavailable backend is not an empty list. T:F-07, T:F-30, T:F-32, T:MIG-06, T:SEC-09, T:SEC-13, T:SEC-18–21, T:UX-07–11 |
-| **ADM-S01-03 Controlled mailbox creation**; depends on ADM-S01-02 and verified lab writer/native contracts | E2/E3 designated lab writer only; UX-A5, UX-WF-04, UX-WF-14 | Browser form -> scoped Rust service -> known committed mailbox, self-delivery alias, Maildir/UID/quota projection and audited receipt; new credential generation reuses the qualified supported scheme; browser MFA stays pending | Duplicate/canonical collision, foreign domain, stale revision, missing step-up/CSRF, competing writer, invalid quota and repeated/ambiguous operation refuse or retain reconciliation state without duplicate or partial success. T:F-08–09, T:F-26, T:F-31–32, T:DB-04–10, T:DB-13–15, T:DB-19, T:SEC-07, T:SEC-09, T:SEC-11–14, T:SEC-26–28, T:UX-06–10, T:RES-03–05 |
+| **ADM-S01-02 Authorized overview/domain/mailbox views and own display Settings**; depends on ADM-S01-01 | E2/E3 real reader + browser; UX-A3, UX-WF-15 | Authorized domain counts/list/detail, mailbox navigation and truthful empty/unavailable states match metadata without hash exposure; own theme/density/font and Text labels/Icons save and persist with old-record compatibility and the approved final login preserved | Domain substitution, foreign counts/details, SQL/HTML inputs, unauthorized writes and invalid preference/CSRF refuse; unavailable is not empty, and display settings confer no authority. T:F-07, T:F-30, T:F-32, T:MIG-06, T:SEC-07, T:SEC-09, T:SEC-13, T:SEC-18–21, T:UX-01–05, T:UX-07–11, T:UX-14 |
+| **ADM-S01-03 Controlled mailbox creation**; depends on ADM-S01-02, ADM-S01-03a writer/native contracts and a qualified target domain (ADM-S02-01 for the fresh path) | E2/E3 designated lab writer only; UX-A5, UX-WF-04, UX-WF-14 | Browser form -> scoped Rust service -> known committed mailbox, self-delivery alias, Maildir/UID/quota projection and audited receipt; new credential generation reuses the qualified supported scheme; browser MFA stays pending | Duplicate/canonical collision, foreign domain, stale revision, missing step-up/CSRF, competing writer, invalid quota and repeated/ambiguous operation refuse or retain reconciliation state without duplicate or partial success. T:F-08–09, T:F-26, T:F-31–32, T:DB-04–10, T:DB-13–15, T:DB-19, T:SEC-07, T:SEC-09, T:SEC-11–14, T:SEC-26–28, T:UX-06–10, T:RES-03–05 |
 | **ADM-S01-04 Authenticate and deliver to the created mailbox**; depends on ADM-S01-03 | E1 or E2/E3 with actual isolated Postfix/Dovecot; UX-A5 result readback, UX-A8 matching journey | Fresh native authentication succeeds; a uniquely correlated harmless local message traverses Postfix -> LMTP and is observed in the intended Maildir; the UI's reported result matches readback | Wrong/unknown credentials, unknown recipient and cross-mailbox storage access refuse; missing delivery remains FAIL/UNCERTAIN even if SMTP accepted or SQL committed. No unrestricted OSMAP session before owner MFA. T:INT-01–09, T:INT-13, T:INT-22, T:INT-26, T:SEC-30, T:UX-09–10 |
 
 Before ADM-S01-03 specify the lab's native-auth/delivery policy while browser MFA
@@ -284,26 +306,122 @@ prerequisite; required safety and interface dependencies are named separately.
 
 | Sprint and product exit | Slice / dependencies / target | Existing UX and acceptance mapping | Positive / negative product observations |
 | --- | --- | --- | --- |
-| **ADM-S02 Domain and mailbox management**: supported settings have proven native effects | **ADM-S02-01** domain create/edit/disable; depends on ADM-S01-03 auth/writer foundation; scheduled after ADM-S01-04; E2/E3 | UX-A5; UX-WF-03; T:F-05–06, T:DB-04–07, T:INT-03, T:SEC-07, T:SEC-09, T:UX-06–10 | Domain form changes actual Postfix recognition and preserves dependants; duplicate, invalid or unauthorized change leaves authority intact |
+| **ADM-S02 Domain and mailbox management**: supported settings have proven native effects | **ADM-S02-01** domain create/edit/disable; selected next after the approved-page text/icon refinement. Requires ADM-S05-01a -> ADM-S05-02a -> ADM-S01-03a; does not depend on a pre-existing mailbox or completion of their parent journeys; E2/E3 | UX-A5; UX-WF-02, UX-WF-03; T:F-01–06, T:DB-04–07, T:INT-03, T:SEC-07, T:SEC-09, T:UX-06–10 | Empty authority reaches first admin/domain; domain form changes actual Postfix recognition and preserves dependants; duplicate, invalid or unauthorized change leaves authority intact |
 | ADM-S02 | **ADM-S02-02** mailbox display/state/password operations; depends on ADM-S01-03 and verified native/session contracts; scheduled after ADM-S02-01; E2/E3 | UX-A5, UX-A6; UX-WF-08–09; T:F-13–14, T:F-16–17, T:F-26, T:INT-06, T:INT-15, T:SEC-05, T:SEC-12–15, T:RES-02, T:RES-08 | Edit/reset/disable/reactivate has documented native-auth, delivery and session effects; old password, stale step-up, forbidden target and accidental factor reactivation refuse |
 | ADM-S02 | **ADM-S02-03** domain limits, mailbox quota/usage; depends on ADM-S01-03 writer and verified quota consumers; scheduled after ADM-S02-02; E2/E3 bounded data | UX-A5, UX-A7; UX-WF-06; T:F-22–23, T:INT-07, T:INT-10–11, T:UX-08–10 | Quota/limits persist with correct units and real over-limit enforcement; limit races/overflow refuse, unknown usage is displayed as unavailable |
+| ADM-S02 | **ADM-S02-04 Domain DNS readiness and SPF**; after ADM-S01-04; requires ADM-S02-01 and a scoped DNS/observation contract; E2/E3 controlled DNS | UX-A5, UX-A7; UX-WF-03, UX-WF-13; T:F-36, T:SEC-09, T:SEC-18, T:SEC-28, T:INT-03, T:INT-24 | Generated MX/address/SPF records and native domain readiness agree with observed DNS; SPF scope/lookup limits and pending propagation are truthful; foreign-zone writes and unsupported publication refuse |
+| ADM-S02 | **ADM-S02-05 DKIM lifecycle**; depends on ADM-S02-04 and a protected installed signer/key operation; E2/E3 | UX-A5, UX-A7; UX-WF-03, UX-WF-13, UX-WF-14; T:F-37, T:SEC-09, T:SEC-24, T:SEC-28, T:REC-15 | Real outgoing mail verifies against the selected public DNS key; generation, rotation and retirement preserve custody/continuity; missing signer, foreign domain or private-key export refuses |
+| ADM-S02 | **ADM-S02-06 DMARC policy and reporting**; depends on ADM-S02-04, ADM-S02-05 and qualified receiver/report inputs; E2/E3 | UX-A5, UX-A7; UX-WF-03, UX-WF-13; T:F-38, T:SEC-18, T:SEC-21, T:SEC-28, T:RES-09 | Sender alignment/reporting and deliberate policy rollout have native observations; unsupported tags, unsafe report input and premature enforcement refuse or remain pending |
 | **ADM-S03 Alias and routing administration**: required forwarding works without losing local delivery | **ADM-S03-01** alias list/create/edit/disable/remove and multi-recipient forwarding; depends on ADM-S01-03 writer and verified map/alias contracts; scheduled after ADM-S02-03; E2/E3 | UX-A3, UX-A5; UX-WF-07; T:F-18–19, T:F-21, T:INT-04–05, T:SEC-09, T:SEC-32, T:RES-01 | Native map expansion and bounded local delivery match source/destinations; loop, foreign-source edit, reserved/self-alias removal and conflicting revision refuse |
 | ADM-S03 | **ADM-S03-02** installed catch-all/alias-domain variants; depends on ADM-S03-01; E2/E3 | UX-A5, UX-A7; UX-WF-07; T:F-20–21, T:F-33, T:INT-03–05 | Enabled required variants have real routing proof; collisions/unsupported variants are refused, and any nonapplicability/deferment has explicit installed-feature disposition |
 | **ADM-S04 Identity and retention lifecycle**: users/admins enroll and recover safely; retirement preserves ownership | **ADM-S04-01** owner enrollment and first OSMAP login; depends on ADM-S01-03; normally scheduled here, brought forward before ADM-S01-04 if its pending-MFA policy requires; E2/E3 | UX-A6; UX-WF-05; T:F-09–12, T:F-34, T:INT-12–13, T:SEC-16–17, T:SEC-34, T:UX-12, T:RES-06–07 | Independently delivered single-use setup and user-held TOTP reach owned OSMAP Inbox; expired/replayed/cross-account setup and factor overwrite refuse |
 | ADM-S04 | **ADM-S04-02** administrator enrollment, grants and own credential lifecycle, including Argon2id; depends on ADM-S01-01 and service-held writer/epoch contracts; scheduled after ADM-S04-01; E2/E3 | UX-A6; UX-WF-11, UX-WF-15; T:F-04, T:F-14, T:F-24–26, T:F-35, T:SEC-05, T:SEC-10–16, T:SEC-31, T:REC-09 | New/explicitly changed admin credentials use qualified Argon2id with legacy bcrypt verification retained; domain grants and revocation work; wrong/unsupported hashes, excessive work, privilege escalation and old-session resurrection refuse |
 | ADM-S04 | **ADM-S04-03** factor rotation/revocation/recovery; depends on ADM-S04-02; E2/E3 | UX-A6; UX-WF-10; T:F-12, T:F-15, T:SEC-14–17, T:SEC-28, T:SEC-31, T:REC-05–09, T:RES-02, T:RES-06–08 | Approved transition has safe factor/replay/session readback; missing attestation, concurrent reset and interrupted follow-up stay refused or contained |
 | ADM-S04 | **ADM-S04-04** mailbox/domain retirement and address reissue; depends on ADM-S02-02, ADM-S03-02 and ADM-S04-03; E1/E2 synthetic retained mail | UX-A6, UX-A7; UX-WF-12; T:F-27–29, T:DB-05, T:INT-11, T:REC-10, T:REC-19 | Staged retirement preserves mail/history and reissue gives a new owner no prior access; dependent domains, unsafe purge and inherited identity refuse |
-| **ADM-S05 Standalone Rust installation**: clean installation reaches the same working admin/user journey without PHP | **ADM-S05-01** native schema/grants/migrations; requires reviewed DDL/grants/projections, actual MariaDB capabilities and restore; scheduled after ADM-S04-04; E1 empty disposable authority | UX-A4; T:F-01, T:DB-01–03, T:DB-08–11, T:DB-16–20, T:OPS-01–03, T:REC-02–04 | Vendor-initialized MariaDB plus Rust migrator produces correct native projections; populated/unknown/checksum-mismatched or interrupted schema refuses or restores |
-| ADM-S05 | **ADM-S05-02** offline first admin and clean first domain/mailbox/enrollment; depends on ADM-S05-01, ADM-S01-04, ADM-S02-01, ADM-S04-01 and ADM-S04-02; E1 | UX-A4, UX-A6; UX-WF-02; T:F-02–04, T:F-08–12, T:F-35, T:INT-05–08, T:INT-12–14, T:OPS-03 | First admin exists before a mailbox; private UI then provisions/enrolls a working user; concurrent/repeated/partial bootstrap and public bootstrap route refuse |
+| **ADM-S05 Existing-mailstack bootstrap and application lifecycle**: Rust admin authority reaches the working admin/user journey without PHP; OS/package installation is excluded | **ADM-S05-01** native schema/grants/migrations; requires reviewed DDL/grants/projections, actual MariaDB capabilities and restore. Bring required bootstrap portions forward before first-domain creation; retain remaining migration/upgrade/restore obligations for this slice; E1 empty disposable authority | UX-A4; T:F-01, T:F-43, T:DB-01–03, T:DB-08–11, T:DB-16–20, T:OPS-01–03, T:REC-02–04 | Vendor-initialized MariaDB plus Rust migrator produces correct native projections; populated/unknown/checksum-mismatched or interrupted schema refuses or restores |
+| ADM-S05 | **ADM-S05-02** offline first admin and clean first domain/mailbox/enrollment. First-admin bootstrap portion precedes ADM-S02-01 and requires only the qualified schema/grant/factor authority, not a domain/mailbox. The complete user journey additionally depends on ADM-S01-04, ADM-S02-01, ADM-S04-01 and ADM-S04-02; E1 | UX-A4, UX-A6; UX-WF-02; T:F-02–04, T:F-08–12, T:F-35, T:INT-05–08, T:INT-12–14, T:OPS-03 | First admin exists before a mailbox; private UI then provisions/enrolls a working user; concurrent/repeated/partial bootstrap and public bootstrap route refuse |
 | **ADM-S06 Replacement parity and operations**: every required feature and recovery path has a disposition and evidence | **ADM-S06-01** scoped audit/search, native CLI and installed conditional modules; depends on ADM-S02-03, ADM-S03-02 and ADM-S04-04 operations; scheduled after ADM-S05-02; E1/E2/E3 | UX-A7; UX-WF-13–15; T:F-26, T:F-30–34, T:SEC-25–28, T:UX-03–05, T:UX-13–14 | Browser and CLI reach the same scoped service; audit/journal distinguish known/uncertain effects; each required optional backend works; secret/foreign audit access and unsupported actions refuse |
 | ADM-S06 | **ADM-S06-02** backup/restore, service/upgrade and continuity; depends on ADM-S06-01 and ADM-S05-02; E1/E3 | UX-A7, UX-A8; T:DB-18, T:INT-15–26, T:REC-01–20, T:OPS-01–10, T:RES-09–16 | Actual isolated restore and maintenance preserve mail, factors, writer authority and public/native journeys; stale data, unknown compatibility and split authority prevent promotion |
-| ADM-S06 | **ADM-S06-03** release-candidate end-to-end/security/accessibility and owner UAT; depends on ADM-S06-02; E1/E3, E4 read-only | UX-A8 and all implemented UX-WF; T:UX-01–14, applicable T:SEC-01–36 and T:RES-01–16; test-plan G0–G5 | Applicable workflows, WSTG, direct-service negatives and accessible browser journey pass for the exact candidate; any required FAIL/NOT_RUN/UNCERTAIN blocks that release claim |
+| ADM-S06 | **ADM-S06-04 TLS, MTA-STS and TLS reporting**; depends on ADM-S06-01 and verified certificate/policy/report consumers; E2/E3 | UX-A7, UX-A8; UX-WF-13, UX-WF-14; T:F-39, T:SEC-23, T:SEC-29, T:INT-17, T:INT-18, T:INT-22–24, T:OPS-01–10 | Actual HTTPS, IMAP/submission TLS, MTA-STS policy and bounded TLS-RPT observations match displayed status; wrong/expired certificate, broken policy fetch and hostile report refuse or report unavailable without false protection claims |
+| ADM-S06 | **ADM-S06-05 DNSSEC/DANE and conditional REQUIRETLS**; depends on ADM-S02-04 and ADM-S06-04, with actual DNSSEC/SMTP capabilities; E2/E3 | UX-A7, UX-A8; UX-WF-13, UX-WF-14; T:F-40, T:SEC-09, T:SEC-29, T:INT-24, T:INT-26 | Validating DNS and actual SMTP peers prove supported TLSA/policy effects and safe rollover; bogus DNSSEC, stale TLSA and unsupported per-message enforcement refuse; any conditional nonapplicability is explicit |
+| ADM-S06 | **ADM-S06-06 Message-encryption integration**; depends on ADM-S06-01 and the qualified OSMAP key/message workflow; storage recovery uses ADM-S06-02; E2/E3 owned synthetic mail | UX-A7, UX-A8; UX-WF-13, UX-WF-14; T:F-41, T:SEC-20, T:SEC-24, T:INT-20, T:INT-24, T:REC-15 | User encryption/signature and key expiry/revocation observations are truthful while admins cannot obtain private keys/mail; unsupported S/MIME or server-side storage claims remain conditional/unavailable |
+| ADM-S06 | **ADM-S06-07 Mail abuse, content safety and privacy controls**; depends on ADM-S03-01, ADM-S03-02, ADM-S06-01 and installed filtering/OSMAP consumers; E2/E3 | UX-A7, UX-A8; UX-WF-13, UX-WF-14; T:F-42, T:SEC-18–21, T:SEC-28, T:INT-24, T:INT-26, T:RES-01–16 | Scoped filtering/quarantine/limits and browser privacy status have actual consumer proof; unauthorized release/forwarding, unsafe rendering and unavailable scanners never appear as a safety PASS |
+| ADM-S06 | **ADM-S06-03** release-candidate end-to-end/security/accessibility and owner UAT; depends on ADM-S05-01, ADM-S05-02, ADM-S06-02, ADM-S06-04–07, ADM-S02-04–06 and all required management/lifecycle outcomes; E1/E3, E4 read-only | UX-A8 and all required UX-WF; T:UX-01–14, applicable T:SEC-01–36 and T:RES-01–16; test-plan G0–G5 | Both entry paths, applicable security catalogue controls, WSTG, direct-service negatives and accessible browser journeys pass for the exact candidate; required FAIL/NOT_RUN/UNCERTAIN blocks release; conditional omissions need accepted dispositions |
 | **ADM-S07 Production replacement and retirement**: transfer one writer, prove continuity, then retire the old interface | **ADM-S07-01** Path A representative rehearsal; depends on ADM-S06-03; E2/E3 | UX-A7, UX-A8; T:MIG-01–11, T:MIG-17–18, T:DB-12, T:REC-11–12 | Legacy writer fencing, Rust writes, native mail and rollback before/after new writes are proven; stale writer connections and unreconciled rollback refuse |
 | ADM-S07 | **ADM-S07-02** separately authorized Path A installation/cutover; depends on ADM-S07-01 and explicit production authority; E4 -> E5 | UX-A7, UX-A8; T:MIG-07–11, T:INT-15–26, T:PROD-01–18 | Exact installed Rust writer and private UI pass approved smoke/observation with one mail authority; any ambiguous writer, regression or unsafe rollback prevents acceptance |
 | ADM-S07 | **ADM-S07-03** optional Path B data-authority migration; depends on ADM-S06-03, ADM-S05-02 and explicit Path B selection; its own E2/E3 full rehearsal before authorized E5 | UX-A4, UX-A7, UX-A8; T:MIG-12–17, T:DB-12, T:REC-02–04, T:REC-11–12, T:PROD-01–18 | Reconciled native authority and every consumer converge with preserved mail/state; deltas, interrupted switches and unsafe downgrade refuse. Path B may replace ADM-S07-02 only under an explicit approved alternate cutover; retaining the existing database is valid Path A |
 | ADM-S07 | **ADM-S07-04** separately authorized retirement; depends on accepted ADM-S07-02, or selected/accepted ADM-S07-03, stable observation and retained recovery; E4 -> E5 | UX-A7, UX-A8; T:MIG-18–20, T:F-33, T:INT-24–25, T:PROD-16–18 | Required functions, jobs, grants and routes no longer depend on the old interface/PHP; only approved legacy components retire; remaining dependency, missing parity or unsafe recovery blocks retirement |
 
+### Integrated epic sequence and bootstrap sub-slices — 2026-11-17
+
+The current epic has **seven sprint groups and 29 top-level slices**. Preserve
+the 22 original slice IDs; the seven added security slices are ADM-S02-04–06
+and ADM-S06-04–07. Three named prerequisite sub-slices make the first-domain
+dependency concrete without creating another bootstrap epic or test framework.
+Their implementation, development/mail qualification and owner acceptance are
+all NOT_STARTED / NOT_RUN / NOT_ACCEPTED at this planning checkpoint.
+
+| Named sub-slice / parent | Dependency and target | Observable result / required refusal | Existing acceptance mapping |
+| --- | --- | --- | --- |
+| **ADM-S05-01a Authority initialization or adoption inspection** / ADM-S05-01 | Installed mailstack/OSMAP, actual MariaDB/socket/profile/lookup contracts; E1/E2/E3 | Actual mailstack bootstrap calls the Rust authority initializer: an empty target receives the complete reviewed schema/projections and narrow grants; populated authority is inspected/preserved, never silently reinitialized. Unknown/partial schema and rerun credential overwrite refuse or reconcile. | UX-A4; UX-WF-02; T:F-01, T:F-43, T:DB-01–03, T:DB-08–11, T:DB-16–20, T:REC-02–04 |
+| **ADM-S05-02a Independent first administrator** / ADM-S05-02 | ADM-S05-01a, protected credential/factor/session stores and a qualified verifier; E1/E2/E3 | Fresh empty authority establishes one administrator and MFA locally before any domain/mailbox, then private sign-in succeeds. Existing adoption uses the reviewed existing identity/enrollment path without overwriting credentials/factors. Concurrent/repeated bootstrap or an unauthenticated public bootstrap refuses. | UX-A4, UX-A6; UX-WF-01, UX-WF-02; T:F-02–04, T:F-43, T:INT-14, T:INT-19, T:INT-20, T:SEC-01–06, T:SEC-14–17 |
+| **ADM-S01-03a Shared account-writer foundation** / ADM-S01-03 | ADM-S05-01a, ADM-S05-02a and actual write/native/audit contracts; E2/E3, with representative populated adoption fixture | A designated protected writer, current authority, narrow SQL grants, revision/idempotency and durable result/recovery contracts support the domain operation. A competing writer, stale actor, duplicate request or uncertain submission refuses or remains explicitly unconfirmed. Production fencing stays in ADM-S07. | UX-A5, UX-A7; UX-WF-14, UX-WF-15; T:F-26, T:F-31, T:F-32, T:F-43, T:DB-04–15, T:DB-19, T:SEC-07, T:SEC-09, T:SEC-11–14, T:SEC-26–28, T:RES-03–05 |
+
+Sub-slice delivery is not completion of its whole parent. In particular,
+ADM-S05-02's later mailbox/enrollment journey still needs ADM-S02-01,
+ADM-S01-03, ADM-S01-04 and the applicable identity slices; those outcomes are not inputs
+to ADM-S05-02a. The first admin uses a currently qualified supported credential
+policy; Argon2id-specific F-35 acceptance remains owned by ADM-S04-02 rather
+than being falsely inferred from bootstrap or made a circular prerequisite.
+T:F-43 is the joint bootstrap-to-domain integration result, completed after
+ADM-S02-01. Each prerequisite closes against its own listed boundary cases and
+matching stage evidence; the future whole F-43 PASS is not a dispatch condition
+for implementing those prerequisites or domain creation.
+
+Execute in this order, selecting only one concrete work order at a time:
+
+1. Reconcile outstanding ADM-S01-02 matching mail/owner qualification without
+   discarding the approved basic pages or final login.
+2. For the selected first-domain outcome, execute ADM-S05-01a -> ADM-S05-02a ->
+   ADM-S01-03a -> ADM-S02-01. The named prerequisites belong to that outcome.
+3. Execute ADM-S01-03 controlled mailbox creation, required owner enrollment
+   and ADM-S01-04 native authentication/delivery. Both fresh and existing entry
+   paths must reach the working mailbox milestone.
+4. Complete domain/mailbox management (ADM-S02), routing (ADM-S03), administrator
+   setup/modification and identity lifecycle (ADM-S04), including the scheduled
+   Argon2id feature. The virtual list must expose real mailbox and alias actions,
+   not only the currently approved domain chooser.
+5. Finish remaining ADM-S05 lifecycle obligations and ADM-S06 operational and
+   security slices according to their actual dependencies; then ADM-S06-03
+   assesses every required path/control and accepted conditional disposition.
+6. ADM-S07 rehearses and separately authorizes production handover and retirement
+   with preserved mail, credentials/factors and rollback. No PHP setup or old
+   admin runtime remains a dependency of an accepted Rust replacement path.
+
+Each row's E1/E2/E3 target describes development. Matching installed private
+product/native/browser evidence on **mail.blackbagsecurity.com (mail)** is also
+required before slice acceptance; obsd1 alone never supplies it. A conditional
+control must be implemented/tested when applicable or have an explicit accepted
+nonapplicability/deferment; do not move baseline controls into optional modules.
+The full-stack installer and optional WireGuard client provisioning have no
+active slice, dependency or acceptance requirement in this epic's current scope.
+
+### Security catalogue to sprint/slice crosswalk
+
+The [18-category catalogue](OSMAP_ADMIN_SECURITY_MODEL.md#131-operator-requested-security-function-catalogue--2026-11-17)
+remains the control definition. This table assigns its delivery and verification
+owners; all unimplemented controls retain NOT_STARTED / NOT_RUN results.
+
+| Catalogue category | Delivery owner / supporting slice | Required acceptance cases |
+| --- | --- | --- |
+| Domain/routing readiness; SPF | ADM-S02-04; domain writer ADM-S02-01 | T:F-36, T:INT-03, T:INT-04, T:INT-24 |
+| DKIM signing/verification | ADM-S02-05 | T:F-37, T:SEC-09, T:SEC-24, T:SEC-28 |
+| DMARC policy/reporting | ADM-S02-06 | T:F-38, T:SEC-18, T:SEC-21, T:SEC-28 |
+| HTTPS and native-client TLS; MTA-STS; TLS reporting | ADM-S06-04 | T:F-39, T:SEC-23, T:SEC-29, T:INT-17, T:INT-18, T:INT-22–24 |
+| DNSSEC/DANE; conditional REQUIRETLS | ADM-S06-05 | T:F-40, T:INT-24, T:INT-26, T:SEC-29 |
+| Forwarding authentication and conditional ARC/SRS | ADM-S03-01, ADM-S03-02; transport support ADM-S06-04 | T:F-18–21, T:F-33, T:INT-04, T:INT-05 |
+| Message encryption/signatures; conditional S/MIME | ADM-S06-06, reusing the actual qualified OSMAP workflow | T:F-41, T:SEC-20, T:SEC-24, T:INT-20, T:INT-24 |
+| Stored data and backup encryption | ADM-S06-02; integration ADM-S06-06 | T:REC-02–04, T:REC-15, T:DB-18, T:F-41 |
+| Account authentication/MFA and Argon2id | ADM-S01-01; ADM-S04-01–03; first-admin ADM-S05-02a | T:F-02–04, T:F-09–15, T:F-35, T:F-43, T:SEC-01–06, T:SEC-14–17 |
+| Administrator least privilege and safe administration | ADM-S04-02, ADM-S04-03; writer ADM-S01-03a | T:F-24–26, T:F-35, T:SEC-09–13, T:SEC-25 |
+| Mail abuse/filtering; browser message safety/privacy | ADM-S06-07, reusing native filtering and OSMAP controls | T:F-42, T:SEC-18–21, T:SEC-28, T:INT-24, T:INT-26 |
+| Safe changes/audit/recovery; operational assurance | ADM-S01-03a; ADM-S06-01, ADM-S06-02; cutover ADM-S07 | T:F-26, T:F-31, T:F-43, T:DB-12–15, T:DB-18, T:REC-01–20, T:OPS-01–10 |
+
+ADM-PLAN-03 is a documentation-only incorporation based on b28a4d9. Root owns
+the existing plan/test/decision updates and Git delivery; adapter_review checks
+dependency order, IDs, all 18 control owners and honest statuses independently.
+Minimum checks are reference resolution, unique/count-consistent cases and
+slices, complete catalogue coverage, local links and normal mandatory hooks.
+No host action, runtime test, new Python or new QA/status framework is needed.
+Preserve historical receipts, including their former slice/case counts; this
+amendment does not retroactively qualify any product or expand live authority.
+
 ### ADM-S04-02 feature — Argon2id administrator credentials
+
+The assignment and validation paragraphs below retain the historical
+ADM-PLAN-02 checkpoint. Its old slice counts/selection and chronological
+bootstrap dependency are superseded by the integrated execution index above;
+its Argon2id product/security obligations remain required.
 
 The operator assigns the earlier standalone enhancement to the existing
 administrator enrollment, grants and own-credential lifecycle slice. It is a
@@ -387,7 +505,7 @@ disposition; P0 obligations cannot silently move to an enhancement backlog.
 | P:DOM-02–03, P:DOM-05–09; P:USR-04–08, P:USR-10–11 | ADM-S02-01–03; conditional native support must be proven |
 | P:ALS-01–11 | ADM-S03-01–02, including required reserved/self-delivery aliases |
 | P:USR-09, P:USR-14; P:DOM-04; P:ADM-03–06, P:ADM-08; P:SEC-02–08 | ADM-S04-01–04; independent invitation channel and last-admin safety retained |
-| P:DOM-10–12; P:USR-12–13; P:SEC-11–12; P:MAIL-01–07; P:SYS-01–04, P:SYS-07–13 | ADM-S06-01 conditional feature disposition/implementation; SYS-08 native Rust CLI is P0 and cannot be deferred as optional |
+| P:DOM-10–12; P:USR-12–13; P:SEC-11–12; P:MAIL-01–07; P:SYS-01–04, P:SYS-07–13 | ADM-S06-01 inventories/disposes installed parity; applicable domain/transport/encryption/filtering implementation is owned by ADM-S02-04–06 and ADM-S06-04–07. SYS-08 native Rust CLI is P0 and cannot be deferred as optional; baseline catalogue controls remain required |
 | P:SYS-06 | ADM-S05-01 and ADM-S06-02 restore proof; ADM-S07 rehearses the exact selected cutover/retirement state |
 
 Appearance, forms, audit, ownership, secret handling, bounded work, no-JavaScript
@@ -722,7 +840,595 @@ delivery hooks are separate from native product qualification. ADM-S01-02 is
 the next selected slice and remains NOT_STARTED; the first mailbox-management
 milestone and the other three ADM-S01 slices remain incomplete.
 
+### ADM-S01-02 lean implementation work order — 2026-11-17
+
+**Focused resumption — 2026-11-17:** the operator directs completion of this
+slice, not bootstrap/domain writers. Baseline a0f1c35; reuse the independently
+reviewed ba360305 product and obsd1 binary SHA-256
+`879d1bec355584a850f995ab67565de0a443410dc92e8f1029297f4d94d8f494`.
+Root owns the sole host/Git queue and result writing; adapter_review independently
+checks dispatch and results. Required exit is the installed private mail browser
+journey through overview/counts, domain/mailbox list/filter/detail and persistent
+Text labels/Icons, with current-scope, private-reader-loss, direct-write and
+preference/CSRF refusals. Reuse matching obsd1 and S01-01 evidence; no full repeat
+of authentication tests, public mail changes, new Python or test framework.
+
+Read-only preflight verifies mail.blackbagsecurity.com through the established
+216.128.179.75 route, noninteractive privilege and running public daemons. The
+earlier `/var/osmap-adm-s01` namespace is root-sealed with its temporary roles
+removed: preserve it. Use one fresh exact-owned `/var/osmap-adm-s01-02` fixture,
+socket-only private SQL and loopback nginx, after actual utility/listener/schema/
+reader-grant admission and independent dispatch review. The same reviewed
+binary is copied with hash/version admission; do not rebuild unchanged code.
+Verify the TLS Host/Origin/proxy path before browser use; a certificate warning
+requires operator handling. Mutations apply only to fixture records/resources.
+Individual setup actions retain the existing 120-second bound; browser actions
+retain 300 seconds plus finite cleanup. Preserve cumulative history/UNKNOWN
+costs and measure new elapsed work; this resumption does not erase or replenish
+past effort. Two failures at one boundary stop retries for independent
+reassessment. Retain bounded private diagnostics before cleanup; uncertain owned
+state remains retained. The only final human judgment outstanding for the new
+presentation is separate from its agent-owned qualification. The later final
+login approval preserves the approved design, without retroactively claiming an
+owner repetition of every S01-01 journey. Delivery uses existing signed hooks,
+ordinary push and fresh remote equality; mail results remain NOT_RUN until run.
+
+The operator subsequently retains obsd1 as the development host and browser
+address, rejecting loopback URLs. Preserve normal obsd1 application/backend
+state. For the bounded mail qualification only, use the existing trusted
+`https://obsd1.blackbagsecurity.com/admin` entry with its source-IP restriction,
+temporarily selecting the isolated mail upstream through SSH. Admit and retain
+the exact old route/public upstream certificate, test the new upstream before
+switching, and restore/read back the original route after the browser journey.
+Only the obsd1 admin frontend routing changes temporarily; no public mail daemon,
+mail authority, new exposed port or firewall rule changes. Keep the isolated mail
+Web's exact origin/Host policy aligned with that hostname. A synthetic domain
+description distinguishes mail data from the unchanged obsd1 fixture. This is
+mail qualification through the obsd1 entry, not relocation of development or a
+live-authority cutover. Independent review covers this concrete route and its
+finite restoration before dispatch.
+
+**Mail progression checkpoint — 2026-11-17:** the unchanged reviewed binary is
+installed in the separate private mail namespace; its actual service/Web/SQL
+path signs in and returns the scoped overview (two domains, 12 mailboxes, two
+forwarding sources), domain detail, mailbox page/filter/detail, empty 200 and
+foreign 404. Restricted password-column SELECT and UPDATE refuse. A well-formed
+mailbox POST returns 405; malformed preferences/CSRF refuse, and a wrong
+well-shaped CSRF returns denial while a subsequent eligible GET is 200 with
+unchanged preferences. These are native HTTP results, not browser acceptance.
+
+Private reader SELECT loss reaches the expected 503. Its first restoration
+consumer incorrectly compares serialized SHOW GRANTS row order, reports
+`original_status=1 cleanup=UNCONFIRMED authority=UNKNOWN`, and is preserved.
+Independent readback compares the complete unordered grant lines and proves
+equality; a later eligible mailbox GET 200 and active-grant count one reconcile
+restoration. Do not repeat that REVOKE. The separate remaining fixture domain
+grant-loss operation returns 303, restores the exact grant with count readback,
+and reports original status zero with no pending recovery.
+
+The loopback browser entry stops at its certificate warning. The operator
+instead requires the existing obsd1 hostname/development host. A reviewed
+private mail-origin change fails at its bundled installation phase; the exact
+failed command/first HTTP status is UNKNOWN because that invocation did not
+retain them. Preserve this missing observation and failed receipt. Later
+config/process/socket readback and strict-TLS Host=obsd1 login 200 establish
+current private availability only. No stop/install/reload repeat or obsd1 route
+switch occurs. The original obsd1 route hash is unchanged; admin/public login
+HTTP 200 and public mail daemon checks pass. Private q2 service/Web/nginx/SQL and
+their isolated authority remain intentionally ACTIVE pending the next scope
+decision; no final cleanup or browser PASS is claimed.
+
+The operator observes that the pages remain shallow: Overview/Domains largely
+share a read-only list, and missing writers are still missing. No presentation
+work is added. A production read-only preflight observes five domain records,
+14 mailbox records and 49 alias records, plus the six required mailbox columns;
+alias rows are not forwarding-source counts. No production write, new grant,
+credential/factor change or deployment occurs. The question whether to use real
+production metadata through obsd1 or deploy production administration remains
+pending. The current executor shares one protected database/profile for admin
+authority and directory reads; do not substitute production credentials or grant
+development identities production authority implicitly. Mail browser qualification
+and full ADM-S01-02 completion remain pending. Retain the private evidence under
+the existing sprint root, with regular owner-only single-link artifacts. The
+first retained artifact is 13:54:58 UTC; observation through 14:32:33 UTC is
+37 minutes 35 seconds, with earlier preparation cost UNKNOWN and prior history
+unchanged. This checkpoint is source/evidence preservation, not product closure.
+
+**Isolated mail qualification result — 2026-11-17:** the operator clarifies that
+the goal is confidence in later deployment on mail and follows the recommendation
+to retain obsd1 development with isolated qualification on mail. A permanent
+production-data connection is not added to development. The same ba360305 source
+and `879d1bec...` binary run on mail; application/build inputs are unchanged
+through the documentation checkpoints. Read-only production preflight confirms
+all 29 source-consumed columns across admin, grants, domains, mailboxes and aliases.
+It does not qualify production service grants, identities, configuration or writes.
+
+The actual browser uses the trusted canonical obsd1 HTTPS entry, temporarily
+forwarded only for qualification to the mail Web/service/private SQL stack. It
+observes the scoped 2/12/2 overview, unique mail-host domain description, domain
+metadata, mailbox pages 1/2, user11 filtering/quota sort and stable opaque detail.
+Two direct navigation-completion waits time out; immediate later accessibility
+readbacks independently show the correct empty-domain and foreign-not-found
+pages. Preserve both helper failures, not retroactive successful navigation calls.
+Independent combined reassessment admits click navigation without replaying GETs.
+
+The next visible link returns 502. Stop without credential retry and restore the
+original obsd1 route. The reverse SSH connection reports that its local target
+is absent; the original local forward has exited zero without an observed cause.
+The edge reports a closed upstream TLS handshake. Preserve the 502 and unknown
+forward-exit cause separately. One reviewed native managed SSH replacement passes
+master/listener/pinned-TLS checks; first-cycle route evidence is archived and
+independently read back before guarded resumption. No fixture or allowance resets.
+
+Resume only the remaining boundary: sign in, open Settings, observe Text labels,
+save Icons with Appearance saved, log out, sign in with a fresh factor, and read
+Icons still selected in Settings. Final logout returns the approved login.
+Native private preference readback is icons/system/comfortable/medium. Reuse the
+matching obsd1 keyboard/touch-emulation and unchanged authentication/confinement
+evidence rather than repeating them on mail. Nine retained images and their
+portable hash manifest, the native archive and actual result receive independent
+review. Physical-device UAT and a release-wide security pass are not inferred.
+
+Restore and read back the exact original obsd1 route, stop only the private q2
+Web/service/nginx/SQL, verify process/socket absence, remove its exact temporary
+principals and seal its retained namespace under root. The native evidence
+archive is read back with SHA-256
+`ff3d7f7f76620b18c354f967c3fe2be2a0f00954d6efb3042f11947b04126b18`
+before endpoint/principal disposition. Close both owned forwards and verify their
+listeners absent. With the mail candidate stopped, the normal obsd1 admin/public
+login routes still return 200; public mail daemons remain running. Cleanup PASS
+establishes only that disposition, separately from the observed product results.
+
+Engineering and bounded isolated mail qualification are DELIVERED/PASS. Preserve
+basic-page/final-login approval; text/icon owner acceptance is still pending.
+Source delivery/protected integration use the normal exact-head checks and are
+recorded in the PR receipt. No domain/mailbox writer, bootstrap, production
+deployment or full-replacement claim follows. The selected next product journey
+remains first-domain creation through its three named bootstrap/writer prerequisites.
+
+The operator applies the S01 lessons and authorizes the next mailbox-list slice
+(called “adm-s02” in chat). Baseline is signed main
+`f7e7b87197013aa41a00a920cf60a00b317dd77a`. One observable outcome:
+private sign-in -> choose an authorized domain -> bounded mailbox list,
+filter/sort/page and stable detail -> truthful empty/missing/unavailable states.
+Map UX-A3, F-07/F-30/F-32 and the S01-02 security/integration/UX IDs above.
+Display only observed configured metadata; native auth/delivery, usage, display
+name and MFA observations absent from this reader remain explicitly unknown.
+
+Reuse the existing scoped directory SELECT, admin sessions/current authority,
+typed socket, strict HTTP and OSMAP presentation. Each operation validates the
+supplied session context and current grants before directory reads. Filter and
+paginate the complete existing bounded inventory (maximum 100 rows, ten per
+page); excess capacity is an explicit refusal, never a truncated or empty list.
+Detail IDs are stable username digests, reselected only within current scope.
+Omit maildir, credentials and hashes from transport/browser. Keep fixed directory
+SQL output at its existing 64 KiB bound, identity-query/stdin bounds at 16 KiB
+and RPC at 8 KiB. No writer, enrollment, new dependency, Python or general QA
+framework is introduced.
+
+Root owns implementation, writing and the sole Git/host queue; adapter_review
+independently reviews the candidate and observed results. Establish one RED
+backend test using a non-default live session context. Minimum changed-boundary
+checks: scoped projection/page/filter/detail, foreign and revoked scope, missing
+versus empty/unavailable/capacity, maximum RPC shape, escaped inputs and direct
+write refusal. Use focused existing Rust suites, then a complete browser journey
+on obsd1 before promoting the reviewed byte-identical candidate to mail. Check
+visual layout in that journey. Reuse unchanged auth/confinement evidence.
+
+Before native use verify actual mailbox columns and restricted SELECT grants
+in the new isolated fixture. Preserve the old root-only retained fixture by
+exact ownership before preparing fresh disposable SQL/roles/private nginx;
+use demonstrated existing tools and standard commands. Keep all retained work
+under `Downloads/osmap-admin-s01/slice02/`. No public mail service/configuration,
+production account or factor changes are authorized. Record actual results and
+failures here, not another planning document. Native compile bounds remain
+600 s, fixture actions 120 s and browser journey 300 s plus finite cleanup.
+Initial investigation checkpoint: two hours, retaining measured and UNKNOWN
+cost across attempts; no automatic allowance growth or clock-based authority
+expiry. Two failures at a boundary require combined independent reassessment.
+Finish independent result review, normal signed hooks/push, exact remote parity
+and protected integration. Operator acceptance remains a separate result.
+
+Source progression: the new live-context mailbox test is RED on the prior
+backend and GREEN after composition. The first integrated focused run passes
+76 cases and exposes three test-assumption failures: two retained UI checks ban
+the newly implemented route, and one incorrectly assumes the existing bearer
+session is IP-bound. Combined independent reassessment approves correcting those
+expectations without changing authentication policy. Review also removes an
+unverified quota-byte label. The next focused run passes 82 cases, zero failures,
+with 12 native-only cases ignored. Maximum DTO serialization fits the existing
+8 KiB frame. Source review GO admits only the exact new Rust source digest in
+the existing guard; no Python logic or framework is added.
+
+The reviewed candidate is Shopkeeper-signed
+`428c9e0434ff6098c975a0ea2ec9ed305243aeab`, preserved on the ordinary topic
+branch with the mandatory pre-push `make security-check` PASS and fresh exact
+remote equality (zero ahead/behind). Draft [PR #99](https://github.com/unattributed/OSMAP/pull/99)
+remains unmerged. The obsd1 executable reports that revision, SHA-256
+`2188257edd7ec357c26fa779499451b18ec65f4731f2152457bfeca92c15da4c`;
+the bounded native binary build passes in 40.63 seconds. No full native test
+library build is introduced.
+
+The actual private SQL contract admits the required mailbox projection and
+refuses password-column SELECT and UPDATE. Native HTTPS requests through the
+installed Web/service/SQL path observe sign-in, the 12-row scoped inventory,
+ten-row pagination, filtering, quota sorting, opaque detail, an authorized empty
+domain and uniform foreign-domain 404. Responses exclude the seeded credential
+and maildir. Unauthenticated/invalid sessions redirect to sign-in, duplicate
+query keys refuse and a well-formed direct write returns 405. These are native
+HTTP observations, not browser acceptance or complete native qualification.
+Unchanged authentication and confinement evidence remains reused within its
+original scope; the new mailbox backend-loss and live grant-revocation cases
+remain unobserved natively.
+
+The 900-second SSH forward expires before two later requests, which return
+transport failure without reaching the product. Preserve that failure;
+independent reassessment permits one 30-minute replacement forward, with no
+cost or authority reset. An expired idle session redirects before a fresh,
+successful synthetic login. The browser stops at its private self-signed TLS
+warning. Computer-use policy requires the operator to handle that warning;
+the handoff is pending. Do not bypass it or infer a browser PASS from curl.
+Mail promotion remains NOT_RUN until the planned obsd1 browser journey passes.
+
+At the handoff observation (2026-11-17 03:23:45 UTC), the fresh isolated obsd1
+fixture `/var/osmap-adm-s01` (device 1028, inode 3836160) remains ACTIVE, including
+its private SQL, loopback TLS proxy and Rust service/Web roles. Cleanup is
+NOT_RUN; no cleanup PASS is claimed. The previous root-only fixture is preserved
+as `/var/osmap-adm-s01-retained-20261117`. Retained private results are under
+`Downloads/osmap-admin-s01/slice02/`. Normal obsd1 Dovecot, Postfix, MariaDB and
+nginx health checks pass; public configuration/accounts/factors are unchanged.
+The replacement local forward expires around 03:46 UTC; that is a transport
+limit, not expiration of operator authority. Preserve measured build/test times,
+the transport failure and UNKNOWN total effort; do not replenish the two-hour
+initial investigation checkpoint. Browser, mail, final cleanup and operator
+acceptance remain outstanding.
+
+Operator routing correction, 2026-11-17: the expired workstation forward makes
+the loopback handoff unavailable. The operator requests the real private
+candidate at `https://obsd1.blackbagsecurity.com/admin/login`. Reuse the existing
+valid hostname certificate and nginx listener, adding only an `/admin` route
+restricted to the workstation's verified LAN address. Resolve that hostname
+directly to obsd1 on this workstation so access does not depend on a timed
+forward or admit the router's indistinguishable NAT clients. Preserve the exact
+prior workstation resolution and nginx/Web configurations before changing them.
+Root owns dispatch; adapter_review independently reviews configuration and the
+result. The existing Rust candidate and isolated SQL authority stay unchanged.
+
+Update the private Web origin and fixed proxy Host together; retain verified TLS
+on the loopback upstream, existing proxy UID/socket custody and header rewriting.
+The inner proxy continues to report its actual loopback TLS peer: this isolated
+route does not qualify end-client address propagation or production throttling.
+Check nginx syntax before its reload, valid hostname TLS/login, a refused
+non-admitted route, exact Origin handling and the ordinary frontend/mail health.
+Then continue the actual browser mailbox journey. Only the OSMAP Web process and
+nginx configuration may restart/reload for this correction; no public Postfix,
+Dovecot or MariaDB change. Preserve the unreachable-forward result and the
+unsupported native `openssl x509 -ext` inspection option as preparation failures;
+the supported certificate query succeeds without any certificate change.
+Each configuration action remains bounded to 120 seconds with exact backups and
+rollback; two failures at the same boundary stop for combined reassessment.
+This correction changes routing, not authority, cumulative effort or acceptance.
+
+The hostname route now returns the real browser sign-in without a certificate
+warning. Non-admitted NAT clients, including spoofed client-address headers,
+receive 403; the alternate Host receives 421. Ordinary frontend login remains
+200 and all normal mail-service checks pass. Browser password/TOTP, authorized
+inventory, pagination, filter, quota sorting, detail, empty and foreign-domain
+refusal are observed. The narrow-rail visual check reveals clipped bare labels;
+reuse the existing icon/presentation-label markup in `admin_ui.rs`, run its
+existing focused tests and qualify the changed rendering natively. No new test
+scaffolding, authentication change or blanket native-test rebuild is needed.
+
+Preserve two visual failures: the initial bare labels clip at 744 pixels, and
+candidate `91102357` wraps them into narrow fragments. Stop further visual
+retries for combined independent reassessment. The actual shared CSS requires
+the existing main application's `rail-disclosure`, `shell-icon` and `rail-label`
+structure; presentation labels alone do not supply that contract. Independent
+reassessment approves reusing the fixed icon helper and native disclosure in
+an admin-only rail. Qualify collapsed/expanded navigation at 744 and 360 pixels;
+do not infer its PASS from source. This does not reset failures or cumulative
+effort. Candidate 91102357's Cargo output reports a 39.34-second successful
+build, while its launcher later returns 143 with no termination-source
+observation. Retain that UNKNOWN transport cause; fresh revision/hash readback
+confirms the resulting artifact without another build attempt.
+
+The rail source change passes seven UI tests and strict Clippy. Its first V10
+consumer check refuses source-digest drift; regenerate through the existing
+producer and verify the real consumer before native dispatch. Commit e2a3c2e0's
+body incorrectly records that check as passing; retain this correction and the
+actual failed result rather than rewriting the signed commit. No native build
+uses the stale inventory.
+
+The corrected shared rail at `088d3f23` builds natively in 39.91 seconds,
+launcher exit 0, executable SHA-256
+`adb0823e624db93020ced98c40d22f07c60242b84b103b93e35d7c89ec107dca`.
+The actual browser shows usable collapsed icons and readable expanded labels at
+744 pixels; at 360 pixels the disclosure hides/shows the links and both overview
+and domain-selection navigation work. The viewport is restored. Resident backend
+source 428c9e04 is unchanged and its matching functional evidence is reused.
+
+Operator presentation correction: reuse the ordinary OSMAP login screen for
+`/admin/login`, changing admin copy while preserving the distinct admin form
+action/fields, CSRF, cookie purpose, credentials and factors. Reuse the existing
+Rust renderer through two fixed entry points, with no caller-selected routes or
+new framework. Ordinary login markup/contract remains the default; admin copy
+must make the separate administrator account clear and must not offer an
+unimplemented admin recovery link. Run the existing login/UI contract tests,
+strict Clippy and one installed browser sign-in after the presentation change;
+reuse unchanged list/backend/security observations. The screenshot's real
+mailbox credentials cannot authenticate the synthetic-only admin authority.
+Check the ordinary login's installed backend read-only and clarify which page
+failed; do not capture, replay or change the operator's password/TOTP.
+
+The operator subsequently confirms ordinary mailbox login succeeds and requests
+the owner address as an OSMAP-ADMIN administrator. Stop mailbox-login diagnosis.
+Provision only that new administrator in the currently selected isolated admin
+authority, with the two matching system-role indicators, an independently random
+password hashed by the installed native bcrypt utility, and a fresh independent
+TOTP factor under existing service custody. The verified private SQL datadir,
+socket and disabled networking must match before writing; refuse an existing
+principal/factor rather than reset it. Preserve native state/readback and qualify
+actual owner sign-in. Do not change mailbox credentials, factors, public SQL or
+mail services. Deliver password and authenticator registration only through an
+owner-only local setup artifact under the sprint root, never Git, command
+arguments, environment, logs or chat. The owner must import the new administrator
+factor into their authenticator; ordinary mailbox registration is not changed.
+This provides owner access to the isolated read-only candidate and its selected
+data; it does not promote the test authority to live mail administration.
+
+Owner provisioning observes private SQL admission, principal absence, native
+bcrypt cost 12, exact service-owned factor custody and a committed/read-back
+pair of system-role indicators. Password-hash and factor bytes are downloaded
+privately, compared and hash-read back before any source disposal. No secret is
+exported to Git, logs or chat. The shared login change passes seven admin UI cases, eleven Web cases,
+the existing shared-brand public-render case and strict all-target Clippy; the
+regenerated V10 record passes its real consumer. Actual owner login and installed
+shared-login screenshots remain pending at this source checkpoint.
+
+Final obsd1 continuation: Web candidate
+`f21b026883df7dfe4986b1ccc6b394c9d732c8f8` builds in 40.43 seconds with launcher
+exit 0, installed executable SHA-256
+`aa891651a0004323a0d3f2602118e2cdc974f082187778a75b972a7ced728b0c`.
+The actual browser shows the reused OSMAP login screen with admin-specific copy,
+then the requested owner signs in with the new password and TOTP. Current scope
+reports System administrator; choosing the test domain returns its 12-mailbox
+inventory. The unchanged resident service/backend remains assessed source
+428c9e04; no backend-module change or new library-test build is claimed.
+Login, scope and inventory screenshots are retained privately under the sprint
+root. The ordinary and admin login GETs both return 200; at 07:39:21 UTC normal
+OSMAP, Dovecot, Postfix, MariaDB and nginx health checks all pass.
+
+The local owner-only password/QR setup is delivered for a separate password-
+manager entry. User import of that registration and operator functional
+acceptance are not inferred from agent sign-in. Uploaded provisioning inputs are
+removed only after exact private readback/hash verification; the committed owner
+authority and factor remain active. At the operator's request the candidate,
+private SQL/roles/proxy and hostname route remain ACTIVE for access, rather than
+being removed as a disposable test. This is intentional retained disposition,
+not cleanup PASS or a production installation. Prior failed results and UNKNOWN
+costs remain; no allowance or authority clock is reset. Mail qualification stays
+NOT_RUN, draft PR #99 remains unmerged, and ADM-S01-02 is not accepted.
+
+### Approved catalogue and priority-page refinement — 2026-11-17
+
+The operator approves the function catalogue and its explicit implementation
+statuses, and prioritizes Overview, Domain administration pages and Settings
+with the same feel as OSMAP. Continue ADM-S01-02 with one observable journey:
+owner sign-in -> permitted domain overview with actual mailbox/forward counts
+-> domain detail and mailbox navigation -> own Settings save and readback.
+Use existing welcome cards/tables, responsive admin shell, shared appearance
+enums and private atomic account records. Domain create/edit remains the
+catalogue's planned writer work; no enabled mutation control is invented for
+the currently read-only SQL authority. Preserve the owner account and its
+private registration, working sign-in, mailbox journey and public services.
+
+Root owns implementation/host/Git; adapter_review independently reviews source
+and results. Baseline is signed 47582e5. Relevant installed contracts are
+observed: the real domain schema has description/created/modified and the alias
+schema address/goto/domain/active; the selected private schema lacks those
+metadata columns and alias table. Extend only that exact private fixture and
+its SELECT projection to qualify these reads. Existing domain.mailboxes/aliases
+are limits, not counts. Count actual mailbox rows and non-self forwarding
+address records, once per source; do not infer counts from truncated lists.
+Preserve unknown creation metadata as unknown. Scope all queries in the service;
+system enumeration follows the existing two-indicator system authorization.
+
+Minimum checks are one distinguishing backend RED/GREEN, actual dispatch and
+bounded wire shape, foreign/revoked scope, zero-versus-unavailable, isolated
+own-preference save with CSRF/enum refusal, and the real browser journey with
+desktop/narrow rendering and a fresh-session preference readback. Reuse matching
+authentication/confinement evidence. No new dependency, Python logic or test
+framework. Retain artifacts under the existing sprint root's domain-overview
+directory. Native build remains 600 seconds and individual fixture actions
+120 seconds. Initial review checkpoint is two hours of this explicitly added
+scope, retaining prior failures/cost and UNKNOWN totals without automatic
+allowance growth; two failures at one boundary stop for combined reassessment.
+Qualify obsd1 first and record mail separately; no obsd1-only acceptance claim.
+Normal independent review, verified Shopkeeper signing/hooks/push and exact
+remote equality remain delivery requirements.
+
+The distinguishing backend test first failed because the new operations did not
+exist. The implementation then passed that test. Preserve the integrated compile
+failure and the five stale landing-page/navigation/logout assertions; combined
+independent reassessment approved their narrow correction and the self-only
+forwarding count. The corrected focused run passes 85 tests (12 native/explicit
+tests ignored), and the new maximum domain page fits and roundtrips within the
+existing 8192-byte RPC frame. Strict Clippy passes. These are source checks.
+
+Before fixture extension, verify the exact private root and SQL socket/datadir,
+then read back and hash the domain-table backup. Actual Rust-produced prepared
+queries execute as the installed restricted reader: example.test has 12 mailbox
+rows and two configured forwarding source addresses, while system enumeration
+has three domains and includes a genuine zero-count domain. Self-only duplicate
+destinations and empty destinations do not count; a mixed list and a disabled
+forward each count once. Core and nullable metadata projections pass. Temporarily
+removing only the private alias SELECT grant makes the same query refuse with
+exit 1 and zero stdout; restoring the exact grant restores the original result.
+No owner password, factor, role or mailbox data changes. Native application and
+browser qualification of this refinement remain NOT_RUN at this checkpoint.
+
+The signed 4ca8757 candidate builds natively in 40.38 seconds and runs both
+private processes with binary SHA-256
+`970f0bc3efb9628533842a28f2080e25e16d2ae4b0058caaa0f1c63a32a3d480`.
+The owner browser observes three domains, 13 mailbox addresses and three
+forwarding addresses, opens example.test metadata and follows its mailbox link.
+Search with no match remains distinct from unavailable. Appearance save, logout
+and fresh sign-in retain light/compact/large in both the overview and Settings;
+restore the original system/comfortable/medium values afterward. Account and
+system-information sections work. A private alias SELECT withdrawal displays
+unavailable, and restoration recovers the existing authenticated journey.
+Public frontend/mail services remain healthy and unchanged.
+
+Visual review at desktop and 360 pixels identifies a metric wrapper mismatch,
+the absent Settings CSS ancestor and narrow header wrapping. Reuse the existing
+OSMAP metric/icon and Settings wrappers, plus wrapping on the own account label.
+Preserve the initial malformed resize screenshot, the uppercase AX versus DOM
+locator miss and unsupported attribute-inspection diagnostic as observation
+limits, not successful visual evidence. The small presentation correction also
+has an initial missing-import compile refusal, retained before correction.
+Rebuild and inspect the changed installed presentation; do not repeat matching
+SQL, authentication or preference persistence tests. No acceptance or cost reset.
+
+The reviewed presentation correction is signed e3a7ab4. Its native build passes
+in 40.56 seconds; the installed Web binary SHA-256 is
+`2b34afc11ad99bfef36d2e9150a1e9100bbabb1f69f3afc4b2c5c6cc2e3389e0`.
+Only Web restarts for this correction; the resident 4ca8757 backend and its
+matching unchanged SQL/authentication/persistence results remain applicable.
+Desktop Overview shows all three metric cards and the complete domain table.
+Viewport-only Settings screenshots at 1280 and 360 pixels show the shared theme
+grid, controls and full account label correctly. Measured narrow text ends at
+332.2 pixels inside the 345-pixel header (360-pixel viewport with scrollbar).
+The malformed full-page image is a capture limitation, not evidence of a
+26-pixel product layout: desktop main/content bounds are 1060/767.2 pixels and
+the matching viewport image is readable. Retain both failed images and these
+distinguishing observations. Navigation disclosure and working links remain
+observed. Restore the browser viewport and retain the active owner-accessible
+candidate. Independent review and normal Git delivery reconcile this result;
+mail qualification and operator acceptance remain pending. This is an installed
+obsd1 refinement, not completion of ADM-S01-02 or the replacement milestone.
+
+Owner acceptance, 2026-11-17: following delivery checkpoint 449ceef, the operator
+confirms, "this functionality works." Record owner UAT PASS for the delivered
+obsd1 domain overview, domain information/mailbox navigation and Settings
+functionality described above. This is the owner's confirmation of the delivered
+functionality, not a claim that the owner individually repeated every agent-owned
+security or refusal test. Installed Web remains e3a7ab4 with the unchanged
+4ca8757 backend. Preserve the active owner account and candidate.
+
+This documentation-only follow-up records the acceptance in the existing plan,
+test record and decision log, independently reviews that wording, and preserves
+it through normal signed delivery. No product or host action, discretionary test
+rerun, new artifact framework or expanded acceptance scope is needed. Mail
+qualification remains NOT_RUN; domain/forward writers and credential lifecycle
+remain planned. The confirmation does not waive the required mail evidence or
+complete ADM-S01-02, production readiness or the replacement milestone.
+
 ### One active slice, work orders and delivery
+
+### Approved page baseline and text/icon refinement — 2026-11-17
+
+The operator's five page references approve basic functionality of the current
+pages and fully approve the login page in its final state. Preserve that login
+rendering and sign-in contract. The mailbox reference currently shows the domain
+chooser, not a complete virtual-address management workspace; do not treat it as
+acceptance of the missing writer functions.
+
+Continue the active slice with one bounded outcome: own admin Settings selects
+Text labels or Icons, saves it, and the authenticated admin pages follow the
+same shared OSMAP desktop/touch/keyboard rules across a fresh session. Reuse
+PresentationStyle, presentation_label and the existing CSS. Old private
+preferences/cookie records default to text labels; invalid choices refuse.
+Root owns implementation/host/Git and adapter_review independently reviews.
+Baseline b0e349a; preserve all matching backend/owner acceptance evidence.
+Minimum checks: one changed-boundary RED/GREEN, old-record compatibility,
+enum/CSRF refusal, label/accessibility and login isolation, then native browser
+save/readback and desktop/narrow observation. No new Python, dependency or test
+framework. Keep native build at 600 seconds and individual fixture actions at
+120 seconds; preserve cumulative history/UNKNOWN costs and the existing two-
+failure independent-reassessment stop. Use the existing sprint artifact root.
+
+The operator additionally requires complete domain creation/configuration,
+virtual mailbox/forward administration, administrator setup/modification and a
+security-function catalogue. Reconcile these requirements into the existing
+writer/domain/routing/identity slices and security model; they are not supplied
+by the currently SELECT-only pages or an enabled-looking button. Mail native
+qualification remains required separately from this obsd1 refinement.
+
+Installed presentation result: signed ba360305a2961453e1e791812d0fadf5f1e290e8
+builds natively in 40.41 seconds. Both isolated admin processes use artifact
+SHA-256 `879d1bec355584a850f995ab67565de0a443410dc92e8f1029297f4d94d8f494`.
+Old preferences load as Text labels. The actual owner browser saves Icons,
+uses overview/domain/mailbox controls, exposes the keyboard-focused Domains
+label, switches back to Text labels, and retains Icons after logout and fresh
+password/TOTP sign-in. Leave the requested Icons mode selected with the other
+appearance preferences unchanged. The approved login remains visually unchanged.
+At 360 pixels, touch emulation keeps visible labels and expanded navigation;
+this is emulation evidence, not physical-device UAT. Touch and viewport overrides
+are restored. The initial 759-pixel reference-tab viewport observation is retained
+as a setup limitation; corrected 1280-pixel DOM and viewport images establish
+desktop rendering. Independent source and image/result review are GO for this
+obsd1 scope. Reuse unchanged SQL/authentication evidence. Public mail/frontend
+services stay healthy; the private candidate/owner account remain ACTIVE.
+The expected missing-field RED and the whole-body CSS assertion failure are
+retained; the latter is corrected to inspect only the login root tag and passes.
+Strict Clippy and the existing inventory producer/consumer pass. Mail, release
+and owner acceptance of this new refinement remain pending. Bootstrap/domain
+writers are selected next, not implemented by this presentation change.
+
+The operator explicitly selects **Create a domain from scratch** as the next
+complete write journey. This supersedes the table's earlier chronological
+mailbox-first priority, not the required writer/authority/security contracts.
+An existing mailbox or the old application must not be a bootstrap prerequisite.
+Bring the minimum native schema/grant initialization and offline first-admin
+sub-slices ADM-S05-01a and ADM-S05-02a forward into the domain outcome; retain their parents' remaining
+installation/upgrade/enrollment acceptance obligations. Then reuse that writer
+foundation for ADM-S01-03. Domain creation does not depend on completion of a
+mailbox-creation journey or of the entire later standalone-installation sprint.
+
+**Both entry paths are required.** For an already installed openbsd-mailstack
+and OSMAP system with no managed accounts, enhance the existing bootstrap so
+Rust can initialize/verify the admin authority and least-privilege grants,
+establish a first administrator with MFA independently of any mailbox, and reach
+first-domain then first-mailbox creation. For an existing populated installation,
+inspect/adopt the actual compatible authority, preserve mail/credentials/factors,
+fence the old writer before enabling Rust writes, and prove continuity before
+retirement. Keep the existing database name when required; no PHP runtime or
+legacy setup page may be required by the new admin path.
+
+Inspection of openbsd-mailstack at commit
+`70c3d799bc13b7f00f49ee4d86557f3216827d4d` identifies concrete integration points:
+[Phase 02](https://github.com/unattributed/openbsd-mailstack/blob/70c3d799bc13b7f00f49ee4d86557f3216827d4d/docs/phases/phase-02-mariadb-baseline.md),
+[Phase 03](https://github.com/unattributed/openbsd-mailstack/blob/70c3d799bc13b7f00f49ee4d86557f3216827d4d/docs/phases/phase-03-postfixadmin-and-sql-wiring.md)
+and the [lab seeder](https://github.com/unattributed/openbsd-mailstack/blob/70c3d799bc13b7f00f49ee4d86557f3216827d4d/scripts/bootstrap/seed-lab-runtime-state.ksh).
+Phase 03 expects legacy setup inputs. The seeder creates mail routing tables,
+but not the admin/grant authority consumed by Rust, and its mailbox table omits
+the smtp_active projection consumed by the current reader. It also uses broad
+SQL grants and upserts initial mailbox passwords. Do not execute or wrap that
+seeder as an adoption path: replace these bootstrap effects with typed,
+least-privilege, empty-versus-populated Rust operations and explicit refusal of
+unknown/partial state. Preserve existing credentials on rerun. Do not carry its
+release/package pins into compatibility admission. These are inspected gaps,
+not an implemented bootstrap enhancement or a native fresh-install PASS.
+
+The future full-stack installation gateway, OS/package deployment and optional
+WireGuard access for native clients are explicitly OUT OF SCOPE now. Enhancing
+the existing mailstack's admin bootstrap is IN SCOPE; building a second general
+installer is not required to deliver it.
+
+### Required write functionality and parity scope — 2026-11-17
+
+The referenced domain and virtual-list pages redirect to authenticated legacy
+login in the agent browser. Read-only installed handler inspection on mail
+establishes the field definitions below; enabled optional flags, rendered-page
+parity and native effects still need qualification when each writer is selected.
+No installed PHP code, hook or endpoint becomes a Rust runtime dependency.
+
+| Existing slice | Required product functionality | Matching positive/refusal observations |
+| --- | --- | --- |
+| ADM-S02-01, brought forward as selected next | Create a domain with name, description, active state, mailbox/alias limits, per-mailbox/domain quota with verified units, supported transport, backup-MX policy and previewed default aliases. Show server-owned creation/modification dates. Include password-expiry policy only where its installed consumer is qualified. Link domain-admin assignment and DNS/security setup. DNS publication is an explicit configured integration or operator action; pending DNS is displayed honestly rather than preventing configuration drafts. | Empty authority reaches first admin/domain without an existing mailbox or legacy setup; persisted domain/default aliases are consistent and the actual Postfix lookup recognizes the configured domain. Duplicate/invalid names, foreign administrator, unapproved transport, quota overflow, partial initialization and concurrent submission refuse or reconcile without damaging existing data. Map UX-WF-02, UX-WF-03, existing T:F-01–06 and T:DB/INT/SEC cases. |
+| ADM-S01-03, ADM-S02-02, ADM-S02-03, ADM-S03-01, ADM-S03-02 | A real per-domain virtual-address workspace, rather than only the domain chooser: mailbox and alias lists, create/edit/disable/reactivate, mailbox display name and quota/usage, password/reset/enrollment, SMTP authorization, forwarding recipients and keep-local-copy, catch-all, alias domains and installed vacation/Sieve. Dates and routing state remain visible; recovery contacts follow the approved identity policy. Retirement preserves mail and uses the existing lifecycle rather than immediate destructive deletion. | Native authentication, local/external routing and delivery reflect each supported action; self-forwarding loops, foreign targets, reserved address damage, duplicate addresses, stale revisions and violated limits refuse. Units/usage and optional backend effects require native proof. Reuse mapped UX-WF-04–10/12 and existing T:F/INT/SEC/REC cases. |
+| ADM-S04-02, ADM-S04-03 | Settings has a system-administrator-only Administrators section: create/list/edit identities independently of mailboxes, select system/domain role and exact domain grants, activate/disable, enroll password/MFA securely, rotate/recover credentials under policy, revoke sessions and audit changes. Own appearance/account preferences remain separate. Argon2id stays part of this credential feature with compatible legacy verification. | Creation and grant changes work through the protected service; unauthorized elevation, last-system-admin lockout, expired/reused enrollment and stale-session resurrection refuse. Role changes invalidate authority before success. No password/hash/TOTP secret is returned in list views or audit. Reuse UX-WF-11, UX-WF-15 and existing T:F-04, T:F-24–26, T:F-35, T:SEC and T:REC cases. |
+| ADM-S06-01, ADM-S06-02 plus each affected domain/identity slice | Domain security/DNS and encryption controls follow the catalogue in OSMAP_ADMIN_SECURITY_MODEL.md, beginning with observed status and evidence. Each writable control requires its fixed protected backend and actual consumer test before enablement. | Distinguish configured, DNS-observed, native-verified, unavailable and pending states. A saved switch or generated key is not proof of signing, encryption, enforcement or recovery. |
 
 Only the selected product slice may transition to IN_PROGRESS. Its concrete
 work order extends the contract above in this document, records file owners,
