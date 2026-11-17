@@ -188,8 +188,8 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Active product implementation slice | **ADM-S01-02**, authorized mailbox list: IN_PROGRESS; reviewed source in draft PR #99, obsd1 basic pages/sign-in owner-accepted; text/icon refinement installed agent PASS, separate owner acceptance pending; candidate ACTIVE; mail qualification NOT_RUN, so full slice completion remains pending |
-| Previous product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; operator acceptance NOT_ACCEPTED |
+| Active product implementation slice | **ADM-S01-02**, authorized mailbox list: IN_PROGRESS; reviewed source in draft PR #99, obsd1 basic pages/sign-in owner-accepted; text/icon refinement installed agent PASS, separate owner acceptance pending; candidate ACTIVE; mail qualification PARTIAL (private native HTTP observed; required browser journey NOT_RUN), so full slice completion remains pending |
+| Previous product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; final login design owner-approved; whole-slice operator acceptance NOT_ACCEPTED |
 | Selected next product slice | **ADM-S02-01 domain creation from scratch**, selected by the operator after the text/icon refinement; NOT_STARTED. Execute ADM-S05-01a -> ADM-S05-02a -> ADM-S01-03a as its prerequisites, leaving their parent completion obligations later. Controlled mailbox creation follows. |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
 | Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
@@ -841,6 +841,98 @@ the next selected slice and remains NOT_STARTED; the first mailbox-management
 milestone and the other three ADM-S01 slices remain incomplete.
 
 ### ADM-S01-02 lean implementation work order — 2026-11-17
+
+**Focused resumption — 2026-11-17:** the operator directs completion of this
+slice, not bootstrap/domain writers. Baseline a0f1c35; reuse the independently
+reviewed ba360305 product and obsd1 binary SHA-256
+`879d1bec355584a850f995ab67565de0a443410dc92e8f1029297f4d94d8f494`.
+Root owns the sole host/Git queue and result writing; adapter_review independently
+checks dispatch and results. Required exit is the installed private mail browser
+journey through overview/counts, domain/mailbox list/filter/detail and persistent
+Text labels/Icons, with current-scope, private-reader-loss, direct-write and
+preference/CSRF refusals. Reuse matching obsd1 and S01-01 evidence; no full repeat
+of authentication tests, public mail changes, new Python or test framework.
+
+Read-only preflight verifies mail.blackbagsecurity.com through the established
+216.128.179.75 route, noninteractive privilege and running public daemons. The
+earlier `/var/osmap-adm-s01` namespace is root-sealed with its temporary roles
+removed: preserve it. Use one fresh exact-owned `/var/osmap-adm-s01-02` fixture,
+socket-only private SQL and loopback nginx, after actual utility/listener/schema/
+reader-grant admission and independent dispatch review. The same reviewed
+binary is copied with hash/version admission; do not rebuild unchanged code.
+Verify the TLS Host/Origin/proxy path before browser use; a certificate warning
+requires operator handling. Mutations apply only to fixture records/resources.
+Individual setup actions retain the existing 120-second bound; browser actions
+retain 300 seconds plus finite cleanup. Preserve cumulative history/UNKNOWN
+costs and measure new elapsed work; this resumption does not erase or replenish
+past effort. Two failures at one boundary stop retries for independent
+reassessment. Retain bounded private diagnostics before cleanup; uncertain owned
+state remains retained. The only final human judgment outstanding for the new
+presentation is separate from its agent-owned qualification. The later final
+login approval preserves the approved design, without retroactively claiming an
+owner repetition of every S01-01 journey. Delivery uses existing signed hooks,
+ordinary push and fresh remote equality; mail results remain NOT_RUN until run.
+
+The operator subsequently retains obsd1 as the development host and browser
+address, rejecting loopback URLs. Preserve normal obsd1 application/backend
+state. For the bounded mail qualification only, use the existing trusted
+`https://obsd1.blackbagsecurity.com/admin` entry with its source-IP restriction,
+temporarily selecting the isolated mail upstream through SSH. Admit and retain
+the exact old route/public upstream certificate, test the new upstream before
+switching, and restore/read back the original route after the browser journey.
+Only the obsd1 admin frontend routing changes temporarily; no public mail daemon,
+mail authority, new exposed port or firewall rule changes. Keep the isolated mail
+Web's exact origin/Host policy aligned with that hostname. A synthetic domain
+description distinguishes mail data from the unchanged obsd1 fixture. This is
+mail qualification through the obsd1 entry, not relocation of development or a
+live-authority cutover. Independent review covers this concrete route and its
+finite restoration before dispatch.
+
+**Mail progression checkpoint — 2026-11-17:** the unchanged reviewed binary is
+installed in the separate private mail namespace; its actual service/Web/SQL
+path signs in and returns the scoped overview (two domains, 12 mailboxes, two
+forwarding sources), domain detail, mailbox page/filter/detail, empty 200 and
+foreign 404. Restricted password-column SELECT and UPDATE refuse. A well-formed
+mailbox POST returns 405; malformed preferences/CSRF refuse, and a wrong
+well-shaped CSRF returns denial while a subsequent eligible GET is 200 with
+unchanged preferences. These are native HTTP results, not browser acceptance.
+
+Private reader SELECT loss reaches the expected 503. Its first restoration
+consumer incorrectly compares serialized SHOW GRANTS row order, reports
+`original_status=1 cleanup=UNCONFIRMED authority=UNKNOWN`, and is preserved.
+Independent readback compares the complete unordered grant lines and proves
+equality; a later eligible mailbox GET 200 and active-grant count one reconcile
+restoration. Do not repeat that REVOKE. The separate remaining fixture domain
+grant-loss operation returns 303, restores the exact grant with count readback,
+and reports original status zero with no pending recovery.
+
+The loopback browser entry stops at its certificate warning. The operator
+instead requires the existing obsd1 hostname/development host. A reviewed
+private mail-origin change fails at its bundled installation phase; the exact
+failed command/first HTTP status is UNKNOWN because that invocation did not
+retain them. Preserve this missing observation and failed receipt. Later
+config/process/socket readback and strict-TLS Host=obsd1 login 200 establish
+current private availability only. No stop/install/reload repeat or obsd1 route
+switch occurs. The original obsd1 route hash is unchanged; admin/public login
+HTTP 200 and public mail daemon checks pass. Private q2 service/Web/nginx/SQL and
+their isolated authority remain intentionally ACTIVE pending the next scope
+decision; no final cleanup or browser PASS is claimed.
+
+The operator observes that the pages remain shallow: Overview/Domains largely
+share a read-only list, and missing writers are still missing. No presentation
+work is added. A production read-only preflight observes five domain records,
+14 mailbox records and 49 alias records, plus the six required mailbox columns;
+alias rows are not forwarding-source counts. No production write, new grant,
+credential/factor change or deployment occurs. The question whether to use real
+production metadata through obsd1 or deploy production administration remains
+pending. The current executor shares one protected database/profile for admin
+authority and directory reads; do not substitute production credentials or grant
+development identities production authority implicitly. Mail browser qualification
+and full ADM-S01-02 completion remain pending. Retain the private evidence under
+the existing sprint root, with regular owner-only single-link artifacts. The
+first retained artifact is 13:54:58 UTC; observation through 14:32:33 UTC is
+37 minutes 35 seconds, with earlier preparation cost UNKNOWN and prior history
+unchanged. This checkpoint is source/evidence preservation, not product closure.
 
 The operator applies the S01 lessons and authorizes the next mailbox-list slice
 (called “adm-s02” in chat). Baseline is signed main

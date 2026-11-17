@@ -1973,3 +1973,25 @@ basic pages, final login and prior result/count receipts. Full-stack installatio
 and optional WireGuard client provisioning remain deferred. This is a reviewed
 documentation integration, not implementation, runtime qualification, new test
 machinery or authority for host changes; all new slices/cases remain planned.
+
+### Same day — Bound ADM-S01-02 qualification and retain the production distinction
+
+The operator resumes the read-only slice and requires effective, focused work,
+then retains obsd1 as the development host/address and challenges the shallow
+product functionality and use of synthetic authority. Reuse the reviewed Rust
+binary and matching obsd1 results. Record the new isolated mail HTTP reader and
+refusal observations separately from browser qualification. Preserve the failed
+grant-order equality check, its independently reconciled restoration, and the
+private origin invocation whose exact failed command/status was not observed.
+Do not repeat completed mutations or promote later availability into an earlier
+PASS. The original obsd1 frontend route and public mail services stay intact.
+
+Read-only production inspection confirms real authority exists and has the
+required mailbox columns; it does not connect the development UI to it. Keep
+development, production data authority and production deployment distinct. A
+pending operator clarification selects real metadata reads or production use;
+it supplies no implicit production write, role or factor change. The existing
+pages remain an incomplete administration product, even where their read-only
+boundaries pass. Preserve their approved design and progress toward the real
+domain/mailbox writer journey rather than further presentation work. ADM-S01-02
+remains IN_PROGRESS; its mail browser result and acceptance remain pending.
