@@ -1217,6 +1217,28 @@ fn creation_requires_opt_in_actor_scope_csrf_and_fresh_factor() {
         backend.create_mailbox_from(&token, &context, &r),
         Err(CreateFailure::Missing)
     ));
+    r.domain = "example.test".into();
+    for _ in 0..LoginThrottlePolicy::default().credential_max_failures {
+        assert!(matches!(
+            backend.create_mailbox_from(&token, &context, &r),
+            Err(CreateFailure::StepUp)
+        ));
+    }
+    let throttle = LoginThrottleService::new(
+        FileLoginThrottleStore::new(f.root.join("account-throttle")),
+        f.clock.clone(),
+        LoginThrottlePolicy::default(),
+    );
+    assert_ne!(
+        throttle
+            .check(
+                &Service::<Sql, Clock, Password>::account_context(LOGIN),
+                LOGIN
+            )
+            .unwrap()
+            .decision,
+        LoginThrottleDecision::Allowed
+    );
     assert_eq!(*writes.lock().unwrap(), 0);
 }
 #[test]

@@ -93,7 +93,7 @@ REVIEWED_SQL_RUST_PATHS = {
     "src/admin_access.rs":
         "90bc537438ed0220d3c031af14d0ce07d4fa99c6e669560a6d0f7b9732ede22f",
     "src/admin_create.rs":
-        "4bff75bd41c5c76512559f55eef52e57a2960b0070a02021157ed2fb8d181162",
+        "2df6a79f11864a8e6a72e62f7089630b479b828d013c7b6e5df62350357291e3",
     "src/account_password_backend.rs":
         "95c0e45371b1e572cad9834328ff4fcd15162ba64e9b8b66242e13e1d05fe219",
     "src/admin_directory.rs":

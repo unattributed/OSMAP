@@ -325,6 +325,20 @@ where
         if previous.as_ref().is_some_and(|p| p.pending) {
             return Err(CreateFailure::Unconfirmed);
         }
+        let step_up_context = Self::account_context(&summary.login);
+        let step_up_throttle = LoginThrottleService::new(
+            FileLoginThrottleStore::new(self.authority.root.join("account-throttle")),
+            self.clock.clone(),
+            LoginThrottlePolicy::default(),
+        );
+        if step_up_throttle
+            .check(&step_up_context, &summary.login)
+            .map_err(|_| CreateFailure::Unavailable)?
+            .decision
+            != LoginThrottleDecision::Allowed
+        {
+            return Err(CreateFailure::StepUp);
+        }
         let verdict = TotpVerifier::new(
             self.authority.factors(),
             self.clock.clone(),
@@ -337,8 +351,14 @@ where
         )
         .map_err(|_| CreateFailure::Unavailable)?;
         if verdict != SecondFactorVerdict::Accept {
+            step_up_throttle
+                .record_failure(&step_up_context, &summary.login)
+                .map_err(|_| CreateFailure::Unavailable)?;
             return Err(CreateFailure::StepUp);
         }
+        step_up_throttle
+            .clear_success(&step_up_context, &summary.login)
+            .map_err(|_| CreateFailure::Unavailable)?;
         // Recheck authority after step-up/hash and again atomically in SQL.
         let admin = self
             .authority
