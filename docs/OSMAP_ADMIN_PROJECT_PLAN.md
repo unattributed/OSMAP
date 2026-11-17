@@ -858,6 +858,19 @@ reuse the existing icon/presentation-label markup in `admin_ui.rs`, run its
 existing focused tests and qualify the changed rendering natively. No new test
 scaffolding, authentication change or blanket native-test rebuild is needed.
 
+Preserve two visual failures: the initial bare labels clip at 744 pixels, and
+candidate `91102357` wraps them into narrow fragments. Stop further visual
+retries for combined independent reassessment. The actual shared CSS requires
+the existing main application's `rail-disclosure`, `shell-icon` and `rail-label`
+structure; presentation labels alone do not supply that contract. Independent
+reassessment approves reusing the fixed icon helper and native disclosure in
+an admin-only rail. Qualify collapsed/expanded navigation at 744 and 360 pixels;
+do not infer its PASS from source. This does not reset failures or cumulative
+effort. Candidate 91102357's Cargo output reports a 39.34-second successful
+build, while its launcher later returns 143 with no termination-source
+observation. Retain that UNKNOWN transport cause; fresh revision/hash readback
+confirms the resulting artifact without another build attempt.
+
 ### One active slice, work orders and delivery
 
 Only the selected product slice may transition to IN_PROGRESS. Its concrete

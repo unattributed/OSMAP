@@ -344,7 +344,7 @@ pub(crate) fn presentation_label(label: &str, icon: &str) -> String {
     format!("<span class=\"presentation-icon presentation-icon-{icon}\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">{}</span>", escape_html(label))
 }
 
-fn shell_icon(name: &str) -> String {
+pub(crate) fn shell_icon(name: &str) -> String {
     let path = match name {
         "back" => "<path d=\"M20 12H4m6-6-6 6 6 6\"/>",
         "reply" => "<path d=\"m9 4-6 6 6 6M3 10h11c5 0 7 4 7 10\"/>",

@@ -5,6 +5,18 @@ use crate::html::TrustedHtml;
 use crate::http::HttpResponse;
 use crate::http_support::{escape_html, html_response, url_encode};
 
+fn admin_rail(inventory: bool) -> String {
+    format!(concat!(
+        "<aside class=\"app-rail\" aria-label=\"Admin navigation\">",
+        "<details class=\"rail-disclosure\"><summary title=\"Navigation labels\">{menu}<span class=\"sr-only rail-expand-label\">Expand navigation</span><span class=\"sr-only rail-collapse-label\">Collapse navigation</span></summary><p class=\"sr-only\">Navigation labels are expanded.</p></details>",
+        "<nav class=\"rail-links\" aria-label=\"Primary navigation\">",
+        "<a class=\"rail-link\" href=\"/admin\" aria-label=\"Overview\" title=\"Overview\"{overview_current}>{shield}<span class=\"rail-label\">Overview</span></a>",
+        "<a class=\"rail-link\" href=\"/admin#admin-domain-selection\" aria-label=\"Mailboxes\" title=\"Mailboxes\"{mailboxes_current}>{inbox}<span class=\"rail-label\">Mailboxes</span></a></nav></aside>"
+    ), menu = crate::http_ui::shell_icon("menu"), shield = crate::http_ui::shell_icon("shield"), inbox = crate::http_ui::shell_icon("inbox"),
+    overview_current = if inventory { "" } else { " aria-current=\"page\"" },
+    mailboxes_current = if inventory { " aria-current=\"page\"" } else { "" })
+}
+
 fn admin_html_response(
     status: u16,
     reason: &'static str,
@@ -88,8 +100,7 @@ pub(crate) fn scope_page(
     let body = TrustedHtml::from_template(format!(
         concat!(
             "<a class=\"skip-link\" href=\"#main-content\">Skip to current scope</a>",
-            "<aside class=\"app-rail\" aria-label=\"Admin navigation\"><nav class=\"rail-links\" aria-label=\"Primary navigation\">",
-            "<a class=\"rail-link selected\" href=\"/admin\" aria-current=\"page\"><span class=\"presentation-icon presentation-icon-shield\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Overview</span></a></nav></aside>",
+            "{rail}",
             "<header class=\"topbar\" aria-label=\"OSMAP Admin\"><a class=\"brand\" href=\"/admin\" style=\"flex-basis:auto;white-space:nowrap\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>OSMAP Admin</a>",
             "<div class=\"status-row auth-status\"><span>Signed in as <strong>{login}</strong></span>",
             "<form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{csrf}\"><button type=\"submit\">Sign out</button></form></div></header>",
@@ -102,6 +113,7 @@ pub(crate) fn scope_page(
         login = escape_html(login),
         csrf = escape_html(csrf),
         scope = scope,
+        rail = admin_rail(false),
     ));
     admin_html_response(200, "OK", "OSMAP Admin — Current scope", body)
 }
@@ -109,10 +121,10 @@ pub(crate) fn scope_page(
 fn inventory_shell(login: &str, csrf: &str, title: &str, content: String) -> HttpResponse {
     let body = format!(concat!(
         "<a class=\"skip-link\" href=\"#main-content\">Skip to mailboxes</a>",
-        "<aside class=\"app-rail\" aria-label=\"Admin navigation\"><nav class=\"rail-links\" aria-label=\"Primary navigation\"><a class=\"rail-link\" href=\"/admin\"><span class=\"presentation-icon presentation-icon-shield\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Overview</span></a><a class=\"rail-link selected\" href=\"/admin#admin-domain-selection\" aria-current=\"page\"><span class=\"presentation-icon presentation-icon-inbox\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Mailboxes</span></a></nav></aside>",
+        "{}",
         "<header class=\"topbar\" aria-label=\"OSMAP Admin\"><a class=\"brand\" href=\"/admin\" style=\"flex-basis:auto;white-space:nowrap\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>OSMAP Admin</a><div class=\"status-row auth-status\"><span>Signed in as <strong>{}</strong></span><form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{}\"><button type=\"submit\">Sign out</button></form></div></header>",
         "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>{}</h1><p><span class=\"badge\">Read-only</span> Configured mailbox metadata. Live authentication, delivery, usage and browser MFA have not been verified.</p></div>{}</main>"
-    ), escape_html(login), escape_html(csrf), escape_html(title), content);
+    ), admin_rail(true), escape_html(login), escape_html(csrf), escape_html(title), content);
     admin_html_response(
         200,
         "OK",
