@@ -164,10 +164,11 @@ impl CommandExecutor for Sql {
         );
         match &result {
             Ok(output) if output.status_code != 0 || !output.stderr.is_empty() => eprintln!(
-                "ADMIN_SQL_PROCESS_REFUSED status={} stdout_bytes={} stderr_bytes={}",
+                "ADMIN_SQL_PROCESS_REFUSED status={} stdout_bytes={} stderr_bytes={} cause={}",
                 output.status_code,
                 output.stdout.len(),
-                output.stderr.len()
+                output.stderr.len(),
+                sql_failure_code(&output.stderr)
             ),
             Err(error) => eprintln!(
                 "ADMIN_SQL_RUNNER_REFUSED private_reason_bytes={} cause=not_observed",
@@ -177,6 +178,29 @@ impl CommandExecutor for Sql {
         }
         result
     }
+}
+
+fn sql_failure_code(stderr: &str) -> &'static str {
+    // Only source-owned classifications cross the native diagnostic boundary.
+    // Never retain arbitrary SQL/error text (which may contain credentials).
+    for line in stderr.lines() {
+        if line.starts_with("ERROR 1267 ") || line.starts_with("ERROR 1271 ") {
+            return "collation";
+        }
+        if line.starts_with("ERROR 1142 ") || line.starts_with("ERROR 1143 ") {
+            return "permission";
+        }
+        if line.starts_with("ERROR 1054 ") || line.starts_with("ERROR 1146 ") {
+            return "schema";
+        }
+        if line.starts_with("ERROR 1064 ") {
+            return "syntax";
+        }
+        if line.starts_with("ERROR 1205 ") || line.starts_with("ERROR 1213 ") {
+            return "lock";
+        }
+    }
+    "not_observed"
 }
 
 /// CLI-only role selection; no browser field supplies configuration or execution.
@@ -433,6 +457,18 @@ fn inventory_error(error: crate::admin_access::Error) -> Response {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn native_sql_diagnostic_keeps_private_error_text_out_of_export() {
+        assert_eq!(
+            sql_failure_code("ERROR 1267 (HY000): private-token-and-SQL"),
+            "collation"
+        );
+        assert_eq!(sql_failure_code("private-token-and-SQL"), "not_observed");
+        assert_eq!(
+            sql_failure_code("ERROR 1143 (42000): private-account"),
+            "permission"
+        );
+    }
     #[derive(Clone)]
     struct Unavailable;
     impl CommandExecutor for Unavailable {
