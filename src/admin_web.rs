@@ -40,7 +40,7 @@ fn policy(config: &WebConfig) -> HttpPolicy {
         max_query_fields: 4,
         max_body_bytes: 2048,
         max_upload_body_bytes: 2048,
-        max_form_fields: 4,
+        max_form_fields: 5,
         allowed_hosts: vec![config.host.clone()],
         session_cookie_name: SESSION_COOKIE,
         secure_session_cookie: true,
@@ -105,7 +105,7 @@ fn form(request: &HttpRequest, expected: &[&str]) -> Result<BTreeMap<String, Str
     {
         return Err(());
     }
-    let values = parse_urlencoded_form(&request.body, 4, 2048).map_err(|_| ())?;
+    let values = parse_urlencoded_form(&request.body, expected.len(), 2048).map_err(|_| ())?;
     if values.len() != expected.len() || expected.iter().any(|key| !values.contains_key(*key)) {
         return Err(());
     }
@@ -264,6 +264,9 @@ fn handle<C: Exchange>(config: &WebConfig, request: &HttpRequest, client: &C) ->
         })
         .unwrap_or_default();
     preferences.apply(&mut response);
+    if request.path != "/admin/login" {
+        preferences.apply_menus(&mut response);
+    }
     response
 }
 fn handle_inner<C: Exchange>(
@@ -395,7 +398,16 @@ fn dashboard<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) -> Http
             }
         }
         "/admin/settings/appearance" => {
-            let Ok(values) = form(request, &["csrf", "theme", "density", "font_size"]) else {
+            let Ok(values) = form(
+                request,
+                &[
+                    "csrf",
+                    "theme",
+                    "density",
+                    "font_size",
+                    "presentation_style",
+                ],
+            ) else {
                 return crate::admin_ui::error_page(400);
             };
             Operation::SavePreferences {
@@ -405,6 +417,7 @@ fn dashboard<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) -> Http
                     theme: values["theme"].clone(),
                     density: values["density"].clone(),
                     font_size: values["font_size"].clone(),
+                    presentation_style: values["presentation_style"].clone(),
                 },
             }
         }
@@ -754,11 +767,37 @@ mod tests {
     }
 
     #[test]
+    fn menu_cookie_never_changes_the_approved_login_presentation() {
+        let fake = Fake::new(Response::Unavailable);
+        let response = handle(
+            &config(),
+            &parse(
+                "GET",
+                "/admin/login",
+                &format!("Cookie: {APPEARANCE_COOKIE}=system.comfortable.medium.icons\r\n"),
+                "",
+            ),
+            &fake,
+        );
+        assert_eq!(response.status_code, 200);
+        let body = std::str::from_utf8(&response.body).unwrap();
+        assert!(body.contains("Private Administration"));
+        assert!(!body
+            .split_once("<head>")
+            .unwrap()
+            .0
+            .contains("data-presentation-style="));
+        assert!(!body.contains("Presentation style"));
+        assert!(fake.calls.borrow().is_empty());
+    }
+
+    #[test]
     fn settings_save_uses_admin_fields_cookie_and_shared_appearance_only() {
         let preferences = crate::admin_access::AdminPreferences {
             theme: "dark".into(),
             density: "compact".into(),
             font_size: "large".into(),
+            presentation_style: "icons".into(),
         };
         let fake = Fake::new(Response::Settings {
             page: crate::admin_access::SettingsPage {
@@ -776,7 +815,7 @@ mod tests {
                 "/admin/settings/appearance",
                 &headers,
                 &format!(
-                    "csrf={}&theme=dark&density=compact&font_size=large",
+                    "csrf={}&theme=dark&density=compact&font_size=large&presentation_style=icons",
                     "c".repeat(64)
                 ),
             ),
@@ -787,6 +826,8 @@ mod tests {
         assert!(text.contains("Appearance saved."));
         assert!(text.contains("data-appearance=\"dark\""));
         assert!(text.contains("data-density=\"compact\""));
+        assert!(text.contains("data-presentation-style=\"icons\""));
+        assert!(text.contains("Presentation style"));
         assert!(response
             .headers
             .iter()

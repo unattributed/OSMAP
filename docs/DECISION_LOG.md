@@ -1912,3 +1912,32 @@ delivery, without another host action or discretionary test run. Mail
 qualification stays NOT_RUN, so ADM-S01-02 completion and production/release
 acceptance remain pending. Domain and forwarding writes remain planned work.
 Keep PR #99 draft until its outstanding qualification requirements are met.
+
+### Same day — Preserve approved pages and bring admin bootstrap before domains
+
+The operator approves basic functionality of the referenced pages and fully
+approves the login page in its final state. Reuse OSMAP's existing Text labels /
+Icons preference for authenticated admin menus, with old records defaulting to
+text labels and the approved login excluded from menu presentation changes.
+The new missing-field RED and the corrected root-tag assertion are retained;
+shared CSS, native authentication and SQL remain unchanged.
+
+The operator identifies the missing domain, virtual-address and administrator
+writers, selects domain creation from scratch next, and requires both a fresh
+mailstack/OSMAP installation and adoption of a populated installation. Bring
+the needed schema/grant/first-admin bootstrap portions forward: a mailbox or
+the old admin application cannot be required to create the first administrator
+or first domain. Inspect the existing mailstack bootstrap rather than wrapping
+its lab seeder: it lacks the Rust admin/grant and smtp_active projections and
+upserts mailbox credentials with broad SQL grants. Preserve existing authority
+and credentials on adoption/rerun, and fence the previous writer before Rust
+writes. Record field parity from installed handlers and a sourced security
+function catalogue as requirements, not implemented capability.
+
+The operator explicitly keeps the future full-stack installation gateway and
+optional WireGuard client access out of scope, while confirming that enhancing
+openbsd-mailstack's existing bootstrap is in scope. Keep that distinction in
+the existing project/acceptance records. Current code work is the text/icon
+refinement; bootstrap/domain writers remain the selected next implementation
+boundary. Neither the roadmap correction nor approved basic pages closes mail
+qualification, the replacement milestone or production retirement.

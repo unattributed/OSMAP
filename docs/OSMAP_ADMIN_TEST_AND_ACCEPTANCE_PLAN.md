@@ -790,3 +790,25 @@ Settings functionality. The owner statement does not separately attest each
 agent-owned negative/security test. The assessed installed source remains
 e3a7ab4 Web and unchanged 4ca8757 backend. Mail qualification remains NOT_RUN;
 full ADM-S01-02 completion and release/production acceptance remain pending.
+
+### Approved baseline and next domain/bootstrap journey — 2026-11-17
+
+The five owner page references approve their basic functionality; login is
+fully approved in its final state. Text/icon refinement must preserve that
+login, old preference records, scoped authority and separate admin cookies.
+Source checks cover the actual preference form, persistence, invalid enum/CSRF,
+old record/cookie compatibility and login-root isolation. Native menu save and
+readback plus desktop/narrow observation remain required before installed PASS.
+
+The selected next write journey is domain creation from scratch. Both entry
+paths are required: an existing mailstack/OSMAP installation with no domains,
+mailboxes or administrator reaches first-admin/domain creation through the
+enhanced bootstrap; a populated installation adopts preserved authority and
+transfers a single writer without losing mail, credentials or factors. Execute
+the real bootstrap producer's output through Rust and native mail consumers;
+manually seeded fixture tables alone cannot qualify this path. Repeat bootstrap,
+partial/unknown schema, duplicate domain, unsupported configuration and stale/
+foreign authority must refuse or reconcile safely. The full-stack installation
+gateway and optional WireGuard are future features excluded from this acceptance.
+Use the current project-plan parity definitions and security-model catalogue;
+those requirements are not current writer/security-feature PASS results.

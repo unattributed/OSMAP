@@ -4,6 +4,7 @@ use crate::admin_access::{MailboxPage, MailboxView};
 use crate::html::TrustedHtml;
 use crate::http::HttpResponse;
 use crate::http_support::{escape_html, html_response, url_encode};
+use crate::http_ui::presentation_label;
 
 #[path = "admin_dashboard_ui.rs"]
 mod dashboard;
@@ -95,7 +96,7 @@ pub(crate) fn scope_page(
             "{rail}",
             "<header class=\"topbar\" aria-label=\"OSMAP Admin\"><a class=\"brand\" href=\"/admin\" style=\"flex-basis:auto;white-space:nowrap\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>OSMAP Admin</a>",
             "<div class=\"status-row auth-status\"><span>Signed in as <strong>{login}</strong></span>",
-            "<form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{csrf}\"><button type=\"submit\">Sign out</button></form></div></header>",
+            "<form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{csrf}\"><button type=\"submit\">{logout}</button></form></div></header>",
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Administration</h1><p>Your current administrator scope is shown below.</p></div>",
             "<section class=\"panel\" aria-labelledby=\"admin-scope-title\"><h2 id=\"admin-scope-title\">Current scope</h2>{scope}</section>",
             "<section class=\"panel\" aria-labelledby=\"admin-access-title\"><h2 id=\"admin-access-title\">Available access</h2><p><span class=\"badge\">Read-only</span></p>",
@@ -106,6 +107,7 @@ pub(crate) fn scope_page(
         csrf = escape_html(csrf),
         scope = scope,
         rail = admin_rail("overview"),
+        logout = presentation_label("Sign out", "logout"),
     ));
     admin_html_response(200, "OK", "OSMAP Admin — Current scope", body)
 }
@@ -126,9 +128,9 @@ fn page_shell(
     let body = format!(concat!(
         "<a class=\"skip-link\" href=\"#main-content\">Skip to main content</a>",
         "{}",
-        "<header class=\"topbar\" aria-label=\"OSMAP Admin\"><a class=\"brand\" href=\"/admin\" style=\"flex-basis:auto;white-space:nowrap\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>OSMAP Admin</a><div class=\"status-row auth-status\"><span style=\"min-width:0;overflow-wrap:anywhere\">Signed in as <strong>{}</strong></span><form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{}\"><button type=\"submit\">Sign out</button></form></div></header>",
+        "<header class=\"topbar\" aria-label=\"OSMAP Admin\"><a class=\"brand\" href=\"/admin\" style=\"flex-basis:auto;white-space:nowrap\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>OSMAP Admin</a><div class=\"status-row auth-status\"><span style=\"min-width:0;overflow-wrap:anywhere\">Signed in as <strong>{}</strong></span><form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{}\"><button type=\"submit\">{logout}</button></form></div></header>",
         "<main id=\"main-content\" class=\"page-shell{}\" tabindex=\"-1\"><div class=\"page-intro\"><h1>{}</h1><p>{}</p></div>{}</main>"
-    ), admin_rail(current), escape_html(login), escape_html(csrf),page_class, escape_html(title),escape_html(intro), content);
+    ), admin_rail(current), escape_html(login), escape_html(csrf),page_class, escape_html(title),escape_html(intro), content, logout=presentation_label("Sign out","logout"));
     admin_html_response(
         200,
         "OK",
@@ -158,9 +160,9 @@ pub(crate) fn mailboxes_page(page: &MailboxPage) -> HttpResponse {
         "<section class=\"panel\"><h2>Mailboxes for {}</h2>",
         "<form method=\"get\" action=\"/admin/mailboxes\"><input type=\"hidden\" name=\"domain\" value=\"{}\"><input type=\"hidden\" name=\"page\" value=\"1\">",
         "<label for=\"mailbox-filter\">Address contains</label><input id=\"mailbox-filter\" name=\"q\" maxlength=\"64\" value=\"{}\">",
-        "<label for=\"mailbox-sort\">Sort by</label><select id=\"mailbox-sort\" name=\"sort\"><option value=\"address\"{}>Address A–Z</option><option value=\"quota\"{}>Configured quota, highest first</option></select><button type=\"submit\">Filter mailboxes</button></form>",
+        "<label for=\"mailbox-sort\">Sort by</label><select id=\"mailbox-sort\" name=\"sort\"><option value=\"address\"{}>Address A–Z</option><option value=\"quota\"{}>Configured quota, highest first</option></select><button type=\"submit\">{filter}</button></form>",
         "<p role=\"status\">{} matching mailboxes. Page {} of {}.</p>"
-    ), escape_html(&page.domain), escape_html(&page.domain), escape_html(&page.query), if page.sort == "address" { " selected" } else { "" }, if page.sort == "quota" { " selected" } else { "" }, page.total, page.page, page.pages());
+    ), escape_html(&page.domain), escape_html(&page.domain), escape_html(&page.query), if page.sort == "address" { " selected" } else { "" }, if page.sort == "quota" { " selected" } else { "" }, page.total, page.page, page.pages(),filter=presentation_label("Filter mailboxes","search"));
     if page.rows.is_empty() {
         content.push_str(if page.query.is_empty() {
             "<p>No mailboxes are configured for this domain.</p>"
@@ -177,24 +179,26 @@ pub(crate) fn mailboxes_page(page: &MailboxPage) -> HttpResponse {
     content.push_str("<nav aria-label=\"Mailbox pages\">");
     if page.page > 1 {
         content.push_str(&format!(
-            "<a class=\"button-link\" href=\"{}\">Previous page</a> ",
+            "<a class=\"button-link\" href=\"{}\">{}</a> ",
             escape_html(&list_url(
                 &page.domain,
                 &page.query,
                 page.page - 1,
                 &page.sort
-            ))
+            )),
+            presentation_label("Previous page", "previous")
         ));
     }
     if page.page < page.pages() {
         content.push_str(&format!(
-            "<a class=\"button-link\" href=\"{}\">Next page</a>",
+            "<a class=\"button-link\" href=\"{}\">{}</a>",
             escape_html(&list_url(
                 &page.domain,
                 &page.query,
                 page.page + 1,
                 &page.sort
-            ))
+            )),
+            presentation_label("Next page", "next")
         ));
     }
     content.push_str("</nav><p>Quota is the stored configured value; its unit, usage and enforcement have not been verified. Lists refresh between views; object links remain bound to mailbox identity.</p></section>");
@@ -218,8 +222,8 @@ pub(crate) fn mailbox_page(
     let content = format!(concat!(
         "<section class=\"panel\"><h2>{}</h2><dl><dt>Hosted domain</dt><dd>{}</dd><dt>Account flag</dt><dd>{}</dd><dt>SMTP flag</dt><dd>{}</dd><dt>Configured quota (unit unverified)</dt><dd>{}</dd>",
         "<dt>Display name</dt><dd>Not available from this inventory</dd><dt>Native authentication</dt><dd>Not verified</dd><dt>Message delivery</dt><dd>Not verified</dd><dt>Storage usage</dt><dd>Unknown</dd><dt>Browser TOTP and recovery</dt><dd>Not observed</dd><dt>Last live verification</dt><dd>Not observed</dd></dl>",
-        "<a class=\"button-link\" href=\"{}\">Back to mailboxes</a></section>"
-    ), escape_html(&row.username), escape_html(domain), enabled(row.active), enabled(row.smtp_active), row.quota, escape_html(&list_url(domain, "", 1, "address")));
+        "<a class=\"button-link\" href=\"{}\">{back}</a></section>"
+    ), escape_html(&row.username), escape_html(domain), enabled(row.active), enabled(row.smtp_active), row.quota, escape_html(&list_url(domain, "", 1, "address")),back=presentation_label("Back to mailboxes","back"));
     inventory_shell(login, csrf, "Mailbox details", content)
 }
 

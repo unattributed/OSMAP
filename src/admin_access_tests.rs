@@ -909,13 +909,14 @@ fn domain_overview_and_preferences_use_current_admin_authority() {
     assert_eq!(settings.preferences.theme, "system");
     let mut preferences = settings.preferences;
     preferences.theme = "dark".into();
+    preferences.presentation_style = "icons".into();
     assert!(matches!(
         f.service()
             .save_preferences_from(&token, &context, &"0".repeat(64), preferences.clone()),
         Err(Error::Denied)
     ));
     let mut invalid = preferences.clone();
-    invalid.theme = "<script>".into();
+    invalid.presentation_style = "<script>".into();
     assert!(matches!(
         f.service()
             .save_preferences_from(&token, &context, &settings.csrf, invalid),
@@ -931,6 +932,14 @@ fn domain_overview_and_preferences_use_current_admin_authority() {
             .preferences
             .theme,
         "dark"
+    );
+    assert_eq!(
+        f.service()
+            .settings_from(&token, &context)
+            .unwrap()
+            .preferences
+            .presentation_style,
+        "icons"
     );
     let id = &overview.rows[0].id;
     assert_eq!(

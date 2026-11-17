@@ -7,6 +7,42 @@ pub(crate) struct AdminPreferences {
     pub(crate) theme: String,
     pub(crate) density: String,
     pub(crate) font_size: String,
+    #[serde(default = "text_labels")]
+    pub(crate) presentation_style: String,
+}
+fn text_labels() -> String {
+    crate::appearance::PresentationStyle::default()
+        .as_str()
+        .into()
+}
+
+#[cfg(test)]
+mod preference_compatibility_tests {
+    use super::*;
+    #[test]
+    fn old_admin_records_and_cookie_hints_keep_text_labels() {
+        let old: AdminPreferences =
+            serde_json::from_str(r#"{"theme":"dark","density":"compact","font_size":"large"}"#)
+                .unwrap();
+        assert!(old.valid());
+        assert_eq!(old.presentation_style, "text_labels");
+        assert_eq!(
+            AdminPreferences::parse("dark.compact.large")
+                .unwrap()
+                .presentation_style,
+            "text_labels"
+        );
+        let mut icons = old;
+        icons.presentation_style = "icons".into();
+        assert_eq!(
+            AdminPreferences::parse(&icons.value())
+                .unwrap()
+                .presentation_style,
+            "icons"
+        );
+        assert!(AdminPreferences::parse("dark.compact.large.svg").is_none());
+        assert!(AdminPreferences::parse("dark.compact.large.icons.extra").is_none());
+    }
 }
 impl Default for AdminPreferences {
     fn default() -> Self {
@@ -14,6 +50,7 @@ impl Default for AdminPreferences {
             theme: "system".into(),
             density: "comfortable".into(),
             font_size: "medium".into(),
+            presentation_style: text_labels(),
         }
     }
 }
@@ -22,19 +59,27 @@ impl AdminPreferences {
         crate::appearance::AppearancePreference::parse(&self.theme).is_some()
             && crate::appearance::Density::parse(&self.density).is_some()
             && crate::appearance::FontSize::parse(&self.font_size).is_some()
+            && crate::appearance::PresentationStyle::parse(&self.presentation_style).is_some()
     }
     pub(crate) fn value(&self) -> String {
-        format!("{}.{}.{}", self.theme, self.density, self.font_size)
+        format!(
+            "{}.{}.{}.{}",
+            self.theme, self.density, self.font_size, self.presentation_style
+        )
     }
     pub(crate) fn parse(value: &str) -> Option<Self> {
         let values = value.split('.').collect::<Vec<_>>();
-        if values.len() != 3 {
+        if !matches!(values.len(), 3 | 4) {
             return None;
         }
         let result = Self {
             theme: values[0].into(),
             density: values[1].into(),
             font_size: values[2].into(),
+            presentation_style: values
+                .get(3)
+                .map(|s| (*s).into())
+                .unwrap_or_else(text_labels),
         };
         result.valid().then_some(result)
     }
@@ -43,6 +88,10 @@ impl AdminPreferences {
             theme: crate::appearance::AppearancePreference::parse(&self.theme).unwrap_or_default(),
             density: crate::appearance::Density::parse(&self.density).unwrap_or_default(),
             font_size: crate::appearance::FontSize::parse(&self.font_size).unwrap_or_default(),
+            presentation_style: crate::appearance::PresentationStyle::parse(
+                &self.presentation_style,
+            )
+            .unwrap_or_default(),
             ..Default::default()
         };
         // Internal presentation projection only. No mailbox cookie is emitted,
@@ -53,6 +102,17 @@ impl AdminPreferences {
             appearance.cookie(true)
         );
         crate::http_support::apply_appearance(response, Some(&projected));
+    }
+    pub(crate) fn apply_menus(&self, response: &mut crate::http::HttpResponse) {
+        const ROOT: &[u8] = b"<!doctype html><html lang=\"en\"";
+        if response.status_code == 200 && response.body.starts_with(ROOT) {
+            let style = crate::appearance::PresentationStyle::parse(&self.presentation_style)
+                .unwrap_or_default();
+            let attribute = format!(" data-presentation-style=\"{}\"", style.as_str());
+            response
+                .body
+                .splice(ROOT.len()..ROOT.len(), attribute.bytes());
+        }
     }
 }
 
