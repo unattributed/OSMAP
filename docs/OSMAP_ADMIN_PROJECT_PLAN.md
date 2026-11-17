@@ -822,6 +822,42 @@ the transport failure and UNKNOWN total effort; do not replenish the two-hour
 initial investigation checkpoint. Browser, mail, final cleanup and operator
 acceptance remain outstanding.
 
+Operator routing correction, 2026-11-17: the expired workstation forward makes
+the loopback handoff unavailable. The operator requests the real private
+candidate at `https://obsd1.blackbagsecurity.com/admin/login`. Reuse the existing
+valid hostname certificate and nginx listener, adding only an `/admin` route
+restricted to the workstation's verified LAN address. Resolve that hostname
+directly to obsd1 on this workstation so access does not depend on a timed
+forward or admit the router's indistinguishable NAT clients. Preserve the exact
+prior workstation resolution and nginx/Web configurations before changing them.
+Root owns dispatch; adapter_review independently reviews configuration and the
+result. The existing Rust candidate and isolated SQL authority stay unchanged.
+
+Update the private Web origin and fixed proxy Host together; retain verified TLS
+on the loopback upstream, existing proxy UID/socket custody and header rewriting.
+The inner proxy continues to report its actual loopback TLS peer: this isolated
+route does not qualify end-client address propagation or production throttling.
+Check nginx syntax before its reload, valid hostname TLS/login, a refused
+non-admitted route, exact Origin handling and the ordinary frontend/mail health.
+Then continue the actual browser mailbox journey. Only the OSMAP Web process and
+nginx configuration may restart/reload for this correction; no public Postfix,
+Dovecot or MariaDB change. Preserve the unreachable-forward result and the
+unsupported native `openssl x509 -ext` inspection option as preparation failures;
+the supported certificate query succeeds without any certificate change.
+Each configuration action remains bounded to 120 seconds with exact backups and
+rollback; two failures at the same boundary stop for combined reassessment.
+This correction changes routing, not authority, cumulative effort or acceptance.
+
+The hostname route now returns the real browser sign-in without a certificate
+warning. Non-admitted NAT clients, including spoofed client-address headers,
+receive 403; the alternate Host receives 421. Ordinary frontend login remains
+200 and all normal mail-service checks pass. Browser password/TOTP, authorized
+inventory, pagination, filter, quota sorting, detail, empty and foreign-domain
+refusal are observed. The narrow-rail visual check reveals clipped bare labels;
+reuse the existing icon/presentation-label markup in `admin_ui.rs`, run its
+existing focused tests and qualify the changed rendering natively. No new test
+scaffolding, authentication change or blanket native-test rebuild is needed.
+
 ### One active slice, work orders and delivery
 
 Only the selected product slice may transition to IN_PROGRESS. Its concrete
