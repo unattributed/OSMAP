@@ -1897,3 +1897,18 @@ The own account label remains inside the narrow header. Both private services
 and the owner account remain ACTIVE for operator access; public mail/frontend
 services remain healthy. Keep mail qualification NOT_RUN, operator acceptance
 pending and PR #99 draft. Domain/forward writes remain planned catalogue work.
+
+### Same day — Record owner acceptance of the delivered admin functionality
+
+After delivery checkpoint 449ceef, the operator confirms, "this functionality
+works." Record owner acceptance PASS for the delivered obsd1 overview, domain
+information/mailbox navigation and Settings. This confirmation resolves the
+pending owner judgment for that delivered functionality; it does not represent
+an owner repetition of every agent-owned security/refusal test. Preserve the
+installed e3a7ab4 Web, unchanged 4ca8757 backend and active owner access.
+
+Update the existing project and acceptance records through normal signed source
+delivery, without another host action or discretionary test run. Mail
+qualification stays NOT_RUN, so ADM-S01-02 completion and production/release
+acceptance remain pending. Domain and forwarding writes remain planned work.
+Keep PR #99 draft until its outstanding qualification requirements are met.

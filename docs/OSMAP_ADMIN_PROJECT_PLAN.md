@@ -171,7 +171,7 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Active product implementation slice | **ADM-S01-02**, authorized mailbox list: IN_PROGRESS; reviewed source in draft PR #99, obsd1 browser functional/responsive/shared-login and requested owner-admin sign-in PASS; candidate retained ACTIVE for owner access; mail qualification NOT_RUN; operator acceptance NOT_ACCEPTED |
+| Active product implementation slice | **ADM-S01-02**, authorized mailbox list: IN_PROGRESS; reviewed source in draft PR #99, obsd1 browser functional/responsive/shared-login and requested owner-admin sign-in PASS; candidate retained ACTIVE for owner access; owner accepts delivered obsd1 functionality on 2026-11-17 (reference below); mail qualification NOT_RUN, so full slice completion remains pending |
 | Previous product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; operator acceptance NOT_ACCEPTED |
 | Selected next product slice | ADM-S01-03 controlled mailbox creation; NOT_STARTED |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
@@ -1045,6 +1045,22 @@ observed. Restore the browser viewport and retain the active owner-accessible
 candidate. Independent review and normal Git delivery reconcile this result;
 mail qualification and operator acceptance remain pending. This is an installed
 obsd1 refinement, not completion of ADM-S01-02 or the replacement milestone.
+
+Owner acceptance, 2026-11-17: following delivery checkpoint 449ceef, the operator
+confirms, "this functionality works." Record owner UAT PASS for the delivered
+obsd1 domain overview, domain information/mailbox navigation and Settings
+functionality described above. This is the owner's confirmation of the delivered
+functionality, not a claim that the owner individually repeated every agent-owned
+security or refusal test. Installed Web remains e3a7ab4 with the unchanged
+4ca8757 backend. Preserve the active owner account and candidate.
+
+This documentation-only follow-up records the acceptance in the existing plan,
+test record and decision log, independently reviews that wording, and preserves
+it through normal signed delivery. No product or host action, discretionary test
+rerun, new artifact framework or expanded acceptance scope is needed. Mail
+qualification remains NOT_RUN; domain/forward writers and credential lifecycle
+remain planned. The confirmation does not waive the required mail evidence or
+complete ADM-S01-02, production readiness or the replacement milestone.
 
 ### One active slice, work orders and delivery
 

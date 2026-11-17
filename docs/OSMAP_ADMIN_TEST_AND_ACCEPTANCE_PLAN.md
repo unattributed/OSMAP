@@ -782,3 +782,11 @@ element bounds and viewport-only images. Restore system/comfortable/medium
 appearance and retain the active candidate. This installed obsd1 result advances
 the active slice; it does not supply mail qualification, operator acceptance,
 domain writers, credential lifecycle or a release-wide WSTG pass.
+
+Owner UAT confirmation, 2026-11-17: after delivered checkpoint 449ceef, the
+operator states, "this functionality works." Record PASS for owner acceptance
+of the delivered obsd1 overview, domain information/mailbox navigation and
+Settings functionality. The owner statement does not separately attest each
+agent-owned negative/security test. The assessed installed source remains
+e3a7ab4 Web and unchanged 4ca8757 backend. Mail qualification remains NOT_RUN;
+full ADM-S01-02 completion and release/production acceptance remain pending.
