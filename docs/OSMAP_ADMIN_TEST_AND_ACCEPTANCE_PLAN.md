@@ -198,11 +198,30 @@ Each table row is an independently identifiable test. Tests involving mail-accou
 | F-33 | Every implemented optional PostfixAdmin-equivalent feature has positive, negative and native-consumer proof; omitted items have explicit operator disposition. |
 | F-34 | Mailbox self-service actions remain in OSMAP, not copied into privileged admin capabilities or converted into mail-content access. |
 | F-35 | ADM-S04-02 enrolls an admin or explicitly changes/resets its credential to qualified Argon2id; password+TOTP login and restart persistence work alongside supported legacy bcrypt logins. Full long ASCII/UTF-8 input is verified; wrong/tail-changed inputs, replay, malformed encoding and excessive PHC costs refuse safely. A credential transition rejects the old password and invalidates affected sessions; read-only login preserves legacy hashes, unknown writes remain contained, and compatible rollback still verifies Argon2id. Development and matching installed mail-host journey evidence are both required. |
+| F-36 | ADM-S02-04 generates/validates the selected domain's DNS/SPF configuration and reports actual DNS/native readiness, including propagation and lookup-limit failures. A draft may be saved while DNS is pending; foreign-zone publication, unsupported providers and an unverified ready state refuse. |
+| F-37 | ADM-S02-05 generates/selects a protected DKIM key and selector, verifies the published public key and a real outbound signature, then proves safe rotation/retirement. Foreign-domain operations, missing signer, private-key disclosure or premature retirement refuse or remain unconfirmed. |
+| F-38 | ADM-S02-06 observes sender alignment and bounded DMARC reports and applies only an authorized, verified policy transition. Unsupported policy inputs, hostile reports, foreign-domain access and enforcement without the required sender compatibility evidence refuse or stay pending. |
+| F-39 | ADM-S06-04 verifies actual HTTPS, native submission/access TLS, certificate identity/expiry, MTA-STS fetch/MX policy and TLS-RPT handling. Wrong/expired certificates, unavailable policy/report consumers and bounded malicious reports produce truthful failure rather than a protection PASS. |
+| F-40 | ADM-S06-05 observes authenticated DNSSEC/TLSA and actual SMTP DANE/rollover behaviour; qualify REQUIRETLS only when the complete selected path supports it. Bogus DNSSEC, stale/mismatched TLSA and unsupported enforcement refuse. Conditional nonapplicability requires evidence and acceptance. |
+| F-41 | ADM-S06-06 reuses OSMAP's qualified user encryption/signature/key lifecycle and presents accurate public metadata while direct admin access to private keys/mail is denied. Unsupported S/MIME is not offered as working; storage/backup encryption claims require key-custody and actual recovery proof from ADM-S06-02. |
+| F-42 | ADM-S06-07 exercises a scoped installed filtering/quarantine/abuse operation and the existing browser privacy/rendering integration with actual consumer readback. Foreign release, unsafe forwarding/rendering and unavailable scanners refuse or report unavailable; rendering or scan success never guarantees a harmless attachment. |
+| F-43 | ADM-S05-01a, ADM-S05-02a and ADM-S01-03a consume the real mailstack bootstrap producer through Rust/native readers: empty authority reaches independent first admin and a complete first-domain projection, including smtp_active for later mailbox reads. Populated adoption and rerun preserve existing passwords/factors/mail; unknown/partial schema, competing writer and unsafe lab-seeder effects refuse or reconcile. A manually seeded schema alone is not a fresh-bootstrap PASS. |
 
 F-35 is a planned feature case, added 2026-11-17, with NOT_RUN results in both
 development and on mail. It belongs to ADM-S04-02 and is not a prerequisite for
-ADM-S01. The current acceptance catalogue contains 215 cases; the initial
-roadmap's 214-case validation receipt remains historical evidence.
+ADM-S01. F-36–43 are eight additional planned product cases assigned by the
+integrated epic index; their development/mail results are NOT_RUN and acceptance
+is NOT_ACCEPTED. The current catalogue contains 223 cases. The prior 215-case
+checkpoint and initial roadmap's 214-case receipt remain historical evidence;
+adding case specifications does not add implemented Rust tests or imply a PASS.
+
+The [integrated epic sequence](OSMAP_ADMIN_PROJECT_PLAN.md#integrated-epic-sequence-and-bootstrap-sub-slices--2026-11-17)
+and [security delivery crosswalk](OSMAP_ADMIN_PROJECT_PLAN.md#security-catalogue-to-sprintslice-crosswalk)
+assign dependencies, owners and positive/refusal results. Every selected slice
+retains separate implementation, development qualification, matching installed
+mail qualification and operator acceptance. Catalogue controls are not all
+conditional: baseline controls remain release requirements; absent optional
+backends require an accepted disposition with evidence.
 
 ## 6. Database and writer acceptance cases
 
@@ -494,7 +513,7 @@ This inventory covers the top-level v4.2 test scenarios. For SQL injection, test
 | --- | --- |
 | UX-01 | Admin shell reuses audited OSMAP CSS tokens, native rail/topbar, Settings-style forms, cards, tables, notices and focus behaviour without inheriting mailbox authority. |
 | UX-02 | OSMAP approved public login/TOTP pages and other locked UX output are unchanged unless separately approved. |
-| UX-03 | Light, dark and system appearances, density and fonts produce readable persistent admin views with isolated preference state. |
+| UX-03 | Light/dark/system, density, font and Text labels/Icons produce readable persistent admin views with isolated preference state and compatible old records. Icons expose names on keyboard focus/hover and keep labels on touch; invalid preferences/CSRF refuse, and the approved final login remains unchanged. |
 | UX-04 | Keyboard-only navigation, skip link, single `aria-current` destination, labelled search and form controls all work. |
 | UX-05 | All essential controls remain accessible at 360, 768 and 1440 CSS pixels, 200% zoom and forced-colours. |
 | UX-06 | Create, update, recovery and confirmation forms complete with JavaScript disabled and no remote UI dependencies. |

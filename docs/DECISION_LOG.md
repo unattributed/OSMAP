@@ -1952,3 +1952,24 @@ assertion failure separately from corrected results. Restore browser emulation
 and retain the active candidate; leave requested Icons selected. Mail native
 qualification, owner acceptance of the new refinement and the bootstrap/domain
 writer remain outstanding; the basic-page approval is preserved.
+
+### Same day — Integrate the approved scope into the epic execution index
+
+The operator requests that bootstrap, complete domain/virtual-address/admin
+management and the security catalogue be incorporated into the epic's sprints
+and slices. Give these requirements delivery owners rather than leaving them
+only in supplemental prose. Retain seven sprint groups and all 22 original slice
+IDs; add seven security slices for a total of 29. Name three prerequisite
+sub-slices for authority initialization/adoption, independent first admin and
+the shared writer, then execute them before the selected first-domain outcome.
+Preserve the remaining parent-slice obligations and avoid a mailbox/first-admin
+dependency cycle.
+
+Map all 18 security categories to slices and existing or eight additional named
+acceptance cases; the test catalogue now contains 223 specifications. Require
+both empty-authority and populated-adoption paths, matching obsd1/mail evidence,
+and explicit conditional-feature dispositions before release. Preserve approved
+basic pages, final login and prior result/count receipts. Full-stack installation
+and optional WireGuard client provisioning remain deferred. This is a reviewed
+documentation integration, not implementation, runtime qualification, new test
+machinery or authority for host changes; all new slices/cases remain planned.

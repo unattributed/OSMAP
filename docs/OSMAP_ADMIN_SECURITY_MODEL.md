@@ -518,6 +518,12 @@ observation time and result; missing evidence stays unavailable/pending. Domain
 and service changes require fixed protected operations, preview, scoped authority
 and matching result/recovery evidence. Never expose a root command editor.
 
+The [epic security delivery crosswalk](OSMAP_ADMIN_PROJECT_PLAN.md#security-catalogue-to-sprintslice-crosswalk)
+assigns every category to named sprint/slice owners and acceptance cases,
+including ADM-S02-04–06 and ADM-S06-04–07. Bootstrap dependencies use the three
+named prerequisite sub-slices in that same epic. These schedules do not change
+the control definitions, make baseline controls optional, or start live work.
+
 | Protection | OSMAP-ADMIN function to provide | Required proof or limit |
 | --- | --- | --- |
 | Domain and routing readiness | Validate domain ownership/delegation and display MX, A/AAAA, PTR/HELO consistency, recipient lookup, postmaster/abuse routing and native delivery observations. Generate the DNS records needed for the chosen configuration; publish only through an explicitly configured authority. | DNS lookup alone does not prove authentication or delivery. Preserve unrelated records and distinguish a saved domain from a ready mail service. |
