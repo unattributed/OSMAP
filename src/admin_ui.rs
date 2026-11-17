@@ -118,12 +118,17 @@ fn page_shell(
     current: &str,
     content: String,
 ) -> HttpResponse {
+    let page_class = if current == "settings" {
+        " settings-page"
+    } else {
+        ""
+    };
     let body = format!(concat!(
-        "<a class=\"skip-link\" href=\"#main-content\">Skip to mailboxes</a>",
+        "<a class=\"skip-link\" href=\"#main-content\">Skip to main content</a>",
         "{}",
-        "<header class=\"topbar\" aria-label=\"OSMAP Admin\"><a class=\"brand\" href=\"/admin\" style=\"flex-basis:auto;white-space:nowrap\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>OSMAP Admin</a><div class=\"status-row auth-status\"><span>Signed in as <strong>{}</strong></span><form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{}\"><button type=\"submit\">Sign out</button></form></div></header>",
-        "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>{}</h1><p>{}</p></div>{}</main>"
-    ), admin_rail(current), escape_html(login), escape_html(csrf), escape_html(title),escape_html(intro), content);
+        "<header class=\"topbar\" aria-label=\"OSMAP Admin\"><a class=\"brand\" href=\"/admin\" style=\"flex-basis:auto;white-space:nowrap\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>OSMAP Admin</a><div class=\"status-row auth-status\"><span style=\"min-width:0;overflow-wrap:anywhere\">Signed in as <strong>{}</strong></span><form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{}\"><button type=\"submit\">Sign out</button></form></div></header>",
+        "<main id=\"main-content\" class=\"page-shell{}\" tabindex=\"-1\"><div class=\"page-intro\"><h1>{}</h1><p>{}</p></div>{}</main>"
+    ), admin_rail(current), escape_html(login), escape_html(csrf),page_class, escape_html(title),escape_html(intro), content);
     admin_html_response(
         200,
         "OK",

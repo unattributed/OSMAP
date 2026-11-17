@@ -24,7 +24,7 @@
     "This slice does not claim broad public release readiness.",
     "This slice does not change production deployment state."
   ],
-  "generated_at_utc": "2026-11-17T09:02:52Z",
+  "generated_at_utc": "2026-11-17T09:10:07Z",
   "purpose": "Targeted fail-closed remediation register for Rust assumption handling after the Slice 4 audit.",
   "refined_current": {
     "by_classification": {
@@ -36,7 +36,7 @@
       "medium": 3
     },
     "high_relevance_top_files": {},
-    "inventory_sha256": "0ac7f5168989e7e40d0c1e4b12e63cf9ab447691d439887659369d77607baa70",
+    "inventory_sha256": "1e80fe6d2c56d09a7aab161b466415f1f7b7f7aad9b4ba8ef637869bfba39418",
     "total_count": 13588
   },
   "required_followups": [

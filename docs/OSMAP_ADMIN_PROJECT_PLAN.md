@@ -1006,6 +1006,28 @@ exit 1 and zero stdout; restoring the exact grant restores the original result.
 No owner password, factor, role or mailbox data changes. Native application and
 browser qualification of this refinement remain NOT_RUN at this checkpoint.
 
+The signed 4ca8757 candidate builds natively in 40.38 seconds and runs both
+private processes with binary SHA-256
+`970f0bc3efb9628533842a28f2080e25e16d2ae4b0058caaa0f1c63a32a3d480`.
+The owner browser observes three domains, 13 mailbox addresses and three
+forwarding addresses, opens example.test metadata and follows its mailbox link.
+Search with no match remains distinct from unavailable. Appearance save, logout
+and fresh sign-in retain light/compact/large in both the overview and Settings;
+restore the original system/comfortable/medium values afterward. Account and
+system-information sections work. A private alias SELECT withdrawal displays
+unavailable, and restoration recovers the existing authenticated journey.
+Public frontend/mail services remain healthy and unchanged.
+
+Visual review at desktop and 360 pixels identifies a metric wrapper mismatch,
+the absent Settings CSS ancestor and narrow header wrapping. Reuse the existing
+OSMAP metric/icon and Settings wrappers, plus wrapping on the own account label.
+Preserve the initial malformed resize screenshot, the uppercase AX versus DOM
+locator miss and unsupported attribute-inspection diagnostic as observation
+limits, not successful visual evidence. The small presentation correction also
+has an initial missing-import compile refusal, retained before correction.
+Rebuild and inspect the changed installed presentation; do not repeat matching
+SQL, authentication or preference persistence tests. No acceptance or cost reset.
+
 ### One active slice, work orders and delivery
 
 Only the selected product slice may transition to IN_PROGRESS. Its concrete

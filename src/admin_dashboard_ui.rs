@@ -1,6 +1,7 @@
 //! OSMAP welcome/settings composition for service-authorized admin projections.
 use super::*;
 use crate::admin_access::{DomainDetails, DomainOverview, SettingsPage};
+use crate::http_ui::shell_icon;
 
 fn date(value: &Option<String>) -> String {
     value
@@ -17,13 +18,13 @@ pub(crate) fn overview_page(page: &DomainOverview, domains: bool) -> HttpRespons
     }
     let mut body = String::new();
     body.push_str("<section class=\"welcome-intro\" aria-label=\"Administration overview\"><div class=\"welcome-greeting\"><h2>Your mail domains</h2><p>Choose a domain to view its addresses and configuration.</p></div><div class=\"welcome-metrics\" aria-label=\"Managed resources\">");
-    for (label, value) in [
-        ("Domains", u64::from(page.domain_total)),
-        ("Mailbox addresses", page.mailbox_total),
-        ("Forwarding addresses", page.forward_total),
+    for (label, value, icon) in [
+        ("Domains", u64::from(page.domain_total), "folders"),
+        ("Mailbox addresses", page.mailbox_total, "inbox"),
+        ("Forwarding addresses", page.forward_total, "sent"),
     ] {
         body.push_str(&format!(
-            "<div class=\"welcome-metric\"><strong>{value}</strong><span>{label}</span></div>"
+            "<div class=\"welcome-metric\"><span class=\"welcome-icon\">{}</span><span><strong>{value}</strong><span>{label}</span></span></div>",shell_icon(icon)
         ));
     }
     body.push_str("</div></section><section class=\"panel\" id=\"domain-list\"><div class=\"section-header\"><h2>Domains</h2><span class=\"badge\">Read-only</span></div>");
@@ -118,7 +119,7 @@ pub(crate) fn settings_page(page: &SettingsPage, section: &str, saved: bool) -> 
         "appearance"=>{
             body.push_str("<h2>Appearance</h2><p>Personalize your administration pages. These preferences belong to your administrator account.</p>");
             if saved {body.push_str("<div class=\"notice notice-success\" role=\"status\">Appearance saved.</div>");}
-            body.push_str(&format!("<form class=\"settings-display-form\" method=\"post\" action=\"/admin/settings/appearance\"><input type=\"hidden\" name=\"csrf\" value=\"{}\"><fieldset class=\"settings-themes\"><legend>Theme</legend>",escape_html(&page.csrf)));
+            body.push_str(&format!("<form class=\"settings-display-form\" method=\"post\" action=\"/admin/settings/appearance\"><input type=\"hidden\" name=\"csrf\" value=\"{}\"><fieldset class=\"settings-themes\"><legend class=\"sr-only\">Theme</legend>",escape_html(&page.csrf)));
             for (value,label,icon) in [("light","Light","☼"),("dark","Dark","☾"),("system","System","◫")] {
                 body.push_str(&format!("<label class=\"settings-theme settings-theme-{value}\"><input class=\"sr-only\" type=\"radio\" name=\"theme\" value=\"{value}\" aria-label=\"{label}\"{}><span class=\"settings-theme-icon\" aria-hidden=\"true\">{icon}</span><strong>{label}</strong><span class=\"settings-theme-selected\">Selected</span></label>",if page.preferences.theme==value {" checked"}else{""}));
             }
