@@ -1941,3 +1941,14 @@ the existing project/acceptance records. Current code work is the text/icon
 refinement; bootstrap/domain writers remain the selected next implementation
 boundary. Neither the roadmap correction nor approved basic pages closes mail
 qualification, the replacement milestone or production retirement.
+
+Signed ba36030 builds natively and runs both private admin processes. The owner
+browser saves and switches text/icon menus, retains Icons after a fresh sign-in,
+and reaches the existing domain/mailbox pages. Keyboard focus exposes action
+names; narrow touch emulation retains visible labels. The approved login stays
+unchanged. Independent source and retained image/result review pass for this
+obsd1 refinement. Preserve the initial viewport setup observation and source
+assertion failure separately from corrected results. Restore browser emulation
+and retain the active candidate; leave requested Icons selected. Mail native
+qualification, owner acceptance of the new refinement and the bootstrap/domain
+writer remain outstanding; the basic-page approval is preserved.

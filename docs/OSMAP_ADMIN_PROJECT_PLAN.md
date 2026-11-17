@@ -1093,6 +1093,27 @@ writer/domain/routing/identity slices and security model; they are not supplied
 by the currently SELECT-only pages or an enabled-looking button. Mail native
 qualification remains required separately from this obsd1 refinement.
 
+Installed presentation result: signed ba360305a2961453e1e791812d0fadf5f1e290e8
+builds natively in 40.41 seconds. Both isolated admin processes use artifact
+SHA-256 `879d1bec355584a850f995ab67565de0a443410dc92e8f1029297f4d94d8f494`.
+Old preferences load as Text labels. The actual owner browser saves Icons,
+uses overview/domain/mailbox controls, exposes the keyboard-focused Domains
+label, switches back to Text labels, and retains Icons after logout and fresh
+password/TOTP sign-in. Leave the requested Icons mode selected with the other
+appearance preferences unchanged. The approved login remains visually unchanged.
+At 360 pixels, touch emulation keeps visible labels and expanded navigation;
+this is emulation evidence, not physical-device UAT. Touch and viewport overrides
+are restored. The initial 759-pixel reference-tab viewport observation is retained
+as a setup limitation; corrected 1280-pixel DOM and viewport images establish
+desktop rendering. Independent source and image/result review are GO for this
+obsd1 scope. Reuse unchanged SQL/authentication evidence. Public mail/frontend
+services stay healthy; the private candidate/owner account remain ACTIVE.
+The expected missing-field RED and the whole-body CSS assertion failure are
+retained; the latter is corrected to inspect only the login root tag and passes.
+Strict Clippy and the existing inventory producer/consumer pass. Mail, release
+and owner acceptance of this new refinement remain pending. Bootstrap/domain
+writers are selected next, not implemented by this presentation change.
+
 The operator explicitly selects **Create a domain from scratch** as the next
 complete write journey. This supersedes the table's earlier chronological
 mailbox-first priority, not the required writer/authority/security contracts.

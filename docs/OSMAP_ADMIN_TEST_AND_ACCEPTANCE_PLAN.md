@@ -812,3 +812,13 @@ foreign authority must refuse or reconcile safely. The full-stack installation
 gateway and optional WireGuard are future features excluded from this acceptance.
 Use the current project-plan parity definitions and security-model catalogue;
 those requirements are not current writer/security-feature PASS results.
+
+Presentation refinement agent result: signed ba36030 builds on obsd1 and its
+actual browser demonstrates Text labels/Icons save, valid old-record readback,
+fresh-session Icons persistence, working domain/mailbox links, keyboard label
+disclosure and narrow touch-emulated visible labels. The login screenshot and
+source isolation check preserve the approved sign-in. Restore emulation and
+retain Icons with the other preferences unchanged. Independent source and image
+review pass; physical-device UAT, mail qualification and owner acceptance of the
+new refinement are not inferred. The bootstrap enhancement and domain writer
+remain the selected next implementation, not a result of these menu tests.
