@@ -171,8 +171,9 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Active product implementation slice | **ADM-S01-01**, private admin sign-in: DELIVERED; isolated development and mail qualification PASS for the cases below; operator acceptance NOT_ACCEPTED |
-| Selected next product slice | ADM-S01-02 after ADM-S01-01's required boundary; NOT_STARTED |
+| Active product implementation slice | **ADM-S01-02**, authorized mailbox list: IN_PROGRESS under the lean work order below; source/native/browser qualification NOT_RUN; operator acceptance NOT_ACCEPTED |
+| Previous product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; operator acceptance NOT_ACCEPTED |
+| Selected next product slice | ADM-S01-03 controlled mailbox creation; NOT_STARTED |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
 | Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
 
@@ -721,6 +722,63 @@ only bounded evidence, review and mandatory signed Git delivery remain. Normal
 delivery hooks are separate from native product qualification. ADM-S01-02 is
 the next selected slice and remains NOT_STARTED; the first mailbox-management
 milestone and the other three ADM-S01 slices remain incomplete.
+
+### ADM-S01-02 lean implementation work order — 2026-11-17
+
+The operator applies the S01 lessons and authorizes the next mailbox-list slice
+(called “adm-s02” in chat). Baseline is signed main
+`f7e7b87197013aa41a00a920cf60a00b317dd77a`. One observable outcome:
+private sign-in -> choose an authorized domain -> bounded mailbox list,
+filter/sort/page and stable detail -> truthful empty/missing/unavailable states.
+Map UX-A3, F-07/F-30/F-32 and the S01-02 security/integration/UX IDs above.
+Display only observed configured metadata; native auth/delivery, usage, display
+name and MFA observations absent from this reader remain explicitly unknown.
+
+Reuse the existing scoped directory SELECT, admin sessions/current authority,
+typed socket, strict HTTP and OSMAP presentation. Each operation validates the
+supplied session context and current grants before directory reads. Filter and
+paginate the complete existing bounded inventory (maximum 100 rows, ten per
+page); excess capacity is an explicit refusal, never a truncated or empty list.
+Detail IDs are stable username digests, reselected only within current scope.
+Omit maildir, credentials and hashes from transport/browser. Keep fixed directory
+SQL output at its existing 64 KiB bound, identity-query/stdin bounds at 16 KiB
+and RPC at 8 KiB. No writer, enrollment, new dependency, Python or general QA
+framework is introduced.
+
+Root owns implementation, writing and the sole Git/host queue; adapter_review
+independently reviews the candidate and observed results. Establish one RED
+backend test using a non-default live session context. Minimum changed-boundary
+checks: scoped projection/page/filter/detail, foreign and revoked scope, missing
+versus empty/unavailable/capacity, maximum RPC shape, escaped inputs and direct
+write refusal. Use focused existing Rust suites, then a complete browser journey
+on obsd1 before promoting the reviewed byte-identical candidate to mail. Check
+visual layout in that journey. Reuse unchanged auth/confinement evidence.
+
+Before native use verify actual mailbox columns and restricted SELECT grants
+in the new isolated fixture. Preserve the old root-only retained fixture by
+exact ownership before preparing fresh disposable SQL/roles/private nginx;
+use demonstrated existing tools and standard commands. Keep all retained work
+under `Downloads/osmap-admin-s01/slice02/`. No public mail service/configuration,
+production account or factor changes are authorized. Record actual results and
+failures here, not another planning document. Native compile bounds remain
+600 s, fixture actions 120 s and browser journey 300 s plus finite cleanup.
+Initial investigation checkpoint: two hours, retaining measured and UNKNOWN
+cost across attempts; no automatic allowance growth or clock-based authority
+expiry. Two failures at a boundary require combined independent reassessment.
+Finish independent result review, normal signed hooks/push, exact remote parity
+and protected integration. Operator acceptance remains a separate result.
+
+Source progression: the new live-context mailbox test is RED on the prior
+backend and GREEN after composition. The first integrated focused run passes
+76 cases and exposes three test-assumption failures: two retained UI checks ban
+the newly implemented route, and one incorrectly assumes the existing bearer
+session is IP-bound. Combined independent reassessment approves correcting those
+expectations without changing authentication policy. Review also removes an
+unverified quota-byte label. The next focused run passes 82 cases, zero failures,
+with 12 native-only cases ignored. Maximum DTO serialization fits the existing
+8 KiB frame. Source review GO admits only the exact new Rust source digest in
+the existing guard; no Python logic or framework is added. Native/browser cases
+remain NOT_RUN until observed.
 
 ### One active slice, work orders and delivery
 

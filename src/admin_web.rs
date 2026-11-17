@@ -36,7 +36,7 @@ fn policy(config: &WebConfig) -> HttpPolicy {
         max_request_target_bytes: 512,
         max_header_count: 24,
         max_header_value_bytes: 1024,
-        max_query_fields: 0,
+        max_query_fields: 4,
         max_body_bytes: 2048,
         max_upload_body_bytes: 2048,
         max_form_fields: 4,
@@ -242,8 +242,10 @@ fn logout<C: Exchange>(request: &HttpRequest, client_addr: &str, client: &C) -> 
 
 /// Called only after the accepted Unix stream's proxy UID has been verified.
 fn handle<C: Exchange>(config: &WebConfig, request: &HttpRequest, client: &C) -> HttpResponse {
+    let inventory =
+        request.path == "/admin/mailboxes" || request.path.starts_with("/admin/mailboxes/");
     if request.headers.get("host") != Some(&config.host)
-        || !request.query_params.is_empty()
+        || (!request.query_params.is_empty() && !inventory)
         || request
             .headers
             .get("origin")
@@ -269,9 +271,121 @@ fn handle<C: Exchange>(config: &WebConfig, request: &HttpRequest, client: &C) ->
         (HttpMethod::Get, "/admin/login") => sign_in(false),
         (HttpMethod::Post, "/admin/login") => login(request, &client_addr, client),
         (HttpMethod::Get, "/admin") => scope(request, &client_addr, client),
+        (HttpMethod::Get, "/admin/mailboxes") => {
+            mailbox_inventory(request, &client_addr, client, None)
+        }
+        (HttpMethod::Get, path) if path.starts_with("/admin/mailboxes/") => mailbox_inventory(
+            request,
+            &client_addr,
+            client,
+            path.strip_prefix("/admin/mailboxes/"),
+        ),
+        _ if inventory => crate::admin_ui::error_page(405),
         (HttpMethod::Post, "/admin/logout") => logout(request, &client_addr, client),
         (_, "/admin" | "/admin/logout") => crate::admin_ui::error_page(405),
         _ => crate::admin_ui::error_page(404),
+    }
+}
+
+fn mailbox_inventory<C: Exchange>(
+    request: &HttpRequest,
+    addr: &str,
+    client: &C,
+    id: Option<&str>,
+) -> HttpResponse {
+    let token = match cookie(request, SESSION_COOKIE) {
+        Ok(Some(value)) if bearer(value) => value,
+        Ok(_) => {
+            return redirect("/admin/login")
+                .with_header("Set-Cookie", clear_session_cookie(SESSION_COOKIE, true))
+        }
+        Err(_) => return crate::admin_ui::error_page(403),
+    };
+    let keys = if id.is_some() {
+        &["domain"][..]
+    } else {
+        &["domain", "q", "page", "sort"][..]
+    };
+    if request
+        .query_params
+        .keys()
+        .any(|key| !keys.contains(&key.as_str()))
+    {
+        return crate::admin_ui::error_page(400);
+    }
+    let Some(domain) = request.query_params.get("domain") else {
+        return crate::admin_ui::error_page(400);
+    };
+    let query = request
+        .query_params
+        .get("q")
+        .map(String::as_str)
+        .unwrap_or("");
+    let page = match request
+        .query_params
+        .get("page")
+        .map(String::as_str)
+        .unwrap_or("1")
+        .parse::<u8>()
+    {
+        Ok(value) => value,
+        Err(_) => return crate::admin_ui::error_page(400),
+    };
+    let sort = request
+        .query_params
+        .get("sort")
+        .map(String::as_str)
+        .unwrap_or("address");
+    let operation = if let Some(id) = id {
+        Operation::Mailbox {
+            token: token.into(),
+            domain: domain.clone(),
+            id: id.into(),
+        }
+    } else {
+        Operation::Mailboxes {
+            token: token.into(),
+            domain: domain.clone(),
+            query: query.into(),
+            page,
+            sort: sort.into(),
+        }
+    };
+    let rpc = Request {
+        version: VERSION,
+        client: addr.into(),
+        operation,
+    };
+    if rpc.validate().is_err() {
+        return crate::admin_ui::error_page(400);
+    }
+    match client.exchange(&rpc) {
+        Ok(response) if response.validate().is_ok() => match response {
+            Response::Mailboxes { page: result }
+                if id.is_none()
+                    && result.domain == *domain
+                    && result.query == query
+                    && result.page == page
+                    && result.sort == sort =>
+            {
+                crate::admin_ui::mailboxes_page(&result)
+            }
+            Response::Mailbox {
+                login,
+                csrf,
+                domain: returned,
+                mailbox,
+            } if id == Some(mailbox.id.as_str()) && returned == *domain => {
+                crate::admin_ui::mailbox_page(&login, &csrf, domain, &mailbox)
+            }
+            Response::Denied => redirect("/admin/login")
+                .with_header("Set-Cookie", clear_session_cookie(SESSION_COOKIE, true)),
+            Response::Missing => crate::admin_ui::error_page(404),
+            Response::Capacity => crate::admin_ui::capacity_page(),
+            Response::Invalid => crate::admin_ui::error_page(400),
+            _ => crate::admin_ui::error_page(503),
+        },
+        _ => crate::admin_ui::error_page(503),
     }
 }
 
@@ -460,6 +574,161 @@ mod tests {
             .iter()
             .find(|(key, _)| key == name)
             .map(|(_, value)| value.as_str())
+    }
+
+    fn inventory_page() -> crate::admin_access::MailboxPage {
+        use sha2::{Digest, Sha256};
+        crate::admin_access::MailboxPage {
+            login: "operator@example.test".into(),
+            csrf: "b".repeat(64),
+            domain: "example.test".into(),
+            query: "".into(),
+            sort: "address".into(),
+            page: 1,
+            total: 1,
+            rows: vec![crate::admin_access::MailboxView {
+                id: format!("{:x}", Sha256::digest(b"alice@example.test")),
+                username: "alice@example.test".into(),
+                quota: 2048,
+                active: true,
+                smtp_active: false,
+            }],
+        }
+    }
+
+    #[test]
+    fn authorized_inventory_and_opaque_detail_render_only_public_projection() {
+        let page = inventory_page();
+        let id = page.rows[0].id.clone();
+        let fake = Fake::new(Response::Mailboxes { page });
+        let headers = format!("Cookie: {SESSION_COOKIE}={}\r\n", token());
+        let result = handle(
+            &config(),
+            &parse("GET", "/admin/mailboxes?domain=example.test", &headers, ""),
+            &fake,
+        );
+        assert_eq!(result.status_code, 200);
+        let html = String::from_utf8(result.body).unwrap();
+        assert!(html.contains("alice@example.test"));
+        assert!(html.contains(&format!("/admin/mailboxes/{id}?domain=")));
+        assert!(!html.contains("maildir"));
+        assert!(!html.contains("password"));
+        assert!(matches!(
+            &fake.calls.borrow()[0].operation,
+            Operation::Mailboxes { page: 1, .. }
+        ));
+        let row = inventory_page().rows.remove(0);
+        let fake = Fake::new(Response::Mailbox {
+            login: "operator@example.test".into(),
+            csrf: "b".repeat(64),
+            domain: "example.test".into(),
+            mailbox: row,
+        });
+        let result = handle(
+            &config(),
+            &parse(
+                "GET",
+                &format!("/admin/mailboxes/{id}?domain=example.test"),
+                &headers,
+                "",
+            ),
+            &fake,
+        );
+        assert_eq!(result.status_code, 200);
+        assert!(String::from_utf8(result.body)
+            .unwrap()
+            .contains("Not verified"));
+    }
+
+    #[test]
+    fn inventory_inputs_and_writes_refuse_before_rpc() {
+        let headers = format!(
+            "Origin: https://admin.example.test\r\nCookie: {SESSION_COOKIE}={}\r\n",
+            token()
+        );
+        for path in [
+            "/admin/mailboxes?domain=example.test&role=system",
+            "/admin/mailboxes?domain=example.test&page=0",
+            "/admin/mailboxes?domain=example.test&page=11",
+            "/admin/mailboxes?domain=example.test&sort=sql",
+            "/admin/mailboxes/short?domain=example.test",
+        ] {
+            let fake = Fake::new(Response::Unavailable);
+            assert_eq!(
+                handle(&config(), &parse("GET", path, &headers, ""), &fake).status_code,
+                400
+            );
+            assert!(fake.calls.borrow().is_empty());
+        }
+        let fake = Fake::new(Response::Unavailable);
+        assert_eq!(
+            handle(
+                &config(),
+                &parse("POST", "/admin/mailboxes?domain=example.test", &headers, ""),
+                &fake
+            )
+            .status_code,
+            405
+        );
+        assert!(fake.calls.borrow().is_empty());
+        let raw = format!("GET /admin/mailboxes?domain=example.test&%64omain=foreign.test HTTP/1.1\r\nHost: admin.example.test\r\nCookie: {SESSION_COOKIE}={}\r\n\r\n", token());
+        assert!(crate::http_parse::parse_http_request(&raw, &policy(&config())).is_err());
+    }
+
+    #[test]
+    fn empty_unavailable_capacity_and_foreign_missing_are_truthful() {
+        let headers = format!("Cookie: {SESSION_COOKIE}={}\r\n", token());
+        let request = parse("GET", "/admin/mailboxes?domain=example.test", &headers, "");
+        let mut page = inventory_page();
+        page.rows.clear();
+        page.total = 0;
+        let empty = handle(
+            &config(),
+            &request,
+            &Fake::new(Response::Mailboxes { page }),
+        );
+        assert_eq!(empty.status_code, 200);
+        assert!(String::from_utf8(empty.body)
+            .unwrap()
+            .contains("No mailboxes are configured"));
+        let unavailable = handle(&config(), &request, &Fake::new(Response::Unavailable));
+        assert_eq!(unavailable.status_code, 503);
+        assert!(!String::from_utf8(unavailable.body)
+            .unwrap()
+            .contains("No mailboxes"));
+        let capacity = handle(&config(), &request, &Fake::new(Response::Capacity));
+        assert_eq!(capacity.status_code, 503);
+        assert!(String::from_utf8(capacity.body)
+            .unwrap()
+            .contains("No partial list"));
+        let missing = handle(&config(), &request, &Fake::new(Response::Missing));
+        let foreign = handle(
+            &config(),
+            &parse("GET", "/admin/mailboxes?domain=foreign.test", &headers, ""),
+            &Fake::new(Response::Missing),
+        );
+        assert_eq!(
+            (missing.status_code, missing.body),
+            (foreign.status_code, foreign.body)
+        );
+        let mut page = inventory_page();
+        page.rows.clear();
+        page.total = 0;
+        page.query = "\"><script>".into();
+        let escaped = handle(
+            &config(),
+            &parse(
+                "GET",
+                "/admin/mailboxes?domain=example.test&q=%22%3E%3Cscript%3E",
+                &headers,
+                "",
+            ),
+            &Fake::new(Response::Mailboxes { page }),
+        );
+        assert_eq!(escaped.status_code, 200);
+        let html = String::from_utf8(escaped.body).unwrap();
+        assert!(html.contains("&quot;&gt;&lt;script&gt;"));
+        assert!(!html.contains("<script>"));
     }
 
     #[test]

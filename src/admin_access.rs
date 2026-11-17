@@ -31,9 +31,84 @@ const ADMIN_QUERY: &str = "SELECT HEX(a.username),HEX(a.password),a.active,HEX(C
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Error {
     Denied,
+    Forbidden,
+    Missing,
+    Capacity,
     Unavailable,
     Invalid,
     Unsupported,
+}
+
+// Explicit public projection: never serialize the directory's maildir or a
+// credential record. These fields are configuration, not observed mail health.
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct MailboxView {
+    pub(crate) id: String,
+    pub(crate) username: String,
+    pub(crate) quota: i64,
+    pub(crate) active: bool,
+    pub(crate) smtp_active: bool,
+}
+impl MailboxView {
+    pub(crate) fn valid(&self, domain: &str) -> bool {
+        let suffix = format!("@{domain}");
+        self.username
+            .strip_suffix(&suffix)
+            .is_some_and(|local| !local.is_empty() && local.len() <= 64)
+            && self.username.len() <= 254
+            && !self
+                .username
+                .chars()
+                .any(|c| c.is_control() || c.is_whitespace())
+            && self.quota >= 0
+            && self.id == format!("{:x}", Sha256::digest(self.username.as_bytes()))
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct MailboxPage {
+    pub(crate) login: String,
+    pub(crate) csrf: String,
+    pub(crate) domain: String,
+    pub(crate) query: String,
+    pub(crate) sort: String,
+    pub(crate) page: u8,
+    pub(crate) total: u16,
+    pub(crate) rows: Vec<MailboxView>,
+}
+impl MailboxPage {
+    pub(crate) fn pages(&self) -> u8 {
+        self.total.div_ceil(10).max(1) as u8
+    }
+    pub(crate) fn valid(&self) -> bool {
+        valid_login(&self.login)
+            && self.csrf.len() == 64
+            && self.csrf.bytes().all(|b| b.is_ascii_hexdigit())
+            && Scope::domains(&[&self.domain]).is_ok()
+            && inventory_options_valid(&self.query, self.page, &self.sort)
+            && self.total <= 100
+            && self.page <= self.pages()
+            && self.rows.len()
+                == usize::from(self.total)
+                    .saturating_sub(usize::from(self.page - 1) * 10)
+                    .min(10)
+            && self.rows.iter().all(|row| row.valid(&self.domain))
+            && self
+                .rows
+                .iter()
+                .map(|row| &row.id)
+                .collect::<std::collections::BTreeSet<_>>()
+                .len()
+                == self.rows.len()
+    }
+}
+pub(crate) fn inventory_options_valid(query: &str, page: u8, sort: &str) -> bool {
+    query.len() <= 64
+        && !query.chars().any(char::is_control)
+        && (1..=10).contains(&page)
+        && matches!(sort, "address" | "quota")
 }
 
 /// Raw passwords/hashes and bearer tokens deliberately have no Debug/Serialize.
@@ -558,6 +633,100 @@ impl<
             .revoke_by_token(context, &token.session()?)
             .map(|_| ())
             .map_err(|_| Error::Denied)
+    }
+    fn scoped_mailboxes(&self, summary: &Summary, domain: &str) -> Result<Vec<MailboxView>, Error> {
+        let scope = Scope::domains(&[domain]).map_err(|_| Error::Invalid)?;
+        if !summary.system && !summary.domains.iter().any(|name| name == domain) {
+            return Err(Error::Forbidden);
+        }
+        let records = Adapter::new(self.authority.executor.clone())
+            .mailboxes(&scope, domain)
+            .map_err(|error| match error {
+                crate::admin_directory::Error::Missing => Error::Missing,
+                crate::admin_directory::Error::Limit => Error::Capacity,
+                crate::admin_directory::Error::Invalid => Error::Invalid,
+                crate::admin_directory::Error::Unauthorized => Error::Forbidden,
+                _ => Error::Unavailable,
+            })?;
+        let mut ids = std::collections::BTreeSet::new();
+        records
+            .into_iter()
+            .map(|record| {
+                let row = MailboxView {
+                    id: format!("{:x}", Sha256::digest(record.username.as_bytes())),
+                    username: record.username,
+                    quota: record.quota,
+                    active: record.active,
+                    smtp_active: record.smtp_active,
+                };
+                if !row.valid(domain) || !ids.insert(row.id.clone()) {
+                    return Err(Error::Unavailable);
+                }
+                Ok(row)
+            })
+            .collect()
+    }
+    pub(crate) fn mailboxes_from(
+        &self,
+        token: &Token,
+        context: &AuthenticationContext,
+        domain: &str,
+        query: &str,
+        page: u8,
+        sort: &str,
+    ) -> Result<MailboxPage, Error> {
+        if !inventory_options_valid(query, page, sort) {
+            return Err(Error::Invalid);
+        }
+        let summary = self.scope(token, context)?;
+        let mut rows = self.scoped_mailboxes(&summary, domain)?;
+        let needle = query.to_lowercase();
+        rows.retain(|row| row.username.to_lowercase().contains(&needle));
+        rows.sort_by(|a, b| {
+            if sort == "quota" {
+                b.quota
+                    .cmp(&a.quota)
+                    .then_with(|| a.username.cmp(&b.username))
+            } else {
+                a.username.cmp(&b.username)
+            }
+        });
+        let total = rows.len() as u16;
+        if page > total.div_ceil(10).max(1) as u8 {
+            return Err(Error::Invalid);
+        }
+        Ok(MailboxPage {
+            login: summary.login,
+            csrf: summary.csrf,
+            domain: domain.into(),
+            query: query.into(),
+            sort: sort.into(),
+            page,
+            total,
+            rows: rows
+                .into_iter()
+                .skip(usize::from(page - 1) * 10)
+                .take(10)
+                .collect(),
+        })
+    }
+    pub(crate) fn mailbox_from(
+        &self,
+        token: &Token,
+        context: &AuthenticationContext,
+        domain: &str,
+        id: &str,
+    ) -> Result<(Summary, MailboxView), Error> {
+        if id.len() != 64 || !id.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Err(Error::Invalid);
+        }
+        let summary = self.scope(token, context)?;
+        let row = self
+            .scoped_mailboxes(&summary, domain)?
+            .into_iter()
+            .find(|row| row.id == id)
+            .ok_or(Error::Missing)?;
+        Ok((summary, row))
     }
     pub(crate) fn domain(&self, token: &Token, domain: &str) -> Result<Option<Domain>, Error> {
         let (sessions, failure) = self.sessions();

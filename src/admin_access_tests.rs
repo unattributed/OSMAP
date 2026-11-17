@@ -32,6 +32,8 @@ struct State {
     active: bool,
     unavailable: bool,
     directory_reads: usize,
+    mailbox_rows: usize,
+    domain_missing: bool,
 }
 #[derive(Clone)]
 struct Sql(Arc<Mutex<State>>);
@@ -86,6 +88,24 @@ impl CommandExecutor for Sql {
                     )
                 })
                 .collect::<String>()
+        } else if query.contains("FROM mailbox WHERE") {
+            state.directory_reads += 1;
+            (0..state.mailbox_rows)
+                .map(|index| {
+                    let address = if index == 0 {
+                        "alice@example.test".into()
+                    } else {
+                        format!("user{index:02}@example.test")
+                    };
+                    format!(
+                        "{}\t{}\t{}\t{}\t1\n",
+                        upper_hex(address.as_bytes()),
+                        upper_hex(b"private-storage/path/"),
+                        index * 1024,
+                        u8::from(index % 2 == 0)
+                    )
+                })
+                .collect()
         } else {
             state.directory_reads += 1;
             let domain = if query.contains(&upper_hex(b"foreign.test")) {
@@ -93,7 +113,11 @@ impl CommandExecutor for Sql {
             } else {
                 "example.test"
             };
-            format!("{}\t1\t4\t5\t100\t200\t0\n", upper_hex(domain.as_bytes()))
+            if state.domain_missing {
+                String::new()
+            } else {
+                format!("{}\t1\t4\t5\t100\t200\t0\n", upper_hex(domain.as_bytes()))
+            }
         };
         Ok(CommandExecution {
             status_code: 0,
@@ -148,6 +172,8 @@ impl Fixture {
                 active: true,
                 unavailable: false,
                 directory_reads: 0,
+                mailbox_rows: 12,
+                domain_missing: false,
             }))),
             clock: Clock::new(),
         }
@@ -175,6 +201,147 @@ impl Drop for Fixture {
         }
     }
 }
+#[test]
+fn mailbox_inventory_uses_live_context_and_refuses_foreign_before_directory_read() {
+    let f = Fixture::new();
+    let context = AuthenticationContext {
+        request_id: "admin-web".into(),
+        remote_addr: "192.0.2.12".into(),
+        user_agent: "osmap-admin-web".into(),
+    };
+    let service = f.service();
+    let token = service
+        .login_from(&context, LOGIN, PASSWORD, &code(&f.clock))
+        .unwrap();
+    assert!(matches!(
+        service.mailboxes_from(&token, &context, "foreign.test", "", 1, "address"),
+        Err(Error::Forbidden)
+    ));
+    assert_eq!(f.sql.0.lock().unwrap().directory_reads, 0);
+    let page = service
+        .mailboxes_from(&token, &context, "example.test", "", 1, "address")
+        .unwrap();
+    assert_eq!(page.domain, "example.test");
+    assert_eq!(page.rows[0].username, "alice@example.test");
+}
+
+#[test]
+fn mailbox_pages_filter_sort_and_stable_details_exclude_private_storage() {
+    let f = Fixture::new();
+    let service = f.service();
+    let token = f.login().unwrap();
+    let context = Service::<Sql, Clock, Password>::context();
+    let second = service
+        .mailboxes_from(&token, &context, "example.test", "", 2, "address")
+        .unwrap();
+    assert_eq!(
+        (second.total, second.rows.len(), second.pages()),
+        (12, 2, 2)
+    );
+    let filtered = service
+        .mailboxes_from(&token, &context, "example.test", "ALICE", 1, "address")
+        .unwrap();
+    assert_eq!(filtered.total, 1);
+    let id = filtered.rows[0].id.clone();
+    let (_, row) = service
+        .mailbox_from(&token, &context, "example.test", &id)
+        .unwrap();
+    assert_eq!(row.username, "alice@example.test");
+    assert!(!serde_json::to_string(&row)
+        .unwrap()
+        .contains("private-storage"));
+    let sorted = service
+        .mailboxes_from(&token, &context, "example.test", "", 1, "quota")
+        .unwrap();
+    assert_eq!(sorted.rows[0].username, "user11@example.test");
+    f.sql.0.lock().unwrap().mailbox_rows = 13;
+    assert_eq!(
+        service
+            .mailbox_from(&token, &context, "example.test", &id)
+            .unwrap()
+            .1
+            .id,
+        id
+    );
+    let foreign_id = format!("{:x}", Sha256::digest(b"alice@foreign.test"));
+    assert!(matches!(
+        service.mailbox_from(&token, &context, "example.test", &foreign_id),
+        Err(Error::Missing)
+    ));
+}
+
+#[test]
+fn mailbox_empty_missing_capacity_and_unavailable_remain_distinct() {
+    let f = Fixture::new();
+    let service = f.service();
+    let token = f.login().unwrap();
+    let context = Service::<Sql, Clock, Password>::context();
+    f.sql.0.lock().unwrap().mailbox_rows = 0;
+    assert_eq!(
+        service
+            .mailboxes_from(&token, &context, "example.test", "", 1, "address")
+            .unwrap()
+            .total,
+        0
+    );
+    f.sql.0.lock().unwrap().domain_missing = true;
+    assert!(matches!(
+        service.mailboxes_from(&token, &context, "example.test", "", 1, "address"),
+        Err(Error::Missing)
+    ));
+    {
+        let mut state = f.sql.0.lock().unwrap();
+        state.domain_missing = false;
+        state.mailbox_rows = 101;
+    }
+    assert!(matches!(
+        service.mailboxes_from(&token, &context, "example.test", "", 1, "address"),
+        Err(Error::Capacity)
+    ));
+    f.sql.0.lock().unwrap().unavailable = true;
+    assert!(matches!(
+        service.mailboxes_from(&token, &context, "example.test", "", 1, "address"),
+        Err(Error::Unavailable)
+    ));
+}
+
+#[test]
+fn runtime_mailbox_dispatch_uses_current_peer_context_and_revoked_grants() {
+    use crate::admin_transport::{Operation, Request, Response, VERSION};
+    let f = Fixture::new();
+    let service = f.service();
+    let context = AuthenticationContext {
+        request_id: "admin-private-request".into(),
+        remote_addr: "192.0.2.12".into(),
+        user_agent: "admin-private-web".into(),
+    };
+    let token = service
+        .login_from(&context, LOGIN, PASSWORD, &code(&f.clock))
+        .unwrap();
+    let read = || Request {
+        version: VERSION,
+        client: context.remote_addr.clone(),
+        operation: Operation::Mailboxes {
+            token: token.as_str().into(),
+            domain: "example.test".into(),
+            query: "".into(),
+            page: 1,
+            sort: "address".into(),
+        },
+    };
+    assert!(matches!(
+        crate::admin_runtime::dispatch(&service, read()),
+        Response::Mailboxes { .. }
+    ));
+    let before = f.sql.0.lock().unwrap().directory_reads;
+    f.sql.0.lock().unwrap().grants.clear();
+    assert!(matches!(
+        crate::admin_runtime::dispatch(&service, read()),
+        Response::Denied | Response::Missing
+    ));
+    assert_eq!(f.sql.0.lock().unwrap().directory_reads, before);
+}
+
 #[test]
 fn authenticated_domain_read_and_foreign_refusal() {
     let f = Fixture::new();

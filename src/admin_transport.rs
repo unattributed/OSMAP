@@ -1,5 +1,6 @@
 //! Fixed, bounded private admin RPC. Peer UIDs come from the kernel; requests
 //! contain neither grants nor executable, SQL, configuration or identity paths.
+use crate::admin_access::{MailboxPage, MailboxView};
 use crate::openpgp_inventory_runtime::{read_frame, validate_socket, write_frame};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -46,11 +47,34 @@ pub(crate) enum Operation {
         token: String,
         csrf: String,
     },
+    Mailboxes {
+        token: String,
+        domain: String,
+        query: String,
+        page: u8,
+        sort: String,
+    },
+    Mailbox {
+        token: String,
+        domain: String,
+        id: String,
+    },
 }
 
 #[derive(Serialize)]
 #[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
 pub(crate) enum Response {
+    Mailboxes {
+        page: MailboxPage,
+    },
+    Mailbox {
+        login: String,
+        csrf: String,
+        domain: String,
+        mailbox: MailboxView,
+    },
+    Missing,
+    Capacity,
     SignedIn {
         token: String,
     },
@@ -72,6 +96,17 @@ pub(crate) enum Response {
 #[derive(Deserialize)]
 #[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
 enum WireResponse {
+    Mailboxes {
+        page: MailboxPage,
+    },
+    Mailbox {
+        login: String,
+        csrf: String,
+        domain: String,
+        mailbox: MailboxView,
+    },
+    Missing {},
+    Capacity {},
     SignedIn {
         token: String,
     },
@@ -104,6 +139,20 @@ impl<'de> Deserialize<'de> for Response {
                 csrf,
             },
             WireResponse::Denied {} => Self::Denied,
+            WireResponse::Mailboxes { page } => Self::Mailboxes { page },
+            WireResponse::Mailbox {
+                login,
+                csrf,
+                domain,
+                mailbox,
+            } => Self::Mailbox {
+                login,
+                csrf,
+                domain,
+                mailbox,
+            },
+            WireResponse::Missing {} => Self::Missing,
+            WireResponse::Capacity {} => Self::Capacity,
             WireResponse::Invalid {} => Self::Invalid,
             WireResponse::Unavailable {} => Self::Unavailable,
         })
@@ -149,6 +198,22 @@ impl Request {
             }
             Operation::Scope { token } => token_valid(token),
             Operation::Logout { token, csrf } => token_valid(token) && hex64(csrf),
+            Operation::Mailboxes {
+                token,
+                domain,
+                query,
+                page,
+                sort,
+            } => {
+                token_valid(token)
+                    && crate::admin_directory::Scope::domains(&[domain]).is_ok()
+                    && crate::admin_access::inventory_options_valid(query, *page, sort)
+            }
+            Operation::Mailbox { token, domain, id } => {
+                token_valid(token)
+                    && hex64(id)
+                    && crate::admin_directory::Scope::domains(&[domain]).is_ok()
+            }
         };
         if valid {
             Ok(())
@@ -161,6 +226,29 @@ impl Request {
 impl Response {
     pub(crate) fn validate(&self) -> Result<(), Error> {
         match self {
+            Self::Mailboxes { page } => {
+                if page.valid() {
+                    Ok(())
+                } else {
+                    Err(Error::Invalid)
+                }
+            }
+            Self::Mailbox {
+                login,
+                csrf,
+                domain,
+                mailbox,
+            } => {
+                if login_valid(login)
+                    && hex64(csrf)
+                    && crate::admin_directory::Scope::domains(&[domain]).is_ok()
+                    && mailbox.valid(domain)
+                {
+                    Ok(())
+                } else {
+                    Err(Error::Invalid)
+                }
+            }
             Self::SignedIn { token } if !token_valid(token) => Err(Error::Invalid),
             Self::Scope {
                 login,
@@ -368,6 +456,56 @@ pub(crate) fn write_response(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn maximum_mailbox_page_fits_existing_frame_and_roundtrips() {
+        use sha2::{Digest, Sha256};
+        let domain = format!(
+            "{}.{}.{}.test",
+            "d".repeat(63),
+            "d".repeat(63),
+            "d".repeat(56)
+        );
+        let rows = (0..10)
+            .map(|i| {
+                let username = format!("{i}{}@{domain}", "\\".repeat(63));
+                MailboxView {
+                    id: format!("{:x}", Sha256::digest(username.as_bytes())),
+                    username,
+                    quota: i64::MAX,
+                    active: true,
+                    smtp_active: true,
+                }
+            })
+            .collect();
+        let response = Response::Mailboxes {
+            page: MailboxPage {
+                login: "a".repeat(96),
+                csrf: "a".repeat(64),
+                domain,
+                query: "\"".repeat(64),
+                sort: "address".into(),
+                page: 1,
+                total: 100,
+                rows,
+            },
+        };
+        assert_eq!(response.validate(), Ok(()));
+        let bytes = serde_json::to_vec(&response).unwrap();
+        assert!(bytes.len() <= MAX_FRAME);
+        assert_eq!(
+            serde_json::from_slice::<Response>(&bytes)
+                .unwrap()
+                .validate(),
+            Ok(())
+        );
+        for extra in [
+            br#"{"status":"missing","role":"system"}"#.as_slice(),
+            br#"{"status":"capacity","sql":"private"}"#,
+        ] {
+            assert!(serde_json::from_slice::<Response>(extra).is_err());
+        }
+    }
     use std::io::Write;
     use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
     use std::os::unix::net::UnixListener;

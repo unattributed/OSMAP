@@ -1781,3 +1781,26 @@ private namespaces remain root-protected for retention. Toronto's original mail
 services remain running and production accounts/configuration are unchanged.
 This delivers the first functional slice, not mailbox management, completion of
 Sprint ADM-S01, the native installer, a full release or predecessor retirement.
+
+### Same day — Connect authorized mailbox inventory through the Rust service
+
+Private administrator sign-in is qualified, but its current scope page cannot
+yet inspect mailboxes. Reuse the working scoped directory reader and extend the
+existing service, RPC and browser routes. Validate the live session and current
+domain grant before every list or detail read. Expose only a dedicated metadata
+projection; keep credentials and private storage paths out of the response.
+
+Use the existing complete 100-row reader bound with ten-row filtered/sorted
+pages and stable, scope-checked digest detail locators. Return explicit capacity
+and dependency failures; preserve empty as a successful, distinct result.
+Configured flags are not live health, and quota units absent from the observed
+contract remain unverified. Admit the reader's existing 64 KiB output ceiling
+only for directory queries, retaining the 16 KiB identity/input and 8 KiB RPC
+bounds. No mailbox writer or new application dependency is added.
+
+Apply the operator's lean S05 direction: one implementation owner and independent
+reviewer, focused Rust tests, an early real browser journey on obsd1, then actual
+mail qualification. Reuse passing unchanged boundaries and existing native tools;
+write no additional Python or general test framework. The existing project plan
+holds the work order and failure history. Source review and 82 focused cases
+pass; native/browser qualification and operator acceptance remain pending.

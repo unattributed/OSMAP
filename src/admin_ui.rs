@@ -1,8 +1,9 @@
 //! Admin-only presentation. Authority and sessions are supplied by the service.
 //! This module neither authenticates an identity nor reads private state.
+use crate::admin_access::{MailboxPage, MailboxView};
 use crate::html::TrustedHtml;
 use crate::http::HttpResponse;
-use crate::http_support::{escape_html, html_response};
+use crate::http_support::{escape_html, html_response, url_encode};
 
 fn admin_html_response(
     status: u16,
@@ -76,7 +77,11 @@ pub(crate) fn scope_page(
     } else {
         let mut items = String::new();
         for domain in domains {
-            items.push_str(&format!("<li>{}</li>", escape_html(domain)));
+            items.push_str(&format!(
+                "<li>{} <a href=\"/admin/mailboxes?domain={}\">View mailboxes</a></li>",
+                escape_html(domain),
+                escape_html(&url_encode(domain))
+            ));
         }
         format!("<p><strong>Domain administrator</strong></p><ul aria-label=\"Assigned domains\">{items}</ul>")
     };
@@ -91,13 +96,115 @@ pub(crate) fn scope_page(
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Administration</h1><p>Your current administrator scope is shown below.</p></div>",
             "<section class=\"panel\" aria-labelledby=\"admin-scope-title\"><h2 id=\"admin-scope-title\">Current scope</h2>{scope}</section>",
             "<section class=\"panel\" aria-labelledby=\"admin-access-title\"><h2 id=\"admin-access-title\">Available access</h2><p><span class=\"badge\">Read-only</span></p>",
-            "<p>Account changes are unavailable. Mailbox administration is not available yet.</p></section></main>"
+            "<p>Mailbox metadata is available for an authorized domain. Account changes are unavailable.</p>",
+            "<form id=\"admin-domain-selection\" method=\"get\" action=\"/admin/mailboxes\"><label for=\"domain\">Hosted domain</label><input id=\"domain\" name=\"domain\" maxlength=\"255\" required><button type=\"submit\">View mailboxes</button></form></section></main>"
         ),
         login = escape_html(login),
         csrf = escape_html(csrf),
         scope = scope,
     ));
     admin_html_response(200, "OK", "OSMAP Admin — Current scope", body)
+}
+
+fn inventory_shell(login: &str, csrf: &str, title: &str, content: String) -> HttpResponse {
+    let body = format!(concat!(
+        "<a class=\"skip-link\" href=\"#main-content\">Skip to mailboxes</a>",
+        "<aside class=\"app-rail\" aria-label=\"Admin navigation\"><nav class=\"rail-links\" aria-label=\"Primary navigation\"><a class=\"rail-link\" href=\"/admin\">Overview</a><a class=\"rail-link selected\" href=\"/admin#admin-domain-selection\" aria-current=\"page\">Mailboxes</a></nav></aside>",
+        "<header class=\"topbar\" aria-label=\"OSMAP Admin\"><a class=\"brand\" href=\"/admin\" style=\"flex-basis:auto;white-space:nowrap\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>OSMAP Admin</a><div class=\"status-row auth-status\"><span>Signed in as <strong>{}</strong></span><form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{}\"><button type=\"submit\">Sign out</button></form></div></header>",
+        "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>{}</h1><p><span class=\"badge\">Read-only</span> Configured mailbox metadata. Live authentication, delivery, usage and browser MFA have not been verified.</p></div>{}</main>"
+    ), escape_html(login), escape_html(csrf), escape_html(title), content);
+    admin_html_response(
+        200,
+        "OK",
+        "OSMAP Admin — Mailboxes",
+        TrustedHtml::from_template(body),
+    )
+}
+
+fn list_url(domain: &str, query: &str, page: u8, sort: &str) -> String {
+    format!(
+        "/admin/mailboxes?domain={}&q={}&page={page}&sort={}",
+        url_encode(domain),
+        url_encode(query),
+        url_encode(sort)
+    )
+}
+
+pub(crate) fn mailboxes_page(page: &MailboxPage) -> HttpResponse {
+    if !page.valid() {
+        return error_page(503);
+    }
+    let mut content = format!(concat!(
+        "<section class=\"panel\"><h2>Mailboxes for {}</h2>",
+        "<form method=\"get\" action=\"/admin/mailboxes\"><input type=\"hidden\" name=\"domain\" value=\"{}\"><input type=\"hidden\" name=\"page\" value=\"1\">",
+        "<label for=\"mailbox-filter\">Address contains</label><input id=\"mailbox-filter\" name=\"q\" maxlength=\"64\" value=\"{}\">",
+        "<label for=\"mailbox-sort\">Sort by</label><select id=\"mailbox-sort\" name=\"sort\"><option value=\"address\"{}>Address A–Z</option><option value=\"quota\"{}>Configured quota, highest first</option></select><button type=\"submit\">Filter mailboxes</button></form>",
+        "<p role=\"status\">{} matching mailboxes. Page {} of {}.</p>"
+    ), escape_html(&page.domain), escape_html(&page.domain), escape_html(&page.query), if page.sort == "address" { " selected" } else { "" }, if page.sort == "quota" { " selected" } else { "" }, page.total, page.page, page.pages());
+    if page.rows.is_empty() {
+        content.push_str(if page.query.is_empty() {
+            "<p>No mailboxes are configured for this domain.</p>"
+        } else {
+            "<p>No mailboxes match this filter.</p>"
+        });
+    } else {
+        content.push_str("<div role=\"region\" aria-label=\"Mailbox inventory\" tabindex=\"0\" style=\"overflow-x:auto\"><table><thead><tr><th scope=\"col\">Mailbox address</th><th scope=\"col\">Account flag</th><th scope=\"col\">SMTP flag</th><th scope=\"col\">Configured quota (unit unverified)</th></tr></thead><tbody>");
+        for row in &page.rows {
+            content.push_str(&format!("<tr><th scope=\"row\"><a href=\"/admin/mailboxes/{}?domain={}\">{}</a></th><td>{}</td><td>{}</td><td>{}</td></tr>", row.id, escape_html(&url_encode(&page.domain)), escape_html(&row.username), enabled(row.active), enabled(row.smtp_active), row.quota));
+        }
+        content.push_str("</tbody></table></div>");
+    }
+    content.push_str("<nav aria-label=\"Mailbox pages\">");
+    if page.page > 1 {
+        content.push_str(&format!(
+            "<a class=\"button-link\" href=\"{}\">Previous page</a> ",
+            escape_html(&list_url(
+                &page.domain,
+                &page.query,
+                page.page - 1,
+                &page.sort
+            ))
+        ));
+    }
+    if page.page < page.pages() {
+        content.push_str(&format!(
+            "<a class=\"button-link\" href=\"{}\">Next page</a>",
+            escape_html(&list_url(
+                &page.domain,
+                &page.query,
+                page.page + 1,
+                &page.sort
+            ))
+        ));
+    }
+    content.push_str("</nav><p>Quota is the stored configured value; its unit, usage and enforcement have not been verified. Lists refresh between views; object links remain bound to mailbox identity.</p></section>");
+    inventory_shell(&page.login, &page.csrf, "Mailboxes", content)
+}
+
+fn enabled(value: bool) -> &'static str {
+    if value {
+        "Enabled"
+    } else {
+        "Disabled"
+    }
+}
+
+pub(crate) fn mailbox_page(
+    login: &str,
+    csrf: &str,
+    domain: &str,
+    row: &MailboxView,
+) -> HttpResponse {
+    let content = format!(concat!(
+        "<section class=\"panel\"><h2>{}</h2><dl><dt>Hosted domain</dt><dd>{}</dd><dt>Account flag</dt><dd>{}</dd><dt>SMTP flag</dt><dd>{}</dd><dt>Configured quota (unit unverified)</dt><dd>{}</dd>",
+        "<dt>Display name</dt><dd>Not available from this inventory</dd><dt>Native authentication</dt><dd>Not verified</dd><dt>Message delivery</dt><dd>Not verified</dd><dt>Storage usage</dt><dd>Unknown</dd><dt>Browser TOTP and recovery</dt><dd>Not observed</dd><dt>Last live verification</dt><dd>Not observed</dd></dl>",
+        "<a class=\"button-link\" href=\"{}\">Back to mailboxes</a></section>"
+    ), escape_html(&row.username), escape_html(domain), enabled(row.active), enabled(row.smtp_active), row.quota, escape_html(&list_url(domain, "", 1, "address")));
+    inventory_shell(login, csrf, "Mailbox details", content)
+}
+
+pub(crate) fn capacity_page() -> HttpResponse {
+    admin_html_response(503, "Service Unavailable", "Mailbox inventory limit", TrustedHtml::from_template("<main class=\"standalone-notice\"><section class=\"panel\"><h1>Mailbox inventory limit</h1><p>This read-only view supports at most 100 mailboxes per domain. No partial list has been displayed.</p><a href=\"/admin\">Return to overview</a></section></main>".into()))
 }
 
 /// Use fixed user-facing messages; native diagnostics never cross this API.
@@ -158,13 +265,7 @@ mod tests {
         assert!(html.contains("id=\"main-content\""));
         assert!(!html.contains("Return to mail"));
         assert!(!html.contains("href=\"/\""));
-        for route in [
-            "/mailboxes",
-            "/mailbox?",
-            "/settings",
-            "/contacts",
-            "/sessions",
-        ] {
+        for route in ["/mailbox?", "/settings", "/contacts", "/sessions"] {
             assert!(!html.contains(route));
         }
         assert!(!html.contains("<script"));
@@ -260,7 +361,9 @@ mod tests {
         assert_eq!(response.status_code, 200);
         let html = body(&response);
         assert!(html.contains("&lt;script&gt;public&lt;/script&gt;"));
-        assert!(html.contains("<li>one.example.test</li>"));
+        assert!(html.contains(
+            "<li>one.example.test <a href=\"/admin/mailboxes?domain=one.example.test\">"
+        ));
         assert!(html.contains("&lt;img src=x onerror=&#39;public&#39;&gt;"));
         assert!(!html.contains("<img"));
         assert!(html.contains("method=\"post\" action=\"/admin/logout\""));
@@ -275,7 +378,7 @@ mod tests {
         assert_eq!(navigation.matches("aria-current=\"page\"").count(), 1);
         assert!(!html.contains("name=\"token\""));
         assert!(html.contains("Read-only"));
-        assert!(html.contains("Mailbox administration is not available yet."));
+        assert!(html.contains("Mailbox metadata is available for an authorized domain."));
     }
 
     #[test]

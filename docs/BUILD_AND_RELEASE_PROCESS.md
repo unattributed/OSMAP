@@ -427,3 +427,11 @@ one-line Rust presentation correction; verify the copied artifact's exact bytes
 and actual mail execution. Normal signed source/evidence delivery hooks remain
 mandatory. Their PASS is not a refreshed strict-release tuple, public production
 deployment, operator acceptance or completion of Sprint ADM-S01.
+
+ADM-S01-02 extends only the qualified private admin path with read-only mailbox
+inventory. The active project-plan work order binds current-grant checks,
+bounded projection/filter/page/detail and observable empty/failure cases. Reuse
+unchanged auth/confinement results; qualify the new frontend/backend path on
+obsd1 before promoting the signed candidate to actual isolated mail execution.
+No additional Python or general QA framework is required. Native/browser results
+remain pending at the source checkpoint; normal signed delivery hooks still apply.

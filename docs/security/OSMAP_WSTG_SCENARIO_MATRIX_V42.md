@@ -1,5 +1,13 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+2026-11-17 ADM-S01-02 source boundary: scoped mailbox list/filter/sort/page and
+digest-addressed detail revalidate current authority before the fixed reader.
+Projection excludes storage paths and credentials; foreign/missing responses are
+uniform, writes refuse, and empty/capacity/dependency states differ. Focused Rust
+coverage exercises the actual runtime delegate, frame bound, escaped input and
+query allowlist. Source review passes; native/browser qualification on obsd1 and
+mail remains pending. This changes neither production mail nor owner acceptance.
+
 2026-11-17 ADM-S01-01 isolated qualification: actual browser password/TOTP,
 current authorized scope, restart continuity and logout pass separately on
 obsd1 and mail at e685f908. Both final browsers pass 12 checks, including strict
