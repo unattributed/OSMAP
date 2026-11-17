@@ -188,7 +188,7 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Active product implementation slice | **ADM-S01-02**, authorized mailbox list: IN_PROGRESS; reviewed source in draft PR #99, obsd1 basic pages/sign-in owner-accepted; text/icon refinement installed agent PASS, separate owner acceptance pending; candidate ACTIVE; mail qualification PARTIAL (private native HTTP observed; required browser journey NOT_RUN), so full slice completion remains pending |
+| Current product slice | **ADM-S01-02**, read-only overview/domain/mailbox views and own display Settings: engineering DELIVERED; matching obsd1 and isolated mail native/browser qualification PASS for the bounded work order; independent result review PASS; obsd1 basic pages/final login owner-approved, separate text/icon owner acceptance pending. Normal obsd1 candidate ACTIVE; temporary mail candidate stopped and root-sealed. Full operator acceptance, production deployment and writers remain pending |
 | Previous product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; final login design owner-approved; whole-slice operator acceptance NOT_ACCEPTED |
 | Selected next product slice | **ADM-S02-01 domain creation from scratch**, selected by the operator after the text/icon refinement; NOT_STARTED. Execute ADM-S05-01a -> ADM-S05-02a -> ADM-S01-03a as its prerequisites, leaving their parent completion obligations later. Controlled mailbox creation follows. |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
@@ -933,6 +933,58 @@ the existing sprint root, with regular owner-only single-link artifacts. The
 first retained artifact is 13:54:58 UTC; observation through 14:32:33 UTC is
 37 minutes 35 seconds, with earlier preparation cost UNKNOWN and prior history
 unchanged. This checkpoint is source/evidence preservation, not product closure.
+
+**Isolated mail qualification result — 2026-11-17:** the operator clarifies that
+the goal is confidence in later deployment on mail and follows the recommendation
+to retain obsd1 development with isolated qualification on mail. A permanent
+production-data connection is not added to development. The same ba360305 source
+and `879d1bec...` binary run on mail; application/build inputs are unchanged
+through the documentation checkpoints. Read-only production preflight confirms
+all 29 source-consumed columns across admin, grants, domains, mailboxes and aliases.
+It does not qualify production service grants, identities, configuration or writes.
+
+The actual browser uses the trusted canonical obsd1 HTTPS entry, temporarily
+forwarded only for qualification to the mail Web/service/private SQL stack. It
+observes the scoped 2/12/2 overview, unique mail-host domain description, domain
+metadata, mailbox pages 1/2, user11 filtering/quota sort and stable opaque detail.
+Two direct navigation-completion waits time out; immediate later accessibility
+readbacks independently show the correct empty-domain and foreign-not-found
+pages. Preserve both helper failures, not retroactive successful navigation calls.
+Independent combined reassessment admits click navigation without replaying GETs.
+
+The next visible link returns 502. Stop without credential retry and restore the
+original obsd1 route. The reverse SSH connection reports that its local target
+is absent; the original local forward has exited zero without an observed cause.
+The edge reports a closed upstream TLS handshake. Preserve the 502 and unknown
+forward-exit cause separately. One reviewed native managed SSH replacement passes
+master/listener/pinned-TLS checks; first-cycle route evidence is archived and
+independently read back before guarded resumption. No fixture or allowance resets.
+
+Resume only the remaining boundary: sign in, open Settings, observe Text labels,
+save Icons with Appearance saved, log out, sign in with a fresh factor, and read
+Icons still selected in Settings. Final logout returns the approved login.
+Native private preference readback is icons/system/comfortable/medium. Reuse the
+matching obsd1 keyboard/touch-emulation and unchanged authentication/confinement
+evidence rather than repeating them on mail. Nine retained images and their
+portable hash manifest, the native archive and actual result receive independent
+review. Physical-device UAT and a release-wide security pass are not inferred.
+
+Restore and read back the exact original obsd1 route, stop only the private q2
+Web/service/nginx/SQL, verify process/socket absence, remove its exact temporary
+principals and seal its retained namespace under root. The native evidence
+archive is read back with SHA-256
+`ff3d7f7f76620b18c354f967c3fe2be2a0f00954d6efb3042f11947b04126b18`
+before endpoint/principal disposition. Close both owned forwards and verify their
+listeners absent. With the mail candidate stopped, the normal obsd1 admin/public
+login routes still return 200; public mail daemons remain running. Cleanup PASS
+establishes only that disposition, separately from the observed product results.
+
+Engineering and bounded isolated mail qualification are DELIVERED/PASS. Preserve
+basic-page/final-login approval; text/icon owner acceptance is still pending.
+Source delivery/protected integration use the normal exact-head checks and are
+recorded in the PR receipt. No domain/mailbox writer, bootstrap, production
+deployment or full-replacement claim follows. The selected next product journey
+remains first-domain creation through its three named bootstrap/writer prerequisites.
 
 The operator applies the S01 lessons and authorizes the next mailbox-list slice
 (called “adm-s02” in chat). Baseline is signed main

@@ -194,7 +194,7 @@ Each table row is an independently identifiable test. Tests involving mail-accou
 | F-29 | Domain retirement checks dependent mailboxes, aliases and queued effects, then refuses unsafe removal until disposition is reviewed. |
 | F-30 | Lists, filtering, pagination, sorting and detail links return stable authorized objects despite concurrent updates or missing backend data. |
 | F-31 | No operation reports success on unknown native write status; user sees a specific pending reconciliation state and correlation ID. |
-| F-32 | Read-only legacy compatibility mode permits inventory but refuses every direct or browser write path. |
+| F-32 | Read-only legacy compatibility mode permits inventory and isolated own non-authority preferences, but refuses every direct or browser write to mail-account authority. |
 | F-33 | Every implemented optional PostfixAdmin-equivalent feature has positive, negative and native-consumer proof; omitted items have explicit operator disposition. |
 | F-34 | Mailbox self-service actions remain in OSMAP, not copied into privileged admin capabilities or converted into mail-content access. |
 | F-35 | ADM-S04-02 enrolls an admin or explicitly changes/resets its credential to qualified Argon2id; password+TOTP login and restart persistence work alongside supported legacy bcrypt logins. Full long ASCII/UTF-8 input is verified; wrong/tail-changed inputs, replay, malformed encoding and excessive PHC costs refuse safely. A credential transition rejects the old password and invalidates affected sessions; read-only login preserves legacy hashes, unknown writes remain contained, and compatible rollback still verifies Argon2id. Development and matching installed mail-host journey evidence are both required. |
@@ -841,3 +841,42 @@ retain Icons with the other preferences unchanged. Independent source and image
 review pass; physical-device UAT, mail qualification and owner acceptance of the
 new refinement are not inferred. The bootstrap enhancement and domain writer
 remain the selected next implementation, not a result of these menu tests.
+
+### ADM-S01-02 isolated mail result — 2026-11-17
+
+The bounded read/projection and own-preference outcome now has matching native
+HTTP and actual browser evidence on mail for unchanged signed source ba360305,
+binary SHA-256 `879d1bec355584a850f995ab67565de0a443410dc92e8f1029297f4d94d8f494`.
+Use the existing project work order/result for full provenance and failure history.
+The browser enters through obsd1's trusted hostname while the candidate service,
+reader and isolated SQL authority run on mail. A unique domain description and
+verified private source/configuration bind the observed data to that candidate.
+
+Observed portions of T:F-07, T:F-30, T:F-32, T:SEC-07, T:SEC-09, T:SEC-13 and
+T:UX-03 include scoped counts/domain detail, mailbox paging/filter/sort/opaque
+detail, empty/foreign separation, private reader loss/recovery, current grant
+loss/restoration, direct-write refusal, invalid preference/CSRF refusal, and
+Icons save/readback across logout and fresh sign-in. Native preference files
+confirm the saved values; images and native evidence receive independent review.
+Reuse matching obsd1 source/native authentication, confinement, keyboard and
+touch-emulation evidence. These results qualify the declared slice boundary,
+not every management/concurrency/production assertion in those broader cases.
+F-32's non-authority preference clarification preserves the approved own Settings
+feature; it grants no account-table write permission.
+
+Preserve the raw grant-order consumer failure and later unordered-set/read-path
+reconciliation, the origin invocation's missing exact failure observation, two
+navigation-completion timeouts with later page readbacks, and the 502/forward loss.
+One independently reviewed forward repair resumes only the remaining preference
+boundary. Restoration and cleanup have separate matching results: original obsd1
+route/hash, private process/socket/principal absence, root-only retained evidence,
+closed forwards, working normal login routes and running public mail daemons.
+No matching pass is inferred from cleanup or from the earlier failed invocation.
+
+The operator selects obsd1 development plus isolated qualification on mail to
+establish future deployment confidence. Production read-only schema preflight
+finds all 29 required columns; production authority, service permissions, exact
+deployment/cutover configuration and writer journeys remain future gates.
+Bounded development/mail qualification PASS does not supply text/icon owner
+acceptance, a complete broad T-case, full replacement or release acceptance.
+The catalogue remains 223 specifications; no new test machinery is introduced.

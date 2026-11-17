@@ -1995,3 +1995,28 @@ pages remain an incomplete administration product, even where their read-only
 boundaries pass. Preserve their approved design and progress toward the real
 domain/mailbox writer journey rather than further presentation work. ADM-S01-02
 remains IN_PROGRESS; its mail browser result and acceptance remain pending.
+
+### Same day — Qualify the read-only slice on mail and preserve obsd1 development
+
+The operator clarifies that the aim is confidence in future deployment on mail
+and accepts retaining obsd1 as development with isolated qualification on mail.
+Keep production data out of the development dependency chain; production schema
+inspection remains a read-only preflight. The unchanged reviewed artifact now
+executes the scoped browser reader journey through the canonical obsd1 entry
+to the isolated mail service/SQL stack, and saves Icons across a fresh sign-in.
+Independent native/image/result review accepts that bounded engineering outcome.
+
+Preserve the two navigation-wait failures and the later 502. The failed local
+forward is absent and has exited zero without an observed cause; repair only
+that transport through one reviewed managed SSH connection, then resume only
+Settings/persistence. Do not rerun passing inventory tests or infer that a failed
+invocation passed. Restore the original obsd1 route, stop/remove only exact-owned
+q2 resources after evidence readback/hash, retain its root-sealed data, and close
+the forwards. Normal obsd1 login routes and public mail services remain available.
+
+Mark ADM-S01-02 engineering delivered and bounded development/isolated mail
+qualification PASS. Preserve approved basic pages/final login and separately
+pending text/icon owner acceptance. Production deployment, writers and full
+replacement remain unimplemented; first-domain creation is the next selected
+journey. The earlier GPG No-pinentry refusal created no commit; operator warm-up
+then permits verified signed checkpoint 7e594b2 and normal final delivery gates.
