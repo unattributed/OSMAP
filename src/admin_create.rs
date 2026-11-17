@@ -398,7 +398,15 @@ where
         };
         held.write(&serde_json::to_vec(&intent).map_err(|_| CreateFailure::Unavailable)?)
             .map_err(|_| CreateFailure::Unavailable)?;
-        let query = transaction(writer, &summary.login, &admin.hash, r, hash, &digest);
+        let query = transaction(
+            writer,
+            &summary.login,
+            &admin.hash,
+            &admin.modified,
+            r,
+            hash,
+            &digest,
+        );
         // The durable pending intent precedes dispatch. Any uncertain result
         // prevents another request key for this account until reconciliation.
         let output = self.writer_sql(&query, true)?;
@@ -449,6 +457,7 @@ fn transaction(
     w: &WriterConfig,
     actor: &str,
     actor_hash: &str,
+    actor_modified: &str,
     r: &CreateMailbox,
     hash: &str,
     digest: &str,
@@ -461,7 +470,7 @@ fn transaction(
     format!("SET SESSION innodb_lock_wait_timeout=3; START TRANSACTION;\n\
 SET @holder=NULL,@epoch=NULL,@rev=NULL,@mode=NULL; SELECT holder,epoch,revision,mode INTO @holder,@epoch,@rev,@mode FROM osmap_admin_writer WHERE id=1 FOR UPDATE;\n\
 SET @d=NULL,@active=NULL,@mx=NULL,@cap=NULL,@maxquota=NULL,@quota=NULL,@aliascap=NULL; SELECT domain,active,backupmx,mailboxes,maxquota,quota,aliases INTO @d,@active,@mx,@cap,@maxquota,@quota,@aliascap FROM domain WHERE BINARY domain=BINARY {domain} FOR UPDATE;\n\
-SET @actor=NULL,@system=NULL,@all=NULL,@grant=NULL; SELECT username,superadmin INTO @actor,@system FROM admin WHERE BINARY username=BINARY {actor} AND BINARY password=BINARY {actor_hash} AND active=1 FOR UPDATE;\n\
+SET @actor=NULL,@system=NULL,@all=NULL,@grant=NULL; SELECT username,superadmin INTO @actor,@system FROM admin WHERE BINARY username=BINARY {actor} AND BINARY password=BINARY {actor_hash} AND BINARY CAST(modified AS CHAR)=BINARY {actor_modified} AND active=1 FOR UPDATE;\n\
 SELECT domain INTO @all FROM domain_admins WHERE BINARY username=BINARY {actor} AND BINARY domain=BINARY 'ALL' AND active=1 FOR UPDATE;\n\
 SELECT domain INTO @grant FROM domain_admins WHERE BINARY username=BINARY {actor} AND BINARY domain=BINARY {domain} AND active=1 FOR UPDATE;\n\
 SET @count=(SELECT COUNT(*) FROM mailbox WHERE BINARY domain=BINARY {domain}),@aliases=(SELECT COUNT(*) FROM alias WHERE BINARY domain=BINARY {domain}),@used=(SELECT COALESCE(SUM(quota),0) FROM mailbox WHERE BINARY domain=BINARY {domain});\n\
@@ -472,7 +481,7 @@ INSERT INTO osmap_admin_operations (request_id,actor,digest,credential_digest,us
 UPDATE osmap_admin_writer SET revision=revision+1 WHERE id=1 AND @reason='committed' AND @m=1 AND @a=1 AND @o=1; SET @w=ROW_COUNT();\n\
 SET @finish=IF(@reason='committed' AND @m=1 AND @a=1 AND @o=1 AND @w=1,'COMMIT','ROLLBACK'); PREPARE osmap_finish FROM @finish; EXECUTE osmap_finish; SELECT IF(@finish='COMMIT','committed',IF(@reason='committed','conflict',@reason));\n\
 SELECT HEX(actor),digest,HEX(username),quota FROM osmap_admin_operations WHERE request_id={request} AND @finish='COMMIT';\n",
-        domain=sql(&r.domain),actor=sql(actor),actor_hash=sql(actor_hash),holder=sql(&w.holder),epoch=w.epoch,
+        domain=sql(&r.domain),actor=sql(actor),actor_hash=sql(actor_hash),actor_modified=sql(actor_modified),holder=sql(&w.holder),epoch=w.epoch,
         revision=r.revision,quota_unit=w.domain_quota_unit_bytes,account=sql(&account),request=sql(&r.request_id),hash=sql(hash),
         name=sql(&r.display_name),maildir=sql(&format!("{}/{}/",r.domain,r.local_part.to_ascii_lowercase())),
         local=sql(&r.local_part.to_ascii_lowercase()),digest=sql(digest))

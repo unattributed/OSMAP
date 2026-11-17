@@ -139,6 +139,7 @@ impl Token {
 struct Admin {
     login: String,
     hash: String,
+    modified: String,
     epoch: u64,
     generation: String,
     domains: Vec<String>,
@@ -288,6 +289,7 @@ impl<E: CommandExecutor> Authority<E> {
         Ok(Some(Admin {
             login: login.into(),
             hash,
+            modified: unhex(&identity[3])?,
             epoch,
             generation,
             domains,
