@@ -11,10 +11,13 @@ frontend/mail health passes. Functional source is 428c9e04; unchanged backend
 evidence is reused for the Web-only rail correction. Two visual failures are
 retained; the responsive-rail correction at 088d3f23 passes actual 744/360-pixel
 disclosure and navigation checks. The shared-login presentation and requested
-owner account need their final installed sign-in observation; source tests and
-private role/factor readback pass. Mail qualification, final fixture disposition
-and operator acceptance remain outstanding. No complete WSTG or strict-release
-PASS is claimed.
+owner account pass their final installed sign-in observation on Web f21b0268:
+the owner authenticates with the new password/TOTP, receives system-admin scope
+and reads the chosen test-domain list. The backend remains unchanged 428c9e04.
+Source tests and private role/factor readback pass. Uploaded provisioning inputs
+are disposed of after readback; the candidate remains intentionally ACTIVE for
+operator access. Mail qualification and operator acceptance remain outstanding.
+No complete WSTG or strict-release PASS is claimed.
 
 2026-11-17 ADM-S01-02 source boundary: scoped mailbox list/filter/sort/page and
 digest-addressed detail revalidate current authority before the fixed reader.

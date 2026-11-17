@@ -440,8 +440,10 @@ the expired-forward/certificate handoff. The actual obsd1 browser additionally
 observes the functional list journey, private reader loss/recovery and grant
 revocation/restoration. Preserve the restricted hostname routing and unchanged
 backend evidence with the assessed Web source. Shared-rail visual checks pass at
-744 and 360 pixels. The requested shared-login presentation and owner-admin
-account still need matching installed sign-in evidence; private role/factor
-readback and affected source checks pass. Mail qualification and fixture
-disposition remain pending in the existing work order. Normal signed delivery
-hooks still apply; this is not release acceptance.
+744 and 360 pixels. Web candidate f21b0268 passes installed shared-login and
+owner password/TOTP sign-in, system-role scope and selected test-domain metadata.
+The resident 428c9e04 backend remains unchanged and separately identified. Private
+role/factor readback and affected source checks pass. Provisioning uploads are
+disposed of after readback; the owner account and isolated candidate are
+intentionally retained ACTIVE for operator access. Mail qualification remains
+NOT_RUN. Normal signed delivery hooks still apply; this is not release acceptance.

@@ -171,7 +171,7 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Active product implementation slice | **ADM-S01-02**, authorized mailbox list: IN_PROGRESS; reviewed source in draft PR #99, obsd1 browser functional and responsive-rail cases PASS; shared-login presentation and requested owner-admin sign-in await final native observation; mail qualification NOT_RUN; operator acceptance NOT_ACCEPTED |
+| Active product implementation slice | **ADM-S01-02**, authorized mailbox list: IN_PROGRESS; reviewed source in draft PR #99, obsd1 browser functional/responsive/shared-login and requested owner-admin sign-in PASS; candidate retained ACTIVE for owner access; mail qualification NOT_RUN; operator acceptance NOT_ACCEPTED |
 | Previous product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; operator acceptance NOT_ACCEPTED |
 | Selected next product slice | ADM-S01-03 controlled mailbox creation; NOT_STARTED |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
@@ -923,6 +923,30 @@ exported to Git, logs or chat. The shared login change passes seven admin UI cas
 the existing shared-brand public-render case and strict all-target Clippy; the
 regenerated V10 record passes its real consumer. Actual owner login and installed
 shared-login screenshots remain pending at this source checkpoint.
+
+Final obsd1 continuation: Web candidate
+`f21b026883df7dfe4986b1ccc6b394c9d732c8f8` builds in 40.43 seconds with launcher
+exit 0, installed executable SHA-256
+`aa891651a0004323a0d3f2602118e2cdc974f082187778a75b972a7ced728b0c`.
+The actual browser shows the reused OSMAP login screen with admin-specific copy,
+then the requested owner signs in with the new password and TOTP. Current scope
+reports System administrator; choosing the test domain returns its 12-mailbox
+inventory. The unchanged resident service/backend remains assessed source
+428c9e04; no backend-module change or new library-test build is claimed.
+Login, scope and inventory screenshots are retained privately under the sprint
+root. The ordinary and admin login GETs both return 200; at 07:39:21 UTC normal
+OSMAP, Dovecot, Postfix, MariaDB and nginx health checks all pass.
+
+The local owner-only password/QR setup is delivered for a separate password-
+manager entry. User import of that registration and operator functional
+acceptance are not inferred from agent sign-in. Uploaded provisioning inputs are
+removed only after exact private readback/hash verification; the committed owner
+authority and factor remain active. At the operator's request the candidate,
+private SQL/roles/proxy and hostname route remain ACTIVE for access, rather than
+being removed as a disposable test. This is intentional retained disposition,
+not cleanup PASS or a production installation. Prior failed results and UNKNOWN
+costs remain; no allowance or authority clock is reset. Mail qualification stays
+NOT_RUN, draft PR #99 remains unmerged, and ADM-S01-02 is not accepted.
 
 ### One active slice, work orders and delivery
 

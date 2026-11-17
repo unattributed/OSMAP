@@ -1845,3 +1845,15 @@ indicators and a new service-owned factor. Deliver the independent password and
 registration through an owner-only local artifact. Source checks and private
 role/factor readback pass; installed shared-login appearance and actual owner
 sign-in remain pending. No mailbox credential, factor or live authority changes.
+
+Web source f21b0268 builds and runs natively; the actual browser shows the shared
+OSMAP login appearance, authenticates the requested owner with the separate new
+password/TOTP and reports System administrator. The owner reads the selected
+test domain's mailbox list. Deliver the password and QR registration through
+owner-only local files for a distinct password-manager entry. Preserve the
+unchanged resident backend's 428c9e04 evidence separately from Web identity.
+Both login routes and normal mail/frontend health remain available. Dispose of
+only the uploaded provisioning inputs after durable readback; intentionally
+retain the active candidate and owner account for the operator. This establishes
+owner access to the isolated candidate, not live mailbox administration, mail
+qualification, production installation or operator acceptance. Keep PR #99 draft.
