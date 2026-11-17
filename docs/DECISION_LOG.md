@@ -1882,3 +1882,18 @@ private table backup, the actual Rust-generated prepared queries pass through
 the installed restricted MariaDB reader. A narrow grant withdrawal refuses and
 restoration recovers the same counts. Installed application/browser results
 remain pending; source checks and SQL preflight alone do not qualify this UX.
+
+The signed 4ca8757 native candidate establishes the actual owner journey:
+authorized domain counts and details, mailbox navigation, no-match search,
+Settings save and fresh-session persistence, and truthful unavailable/recovery
+under private reader-grant withdrawal. Restore the original appearance afterward.
+Visual review finds two missing shared markup wrappers; the independently
+reviewed e3a7ab4 correction reuses OSMAP's exact metric and Settings selectors.
+Rebuild natively and restart only Web, reusing the unchanged resident backend.
+Desktop and narrow viewport screenshots confirm the corrected appearance.
+Preserve the malformed full-page captures separately: measured element bounds
+and normal viewport captures distinguish their distortion from product layout.
+The own account label remains inside the narrow header. Both private services
+and the owner account remain ACTIVE for operator access; public mail/frontend
+services remain healthy. Keep mail qualification NOT_RUN, operator acceptance
+pending and PR #99 draft. Domain/forward writes remain planned catalogue work.

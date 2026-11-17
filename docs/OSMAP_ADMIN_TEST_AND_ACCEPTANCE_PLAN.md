@@ -770,3 +770,15 @@ operator acceptance are pending at this source checkpoint. mail qualification
 remains NOT_RUN. Domain/forward writer actions and credential lifecycle settings
 remain planned catalogue functions, not accepted capabilities of this read-only
 candidate. The strict release gate and production readiness are not claimed.
+
+Installed refinement result: native 4ca8757 proves owner sign-in, scoped overview
+counts, metadata and mailbox navigation, no-match search, own appearance save
+and fresh-session readback. Private reader-grant withdrawal displays unavailable;
+restoration recovers without changing the account or public mail services.
+Presentation correction e3a7ab4 changes only Web markup; its native build and
+desktop/360-pixel viewport inspection pass, reusing matching backend evidence.
+Preserve the malformed full-page capture and distinguish it using measured
+element bounds and viewport-only images. Restore system/comfortable/medium
+appearance and retain the active candidate. This installed obsd1 result advances
+the active slice; it does not supply mail qualification, operator acceptance,
+domain writers, credential lifecycle or a release-wide WSTG pass.

@@ -1028,6 +1028,24 @@ has an initial missing-import compile refusal, retained before correction.
 Rebuild and inspect the changed installed presentation; do not repeat matching
 SQL, authentication or preference persistence tests. No acceptance or cost reset.
 
+The reviewed presentation correction is signed e3a7ab4. Its native build passes
+in 40.56 seconds; the installed Web binary SHA-256 is
+`2b34afc11ad99bfef36d2e9150a1e9100bbabb1f69f3afc4b2c5c6cc2e3389e0`.
+Only Web restarts for this correction; the resident 4ca8757 backend and its
+matching unchanged SQL/authentication/persistence results remain applicable.
+Desktop Overview shows all three metric cards and the complete domain table.
+Viewport-only Settings screenshots at 1280 and 360 pixels show the shared theme
+grid, controls and full account label correctly. Measured narrow text ends at
+332.2 pixels inside the 345-pixel header (360-pixel viewport with scrollbar).
+The malformed full-page image is a capture limitation, not evidence of a
+26-pixel product layout: desktop main/content bounds are 1060/767.2 pixels and
+the matching viewport image is readable. Retain both failed images and these
+distinguishing observations. Navigation disclosure and working links remain
+observed. Restore the browser viewport and retain the active owner-accessible
+candidate. Independent review and normal Git delivery reconcile this result;
+mail qualification and operator acceptance remain pending. This is an installed
+obsd1 refinement, not completion of ADM-S01-02 or the replacement milestone.
+
 ### One active slice, work orders and delivery
 
 Only the selected product slice may transition to IN_PROGRESS. Its concrete
