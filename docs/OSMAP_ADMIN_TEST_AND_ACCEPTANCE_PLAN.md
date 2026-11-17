@@ -880,3 +880,50 @@ deployment/cutover configuration and writer journeys remain future gates.
 Bounded development/mail qualification PASS does not supply text/icon owner
 acceptance, a complete broad T-case, full replacement or release acceptance.
 The catalogue remains 223 specifications; no new test machinery is introduced.
+
+## ADM-S01-03 execution opening — 2026-11-18
+
+The existing-domain controlled mailbox-creation work order is active in the
+project plan. Source qualification has 99 passing focused admin tests, including
+strict browser/RPC form composition, opt-in scope/CSRF/factor refusal and durable
+uncertain-intent refusal. Independent source review admits this candidate only
+for bounded isolated native qualification. Installed transaction/hash, browser
+creation and native recipient/userdb/passdb projection cases remain NOT_RUN.
+Authentication and delivery remain ADM-S01-04; no production/release PASS follows.
+
+## ADM-S01-03 qualified existing-domain creation — 2026-11-18
+
+**Implementation: engineering complete. Development qualification: PASS. Matching
+isolated mail qualification: PASS. Owner acceptance: NOT_ACCEPTED. Production
+writer: NOT_DEPLOYED.** Final runtime source
+`a8b86483751102ec2c7025d82d5ab94cfeecd538`, identical native artifact
+`09a73f45dc87367abdf319a2fff098287217d7687a48f4141ee1c7c4bfe9a869`.
+
+| Changed boundary | Actual result and limits |
+| --- | --- |
+| Browser form -> private Web/RPC -> Rust writer -> committed metadata | Browser receipts on obsd1 and the isolated mail-host candidate; mailbox, self alias and operation journal committed once. Final backend-only revision guard additionally qualified through actual HTTP/Web/service/SQL on both hosts with HTTP 201; unchanged d40ad64 UI/RPC/browser evidence reused. |
+| Current authority and fresh step-up | Native CSRF, foreign scope, wrong/replayed factor and revoked-actor refusals; restoring grants did not restore the old session. Existing account throttle bounds failed step-up attempts. |
+| Transaction correctness and limits | Duplicate/canonical collision, stale revision, competing holder and quota refusals. 97 MiB accepted and 98 MiB refused under actual 100 * 1,024,000-byte adopted limit. Native grant locking refused concurrent revocation. |
+| Metadata-only session revocation race | Writer admin SELECT observed in LOCK WAIT before metadata commit; final revision comparison returned 403 with unchanged account/alias/operation counts and writer revision. The earlier scope check was deliberately allowed to read the prior committed value. |
+| Uncertain result and reconciliation | First native operation remained UNCONFIRMED in history. Its committed state was read independently; byte-exact collation correction qualified; original operation reconciliation returned 201 without a second write or revision increment. |
+| Installed lookup contracts | Real Postfix mysql map consumer returned domain, mailbox path and self alias. Actual Dovecot SQL projections returned compatible Argon2id shape privately and expected home/mail paths, UID/GID 2000 and quota bytes on both hosts. Live Dovecot authentication, actual delivery, quota enforcement and mailbox MFA remain their separate slice outcomes. |
+| Operator state | Original duncan login configuration/state restored as selected; login pages HTTP 200. Qualified writer retained for acceptance. Temporary qualification routing/roles/services are not production deployment. |
+
+Preserve compiler, native readback, certificate and command-serialization failures,
+including the documented userdb-probe sequencing deviation; cleanup success does
+not replace these functional observations. Private evidence is under
+`/home/foo/Downloads/osmap-admin-s01/slice03/`, including browser receipts and
+sanitized result/count receipts. Raw credentials, factors, cookies, SQL error text
+and host-private keys remain excluded from source delivery. Existing S01-03
+T:F/DB/SEC/UX/RES mappings apply; this record does not complete fresh bootstrap,
+first-domain creation or ADM-S01-04.
+
+Final custody readbacks pass separately: original obsd1 Web/route hashes restored,
+new writer stopped and root-sealed; mail private Web/service/nginx/SQL stopped,
+sockets absent, retained tree root-only and temporary roles removed. Both SSH
+forwards are closed and public mail service health checks pass. Owner sign-in
+was not repeated. Admission-only cleanup failures, the failed local edit-builder
+dispatch, and OpenBSD's refusal of combined `chown -Rh` are retained; the bounded
+seal-only correction and final readback do not erase those failures or substitute
+for the product results above. Neither retained writer is currently accepting
+browser submissions. Separate owner acceptance needs a controlled reactivation.

@@ -1303,6 +1303,7 @@ pub(crate) fn seal_admin_service(
     socket: &Path,
     profile: &Path,
     sql: &Path,
+    writer_profile: Option<&Path>,
 ) -> io::Result<()> {
     let mut rules = BTreeMap::new();
     add_rule(&mut rules, state, "rwc");
@@ -1315,6 +1316,9 @@ pub(crate) fn seal_admin_service(
     // this exact endpoint on shutdown; peer sockets remain connect-only.
     add_rule(&mut rules, socket, "rwc");
     add_rule(&mut rules, profile, "r");
+    if let Some(writer) = writer_profile {
+        add_rule(&mut rules, writer, "r");
+    }
     add_rule(
         &mut rules,
         sql.parent().ok_or(io::ErrorKind::InvalidInput)?,
@@ -1340,6 +1344,12 @@ pub(crate) fn seal_admin_service(
         add_rule(&mut rules, Path::new("/var/run/ld.so.hints"), "r");
         add_rule(&mut rules, Path::new("/dev/null"), "rw");
         add_if_exists(&mut rules, Path::new("/etc/localtime"), "r");
+        if writer_profile.is_some() {
+            add_doveadm_hash_dependency_rules(&mut rules).map_err(|_| {
+                eprintln!("ADMIN_CREATE_HASH_DEPENDENCY_REFUSED");
+                io::Error::from(io::ErrorKind::PermissionDenied)
+            })?;
+        }
     }
     apply_admin_plan(
         rules,
@@ -2379,6 +2389,17 @@ fn add_parent_dir_rules(rules: &mut BTreeMap<PathBuf, String>, path: &Path) {
 /// Exact executable and loader-selected library grants. Resolution failure
 /// prevents confinement activation; it never expands a library-directory grant.
 fn add_doveadm_dependency_rules(rules: &mut BTreeMap<PathBuf, String>) -> Result<(), String> {
+    add_doveadm_hash_dependency_rules(rules)?;
+    add_if_exists(rules, Path::new("/etc/dovecot/dovecot.conf"), "r");
+    add_if_exists(rules, Path::new("/etc/dovecot/conf.d"), "r");
+    add_if_exists(rules, Path::new("/etc/dovecot/local.conf"), "r");
+    add_if_exists(rules, Path::new("/var/dovecot/config"), "rw");
+    Ok(())
+}
+
+// Hash-only invocation uses CONFIG_FILE=/dev/null; it gains no public mail
+// configuration or control socket. Reuse the installed module/loader inventory.
+fn add_doveadm_hash_dependency_rules(rules: &mut BTreeMap<PathBuf, String>) -> Result<(), String> {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
     add_rule(rules, Path::new("/usr/local/bin/doveadm"), "x");
     add_rule(rules, Path::new("/usr/local/bin/doveconf"), "x");
@@ -2403,10 +2424,6 @@ fn add_doveadm_dependency_rules(rules: &mut BTreeMap<PathBuf, String>) -> Result
             }
         }
     }
-    add_if_exists(rules, Path::new("/etc/dovecot/dovecot.conf"), "r");
-    add_if_exists(rules, Path::new("/etc/dovecot/conf.d"), "r");
-    add_if_exists(rules, Path::new("/etc/dovecot/local.conf"), "r");
-    add_if_exists(rules, Path::new("/var/dovecot/config"), "rw");
     Ok(())
 }
 

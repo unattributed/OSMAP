@@ -31,6 +31,9 @@ const ADMIN_QUERY: &str = "SELECT HEX(a.username),HEX(a.password),a.active,HEX(C
 #[path = "admin_pages.rs"]
 pub(crate) mod pages;
 pub(crate) use pages::{AdminPreferences, DomainDetails, DomainOverview, SettingsPage};
+#[path = "admin_create.rs"]
+pub(crate) mod create;
+pub(crate) use create::{CreateFailure, CreateMailbox, CreatePage, CreateReceipt};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Error {
@@ -136,6 +139,7 @@ impl Token {
 struct Admin {
     login: String,
     hash: String,
+    modified: String,
     epoch: u64,
     generation: String,
     domains: Vec<String>,
@@ -285,6 +289,7 @@ impl<E: CommandExecutor> Authority<E> {
         Ok(Some(Admin {
             login: login.into(),
             hash,
+            modified: unhex(&identity[3])?,
             epoch,
             generation,
             domains,
@@ -411,6 +416,7 @@ pub(crate) struct Service<E, T, P = NativePassword> {
     authority: Arc<Authority<E>>,
     clock: T,
     password: P,
+    writer: Option<crate::admin_config::WriterConfig>,
 }
 /// Current authority only; no stored hash, factor, bearer or caller-supplied grant.
 pub(crate) struct Summary {
@@ -436,6 +442,7 @@ impl<
             "account-throttle",
             "epochs",
             "preferences",
+            "creation",
         ] {
             let path = root.join(child);
             if !path.exists() {
@@ -451,6 +458,7 @@ impl<
             authority: Arc::new(Authority { executor, root }),
             clock,
             password,
+            writer: None,
         })
     }
     fn sessions(&self) -> (Sessions<T>, AdmissionFailure) {

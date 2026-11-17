@@ -2020,3 +2020,64 @@ pending text/icon owner acceptance. Production deployment, writers and full
 replacement remain unimplemented; first-domain creation is the next selected
 journey. The earlier GPG No-pinentry refusal created no commit; operator warm-up
 then permits verified signed checkpoint 7e594b2 and normal final delivery gates.
+
+## 2026-11-18
+
+### Controlled mailbox creation starts with an explicitly admitted lab writer
+
+The accepted admin pages could inspect accounts but could not create one. The
+operator explicitly commenced ADM-S01-03. Requiring the entire fresh-install and
+first-domain chain first would obstruct the existing-domain replacement journey.
+
+Implement the shared writer boundary needed for creation against an existing
+isolated domain. Retain the read-only credential and add a separate protected,
+opt-in writer profile with exact test administrators/domains and holder/epoch.
+The Rust service requires current authority, CSRF and fresh replay-protected TOTP,
+locks current grants/domain, and commits mailbox, self-delivery alias and operation
+journal together. A durable pending intent and exact committed projection readback
+prevent an uncertain submission from being blindly repeated. Reuse the existing
+bounded Argon2id hash runner and password policy, without adding dependencies or
+Python execution machinery. The exposed earlier owner fixture gains no writer
+access.
+
+Source review and the focused 99-test admin run passed; native schema, hash,
+transaction and browser qualification are still outstanding at this checkpoint.
+No production writer or public mail configuration is enabled. Fresh bootstrap,
+first-domain creation, actual authentication/delivery and owner MFA enrollment
+retain their planned slice outcomes. The work order and actual results live in
+[the existing admin project plan](OSMAP_ADMIN_PROJECT_PLAN.md).
+
+### Same day — qualify committed mailbox creation and bind the admin revision
+
+The first browser creation committed the mailbox, self alias and operation record,
+but native collation handling refused the final readback. Keeping the result
+unconfirmed prevented an unsafe second request. An explicit byte comparison and
+independent committed-state readback reconciled the original operation without
+another insertion or revision increment. Browser creation then passed in both
+isolated native environments, with installed Postfix and Dovecot SQL projections
+matching the configured account and adopted quota units.
+
+Final review also identified an actual stale-session race: advancing only
+`admin.modified` invalidates a session, but the writer's locked actor query had
+checked only the password, active flag and grants. Carry the captured revision
+into that query. The native test observed the writer waiting on the admin row
+before the metadata update committed, then obtained refusal with all account
+counts and the writer revision unchanged. Reuse the unchanged browser, RPC and
+lookup evidence; qualify this changed backend boundary through the real writer
+on both hosts. Final runtime source is `a8b8648`.
+
+Retain the original failures and their uncertainty separately from final passes.
+The operator chose restoration of the working duncan login and a separately
+retained writer candidate for acceptance. Normal signed source delivery does not
+enable production writes, migrate passwords or prove native authentication and
+message delivery; ADM-S01-04 remains the next product boundary.
+
+Restore the original obsd1 Web/route configuration and retain the new writer
+inactive under root-only custody, as the operator selected. On mail, stop the
+isolated candidate and SQL, remove temporary OS roles, and seal the retained
+tree. Final readbacks establish those outcomes and healthy public mail daemons;
+they do not repeat owner sign-in. Preserve cleanup's admission/serialization and
+local-builder sequencing failures and OpenBSD's `chown -Rh` refusal separately
+from the successful bounded seal-only correction. Neither candidate remains
+open for writes; owner acceptance requires controlled reactivation. Normal signed
+GitHub delivery remains pending at this checkpoint.

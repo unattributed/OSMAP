@@ -1061,3 +1061,229 @@ fn logout_requires_session_csrf_then_persistently_revokes() {
         Err(Error::Denied)
     ));
 }
+
+#[derive(Clone)]
+struct CreateSql {
+    reader: Sql,
+    writes: Arc<Mutex<usize>>,
+    uncertain: bool,
+}
+impl CommandExecutor for CreateSql {
+    fn run_with_stdin_bytes(
+        &self,
+        program: &str,
+        args: &[String],
+        input: &[u8],
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        let query = std::str::from_utf8(input).unwrap();
+        let stdout = if program == crate::account_password_backend::HASH_PROGRAM {
+            assert_eq!(
+                args,
+                &crate::account_password_backend::HASH_ARGS
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect::<Vec<_>>()
+            );
+            format!(
+                "{{ARGON2ID}}$argon2id$v=19$m=65536,t=3,p=1${}${}\n",
+                "A".repeat(22),
+                "B".repeat(43)
+            )
+        } else if args
+            .first()
+            .is_some_and(|a| a.contains("admin-write-mariadb"))
+        {
+            if query.starts_with("SELECT revision") {
+                "1\n".into()
+            } else if query.starts_with("SELECT HEX(actor)") {
+                String::new()
+            } else {
+                assert!(
+                    query.starts_with("SET SESSION innodb_lock_wait_timeout=3; START TRANSACTION;")
+                );
+                *self.writes.lock().unwrap() += 1;
+                if self.uncertain {
+                    return Err(CommandExecutionError {
+                        reason: "private token-shaped diagnostic must not persist".into(),
+                    });
+                }
+                "stale\n".into()
+            }
+        } else {
+            return self.reader.run_with_stdin_bytes(program, args, input);
+        };
+        Ok(CommandExecution {
+            status_code: 0,
+            stdout,
+            stderr: String::new(),
+        })
+    }
+}
+fn create_request(f: &Fixture, csrf: &str) -> CreateMailbox {
+    CreateMailbox {
+        domain: "example.test".into(),
+        local_part: "controlled".into(),
+        display_name: "Controlled mailbox".into(),
+        password: "fresh-controlled-mailbox-password".into(),
+        confirmation: "fresh-controlled-mailbox-password".into(),
+        totp: code(&f.clock),
+        csrf: csrf.into(),
+        request_id: "a".repeat(64),
+        quota_mib: 10,
+        revision: 1,
+    }
+}
+fn writer_config() -> crate::admin_config::WriterConfig {
+    crate::admin_config::WriterConfig {
+        profile: "/private/writer.cnf".into(),
+        holder: "a".repeat(32),
+        epoch: 1,
+        domains: vec!["example.test".into()],
+        administrators: vec![LOGIN.into()],
+        domain_quota_unit_bytes: 1_024_000,
+    }
+}
+#[test]
+fn creation_rejects_unusable_accounts_and_unbounded_inputs_before_dispatch() {
+    let f = Fixture::new();
+    let mut r = create_request(&f, &"a".repeat(64));
+    assert!(r.valid());
+    for local in [
+        "_bad",
+        "-bad",
+        ".bad",
+        "bad.",
+        "bad..name",
+        "a/b",
+        "a' OR 1=1",
+    ] {
+        r.local_part = local.into();
+        assert!(!r.valid());
+    }
+    r.local_part = "Valid-Name".into();
+    assert!(r.valid());
+    r.domain = "Example.test".into();
+    assert!(!r.valid());
+    r.domain = "example.test".into();
+    r.quota_mib = 0;
+    assert!(!r.valid());
+    r.quota_mib = 1_048_577;
+    assert!(!r.valid());
+    r.quota_mib = 10;
+    r.request_id = "A".repeat(64);
+    assert!(!r.valid());
+    r.request_id = "a".repeat(64);
+    r.display_name = "name\nnot allowed".into();
+    assert!(!r.valid());
+}
+#[test]
+fn creation_requires_opt_in_actor_scope_csrf_and_fresh_factor() {
+    let f = Fixture::new();
+    let backend = f.service();
+    let token = backend.login(LOGIN, PASSWORD, &code(&f.clock)).unwrap();
+    let context = Service::<Sql, Clock, Password>::context();
+    let summary = backend.scope(&token, &context).unwrap();
+    let r = create_request(&f, &summary.csrf);
+    assert!(matches!(
+        backend.create_mailbox_from(&token, &context, &r),
+        Err(CreateFailure::WriterDisabled)
+    ));
+    let writes = Arc::new(Mutex::new(0));
+    let backend = Service::new(
+        CreateSql {
+            reader: f.sql.clone(),
+            writes: writes.clone(),
+            uncertain: false,
+        },
+        f.clock.clone(),
+        Password,
+        f.root.clone(),
+    )
+    .unwrap()
+    .with_writer(Some(writer_config()));
+    assert!(matches!(
+        backend.create_mailbox_from(&token, &context, &r),
+        Err(CreateFailure::StepUp)
+    ));
+    let mut r = r;
+    r.csrf = "f".repeat(64);
+    assert!(matches!(
+        backend.create_mailbox_from(&token, &context, &r),
+        Err(CreateFailure::Denied)
+    ));
+    r.csrf = summary.csrf;
+    r.domain = "foreign.test".into();
+    assert!(matches!(
+        backend.create_mailbox_from(&token, &context, &r),
+        Err(CreateFailure::Missing)
+    ));
+    r.domain = "example.test".into();
+    for _ in 0..LoginThrottlePolicy::default().credential_max_failures {
+        assert!(matches!(
+            backend.create_mailbox_from(&token, &context, &r),
+            Err(CreateFailure::StepUp)
+        ));
+    }
+    let throttle = LoginThrottleService::new(
+        FileLoginThrottleStore::new(f.root.join("account-throttle")),
+        f.clock.clone(),
+        LoginThrottlePolicy::default(),
+    );
+    assert_ne!(
+        throttle
+            .check(
+                &Service::<Sql, Clock, Password>::account_context(LOGIN),
+                LOGIN
+            )
+            .unwrap()
+            .decision,
+        LoginThrottleDecision::Allowed
+    );
+    assert_eq!(*writes.lock().unwrap(), 0);
+}
+#[test]
+fn ambiguous_creation_retains_intent_and_blocks_another_request_key() {
+    let f = Fixture::new();
+    let reader = f.service();
+    let token = reader.login(LOGIN, PASSWORD, &code(&f.clock)).unwrap();
+    let context = Service::<Sql, Clock, Password>::context();
+    let summary = reader.scope(&token, &context).unwrap();
+    f.clock.0.fetch_add(30, Ordering::SeqCst);
+    let writes = Arc::new(Mutex::new(0));
+    let backend = Service::new(
+        CreateSql {
+            reader: f.sql.clone(),
+            writes: writes.clone(),
+            uncertain: true,
+        },
+        f.clock.clone(),
+        Password,
+        f.root.clone(),
+    )
+    .unwrap()
+    .with_writer(Some(writer_config()));
+    let mut r = create_request(&f, &summary.csrf);
+    assert!(matches!(
+        backend.create_mailbox_from(&token, &context, &r),
+        Err(CreateFailure::Unconfirmed)
+    ));
+    assert_eq!(*writes.lock().unwrap(), 1);
+    r.request_id = "b".repeat(64);
+    f.clock.0.fetch_add(30, Ordering::SeqCst);
+    r.totp = code(&f.clock);
+    assert!(matches!(
+        backend.create_mailbox_from(&token, &context, &r),
+        Err(CreateFailure::Unconfirmed)
+    ));
+    assert_eq!(*writes.lock().unwrap(), 1);
+    for entry in std::fs::read_dir(f.root.join("creation")).unwrap() {
+        let path = entry.unwrap().path();
+        if path.extension().is_some_and(|e| e == "json") {
+            let text = std::fs::read_to_string(path).unwrap();
+            assert!(!text.contains(&r.password));
+            assert!(!text.contains(&r.totp));
+            assert!(!text.contains("private token-shaped"));
+            assert!(text.contains("\"pending\":true"));
+        }
+    }
+}

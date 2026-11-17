@@ -1,6 +1,7 @@
 //! Fixed, bounded private admin RPC. Peer UIDs come from the kernel; requests
 //! contain neither grants nor executable, SQL, configuration or identity paths.
 use crate::admin_access::{AdminPreferences, DomainDetails, DomainOverview, SettingsPage};
+use crate::admin_access::{CreateFailure, CreateMailbox, CreatePage, CreateReceipt};
 use crate::admin_access::{MailboxPage, MailboxView};
 use crate::openpgp_inventory_runtime::{read_frame, validate_socket, write_frame};
 use serde::{Deserialize, Serialize};
@@ -77,6 +78,14 @@ pub(crate) enum Operation {
         domain: String,
         id: String,
     },
+    CreateMailboxForm {
+        token: String,
+        domain: String,
+    },
+    CreateMailbox {
+        token: String,
+        request: CreateMailbox,
+    },
 }
 
 #[derive(Serialize)]
@@ -99,6 +108,15 @@ pub(crate) enum Response {
         csrf: String,
         domain: String,
         mailbox: MailboxView,
+    },
+    CreateMailboxForm {
+        page: CreatePage,
+    },
+    MailboxCreated {
+        receipt: CreateReceipt,
+    },
+    CreateMailboxFailed {
+        reason: CreateFailure,
     },
     Missing,
     Capacity,
@@ -141,6 +159,15 @@ enum WireResponse {
         domain: String,
         mailbox: MailboxView,
     },
+    CreateMailboxForm {
+        page: CreatePage,
+    },
+    MailboxCreated {
+        receipt: CreateReceipt,
+    },
+    CreateMailboxFailed {
+        reason: CreateFailure,
+    },
     Missing {},
     Capacity {},
     SignedIn {
@@ -164,6 +191,9 @@ impl<'de> Deserialize<'de> for Response {
             WireResponse::Overview { page } => Self::Overview { page },
             WireResponse::DomainDetails { page } => Self::DomainDetails { page },
             WireResponse::Settings { page } => Self::Settings { page },
+            WireResponse::CreateMailboxForm { page } => Self::CreateMailboxForm { page },
+            WireResponse::MailboxCreated { receipt } => Self::MailboxCreated { receipt },
+            WireResponse::CreateMailboxFailed { reason } => Self::CreateMailboxFailed { reason },
             WireResponse::SignedIn { token } => Self::SignedIn { token },
             WireResponse::SignedOut {} => Self::SignedOut,
             WireResponse::Scope {
@@ -263,6 +293,10 @@ impl Request {
                     && hex64(id)
                     && crate::admin_directory::Scope::domains(&[domain]).is_ok()
             }
+            Operation::CreateMailboxForm { token, domain } => {
+                token_valid(token) && crate::admin_directory::Scope::domains(&[domain]).is_ok()
+            }
+            Operation::CreateMailbox { token, request } => token_valid(token) && request.valid(),
         };
         if valid {
             Ok(())
@@ -275,6 +309,20 @@ impl Request {
 impl Response {
     pub(crate) fn validate(&self) -> Result<(), Error> {
         match self {
+            Self::CreateMailboxForm { page } => {
+                if page.valid() {
+                    Ok(())
+                } else {
+                    Err(Error::Invalid)
+                }
+            }
+            Self::MailboxCreated { receipt } => {
+                if receipt.valid() {
+                    Ok(())
+                } else {
+                    Err(Error::Invalid)
+                }
+            }
             Self::Overview { page } => {
                 if page.valid() {
                     Ok(())
@@ -526,6 +574,58 @@ pub(crate) fn write_response(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn creation_rpc_roundtrips_private_request_and_rejects_extra_authority_fields() {
+        let request = Request {
+            version: VERSION,
+            client: "127.0.0.1".into(),
+            operation: Operation::CreateMailbox {
+                token: token(),
+                request: CreateMailbox {
+                    domain: "example.test".into(),
+                    local_part: "alice".into(),
+                    display_name: "Public Alice".into(),
+                    password: "public-mailbox-password".into(),
+                    confirmation: "public-mailbox-password".into(),
+                    totp: "123456".into(),
+                    csrf: "c".repeat(64),
+                    request_id: "b".repeat(64),
+                    quota_mib: 2,
+                    revision: 7,
+                },
+            },
+        };
+        assert_eq!(request.validate(), Ok(()));
+        let bytes = serde_json::to_vec(&request).unwrap();
+        assert!(bytes.len() <= MAX_FRAME);
+        assert_eq!(
+            serde_json::from_slice::<Request>(&bytes)
+                .unwrap()
+                .validate(),
+            Ok(())
+        );
+        let mut forged = serde_json::to_value(&request).unwrap();
+        forged["operation"]["request"]["role"] = serde_json::Value::String("system".into());
+        assert!(serde_json::from_value::<Request>(forged).is_err());
+        let response = Response::CreateMailboxForm {
+            page: CreatePage {
+                login: "operator@example.test".into(),
+                csrf: "c".repeat(64),
+                domain: "example.test".into(),
+                revision: 7,
+                request_id: "b".repeat(64),
+            },
+        };
+        assert_eq!(response.validate(), Ok(()));
+        let mut value = serde_json::to_value(&response).unwrap();
+        value["page"]["password"] = serde_json::Value::String("public-unexpected-proof".into());
+        assert!(serde_json::from_value::<Response>(value).is_err());
+        assert!(serde_json::from_str::<Response>(
+            r#"{"status":"create_mailbox_failed","reason":"unconfirmed","token":"public-forged"}"#
+        )
+        .is_err());
+    }
 
     #[test]
     fn maximum_domain_page_fits_existing_frame_and_roundtrips() {

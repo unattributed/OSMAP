@@ -57,6 +57,21 @@ pub(crate) struct ServiceConfig {
     pub(crate) database: String,
     pub(crate) sql_socket: PathBuf,
     pub(crate) sql_socket_uid: u32,
+    #[serde(default)]
+    pub(crate) writer: Option<WriterConfig>,
+}
+
+/// Explicit local operator opt-in. Never populated from HTTP or RPC.
+#[derive(Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WriterConfig {
+    pub(crate) profile: PathBuf,
+    pub(crate) holder: String,
+    pub(crate) epoch: u64,
+    pub(crate) domains: Vec<String>,
+    pub(crate) administrators: Vec<String>,
+    /// Explicit adopted domain-limit unit; mailbox quota is always bytes.
+    pub(crate) domain_quota_unit_bytes: u32,
 }
 
 #[derive(Deserialize)]
@@ -278,6 +293,37 @@ pub(crate) fn load_service(path: &Path) -> Result<ServiceConfig, Error> {
         read_file(&config.sql_profile, own, false).map_err(|_| Error::SqlProfileCustody)?;
     profile_options(&profile, &config.sql_socket).map_err(|_| Error::SqlProfileOptions)?;
     sql_socket(&config.sql_socket, config.sql_socket_uid).map_err(|_| Error::SqlSocket)?;
+    if let Some(writer) = &config.writer {
+        if writer.profile == config.sql_profile
+            || writer.holder.len() != 32
+            || !writer.holder.bytes().all(|b| b.is_ascii_hexdigit())
+            || writer.epoch == 0
+            || writer.domains.is_empty()
+            || writer.domains.len() > 16
+            || writer.administrators.is_empty()
+            || writer.administrators.len() > 16
+            || !matches!(writer.domain_quota_unit_bytes, 1_024_000 | 1_048_576)
+            || writer.administrators.iter().any(|s| {
+                s.is_empty()
+                    || s.len() > 96
+                    || !s
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b"@._-".contains(&b))
+            })
+            || crate::admin_directory::Scope::domains(
+                &writer
+                    .domains
+                    .iter()
+                    .map(String::as_str)
+                    .collect::<Vec<_>>(),
+            )
+            .is_err()
+        {
+            return Err(Error::Invalid);
+        }
+        let profile = read_file(&writer.profile, own, false)?;
+        profile_options(&profile, &config.sql_socket)?;
+    }
     Ok(config)
 }
 

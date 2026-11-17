@@ -9,6 +9,9 @@ use crate::http_ui::presentation_label;
 #[path = "admin_dashboard_ui.rs"]
 mod dashboard;
 pub(crate) use dashboard::{domain_page, overview_page, settings_page};
+#[path = "admin_create_ui.rs"]
+mod create;
+pub(crate) use create::{create_failure_page, create_mailbox_page, mailbox_created_page};
 
 fn admin_rail(current: &str) -> String {
     let mut links = String::new();
@@ -99,8 +102,8 @@ pub(crate) fn scope_page(
             "<form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{csrf}\"><button type=\"submit\">{logout}</button></form></div></header>",
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Administration</h1><p>Your current administrator scope is shown below.</p></div>",
             "<section class=\"panel\" aria-labelledby=\"admin-scope-title\"><h2 id=\"admin-scope-title\">Current scope</h2>{scope}</section>",
-            "<section class=\"panel\" aria-labelledby=\"admin-access-title\"><h2 id=\"admin-access-title\">Available access</h2><p><span class=\"badge\">Read-only</span></p>",
-            "<p>Mailbox metadata is available for an authorized domain. Account changes are unavailable.</p>",
+            "<section class=\"panel\" aria-labelledby=\"admin-access-title\"><h2 id=\"admin-access-title\">Available access</h2><p><span class=\"badge\">Scoped administration</span></p>",
+            "<p>Mailbox metadata is available for an authorized domain. Mailbox creation requires the configured writer and current authorization.</p>",
             "<form id=\"admin-domain-selection\" method=\"get\" action=\"/admin/mailboxes\"><label for=\"domain\">Hosted domain</label><input id=\"domain\" name=\"domain\" maxlength=\"255\" required><button type=\"submit\">View mailboxes</button></form></section></main>"
         ),
         login = escape_html(login),
@@ -163,6 +166,11 @@ pub(crate) fn mailboxes_page(page: &MailboxPage) -> HttpResponse {
         "<label for=\"mailbox-sort\">Sort by</label><select id=\"mailbox-sort\" name=\"sort\"><option value=\"address\"{}>Address A–Z</option><option value=\"quota\"{}>Configured quota, highest first</option></select><button type=\"submit\">{filter}</button></form>",
         "<p role=\"status\">{} matching mailboxes. Page {} of {}.</p>"
     ), escape_html(&page.domain), escape_html(&page.domain), escape_html(&page.query), if page.sort == "address" { " selected" } else { "" }, if page.sort == "quota" { " selected" } else { "" }, page.total, page.page, page.pages(),filter=presentation_label("Filter mailboxes","search"));
+    content.push_str(&format!(
+        "<p><a class=\"button-link\" href=\"/admin/mailboxes/new?domain={}\">{}</a></p>",
+        escape_html(&url_encode(&page.domain)),
+        presentation_label("Create mailbox", "add")
+    ));
     if page.rows.is_empty() {
         content.push_str(if page.query.is_empty() {
             "<p>No mailboxes are configured for this domain.</p>"
@@ -410,7 +418,10 @@ mod tests {
             .0;
         assert_eq!(navigation.matches("aria-current=\"page\"").count(), 1);
         assert!(!html.contains("name=\"token\""));
-        assert!(html.contains("Read-only"));
+        assert!(html.contains("Scoped administration"));
+        assert!(html.contains(
+            "Mailbox creation requires the configured writer and current authorization."
+        ));
         assert!(html.contains("Mailbox metadata is available for an authorized domain."));
     }
 
