@@ -433,5 +433,10 @@ inventory. The active project-plan work order binds current-grant checks,
 bounded projection/filter/page/detail and observable empty/failure cases. Reuse
 unchanged auth/confinement results; qualify the new frontend/backend path on
 obsd1 before promoting the signed candidate to actual isolated mail execution.
-No additional Python or general QA framework is required. Native/browser results
-remain pending at the source checkpoint; normal signed delivery hooks still apply.
+No additional Python or general QA framework is required. Candidate `428c9e04`
+passes the normal developer gate and partial installed obsd1 HTTP/SQL cases;
+draft PR #99 remains unmerged. Actual browser qualification awaits the required
+operator certificate-warning handoff. Mail promotion, remaining native adverse
+cases and cleanup remain pending as recorded in the existing work order. Normal
+signed delivery hooks still apply; partial HTTP results are not browser or
+release acceptance.

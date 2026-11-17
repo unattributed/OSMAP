@@ -171,7 +171,7 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Active product implementation slice | **ADM-S01-02**, authorized mailbox list: IN_PROGRESS under the lean work order below; source/native/browser qualification NOT_RUN; operator acceptance NOT_ACCEPTED |
+| Active product implementation slice | **ADM-S01-02**, authorized mailbox list: IN_PROGRESS; reviewed source delivered in draft PR #99, obsd1 native HTTP cases partially PASS, browser qualification awaits certificate handoff; mail qualification NOT_RUN; operator acceptance NOT_ACCEPTED |
 | Previous product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; operator acceptance NOT_ACCEPTED |
 | Selected next product slice | ADM-S01-03 controlled mailbox creation; NOT_STARTED |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
@@ -777,8 +777,50 @@ expectations without changing authentication policy. Review also removes an
 unverified quota-byte label. The next focused run passes 82 cases, zero failures,
 with 12 native-only cases ignored. Maximum DTO serialization fits the existing
 8 KiB frame. Source review GO admits only the exact new Rust source digest in
-the existing guard; no Python logic or framework is added. Native/browser cases
-remain NOT_RUN until observed.
+the existing guard; no Python logic or framework is added.
+
+The reviewed candidate is Shopkeeper-signed
+`428c9e0434ff6098c975a0ea2ec9ed305243aeab`, preserved on the ordinary topic
+branch with the mandatory pre-push `make security-check` PASS and fresh exact
+remote equality (zero ahead/behind). Draft [PR #99](https://github.com/unattributed/OSMAP/pull/99)
+remains unmerged. The obsd1 executable reports that revision, SHA-256
+`2188257edd7ec357c26fa779499451b18ec65f4731f2152457bfeca92c15da4c`;
+the bounded native binary build passes in 40.63 seconds. No full native test
+library build is introduced.
+
+The actual private SQL contract admits the required mailbox projection and
+refuses password-column SELECT and UPDATE. Native HTTPS requests through the
+installed Web/service/SQL path observe sign-in, the 12-row scoped inventory,
+ten-row pagination, filtering, quota sorting, opaque detail, an authorized empty
+domain and uniform foreign-domain 404. Responses exclude the seeded credential
+and maildir. Unauthenticated/invalid sessions redirect to sign-in, duplicate
+query keys refuse and a well-formed direct write returns 405. These are native
+HTTP observations, not browser acceptance or complete native qualification.
+Unchanged authentication and confinement evidence remains reused within its
+original scope; the new mailbox backend-loss and live grant-revocation cases
+remain unobserved natively.
+
+The 900-second SSH forward expires before two later requests, which return
+transport failure without reaching the product. Preserve that failure;
+independent reassessment permits one 30-minute replacement forward, with no
+cost or authority reset. An expired idle session redirects before a fresh,
+successful synthetic login. The browser stops at its private self-signed TLS
+warning. Computer-use policy requires the operator to handle that warning;
+the handoff is pending. Do not bypass it or infer a browser PASS from curl.
+Mail promotion remains NOT_RUN until the planned obsd1 browser journey passes.
+
+At the handoff observation (2026-11-17 03:23:45 UTC), the fresh isolated obsd1
+fixture `/var/osmap-adm-s01` (device 1028, inode 3836160) remains ACTIVE, including
+its private SQL, loopback TLS proxy and Rust service/Web roles. Cleanup is
+NOT_RUN; no cleanup PASS is claimed. The previous root-only fixture is preserved
+as `/var/osmap-adm-s01-retained-20261117`. Retained private results are under
+`Downloads/osmap-admin-s01/slice02/`. Normal obsd1 Dovecot, Postfix, MariaDB and
+nginx health checks pass; public configuration/accounts/factors are unchanged.
+The replacement local forward expires around 03:46 UTC; that is a transport
+limit, not expiration of operator authority. Preserve measured build/test times,
+the transport failure and UNKNOWN total effort; do not replenish the two-hour
+initial investigation checkpoint. Browser, mail, final cleanup and operator
+acceptance remain outstanding.
 
 ### One active slice, work orders and delivery
 

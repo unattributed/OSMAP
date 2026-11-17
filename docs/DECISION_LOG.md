@@ -1803,4 +1803,11 @@ reviewer, focused Rust tests, an early real browser journey on obsd1, then actua
 mail qualification. Reuse passing unchanged boundaries and existing native tools;
 write no additional Python or general test framework. The existing project plan
 holds the work order and failure history. Source review and 82 focused cases
-pass; native/browser qualification and operator acceptance remain pending.
+pass. Signed candidate `428c9e04` is saved in draft PR #99 after the normal
+developer gate. The installed obsd1 HTTP path proves scoped inventory,
+pagination/filter/sort/detail, empty/foreign states and direct-write refusal
+against private SQL. Preserve the expired-forward transport failures separately.
+The actual browser awaits the operator-required certificate-warning handoff;
+mail promotion, remaining native adverse cases and cleanup remain outstanding.
+The work order records the still-active exact private fixture. These partial
+native results do not establish browser, mail, release or operator acceptance.

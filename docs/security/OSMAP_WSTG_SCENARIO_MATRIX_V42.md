@@ -5,8 +5,13 @@ digest-addressed detail revalidate current authority before the fixed reader.
 Projection excludes storage paths and credentials; foreign/missing responses are
 uniform, writes refuse, and empty/capacity/dependency states differ. Focused Rust
 coverage exercises the actual runtime delegate, frame bound, escaped input and
-query allowlist. Source review passes; native/browser qualification on obsd1 and
-mail remains pending. This changes neither production mail nor owner acceptance.
+query allowlist. Source review passes. Candidate 428c9e04 additionally observes
+scoped inventory/page/filter/sort/detail, empty/foreign states, invalid-session,
+duplicate-query and well-formed direct-write refusal through isolated native
+obsd1 HTTP/SQL. Native backend-loss and live grant-revocation cases remain
+unobserved for this route. Browser qualification awaits the required operator
+certificate-warning handoff; mail qualification and cleanup remain pending.
+Draft PR #99 is source preservation, not production mail or owner acceptance.
 
 2026-11-17 ADM-S01-01 isolated qualification: actual browser password/TOTP,
 current authorized scope, restart continuity and logout pass separately on
