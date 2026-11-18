@@ -327,7 +327,11 @@ fn handle_inner<C: Exchange>(
             dashboard(request, &client_addr, client)
         }
         (HttpMethod::Get, "/admin/mailboxes") => {
-            mailbox_inventory(request, &client_addr, client, None)
+            if request.query_params.contains_key("domain") {
+                mailbox_inventory(request, &client_addr, client, None)
+            } else {
+                dashboard(request, &client_addr, client)
+            }
         }
         (HttpMethod::Get | HttpMethod::Post, "/admin/mailboxes/new") => {
             mailbox_create(request, &client_addr, client)
@@ -371,7 +375,7 @@ fn dashboard<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) -> Http
     let path = request.path.as_str();
     let mut section = "appearance";
     let operation = match path {
-        "/admin" | "/admin/domains" => {
+        "/admin" | "/admin/domains" | "/admin/mailboxes" => {
             if request
                 .query_params
                 .iter()
@@ -448,7 +452,7 @@ fn dashboard<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) -> Http
     }
     match client.exchange(&rpc) {
         Ok(Response::Overview { page })
-            if matches!(path, "/admin" | "/admin/domains") && page.valid() =>
+            if matches!(path, "/admin" | "/admin/domains" | "/admin/mailboxes") && page.valid() =>
         {
             let (query, requested) = match &rpc.operation {
                 Operation::Overview { query, page, .. } => (query.trim(), *page),
@@ -457,8 +461,12 @@ fn dashboard<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) -> Http
             if page.query != query || page.page != requested.min(page.pages()) {
                 return crate::admin_ui::error_page(503);
             }
-            crate::admin_ui::overview_page(&page, path == "/admin/domains")
-                .with_header("Set-Cookie", appearance_cookie(&page.preferences))
+            let response = if path == "/admin/mailboxes" {
+                crate::admin_ui::mailbox_workspace_page(&page)
+            } else {
+                crate::admin_ui::overview_page(&page, path == "/admin/domains")
+            };
+            response.with_header("Set-Cookie", appearance_cookie(&page.preferences))
         }
         Ok(Response::DomainDetails { page })
             if path.strip_prefix("/admin/domains/") == Some(page.domain.id.as_str())
@@ -912,6 +920,109 @@ mod tests {
     }
 
     #[test]
+    fn overview_domains_and_mailbox_workspace_are_distinct_authenticated_routes() {
+        use sha2::{Digest, Sha256};
+        for (path, title) in [
+            ("/admin", "Overview"),
+            ("/admin/domains", "Domains"),
+            ("/admin/mailboxes", "Mailboxes"),
+        ] {
+            let mut page = overview_model();
+            page.total = 1;
+            page.domain_total = 1;
+            page.mailbox_total = 12;
+            page.forward_total = 2;
+            page.rows.push(crate::admin_access::pages::DomainSummary {
+                id: format!("{:x}", Sha256::digest(b"example.test")),
+                name: "example.test".into(),
+                active: true,
+                mailboxes: 12,
+                forwards: 2,
+                created: None,
+            });
+            let fake = Fake::new(Response::Overview { page });
+            let response = handle(
+                &config(),
+                &parse(
+                    "GET",
+                    path,
+                    &format!("Cookie: {SESSION_COOKIE}={}\r\n", token()),
+                    "",
+                ),
+                &fake,
+            );
+            assert_eq!(response.status_code, 200);
+            let html = String::from_utf8(response.body).unwrap();
+            let main = html.split_once("<main id=\"main-content\"").unwrap().1;
+            assert!(main.contains(&format!("<h1>{title}</h1>")));
+            match path {
+                "/admin" => {
+                    assert!(main.contains("Welcome to OSMAP Admin"));
+                    assert!(!main.contains("<table"));
+                }
+                "/admin/domains" => {
+                    assert!(main.contains("aria-label=\"Domain inventory\""));
+                    assert!(main.contains("Search domains"));
+                }
+                _ => {
+                    assert!(main.contains("Choose a hosted domain"));
+                    assert!(main.contains("<select id=\"mailbox-domain\" name=\"domain\""));
+                    assert!(main.contains("value=\"example.test\""));
+                    assert!(!main.contains("<table"));
+                }
+            }
+            assert!(html.contains("href=\"/admin/mailboxes\" aria-label=\"Mailboxes\""));
+            assert!(!html.contains("/admin/domains#domain-list"));
+            assert!(
+                matches!(&fake.calls.borrow()[0].operation,Operation::Overview {query,page:1,..} if query.is_empty())
+            );
+        }
+    }
+
+    #[test]
+    fn mailbox_workspace_search_keeps_scoped_domain_pagination_and_refuses_other_fields() {
+        use sha2::{Digest, Sha256};
+        let mut page = overview_model();
+        page.query = "example".into();
+        page.page = 2;
+        page.total = 11;
+        page.domain_total = 11;
+        page.rows.push(crate::admin_access::pages::DomainSummary {
+            id: format!("{:x}", Sha256::digest(b"last.example.test")),
+            name: "last.example.test".into(),
+            active: true,
+            mailboxes: 0,
+            forwards: 0,
+            created: None,
+        });
+        let fake = Fake::new(Response::Overview { page });
+        let headers = format!("Cookie: {SESSION_COOKIE}={}\r\n", token());
+        let response = handle(
+            &config(),
+            &parse("GET", "/admin/mailboxes?q=example&page=2", &headers, ""),
+            &fake,
+        );
+        assert_eq!(response.status_code, 200);
+        let html = String::from_utf8(response.body).unwrap();
+        assert!(html.contains("/admin/mailboxes?q=example&amp;page=1"));
+        assert!(html.contains("value=\"last.example.test\""));
+        assert!(
+            matches!(&fake.calls.borrow()[0].operation,Operation::Overview {query,page:2,..} if query=="example")
+        );
+        let denied = Fake::new(Response::Denied);
+        assert_eq!(
+            handle(
+                &config(),
+                &parse("GET", "/admin/mailboxes?sort=quota", &headers, ""),
+                &denied
+            )
+            .status_code,
+            400
+        );
+        assert!(denied.calls.borrow().is_empty());
+    }
+
+    #[test]
     fn menu_cookie_never_changes_the_approved_login_presentation() {
         let fake = Fake::new(Response::Unavailable);
         let response = handle(
@@ -1199,6 +1310,10 @@ mod tests {
         assert_eq!(result.status_code, 200);
         let html = String::from_utf8(result.body).unwrap();
         assert!(html.contains("alice@example.test"));
+        assert!(html.contains("href=\"/admin/mailboxes/new?domain=example.test\""));
+        assert!(
+            html.contains("href=\"/admin/mailboxes?domain=example.test\" aria-label=\"Mailboxes\"")
+        );
         assert!(html.contains(&format!("/admin/mailboxes/{id}?domain=")));
         assert!(!html.contains("maildir"));
         assert!(!html.contains("password"));

@@ -8,25 +8,31 @@ use crate::http_ui::presentation_label;
 
 #[path = "admin_dashboard_ui.rs"]
 mod dashboard;
-pub(crate) use dashboard::{domain_page, overview_page, settings_page};
+pub(crate) use dashboard::{domain_page, mailbox_workspace_page, overview_page, settings_page};
 #[path = "admin_create_ui.rs"]
 mod create;
 pub(crate) use create::{create_failure_page, create_mailbox_page, mailbox_created_page};
 
 fn admin_rail(current: &str) -> String {
+    admin_rail_for_domain(current, None)
+}
+
+fn admin_rail_for_domain(current: &str, domain: Option<&str>) -> String {
     let mut links = String::new();
     for (key, label, href, icon) in [
         ("overview", "Overview", "/admin", "shield"),
         ("domains", "Domains", "/admin/domains", "folders"),
-        (
-            "mailboxes",
-            "Mailboxes",
-            "/admin/domains#domain-list",
-            "inbox",
-        ),
+        ("mailboxes", "Mailboxes", "/admin/mailboxes", "inbox"),
         ("settings", "Settings", "/admin/settings", "settings"),
     ] {
-        links.push_str(&format!("<a class=\"rail-link\" href=\"{href}\" aria-label=\"{label}\" title=\"{label}\"{}>{}<span class=\"rail-label\">{label}</span></a>",if key==current {" aria-current=\"page\""} else {""},crate::http_ui::shell_icon(icon)));
+        let target = if key == "mailboxes" {
+            domain
+                .map(|domain| format!("/admin/mailboxes?domain={}", url_encode(domain)))
+                .unwrap_or_else(|| href.into())
+        } else {
+            href.into()
+        };
+        links.push_str(&format!("<a class=\"rail-link\" href=\"{}\" aria-label=\"{label}\" title=\"{label}\"{}>{}<span class=\"rail-label\">{label}</span></a>",escape_html(&target),if key==current {" aria-current=\"page\""} else {""},crate::http_ui::shell_icon(icon)));
     }
     format!(concat!(
         "<aside class=\"app-rail\" aria-label=\"Admin navigation\">",
@@ -123,8 +129,22 @@ fn page_shell(
     current: &str,
     content: String,
 ) -> HttpResponse {
+    page_shell_context(login, csrf, title, intro, current, content, None)
+}
+
+fn page_shell_context(
+    login: &str,
+    csrf: &str,
+    title: &str,
+    intro: &str,
+    current: &str,
+    content: String,
+    domain: Option<&str>,
+) -> HttpResponse {
     let page_class = if current == "settings" {
         " settings-page"
+    } else if current == "overview" {
+        " welcome-page"
     } else {
         ""
     };
@@ -133,7 +153,7 @@ fn page_shell(
         "{}",
         "<header class=\"topbar\" aria-label=\"OSMAP Admin\"><a class=\"brand\" href=\"/admin\" style=\"flex-basis:auto;white-space:nowrap\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>OSMAP Admin</a><div class=\"status-row auth-status\"><span style=\"min-width:0;overflow-wrap:anywhere\">Signed in as <strong>{}</strong></span><form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{}\"><button type=\"submit\">{logout}</button></form></div></header>",
         "<main id=\"main-content\" class=\"page-shell{}\" tabindex=\"-1\"><div class=\"page-intro\"><h1>{}</h1><p>{}</p></div>{}</main>"
-    ), admin_rail(current), escape_html(login), escape_html(csrf),page_class, escape_html(title),escape_html(intro), content, logout=presentation_label("Sign out","logout"));
+    ), admin_rail_for_domain(current,domain), escape_html(login), escape_html(csrf),page_class, escape_html(title),escape_html(intro), content, logout=presentation_label("Sign out","logout"));
     admin_html_response(
         200,
         "OK",
@@ -142,8 +162,14 @@ fn page_shell(
     )
 }
 
-fn inventory_shell(login: &str, csrf: &str, title: &str, content: String) -> HttpResponse {
-    page_shell(login,csrf,title,"Read-only mailbox metadata. Mailbox authentication, delivery, usage and browser MFA have not been verified.","mailboxes",content)
+fn inventory_shell(
+    login: &str,
+    csrf: &str,
+    domain: &str,
+    title: &str,
+    content: String,
+) -> HttpResponse {
+    page_shell_context(login,csrf,title,"View mailbox configuration or create a mailbox with the configured writer. Existing mailbox editing is not available; native authentication and delivery require separate verification.","mailboxes",content,Some(domain))
 }
 
 fn list_url(domain: &str, query: &str, page: u8, sort: &str) -> String {
@@ -210,7 +236,7 @@ pub(crate) fn mailboxes_page(page: &MailboxPage) -> HttpResponse {
         ));
     }
     content.push_str("</nav><p>Quota is the stored configured value; its unit, usage and enforcement have not been verified. Lists refresh between views; object links remain bound to mailbox identity.</p></section>");
-    inventory_shell(&page.login, &page.csrf, "Mailboxes", content)
+    inventory_shell(&page.login, &page.csrf, &page.domain, "Mailboxes", content)
 }
 
 fn enabled(value: bool) -> &'static str {
@@ -232,7 +258,7 @@ pub(crate) fn mailbox_page(
         "<dt>Display name</dt><dd>Not available from this inventory</dd><dt>Native authentication</dt><dd>Not verified</dd><dt>Message delivery</dt><dd>Not verified</dd><dt>Storage usage</dt><dd>Unknown</dd><dt>Browser TOTP and recovery</dt><dd>Not observed</dd><dt>Last live verification</dt><dd>Not observed</dd></dl>",
         "<a class=\"button-link\" href=\"{}\">{back}</a></section>"
     ), escape_html(&row.username), escape_html(domain), enabled(row.active), enabled(row.smtp_active), row.quota, escape_html(&list_url(domain, "", 1, "address")),back=presentation_label("Back to mailboxes","back"));
-    inventory_shell(login, csrf, "Mailbox details", content)
+    inventory_shell(login, csrf, domain, "Mailbox details", content)
 }
 
 pub(crate) fn capacity_page() -> HttpResponse {
