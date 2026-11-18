@@ -41,6 +41,27 @@ fn admin_rail_for_domain(current: &str, domain: Option<&str>) -> String {
     ), menu = crate::http_ui::shell_icon("menu"), links=links)
 }
 
+fn admin_header(login: &str, csrf: &str, current: &str) -> String {
+    let avatar = login.chars().take(2).collect::<String>().to_uppercase();
+    let brand_copy = if current == "overview" {
+        "<span class=\"brand-copy\"><strong>OSMAP Admin</strong><small>Private administration.</small></span>"
+    } else {
+        "<span>OSMAP Admin</span>"
+    };
+    format!(concat!(
+        "<header class=\"topbar{variant}\" role=\"banner\" aria-label=\"OSMAP Admin\">",
+        "<a class=\"brand\" href=\"/admin\" aria-label=\"OSMAP Admin overview\"><span class=\"brand-mark\" aria-hidden=\"true\">{shield}</span>{brand_copy}</a>",
+        "<div class=\"status-row auth-status\" aria-label=\"Session status and identity\">",
+        "<details class=\"account-menu\" name=\"toolbar-menu\"><summary class=\"identity-chip\"><span class=\"account-avatar\" aria-hidden=\"true\">{avatar}</span><span class=\"account-name\" title=\"{login}\">{login}</span>{chevron}</summary>",
+        "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{login}</strong></p><a href=\"/admin/settings\">Account settings</a><a href=\"/admin/settings?section=appearance\">Appearance</a>",
+        "<form class=\"logout-form\" method=\"post\" action=\"/admin/logout\" aria-label=\"Sign out of current admin session\"><input type=\"hidden\" name=\"csrf\" value=\"{csrf}\"><button class=\"logout-button\" type=\"submit\">{logout}</button></form>",
+        "</div></details></div></header>"
+    ), variant=if current == "overview" { " topbar-welcome" } else { "" },
+       shield=crate::http_ui::OSMAP_BRAND_SHIELD, brand_copy=brand_copy,
+       avatar=escape_html(&avatar), login=escape_html(login), csrf=escape_html(csrf),
+       chevron=crate::http_ui::shell_icon("chevron"), logout=presentation_label("Log Out", "logout"))
+}
+
 fn admin_html_response(
     status: u16,
     reason: &'static str,
@@ -103,20 +124,17 @@ pub(crate) fn scope_page(
         concat!(
             "<a class=\"skip-link\" href=\"#main-content\">Skip to current scope</a>",
             "{rail}",
-            "<header class=\"topbar\" aria-label=\"OSMAP Admin\"><a class=\"brand\" href=\"/admin\" style=\"flex-basis:auto;white-space:nowrap\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>OSMAP Admin</a>",
-            "<div class=\"status-row auth-status\"><span>Signed in as <strong>{login}</strong></span>",
-            "<form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{csrf}\"><button type=\"submit\">{logout}</button></form></div></header>",
+            "{header}",
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Administration</h1><p>Your current administrator scope is shown below.</p></div>",
             "<section class=\"panel\" aria-labelledby=\"admin-scope-title\"><h2 id=\"admin-scope-title\">Current scope</h2>{scope}</section>",
             "<section class=\"panel\" aria-labelledby=\"admin-access-title\"><h2 id=\"admin-access-title\">Available access</h2><p><span class=\"badge\">Scoped administration</span></p>",
             "<p>Mailbox metadata is available for an authorized domain. Mailbox creation requires the configured writer and current authorization.</p>",
-            "<form id=\"admin-domain-selection\" method=\"get\" action=\"/admin/mailboxes\"><label for=\"domain\">Hosted domain</label><input id=\"domain\" name=\"domain\" maxlength=\"255\" required><button type=\"submit\">View mailboxes</button></form></section></main>"
+            "<form id=\"admin-domain-selection\" method=\"get\" action=\"/admin/mailboxes\"><label for=\"domain\">Hosted domain</label><input id=\"domain\" name=\"domain\" maxlength=\"255\" required><button type=\"submit\">{mailboxes}</button></form></section></main>"
         ),
-        login = escape_html(login),
-        csrf = escape_html(csrf),
         scope = scope,
         rail = admin_rail("overview"),
-        logout = presentation_label("Sign out", "logout"),
+        header = admin_header(login, csrf, "overview"),
+        mailboxes = presentation_label("View mailboxes", "inbox"),
     ));
     admin_html_response(200, "OK", "OSMAP Admin — Current scope", body)
 }
@@ -151,9 +169,9 @@ fn page_shell_context(
     let body = format!(concat!(
         "<a class=\"skip-link\" href=\"#main-content\">Skip to main content</a>",
         "{}",
-        "<header class=\"topbar\" aria-label=\"OSMAP Admin\"><a class=\"brand\" href=\"/admin\" style=\"flex-basis:auto;white-space:nowrap\"><span class=\"brand-mark\" aria-hidden=\"true\">OA</span>OSMAP Admin</a><div class=\"status-row auth-status\"><span style=\"min-width:0;overflow-wrap:anywhere\">Signed in as <strong>{}</strong></span><form method=\"post\" action=\"/admin/logout\"><input type=\"hidden\" name=\"csrf\" value=\"{}\"><button type=\"submit\">{logout}</button></form></div></header>",
+        "{header}",
         "<main id=\"main-content\" class=\"page-shell{}\" tabindex=\"-1\"><div class=\"page-intro\"><h1>{}</h1><p>{}</p></div>{}</main>"
-    ), admin_rail_for_domain(current,domain), escape_html(login), escape_html(csrf),page_class, escape_html(title),escape_html(intro), content, logout=presentation_label("Sign out","logout"));
+    ), admin_rail_for_domain(current,domain), page_class, escape_html(title),escape_html(intro), content, header=admin_header(login,csrf,current));
     admin_html_response(
         200,
         "OK",

@@ -84,11 +84,8 @@ pub mod http_support;
 pub mod http_ui;
 pub mod identity;
 pub mod identity_preferences;
-pub mod initial_enrollment;
 #[cfg(unix)]
 mod initial_factor;
-#[cfg(unix)]
-mod initial_factor_service;
 pub mod key_management;
 pub mod logging;
 pub mod mail_address;

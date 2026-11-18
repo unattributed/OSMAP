@@ -2224,3 +2224,35 @@ email explicitly identifies the account and normal HTTPS setup address. SQL
 confirms disabled authentication flags, self-alias and operation readback. The
 original pending account is retained without reprovisioning. Owner receipt and
 the complete recipient-controlled setup/first-login journey remain pending.
+
+### Same day — replace the rejected invitation approach with existing recovery
+
+The owner rejects the separate invitation page and the effort spent on parallel
+test systems. The owner explicitly directs reuse of OSMAP's Forgot password code
+and clarifies the business authority: the administrator obtains and confirms the
+new user's recovery email offline, then records it during account creation.
+Record the invitation journey as not accepted. Restore the original OSMAP
+frontend and admin configuration, disable that feature and stop only its owned
+parallel private runtime. Normal HTTPS routes, saved admin credentials and public
+mail services remain intact; source and failures are retained.
+
+Implement initial enrollment as a distinct trusted purpose of the existing
+six-digit recovery challenge and setup flow. A pending mailbox's recorded
+provisioning operation and genuine absent factor authorize that purpose;
+registered-account recovery continues to require its real existing factor.
+Reuse the same root account service, bounded SQL/hash writer, code delivery,
+restricted cookie, password and authenticator controls. Native pending metadata
+must be checked again at challenge, proof and activation; no browser can declare
+itself a new account. The administrator-facing pages reuse OSMAP's actual shared
+shield, account menu and controls. This is source work toward the corrected
+product journey, not a new environment or an acceptance claim.
+
+Independent review identifies a remaining native registration dependency: the
+pending SQL account is not automatically included in the root mutation/admission
+rosters or selected frontend rollout. Apply those existing scope checks before
+both initial and completed-contact recovery eligibility. Keep the feature off
+where registration is missing; do not broaden rollout or silently fall back to
+legacy authentication. Automatic native registration and corrected installed
+first login remain unfinished. Historical private Inbox evidence cannot close
+that gap. The shared icon/text preference now covers the creation receipt as
+well as ordinary admin pages; the approved login remains unchanged.

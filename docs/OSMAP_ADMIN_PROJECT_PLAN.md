@@ -188,10 +188,10 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Current product slice | **ADM-S04-01**, initial user enrollment: IN_PROGRESS. Native activation and standard-HTTPS password/TOTP/owned-Inbox qualification PASS on obsd1. Saved administrator login, fresh-TOTP pending creation and corrected invitation submission PASS. Owner confirms receipt of the earlier invitation; receipt/redemption/enrollment/first-login acceptance for the corrected standard-route invitation PENDING. Production writer and mailbox message delivery remain unqualified. |
+| Current product slice | **ADM-S04-01**, initial user enrollment: IN_PROGRESS. The owner rejected the separate invitation journey; it is disabled and its parallel private runtime is stopped. Corrected source reuses Forgot password with the administrator's offline-confirmed recovery email. Source checks and installed qualification are recorded in the correction below; the corrected first-enrollment/Inbox journey is NOT_RUN and NOT_ACCEPTED. Automatic native account registration is still unmet. Historical native passes do not qualify this changed composition. |
 | Previous product slice | ADM-S01-02 DELIVERED through [PR #99](https://github.com/unattributed/OSMAP/pull/99), main `8e8294f`; bounded development/isolated mail qualification PASS; basic pages approved, text/icon refinement owner acceptance NOT_ACCEPTED |
 | Earlier product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; final login design owner-approved; whole-slice operator acceptance NOT_ACCEPTED |
-| Selected slice / next boundary | ADM-S04-01 is explicitly approved and brought forward after ADM-S01-03: admin-authorized pending account -> independently verified setup invitation -> restricted password/TOTP enrollment -> safe initial factor installation -> actual OSMAP mailbox login. ADM-S01-04 message delivery remains subsequent work. |
+| Selected slice / next boundary | ADM-S04-01 is explicitly approved and brought forward after ADM-S01-03: admin-TOTP pending creation with an offline-confirmed recovery email -> existing Forgot password -> six-digit email proof -> restricted password/first-TOTP enrollment -> actual native OSMAP login. Existing native registration and rollout prerequisites must be met before setup. ADM-S01-04 message delivery remains subsequent work. |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
 | Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
 | ADM-PLAN-03: integrated epic scope | Documentation-only integration of bootstrap, domain/virtual-address/admin management and all 18 security catalogue categories into the sprint/slice index below; no new product work is started or accepted by this amendment |
@@ -1984,7 +1984,7 @@ catalogue and slices, not a second backlog. Product Rust has no PHP dependency.
 | Mailbox address/name/password, quota, active/SMTP flags, welcome mail, recovery fields and dates | Create mailbox ADM-S01-03; edit/reset/disable/reactivate ADM-S02-02/03 | Isolated creation qualified; live route correction active. Editing and native authentication/delivery remain unaccepted. |
 | Alias source, multiple recipients, keep-local-copy, active state; catch-all and alias-domain target | Create/edit aliases and local/external forwarders with real routing, ADM-S03-01/02 | Reader projections implemented; mutation/routing journeys not implemented. Protect mailbox self-delivery mappings. |
 | Vacation, Fetchmail and DKIM/signing handlers | Installed-backend parity/disposition under existing optional/security catalogue, ADM-S02-05/ADM-S06 | Source presence observed; enablement, backend support and delivery require actual evidence. |
-| Added initial TOTP requirement | ADM-S04-01, brought forward before ADM-S01-04 where required: created mailbox -> independently delivered single-use setup -> user registers authenticator -> proves a current code -> protected no-overwrite installation -> password-plus-TOTP reaches owned Inbox | Admin browser enrollment journey NOT_IMPLEMENTED. Existing local provisioning does not satisfy it. Expired/replayed/cross-account setup and existing-factor overwrite refuse; seeds/counters stay out of SQL/audit. |
+| Added initial TOTP requirement | ADM-S04-01, brought forward before ADM-S01-04 where required: pending mailbox with administrator-recorded recovery email -> existing Forgot password and six-digit proof -> user password and proved authenticator -> protected no-overwrite installation -> native password-plus-TOTP reaches owned Inbox | Corrected source IN_PROGRESS; automatic native registration and installed journey unmet. Expired/replayed/cross-account setup and existing-factor overwrite refuse; seeds/counters stay out of SQL/audit. |
 
 Acceptance needs persisted changes and native effects. Reuse OSMAP's app shell,
 welcome/settings components and text/icon preference. Overview summarizes;
@@ -2263,3 +2263,77 @@ this is not reissue. The owner is asked to complete the restricted setup and
 ordinary login through obsd1's normal HTTPS address. Corrected invitation receipt,
 recipient-controlled verification, owner enrollment and first-login acceptance
 remain PENDING. No additional port or replacement admin registration is used.
+
+### Operator correction — reuse Forgot password, 2026-11-18
+
+The owner rejects the separate invitation page and elaborate development fixture;
+the previous invitation journey is **NOT_ACCEPTED**, not merely awaiting UAT.
+Restore the original working OSMAP frontend and original admin writer configuration,
+disable the invitation feature and stop its parallel private Dovecot, helper and
+factor processes. Retain source, disabled pending accounts and failure evidence.
+Those restoration readbacks PASS; the normal HTTPS addresses and saved admin
+credentials are preserved. No more invitation or test-environment work is authorized
+by this slice. The earlier native passes remain evidence of their limited scope.
+
+The replacement business rule is explicit: the administrator establishes identity
+and obtains the intended user's recovery email **offline**, then records it when
+creating the new pending mailbox. Reuse OSMAP's existing **Forgot password**
+routes, six-digit mail code, restricted recovery cookie, password form and local
+TOTP enrollment. The email-code proof establishes control of the administrator's
+recorded contact. No existing user password or factor is required for this
+specifically authorized initial purpose. Existing-account recovery retains its
+current eligibility and real prior-factor requirement.
+
+Root owns integration, native authority and delivery; the Rust engineer extends
+the existing recovery store and bounded native SQL backend; the UI engineer reuses
+OSMAP's actual shield, controls and enrollment store; the independent reviewer
+checks the trust boundary. One product outcome: admin-TOTP pending creation with
+the offline-confirmed recovery address -> existing Forgot password -> six-digit
+proof -> user password and proved initial TOTP -> ordinary native login. Store
+the pending contact with its creation operation in the native account authority;
+do not treat browser settings, a fabricated factor or missing factor alone as
+bootstrap authority. Reuse the existing privileged account service and installer
+utility in-process; retire the separate invitation store/page and standalone
+factor service. No new Python, dependencies, services, ports or test framework.
+
+Minimum checks: the existing shared recovery store accepts the initial purpose
+only with a typed pending operation/revision and genuine native absence; registered
+recovery cannot select it. Expired/wrong/replayed email proofs and changed
+provisioning metadata refuse. The same native password backend gains a distinct
+pending-account CAS; counter/factor publication precedes SQL activation, and SQL
+activation consumes the provisioning row atomically. Reuse actual OSMAP form and
+menu classes; leave the approved login unchanged. Run focused existing Rust tests,
+one matching product composition test, independent review and mandatory delivery
+hooks. Native qualification must use the existing deployment/backend contract;
+do not create another fixture or claim production from a source test. Preserve
+prior costs as UNKNOWN and all failures; two failures at the same boundary still
+require combined reassessment.
+
+Native integration gap found during independent review: the existing root account
+service and admission service use equal fixed account rosters, and the frontend
+may select one exact rollout account. A pending SQL row does not register a new
+identity with either roster. Both initial setup and completed-contact recovery
+now require the same roster/rollout admission before SQL eligibility. This
+prevents completing setup for an identity whose ordinary login will refuse.
+Automatic native account registration remains **NOT_IMPLEMENTED**; the corrected
+installed enrollment/Inbox journey is **NOT_RUN**, not awaiting owner UAT. Do not
+switch all existing users to native rollout as a shortcut. Keep `initial_setup`
+false until matching real registration and backend prerequisites are satisfied.
+
+The admin shell reuses the actual OSMAP shield, account menu, rail and controls.
+Creation, Cancel, domain selection, save and return actions use the shared icon
+labels; the existing Appearance icon/text choice also applies to the HTTP 201
+creation receipt. The approved login renderer is unchanged. This is source
+alignment, not new browser appearance acceptance.
+
+Corrected source checks: shared recovery store 20 PASS; native access composition
+5 PASS; password backend 17 PASS; epoch store 11 PASS; authenticator enrollment
+9 PASS; factor replacement 10 PASS (one native-only case ignored); initial file
+publication 5 PASS. The HTTP recovery scope passes all 11 cases after retaining
+the earlier copy-assertion failure: the revised explanatory text had removed the
+existing generic non-enumerating phrase, which is restored. Admin-filtered checks
+pass 108 cases with 12 native-only cases ignored. A focused actual HTTP 201 receipt
+regression also confirms the icon preference is applied. Strict all-target Clippy
+passes; mandatory commit/push results and remote identity are delivery evidence,
+not native qualification. Private terminal logs remain under the existing sprint
+artifact root; no credentials, recovery addresses or raw mail are added to Git.

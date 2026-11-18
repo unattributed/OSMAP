@@ -1,6 +1,6 @@
 //! Native first-factor installation for an already authorized mailbox owner.
 //!
-//! The caller owns the one-use invitation, proved TOTP code, account lock and
+//! The caller owns the one-use email proof, proved TOTP code, account lock and
 //! pending-account transition. This module only publishes the proved factor
 //! and its consumed replay counter into the existing runtime file formats.
 use crate::totp::{decode_base32, encode_base32, MIN_TOTP_SECRET_BYTES};
@@ -188,6 +188,47 @@ impl InitialFactor {
         }
         Ok(())
     }
+}
+
+/// Publish the existing recovery-contact record format for a genuinely new
+/// account. The root recovery service supplies its fixed runtime directory and
+/// has already consumed the email proof; no caller-selected filename is used.
+pub(crate) fn publish_initial_contact(
+    directory: &Path,
+    runtime_uid: u32,
+    runtime_gid: u32,
+    account: &str,
+    bytes: &[u8],
+    deadline: Instant,
+) -> Result<(), Error> {
+    before(deadline)?;
+    crate::account_admission::valid_account(account).map_err(|_| Error::Invalid)?;
+    if bytes.is_empty()
+        || bytes.len() > 4096
+        || (crate::openbsd::effective_uid() != 0
+            && !(cfg!(test) && crate::openbsd::effective_uid() == runtime_uid))
+    {
+        return Err(Error::Refused);
+    }
+    let directory = Directory::open(directory, runtime_uid, runtime_gid)?;
+    let mut digest = Sha256::new();
+    digest.update(b"osmap-recovery-contact-v1\0");
+    digest.update(account.as_bytes());
+    let key = format!("{:x}", digest.finalize());
+    let leaf = format!("{key}.json");
+    let temporary = format!(".initial-{key}.contact.tmp");
+    if directory.exists(&leaf)?
+        || directory.exists(&format!("{key}.lock"))?
+        || directory.exists(&temporary)?
+    {
+        return Err(Error::Refused);
+    }
+    directory.write_new(&temporary, bytes)?;
+    before(deadline).map_err(|_| Error::Unconfirmed)?;
+    directory
+        .publish(&temporary, &leaf, bytes)
+        .map_err(|_| Error::Unconfirmed)?;
+    before(deadline).map_err(|_| Error::Unconfirmed)
 }
 
 fn before(deadline: Instant) -> Result<(), Error> {

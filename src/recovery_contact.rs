@@ -299,6 +299,57 @@ pub struct RecoveryContactStore {
     directory: PathBuf,
 }
 impl RecoveryContactStore {
+    /// Called only by the privileged initial-enrollment composition after it
+    /// consumes the six-digit email proof. Publish the normal verified-contact
+    /// format so later recovery observes the same registered address and vetoes.
+    #[cfg(unix)]
+    pub(crate) fn install_initial_native(
+        &self,
+        address: &str,
+        grant: &crate::access_recovery::GrantBinding,
+        now: u64,
+        owner: u32,
+        group: u32,
+        deadline: Instant,
+    ) -> Result<(), RecoveryContactError> {
+        use crate::access_recovery::{FactorBinding, Purpose};
+        if grant.purpose != Purpose::InitialAccountSetup
+            || !matches!(&grant.factor, FactorBinding::Absent { .. })
+            || now == 0
+            || now >= grant.expires_at
+        {
+            return Err(RecoveryContactError::Invalid);
+        }
+        canonical(&grant.account)?;
+        email(address)?;
+        if address == grant.account {
+            return Err(RecoveryContactError::Invalid);
+        }
+        let record = Record {
+            version: 1,
+            account: grant.account.clone(),
+            revision: 1,
+            updated_at: now,
+            verified: Some(VerifiedRecoveryContact {
+                email: address.into(),
+                verified_at: now,
+            }),
+            pending: None,
+            notice: None,
+            sends: Vec::new(),
+        };
+        record.validate(&grant.account, now)?;
+        let bytes = serde_json::to_vec(&record).map_err(|_| RecoveryContactError::Unavailable)?;
+        crate::initial_factor::publish_initial_contact(
+            &self.directory,
+            owner,
+            group,
+            &grant.account,
+            &bytes,
+            deadline,
+        )
+        .map_err(|_| RecoveryContactError::Unavailable)
+    }
     pub fn new(directory: impl Into<PathBuf>) -> Self {
         let directory = directory.into();
         Self {

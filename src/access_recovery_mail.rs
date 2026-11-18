@@ -9,58 +9,6 @@ use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, TcpStream};
 use std::time::{Duration, Instant};
 
 pub(crate) struct NativeSmtp;
-impl NativeSmtp {
-    /// Initial setup uses a high-entropy invitation, never a recovery code.
-    pub(crate) fn deliver_initial(
-        &self,
-        account: &str,
-        email: &str,
-        invitation: &str,
-        origin: &str,
-        sender: &str,
-        deadline: Instant,
-    ) -> Delivery {
-        audited_attempt(
-            &audit_reference(),
-            |phase| {
-                if !address(account)
-                    || !address(sender)
-                    || !address(email)
-                    || invitation.len() != 64
-                    || !invitation
-                        .bytes()
-                        .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
-                    || !crate::initial_enrollment::valid_setup_origin(origin)
-                {
-                    return Delivery::Refused;
-                }
-                *phase = Phase::Connect;
-                let deadline = deadline.min(Instant::now() + Duration::from_secs(10));
-                let Some(timeout) = deadline.checked_duration_since(Instant::now()) else {
-                    return Delivery::Refused;
-                };
-                let Ok(stream) = TcpStream::connect_timeout(
-                    &SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 25)),
-                    timeout,
-                ) else {
-                    return Delivery::Refused;
-                };
-                transaction_with_body(
-                    stream,
-                    sender,
-                    email,
-                    invitation,
-                    deadline,
-                    phase,
-                    Some((origin, account)),
-                )
-            },
-            |line| {
-                let _ = writeln!(std::io::stderr().lock(), "{line}");
-            },
-        )
-    }
-}
 #[derive(Clone, Copy)]
 enum Phase {
     Validate,
@@ -233,18 +181,6 @@ fn transaction<S: Channel>(
     deadline: Instant,
     phase: &mut Phase,
 ) -> Delivery {
-    transaction_with_body(stream, account, email, code, deadline, phase, None)
-}
-
-fn transaction_with_body<S: Channel>(
-    stream: S,
-    account: &str,
-    email: &str,
-    code: &str,
-    deadline: Instant,
-    phase: &mut Phase,
-    initial_origin: Option<(&str, &str)>,
-) -> Delivery {
     let mut io = BufReader::new(stream);
     let before_data = |value: Option<u16>, expected: u16| -> Result<(), Delivery> {
         match value {
@@ -283,10 +219,7 @@ fn transaction_with_body<S: Channel>(
             return d;
         }
     }
-    let body = match initial_origin {
-        None => format!("From: {account}\r\nTo: {email}\r\nSubject: Your OSMAP recovery code\r\nAuto-Submitted: auto-generated\r\nX-Auto-Response-Suppress: All\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nUse this one-time code on the OSMAP recovery page:\r\n\r\n{code}\r\n\r\nThis code expires in 10 minutes. If you did not request recovery, ignore this message.\r\n.\r\n"),
-        Some((origin, owner)) => format!("From: {account}\r\nTo: {email}\r\nSubject: Set up your new OSMAP account\r\nAuto-Submitted: auto-generated\r\nX-Auto-Response-Suppress: All\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nYour administrator authorized initial setup for your new OSMAP account.\r\n\r\nAccount: {owner}\r\nSetup page: {origin}/admin/setup\r\n\r\nOpen the setup page and enter the account shown above and this single-use invitation code:\r\n\r\n{code}\r\n\r\nExpires in 10 minutes. Choose your own password and register your authenticator. This invitation cannot read mail or recover an existing account. Ignore it if you did not expect this account.\r\n.\r\n"),
-    };
+    let body = format!("From: {account}\r\nTo: {email}\r\nSubject: Your OSMAP recovery code\r\nAuto-Submitted: auto-generated\r\nX-Auto-Response-Suppress: All\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nUse this one-time code on the OSMAP recovery page:\r\n\r\n{code}\r\n\r\nThis code expires in 10 minutes. If you did not request recovery, ignore this message.\r\n.\r\n");
     // From this point a timeout/disconnect cannot prove nonacceptance.
     *phase = Phase::Body;
     if !send(&mut io, body.as_bytes(), deadline) {
@@ -369,46 +302,6 @@ mod tests {
             run("220 ready\r\n250-other\r\n251 wrong\r\n"),
             Delivery::Unconfirmed
         );
-    }
-    #[test]
-    fn initial_invitation_uses_standard_https_and_explicit_account_fields() {
-        assert!(crate::initial_enrollment::valid_setup_origin(
-            "https://obsd1.example.test"
-        ));
-        for origin in [
-            "http://obsd1.example.test",
-            "https://obsd1.example.test:18443",
-            "https://obsd1.example.test:443",
-            "https://obsd1.example.test/path",
-            "https://obsd1.example.test?code=private",
-            "https://-invalid.example.test",
-            "https://obsd1.example.test\r\nInjected: value",
-        ] {
-            assert!(!crate::initial_enrollment::valid_setup_origin(origin));
-        }
-        let output = Rc::new(RefCell::new(Vec::new()));
-        let invitation = "a".repeat(64);
-        assert_eq!(
-            transaction_with_body(
-                Fixture {
-                    input: Cursor::new(b"220 ready\r\n250 DSN\r\n250 sender\r\n250 recipient\r\n354 data\r\n250 queued\r\n".to_vec()),
-                    output: output.clone(),
-                    fail_body: false,
-                },
-                "postmaster@example.test",
-                "owner@outside.test",
-                &invitation,
-                Instant::now() + Duration::from_secs(1),
-                &mut Phase::Validate,
-                Some(("https://obsd1.example.test", "new@example.test")),
-            ),
-            Delivery::Accepted
-        );
-        let wire = String::from_utf8(output.borrow().clone()).unwrap();
-        assert!(wire.contains("\r\nAccount: new@example.test\r\n"));
-        assert!(wire.contains("\r\nSetup page: https://obsd1.example.test/admin/setup\r\n"));
-        assert!(wire.contains("single-use invitation code:\r\n\r\n"));
-        assert!(wire.contains(&format!("\r\n{invitation}\r\n")));
     }
     #[test]
     fn observed_dsn_is_required_and_suppression_is_sent_before_proof_data() {

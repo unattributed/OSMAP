@@ -1337,7 +1337,6 @@ pub(crate) fn seal_admin_service(
     profile: &Path,
     sql: &Path,
     writer_profile: Option<&Path>,
-    initial_factor_socket: Option<&Path>,
 ) -> io::Result<()> {
     let mut rules = BTreeMap::new();
     add_rule(&mut rules, state, "rwc");
@@ -1352,14 +1351,6 @@ pub(crate) fn seal_admin_service(
     add_rule(&mut rules, profile, "r");
     if let Some(writer) = writer_profile {
         add_rule(&mut rules, writer, "r");
-    }
-    if let Some(socket) = initial_factor_socket {
-        add_rule(
-            &mut rules,
-            socket.parent().ok_or(io::ErrorKind::InvalidInput)?,
-            "r",
-        );
-        add_rule(&mut rules, socket, "rw");
     }
     add_rule(
         &mut rules,
@@ -1395,52 +1386,9 @@ pub(crate) fn seal_admin_service(
     }
     apply_admin_plan(
         rules,
-        if initial_factor_socket.is_some() {
-            "stdio rpath wpath cpath fattr flock unix inet proc exec unveil"
-        } else {
-            "stdio rpath wpath cpath fattr flock unix proc exec unveil"
-        },
-        if initial_factor_socket.is_some() {
-            "stdio rpath wpath cpath fattr flock unix inet proc exec"
-        } else {
-            "stdio rpath wpath cpath fattr flock unix proc exec"
-        },
+        "stdio rpath wpath cpath fattr flock unix proc exec unveil",
+        "stdio rpath wpath cpath fattr flock unix proc exec",
     )
-}
-
-pub(crate) struct InitialFactorSeal {
-    pid: u32,
-}
-impl InitialFactorSeal {
-    pub(crate) fn is_current_process(&self) -> bool {
-        self.pid == std::process::id()
-    }
-}
-
-pub(crate) fn seal_initial_factor_service(
-    config: &Path,
-    socket: &Path,
-    factors: &Path,
-    replay: &Path,
-) -> io::Result<InitialFactorSeal> {
-    let mut rules = BTreeMap::new();
-    add_rule(&mut rules, config, "r");
-    add_rule(&mut rules, socket, "rwc");
-    add_rule(
-        &mut rules,
-        socket.parent().ok_or(io::ErrorKind::InvalidInput)?,
-        "rwc",
-    );
-    add_rule(&mut rules, factors, "rwc");
-    add_rule(&mut rules, replay, "rwc");
-    apply_admin_plan(
-        rules,
-        "stdio rpath wpath cpath fattr chown flock unix unveil",
-        "stdio rpath wpath cpath fattr chown flock unix",
-    )?;
-    Ok(InitialFactorSeal {
-        pid: std::process::id(),
-    })
 }
 
 fn apply_admin_plan(

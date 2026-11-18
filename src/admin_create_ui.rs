@@ -3,6 +3,7 @@ use crate::admin_access::{CreateFailure, CreatePage, CreateReceipt};
 use crate::html::TrustedHtml;
 use crate::http::HttpResponse;
 use crate::http_support::{escape_html, url_encode};
+use crate::http_ui::presentation_label;
 
 pub(crate) fn create_mailbox_page(page: &CreatePage) -> HttpResponse {
     if !page.valid() {
@@ -10,8 +11,8 @@ pub(crate) fn create_mailbox_page(page: &CreatePage) -> HttpResponse {
     }
     let credentials = if page.setup_enabled {
         concat!(
-            "<p><label for=\"create-setup-contact\">Approved external setup email</label><input id=\"create-setup-contact\" type=\"email\" name=\"setup_contact\" autocomplete=\"off\" maxlength=\"254\" aria-describedby=\"create-setup-help\" required></p>",
-            "<p id=\"create-setup-help\" class=\"muted\">Use an independent address already verified with the intended user. A single-use invitation lets that user choose their own password and register their authenticator.</p>",
+            "<p><label for=\"create-setup-contact\">Recovery email</label><input id=\"create-setup-contact\" type=\"email\" name=\"setup_contact\" autocomplete=\"off\" maxlength=\"254\" aria-describedby=\"create-setup-help\" required></p>",
+            "<p id=\"create-setup-help\" class=\"muted\">Confirm the new user's identity and independent recovery email offline before entering it here. The user will choose Forgot password on the ordinary OSMAP sign-in page, verify the emailed code, then choose a password and register their authenticator.</p>",
         )
     } else {
         concat!(
@@ -21,7 +22,7 @@ pub(crate) fn create_mailbox_page(page: &CreatePage) -> HttpResponse {
         )
     };
     let setup_notice = if page.setup_enabled {
-        "The account remains pending until the user completes password and authenticator setup. You will not receive their password or authenticator seed."
+        "The account remains pending until the user completes setup through Forgot password. You will not receive their password or authenticator seed."
     } else {
         "Mailbox browser MFA enrollment is pending. Native mailbox authentication and message delivery require separate verification after configuration."
     };
@@ -39,9 +40,10 @@ pub(crate) fn create_mailbox_page(page: &CreatePage) -> HttpResponse {
         "{credentials}",
         "<p><label for=\"create-totp\">Current administrator TOTP code</label><input id=\"create-totp\" type=\"text\" name=\"totp\" autocomplete=\"one-time-code\" inputmode=\"numeric\" pattern=\"[0-9]{{6}}\" minlength=\"6\" maxlength=\"6\" required></p>",
         "<p>{setup_notice}</p>",
-        "<div class=\"toolbar\"><button type=\"submit\" class=\"primary-button\">Create mailbox</button> <a class=\"button-link\" href=\"/admin/mailboxes?domain={domain_url}\">Cancel</a></div></form></section>"
+        "<div class=\"toolbar\"><button type=\"submit\" class=\"primary-button\">{create}</button> <a class=\"button-link\" href=\"/admin/mailboxes?domain={domain_url}\">{cancel}</a></div></form></section>"
     ), csrf=escape_html(&page.csrf), request_id=escape_html(&page.request_id), revision=page.revision,
-       domain=escape_html(&page.domain), domain_url=escape_html(&url_encode(&page.domain)), credentials=credentials, setup_notice=setup_notice);
+       domain=escape_html(&page.domain), domain_url=escape_html(&url_encode(&page.domain)), credentials=credentials, setup_notice=setup_notice,
+       create=presentation_label("Create mailbox", "add"), cancel=presentation_label("Cancel", "close"));
     super::page_shell(
         &page.login,
         &page.csrf,
@@ -63,10 +65,11 @@ pub(crate) fn mailbox_created_page(receipt: &CreateReceipt) -> HttpResponse {
         "<dt>Operation ID</dt><dd style=\"overflow-wrap:anywhere\">{request_id}</dd></dl>",
         "<p>{setup_status}</p>",
         "<p>Keep this operation ID when checking the result. Refreshing this submission uses the same operation ID.</p>",
-        "<a class=\"button-link\" href=\"/admin/mailboxes?domain={domain_url}\">Back to mailboxes</a></section>"
+        "<a class=\"button-link\" href=\"/admin/mailboxes?domain={domain_url}\">{back}</a></section>"
     ), username=escape_html(&receipt.username), domain=escape_html(&receipt.domain), quota_mib=receipt.quota / 1_048_576,
        quota=receipt.quota, request_id=escape_html(&receipt.request_id), domain_url=escape_html(&url_encode(&receipt.domain)),
-       setup_status=if receipt.setup_pending { "The account is pending user setup. The mail service accepted the invitation for the approved external contact; recipient delivery is not yet confirmed. The user must choose a password and prove their own authenticator before sign-in is enabled." } else { "Native authentication and message delivery have not yet been verified. Mailbox browser MFA enrollment is pending." });
+       setup_status=if receipt.setup_pending { "The recovery email was recorded and the account is pending user setup. Ask the user to choose Forgot password on the ordinary OSMAP sign-in page, verify the emailed code, then choose their password and register their authenticator. Sign-in is enabled only after setup is confirmed." } else { "Native authentication and message delivery have not yet been verified. Mailbox browser MFA enrollment is pending." },
+       back=presentation_label("Back to mailboxes", "back"));
     let mut response = super::page_shell(
         &receipt.login,
         &receipt.csrf,
@@ -105,7 +108,7 @@ pub(crate) fn create_failure_page(
             )
         })
         .unwrap_or_default();
-    let body = format!("<main id=\"main-content\" class=\"standalone-notice\" tabindex=\"-1\"><section class=\"panel\"><h1>Mailbox creation unavailable</h1><p role=\"alert\">{message}</p>{operation}<a class=\"button-link\" href=\"/admin/mailboxes?domain={}\">Back to mailboxes</a> <a class=\"button-link\" href=\"/admin\">Return to overview</a></section></main>",escape_html(&url_encode(domain)));
+    let body = format!("<main id=\"main-content\" class=\"standalone-notice\" tabindex=\"-1\"><section class=\"panel\"><h1>Mailbox creation unavailable</h1><p role=\"alert\">{message}</p>{operation}<a class=\"button-link\" href=\"/admin/mailboxes?domain={}\">{back}</a> <a class=\"button-link\" href=\"/admin\">{overview}</a></section></main>",escape_html(&url_encode(domain)),back=presentation_label("Back to mailboxes", "back"),overview=presentation_label("Return to overview", "shield"));
     super::admin_html_response(
         status,
         reason,
@@ -167,9 +170,13 @@ mod tests {
             assert!(!input.contains("value="));
         }
         assert!(form.contains("Configured quota (MiB)"));
-        assert!(form.contains("Approved external setup email"));
+        assert!(form.contains("Recovery email"));
+        assert!(form.contains("offline"));
+        assert!(form.contains("Forgot password"));
         assert!(!form.contains("name=\"password\""));
         assert!(!form.contains("name=\"confirmation\""));
+        assert!(form.contains("presentation-icon-add"));
+        assert!(form.contains("presentation-icon-close"));
         assert!(!html.contains("osmap-admin1."));
         assert!(!html.contains("<script"));
     }
@@ -196,9 +203,16 @@ mod tests {
             quota: 2 * 1_048_576,
             setup_pending: false,
         };
-        let response = mailbox_created_page(&receipt);
+        let mut response = mailbox_created_page(&receipt);
+        crate::admin_access::AdminPreferences {
+            presentation_style: "icons".into(),
+            ..Default::default()
+        }
+        .apply_menus(&mut response);
         assert_eq!(response.status_code, 201);
         let html = String::from_utf8(response.body).unwrap();
+        assert!(html.contains("data-presentation-style=\"icons\""));
+        assert!(html.contains("presentation-icon-back"));
         assert!(html.contains("alice@example.test"));
         assert!(html.contains("2 MiB (2097152 bytes)"));
         assert!(html.contains("Signed in as"));

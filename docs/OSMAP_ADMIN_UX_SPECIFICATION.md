@@ -146,7 +146,7 @@ Paths below are **proposed internal admin routes**, not existing OSMAP endpoints
 | Settings / Appearance | `/admin/settings?section=appearance` | Own authenticated admin | Theme and presentation preferences |
 | My Security / Sessions | `/admin/account/security`, `/admin/account/sessions` | Own authenticated admin | Credential, factor, session and sign-out controls |
 | System / Schema status | `/admin/system` | System admin read-only; operator CLI for changes | Schema version, writer authority and configuration health |
-| Setup invitation | Separately scoped OSMAP enrollment route, final path TBD | Intended mailbox owner holding a valid invitation | Restricted first-user factor setup, **no ordinary mail access** |
+| Initial mailbox setup | Existing OSMAP Forgot password routes `/recover` and `/recover/setup` | Intended mailbox owner proving control of the administrator-recorded recovery email | Existing six-digit email proof and restricted password/first-TOTP setup, **no ordinary mail access**; native registration prerequisites apply |
 
 Use stable opaque IDs in detail URLs, not raw email addresses or secrets. Resource authorization is rechecked for each GET and POST. A domain admin must not infer the existence of unassigned objects through `404` versus `403` differences; the external response can be uniformly non-enumerating while the protected audit records the actual denial reason.
 
@@ -227,10 +227,10 @@ Interaction rules: no mutation on GET; one operation per form; use labelled text
 | Native authentication | Explicit policy choice | Clearly distinguish from OSMAP browser activation |
 | Delivery eligibility | Explicit policy choice | Actual recipient/LMTP behaviour must be read back |
 | Browser MFA setup | Status/explanation | New ordinary browser access remains pending until verified user-held factor |
-| Setup invitation channel | Approved channel selector | Must work without access to the new mailbox and be identity-verified |
+| Recovery email | Independent external email confirmed with the user offline by the administrator | Recorded with the pending creation operation; existing Forgot password sends its six-digit proof to this address; must not require access to the new mailbox |
 | Revision/operation metadata | Hidden server-issued tokens | Must be revalidated; browser fields confer no authority |
 
-**Creation result:** Show exact confirmed canonical address, lifecycle, native authentication/delivery projection and a restricted setup invitation outcome. If a secret or token is ever shown on a controlled surface, it is a separately approved one-time disclosure, not a standing detail field or persistent page cache. The creating administrator normally does not see the new user's TOTP seed.
+**Creation result:** Show exact confirmed canonical address, pending lifecycle, native authentication/delivery projection and confirmation that the recovery email was recorded. Direct the user to existing Forgot password for user-chosen password and first-TOTP enrollment. Do not claim an invitation was sent during creation. The creating administrator does not see the new user's password or TOTP seed. This supersedes the separate mailbox invitation design by operator direction on 2026-11-18; administrator identity enrollment is separate future work.
 
 **Mailbox detail:** Overview, Authentication, TOTP & Recovery, Quota & Usage, Aliases/Forwarding, Activity and Retirement. Distinguish configured quota from actual Dovecot consumption, with `Unknown` if native observation is unavailable. Show relevant source observations, not raw protected credentials or private mail paths beyond permitted configuration metadata.
 

@@ -1,6 +1,7 @@
-//! Native-owned registered-email account recovery. Web-owned contact records
-//! and browser assertions are not authorities for this store. Native composition
-//! supplies the verified contact, active epoch, existing factor and mailer.
+//! Native-owned email proof for registered recovery or initial owner setup.
+//! Web-owned contact records and browser assertions are not authorities. Native
+//! composition supplies either a verified registered contact and actual factor,
+//! or an administrator-authorized pending contact and absent-factor operation.
 //! An opaque restricted grant has no conversion to a normal mail session.
 use crate::private_account_file::{LockedAccountFile, PrivateAccountFile};
 use crate::recovery_contact::RecoveryContactDelivery;
@@ -37,14 +38,19 @@ impl From<std::io::Error> for Error {
     }
 }
 
-/// Construct only from independently native-owned verified-contact state.
+/// Construct only from independently native-owned contact/account state.
 /// This is deliberately not a wire/deserializable proof object.
 pub struct EligibleAccount {
     pub epoch: u64,
+    /// Registered verified destination, or the administrator-approved pending
+    /// setup destination. Initial ownership is proved by the email code.
     pub verified_email: String,
     pub contact_revision: u64,
+    /// Existing contact verification time, or initial pending-contact approval
+    /// time. This value never substitutes for consuming the emailed proof.
     pub verified_at: u64,
-    pub existing_factor_sha256: String,
+    pub purpose: Purpose,
+    pub factor: FactorBinding,
 }
 impl std::fmt::Debug for EligibleAccount {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -96,11 +102,59 @@ pub struct Started {
     pub source_limited: bool,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Purpose {
     /// Replacement authenticator setup and the explicitly staged password
     /// step only. This does not authorize mail, Settings or another account.
+    #[default]
     AccountRecoverySetup,
+    /// A specifically pending native account may install its first factor.
+    InitialAccountSetup,
+}
+
+/// Existing hashes keep their legacy string encoding. Absence is an explicit
+/// pending-operation binding, never a manufactured existing-factor digest.
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged, deny_unknown_fields)]
+pub enum FactorBinding {
+    Existing(String),
+    Absent {
+        provision_operation: String,
+        revision: u64,
+    },
+}
+impl std::fmt::Debug for FactorBinding {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("FactorBinding(<private>)")
+    }
+}
+impl FactorBinding {
+    pub fn existing_sha256(&self) -> Option<&str> {
+        match self {
+            Self::Existing(value) => Some(value),
+            Self::Absent { .. } => None,
+        }
+    }
+    fn valid_for(&self, purpose: Purpose) -> bool {
+        match (purpose, self) {
+            (Purpose::AccountRecoverySetup, Self::Existing(hash)) => lower_hex(hash),
+            (
+                Purpose::InitialAccountSetup,
+                Self::Absent {
+                    provision_operation,
+                    revision,
+                },
+            ) => lower_hex(provision_operation) && *revision > 0,
+            _ => false,
+        }
+    }
+}
+
+fn valid_purpose_epoch(purpose: Purpose, epoch: u64) -> bool {
+    match purpose {
+        Purpose::AccountRecoverySetup => crate::account_admission::valid_epoch(epoch),
+        Purpose::InitialAccountSetup => epoch == 0,
+    }
 }
 pub struct GrantBinding {
     pub account: String,
@@ -108,7 +162,7 @@ pub struct GrantBinding {
     pub purpose: Purpose,
     pub expires_at: u64,
     pub flow_sha256: String,
-    pub existing_factor_sha256: String,
+    pub factor: FactorBinding,
 }
 impl std::fmt::Debug for GrantBinding {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -184,7 +238,9 @@ struct GrantRecord {
     epoch: u64,
     contact_digest: String,
     flow_sha256: String,
-    existing_factor_sha256: String,
+    #[serde(alias = "existing_factor_sha256")]
+    factor: FactorBinding,
+    #[serde(default)]
     purpose: Purpose,
     issued_at: u64,
     expires_at: u64,
@@ -198,7 +254,7 @@ impl GrantRecord {
             purpose: self.purpose,
             expires_at: self.expires_at,
             flow_sha256: self.flow_sha256.clone(),
-            existing_factor_sha256: self.existing_factor_sha256.clone(),
+            factor: self.factor.clone(),
         }
     }
 }
@@ -540,8 +596,8 @@ impl Store {
             epoch: eligible.epoch,
             contact_digest: contact_digest(&eligible, request.now)?,
             flow_sha256,
-            existing_factor_sha256: eligible.existing_factor_sha256.clone(),
-            purpose: Purpose::AccountRecoverySetup,
+            factor: eligible.factor.clone(),
+            purpose: eligible.purpose,
             issued_at: request.now,
             expires_at: request
                 .now
@@ -737,26 +793,45 @@ fn flow_key(flow: &str) -> Result<String, Error> {
     Ok(digest("osmap-access-flow-v1", flow.as_bytes()))
 }
 fn contact_digest(value: &EligibleAccount, now: u64) -> Result<String, Error> {
-    if !crate::account_admission::valid_epoch(value.epoch)
+    if !valid_purpose_epoch(value.purpose, value.epoch)
         || value.contact_revision == 0
         || value.verified_at == 0
         || value.verified_at > now
         || value.verified_email.len() > 254
         || value.verified_email.chars().any(char::is_control)
         || value.verified_email.split('@').count() != 2
-        || !lower_hex(&value.existing_factor_sha256)
+        || !value.factor.valid_for(value.purpose)
     {
         return Err(Error::Unavailable);
     }
-    Ok(digest(
-        "osmap-access-contact-v1",
-        &serde_json::to_vec(&(
+    // Preserve registered-recovery contact digests byte for byte, including
+    // already issued challenges/grants. Initial setup has a distinct digest
+    // domain and exact provisioning revision rather than an old-factor hash.
+    let bytes = match &value.factor {
+        FactorBinding::Existing(hash) => serde_json::to_vec(&(
             &value.verified_email,
             value.contact_revision,
             value.verified_at,
-            &value.existing_factor_sha256,
-        ))
-        .map_err(|_| Error::Unavailable)?,
+            hash,
+        )),
+        FactorBinding::Absent {
+            provision_operation,
+            revision,
+        } => serde_json::to_vec(&(
+            &value.verified_email,
+            value.contact_revision,
+            value.verified_at,
+            provision_operation,
+            revision,
+        )),
+    }
+    .map_err(|_| Error::Unavailable)?;
+    Ok(digest(
+        match value.purpose {
+            Purpose::AccountRecoverySetup => "osmap-access-contact-v1",
+            Purpose::InitialAccountSetup => "osmap-initial-contact-v1",
+        },
+        &bytes,
     ))
 }
 fn code_digest(challenge: &str, code: &str) -> Result<String, Error> {
@@ -835,10 +910,10 @@ fn parse_grant(raw: Vec<u8>, now: u64) -> Result<GrantRecord, Error> {
     if value.version != 1
         || !lower_hex(&value.key)
         || crate::account_admission::valid_account(&value.account).is_err()
-        || !crate::account_admission::valid_epoch(value.epoch)
+        || !valid_purpose_epoch(value.purpose, value.epoch)
         || !lower_hex(&value.contact_digest)
         || !lower_hex(&value.flow_sha256)
-        || !lower_hex(&value.existing_factor_sha256)
+        || !value.factor.valid_for(value.purpose)
         || value.issued_at > now
         || value.issued_at.checked_add(GRANT_SECONDS) != Some(value.expires_at)
     {
@@ -864,7 +939,11 @@ fn validate_grant<A: Authority>(
     let eligible = authority
         .eligible(&grant.account, deadline)?
         .ok_or(Error::Denied)?;
-    if eligible.epoch != grant.epoch || contact_digest(&eligible, now)? != grant.contact_digest {
+    if eligible.epoch != grant.epoch
+        || eligible.purpose != grant.purpose
+        || eligible.factor != grant.factor
+        || contact_digest(&eligible, now)? != grant.contact_digest
+    {
         return Err(Error::Denied);
     }
     before(deadline)

@@ -13,7 +13,9 @@ pub(crate) const WRITER_ARGS: &[&str] = &[
 ];
 /// Additive schema fragment for a privileged local installer. It enables no writer.
 /// The selected compatibility tables must already exist and use InnoDB.
-pub(crate) const SCHEMA: &str = "CREATE TABLE osmap_admin_writer (id TINYINT NOT NULL PRIMARY KEY CHECK(id=1), mode VARCHAR(16) NOT NULL, holder CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, epoch BIGINT UNSIGNED NOT NULL, revision BIGINT UNSIGNED NOT NULL) ENGINE=InnoDB;\nINSERT INTO osmap_admin_writer VALUES (1,'disabled','00000000000000000000000000000000',0,1);\nCREATE TABLE osmap_admin_operations (request_id CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY, actor VARBINARY(96) NOT NULL, digest CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, credential_digest CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, username VARBINARY(254) NOT NULL UNIQUE, domain VARBINARY(253) NOT NULL, quota BIGINT UNSIGNED NOT NULL, revision BIGINT UNSIGNED NOT NULL, created DATETIME NOT NULL, kind VARCHAR(32) NOT NULL CHECK(kind='mailbox.create')) ENGINE=InnoDB;\n";
+pub(crate) const SCHEMA: &str = "CREATE TABLE osmap_admin_writer (id TINYINT NOT NULL PRIMARY KEY CHECK(id=1), mode VARCHAR(16) NOT NULL, holder CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, epoch BIGINT UNSIGNED NOT NULL, revision BIGINT UNSIGNED NOT NULL) ENGINE=InnoDB;\nINSERT INTO osmap_admin_writer VALUES (1,'disabled','00000000000000000000000000000000',0,1);\nCREATE TABLE osmap_admin_operations (request_id CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY, actor VARBINARY(96) NOT NULL, digest CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, credential_digest CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, username VARBINARY(254) NOT NULL UNIQUE, domain VARBINARY(253) NOT NULL, quota BIGINT UNSIGNED NOT NULL, revision BIGINT UNSIGNED NOT NULL, created DATETIME NOT NULL, kind VARCHAR(32) NOT NULL CHECK(kind='mailbox.create')) ENGINE=InnoDB;\nCREATE TABLE osmap_initial_accounts (username VARBINARY(254) NOT NULL PRIMARY KEY, request_id CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL UNIQUE, recovery_email VARBINARY(254) NOT NULL, revision BIGINT UNSIGNED NOT NULL CHECK(revision>0), writer_holder CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, writer_epoch BIGINT UNSIGNED NOT NULL, created DATETIME NOT NULL, status VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','complete')), activated DATETIME NULL, CHECK((status='pending' AND activated IS NULL) OR (status='complete' AND activated IS NOT NULL))) ENGINE=InnoDB;\n";
+
+const INITIAL_READY: &str = "SELECT username,request_id,recovery_email,revision,writer_holder,writer_epoch,created,status,activated FROM osmap_initial_accounts LIMIT 0;\nSTART TRANSACTION; INSERT INTO osmap_initial_accounts (username,request_id,recovery_email,revision,writer_holder,writer_epoch,created) SELECT '',REPEAT('0',64),'',1,REPEAT('0',32),1,UTC_TIMESTAMP() WHERE 0; ROLLBACK; SELECT 'ready';\n";
 
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -103,7 +105,13 @@ impl CreateMailbox {
             && !self.display_name.chars().any(char::is_control)
             && match self.setup_contact.as_deref() {
                 Some(contact) => {
-                    crate::initial_enrollment::valid_contact(contact)
+                    contact.is_ascii()
+                        && !contact.chars().any(char::is_control)
+                        && crate::mail_address::validate_address(
+                            crate::send::ComposePolicy::default(),
+                            contact,
+                        )
+                        .is_ok()
                         && !contact.eq_ignore_ascii_case(&self.username())
                         && contact
                             .rsplit_once('@')
@@ -220,6 +228,12 @@ where
         }
         Ok(output.stdout)
     }
+    fn initial_setup_ready(&self, writer: &WriterConfig) -> Result<(), CreateFailure> {
+        if writer.onboarding.is_some() && self.writer_sql(INITIAL_READY, false)? != "ready\n" {
+            return Err(CreateFailure::Unavailable);
+        }
+        Ok(())
+    }
     pub(crate) fn create_mailbox_form_from(
         &self,
         token: &Token,
@@ -228,6 +242,7 @@ where
     ) -> Result<CreatePage, CreateFailure> {
         let summary = self.scope(token, context)?;
         let writer = self.writer_scope(&summary, domain)?;
+        self.initial_setup_ready(writer)?;
         let scope = Scope::domains(&[domain]).map_err(|_| CreateFailure::Invalid)?;
         let record = Adapter::new(self.authority.executor.clone())
             .domain(&scope, domain)
@@ -281,6 +296,7 @@ where
         if !crate::http_support::constant_time_eq(summary.csrf.as_bytes(), r.csrf.as_bytes()) {
             return Err(CreateFailure::Denied);
         }
+        self.initial_setup_ready(writer)?;
         let username = r.username();
         if username.len() > 254 {
             return Err(CreateFailure::Invalid);
@@ -349,22 +365,13 @@ where
             u64::from(r.quota_mib) * 1_048_576
         );
         let active = u8::from(r.setup_contact.is_none());
-        let verify=format!("SELECT COUNT(*) FROM mailbox m JOIN alias a ON BINARY a.address=BINARY m.username JOIN osmap_admin_operations o ON BINARY o.username=BINARY m.username WHERE o.request_id={} AND BINARY o.actor=BINARY {} AND o.digest={} AND BINARY m.username=BINARY {} AND BINARY o.credential_digest=BINARY SHA2(m.password,256) AND BINARY m.maildir=BINARY {} AND BINARY m.name=BINARY {} AND BINARY m.domain=BINARY {} AND BINARY a.domain=BINARY m.domain AND m.quota={} AND o.quota=m.quota AND m.active={active} AND m.smtp_active={active} AND BINARY a.goto=BINARY m.username AND a.active=1;\n",sql(&r.request_id),sql(&summary.login),sql(&digest),sql(&username),sql(&format!("{}/{}/",r.domain,r.local_part.to_ascii_lowercase())),sql(&r.display_name),sql(&r.domain),u64::from(r.quota_mib)*1_048_576);
+        let handoff = r.setup_contact.as_ref().map(|contact|format!(" AND EXISTS(SELECT 1 FROM osmap_initial_accounts i WHERE BINARY i.username=BINARY m.username AND BINARY i.request_id=BINARY o.request_id AND BINARY i.recovery_email=BINARY {} AND i.revision=1 AND BINARY i.writer_holder=BINARY {} AND i.writer_epoch={} AND i.status='pending' AND i.activated IS NULL)",sql(contact),sql(&writer.holder),writer.epoch)).unwrap_or_default();
+        let verify=format!("SELECT COUNT(*) FROM mailbox m JOIN alias a ON BINARY a.address=BINARY m.username JOIN osmap_admin_operations o ON BINARY o.username=BINARY m.username WHERE o.request_id={} AND BINARY o.actor=BINARY {} AND o.digest={} AND BINARY m.username=BINARY {} AND BINARY o.credential_digest=BINARY SHA2(m.password,256) AND BINARY m.maildir=BINARY {} AND BINARY m.name=BINARY {} AND BINARY m.domain=BINARY {} AND BINARY a.domain=BINARY m.domain AND m.quota={} AND o.quota=m.quota AND m.active={active} AND m.smtp_active={active} AND BINARY a.goto=BINARY m.username AND a.active=1{handoff};\n",sql(&r.request_id),sql(&summary.login),sql(&digest),sql(&username),sql(&format!("{}/{}/",r.domain,r.local_part.to_ascii_lowercase())),sql(&r.display_name),sql(&r.domain),u64::from(r.quota_mib)*1_048_576);
         if !prior.is_empty() {
             if prior != expected {
                 return Err(CreateFailure::Conflict);
             }
             if self.writer_sql(&verify, true)? != "1\n" {
-                return Err(CreateFailure::Unconfirmed);
-            }
-            if r.setup_contact.is_some()
-                && !previous.as_ref().is_some_and(|intent| {
-                    !intent.pending
-                        && intent.request_id == r.request_id
-                        && intent.digest == digest
-                        && intent.actor == summary.login
-                })
-            {
                 return Err(CreateFailure::Unconfirmed);
             }
             held.write(
@@ -381,9 +388,6 @@ where
         }
         if previous.as_ref().is_some_and(|p| p.pending) {
             return Err(CreateFailure::Unconfirmed);
-        }
-        if r.setup_contact.is_some() {
-            self.initial_setup_absent(&username)?;
         }
         let step_up_context = Self::account_context(&summary.login);
         let step_up_throttle = LoginThrottleService::new(
@@ -486,10 +490,6 @@ where
         if self.writer_sql(&verify, true)? != "1\n" {
             return Err(CreateFailure::Unconfirmed);
         }
-        if let Some(contact) = &r.setup_contact {
-            self.issue_initial_setup(&username, contact, &r.request_id)
-                .map_err(|_| CreateFailure::Unconfirmed)?;
-        }
         held.write(
             &serde_json::to_vec(&Intent {
                 pending: false,
@@ -542,6 +542,12 @@ fn transaction(
 ) -> String {
     let account = r.username();
     let bytes = u64::from(r.quota_mib) * 1_048_576;
+    let initial = r.setup_contact.as_ref().map(|contact| format!("INSERT INTO osmap_initial_accounts (username,request_id,recovery_email,revision,writer_holder,writer_epoch,created) SELECT {account},{request},{contact},1,{holder},{epoch},UTC_TIMESTAMP() WHERE @reason='committed' AND @m=1 AND @a=1 AND @o=1; SET @i=ROW_COUNT();\n",account=sql(&account),request=sql(&r.request_id),contact=sql(contact),holder=sql(&w.holder),epoch=w.epoch)).unwrap_or_default();
+    let initial_gate = if r.setup_contact.is_some() {
+        " AND @i=1"
+    } else {
+        ""
+    };
     // All variable text is encoded as SQL value bytes; numeric values are typed.
     // No FORCE/IGNORE/upsert: a SQL error disconnects and rolls the transaction
     // back. Conditional inserts and final row counts cannot commit a partial pair.
@@ -556,8 +562,9 @@ SET @reason=CASE WHEN @holder IS NULL OR BINARY @holder<>BINARY {holder} OR @epo
 INSERT INTO mailbox (username,password,name,maildir,quota,local_part,domain,created,modified,active,smtp_active) SELECT {account},{hash},{name},{maildir},{bytes},{local},{domain},UTC_TIMESTAMP(),UTC_TIMESTAMP(),{active},{active} WHERE @reason='committed'; SET @m=ROW_COUNT();\n\
 INSERT INTO alias (address,goto,domain,created,modified,active) SELECT {account},{account},{domain},UTC_TIMESTAMP(),UTC_TIMESTAMP(),1 WHERE @reason='committed' AND @m=1; SET @a=ROW_COUNT();\n\
 INSERT INTO osmap_admin_operations (request_id,actor,digest,credential_digest,username,domain,quota,revision,created,kind) SELECT {request},{actor},{digest},SHA2({hash},256),{account},{domain},{bytes},@rev+1,UTC_TIMESTAMP(),'mailbox.create' WHERE @reason='committed' AND @m=1 AND @a=1; SET @o=ROW_COUNT();\n\
-UPDATE osmap_admin_writer SET revision=revision+1 WHERE id=1 AND @reason='committed' AND @m=1 AND @a=1 AND @o=1; SET @w=ROW_COUNT();\n\
-SET @finish=IF(@reason='committed' AND @m=1 AND @a=1 AND @o=1 AND @w=1,'COMMIT','ROLLBACK'); PREPARE osmap_finish FROM @finish; EXECUTE osmap_finish; SELECT IF(@finish='COMMIT','committed',IF(@reason='committed','conflict',@reason));\n\
+{initial}\
+UPDATE osmap_admin_writer SET revision=revision+1 WHERE id=1 AND @reason='committed' AND @m=1 AND @a=1 AND @o=1{initial_gate}; SET @w=ROW_COUNT();\n\
+SET @finish=IF(@reason='committed' AND @m=1 AND @a=1 AND @o=1 AND @w=1{initial_gate},'COMMIT','ROLLBACK'); PREPARE osmap_finish FROM @finish; EXECUTE osmap_finish; SELECT IF(@finish='COMMIT','committed',IF(@reason='committed','conflict',@reason));\n\
 SELECT HEX(actor),digest,HEX(username),quota FROM osmap_admin_operations WHERE request_id={request} AND @finish='COMMIT';\n",
         domain=sql(&r.domain),actor=sql(actor),actor_hash=sql(actor_hash),actor_modified=sql(actor_modified),holder=sql(&w.holder),epoch=w.epoch,
         revision=r.revision,quota_unit=w.domain_quota_unit_bytes,account=sql(&account),request=sql(&r.request_id),hash=sql(hash),
@@ -615,7 +622,7 @@ mod initial_setup_tests {
             domain_quota_unit_bytes: 1_024_000,
             onboarding: None,
         };
-        let value = request();
+        let mut value = request();
         let generated = transaction(
             &writer,
             "operator@example.test",
@@ -630,5 +637,22 @@ mod initial_setup_tests {
             !generated.contains("UTC_TIMESTAMP(),UTC_TIMESTAMP(),1,1 WHERE @reason='committed'")
         );
         assert!(!generated.contains("owner@independent.test"));
+        assert!(
+            generated.contains("INSERT INTO osmap_initial_accounts")
+                && generated.matches(" AND @i=1").count() == 2
+        );
+        value.setup_contact = None;
+        value.password = "public-legacy-mailbox-passphrase".into();
+        value.confirmation = value.password.clone();
+        let legacy = transaction(
+            &writer,
+            "operator@example.test",
+            "synthetic-password-hash",
+            "2026-11-18 00:00:00",
+            &value,
+            "synthetic-new-hash",
+            &"c".repeat(64),
+        );
+        assert!(!legacy.contains("osmap_initial_accounts") && !legacy.contains("@i"));
     }
 }

@@ -1067,6 +1067,7 @@ struct CreateSql {
     reader: Sql,
     writes: Arc<Mutex<usize>>,
     uncertain: bool,
+    pending: bool,
 }
 impl CommandExecutor for CreateSql {
     fn run_with_stdin_bytes(
@@ -1077,6 +1078,15 @@ impl CommandExecutor for CreateSql {
     ) -> Result<CommandExecution, CommandExecutionError> {
         let query = std::str::from_utf8(input).unwrap();
         let stdout = if program == crate::account_password_backend::HASH_PROGRAM {
+            if self.pending {
+                let values = query.lines().collect::<Vec<_>>();
+                assert!(
+                    values.len() == 2
+                        && values[0] == values[1]
+                        && values[0].len() == 64
+                        && values[0].bytes().all(|b| b.is_ascii_hexdigit())
+                );
+            }
             assert_eq!(
                 args,
                 &crate::account_password_backend::HASH_ARGS
@@ -1093,10 +1103,25 @@ impl CommandExecutor for CreateSql {
             .first()
             .is_some_and(|a| a.contains("admin-write-mariadb"))
         {
-            if query.starts_with("SELECT revision") {
+            if query.starts_with("SELECT username,request_id,recovery_email") {
+                if self.uncertain {
+                    return Err(CommandExecutionError {
+                        reason: "synthetic missing readiness grant".into(),
+                    });
+                }
+                assert!(query.contains("WHERE 0; ROLLBACK; SELECT 'ready'"));
+                "ready\n".into()
+            } else if query.starts_with("SELECT revision") {
                 "1\n".into()
             } else if query.starts_with("SELECT HEX(actor)") {
                 String::new()
+            } else if self.pending && query.starts_with("SELECT COUNT(*) FROM mailbox m") {
+                assert!(
+                    query.contains("FROM osmap_initial_accounts i")
+                        && query.contains("i.status='pending'")
+                        && query.contains("BINARY i.recovery_email=BINARY")
+                );
+                "1\n".into()
             } else {
                 assert!(
                     query.starts_with("SET SESSION innodb_lock_wait_timeout=3; START TRANSACTION;")
@@ -1107,7 +1132,54 @@ impl CommandExecutor for CreateSql {
                         reason: "private token-shaped diagnostic must not persist".into(),
                     });
                 }
-                "stale\n".into()
+                if self.pending {
+                    assert!(
+                        query.contains("INSERT INTO osmap_initial_accounts")
+                            && query.matches(" AND @i=1").count() == 2
+                    );
+                    let decode = |value: &str| {
+                        unhex(
+                            value
+                                .strip_prefix("CONVERT(0x")
+                                .unwrap()
+                                .strip_suffix(" USING utf8mb4)")
+                                .unwrap(),
+                        )
+                        .unwrap()
+                    };
+                    // Return the actual producer's journal values rather than
+                    // reimplementing its private input digest in the fixture.
+                    let operation = query
+                        .split("INSERT INTO osmap_admin_operations (")
+                        .nth(1)
+                        .unwrap()
+                        .split(") SELECT ")
+                        .nth(1)
+                        .unwrap()
+                        .split(",SHA2(")
+                        .next()
+                        .unwrap()
+                        .split(',')
+                        .collect::<Vec<_>>();
+                    let mailbox = query
+                        .split("INSERT INTO mailbox (")
+                        .nth(1)
+                        .unwrap()
+                        .split(") SELECT ")
+                        .nth(1)
+                        .unwrap()
+                        .split(',')
+                        .collect::<Vec<_>>();
+                    format!(
+                        "committed\n{}\t{}\t{}\t{}\n",
+                        upper_hex(decode(operation[1]).as_bytes()),
+                        decode(operation[2]),
+                        upper_hex(decode(mailbox[0]).as_bytes()),
+                        mailbox[4]
+                    )
+                } else {
+                    "stale\n".into()
+                }
             }
         } else {
             return self.reader.run_with_stdin_bytes(program, args, input);
@@ -1196,6 +1268,7 @@ fn creation_requires_opt_in_actor_scope_csrf_and_fresh_factor() {
             reader: f.sql.clone(),
             writes: writes.clone(),
             uncertain: false,
+            pending: false,
         },
         f.clock.clone(),
         Password,
@@ -1257,6 +1330,7 @@ fn ambiguous_creation_retains_intent_and_blocks_another_request_key() {
             reader: f.sql.clone(),
             writes: writes.clone(),
             uncertain: true,
+            pending: false,
         },
         f.clock.clone(),
         Password,
@@ -1291,7 +1365,7 @@ fn ambiguous_creation_retains_intent_and_blocks_another_request_key() {
 }
 
 #[test]
-fn onboarding_writer_refuses_legacy_password_bypass_and_requires_native_factor_authority() {
+fn onboarding_writer_refuses_legacy_password_bypass_and_records_pending_contact_atomically() {
     let f = Fixture::new();
     let reader = f.service();
     let token = reader.login(LOGIN, PASSWORD, &code(&f.clock)).unwrap();
@@ -1300,23 +1374,20 @@ fn onboarding_writer_refuses_legacy_password_bypass_and_requires_native_factor_a
     let writes = Arc::new(Mutex::new(0));
     let mut writer = writer_config();
     writer.domains.push("managed.test".into());
-    writer.onboarding = Some(crate::admin_config::OnboardingConfig {
-        factor_socket: f.root.join("absent-factor-service.sock"),
-        setup_origin: "https://obsd1.blackbagsecurity.com".into(),
-        sender: "service@example.test".into(),
-    });
+    writer.onboarding = Some(crate::admin_config::OnboardingConfig {});
     let backend = Service::new(
         CreateSql {
             reader: f.sql.clone(),
             writes: writes.clone(),
             uncertain: false,
+            pending: true,
         },
         f.clock.clone(),
         Password,
         f.root.clone(),
     )
     .unwrap()
-    .with_writer(Some(writer));
+    .with_writer(Some(writer.clone()));
     let form = backend
         .create_mailbox_form_from(&token, &context, "example.test")
         .ok()
@@ -1337,12 +1408,33 @@ fn onboarding_writer_refuses_legacy_password_bypass_and_requires_native_factor_a
     ));
     request.setup_contact = Some("owner@independent.test".into());
     assert!(request.valid());
-    // No test-owned substitute may impersonate the root-owned installer. A
-    // missing native authority refuses before SQL/hash or usable credentials.
+    f.clock.0.fetch_add(30, Ordering::SeqCst);
+    request.totp = code(&f.clock);
+    let unavailable = Service::new(
+        CreateSql {
+            reader: f.sql.clone(),
+            writes: writes.clone(),
+            uncertain: true,
+            pending: true,
+        },
+        f.clock.clone(),
+        Password,
+        f.root.clone(),
+    )
+    .unwrap()
+    .with_writer(Some(writer));
+    // Missing schema/grants refuse before consuming the administrator's fresh
+    // code. The same code can then authorize the restored, matching producer.
     assert!(matches!(
-        backend.create_mailbox_from(&token, &context, &request),
+        unavailable.create_mailbox_from(&token, &context, &request),
         Err(CreateFailure::Unavailable)
     ));
     assert_eq!(*writes.lock().unwrap(), 0);
+    let receipt = backend
+        .create_mailbox_from(&token, &context, &request)
+        .ok()
+        .unwrap();
+    assert!(receipt.setup_pending && receipt.username == "controlled@example.test");
+    assert_eq!(*writes.lock().unwrap(), 1);
     assert!(!f.root.join("initial-enrollment").exists());
 }

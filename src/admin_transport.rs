@@ -37,22 +37,6 @@ pub(crate) struct Request {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 pub(crate) enum Operation {
-    RedeemSetup {
-        account: String,
-        invitation: String,
-    },
-    SetupView {
-        account: String,
-        grant: String,
-    },
-    CompleteSetup {
-        account: String,
-        grant: String,
-        password: String,
-        confirmation: String,
-        totp: String,
-        enrollment_id: String,
-    },
     Login {
         login: String,
         password: String,
@@ -107,12 +91,6 @@ pub(crate) enum Operation {
 #[derive(Serialize)]
 #[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
 pub(crate) enum Response {
-    Setup {
-        page: SetupPage,
-    },
-    SetupComplete,
-    SetupRefused,
-    SetupUnconfirmed,
     Overview {
         page: DomainOverview,
     },
@@ -163,12 +141,6 @@ pub(crate) enum Response {
 #[derive(Deserialize)]
 #[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
 enum WireResponse {
-    Setup {
-        page: SetupPage,
-    },
-    SetupComplete {},
-    SetupRefused {},
-    SetupUnconfirmed {},
     Overview {
         page: DomainOverview,
     },
@@ -216,10 +188,6 @@ enum WireResponse {
 impl<'de> Deserialize<'de> for Response {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         Ok(match WireResponse::deserialize(deserializer)? {
-            WireResponse::Setup { page } => Self::Setup { page },
-            WireResponse::SetupComplete {} => Self::SetupComplete,
-            WireResponse::SetupRefused {} => Self::SetupRefused,
-            WireResponse::SetupUnconfirmed {} => Self::SetupUnconfirmed,
             WireResponse::Overview { page } => Self::Overview { page },
             WireResponse::DomainDetails { page } => Self::DomainDetails { page },
             WireResponse::Settings { page } => Self::Settings { page },
@@ -276,71 +244,6 @@ fn token_valid(token: &str) -> bool {
     token.strip_prefix(TOKEN_PREFIX).is_some_and(hex64)
 }
 
-fn setup_account(account: &str) -> bool {
-    crate::account_admission::valid_account(account).is_ok()
-}
-
-// Secret-bearing setup projections deliberately implement neither Debug nor Clone.
-#[derive(Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct InitialEnrollmentView {
-    pub(crate) id: String,
-    pub(crate) revision: u64,
-    pub(crate) secret_base32: String,
-    pub(crate) otpauth_uri: String,
-    pub(crate) expires_at: u64,
-}
-#[derive(Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct SetupPage {
-    pub(crate) account: String,
-    pub(crate) grant: Option<String>,
-    pub(crate) enrollment: InitialEnrollmentView,
-}
-impl SetupPage {
-    pub(crate) fn from_pending(
-        account: String,
-        grant: Option<String>,
-        pending: crate::totp_enrollment::PendingEnrollment,
-    ) -> Self {
-        Self {
-            account,
-            grant,
-            enrollment: InitialEnrollmentView {
-                id: pending.id,
-                revision: pending.revision,
-                secret_base32: pending.secret_base32,
-                otpauth_uri: pending.otpauth_uri,
-                expires_at: pending.expires_at,
-            },
-        }
-    }
-    pub(crate) fn valid(&self) -> bool {
-        setup_account(&self.account)
-            && self.grant.as_ref().is_none_or(|grant| hex64(grant))
-            && hex64(&self.enrollment.id)
-            && self.enrollment.revision > 0
-            && self.enrollment.expires_at > 0
-            && crate::totp::decode_base32(&self.enrollment.secret_base32)
-                .is_ok_and(|bytes| bytes.len() == crate::totp::MIN_TOTP_SECRET_BYTES)
-            && self.enrollment.otpauth_uri
-                == format!(
-                    "otpauth://totp/{}?secret={}&issuer=OSMAP&algorithm=SHA1&digits=6&period=30",
-                    crate::http_support::url_encode(&format!("OSMAP:{}", self.account)),
-                    self.enrollment.secret_base32
-                )
-    }
-    pub(crate) fn pending(&self) -> crate::totp_enrollment::PendingEnrollment {
-        crate::totp_enrollment::PendingEnrollment {
-            id: self.enrollment.id.clone(),
-            revision: self.enrollment.revision,
-            secret_base32: self.enrollment.secret_base32.clone(),
-            otpauth_uri: self.enrollment.otpauth_uri.clone(),
-            expires_at: self.enrollment.expires_at,
-        }
-    }
-}
-
 impl Request {
     pub(crate) fn validate(&self) -> Result<(), Error> {
         if self.version != VERSION
@@ -350,26 +253,6 @@ impl Request {
             return Err(Error::Invalid);
         }
         let valid = match &self.operation {
-            Operation::RedeemSetup {
-                account,
-                invitation,
-            } => setup_account(account) && hex64(invitation),
-            Operation::SetupView { account, grant } => setup_account(account) && hex64(grant),
-            Operation::CompleteSetup {
-                account,
-                grant,
-                password,
-                confirmation,
-                totp,
-                enrollment_id,
-            } => {
-                setup_account(account)
-                    && hex64(grant)
-                    && hex64(enrollment_id)
-                    && crate::password_change::valid_new_password(password, confirmation)
-                    && totp.len() == 6
-                    && totp.bytes().all(|b| b.is_ascii_digit())
-            }
             Operation::Login {
                 login,
                 password,
@@ -426,14 +309,6 @@ impl Request {
 impl Response {
     pub(crate) fn validate(&self) -> Result<(), Error> {
         match self {
-            Self::Setup { page } => {
-                if page.valid() {
-                    Ok(())
-                } else {
-                    Err(Error::Invalid)
-                }
-            }
-            Self::SetupComplete | Self::SetupRefused | Self::SetupUnconfirmed => Ok(()),
             Self::CreateMailboxForm { page } => {
                 if page.valid() {
                     Ok(())
@@ -962,6 +837,9 @@ mod tests {
             r#"{"version":1,"client":"127.0.0.1","uid":1000,"operation":{"op":"scope","token":"x"}}"#,
             r#"{"version":1,"client":"127.0.0.1","operation":{"op":"login","login":"x","password":"y","totp":"123456","system":true}}"#,
             r#"{"version":1,"client":"127.0.0.1","operation":{"op":"sql","query":"SELECT 1"}}"#,
+            r#"{"version":1,"client":"127.0.0.1","operation":{"op":"redeem_setup","account":"new@example.test","invitation":"retired"}}"#,
+            r#"{"version":1,"client":"127.0.0.1","operation":{"op":"setup_view","account":"new@example.test","grant":"retired"}}"#,
+            r#"{"version":1,"client":"127.0.0.1","operation":{"op":"complete_setup","account":"new@example.test","grant":"retired"}}"#,
         ] {
             assert!(serde_json::from_str::<Request>(raw).is_err());
         }

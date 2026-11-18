@@ -78,11 +78,7 @@ pub(crate) struct WriterConfig {
 
 #[derive(Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct OnboardingConfig {
-    pub(crate) factor_socket: PathBuf,
-    pub(crate) setup_origin: String,
-    pub(crate) sender: String,
-}
+pub(crate) struct OnboardingConfig {}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -333,16 +329,6 @@ pub(crate) fn load_service(path: &Path) -> Result<ServiceConfig, Error> {
         }
         let profile = read_file(&writer.profile, own, false)?;
         profile_options(&profile, &config.sql_socket)?;
-        if let Some(setup) = &writer.onboarding {
-            if !crate::initial_enrollment::valid_contact(&setup.sender) {
-                return Err(Error::Invalid);
-            }
-            if !crate::initial_enrollment::valid_setup_origin(&setup.setup_origin) {
-                return Err(Error::Origin);
-            }
-            crate::openpgp_inventory_runtime::validate_socket(&setup.factor_socket, 0)
-                .map_err(|_| Error::ServiceSocket)?;
-        }
     }
     Ok(config)
 }
