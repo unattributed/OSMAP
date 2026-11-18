@@ -302,7 +302,7 @@ fn handle_inner<C: Exchange>(
         return crate::admin_ui::error_page(403);
     }
     // This header is admitted only from the UID-checked Unix proxy, whose
-    // protected configuration overwrites it from the accepted TLS connection.
+    // protected configuration supplies the accepted client or fixed local hop.
     // Generic X-Forwarded-* and Forwarded headers never become source authority.
     let Some(client_addr) = request
         .headers

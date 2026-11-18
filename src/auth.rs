@@ -1902,9 +1902,31 @@ fn parse_doveadm_auth_test_output(
     Err(PrimaryAuthBackendError {
         backend: "doveadm-auth-test",
         // Backend text is untrusted and can contain private auth diagnostics.
-        // Audit only the numeric status, never stdout or stderr bytes.
-        reason: format!("unexpected doveadm result status={}", execution.status_code),
+        // Audit only numeric status, fixed class and bounded stream byte counts;
+        // never native text.
+        reason: format!(
+            "unexpected doveadm result status={} native_cause={} stdout_bytes={} stderr_bytes={}",
+            execution.status_code,
+            doveadm_failure_code(&execution.stderr),
+            execution.stdout.len(),
+            execution.stderr.len()
+        ),
     })
+}
+
+fn doveadm_failure_code(stderr: &str) -> &'static str {
+    for (text, code) in [
+        ("Too many open files", "fd_limit"),
+        ("Permission denied", "permission"),
+        ("No such file or directory", "missing"),
+        ("Connection refused", "connection"),
+        ("Error in configuration", "configuration"),
+    ] {
+        if stderr.contains(text) {
+            return code;
+        }
+    }
+    "not_observed"
 }
 
 /// Extracts the canonical user value from `doveadm auth test` output.
@@ -2268,15 +2290,31 @@ mod tests {
 
     #[test]
     fn unexpected_doveadm_output_is_not_copied_into_audit_reason() {
-        let execution = CommandExecution {
-            status_code: 75,
-            stdout: "private-auth-field-marker".into(),
-            stderr: "private-diagnostic-marker".into(),
-        };
-        let error = parse_doveadm_auth_test_output("alice@example.com", &execution).unwrap_err();
-        assert_eq!(error.reason, "unexpected doveadm result status=75");
-        assert!(!error.reason.contains("private-auth-field-marker"));
-        assert!(!error.reason.contains("private-diagnostic-marker"));
+        for (text, code) in [
+            ("unclassified", "not_observed"),
+            ("Permission denied", "permission"),
+            ("No such file or directory", "missing"),
+            ("Too many open files", "fd_limit"),
+            ("Connection refused", "connection"),
+            ("Error in configuration", "configuration"),
+        ] {
+            let execution = CommandExecution {
+                status_code: 75,
+                stdout: "private-auth-field-marker".into(),
+                stderr: format!("{text}: private-diagnostic-marker"),
+            };
+            let error =
+                parse_doveadm_auth_test_output("alice@example.com", &execution).unwrap_err();
+            assert_eq!(
+                error.reason,
+                format!(
+                    "unexpected doveadm result status=75 native_cause={code} stdout_bytes={} stderr_bytes={}",
+                    execution.stdout.len(), execution.stderr.len()
+                )
+            );
+            assert!(!error.reason.contains("private-auth-field-marker"));
+            assert!(!error.reason.contains("private-diagnostic-marker"));
+        }
     }
 
     #[test]

@@ -2203,3 +2203,13 @@ and public mail daemons remain outside this correction. Preserve the original
 disabled pending account and expired invitation without automatic reprovisioning;
 a distinct controlled acceptance account may follow the corrected route. Do not
 reset or replace the owner's saved administrator credentials.
+
+The standard 443 admin route passes after preserving the Unix-address header
+refusal and graceful-reload observation. The added TCP listeners and exact
+temporary firewall rule are removed. The development frontend's new composition
+serves both login forms, but its first authenticated check returns native backend
+status 75. Direct matching-UID, matching-argument and cleared-environment auth
+succeeds. Do not reuse an earlier private Inbox PASS as proof of this changed
+sealed frontend. Add only fixed diagnostic classes and stream accounting to the
+existing error consumer; never log arbitrary native output. Keep the replacement
+invitation and owner acceptance pending the actual correction.

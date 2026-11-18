@@ -2218,3 +2218,29 @@ invitation retained privately; there is no automatic reissue or state deletion.
 Use a distinct controlled account only after the corrected 443 journey is ready.
 This does not add a resend facility or replace the saved administrator credentials.
 Corrected native installation/routing and owner acceptance are pending.
+
+Standard-route correction: signed `2c53596` compiles natively in 52.34s. The
+existing private admin proxy now listens on a Unix socket reachable from the main
+proxy's verified chroot and UID. Preserve its first 403: Unix peer metadata is
+not an IP address. A protected fixed local-hop header preserves the previous
+loopback-hop identity. Preserve the first HTTPS 502, whose error record names the
+old upstream during graceful reload. Fresh worker observation and actual HTTPS
+admin login then PASS on standard 443. Backups are hash-verified; retain the
+unsupported checksum invocation and Cargo-source hard-link guard refusals as
+pre-effect staging failures. Installed binary leaves remain root-owned,
+single-link and byte-matched.
+
+The obsd1 development frontend now uses its existing web listener with the
+isolated authority and standard hostname. Both login pages return 200. All added
+test TCP listeners are stopped, and the exact temporary PF rule is removed;
+the original 17-rule anchor reads back identically. Production mail is unchanged.
+One authenticated check of this changed 443 composition fails with native auth
+status 75 before a session. This is a backend error, not credential/TOTP denial.
+Actual direct auth as the same UID, including matching arguments and cleared
+environment, succeeds. The sealed frontend boundary remains unresolved; the
+earlier private Inbox PASS does not qualify this corrected route. Existing error
+consumption retained status but discarded the native diagnostic. Extend that
+consumer only with fixed failure classes and stream byte counts, preserving
+authentication decisions and private-output exclusion. Its private-marker
+regression passes. No replacement invitation is sent before the corrected
+authenticated journey passes; owner acceptance remains pending.
