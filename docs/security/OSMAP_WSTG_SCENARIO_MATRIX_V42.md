@@ -1593,3 +1593,10 @@ locked revision comparison. Matching browser/RPC and lookup evidence from
 `d40ad64` is reused for byte-unchanged code. See the existing admin acceptance
 plan for exact results and retained failures. This does not mark authenticated
 WSTG, production writer/cutover or the native authentication/delivery slice PASS.
+
+Owner-route correction at `b8dc4f5`: fresh isolated duncan sign-in, distinct
+authenticated navigation and actual creation form pass on the selected obsd1
+route. Old credentials refuse; one current-identity HTTP creation and SQL/browser
+readback pass. Existing transaction and mail-host evidence are reused. This is
+scoped installed-development evidence, not authenticated WSTG/release, production
+cutover or owner acceptance. Failure history stays in the admin project record.

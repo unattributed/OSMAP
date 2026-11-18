@@ -2081,3 +2081,60 @@ local-builder sequencing failures and OpenBSD's `chown -Rh` refusal separately
 from the successful bounded seal-only correction. Neither candidate remains
 open for writes; owner acceptance requires controlled reactivation. Normal signed
 GitHub delivery remains pending at this checkpoint.
+
+### Same day — reopen the owner-selected creation path and correct navigation
+
+The owner signs in successfully but cannot open mailbox creation; the visible
+Overview/Domains repeat each other and Mailboxes leads back to Domains. Native
+readback confirms the selected route still runs the earlier read-only build,
+while the qualified S01-03 writer is stopped. The earlier engineering evidence
+therefore does not establish owner-route readiness. Reopen that installed case.
+
+Use OSMAP's existing welcome layout for Overview, keep Domains as the domain
+inventory, and give Mailboxes its own scoped workspace and actual creation link.
+Keep the final login renderer and writer transaction unchanged. The operator
+authorizes fresh isolated duncan credentials/TOTP and writer activation; real
+mailbox credentials and production account authority stay unchanged. The function
+map now explicitly includes admin creation, hosted domains/subdomains, aliases
+and forwarders, plus initial user TOTP setup and first OSMAP sign-in, under the
+existing slices. Unimplemented editing/enrollment is not represented as delivered.
+
+Focused admin tests pass (102, 12 native ignores). Independent source review
+passes. The first signing attempt cannot find the earlier temporary agent
+wrapper; restoring that fixed noninteractive wrapper produces verified signed
+source `b8dc4f5`. An archive of the prior HEAD was transferred after the failed
+commit, then replaced and checked before any native build dispatch. Preserve
+that dependency-sequencing error. Native builds first refuse inherited root
+Cargo cache access, then abort on allocation because `su` resets the outer data
+limit. Combined independent reassessment uses the actual child-process probe:
+set and verify the existing 4 GiB process limit inside the foo child and select
+its existing Cargo cache. Preserve both failures and all prior history; no host
+policy, free-memory floor or new QA machinery is introduced. Actual build,
+activation, owner-route verification and delivery results follow when observed.
+
+The corrected build passes in 58.20 seconds. Fresh isolated duncan registration
+reads back one active system admin and one ALL grant. Activation first refuses
+before installation because its filename guard excludes the literal `.totp`
+suffix; the earlier read-only probe made the same refusal and its final PASS
+was missed by the following hash consumer. Preserve that admission-consumer
+deviation. Combined independent reassessment replaces the guard with the exact
+expected filename; actual admission passes and a changed value refuses. One
+activation succeeds, without repeating registration or changing public mail.
+
+At the owner's actual obsd1 address, fresh duncan sign-in and navigation now
+open the real creation form. Prior credentials refuse; a current fresh identity
+commits one controlled account/self-alias/journal, and native readback plus the
+browser inventory confirm it. Keep this development writer active for owner UAT
+and hand off fresh setup privately. Domain/admin/alias mutations and initial
+user enrollment remain required mapped features, not delivered by this correction.
+
+The owner rejects the replacement credential handoff and requires the existing
+duncan development password/TOTP already saved in Proton Pass. Restore that exact
+private password hash and factor, retain the greater consumed replay counter,
+and advance the authority revision while keeping the corrected UI/writer active.
+Saved credentials then sign in and open the creation form; the replaced password
+is refused. Retire the misleading replacement setup/QR handoff and preserve its
+private history. Future work follows one complete management function at a time
+against the installed parity map, using the established test identity without
+new credential setup. Native authentication/delivery and the other mapped writers
+remain their separate outcomes.

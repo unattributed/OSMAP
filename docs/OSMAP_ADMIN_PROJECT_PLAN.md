@@ -1936,3 +1936,99 @@ temporary roles and obtained the final readback above. Preserve these failures
 and the sequencing deviation; no retrospective admission PASS or new functional
 retry is implied. Signed delivery uses the normal hook once for the final source;
 the final GitHub identity and gate result belong in the delivery receipt.
+
+### ADM-S01-03 live UAT correction — 2026-11-18
+
+Owner sign-in PASS; Open creation FAIL. The selected obsd1 route still runs the
+earlier read-only build while the qualified writer is stopped. This reopens
+installed creation readiness; prior isolated engineering evidence remains valid
+for its exact candidate, not the owner's selected route. The owner also rejects
+duplicate Overview/Domains and Mailboxes navigation that leads to Domains.
+
+One outcome: at the usual obsd1 admin address, the established owner development
+administrator opens a real mailbox workspace and creates one controlled mailbox
+in the isolated existing domain. The final operator direction requires the saved
+development password/TOTP; the earlier replacement registration is historical and
+is restored below. Keep the username, approved login design, appearance preferences
+and real mailbox credentials unchanged. Preserve configuration for rollback.
+Production data/configuration and public backend services remain outside this
+action. Domain/mailbox editing is not implemented or claimed by S01-03.
+
+Root owns work order, credentials, native/deployment/Git queue and evidence;
+admin_ui_engineer owns the three existing UI/router files and focused navigation
+checks; adapter_review independently reviews source, native admission and results.
+Use the existing protected reader/writer, SQL/factor custody and native build
+method. First verify retained schema, role/config/path/socket contracts. Reuse
+the matching mailbox transaction, hash and mail-host evidence. Required new
+observations: distinct working navigation; old isolated admin credentials no
+longer admitted to writer; fresh duncan login; authenticated creation form and
+one committed mailbox visible after readback. Browser review uses actual pages,
+not markup alone. Existing security, signing and normal delivery hooks remain.
+Preserve failure history and UNKNOWN total cost, record measured commands, and
+stop after two failures at the same boundary for independent reassessment. Do
+not add Python, dependencies, a new harness or a repeat of unchanged broad tests
+between milestones. Owner acceptance stays open until actually given.
+
+### Required replacement-function map and first-user TOTP — 2026-11-18
+
+The operator requires creation of admins, domains/subdomains, mailboxes,
+aliases/forwarders and initial OSMAP-user TOTP. Read-only inspection of the
+installed `/var/www/postfixadmin/model` on mail confirms the functions below;
+model presence alone does not prove optional enablement. This maps the existing
+catalogue and slices, not a second backlog. Product Rust has no PHP dependency.
+
+| Installed reference | Required replacement and owning slice | Current boundary |
+| --- | --- | --- |
+| Admin identity/password, system role, domain assignments, active state, recovery fields and dates | Create/enroll/edit administrators and revoke scope, ADM-S04-02/03; independent first admin ADM-S05-02a | Sign-in/role reads implemented. This fresh duncan registration is operator provisioning, not browser admin creation. |
+| Domain description, mailbox/alias limits, mailbox/domain quotas, transport, backup-MX, default aliases, active state and dates | Create/edit domains and independently hosted subdomains, ADM-S02-01; quota/usage ADM-S02-03; DNS readiness ADM-S02-04 | Reads implemented; writer not implemented. Subdomains are explicit hosted FQDNs; wildcard acceptance or DNS publication is not implied. |
+| Mailbox address/name/password, quota, active/SMTP flags, welcome mail, recovery fields and dates | Create mailbox ADM-S01-03; edit/reset/disable/reactivate ADM-S02-02/03 | Isolated creation qualified; live route correction active. Editing and native authentication/delivery remain unaccepted. |
+| Alias source, multiple recipients, keep-local-copy, active state; catch-all and alias-domain target | Create/edit aliases and local/external forwarders with real routing, ADM-S03-01/02 | Reader projections implemented; mutation/routing journeys not implemented. Protect mailbox self-delivery mappings. |
+| Vacation, Fetchmail and DKIM/signing handlers | Installed-backend parity/disposition under existing optional/security catalogue, ADM-S02-05/ADM-S06 | Source presence observed; enablement, backend support and delivery require actual evidence. |
+| Added initial TOTP requirement | ADM-S04-01, brought forward before ADM-S01-04 where required: created mailbox -> independently delivered single-use setup -> user registers authenticator -> proves a current code -> protected no-overwrite installation -> password-plus-TOTP reaches owned Inbox | Admin browser enrollment journey NOT_IMPLEMENTED. Existing local provisioning does not satisfy it. Expired/replayed/cross-account setup and existing-factor overwrite refuse; seeds/counters stay out of SQL/audit. |
+
+Acceptance needs persisted changes and native effects. Reuse OSMAP's app shell,
+welcome/settings components and text/icon preference. Overview summarizes;
+Domains manages hosted domains; Mailboxes opens its own workspace. Unimplemented
+operations are stated plainly, without controls lacking working handlers. Finish
+the live S01-03 correction before opening the next writer/enrollment slice.
+
+Live correction result: signed source `b8dc4f543bdd05c107624470fe1d0d865240f435`,
+OpenBSD binary `84f9c621f9dbaf948f41c8090fd9ea14d222e06cd4cbb275b5aa0ba202e46c92`,
+is ACTIVE at the ordinary obsd1 admin address. The approved fresh duncan admin
+and ALL grant read back 1/1 in isolated authority; fixture SQL profile credentials
+are refreshed. Original configuration/binary backups have durable matching hashes.
+Fresh duncan browser sign-in, distinct Overview/Domains/Mailboxes, domain selection
+and the real Create mailbox form pass. The prior password returns 401 on this
+writer. Current credentials reach HTTP 303 login, HTTP 200 creation form and HTTP
+201 committed creation for `uat-live-owner@example.test`, quota 10,485,760 bytes.
+Independent SQL readback returns exactly one mailbox/self-alias/operation, the
+recorded duncan actor, expected name/path/flags and writer revision 5. The actual
+browser filter shows that address once after the write; QA signs out afterward.
+The unchanged creation-form/post/transaction and prior mail-host evidence are
+reused; this is new obsd1 UI/identity/installation evidence, not a new mail-host
+UI qualification or native authentication/delivery claim. Owner acceptance remains
+open. Private setup/QR and results are in the existing slice03 `live-uat` directory.
+
+Retain two build failures and the independently reviewed successful 58.20-second
+child-limit/cache correction. Registration completed before activation, which
+first refused a filename guard that incorrectly excluded the `.totp` suffix;
+there were no activation effects at that refusal. The earlier read-only probe
+made the same refusal, but its trailing hash consumer missed the terminal PASS.
+After combined independent reassessment, the exact factor-name guard passed the
+actual admission and rejected a changed value. One corrected activation then
+passed. Registration was not repeated. A browser locator failed to click Cancel;
+fresh accessibility state and its exposed link completed navigation. Preserve
+these diagnostics separately from the product passes and all previous failures.
+
+Latest operator correction: reuse the established duncan development password
+and TOTP already saved in Proton Pass; do not create replacements. Restore the
+exact original private password hash and factor into the active isolated writer,
+preserving the greater consumed replay counter and existing appearance settings.
+Actual saved-password/current-TOTP sign-in returns 303, the creation form returns
+200, and the replaced password returns 401. QA logs out. No new credentials are
+generated by this restoration; the earlier replacement handoff is retired.
+The new UI and writer remain active. This supersedes the fresh-registration
+handoff above without removing its history. Keep a straight line: one real
+management feature through the established development login, matching native
+proof, independent review and delivery; then the next function in the parity
+map. Do not introduce credential churn, decorative controls or another plan.

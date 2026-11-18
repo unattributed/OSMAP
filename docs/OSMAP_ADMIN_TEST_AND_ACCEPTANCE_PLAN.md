@@ -927,3 +927,28 @@ dispatch, and OpenBSD's refusal of combined `chown -Rh` are retained; the bounde
 seal-only correction and final readback do not erase those failures or substitute
 for the product results above. Neither retained writer is currently accepting
 browser submissions. Separate owner acceptance needs a controlled reactivation.
+
+### ADM-S01-03 owner-route correction — 2026-11-18
+
+The owner reports Sign in PASS and Open creation FAIL on the older selected
+reader. That installed case is reopened. Signed UI correction `b8dc4f5` is now
+active on obsd1, with a fresh isolated duncan admin/password/TOTP, preserved
+appearance preferences and unchanged approved login renderer. Actual browser
+navigation reaches distinct Overview, Domains and Mailboxes, selected-domain
+inventory, and the functioning Create mailbox form. The old password is refused
+(401). The fresh identity commits one controlled mailbox through the real HTTP,
+Web/RPC, service and SQL path (201); SQL confirms one account/self-alias/journal
+and the browser filter shows it once. Name, path, quota and actor match readback.
+Reuse unchanged creation submission and mail-host backend evidence; do not infer
+new mail UI qualification, native authentication/delivery or owner acceptance.
+The writer remains active for separate owner UAT. Registration/activation/build
+failures and their actual corrections remain in the project work order and private
+slice03/live-uat evidence; prior NOT_RUN states remain historical checkpoints.
+
+The operator subsequently requires the established saved duncan development
+credentials, not the replacement registration. Exact original password/factor
+restoration preserves the maximum consumed TOTP counter. Actual saved credentials
+sign in (303) and open creation (200); the replaced password refuses (401).
+QA logs out; the development writer stays active. No new registration/import is
+needed. This corrects login usability without changing the qualified UI/writer
+source or accepting the slice on the owner's behalf.
