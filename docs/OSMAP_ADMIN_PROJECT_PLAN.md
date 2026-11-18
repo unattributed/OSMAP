@@ -188,7 +188,7 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Current product slice | **ADM-S04-01**, initial user enrollment: IN_PROGRESS; native/browser qualification NOT_RUN and owner acceptance NOT_ACCEPTED. ADM-S01-03 configuration creation has owner PASS; native authentication, delivery and production writer remain unqualified. |
+| Current product slice | **ADM-S04-01**, initial user enrollment: IN_PROGRESS. Private native activation and ordinary HTTP password/TOTP/owned-Inbox qualification PASS; one actual admin-authorized pending account, SMTP invitation acceptance and owner-confirmed email receipt PASS. Recipient-controlled token redemption and owner enrollment/first-login acceptance PENDING; owner requests the corrected standard HTTPS route. Production writer and message delivery remain unqualified. |
 | Previous product slice | ADM-S01-02 DELIVERED through [PR #99](https://github.com/unattributed/OSMAP/pull/99), main `8e8294f`; bounded development/isolated mail qualification PASS; basic pages approved, text/icon refinement owner acceptance NOT_ACCEPTED |
 | Earlier product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; final login design owner-approved; whole-slice operator acceptance NOT_ACCEPTED |
 | Selected slice / next boundary | ADM-S04-01 is explicitly approved and brought forward after ADM-S01-03: admin-authorized pending account -> independently verified setup invitation -> restricted password/TOTP enrollment -> safe initial factor installation -> actual OSMAP mailbox login. ADM-S01-04 message delivery remains subsequent work. |
@@ -2055,11 +2055,11 @@ factor/hash to admit first enrollment.
 
 | Required boundary | Prerequisite and action | Expected result | Actual |
 | --- | --- | --- | --- |
-| Pending creation and setup authority | Current scoped writer, real schema, fresh admin TOTP; create one controlled pending account with an external contact | Non-secret receipt; no usable native password or ordinary user session; existing account/factor refuses | NOT_RUN |
-| Independent recipient proof | Server-held approved contact, bounded invitation delivery and verification | Restricted, expiring, single-use setup authority bound to the pending account; wrong/expired/replayed/cross-account proof refuses | NOT_RUN |
-| Initial password and factor | User-chosen password, proved authenticator, protected absent-factor store and real password authority | Counter consumed, factor never overwrites, activation read back; ambiguity remains contained | NOT_RUN |
-| Working OSMAP user | Matching native passdb/userdb/Maildir and browser Runtime | Fresh password plus a later TOTP reaches only the owned Inbox; pending/old/unknown credentials refuse | NOT_RUN |
-| Delivery | Independent source/security review, focused Rust contracts and mandatory normal hooks | Signed reviewed checkpoint, signature verification, ordinary GitHub push and exact remote equality; native and owner acceptance stated separately | NOT_RUN |
+| Pending creation and setup authority | Current scoped writer, real schema, fresh admin TOTP; create one controlled pending account with an external contact | Non-secret receipt; no usable native password or ordinary user session; existing account/factor refuses | PASS for actual HTTPS creation 201 and private SQL readback: one disabled mailbox, disabled SMTP and self-alias. Saved admin credentials preserved. |
+| Independent recipient proof | Server-held approved contact, bounded invitation delivery and verification | Restricted, expiring, single-use setup authority bound to the pending account; wrong/expired/replayed/cross-account proof refuses | SMTP invitation accepted once; owner confirms email receipt. Recipient-controlled token redemption PENDING after correcting the rejected development port. Local purpose/account/expiry/replay cases PASS. |
+| Initial password and factor | User-chosen password, proved authenticator, protected absent-factor store and real password authority | Counter consumed, factor never overwrites, activation read back; ambiguity remains contained | Private native producer/installer/password/SQL activation/readback PASS; owner setup PENDING. No-overwrite/partial-state refusal cases PASS locally. |
+| Working OSMAP user | Matching native passdb/userdb/Maildir and browser Runtime | Fresh password plus a later TOTP reaches only the owned Inbox; pending/old/unknown credentials refuse | Private ordinary HTTPS login 303 and owned Inbox 200 PASS after native setup. Probe logged out and disabled. Owner first login PENDING; no production or message-delivery qualification. |
+| Delivery | Independent source/security review, focused Rust contracts and mandatory normal hooks | Signed reviewed checkpoint, signature verification, ordinary GitHub push and exact remote equality; native and owner acceptance stated separately | Reviewed signed checkpoints 2221f55 and 5cf7461 published through normal full push gates; exact remote equality confirmed. Final result-record checkpoint pending. |
 
 Prior total elapsed effort remains UNKNOWN. Preserve measured new actions and
 earliest sanitized failure separately from cleanup and authoritative-state
@@ -2153,3 +2153,68 @@ is never public evidence. The running owner admin service remains on its working
 configuration while the test uses a separate protected qualification config.
 The new source delta is test-only; production runtime bytes match `2221f55`.
 Native test execution and ordinary first login are NOT_RUN at this checkpoint.
+
+The private HTTPS admin login now returns 200 through the preserved Nginx worker
+chroot. Web shutdown leaves its owned Unix socket behind; the original wait for
+automatic removal and a subsequent over-narrow parent-mode guard both refused.
+Combined independent reassessment confirmed the actual 0750 parent contract,
+fresh process absence and refused connection. Only that pinned obsolete socket
+was removed; the new endpoint is inside the private proxy prefix. The ordinary
+owner admin route and saved credentials remain unchanged.
+
+Signed checkpoint `5cf7461d467d3a2eff7ec7aab3c48126af7970e3` adds only the
+opt-in native test and evidence. Its native compilation fails with ENOSPC on
+the host's `/tmp` filesystem before test execution. Moving its scratch cache to
+`/var/tmp` does not resolve this: fresh observation shows that path is a symlink
+to `/tmp`, and the second compiler attempt also fails before execution. Preserve
+both failures; the earlier free-space observation for `/var` did not establish
+the filesystem backing `/var/tmp`. Combined reassessment must verify the actual
+destination device and put compiler temporary output there as well before one
+corrected compile. No test account has been created or invitation sent. The
+fixture-only writer's five activation column grants and protected qualification
+configuration are installed; they are prerequisites, not activation evidence.
+
+The corrected compiler action verifies both target and temporary directories on
+the actual `/var` device, distinct from `/tmp`. Compilation PASS in 2m04s. The
+single ignored native test then PASS in 0.53s against signed `5cf7461`; installed
+private runtime source remains `2221f55` (the second delta is test-only).
+It exercises the actual privileged socket installer, password hashing, activation
+transaction and readback. Separate ordinary HTTPS password/later-TOTP login
+returns 303, and the owned Inbox returns 200 with the expected identity and real
+mailbox list. This is actual private Dovecot/frontend/helper evidence, not a
+Toronto or public delivery claim. Log out the test session and disable that exact
+probe account; retain its private factor and diagnostics without automatic reuse.
+
+Independent review then admits the development admin service/Web upgrade. The
+existing database, profiles, writer identity, state, socket and admin roster are
+preserved. Actual saved administrator login returns 303 and the new creation form
+returns 200. Private before/after readback confirms identical admin password
+digests and factor bytes; no replacement credentials or registration are made.
+The actual creation form, authorized with a later administrator TOTP, creates one
+controlled pending mailbox and accepts one SMTP setup invitation to the owner's
+privately supplied external contact. The retained mail transport observation
+confirms remote-MX acceptance; recipient receipt remains unconfirmed. SQL
+readback confirms disabled password/SMTP
+access and one self-alias while setup is pending. External recipient delivery,
+the owner-controlled password/authenticator enrollment and owner first login are
+still PENDING. Do not resend or replay an unconfirmed/expired invitation through
+an invented retry path. Public mail daemons/configuration remain unchanged.
+
+The owner confirms external invitation receipt with a screenshot but rejects the
+added development HTTPS port. This is not setup acceptance. Correct the active
+slice to use the existing obsd1 HTTPS 443 entry point and existing ordinary web
+listener; remove the added test TCP listeners and their exact temporary PF rule.
+Use the existing admin proxy with a private Unix endpoint that is reachable from
+the main proxy's actual chroot, preserving the Rust Web peer identity. The obsd1
+ordinary frontend will deliberately serve the isolated development authority;
+the authoritative production host and its public mail services remain untouched.
+Preserve the original frontend/configuration for restoration.
+
+Initial invitation origins now require a plain HTTPS hostname without an explicit
+port, shared by configuration admission and SMTP submission. The email identifies
+the account and setup page explicitly. Focused wire/invalid-origin regression
+passes. The original controlled account remains disabled with its expired/exposed
+invitation retained privately; there is no automatic reissue or state deletion.
+Use a distinct controlled account only after the corrected 443 journey is ready.
+This does not add a resend facility or replace the saved administrator credentials.
+Corrected native installation/routing and owner acceptance are pending.

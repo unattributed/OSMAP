@@ -456,6 +456,24 @@ pub(crate) fn valid_contact(value: &str) -> bool {
         && crate::mail_address::validate_address(crate::send::ComposePolicy::default(), value)
             .is_ok()
 }
+/// Invitations use the installation's ordinary HTTPS origin. A separate test
+/// listener must never become an onboarding URL sent to a user.
+pub(crate) fn valid_setup_origin(origin: &str) -> bool {
+    let Some(host) = origin.strip_prefix("https://") else {
+        return false;
+    };
+    !host.is_empty()
+        && host.len() <= 253
+        && host.split('.').all(|label| {
+            !label.is_empty()
+                && label.len() <= 63
+                && !label.starts_with('-')
+                && !label.ends_with('-')
+                && label
+                    .bytes()
+                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+        })
+}
 fn expires(now: u64) -> Result<u64, Error> {
     if now == 0 {
         return Err(Error::Refused);

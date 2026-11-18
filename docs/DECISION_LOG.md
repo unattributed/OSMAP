@@ -2168,3 +2168,38 @@ cannot qualify the promised first Inbox. A private actual Dovecot/frontend/helpe
 candidate is required without changing public mail services. Source checks, native
 qualification, source publication and owner acceptance remain separate results
 in the existing project work order.
+
+### Same day — qualify native first login before inviting the owner
+
+The separate private admin fixture cannot be qualified by ordinary OSMAP's remote
+mail authority. Keep public mail running and use a private actual Dovecot,
+frontend/helper and root-only initial-factor service. Preserve failed preparation
+observations: descriptor exhaustion, asynchronous stop/readiness, stale Web socket
+handling, proxy-role/chroot assumptions and compiler ENOSPC. In particular,
+`/var/tmp` resolves to `/tmp`; verify the real destination filesystem and compiler
+temporary directory before the corrected build. These corrections supply no
+product acceptance by themselves.
+
+The actual native setup producer/privileged installer/password/activation/readback
+passes, followed by an ordinary password/later-TOTP HTTPS login to the controlled
+user's owned Inbox. Log out and disable that probe. Independent review admits
+the development admin upgrade while preserving its existing authority and the
+exact saved administrator password/factor; actual saved login and the contact
+creation form pass. One fresh administrator TOTP then authorizes a new pending
+mailbox and one invitation to the privately supplied external contact. SQL confirms
+disabled authentication flags and a self-alias; SMTP acceptance is distinct from
+external delivery. Retain owner verification, authenticator setup and first-login
+acceptance as pending. Keep the source PR draft and make no production, Toronto
+or message-delivery claim from this isolated result.
+
+The owner confirms that the invitation arrived, then rejects its non-standard
+development port and requests the normal HTTPS address and clearer account/code
+instructions. Treat this as an installed workflow correction, not acceptance.
+Require a plain HTTPS setup origin in the Rust configuration and SMTP producer;
+show explicit Account and Setup page fields. Reuse obsd1's existing 443/web
+listeners and the admin proxy with Unix transport rather than retaining added
+TCP listeners. The development frontend's private authority is explicit; Toronto
+and public mail daemons remain outside this correction. Preserve the original
+disabled pending account and expired invitation without automatic reprovisioning;
+a distinct controlled acceptance account may follow the corrected route. Do not
+reset or replace the owner's saved administrator credentials.

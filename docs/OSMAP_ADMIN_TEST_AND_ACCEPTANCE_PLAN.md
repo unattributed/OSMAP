@@ -44,6 +44,17 @@ exercise the actual producer/consumer and SQL/Dovecot/Maildir path, including
 disabled-before-setup and fresh-password/later-TOTP login. The project work order
 records execution status and the isolated candidate's exact assessed source.
 
+Executed private obsd1 evidence for source `2221f55` / test-only `5cf7461`:
+the real setup producer, privileged installer and password/SQL activation pass;
+a separate ordinary HTTPS password/later-TOTP login reaches the owned Inbox.
+The exact native probe is then logged out and disabled. The saved administrator
+signs into the upgraded development service and authorizes one pending account
+with a fresh TOTP; actual HTTPS creation and SMTP invitation acceptance pass.
+The owner confirms external email receipt but rejects the development port.
+Recipient-controlled token redemption, enrollment and first-login acceptance
+remain pending on the corrected standard HTTPS route. These observations do not qualify Toronto, production rollout,
+message delivery, or the entire mapped case set.
+
 **Primary cross-project boundary:** `openbsd-mailstack` provides components, configuration patterns, maintenance and public-safe installer examples. `openbsd-self-hosting` provides private deployment-specific context. OSMAP owns the existing browser, credential and factor integrations. OSMAP-ADMIN owns a new private administrative service and, only after explicit cutover, administrative account mutations. The installed OpenBSD, package and schema capabilities determine compatibility; historical release numbers do not.
 
 ### 1.1 Acceptance invariants

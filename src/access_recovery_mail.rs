@@ -30,11 +30,7 @@ impl NativeSmtp {
                     || !invitation
                         .bytes()
                         .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
-                    || !origin.starts_with("https://")
-                    || origin.len() > 261
-                    || !origin
-                        .bytes()
-                        .all(|b| b.is_ascii_alphanumeric() || b":/.-".contains(&b))
+                    || !crate::initial_enrollment::valid_setup_origin(origin)
                 {
                     return Delivery::Refused;
                 }
@@ -289,7 +285,7 @@ fn transaction_with_body<S: Channel>(
     }
     let body = match initial_origin {
         None => format!("From: {account}\r\nTo: {email}\r\nSubject: Your OSMAP recovery code\r\nAuto-Submitted: auto-generated\r\nX-Auto-Response-Suppress: All\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nUse this one-time code on the OSMAP recovery page:\r\n\r\n{code}\r\n\r\nThis code expires in 10 minutes. If you did not request recovery, ignore this message.\r\n.\r\n"),
-        Some((origin, owner)) => format!("From: {account}\r\nTo: {email}\r\nSubject: Set up your new OSMAP account\r\nAuto-Submitted: auto-generated\r\nX-Auto-Response-Suppress: All\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nYour administrator authorized initial setup for {owner}.\r\nOpen {origin}/admin/setup and enter your account and this single-use invitation:\r\n\r\n{code}\r\n\r\nExpires in 10 minutes. Choose your own password and register your authenticator. This invitation cannot read mail or recover an existing account. Ignore it if you did not expect this account.\r\n.\r\n"),
+        Some((origin, owner)) => format!("From: {account}\r\nTo: {email}\r\nSubject: Set up your new OSMAP account\r\nAuto-Submitted: auto-generated\r\nX-Auto-Response-Suppress: All\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nYour administrator authorized initial setup for your new OSMAP account.\r\n\r\nAccount: {owner}\r\nSetup page: {origin}/admin/setup\r\n\r\nOpen the setup page and enter the account shown above and this single-use invitation code:\r\n\r\n{code}\r\n\r\nExpires in 10 minutes. Choose your own password and register your authenticator. This invitation cannot read mail or recover an existing account. Ignore it if you did not expect this account.\r\n.\r\n"),
     };
     // From this point a timeout/disconnect cannot prove nonacceptance.
     *phase = Phase::Body;
@@ -373,6 +369,46 @@ mod tests {
             run("220 ready\r\n250-other\r\n251 wrong\r\n"),
             Delivery::Unconfirmed
         );
+    }
+    #[test]
+    fn initial_invitation_uses_standard_https_and_explicit_account_fields() {
+        assert!(crate::initial_enrollment::valid_setup_origin(
+            "https://obsd1.example.test"
+        ));
+        for origin in [
+            "http://obsd1.example.test",
+            "https://obsd1.example.test:18443",
+            "https://obsd1.example.test:443",
+            "https://obsd1.example.test/path",
+            "https://obsd1.example.test?code=private",
+            "https://-invalid.example.test",
+            "https://obsd1.example.test\r\nInjected: value",
+        ] {
+            assert!(!crate::initial_enrollment::valid_setup_origin(origin));
+        }
+        let output = Rc::new(RefCell::new(Vec::new()));
+        let invitation = "a".repeat(64);
+        assert_eq!(
+            transaction_with_body(
+                Fixture {
+                    input: Cursor::new(b"220 ready\r\n250 DSN\r\n250 sender\r\n250 recipient\r\n354 data\r\n250 queued\r\n".to_vec()),
+                    output: output.clone(),
+                    fail_body: false,
+                },
+                "postmaster@example.test",
+                "owner@outside.test",
+                &invitation,
+                Instant::now() + Duration::from_secs(1),
+                &mut Phase::Validate,
+                Some(("https://obsd1.example.test", "new@example.test")),
+            ),
+            Delivery::Accepted
+        );
+        let wire = String::from_utf8(output.borrow().clone()).unwrap();
+        assert!(wire.contains("\r\nAccount: new@example.test\r\n"));
+        assert!(wire.contains("\r\nSetup page: https://obsd1.example.test/admin/setup\r\n"));
+        assert!(wire.contains("single-use invitation code:\r\n\r\n"));
+        assert!(wire.contains(&format!("\r\n{invitation}\r\n")));
     }
     #[test]
     fn observed_dsn_is_required_and_suppression_is_sent_before_proof_data() {
