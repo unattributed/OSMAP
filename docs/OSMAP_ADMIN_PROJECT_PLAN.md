@@ -188,7 +188,7 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Current product slice | **ADM-S04-01**, initial user enrollment: IN_PROGRESS. Private native activation and ordinary HTTP password/TOTP/owned-Inbox qualification PASS; one actual admin-authorized pending account, SMTP invitation acceptance and owner-confirmed email receipt PASS. Recipient-controlled token redemption and owner enrollment/first-login acceptance PENDING; owner requests the corrected standard HTTPS route. Production writer and message delivery remain unqualified. |
+| Current product slice | **ADM-S04-01**, initial user enrollment: IN_PROGRESS. Native activation and standard-HTTPS password/TOTP/owned-Inbox qualification PASS on obsd1. Saved administrator login, fresh-TOTP pending creation and corrected invitation submission PASS. Owner confirms receipt of the earlier invitation; receipt/redemption/enrollment/first-login acceptance for the corrected standard-route invitation PENDING. Production writer and mailbox message delivery remain unqualified. |
 | Previous product slice | ADM-S01-02 DELIVERED through [PR #99](https://github.com/unattributed/OSMAP/pull/99), main `8e8294f`; bounded development/isolated mail qualification PASS; basic pages approved, text/icon refinement owner acceptance NOT_ACCEPTED |
 | Earlier product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; final login design owner-approved; whole-slice operator acceptance NOT_ACCEPTED |
 | Selected slice / next boundary | ADM-S04-01 is explicitly approved and brought forward after ADM-S01-03: admin-authorized pending account -> independently verified setup invitation -> restricted password/TOTP enrollment -> safe initial factor installation -> actual OSMAP mailbox login. ADM-S01-04 message delivery remains subsequent work. |
@@ -2056,9 +2056,9 @@ factor/hash to admit first enrollment.
 | Required boundary | Prerequisite and action | Expected result | Actual |
 | --- | --- | --- | --- |
 | Pending creation and setup authority | Current scoped writer, real schema, fresh admin TOTP; create one controlled pending account with an external contact | Non-secret receipt; no usable native password or ordinary user session; existing account/factor refuses | PASS for actual HTTPS creation 201 and private SQL readback: one disabled mailbox, disabled SMTP and self-alias. Saved admin credentials preserved. |
-| Independent recipient proof | Server-held approved contact, bounded invitation delivery and verification | Restricted, expiring, single-use setup authority bound to the pending account; wrong/expired/replayed/cross-account proof refuses | SMTP invitation accepted once; owner confirms email receipt. Recipient-controlled token redemption PENDING after correcting the rejected development port. Local purpose/account/expiry/replay cases PASS. |
+| Independent recipient proof | Server-held approved contact, bounded invitation delivery and verification | Restricted, expiring, single-use setup authority bound to the pending account; wrong/expired/replayed/cross-account proof refuses | Owner confirms the first email arrived; its invitation is retired. One distinct controlled account's corrected standard-HTTPS invitation is accepted by SMTP; receipt and recipient-controlled token redemption PENDING. Local purpose/account/expiry/replay cases PASS. |
 | Initial password and factor | User-chosen password, proved authenticator, protected absent-factor store and real password authority | Counter consumed, factor never overwrites, activation read back; ambiguity remains contained | Private native producer/installer/password/SQL activation/readback PASS; owner setup PENDING. No-overwrite/partial-state refusal cases PASS locally. |
-| Working OSMAP user | Matching native passdb/userdb/Maildir and browser Runtime | Fresh password plus a later TOTP reaches only the owned Inbox; pending/old/unknown credentials refuse | Private ordinary HTTPS login 303 and owned Inbox 200 PASS after native setup. Probe logged out and disabled. Owner first login PENDING; no production or message-delivery qualification. |
+| Working OSMAP user | Matching native passdb/userdb/Maildir and browser Runtime | Fresh password plus a later TOTP reaches only the owned Inbox; pending/old/unknown credentials refuse | Standard HTTPS 443 password/TOTP login 303 and owned Inbox 200 PASS at 5fed618. Probe logged out and disabled. Earlier status 75 cause remains UNKNOWN; native text was discarded by its old consumer. Owner first login PENDING; no production or message-delivery qualification. |
 | Delivery | Independent source/security review, focused Rust contracts and mandatory normal hooks | Signed reviewed checkpoint, signature verification, ordinary GitHub push and exact remote equality; native and owner acceptance stated separately | Reviewed signed checkpoints 2221f55 and 5cf7461 published through normal full push gates; exact remote equality confirmed. Final result-record checkpoint pending. |
 
 Prior total elapsed effort remains UNKNOWN. Preserve measured new actions and
@@ -2244,3 +2244,22 @@ consumer only with fixed failure classes and stream byte counts, preserving
 authentication decisions and private-output exclusion. Its private-marker
 regression passes. No replacement invitation is sent before the corrected
 authenticated journey passes; owner acceptance remains pending.
+
+Signed diagnostic checkpoint `5fed618` compiles natively in 51.80s. Its next
+actual standard-HTTPS password/TOTP check PASS (303); the owned Inbox PASS (200)
+with the expected identity and real mailbox list, then logout PASS (303). Disable
+the exact probe again. The diagnostic changes no authentication decision, so do
+not attribute that pass or the earlier failure to a unique fix. The original
+status-75 cause remains UNKNOWN because its old consumer discarded native text;
+future unexpected exits now retain fixed classes and bounded stream accounting.
+
+After those agent-owned checks and independent review, the saved administrator
+signs in on standard 443 and authorizes one distinct controlled pending account
+with a later fresh TOTP. Creation returns 201 and SMTP accepts its corrected
+invitation with explicit account/code instructions and a plain HTTPS setup URL.
+SQL readback confirms one disabled mailbox/SMTP record, self-alias and matching
+operation digest. The original pending account remains disabled and untouched;
+this is not reissue. The owner is asked to complete the restricted setup and
+ordinary login through obsd1's normal HTTPS address. Corrected invitation receipt,
+recipient-controlled verification, owner enrollment and first-login acceptance
+remain PENDING. No additional port or replacement admin registration is used.

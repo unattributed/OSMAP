@@ -2213,3 +2213,14 @@ succeeds. Do not reuse an earlier private Inbox PASS as proof of this changed
 sealed frontend. Add only fixed diagnostic classes and stream accounting to the
 existing error consumer; never log arbitrary native output. Keep the replacement
 invitation and owner acceptance pending the actual correction.
+
+The signed diagnostic source subsequently passes ordinary password/TOTP sign-in
+and owned Inbox access on standard HTTPS 443. Its authentication decisions are
+unchanged; retain the earlier native status-75 cause as UNKNOWN because the old
+consumer discarded that output. Log out and disable the probe. After independent
+review, the unchanged saved administrator signs in and uses a later fresh TOTP
+to create one distinct pending account and submit its corrected invitation. The
+email explicitly identifies the account and normal HTTPS setup address. SQL
+confirms disabled authentication flags, self-alias and operation readback. The
+original pending account is retained without reprovisioning. Owner receipt and
+the complete recipient-controlled setup/first-login journey remain pending.

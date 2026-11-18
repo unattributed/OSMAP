@@ -50,9 +50,14 @@ a separate ordinary HTTPS password/later-TOTP login reaches the owned Inbox.
 The exact native probe is then logged out and disabled. The saved administrator
 signs into the upgraded development service and authorizes one pending account
 with a fresh TOTP; actual HTTPS creation and SMTP invitation acceptance pass.
-The owner confirms external email receipt but rejects the development port.
-Recipient-controlled token redemption, enrollment and first-login acceptance
-remain pending on the corrected standard HTTPS route. These observations do not qualify Toronto, production rollout,
+The owner confirms the first external email arrived but rejects its development
+port. Corrected source 2c53596 requires a plain HTTPS origin and explicit account
+instructions; diagnostic source 5fed618 retains fixed native failure classes and
+stream counts. Standard HTTPS 443 password/TOTP login and owned Inbox pass after
+one earlier native status 75 whose cause remains UNKNOWN (native text discarded).
+The probe is logged out and disabled. The saved admin then authorizes a distinct
+pending account and one corrected invitation; recipient receipt/control proof,
+enrollment and first-login acceptance remain pending. These observations do not qualify Toronto, production rollout,
 message delivery, or the entire mapped case set.
 
 **Primary cross-project boundary:** `openbsd-mailstack` provides components, configuration patterns, maintenance and public-safe installer examples. `openbsd-self-hosting` provides private deployment-specific context. OSMAP owns the existing browser, credential and factor integrations. OSMAP-ADMIN owns a new private administrative service and, only after explicit cutover, administrative account mutations. The installed OpenBSD, package and schema capabilities determine compatibility; historical release numbers do not.
