@@ -2104,3 +2104,52 @@ are unchanged. Preserve this failure independently of any later private-instance
 stop/restart. A bounded process-local correction using the existing hard limit,
 followed by one actual private userdb/storage discriminator, is under independent
 review; do not call the earlier parser/reader passes functional authentication.
+
+Combined reassessment preserves the userdb/EMFILE failure and the separate
+asynchronous-stop observation refusal. Fresh namespace/config, process inventory
+and refused stale-socket connections resolve the private shutdown observation;
+there is no repeated stop, historical PID signal or socket unlink. One start-only
+continuation sets the private process soft descriptor limit to its existing hard
+limit. Its immediate readiness guard also observes too early; fresh readback
+then confirms the new private master/listeners without another start. Actual
+SQL userdb subsequently returns the exact private home/mail and 2000:2000; actual
+native Inbox create/list PASS. These results qualify private userdb/storage only,
+not a password or browser login. Public services remain OK.
+
+Source checkpoint `2221f55c74cfd6f6613fdb3d1c4929a7b6096380` has a verified
+Shopkeeper signature. Independent source review and focused Rust/Clippy checks
+pass; normal GitHub push gates are running. Next bounded native build action
+uses its exact private-mode archive and the already demonstrated obsd1 cache,
+foo Cargo home and child-local data limit, offline/locked with one job, for only
+`osmap-admin` and `osmap`. Stop on build failure; preserve diagnostics and do not
+repeat a full test/build or infer native enrollment from compilation. The provided
+external invitation destination remains private and outside Git.
+
+Native runtime preparation installs the signed binaries under the new private
+namespace and parses the frontend/helper configuration as their actual roles.
+The file service reaches sealed readiness with root:service-group socket 0660;
+the mailbox helper reaches its 2000:1002 socket and the user frontend serves its
+login. Preserve the first invalid pipelined SMTP probe; a sequential existing
+SMTP client observes greeting/EHLO/DSN successfully without sending a message.
+The external test contact has been supplied privately; no invitation is sent yet.
+
+Private proxy preparation first refuses an assumed proxy UID; copying the actual
+working Web identities resolves that mismatch. The native Nginx parser requires
+its private temp directories and creates an empty PID leaf during validation;
+preserve the invalid absent-PID guard separately from service readiness. Its
+OpenBSD worker chroot then requires the private Web endpoint inside that prefix.
+The correction preserves confinement and all public routes. The private TLS
+listener is bound to the obsd1 LAN address. One runtime PF rule admits only the
+operator workstation to its development TLS port; all 17 existing anchor rules
+read back identically, with no table/state flush or public mail-daemon change.
+
+One ignored native contract test now exercises the changed producer/consumer:
+controlled disabled fixture -> real restricted enrollment store -> proved code
+-> real privileged installer -> real password/activation/readback. It admits only
+the fixed private SQL/schema/socket and backend UID. It sends no mail, creates
+no administrator, leaves failure state retained, and writes a mode-0600 private
+receipt for a subsequent actual HTTP password/TOTP/owned-Inbox test. That receipt
+is never public evidence. The running owner admin service remains on its working
+configuration while the test uses a separate protected qualification config.
+The new source delta is test-only; production runtime bytes match `2221f55`.
+Native test execution and ordinary first login are NOT_RUN at this checkpoint.
