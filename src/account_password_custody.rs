@@ -174,6 +174,15 @@ impl Custody {
         }
         Ok(())
     }
+    pub(crate) fn activate_initial(
+        &self,
+        seal: &crate::openbsd::InitialFactorSeal,
+    ) -> Result<(), Unavailable> {
+        if !seal.is_current_process() || self.sealed.swap(true, Ordering::AcqRel) {
+            return Err(Unavailable);
+        }
+        Ok(())
+    }
     fn ancestor_metadata(&self, path: &Path) -> std::io::Result<fs::Metadata> {
         let witness = self.parents.get(path).ok_or_else(|| {
             std::io::Error::new(std::io::ErrorKind::NotFound, "ancestor witness unavailable")

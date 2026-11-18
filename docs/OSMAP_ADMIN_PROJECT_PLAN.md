@@ -188,10 +188,10 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Current product slice | **ADM-S01-03**, controlled mailbox creation: engineering and matching obsd1/mail isolated browser/native lookup qualification PASS; owner acceptance NOT_ACCEPTED and production writer NOT_DEPLOYED. Signed delivery and retained-candidate disposition are recorded in the current work-order closeout below. |
+| Current product slice | **ADM-S04-01**, initial user enrollment: IN_PROGRESS; native/browser qualification NOT_RUN and owner acceptance NOT_ACCEPTED. ADM-S01-03 configuration creation has owner PASS; native authentication, delivery and production writer remain unqualified. |
 | Previous product slice | ADM-S01-02 DELIVERED through [PR #99](https://github.com/unattributed/OSMAP/pull/99), main `8e8294f`; bounded development/isolated mail qualification PASS; basic pages approved, text/icon refinement owner acceptance NOT_ACCEPTED |
 | Earlier product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; final login design owner-approved; whole-slice operator acceptance NOT_ACCEPTED |
-| Selected slice / next boundary | ADM-S01-03 was explicitly commenced on 2026-11-18 against an existing isolated domain. ADM-S01-04 native authentication and delivery is next and NOT_STARTED. The fresh-authority bootstrap and first-domain sequence remains planned; it is not a prerequisite for the qualified existing-domain journey. |
+| Selected slice / next boundary | ADM-S04-01 is explicitly approved and brought forward after ADM-S01-03: admin-authorized pending account -> independently verified setup invitation -> restricted password/TOTP enrollment -> safe initial factor installation -> actual OSMAP mailbox login. ADM-S01-04 message delivery remains subsequent work. |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
 | Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
 | ADM-PLAN-03: integrated epic scope | Documentation-only integration of bootstrap, domain/virtual-address/admin management and all 18 security catalogue categories into the sprint/slice index below; no new product work is started or accepted by this amendment |
@@ -2032,3 +2032,75 @@ handoff above without removing its history. Keep a straight line: one real
 management feature through the established development login, matching native
 proof, independent review and delivery; then the next function in the parity
 map. Do not introduce credential churn, decorative controls or another plan.
+
+## ADM-S04-01 work order — 2026-11-18
+
+The owner accepts the S01-03 configuration-creation journey shown for
+`pr101@empty.test`, quota 20 MiB. This PASS does not qualify native authentication,
+delivery or initial user MFA. The approved next outcome is one pending mailbox
+created with administrator TOTP, independent external-contact verification, a
+restricted user-chosen password/TOTP setup, protected initial installation and
+a fresh login to the owned OSMAP Inbox through its actual backend.
+
+Baseline: merged `9eb3f76952f94c9f6015b31e84ee5df8863f510b`. Root owns integration,
+native/Git execution and delivery; a bounded Rust engineer owns initial setup
+storage; adapter_review independently assesses the source and actual results.
+Preserve the approved login, saved owner development admin password/TOTP,
+appearance and ordinary mailbox access. No new Python, dependencies or general
+test framework. Public mail-daemon/configuration changes and passkeys are outside
+this work. Use obsd1 as the development host/address; inspect actual contracts
+before composing dependent integration. Existing recovery requires a previously
+installed factor and must retain that restriction. Never manufacture a prior
+factor/hash to admit first enrollment.
+
+| Required boundary | Prerequisite and action | Expected result | Actual |
+| --- | --- | --- | --- |
+| Pending creation and setup authority | Current scoped writer, real schema, fresh admin TOTP; create one controlled pending account with an external contact | Non-secret receipt; no usable native password or ordinary user session; existing account/factor refuses | NOT_RUN |
+| Independent recipient proof | Server-held approved contact, bounded invitation delivery and verification | Restricted, expiring, single-use setup authority bound to the pending account; wrong/expired/replayed/cross-account proof refuses | NOT_RUN |
+| Initial password and factor | User-chosen password, proved authenticator, protected absent-factor store and real password authority | Counter consumed, factor never overwrites, activation read back; ambiguity remains contained | NOT_RUN |
+| Working OSMAP user | Matching native passdb/userdb/Maildir and browser Runtime | Fresh password plus a later TOTP reaches only the owned Inbox; pending/old/unknown credentials refuse | NOT_RUN |
+| Delivery | Independent source/security review, focused Rust contracts and mandatory normal hooks | Signed reviewed checkpoint, signature verification, ordinary GitHub push and exact remote equality; native and owner acceptance stated separately | NOT_RUN |
+
+Prior total elapsed effort remains UNKNOWN. Preserve measured new actions and
+earliest sanitized failure separately from cleanup and authoritative-state
+certainty. Two failures at the same boundary stop retries for combined independent
+reassessment. Do not expand an exhausted allowance or invent a new prerequisite.
+Native account activation is not qualified by source, SQL creation or rendering.
+
+Read-only readiness established: obsd1's public mail daemons and ordinary OSMAP
+remain running; the active admin fixture is a separate private MariaDB authority.
+Its writer has creation grants but lacks the password/active-flag and operation
+credential-digest UPDATE grants required by setup. Existing native Dovecot supports
+the SQL/auth-client/userdb interfaces; observed version is evidence, not admission.
+The ordinary frontend uses remote authoritative-mail relays. Therefore the first
+login must use an isolated actual Dovecot + existing OSMAP frontend/helper candidate,
+not falsely qualify the private SQL fixture against the ordinary relay.
+
+Next native preparation `ADM-S04-01-private-passdb-preflight1`: root owns one
+new exact `/var/osmap-adm-s04-01` namespace on obsd1, with private Dovecot config,
+run/state/mail paths and a fixture-only SQL reader. Validate the actual installed
+configuration/SQL connection before dependent execution. Existing `_osmap`/vmail
+principals may be reused with private paths and keys; no public daemon or mail
+configuration changes. Stop on collision or failed semantic readiness and retain
+sanitized stage plus private output. Source-native synchronization follows a
+reviewed signed checkpoint. External invitation delivery awaits the owner's
+selected contact; no mail has been sent by this slice.
+
+Preparation result: private reader creation/query and Dovecot configuration parse
+PASS; exact root namespace identity retained privately. Auth worker and browser
+were NOT_RUN by that parser check. Next action
+`ADM-S04-01-private-userdb-check1` starts only that private Dovecot instance and
+uses the actual unmodified Doveadm userdb/create/list commands as vmail for the
+existing synthetic configuration-accepted account. Before the Inbox write,
+require exact private home/mail location and UID/GID 2000:2000. Retain the private
+master/state and earliest bounded failure; no public mail control/configuration
+operation. Primary authentication and new-user browser login remain separate.
+
+The first private userdb attempt starts the private master but userdb exits 75.
+Retained native diagnostics identify `EMFILE` (too many open files); the SSH-root
+process has soft/hard descriptor limits 128/1024. No Inbox write occurred because
+the userdb prerequisite did not pass. Public services and the active admin login
+are unchanged. Preserve this failure independently of any later private-instance
+stop/restart. A bounded process-local correction using the existing hard limit,
+followed by one actual private userdb/storage discriminator, is under independent
+review; do not call the earlier parser/reader passes functional authentication.

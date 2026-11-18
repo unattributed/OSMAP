@@ -205,6 +205,9 @@ fn sql_failure_code(stderr: &str) -> &'static str {
 
 /// CLI-only role selection; no browser field supplies configuration or execution.
 pub fn run(arguments: &[OsString]) -> Result<(), &'static str> {
+    if arguments.len() == 2 && arguments[0] == "initial-factor-service" {
+        return crate::initial_factor_service::run(Path::new(&arguments[1]));
+    }
     if arguments.len() == 1 && arguments[0] == "writer-schema" {
         print!("{}", crate::admin_access::create::SCHEMA);
         return Ok(());
@@ -265,6 +268,11 @@ fn service(config: ServiceConfig) -> Result<(), &'static str> {
         &config.sql_profile,
         &config.sql_socket,
         config.writer.as_ref().map(|w| w.profile.as_path()),
+        config
+            .writer
+            .as_ref()
+            .and_then(|w| w.onboarding.as_ref())
+            .map(|s| s.factor_socket.as_path()),
     )
     .map_err(|_| "ADMIN_SERVICE_SEAL")?;
     eprintln!("ADMIN_SERVICE_READY");
@@ -334,6 +342,38 @@ where
         user_agent: "admin-private-web".into(),
     };
     match request.operation {
+        Operation::RedeemSetup {
+            account,
+            invitation,
+        } => match backend.redeem_initial_setup(&account, &invitation) {
+            Ok(page) => Response::Setup { page },
+            Err(_) => Response::SetupRefused,
+        },
+        Operation::SetupView { account, grant } => {
+            match backend.view_initial_setup(&account, &grant) {
+                Ok(page) => Response::Setup { page },
+                Err(_) => Response::SetupRefused,
+            }
+        }
+        Operation::CompleteSetup {
+            account,
+            grant,
+            password,
+            confirmation,
+            totp,
+            enrollment_id,
+        } => match backend.complete_initial_setup(
+            &account,
+            &grant,
+            &password,
+            &confirmation,
+            &totp,
+            &enrollment_id,
+        ) {
+            Ok(()) => Response::SetupComplete,
+            Err(crate::admin_access::CreateFailure::Unconfirmed) => Response::SetupUnconfirmed,
+            Err(_) => Response::SetupRefused,
+        },
         Operation::CreateMailboxForm { token, domain } => match Token::presented(&token)
             .map_err(crate::admin_access::CreateFailure::from)
             .and_then(|t| backend.create_mailbox_form_from(&t, &context, &domain))

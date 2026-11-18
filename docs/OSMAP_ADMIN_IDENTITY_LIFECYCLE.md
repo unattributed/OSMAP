@@ -225,6 +225,20 @@ The current mailbox-user factor verifier follows RFC 6238-style TOTP with 6-digi
 
 ### 7.3 Admin enrollment and first system administrator
 
+ADM-S04-01 implementation boundary: first-user invitations use a separate
+256-bit, digest-only setup authority and restricted cookie, not the existing
+registered-account recovery grant. The administrator supplies an approved
+external contact and fresh administrator TOTP; the user chooses the permanent
+password and authenticator. With onboarding explicitly enabled, both native
+authentication flags stay disabled until protected factor/counter installation
+and the scoped SQL activation/readback complete. A root-owned file endpoint
+trusts only the configured admin-service UID for proved initial installation;
+it has no SQL profile or request-selected paths/commands. Interrupted setup
+retains disabled or unconfirmed state for exact reconciliation, with no automatic
+resend, counter reset or factor replacement. Completing first setup does not
+silently grant the contact permanent password-and-MFA recovery authority. These
+implementation rules are not a native qualification or production rollout claim.
+
 - Before any domain or mailbox exists, a **trusted local one-shot Rust `bootstrap-admin` procedure** creates one pending system-admin identity and protected pending admin enrollment. It does not use the public OSMAP listener.
 - Establish a separately reviewed admin password verifier, distinct admin principal namespace and factor-store path. Present the bootstrap enrollment to the operator over the trusted local terminal, not an unattended log or a public web endpoint.
 - Require a fresh code proof, no-overwrite protected factor installation, replay-store acceptance, SQL status readback and one-shot bootstrap closure before activating the first system admin.

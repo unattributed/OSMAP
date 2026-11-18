@@ -90,10 +90,12 @@ SCHEDULED_TEST_ONLY_REGISTRATIONS = {
 # every byte change requires renewed source review, even without a regex hit.
 # Other production rules continue to scan the entire file.
 REVIEWED_SQL_RUST_PATHS = {
+    "src/admin_onboarding.rs":
+        "080ae9d86c97a4acec798324ee46a029241cda02881430226d6b80c83d49de15",
     "src/admin_access.rs":
-        "ece2f1ae0925e99c064d686201004dcfd2fdc8b75adabacfdced92bd40bbe46c",
+        "fbc3208ab3b8fd801b21763e07a3475d39f54960ceca63a192baa4d25bb9c3a8",
     "src/admin_create.rs":
-        "6e681c83fcc7f50f6e036fc78907903035043910f17163eb8e7ccb577734f284",
+        "d7f5b644192152239201f31395f95195353ced7d29bf590528a9f760f18a32b0",
     "src/account_password_backend.rs":
         "95c0e45371b1e572cad9834328ff4fcd15162ba64e9b8b66242e13e1d05fe219",
     "src/admin_directory.rs":

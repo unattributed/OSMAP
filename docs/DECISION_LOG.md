@@ -2138,3 +2138,33 @@ private history. Future work follows one complete management function at a time
 against the installed parity map, using the established test identity without
 new credential setup. Native authentication/delivery and the other mapped writers
 remain their separate outcomes.
+
+### Same day — owner-controlled first enrollment, separate from recovery
+
+The owner accepts controlled mailbox configuration creation, then identifies the
+missing initial TOTP: the new mailbox still cannot sign into OSMAP. Record that
+PASS for configuration creation only. The owner approves administrator-TOTP
+authorization, independent external invitation verification, restricted user-chosen
+password/authenticator setup, safe first-factor installation and a fresh login
+through the actual mailbox backend.
+
+Reuse the existing Rust writer, password hashing, private account records, local
+QR renderer and ordinary login. Keep initial invitation authority separate from
+registered-account recovery, which requires an existing factor. An explicitly
+configured onboarding writer creates disabled authentication flags and an unknown
+random initial password; it cannot select the legacy administrator-password flow.
+Only the intended user's expiring single-use invitation can open restricted
+setup. Consume that authority before native changes; publish the replay counter
+before the factor without overwrite, then activate the user-chosen password under
+current writer/domain/admin/grant/self-alias locks and read back. Retain interrupted
+state and the earliest fixed failure stage. The privileged file role accepts only
+the configured admin service UID and domain scope, with no SQL or command input.
+
+Preserve the established development admin password/TOTP and approved login.
+Passkeys and changing existing recovery eligibility remain outside this slice.
+The onboarding option defaults off. The active fixture and ordinary frontend
+currently use different mailbox authorities, so component tests and SQL creation
+cannot qualify the promised first Inbox. A private actual Dovecot/frontend/helper
+candidate is required without changing public mail services. Source checks, native
+qualification, source publication and owner acceptance remain separate results
+in the existing project work order.

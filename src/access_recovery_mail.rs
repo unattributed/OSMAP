@@ -9,6 +9,62 @@ use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, TcpStream};
 use std::time::{Duration, Instant};
 
 pub(crate) struct NativeSmtp;
+impl NativeSmtp {
+    /// Initial setup uses a high-entropy invitation, never a recovery code.
+    pub(crate) fn deliver_initial(
+        &self,
+        account: &str,
+        email: &str,
+        invitation: &str,
+        origin: &str,
+        sender: &str,
+        deadline: Instant,
+    ) -> Delivery {
+        audited_attempt(
+            &audit_reference(),
+            |phase| {
+                if !address(account)
+                    || !address(sender)
+                    || !address(email)
+                    || invitation.len() != 64
+                    || !invitation
+                        .bytes()
+                        .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                    || !origin.starts_with("https://")
+                    || origin.len() > 261
+                    || !origin
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b":/.-".contains(&b))
+                {
+                    return Delivery::Refused;
+                }
+                *phase = Phase::Connect;
+                let deadline = deadline.min(Instant::now() + Duration::from_secs(10));
+                let Some(timeout) = deadline.checked_duration_since(Instant::now()) else {
+                    return Delivery::Refused;
+                };
+                let Ok(stream) = TcpStream::connect_timeout(
+                    &SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 25)),
+                    timeout,
+                ) else {
+                    return Delivery::Refused;
+                };
+                transaction_with_body(
+                    stream,
+                    sender,
+                    email,
+                    invitation,
+                    deadline,
+                    phase,
+                    Some((origin, account)),
+                )
+            },
+            |line| {
+                let _ = writeln!(std::io::stderr().lock(), "{line}");
+            },
+        )
+    }
+}
 #[derive(Clone, Copy)]
 enum Phase {
     Validate,
@@ -181,6 +237,18 @@ fn transaction<S: Channel>(
     deadline: Instant,
     phase: &mut Phase,
 ) -> Delivery {
+    transaction_with_body(stream, account, email, code, deadline, phase, None)
+}
+
+fn transaction_with_body<S: Channel>(
+    stream: S,
+    account: &str,
+    email: &str,
+    code: &str,
+    deadline: Instant,
+    phase: &mut Phase,
+    initial_origin: Option<(&str, &str)>,
+) -> Delivery {
     let mut io = BufReader::new(stream);
     let before_data = |value: Option<u16>, expected: u16| -> Result<(), Delivery> {
         match value {
@@ -219,7 +287,10 @@ fn transaction<S: Channel>(
             return d;
         }
     }
-    let body = format!("From: {account}\r\nTo: {email}\r\nSubject: Your OSMAP recovery code\r\nAuto-Submitted: auto-generated\r\nX-Auto-Response-Suppress: All\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nUse this one-time code on the OSMAP recovery page:\r\n\r\n{code}\r\n\r\nThis code expires in 10 minutes. If you did not request recovery, ignore this message.\r\n.\r\n");
+    let body = match initial_origin {
+        None => format!("From: {account}\r\nTo: {email}\r\nSubject: Your OSMAP recovery code\r\nAuto-Submitted: auto-generated\r\nX-Auto-Response-Suppress: All\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nUse this one-time code on the OSMAP recovery page:\r\n\r\n{code}\r\n\r\nThis code expires in 10 minutes. If you did not request recovery, ignore this message.\r\n.\r\n"),
+        Some((origin, owner)) => format!("From: {account}\r\nTo: {email}\r\nSubject: Set up your new OSMAP account\r\nAuto-Submitted: auto-generated\r\nX-Auto-Response-Suppress: All\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nYour administrator authorized initial setup for {owner}.\r\nOpen {origin}/admin/setup and enter your account and this single-use invitation:\r\n\r\n{code}\r\n\r\nExpires in 10 minutes. Choose your own password and register your authenticator. This invitation cannot read mail or recover an existing account. Ignore it if you did not expect this account.\r\n.\r\n"),
+    };
     // From this point a timeout/disconnect cannot prove nonacceptance.
     *phase = Phase::Body;
     if !send(&mut io, body.as_bytes(), deadline) {

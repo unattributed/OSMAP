@@ -614,6 +614,39 @@ pub(crate) fn private_leaf_unlink(directory: &fs::File, name: &std::ffi::CStr) -
         Err(io::Error::last_os_error())
     }
 }
+
+/// Publish a checked private leaf without replacing an existing destination.
+/// Both names stay beneath the same already admitted directory descriptor.
+pub(crate) fn private_leaf_link(
+    directory: &fs::File,
+    source: &std::ffi::CStr,
+    destination: &std::ffi::CStr,
+) -> io::Result<()> {
+    for name in [source, destination] {
+        if name.to_bytes().is_empty()
+            || matches!(name.to_bytes(), b"." | b"..")
+            || name.to_bytes().contains(&b'/')
+        {
+            return Err(io::ErrorKind::InvalidInput.into());
+        }
+    }
+    // SAFETY: CStr owns terminated names and the live File owns this directory
+    // descriptor for the call. flags=0 cannot follow a source symbolic link.
+    if unsafe {
+        libc::linkat(
+            directory.as_raw_fd(),
+            source.as_ptr(),
+            directory.as_raw_fd(),
+            destination.as_ptr(),
+            0,
+        )
+    } == 0
+    {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
 #[cfg(unix)]
 pub(crate) fn private_leaf_exists(directory: &fs::File, name: &std::ffi::CStr) -> io::Result<bool> {
     let mut info: libc::stat = unsafe { std::mem::zeroed() };
@@ -1304,6 +1337,7 @@ pub(crate) fn seal_admin_service(
     profile: &Path,
     sql: &Path,
     writer_profile: Option<&Path>,
+    initial_factor_socket: Option<&Path>,
 ) -> io::Result<()> {
     let mut rules = BTreeMap::new();
     add_rule(&mut rules, state, "rwc");
@@ -1318,6 +1352,14 @@ pub(crate) fn seal_admin_service(
     add_rule(&mut rules, profile, "r");
     if let Some(writer) = writer_profile {
         add_rule(&mut rules, writer, "r");
+    }
+    if let Some(socket) = initial_factor_socket {
+        add_rule(
+            &mut rules,
+            socket.parent().ok_or(io::ErrorKind::InvalidInput)?,
+            "r",
+        );
+        add_rule(&mut rules, socket, "rw");
     }
     add_rule(
         &mut rules,
@@ -1353,9 +1395,52 @@ pub(crate) fn seal_admin_service(
     }
     apply_admin_plan(
         rules,
-        "stdio rpath wpath cpath fattr flock unix proc exec unveil",
-        "stdio rpath wpath cpath fattr flock unix proc exec",
+        if initial_factor_socket.is_some() {
+            "stdio rpath wpath cpath fattr flock unix inet proc exec unveil"
+        } else {
+            "stdio rpath wpath cpath fattr flock unix proc exec unveil"
+        },
+        if initial_factor_socket.is_some() {
+            "stdio rpath wpath cpath fattr flock unix inet proc exec"
+        } else {
+            "stdio rpath wpath cpath fattr flock unix proc exec"
+        },
     )
+}
+
+pub(crate) struct InitialFactorSeal {
+    pid: u32,
+}
+impl InitialFactorSeal {
+    pub(crate) fn is_current_process(&self) -> bool {
+        self.pid == std::process::id()
+    }
+}
+
+pub(crate) fn seal_initial_factor_service(
+    config: &Path,
+    socket: &Path,
+    factors: &Path,
+    replay: &Path,
+) -> io::Result<InitialFactorSeal> {
+    let mut rules = BTreeMap::new();
+    add_rule(&mut rules, config, "r");
+    add_rule(&mut rules, socket, "rwc");
+    add_rule(
+        &mut rules,
+        socket.parent().ok_or(io::ErrorKind::InvalidInput)?,
+        "rwc",
+    );
+    add_rule(&mut rules, factors, "rwc");
+    add_rule(&mut rules, replay, "rwc");
+    apply_admin_plan(
+        rules,
+        "stdio rpath wpath cpath fattr chown flock unix unveil",
+        "stdio rpath wpath cpath fattr chown flock unix",
+    )?;
+    Ok(InitialFactorSeal {
+        pid: std::process::id(),
+    })
 }
 
 fn apply_admin_plan(

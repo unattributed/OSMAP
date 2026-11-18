@@ -32,6 +32,18 @@ selected source and evidence before engineering tests; reuse matching results
 without promoting an internal backend PASS into a complete browser journey.
 The 2026-11-13 acceptance baseline below retains its original requirements.
 
+ADM-S04-01 implementation/qualification mapping (2026-11-18): T:F-09–12,
+T:F-34, T:INT-12–13, T:SEC-16–17, T:SEC-34, T:UX-12 and T:RES-06–07 cover
+admin-TOTP pending creation, external-contact invitation, restricted initial
+password/TOTP setup, no-overwrite activation and owned Inbox. Focused Rust checks
+exercise purpose/account binding, invitation/grant replay and expiry, bounded
+incorrect codes, existing/partial factor refusal, initial counter readback,
+strict RPC/Origin/CSRF and separation from admin/mail session cookies. They are
+component evidence, not native or owner acceptance. Native qualification must
+exercise the actual producer/consumer and SQL/Dovecot/Maildir path, including
+disabled-before-setup and fresh-password/later-TOTP login. The project work order
+records execution status and the isolated candidate's exact assessed source.
+
 **Primary cross-project boundary:** `openbsd-mailstack` provides components, configuration patterns, maintenance and public-safe installer examples. `openbsd-self-hosting` provides private deployment-specific context. OSMAP owns the existing browser, credential and factor integrations. OSMAP-ADMIN owns a new private administrative service and, only after explicit cutover, administrative account mutations. The installed OpenBSD, package and schema capabilities determine compatibility; historical release numbers do not.
 
 ### 1.1 Acceptance invariants

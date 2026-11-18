@@ -1131,6 +1131,7 @@ fn create_request(f: &Fixture, csrf: &str) -> CreateMailbox {
         request_id: "a".repeat(64),
         quota_mib: 10,
         revision: 1,
+        setup_contact: None,
     }
 }
 fn writer_config() -> crate::admin_config::WriterConfig {
@@ -1141,6 +1142,7 @@ fn writer_config() -> crate::admin_config::WriterConfig {
         domains: vec!["example.test".into()],
         administrators: vec![LOGIN.into()],
         domain_quota_unit_bytes: 1_024_000,
+        onboarding: None,
     }
 }
 #[test]
@@ -1286,4 +1288,61 @@ fn ambiguous_creation_retains_intent_and_blocks_another_request_key() {
             assert!(text.contains("\"pending\":true"));
         }
     }
+}
+
+#[test]
+fn onboarding_writer_refuses_legacy_password_bypass_and_requires_native_factor_authority() {
+    let f = Fixture::new();
+    let reader = f.service();
+    let token = reader.login(LOGIN, PASSWORD, &code(&f.clock)).unwrap();
+    let context = Service::<Sql, Clock, Password>::context();
+    let summary = reader.scope(&token, &context).unwrap();
+    let writes = Arc::new(Mutex::new(0));
+    let mut writer = writer_config();
+    writer.domains.push("managed.test".into());
+    writer.onboarding = Some(crate::admin_config::OnboardingConfig {
+        factor_socket: f.root.join("absent-factor-service.sock"),
+        setup_origin: "https://obsd1.blackbagsecurity.com".into(),
+        sender: "service@example.test".into(),
+    });
+    let backend = Service::new(
+        CreateSql {
+            reader: f.sql.clone(),
+            writes: writes.clone(),
+            uncertain: false,
+        },
+        f.clock.clone(),
+        Password,
+        f.root.clone(),
+    )
+    .unwrap()
+    .with_writer(Some(writer));
+    let form = backend
+        .create_mailbox_form_from(&token, &context, "example.test")
+        .ok()
+        .unwrap();
+    assert!(form.setup_enabled);
+    let mut request = create_request(&f, &summary.csrf);
+    assert!(matches!(
+        backend.create_mailbox_from(&token, &context, &request),
+        Err(CreateFailure::Invalid)
+    ));
+    request.setup_contact = Some("owner@managed.test".into());
+    request.password.clear();
+    request.confirmation.clear();
+    assert!(request.valid());
+    assert!(matches!(
+        backend.create_mailbox_from(&token, &context, &request),
+        Err(CreateFailure::Invalid)
+    ));
+    request.setup_contact = Some("owner@independent.test".into());
+    assert!(request.valid());
+    // No test-owned substitute may impersonate the root-owned installer. A
+    // missing native authority refuses before SQL/hash or usable credentials.
+    assert!(matches!(
+        backend.create_mailbox_from(&token, &context, &request),
+        Err(CreateFailure::Unavailable)
+    ));
+    assert_eq!(*writes.lock().unwrap(), 0);
+    assert!(!f.root.join("initial-enrollment").exists());
 }

@@ -18,6 +18,8 @@ use std::time::{Duration, Instant};
 const SESSION_COOKIE: &str = "__Host-osmap_admin";
 const LOGIN_COOKIE: &str = "__Host-osmap_admin_login";
 const APPEARANCE_COOKIE: &str = "__Host-osmap_admin_appearance";
+const SETUP_COOKIE: &str = "__Host-osmap_initial_setup";
+const SETUP_CSRF_COOKIE: &str = "__Host-osmap_initial_csrf";
 const IO_LIMIT: Duration = Duration::from_secs(5);
 const RESPONSE_LIMIT: usize = 1024 * 1024;
 
@@ -314,6 +316,9 @@ fn handle_inner<C: Exchange>(
         return crate::admin_ui::error_page(403);
     }
     match (&request.method, request.path.as_str()) {
+        (HttpMethod::Get | HttpMethod::Post, "/admin/setup") => {
+            initial_setup(request, &client_addr, client)
+        }
         (HttpMethod::Get, "/admin/login") => sign_in(false),
         (HttpMethod::Post, "/admin/login") => login(request, &client_addr, client),
         (HttpMethod::Get, "/admin" | "/admin/domains" | "/admin/settings") => {
@@ -362,6 +367,149 @@ fn appearance_cookie(preferences: &crate::admin_access::AdminPreferences) -> Str
         "{APPEARANCE_COOKIE}={}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=31536000",
         preferences.value()
     )
+}
+
+fn setup_cookie(name: &str, value: &str) -> String {
+    format!("{name}={value}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=600")
+}
+
+fn setup_response(content: String) -> HttpResponse {
+    let body = crate::html::TrustedHtml::from_template(format!("<main id=\"main-content\" class=\"page-shell standalone-notice\" tabindex=\"-1\"><section class=\"panel\"><h1>Set up your OSMAP account</h1>{content}</section></main>"));
+    let mut response = crate::http_support::html_response(200, "OK", "OSMAP — Account setup", body);
+    for (name, value) in &mut response.headers {
+        if name.eq_ignore_ascii_case("Referrer-Policy") {
+            *value = "strict-origin".into();
+        }
+    }
+    response
+}
+
+fn setup_identity(value: &str) -> Option<(String, String)> {
+    let (encoded, grant) = value.split_once('.')?;
+    if !hex64(grant) || encoded.is_empty() || encoded.len() > 508 || encoded.len() % 2 != 0 {
+        return None;
+    }
+    let bytes = encoded
+        .as_bytes()
+        .chunks_exact(2)
+        .map(|p| {
+            let text = std::str::from_utf8(p).ok()?;
+            u8::from_str_radix(text, 16).ok()
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let account = String::from_utf8(bytes).ok()?;
+    crate::account_admission::valid_account(&account).ok()?;
+    Some((account, grant.into()))
+}
+
+fn initial_setup<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) -> HttpResponse {
+    use crate::http_support::escape_html;
+    if !request.query_params.is_empty() {
+        return crate::admin_ui::error_page(400);
+    }
+    let restricted = match cookie(request, SETUP_COOKIE) {
+        Ok(Some(value)) => match setup_identity(value) {
+            Some(identity) => Some(identity),
+            None => return crate::admin_ui::error_page(403),
+        },
+        Ok(None) => None,
+        Err(_) => return crate::admin_ui::error_page(403),
+    };
+    let csrf = if request.method == HttpMethod::Get {
+        let mut bytes = [0_u8; 32];
+        if getrandom::getrandom(&mut bytes).is_err() {
+            return crate::admin_ui::error_page(503);
+        }
+        bytes.iter().map(|b| format!("{b:02x}")).collect::<String>()
+    } else {
+        match cookie(request, SETUP_CSRF_COOKIE) {
+            Ok(Some(value)) if hex64(value) => value.into(),
+            _ => return crate::admin_ui::error_page(403),
+        }
+    };
+    let hidden = |name: &str, value: &str| {
+        format!(
+            "<input type=\"hidden\" name=\"{name}\" value=\"{}\">",
+            escape_html(value)
+        )
+    };
+    let mut expected_account = None;
+    let operation = if request.method == HttpMethod::Get {
+        if let Some((account, grant)) = restricted {
+            expected_account = Some(account.clone());
+            Some(Operation::SetupView { account, grant })
+        } else {
+            None
+        }
+    } else {
+        let expected = if restricted.is_some() {
+            &["csrf", "enrollment_id", "password", "confirmation", "totp"][..]
+        } else {
+            &["csrf", "account", "invitation"][..]
+        };
+        let Ok(values) = bounded_form(request, expected, 2048) else {
+            return crate::admin_ui::error_page(400);
+        };
+        if !crate::http_support::constant_time_eq(csrf.as_bytes(), values["csrf"].as_bytes()) {
+            return crate::admin_ui::error_page(403);
+        }
+        if let Some((account, grant)) = restricted {
+            expected_account = Some(account.clone());
+            Some(Operation::CompleteSetup {
+                account,
+                grant,
+                password: values["password"].clone(),
+                confirmation: values["confirmation"].clone(),
+                totp: values["totp"].clone(),
+                enrollment_id: values["enrollment_id"].clone(),
+            })
+        } else {
+            let account = values["account"].clone();
+            expected_account = Some(account.clone());
+            Some(Operation::RedeemSetup {
+                account,
+                invitation: values["invitation"].clone(),
+            })
+        }
+    };
+    let Some(operation) = operation else {
+        return setup_response(format!("<p>Use the invitation sent to your approved external contact. It authorizes account setup only and expires after ten minutes.</p><form method=\"post\" action=\"/admin/setup\" autocomplete=\"off\">{}<p><label for=\"setup-account\">New OSMAP email address</label><input id=\"setup-account\" type=\"email\" name=\"account\" autocomplete=\"username\" maxlength=\"254\" required></p><p><label for=\"setup-invitation\">Single-use invitation code</label><input id=\"setup-invitation\" type=\"text\" name=\"invitation\" autocomplete=\"off\" pattern=\"[0-9a-f]{{64}}\" minlength=\"64\" maxlength=\"64\" required></p><button type=\"submit\">Verify invitation</button></form>", hidden("csrf", &csrf)))
+            .with_header("Set-Cookie", setup_cookie(SETUP_CSRF_COOKIE, &csrf));
+    };
+    let redeem = matches!(operation, Operation::RedeemSetup { .. });
+    let rpc = Request {
+        version: VERSION,
+        client: addr.into(),
+        operation,
+    };
+    if rpc.validate().is_err() {
+        return crate::admin_ui::error_page(400);
+    }
+    match client.exchange(&rpc) {
+        Ok(Response::Setup { page }) if page.valid() && Some(page.account.as_str()) == expected_account.as_deref() && page.grant.is_some() == redeem => {
+            let Ok(qr) = crate::access_recovery_ui::initial_enrollment(&page.pending()) else { return crate::admin_ui::error_page(503); };
+            let mut response = setup_response(format!("<p>Choose your password and register your authenticator for <strong>{}</strong>. This restricted page does not sign you into your mailbox.</p>{qr}<form method=\"post\" action=\"/admin/setup\" autocomplete=\"off\">{}{}<p><label for=\"setup-password\">Choose a password</label><input id=\"setup-password\" type=\"password\" name=\"password\" autocomplete=\"new-password\" minlength=\"15\" maxlength=\"128\" required></p><p><label for=\"setup-confirmation\">Confirm password</label><input id=\"setup-confirmation\" type=\"password\" name=\"confirmation\" autocomplete=\"new-password\" minlength=\"15\" maxlength=\"128\" required></p><p><label for=\"setup-totp\">Code from your new authenticator</label><input id=\"setup-totp\" name=\"totp\" type=\"text\" autocomplete=\"one-time-code\" inputmode=\"numeric\" pattern=\"[0-9]{{6}}\" minlength=\"6\" maxlength=\"6\" required></p><button type=\"submit\">Activate my account</button></form>", escape_html(&page.account), hidden("csrf", &csrf), hidden("enrollment_id", &page.enrollment.id)))
+                .with_header("Set-Cookie", setup_cookie(SETUP_CSRF_COOKIE, &csrf));
+            if let Some(grant) = page.grant {
+                let account = page.account.as_bytes().iter().map(|b| format!("{b:02x}")).collect::<String>();
+                response = response.with_header("Set-Cookie", setup_cookie(SETUP_COOKIE, &format!("{account}.{grant}")));
+            }
+            response
+        },
+        Ok(Response::SetupComplete) if !redeem && request.method == HttpMethod::Post => {
+            setup_response("<p>Your password and authenticator setup was confirmed. Wait for the next authenticator code, then sign in with your password and that fresh code.</p><a class=\"button-link\" href=\"/login\">Sign in to OSMAP</a>".into())
+                .with_header("Set-Cookie", clear_session_cookie(SETUP_COOKIE, true))
+                .with_header("Set-Cookie", clear_session_cookie(SETUP_CSRF_COOKIE, true))
+        },
+        Ok(Response::SetupRefused) => crate::admin_ui::error_page(403),
+        Ok(Response::SetupUnconfirmed) => {
+            let mut response = setup_response("<p role=\"alert\">Account setup could not be confirmed. Do not repeat activation. Ask your administrator to reconcile the pending account.</p>".into());
+            response.status_code = 503;
+            response.reason_phrase = "Service Unavailable";
+            response
+        }
+        _ => crate::admin_ui::error_page(503),
+    }
 }
 fn dashboard<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) -> HttpResponse {
     let token = match cookie(request, SESSION_COOKIE) {
@@ -539,8 +687,7 @@ fn mailbox_create<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) ->
                     "domain",
                     "local_part",
                     "display_name",
-                    "password",
-                    "confirmation",
+                    "setup_contact",
                     "totp",
                     "csrf",
                     "request_id",
@@ -548,7 +695,25 @@ fn mailbox_create<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) ->
                     "revision",
                 ],
                 8192,
-            ) else {
+            )
+            .or_else(|_| {
+                bounded_form(
+                    request,
+                    &[
+                        "domain",
+                        "local_part",
+                        "display_name",
+                        "password",
+                        "confirmation",
+                        "totp",
+                        "csrf",
+                        "request_id",
+                        "quota_mib",
+                        "revision",
+                    ],
+                    8192,
+                )
+            }) else {
                 return crate::admin_ui::error_page(400);
             };
             let (Ok(quota_mib), Ok(revision)) = (
@@ -561,8 +726,9 @@ fn mailbox_create<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) ->
                 domain: values["domain"].clone(),
                 local_part: values["local_part"].clone(),
                 display_name: values["display_name"].clone(),
-                password: values["password"].clone(),
-                confirmation: values["confirmation"].clone(),
+                password: values.get("password").cloned().unwrap_or_default(),
+                confirmation: values.get("confirmation").cloned().unwrap_or_default(),
+                setup_contact: values.get("setup_contact").cloned(),
                 totp: values["totp"].clone(),
                 csrf: values["csrf"].clone(),
                 request_id: values["request_id"].clone(),
@@ -599,6 +765,10 @@ fn mailbox_create<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) ->
     if rpc.validate().is_err() {
         return crate::admin_ui::error_page(400);
     }
+    let expected_setup_pending = match &rpc.operation {
+        Operation::CreateMailbox { request, .. } => Some(request.setup_contact.is_some()),
+        _ => None,
+    };
     let uncertain = || {
         crate::admin_ui::create_failure_page(
             if operation_id.is_some() {
@@ -620,6 +790,7 @@ fn mailbox_create<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) ->
             if receipt.valid()
                 && Some(receipt.request_id.as_str()) == operation_id.as_deref()
                 && receipt.domain == domain
+                && Some(receipt.setup_pending) == expected_setup_pending
                 && Some(receipt.username.as_str()) == expected_username.as_deref()
                 && Some(receipt.quota) == expected_quota =>
         {
@@ -1116,6 +1287,128 @@ mod tests {
             .map(|(_, value)| value.as_str())
     }
 
+    fn setup_page(grant: Option<String>) -> crate::admin_transport::SetupPage {
+        crate::admin_transport::SetupPage::from_pending("new@example.test".into(), grant, crate::totp_enrollment::PendingEnrollment {
+            id: "d".repeat(64), revision: 1, secret_base32: "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ".into(),
+            otpauth_uri: "otpauth://totp/OSMAP%3Anew%40example.test?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ&issuer=OSMAP&algorithm=SHA1&digits=6&period=30".into(), expires_at: 2_000_000_000,
+        })
+    }
+
+    #[test]
+    fn initial_setup_requires_independent_csrf_and_never_issues_a_mail_or_admin_session() {
+        let fake = Fake::new(Response::Setup {
+            page: setup_page(Some("e".repeat(64))),
+        });
+        let response = handle(&config(), &parse("GET", "/admin/setup", "", ""), &fake);
+        assert_eq!(response.status_code, 200);
+        assert!(fake.calls.borrow().is_empty());
+        assert!(header(&response, "Set-Cookie")
+            .unwrap()
+            .starts_with(SETUP_CSRF_COOKIE));
+        let csrf = "c".repeat(64);
+        let body = format!(
+            "account=new%40example.test&invitation={}&csrf={csrf}",
+            "f".repeat(64)
+        );
+        let headers = format!("Origin: https://admin.example.test\r\nContent-Type: application/x-www-form-urlencoded\r\nCookie: {SETUP_CSRF_COOKIE}={csrf}\r\n");
+        let response = handle(
+            &config(),
+            &parse("POST", "/admin/setup", &headers, &body),
+            &fake,
+        );
+        assert_eq!(response.status_code, 200);
+        let html = std::str::from_utf8(&response.body).unwrap();
+        assert!(html.contains("Choose your password"));
+        assert_eq!(header(&response, "Cache-Control"), Some("no-store"));
+        assert_eq!(header(&response, "Referrer-Policy"), Some("strict-origin"));
+        assert!(html.contains("New authenticator QR code"));
+        assert!(!html.contains(&"e".repeat(64)));
+        assert!(!html.contains(&"f".repeat(64)));
+        assert!(response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Set-Cookie"
+                && value.starts_with(&format!("{SETUP_COOKIE}="))
+                && value.contains("Secure; HttpOnly; SameSite=Strict; Max-Age=600")));
+        assert!(!response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Set-Cookie"
+                && (value.starts_with(&format!("{SESSION_COOKIE}="))
+                    || value.starts_with("osmap_session="))));
+        let calls = fake.calls.borrow();
+        assert!(
+            matches!(&calls[0].operation, Operation::RedeemSetup { account, invitation } if account == "new@example.test" && invitation == &"f".repeat(64))
+        );
+    }
+
+    #[test]
+    fn setup_refuses_wrong_csrf_cross_origin_queries_and_admin_cookie_as_grant() {
+        let csrf = "c".repeat(64);
+        let body = format!(
+            "account=new%40example.test&invitation={}&csrf={csrf}",
+            "f".repeat(64)
+        );
+        for (path, headers, expected) in [
+            ("/admin/setup", "Origin: https://other.example.test\r\nContent-Type: application/x-www-form-urlencoded\r\n".into(), 403),
+            ("/admin/setup", format!("Origin: https://admin.example.test\r\nContent-Type: application/x-www-form-urlencoded\r\nCookie: {SETUP_CSRF_COOKIE}={}\r\n", "a".repeat(64)), 403),
+            ("/admin/setup?invitation=private", format!("Origin: https://admin.example.test\r\nContent-Type: application/x-www-form-urlencoded\r\nCookie: {SETUP_CSRF_COOKIE}={csrf}\r\n"), 403),
+            ("/admin/setup", format!("Origin: https://admin.example.test\r\nContent-Type: application/x-www-form-urlencoded\r\nCookie: {SETUP_COOKIE}={}; {SETUP_CSRF_COOKIE}={csrf}\r\n", token()), 403),
+        ] {
+            let fake = Fake::new(Response::SetupComplete);
+            assert_eq!(handle(&config(), &parse("POST", path, &headers, &body), &fake).status_code, expected);
+            assert!(fake.calls.borrow().is_empty());
+        }
+    }
+
+    #[test]
+    fn setup_completion_uses_cookie_bound_account_and_returns_to_fresh_login() {
+        let account = "new@example.test"
+            .as_bytes()
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>();
+        let grant = "e".repeat(64);
+        let csrf = "c".repeat(64);
+        let headers = format!("Origin: https://admin.example.test\r\nContent-Type: application/x-www-form-urlencoded\r\nCookie: {SETUP_COOKIE}={account}.{grant}; {SETUP_CSRF_COOKIE}={csrf}\r\n");
+        let body = format!("csrf={csrf}&enrollment_id={}&password=owner-chosen-public-password&confirmation=owner-chosen-public-password&totp=123456", "d".repeat(64));
+        let fake = Fake::new(Response::SetupComplete);
+        let response = handle(
+            &config(),
+            &parse("POST", "/admin/setup", &headers, &body),
+            &fake,
+        );
+        assert_eq!(response.status_code, 200);
+        assert!(std::str::from_utf8(&response.body)
+            .unwrap()
+            .contains("href=\"/login\""));
+        assert!(
+            matches!(&fake.calls.borrow()[0].operation, Operation::CompleteSetup { account, grant: bound, .. } if account == "new@example.test" && bound == &grant)
+        );
+        assert!(
+            response
+                .headers
+                .iter()
+                .filter(|(name, value)| name == "Set-Cookie" && value.contains("Max-Age=0"))
+                .count()
+                == 2
+        );
+        let unconfirmed = Fake::new(Response::SetupUnconfirmed);
+        let response = handle(
+            &config(),
+            &parse("POST", "/admin/setup", &headers, &body),
+            &unconfirmed,
+        );
+        assert_eq!(response.status_code, 503);
+        assert!(std::str::from_utf8(&response.body)
+            .unwrap()
+            .contains("Do not repeat activation."));
+        assert!(!response
+            .headers
+            .iter()
+            .any(|(name, _)| name == "Set-Cookie"));
+    }
+
     fn inventory_page() -> crate::admin_access::MailboxPage {
         use sha2::{Digest, Sha256};
         crate::admin_access::MailboxPage {
@@ -1143,6 +1436,7 @@ mod tests {
             domain: "example.test".into(),
             revision: 7,
             request_id: "b".repeat(64),
+            setup_enabled: false,
         }
     }
 
@@ -1154,6 +1448,7 @@ mod tests {
             username: "alice@example.test".into(),
             request_id: "b".repeat(64),
             quota: 2 * 1_048_576,
+            setup_pending: false,
         }
     }
 

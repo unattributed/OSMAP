@@ -72,6 +72,16 @@ pub(crate) struct WriterConfig {
     pub(crate) administrators: Vec<String>,
     /// Explicit adopted domain-limit unit; mailbox quota is always bytes.
     pub(crate) domain_quota_unit_bytes: u32,
+    #[serde(default)]
+    pub(crate) onboarding: Option<OnboardingConfig>,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct OnboardingConfig {
+    pub(crate) factor_socket: PathBuf,
+    pub(crate) setup_origin: String,
+    pub(crate) sender: String,
 }
 
 #[derive(Deserialize)]
@@ -128,7 +138,7 @@ fn file_shape(metadata: &fs::Metadata, owner: u32, config: bool) -> bool {
         }
 }
 
-fn read_file(path: &Path, owner: u32, config: bool) -> Result<Vec<u8>, Error> {
+pub(crate) fn read_file(path: &Path, owner: u32, config: bool) -> Result<Vec<u8>, Error> {
     // Root-owned startup files may reside below the role's protected namespace.
     exact(path, crate::openbsd::effective_uid())?;
     let initial = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
@@ -323,6 +333,25 @@ pub(crate) fn load_service(path: &Path) -> Result<ServiceConfig, Error> {
         }
         let profile = read_file(&writer.profile, own, false)?;
         profile_options(&profile, &config.sql_socket)?;
+        if let Some(setup) = &writer.onboarding {
+            if !crate::initial_enrollment::valid_contact(&setup.sender) {
+                return Err(Error::Invalid);
+            }
+            let host = setup
+                .setup_origin
+                .strip_prefix("https://")
+                .ok_or(Error::Origin)?;
+            if host.is_empty()
+                || host.len() > 253
+                || !host
+                    .bytes()
+                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b".-:".contains(&b))
+            {
+                return Err(Error::Origin);
+            }
+            crate::openpgp_inventory_runtime::validate_socket(&setup.factor_socket, 0)
+                .map_err(|_| Error::ServiceSocket)?;
+        }
     }
     Ok(config)
 }

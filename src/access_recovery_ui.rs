@@ -28,6 +28,14 @@ fn password(name: &str, label: &str, fresh: bool) -> String {
 }
 
 fn enrollment(pending: &PendingEnrollment) -> Result<String, AccessError> {
+    enrollment_content(pending, false)
+}
+
+pub(crate) fn initial_enrollment(pending: &PendingEnrollment) -> Result<String, AccessError> {
+    enrollment_content(pending, true)
+}
+
+fn enrollment_content(pending: &PendingEnrollment, initial: bool) -> Result<String, AccessError> {
     if pending.id.len() != 64
         || !pending
             .id
@@ -57,7 +65,8 @@ fn enrollment(pending: &PendingEnrollment) -> Result<String, AccessError> {
             }
         }
     }
-    Ok(format!("<section aria-labelledby=\"enrollment-heading\"><h2 id=\"enrollment-heading\">Add the new authenticator</h2><p>Scan this QR code in your authenticator app. Keep this page private.</p><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {extent} {extent}\" width=\"320\" height=\"320\" role=\"img\" aria-label=\"New authenticator QR code\" style=\"max-width:100%;height:auto;background:white\"><rect width=\"100%\" height=\"100%\" fill=\"white\"/><path d=\"{modules}\" fill=\"black\"/></svg><details><summary>Enter a setup key instead</summary><p>Use this key with a time-based, six-digit authenticator:</p><code>{}</code></details><p>Enter a current six-digit code from the <strong>new</strong> entry to confirm it. The QR code alone does not activate the replacement.</p></section>", escape_html(&pending.secret_base32)))
+    let target = if initial { "account" } else { "replacement" };
+    Ok(format!("<section aria-labelledby=\"enrollment-heading\"><h2 id=\"enrollment-heading\">Add the new authenticator</h2><p>Scan this QR code in your authenticator app. Keep this page private.</p><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {extent} {extent}\" width=\"320\" height=\"320\" role=\"img\" aria-label=\"New authenticator QR code\" style=\"max-width:100%;height:auto;background:white\"><rect width=\"100%\" height=\"100%\" fill=\"white\"/><path d=\"{modules}\" fill=\"black\"/></svg><details><summary>Enter a setup key instead</summary><p>Use this key with a time-based, six-digit authenticator:</p><code>{}</code></details><p>Enter a current six-digit code from the <strong>new</strong> entry to confirm it. The QR code alone does not activate the {target}.</p></section>", escape_html(&pending.secret_base32)))
 }
 fn enrollment_fields(pending: &PendingEnrollment) -> String {
     format!(

@@ -34,6 +34,8 @@ pub(crate) use pages::{AdminPreferences, DomainDetails, DomainOverview, Settings
 #[path = "admin_create.rs"]
 pub(crate) mod create;
 pub(crate) use create::{CreateFailure, CreateMailbox, CreatePage, CreateReceipt};
+#[path = "admin_onboarding.rs"]
+mod onboarding;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Error {
