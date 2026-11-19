@@ -56,10 +56,8 @@ The public `openbsd-mailstack` repository supplies the **component topology, tem
 
 ### 3.1 Configuration source precedence
 
-ADM-S04-01 initial-setup source is opt-in and currently unqualified for installation.
-The corrected flow reuses Forgot password, not a separate invitation service.
-Before enabling writer `onboarding: {}` and root access-recovery `initial_setup:
-true`, install the reviewed `osmap_initial_accounts` table from the Rust schema
+Every new mailbox requires its independent recovery email. Before enabling
+creation, install the reviewed `osmap_initial_accounts` table from the Rust schema
 producer in the same account database. Its `status` must default to `pending`;
 the creator receives INSERT only for `username`, `request_id`, `recovery_email`,
 `revision`, `writer_holder`, `writer_epoch`, `created`, plus necessary SELECT.
@@ -67,7 +65,8 @@ Only the protected root account writer may UPDATE `status` and `activated` and
 perform the reviewed mailbox/password/operation transition. The admin web receives
 none of these grants. Verify actual default/check constraints and grants, the
 configured cache's replay directory and existing contact/factor custody.
-Both protected native account rosters must include the exact account, and the
+Forgot password redemption has a separate enablement condition. Before enabling
+root access-recovery `initial_setup: true`, both protected native account rosters must include the exact account, and the
 ordinary frontend rollout must select it. Automatic registration is not yet
 implemented. Do not enable this source on the present isolated admin authority
 against an unrelated ordinary mailbox backend, broaden rollout to work around a

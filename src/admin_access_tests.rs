@@ -1104,7 +1104,7 @@ impl CommandExecutor for CreateSql {
             .is_some_and(|a| a.contains("admin-write-mariadb"))
         {
             if query.starts_with("SELECT username,request_id,recovery_email") {
-                if self.uncertain {
+                if self.uncertain && self.pending {
                     return Err(CommandExecutionError {
                         reason: "synthetic missing readiness grant".into(),
                     });
@@ -1196,14 +1196,14 @@ fn create_request(f: &Fixture, csrf: &str) -> CreateMailbox {
         domain: "example.test".into(),
         local_part: "controlled".into(),
         display_name: "Controlled mailbox".into(),
-        password: "fresh-controlled-mailbox-password".into(),
-        confirmation: "fresh-controlled-mailbox-password".into(),
+        password: String::new(),
+        confirmation: String::new(),
         totp: code(&f.clock),
         csrf: csrf.into(),
         request_id: "a".repeat(64),
         quota_mib: 10,
         revision: 1,
-        setup_contact: None,
+        setup_contact: Some("owner@independent.test".into()),
     }
 }
 fn writer_config() -> crate::admin_config::WriterConfig {
@@ -1214,7 +1214,7 @@ fn writer_config() -> crate::admin_config::WriterConfig {
         domains: vec!["example.test".into()],
         administrators: vec![LOGIN.into()],
         domain_quota_unit_bytes: 1_024_000,
-        onboarding: None,
+        _onboarding: None,
     }
 }
 #[test]
@@ -1356,7 +1356,7 @@ fn ambiguous_creation_retains_intent_and_blocks_another_request_key() {
         let path = entry.unwrap().path();
         if path.extension().is_some_and(|e| e == "json") {
             let text = std::fs::read_to_string(path).unwrap();
-            assert!(!text.contains(&r.password));
+            assert!(!text.contains("owner@independent.test"));
             assert!(!text.contains(&r.totp));
             assert!(!text.contains("private token-shaped"));
             assert!(text.contains("\"pending\":true"));
@@ -1374,7 +1374,7 @@ fn onboarding_writer_refuses_legacy_password_bypass_and_records_pending_contact_
     let writes = Arc::new(Mutex::new(0));
     let mut writer = writer_config();
     writer.domains.push("managed.test".into());
-    writer.onboarding = Some(crate::admin_config::OnboardingConfig {});
+    // A writer with no historical onboarding marker must enforce the same contract.
     let backend = Service::new(
         CreateSql {
             reader: f.sql.clone(),
@@ -1394,6 +1394,9 @@ fn onboarding_writer_refuses_legacy_password_bypass_and_records_pending_contact_
         .unwrap();
     assert!(form.setup_enabled);
     let mut request = create_request(&f, &summary.csrf);
+    request.setup_contact = None;
+    request.password = "public-admin-chosen-password".into();
+    request.confirmation = request.password.clone();
     assert!(matches!(
         backend.create_mailbox_from(&token, &context, &request),
         Err(CreateFailure::Invalid)

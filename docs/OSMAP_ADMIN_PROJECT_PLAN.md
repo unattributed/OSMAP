@@ -2337,3 +2337,10 @@ regression also confirms the icon preference is applied. Strict all-target Clipp
 passes; mandatory commit/push results and remote identity are delivery evidence,
 not native qualification. Private terminal logs remain under the existing sprint
 artifact root; no credentials, recovery addresses or raw mail are added to Git.
+
+2026-11-19 correction: owner UAT failed at recovery-contact capture. Earlier
+configuration-only acceptance remains historical. Root owns the obsd1 correction
+and delivery, with separate writer, frontend and independent review. Exercise
+missing contact, password-only POST, unavailable schema and atomic pending
+creation; inspect the installed form. Do not infer activation or Inbox access
+from a captured address, or populate older accounts using a guessed contact.

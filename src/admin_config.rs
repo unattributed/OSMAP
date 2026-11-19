@@ -72,8 +72,10 @@ pub(crate) struct WriterConfig {
     pub(crate) administrators: Vec<String>,
     /// Explicit adopted domain-limit unit; mailbox quota is always bytes.
     pub(crate) domain_quota_unit_bytes: u32,
-    #[serde(default)]
-    pub(crate) onboarding: Option<OnboardingConfig>,
+    // Earlier writer profiles used this optional marker to select the form.
+    // Every new mailbox now requires its recovery contact.
+    #[serde(default, rename = "onboarding")]
+    pub(crate) _onboarding: Option<OnboardingConfig>,
 }
 
 #[derive(Clone, Deserialize)]

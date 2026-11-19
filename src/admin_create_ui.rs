@@ -6,26 +6,9 @@ use crate::http_support::{escape_html, url_encode};
 use crate::http_ui::presentation_label;
 
 pub(crate) fn create_mailbox_page(page: &CreatePage) -> HttpResponse {
-    if !page.valid() {
+    if !page.valid() || !page.setup_enabled {
         return super::error_page(503);
     }
-    let credentials = if page.setup_enabled {
-        concat!(
-            "<p><label for=\"create-setup-contact\">Recovery email</label><input id=\"create-setup-contact\" type=\"email\" name=\"setup_contact\" autocomplete=\"off\" maxlength=\"254\" aria-describedby=\"create-setup-help\" required></p>",
-            "<p id=\"create-setup-help\" class=\"muted\">Confirm the new user's identity and independent recovery email offline before entering it here. The user will choose Forgot password on the ordinary OSMAP sign-in page, verify the emailed code, then choose a password and register their authenticator.</p>",
-        )
-    } else {
-        concat!(
-            "<p><label for=\"create-password\">Mailbox password</label><input id=\"create-password\" type=\"password\" name=\"password\" autocomplete=\"new-password\" minlength=\"15\" maxlength=\"256\" aria-describedby=\"create-password-help\" required></p>",
-            "<p id=\"create-password-help\" class=\"muted\">Use 15–128 characters, at most 512 UTF-8 bytes. The service checks this limit when you submit. Passwords are never displayed on the result page.</p>",
-            "<p><label for=\"create-confirmation\">Confirm mailbox password</label><input id=\"create-confirmation\" type=\"password\" name=\"confirmation\" autocomplete=\"new-password\" minlength=\"15\" maxlength=\"256\" required></p>",
-        )
-    };
-    let setup_notice = if page.setup_enabled {
-        "The account remains pending until the user completes setup through Forgot password. You will not receive their password or authenticator seed."
-    } else {
-        "Mailbox browser MFA enrollment is pending. Native mailbox authentication and message delivery require separate verification after configuration."
-    };
     let content = format!(concat!(
         "<section class=\"panel\"><h2>Mailbox details</h2>",
         "<form method=\"post\" action=\"/admin/mailboxes/new\">",
@@ -37,12 +20,12 @@ pub(crate) fn create_mailbox_page(page: &CreatePage) -> HttpResponse {
         "<p><label for=\"create-display-name\">Display name</label><input id=\"create-display-name\" name=\"display_name\" maxlength=\"255\"></p>",
         "<p><label for=\"create-quota\">Configured quota (MiB)</label><input id=\"create-quota\" type=\"number\" name=\"quota_mib\" min=\"1\" max=\"1048576\" step=\"1\" aria-describedby=\"create-quota-help\" required></p>",
         "<p id=\"create-quota-help\" class=\"muted\">Enter a positive limit in MiB (1 MiB = 1,048,576 bytes). The domain's remaining capacity is checked when you submit.</p>",
-        "{credentials}",
+        "<p><label for=\"create-setup-contact\">Recovery email</label><input id=\"create-setup-contact\" type=\"email\" name=\"setup_contact\" autocomplete=\"off\" maxlength=\"254\" aria-describedby=\"create-setup-help\" required></p>",
+        "<p id=\"create-setup-help\" class=\"muted\">Confirm the new user's identity and external recovery email offline. Forgot password uses this address for the user's first password and authenticator setup.</p>",
         "<p><label for=\"create-totp\">Current administrator TOTP code</label><input id=\"create-totp\" type=\"text\" name=\"totp\" autocomplete=\"one-time-code\" inputmode=\"numeric\" pattern=\"[0-9]{{6}}\" minlength=\"6\" maxlength=\"6\" required></p>",
-        "<p>{setup_notice}</p>",
         "<div class=\"toolbar\"><button type=\"submit\" class=\"primary-button\">{create}</button> <a class=\"button-link\" href=\"/admin/mailboxes?domain={domain_url}\">{cancel}</a></div></form></section>"
     ), csrf=escape_html(&page.csrf), request_id=escape_html(&page.request_id), revision=page.revision,
-       domain=escape_html(&page.domain), domain_url=escape_html(&url_encode(&page.domain)), credentials=credentials, setup_notice=setup_notice,
+       domain=escape_html(&page.domain), domain_url=escape_html(&url_encode(&page.domain)),
        create=presentation_label("Create mailbox", "add"), cancel=presentation_label("Cancel", "close"));
     super::page_shell(
         &page.login,
@@ -55,7 +38,7 @@ pub(crate) fn create_mailbox_page(page: &CreatePage) -> HttpResponse {
 }
 
 pub(crate) fn mailbox_created_page(receipt: &CreateReceipt) -> HttpResponse {
-    if !receipt.valid() {
+    if !receipt.valid() || !receipt.setup_pending {
         return super::error_page(503);
     }
     let content = format!(concat!(
@@ -63,12 +46,11 @@ pub(crate) fn mailbox_created_page(receipt: &CreateReceipt) -> HttpResponse {
         "<dl><dt>Mailbox address</dt><dd>{username}</dd><dt>Hosted domain</dt><dd>{domain}</dd>",
         "<dt>Configured quota</dt><dd>{quota_mib} MiB ({quota} bytes)</dd>",
         "<dt>Operation ID</dt><dd style=\"overflow-wrap:anywhere\">{request_id}</dd></dl>",
-        "<p>{setup_status}</p>",
+        "<p>Recovery email recorded. The mailbox is pending user setup. Once account setup is enabled for this mailbox, the user can choose Forgot password on the OSMAP sign-in page.</p>",
         "<p>Keep this operation ID when checking the result. Refreshing this submission uses the same operation ID.</p>",
         "<a class=\"button-link\" href=\"/admin/mailboxes?domain={domain_url}\">{back}</a></section>"
     ), username=escape_html(&receipt.username), domain=escape_html(&receipt.domain), quota_mib=receipt.quota / 1_048_576,
        quota=receipt.quota, request_id=escape_html(&receipt.request_id), domain_url=escape_html(&url_encode(&receipt.domain)),
-       setup_status=if receipt.setup_pending { "The recovery email was recorded and the account is pending user setup. Ask the user to choose Forgot password on the ordinary OSMAP sign-in page, verify the emailed code, then choose their password and register their authenticator. Sign-in is enabled only after setup is confirmed." } else { "Native authentication and message delivery have not yet been verified. Mailbox browser MFA enrollment is pending." },
        back=presentation_label("Back to mailboxes", "back"));
     let mut response = super::page_shell(
         &receipt.login,
@@ -182,13 +164,13 @@ mod tests {
     }
 
     #[test]
-    fn disabled_onboarding_preserves_the_qualified_legacy_creation_form() {
+    fn service_without_recovery_contact_support_cannot_offer_creation() {
         let mut page = page();
         page.setup_enabled = false;
         let response = create_mailbox_page(&page);
         let html = String::from_utf8(response.body).unwrap();
-        assert!(html.contains("name=\"password\""));
-        assert!(html.contains("name=\"confirmation\""));
+        assert_eq!(response.status_code, 503);
+        assert!(!html.contains("<form"));
         assert!(!html.contains("name=\"setup_contact\""));
     }
 
@@ -201,7 +183,7 @@ mod tests {
             username: "alice@example.test".into(),
             request_id: "b".repeat(64),
             quota: 2 * 1_048_576,
-            setup_pending: false,
+            setup_pending: true,
         };
         let mut response = mailbox_created_page(&receipt);
         crate::admin_access::AdminPreferences {
@@ -216,9 +198,8 @@ mod tests {
         assert!(html.contains("alice@example.test"));
         assert!(html.contains("2 MiB (2097152 bytes)"));
         assert!(html.contains("Signed in as"));
-        assert!(
-            html.contains("Native authentication and message delivery have not yet been verified.")
-        );
+        assert!(html.contains("Recovery email recorded."));
+        assert!(html.contains("pending user setup"));
         assert!(!html.contains("synthetic-mailbox-password"));
         assert!(!html.contains("name=\"password\""));
     }

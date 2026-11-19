@@ -2256,3 +2256,13 @@ legacy authentication. Automatic native registration and corrected installed
 first login remain unfinished. Historical private Inbox evidence cannot close
 that gap. The shared icon/text preference now covers the creation receipt as
 well as ordinary admin pages; the approved login remains unchanged.
+
+### 2026-11-19 — require recovery email for every new mailbox
+
+The owner observed a successful development mailbox creation without a recovery
+email. The restored writer's password-only mode allowed exactly that outcome.
+Require the offline-confirmed external recovery email on every new creation.
+A missing handoff table or grant blocks creation. The service records the
+contact atomically with the pending mailbox and leaves both native login flags
+disabled. Existing accounts keep their state. Native Forgot password redemption
+still requires its separate registration and shared account authority.

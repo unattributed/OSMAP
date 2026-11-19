@@ -586,9 +586,9 @@ mod tests {
                     domain: "example.test".into(),
                     local_part: "alice".into(),
                     display_name: "Public Alice".into(),
-                    password: "public-mailbox-password".into(),
-                    confirmation: "public-mailbox-password".into(),
-                    setup_contact: None,
+                    password: String::new(),
+                    confirmation: String::new(),
+                    setup_contact: Some("owner@independent.test".into()),
                     totp: "123456".into(),
                     csrf: "c".repeat(64),
                     request_id: "b".repeat(64),
@@ -616,7 +616,7 @@ mod tests {
                 domain: "example.test".into(),
                 revision: 7,
                 request_id: "b".repeat(64),
-                setup_enabled: false,
+                setup_enabled: true,
             },
         };
         assert_eq!(response.validate(), Ok(()));
