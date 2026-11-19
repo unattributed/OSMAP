@@ -1067,6 +1067,7 @@ struct CreateSql {
     reader: Sql,
     writes: Arc<Mutex<usize>>,
     uncertain: bool,
+    pending: bool,
 }
 impl CommandExecutor for CreateSql {
     fn run_with_stdin_bytes(
@@ -1077,6 +1078,15 @@ impl CommandExecutor for CreateSql {
     ) -> Result<CommandExecution, CommandExecutionError> {
         let query = std::str::from_utf8(input).unwrap();
         let stdout = if program == crate::account_password_backend::HASH_PROGRAM {
+            if self.pending {
+                let values = query.lines().collect::<Vec<_>>();
+                assert!(
+                    values.len() == 2
+                        && values[0] == values[1]
+                        && values[0].len() == 64
+                        && values[0].bytes().all(|b| b.is_ascii_hexdigit())
+                );
+            }
             assert_eq!(
                 args,
                 &crate::account_password_backend::HASH_ARGS
@@ -1093,10 +1103,25 @@ impl CommandExecutor for CreateSql {
             .first()
             .is_some_and(|a| a.contains("admin-write-mariadb"))
         {
-            if query.starts_with("SELECT revision") {
+            if query.starts_with("SELECT username,request_id,recovery_email") {
+                if self.uncertain && self.pending {
+                    return Err(CommandExecutionError {
+                        reason: "synthetic missing readiness grant".into(),
+                    });
+                }
+                assert!(query.contains("WHERE 0; ROLLBACK; SELECT 'ready'"));
+                "ready\n".into()
+            } else if query.starts_with("SELECT revision") {
                 "1\n".into()
             } else if query.starts_with("SELECT HEX(actor)") {
                 String::new()
+            } else if self.pending && query.starts_with("SELECT COUNT(*) FROM mailbox m") {
+                assert!(
+                    query.contains("FROM osmap_initial_accounts i")
+                        && query.contains("i.status='pending'")
+                        && query.contains("BINARY i.recovery_email=BINARY")
+                );
+                "1\n".into()
             } else {
                 assert!(
                     query.starts_with("SET SESSION innodb_lock_wait_timeout=3; START TRANSACTION;")
@@ -1107,7 +1132,54 @@ impl CommandExecutor for CreateSql {
                         reason: "private token-shaped diagnostic must not persist".into(),
                     });
                 }
-                "stale\n".into()
+                if self.pending {
+                    assert!(
+                        query.contains("INSERT INTO osmap_initial_accounts")
+                            && query.matches(" AND @i=1").count() == 2
+                    );
+                    let decode = |value: &str| {
+                        unhex(
+                            value
+                                .strip_prefix("CONVERT(0x")
+                                .unwrap()
+                                .strip_suffix(" USING utf8mb4)")
+                                .unwrap(),
+                        )
+                        .unwrap()
+                    };
+                    // Return the actual producer's journal values rather than
+                    // reimplementing its private input digest in the fixture.
+                    let operation = query
+                        .split("INSERT INTO osmap_admin_operations (")
+                        .nth(1)
+                        .unwrap()
+                        .split(") SELECT ")
+                        .nth(1)
+                        .unwrap()
+                        .split(",SHA2(")
+                        .next()
+                        .unwrap()
+                        .split(',')
+                        .collect::<Vec<_>>();
+                    let mailbox = query
+                        .split("INSERT INTO mailbox (")
+                        .nth(1)
+                        .unwrap()
+                        .split(") SELECT ")
+                        .nth(1)
+                        .unwrap()
+                        .split(',')
+                        .collect::<Vec<_>>();
+                    format!(
+                        "committed\n{}\t{}\t{}\t{}\n",
+                        upper_hex(decode(operation[1]).as_bytes()),
+                        decode(operation[2]),
+                        upper_hex(decode(mailbox[0]).as_bytes()),
+                        mailbox[4]
+                    )
+                } else {
+                    "stale\n".into()
+                }
             }
         } else {
             return self.reader.run_with_stdin_bytes(program, args, input);
@@ -1124,13 +1196,14 @@ fn create_request(f: &Fixture, csrf: &str) -> CreateMailbox {
         domain: "example.test".into(),
         local_part: "controlled".into(),
         display_name: "Controlled mailbox".into(),
-        password: "fresh-controlled-mailbox-password".into(),
-        confirmation: "fresh-controlled-mailbox-password".into(),
+        password: String::new(),
+        confirmation: String::new(),
         totp: code(&f.clock),
         csrf: csrf.into(),
         request_id: "a".repeat(64),
         quota_mib: 10,
         revision: 1,
+        setup_contact: Some("owner@independent.test".into()),
     }
 }
 fn writer_config() -> crate::admin_config::WriterConfig {
@@ -1141,6 +1214,7 @@ fn writer_config() -> crate::admin_config::WriterConfig {
         domains: vec!["example.test".into()],
         administrators: vec![LOGIN.into()],
         domain_quota_unit_bytes: 1_024_000,
+        _onboarding: None,
     }
 }
 #[test]
@@ -1194,6 +1268,7 @@ fn creation_requires_opt_in_actor_scope_csrf_and_fresh_factor() {
             reader: f.sql.clone(),
             writes: writes.clone(),
             uncertain: false,
+            pending: false,
         },
         f.clock.clone(),
         Password,
@@ -1255,6 +1330,7 @@ fn ambiguous_creation_retains_intent_and_blocks_another_request_key() {
             reader: f.sql.clone(),
             writes: writes.clone(),
             uncertain: true,
+            pending: false,
         },
         f.clock.clone(),
         Password,
@@ -1280,10 +1356,88 @@ fn ambiguous_creation_retains_intent_and_blocks_another_request_key() {
         let path = entry.unwrap().path();
         if path.extension().is_some_and(|e| e == "json") {
             let text = std::fs::read_to_string(path).unwrap();
-            assert!(!text.contains(&r.password));
+            assert!(!text.contains("owner@independent.test"));
             assert!(!text.contains(&r.totp));
             assert!(!text.contains("private token-shaped"));
             assert!(text.contains("\"pending\":true"));
         }
     }
+}
+
+#[test]
+fn onboarding_writer_refuses_legacy_password_bypass_and_records_pending_contact_atomically() {
+    let f = Fixture::new();
+    let reader = f.service();
+    let token = reader.login(LOGIN, PASSWORD, &code(&f.clock)).unwrap();
+    let context = Service::<Sql, Clock, Password>::context();
+    let summary = reader.scope(&token, &context).unwrap();
+    let writes = Arc::new(Mutex::new(0));
+    let mut writer = writer_config();
+    writer.domains.push("managed.test".into());
+    // A writer with no historical onboarding marker must enforce the same contract.
+    let backend = Service::new(
+        CreateSql {
+            reader: f.sql.clone(),
+            writes: writes.clone(),
+            uncertain: false,
+            pending: true,
+        },
+        f.clock.clone(),
+        Password,
+        f.root.clone(),
+    )
+    .unwrap()
+    .with_writer(Some(writer.clone()));
+    let form = backend
+        .create_mailbox_form_from(&token, &context, "example.test")
+        .ok()
+        .unwrap();
+    assert!(form.setup_enabled);
+    let mut request = create_request(&f, &summary.csrf);
+    request.setup_contact = None;
+    request.password = "public-admin-chosen-password".into();
+    request.confirmation = request.password.clone();
+    assert!(matches!(
+        backend.create_mailbox_from(&token, &context, &request),
+        Err(CreateFailure::Invalid)
+    ));
+    request.setup_contact = Some("owner@managed.test".into());
+    request.password.clear();
+    request.confirmation.clear();
+    assert!(request.valid());
+    assert!(matches!(
+        backend.create_mailbox_from(&token, &context, &request),
+        Err(CreateFailure::Invalid)
+    ));
+    request.setup_contact = Some("owner@independent.test".into());
+    assert!(request.valid());
+    f.clock.0.fetch_add(30, Ordering::SeqCst);
+    request.totp = code(&f.clock);
+    let unavailable = Service::new(
+        CreateSql {
+            reader: f.sql.clone(),
+            writes: writes.clone(),
+            uncertain: true,
+            pending: true,
+        },
+        f.clock.clone(),
+        Password,
+        f.root.clone(),
+    )
+    .unwrap()
+    .with_writer(Some(writer));
+    // Missing schema/grants refuse before consuming the administrator's fresh
+    // code. The same code can then authorize the restored, matching producer.
+    assert!(matches!(
+        unavailable.create_mailbox_from(&token, &context, &request),
+        Err(CreateFailure::Unavailable)
+    ));
+    assert_eq!(*writes.lock().unwrap(), 0);
+    let receipt = backend
+        .create_mailbox_from(&token, &context, &request)
+        .ok()
+        .unwrap();
+    assert!(receipt.setup_pending && receipt.username == "controlled@example.test");
+    assert_eq!(*writes.lock().unwrap(), 1);
+    assert!(!f.root.join("initial-enrollment").exists());
 }

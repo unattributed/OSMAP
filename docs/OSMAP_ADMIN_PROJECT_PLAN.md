@@ -188,10 +188,10 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Current product slice | **ADM-S01-03**, controlled mailbox creation: engineering and matching obsd1/mail isolated browser/native lookup qualification PASS; owner acceptance NOT_ACCEPTED and production writer NOT_DEPLOYED. Signed delivery and retained-candidate disposition are recorded in the current work-order closeout below. |
+| Current product slice | **ADM-S04-01**, initial user enrollment: IN_PROGRESS. The owner rejected the separate invitation journey; it is disabled and its parallel private runtime is stopped. Corrected source reuses Forgot password with the administrator's offline-confirmed recovery email. Source checks and installed qualification are recorded in the correction below; the corrected first-enrollment/Inbox journey is NOT_RUN and NOT_ACCEPTED. Automatic native account registration is still unmet. Historical native passes do not qualify this changed composition. |
 | Previous product slice | ADM-S01-02 DELIVERED through [PR #99](https://github.com/unattributed/OSMAP/pull/99), main `8e8294f`; bounded development/isolated mail qualification PASS; basic pages approved, text/icon refinement owner acceptance NOT_ACCEPTED |
 | Earlier product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; final login design owner-approved; whole-slice operator acceptance NOT_ACCEPTED |
-| Selected slice / next boundary | ADM-S01-03 was explicitly commenced on 2026-11-18 against an existing isolated domain. ADM-S01-04 native authentication and delivery is next and NOT_STARTED. The fresh-authority bootstrap and first-domain sequence remains planned; it is not a prerequisite for the qualified existing-domain journey. |
+| Selected slice / next boundary | ADM-S04-01 is explicitly approved and brought forward after ADM-S01-03: admin-TOTP pending creation with an offline-confirmed recovery email -> existing Forgot password -> six-digit email proof -> restricted password/first-TOTP enrollment -> actual native OSMAP login. Existing native registration and rollout prerequisites must be met before setup. ADM-S01-04 message delivery remains subsequent work. |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
 | Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
 | ADM-PLAN-03: integrated epic scope | Documentation-only integration of bootstrap, domain/virtual-address/admin management and all 18 security catalogue categories into the sprint/slice index below; no new product work is started or accepted by this amendment |
@@ -1984,7 +1984,7 @@ catalogue and slices, not a second backlog. Product Rust has no PHP dependency.
 | Mailbox address/name/password, quota, active/SMTP flags, welcome mail, recovery fields and dates | Create mailbox ADM-S01-03; edit/reset/disable/reactivate ADM-S02-02/03 | Isolated creation qualified; live route correction active. Editing and native authentication/delivery remain unaccepted. |
 | Alias source, multiple recipients, keep-local-copy, active state; catch-all and alias-domain target | Create/edit aliases and local/external forwarders with real routing, ADM-S03-01/02 | Reader projections implemented; mutation/routing journeys not implemented. Protect mailbox self-delivery mappings. |
 | Vacation, Fetchmail and DKIM/signing handlers | Installed-backend parity/disposition under existing optional/security catalogue, ADM-S02-05/ADM-S06 | Source presence observed; enablement, backend support and delivery require actual evidence. |
-| Added initial TOTP requirement | ADM-S04-01, brought forward before ADM-S01-04 where required: created mailbox -> independently delivered single-use setup -> user registers authenticator -> proves a current code -> protected no-overwrite installation -> password-plus-TOTP reaches owned Inbox | Admin browser enrollment journey NOT_IMPLEMENTED. Existing local provisioning does not satisfy it. Expired/replayed/cross-account setup and existing-factor overwrite refuse; seeds/counters stay out of SQL/audit. |
+| Added initial TOTP requirement | ADM-S04-01, brought forward before ADM-S01-04 where required: pending mailbox with administrator-recorded recovery email -> existing Forgot password and six-digit proof -> user password and proved authenticator -> protected no-overwrite installation -> native password-plus-TOTP reaches owned Inbox | Corrected source IN_PROGRESS; automatic native registration and installed journey unmet. Expired/replayed/cross-account setup and existing-factor overwrite refuse; seeds/counters stay out of SQL/audit. |
 
 Acceptance needs persisted changes and native effects. Reuse OSMAP's app shell,
 welcome/settings components and text/icon preference. Overview summarizes;
@@ -2032,3 +2032,328 @@ handoff above without removing its history. Keep a straight line: one real
 management feature through the established development login, matching native
 proof, independent review and delivery; then the next function in the parity
 map. Do not introduce credential churn, decorative controls or another plan.
+
+## ADM-S04-01 work order — 2026-11-18
+
+The owner accepts the S01-03 configuration-creation journey shown for
+`pr101@empty.test`, quota 20 MiB. This PASS does not qualify native authentication,
+delivery or initial user MFA. The approved next outcome is one pending mailbox
+created with administrator TOTP, independent external-contact verification, a
+restricted user-chosen password/TOTP setup, protected initial installation and
+a fresh login to the owned OSMAP Inbox through its actual backend.
+
+Baseline: merged `9eb3f76952f94c9f6015b31e84ee5df8863f510b`. Root owns integration,
+native/Git execution and delivery; a bounded Rust engineer owns initial setup
+storage; adapter_review independently assesses the source and actual results.
+Preserve the approved login, saved owner development admin password/TOTP,
+appearance and ordinary mailbox access. No new Python, dependencies or general
+test framework. Public mail-daemon/configuration changes and passkeys are outside
+this work. Use obsd1 as the development host/address; inspect actual contracts
+before composing dependent integration. Existing recovery requires a previously
+installed factor and must retain that restriction. Never manufacture a prior
+factor/hash to admit first enrollment.
+
+| Required boundary | Prerequisite and action | Expected result | Actual |
+| --- | --- | --- | --- |
+| Pending creation and setup authority | Current scoped writer, real schema, fresh admin TOTP; create one controlled pending account with an external contact | Non-secret receipt; no usable native password or ordinary user session; existing account/factor refuses | PASS for actual HTTPS creation 201 and private SQL readback: one disabled mailbox, disabled SMTP and self-alias. Saved admin credentials preserved. |
+| Independent recipient proof | Server-held approved contact, bounded invitation delivery and verification | Restricted, expiring, single-use setup authority bound to the pending account; wrong/expired/replayed/cross-account proof refuses | Owner confirms the first email arrived; its invitation is retired. One distinct controlled account's corrected standard-HTTPS invitation is accepted by SMTP; receipt and recipient-controlled token redemption PENDING. Local purpose/account/expiry/replay cases PASS. |
+| Initial password and factor | User-chosen password, proved authenticator, protected absent-factor store and real password authority | Counter consumed, factor never overwrites, activation read back; ambiguity remains contained | Private native producer/installer/password/SQL activation/readback PASS; owner setup PENDING. No-overwrite/partial-state refusal cases PASS locally. |
+| Working OSMAP user | Matching native passdb/userdb/Maildir and browser Runtime | Fresh password plus a later TOTP reaches only the owned Inbox; pending/old/unknown credentials refuse | Standard HTTPS 443 password/TOTP login 303 and owned Inbox 200 PASS at 5fed618. Probe logged out and disabled. Earlier status 75 cause remains UNKNOWN; native text was discarded by its old consumer. Owner first login PENDING; no production or message-delivery qualification. |
+| Delivery | Independent source/security review, focused Rust contracts and mandatory normal hooks | Signed reviewed checkpoint, signature verification, ordinary GitHub push and exact remote equality; native and owner acceptance stated separately | Reviewed signed checkpoints 2221f55 and 5cf7461 published through normal full push gates; exact remote equality confirmed. Final result-record checkpoint pending. |
+
+Prior total elapsed effort remains UNKNOWN. Preserve measured new actions and
+earliest sanitized failure separately from cleanup and authoritative-state
+certainty. Two failures at the same boundary stop retries for combined independent
+reassessment. Do not expand an exhausted allowance or invent a new prerequisite.
+Native account activation is not qualified by source, SQL creation or rendering.
+
+Read-only readiness established: obsd1's public mail daemons and ordinary OSMAP
+remain running; the active admin fixture is a separate private MariaDB authority.
+Its writer has creation grants but lacks the password/active-flag and operation
+credential-digest UPDATE grants required by setup. Existing native Dovecot supports
+the SQL/auth-client/userdb interfaces; observed version is evidence, not admission.
+The ordinary frontend uses remote authoritative-mail relays. Therefore the first
+login must use an isolated actual Dovecot + existing OSMAP frontend/helper candidate,
+not falsely qualify the private SQL fixture against the ordinary relay.
+
+Next native preparation `ADM-S04-01-private-passdb-preflight1`: root owns one
+new exact `/var/osmap-adm-s04-01` namespace on obsd1, with private Dovecot config,
+run/state/mail paths and a fixture-only SQL reader. Validate the actual installed
+configuration/SQL connection before dependent execution. Existing `_osmap`/vmail
+principals may be reused with private paths and keys; no public daemon or mail
+configuration changes. Stop on collision or failed semantic readiness and retain
+sanitized stage plus private output. Source-native synchronization follows a
+reviewed signed checkpoint. External invitation delivery awaits the owner's
+selected contact; no mail has been sent by this slice.
+
+Preparation result: private reader creation/query and Dovecot configuration parse
+PASS; exact root namespace identity retained privately. Auth worker and browser
+were NOT_RUN by that parser check. Next action
+`ADM-S04-01-private-userdb-check1` starts only that private Dovecot instance and
+uses the actual unmodified Doveadm userdb/create/list commands as vmail for the
+existing synthetic configuration-accepted account. Before the Inbox write,
+require exact private home/mail location and UID/GID 2000:2000. Retain the private
+master/state and earliest bounded failure; no public mail control/configuration
+operation. Primary authentication and new-user browser login remain separate.
+
+The first private userdb attempt starts the private master but userdb exits 75.
+Retained native diagnostics identify `EMFILE` (too many open files); the SSH-root
+process has soft/hard descriptor limits 128/1024. No Inbox write occurred because
+the userdb prerequisite did not pass. Public services and the active admin login
+are unchanged. Preserve this failure independently of any later private-instance
+stop/restart. A bounded process-local correction using the existing hard limit,
+followed by one actual private userdb/storage discriminator, is under independent
+review; do not call the earlier parser/reader passes functional authentication.
+
+Combined reassessment preserves the userdb/EMFILE failure and the separate
+asynchronous-stop observation refusal. Fresh namespace/config, process inventory
+and refused stale-socket connections resolve the private shutdown observation;
+there is no repeated stop, historical PID signal or socket unlink. One start-only
+continuation sets the private process soft descriptor limit to its existing hard
+limit. Its immediate readiness guard also observes too early; fresh readback
+then confirms the new private master/listeners without another start. Actual
+SQL userdb subsequently returns the exact private home/mail and 2000:2000; actual
+native Inbox create/list PASS. These results qualify private userdb/storage only,
+not a password or browser login. Public services remain OK.
+
+Source checkpoint `2221f55c74cfd6f6613fdb3d1c4929a7b6096380` has a verified
+Shopkeeper signature. Independent source review and focused Rust/Clippy checks
+pass; normal GitHub push gates are running. Next bounded native build action
+uses its exact private-mode archive and the already demonstrated obsd1 cache,
+foo Cargo home and child-local data limit, offline/locked with one job, for only
+`osmap-admin` and `osmap`. Stop on build failure; preserve diagnostics and do not
+repeat a full test/build or infer native enrollment from compilation. The provided
+external invitation destination remains private and outside Git.
+
+Native runtime preparation installs the signed binaries under the new private
+namespace and parses the frontend/helper configuration as their actual roles.
+The file service reaches sealed readiness with root:service-group socket 0660;
+the mailbox helper reaches its 2000:1002 socket and the user frontend serves its
+login. Preserve the first invalid pipelined SMTP probe; a sequential existing
+SMTP client observes greeting/EHLO/DSN successfully without sending a message.
+The external test contact has been supplied privately; no invitation is sent yet.
+
+Private proxy preparation first refuses an assumed proxy UID; copying the actual
+working Web identities resolves that mismatch. The native Nginx parser requires
+its private temp directories and creates an empty PID leaf during validation;
+preserve the invalid absent-PID guard separately from service readiness. Its
+OpenBSD worker chroot then requires the private Web endpoint inside that prefix.
+The correction preserves confinement and all public routes. The private TLS
+listener is bound to the obsd1 LAN address. One runtime PF rule admits only the
+operator workstation to its development TLS port; all 17 existing anchor rules
+read back identically, with no table/state flush or public mail-daemon change.
+
+One ignored native contract test now exercises the changed producer/consumer:
+controlled disabled fixture -> real restricted enrollment store -> proved code
+-> real privileged installer -> real password/activation/readback. It admits only
+the fixed private SQL/schema/socket and backend UID. It sends no mail, creates
+no administrator, leaves failure state retained, and writes a mode-0600 private
+receipt for a subsequent actual HTTP password/TOTP/owned-Inbox test. That receipt
+is never public evidence. The running owner admin service remains on its working
+configuration while the test uses a separate protected qualification config.
+The new source delta is test-only; production runtime bytes match `2221f55`.
+Native test execution and ordinary first login are NOT_RUN at this checkpoint.
+
+The private HTTPS admin login now returns 200 through the preserved Nginx worker
+chroot. Web shutdown leaves its owned Unix socket behind; the original wait for
+automatic removal and a subsequent over-narrow parent-mode guard both refused.
+Combined independent reassessment confirmed the actual 0750 parent contract,
+fresh process absence and refused connection. Only that pinned obsolete socket
+was removed; the new endpoint is inside the private proxy prefix. The ordinary
+owner admin route and saved credentials remain unchanged.
+
+Signed checkpoint `5cf7461d467d3a2eff7ec7aab3c48126af7970e3` adds only the
+opt-in native test and evidence. Its native compilation fails with ENOSPC on
+the host's `/tmp` filesystem before test execution. Moving its scratch cache to
+`/var/tmp` does not resolve this: fresh observation shows that path is a symlink
+to `/tmp`, and the second compiler attempt also fails before execution. Preserve
+both failures; the earlier free-space observation for `/var` did not establish
+the filesystem backing `/var/tmp`. Combined reassessment must verify the actual
+destination device and put compiler temporary output there as well before one
+corrected compile. No test account has been created or invitation sent. The
+fixture-only writer's five activation column grants and protected qualification
+configuration are installed; they are prerequisites, not activation evidence.
+
+The corrected compiler action verifies both target and temporary directories on
+the actual `/var` device, distinct from `/tmp`. Compilation PASS in 2m04s. The
+single ignored native test then PASS in 0.53s against signed `5cf7461`; installed
+private runtime source remains `2221f55` (the second delta is test-only).
+It exercises the actual privileged socket installer, password hashing, activation
+transaction and readback. Separate ordinary HTTPS password/later-TOTP login
+returns 303, and the owned Inbox returns 200 with the expected identity and real
+mailbox list. This is actual private Dovecot/frontend/helper evidence, not a
+Toronto or public delivery claim. Log out the test session and disable that exact
+probe account; retain its private factor and diagnostics without automatic reuse.
+
+Independent review then admits the development admin service/Web upgrade. The
+existing database, profiles, writer identity, state, socket and admin roster are
+preserved. Actual saved administrator login returns 303 and the new creation form
+returns 200. Private before/after readback confirms identical admin password
+digests and factor bytes; no replacement credentials or registration are made.
+The actual creation form, authorized with a later administrator TOTP, creates one
+controlled pending mailbox and accepts one SMTP setup invitation to the owner's
+privately supplied external contact. The retained mail transport observation
+confirms remote-MX acceptance; recipient receipt remains unconfirmed. SQL
+readback confirms disabled password/SMTP
+access and one self-alias while setup is pending. External recipient delivery,
+the owner-controlled password/authenticator enrollment and owner first login are
+still PENDING. Do not resend or replay an unconfirmed/expired invitation through
+an invented retry path. Public mail daemons/configuration remain unchanged.
+
+The owner confirms external invitation receipt with a screenshot but rejects the
+added development HTTPS port. This is not setup acceptance. Correct the active
+slice to use the existing obsd1 HTTPS 443 entry point and existing ordinary web
+listener; remove the added test TCP listeners and their exact temporary PF rule.
+Use the existing admin proxy with a private Unix endpoint that is reachable from
+the main proxy's actual chroot, preserving the Rust Web peer identity. The obsd1
+ordinary frontend will deliberately serve the isolated development authority;
+the authoritative production host and its public mail services remain untouched.
+Preserve the original frontend/configuration for restoration.
+
+Initial invitation origins now require a plain HTTPS hostname without an explicit
+port, shared by configuration admission and SMTP submission. The email identifies
+the account and setup page explicitly. Focused wire/invalid-origin regression
+passes. The original controlled account remains disabled with its expired/exposed
+invitation retained privately; there is no automatic reissue or state deletion.
+Use a distinct controlled account only after the corrected 443 journey is ready.
+This does not add a resend facility or replace the saved administrator credentials.
+Corrected native installation/routing and owner acceptance are pending.
+
+Standard-route correction: signed `2c53596` compiles natively in 52.34s. The
+existing private admin proxy now listens on a Unix socket reachable from the main
+proxy's verified chroot and UID. Preserve its first 403: Unix peer metadata is
+not an IP address. A protected fixed local-hop header preserves the previous
+loopback-hop identity. Preserve the first HTTPS 502, whose error record names the
+old upstream during graceful reload. Fresh worker observation and actual HTTPS
+admin login then PASS on standard 443. Backups are hash-verified; retain the
+unsupported checksum invocation and Cargo-source hard-link guard refusals as
+pre-effect staging failures. Installed binary leaves remain root-owned,
+single-link and byte-matched.
+
+The obsd1 development frontend now uses its existing web listener with the
+isolated authority and standard hostname. Both login pages return 200. All added
+test TCP listeners are stopped, and the exact temporary PF rule is removed;
+the original 17-rule anchor reads back identically. Production mail is unchanged.
+One authenticated check of this changed 443 composition fails with native auth
+status 75 before a session. This is a backend error, not credential/TOTP denial.
+Actual direct auth as the same UID, including matching arguments and cleared
+environment, succeeds. The sealed frontend boundary remains unresolved; the
+earlier private Inbox PASS does not qualify this corrected route. Existing error
+consumption retained status but discarded the native diagnostic. Extend that
+consumer only with fixed failure classes and stream byte counts, preserving
+authentication decisions and private-output exclusion. Its private-marker
+regression passes. No replacement invitation is sent before the corrected
+authenticated journey passes; owner acceptance remains pending.
+
+Signed diagnostic checkpoint `5fed618` compiles natively in 51.80s. Its next
+actual standard-HTTPS password/TOTP check PASS (303); the owned Inbox PASS (200)
+with the expected identity and real mailbox list, then logout PASS (303). Disable
+the exact probe again. The diagnostic changes no authentication decision, so do
+not attribute that pass or the earlier failure to a unique fix. The original
+status-75 cause remains UNKNOWN because its old consumer discarded native text;
+future unexpected exits now retain fixed classes and bounded stream accounting.
+
+After those agent-owned checks and independent review, the saved administrator
+signs in on standard 443 and authorizes one distinct controlled pending account
+with a later fresh TOTP. Creation returns 201 and SMTP accepts its corrected
+invitation with explicit account/code instructions and a plain HTTPS setup URL.
+SQL readback confirms one disabled mailbox/SMTP record, self-alias and matching
+operation digest. The original pending account remains disabled and untouched;
+this is not reissue. The owner is asked to complete the restricted setup and
+ordinary login through obsd1's normal HTTPS address. Corrected invitation receipt,
+recipient-controlled verification, owner enrollment and first-login acceptance
+remain PENDING. No additional port or replacement admin registration is used.
+
+### Operator correction — reuse Forgot password, 2026-11-18
+
+The owner rejects the separate invitation page and elaborate development fixture;
+the previous invitation journey is **NOT_ACCEPTED**, not merely awaiting UAT.
+Restore the original working OSMAP frontend and original admin writer configuration,
+disable the invitation feature and stop its parallel private Dovecot, helper and
+factor processes. Retain source, disabled pending accounts and failure evidence.
+Those restoration readbacks PASS; the normal HTTPS addresses and saved admin
+credentials are preserved. No more invitation or test-environment work is authorized
+by this slice. The earlier native passes remain evidence of their limited scope.
+
+The replacement business rule is explicit: the administrator establishes identity
+and obtains the intended user's recovery email **offline**, then records it when
+creating the new pending mailbox. Reuse OSMAP's existing **Forgot password**
+routes, six-digit mail code, restricted recovery cookie, password form and local
+TOTP enrollment. The email-code proof establishes control of the administrator's
+recorded contact. No existing user password or factor is required for this
+specifically authorized initial purpose. Existing-account recovery retains its
+current eligibility and real prior-factor requirement.
+
+Root owns integration, native authority and delivery; the Rust engineer extends
+the existing recovery store and bounded native SQL backend; the UI engineer reuses
+OSMAP's actual shield, controls and enrollment store; the independent reviewer
+checks the trust boundary. One product outcome: admin-TOTP pending creation with
+the offline-confirmed recovery address -> existing Forgot password -> six-digit
+proof -> user password and proved initial TOTP -> ordinary native login. Store
+the pending contact with its creation operation in the native account authority;
+do not treat browser settings, a fabricated factor or missing factor alone as
+bootstrap authority. Reuse the existing privileged account service and installer
+utility in-process; retire the separate invitation store/page and standalone
+factor service. No new Python, dependencies, services, ports or test framework.
+
+Minimum checks: the existing shared recovery store accepts the initial purpose
+only with a typed pending operation/revision and genuine native absence; registered
+recovery cannot select it. Expired/wrong/replayed email proofs and changed
+provisioning metadata refuse. The same native password backend gains a distinct
+pending-account CAS; counter/factor publication precedes SQL activation, and SQL
+activation consumes the provisioning row atomically. Reuse actual OSMAP form and
+menu classes; leave the approved login unchanged. Run focused existing Rust tests,
+one matching product composition test, independent review and mandatory delivery
+hooks. Native qualification must use the existing deployment/backend contract;
+do not create another fixture or claim production from a source test. Preserve
+prior costs as UNKNOWN and all failures; two failures at the same boundary still
+require combined reassessment.
+
+Native integration gap found during independent review: the existing root account
+service and admission service use equal fixed account rosters, and the frontend
+may select one exact rollout account. A pending SQL row does not register a new
+identity with either roster. Both initial setup and completed-contact recovery
+now require the same roster/rollout admission before SQL eligibility. This
+prevents completing setup for an identity whose ordinary login will refuse.
+Automatic native account registration remains **NOT_IMPLEMENTED**; the corrected
+installed enrollment/Inbox journey is **NOT_RUN**, not awaiting owner UAT. Do not
+switch all existing users to native rollout as a shortcut. Keep `initial_setup`
+false until matching real registration and backend prerequisites are satisfied.
+
+The admin shell reuses the actual OSMAP shield, account menu, rail and controls.
+Creation, Cancel, domain selection, save and return actions use the shared icon
+labels; the existing Appearance icon/text choice also applies to the HTTP 201
+creation receipt. The approved login renderer is unchanged. This is source
+alignment, not new browser appearance acceptance.
+
+Corrected source checks: shared recovery store 20 PASS; native access composition
+5 PASS; password backend 17 PASS; epoch store 11 PASS; authenticator enrollment
+9 PASS; factor replacement 10 PASS (one native-only case ignored); initial file
+publication 5 PASS. The HTTP recovery scope passes all 11 cases after retaining
+the earlier copy-assertion failure: the revised explanatory text had removed the
+existing generic non-enumerating phrase, which is restored. Admin-filtered checks
+pass 108 cases with 12 native-only cases ignored. A focused actual HTTP 201 receipt
+regression also confirms the icon preference is applied. Strict all-target Clippy
+passes; mandatory commit/push results and remote identity are delivery evidence,
+not native qualification. Private terminal logs remain under the existing sprint
+artifact root; no credentials, recovery addresses or raw mail are added to Git.
+
+2026-11-19 correction: owner UAT failed at recovery-contact capture. Earlier
+configuration-only acceptance remains historical. Root owns the obsd1 correction
+and delivery, with separate writer, frontend and independent review. Exercise
+missing contact, password-only POST, unavailable schema and atomic pending
+creation; inspect the installed form. Do not infer activation or Inbox access
+from a captured address, or populate older accounts using a guessed contact.
+
+The owner subsequently confirmed capture and observed failure at ordinary Forgot
+password. For the shared-backend change starting at `31efd4e`, root owns obsd1
+integration, the native and admin engineers bind both SQL callers, and the
+independent reviewer checks the real command paths. On obsd1 the writer selects
+a private development schema while the native account service and Dovecot use
+the writable local mailbox database. Check domain presence there before live
+provisioning. Creation must use that same socket and database or refuse before
+a write. Keep ordinary sign-in and read access available. Check matching and
+mismatched endpoints, plus the actual host wiring. Stop before changing
+unrelated mail accounts or replacing an existing domain. Earlier effort is
+unquantified. First code delivery and activated Inbox require separate observed
+results.

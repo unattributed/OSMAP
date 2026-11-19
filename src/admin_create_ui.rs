@@ -3,9 +3,10 @@ use crate::admin_access::{CreateFailure, CreatePage, CreateReceipt};
 use crate::html::TrustedHtml;
 use crate::http::HttpResponse;
 use crate::http_support::{escape_html, url_encode};
+use crate::http_ui::presentation_label;
 
 pub(crate) fn create_mailbox_page(page: &CreatePage) -> HttpResponse {
-    if !page.valid() {
+    if !page.valid() || !page.setup_enabled {
         return super::error_page(503);
     }
     let content = format!(concat!(
@@ -19,14 +20,13 @@ pub(crate) fn create_mailbox_page(page: &CreatePage) -> HttpResponse {
         "<p><label for=\"create-display-name\">Display name</label><input id=\"create-display-name\" name=\"display_name\" maxlength=\"255\"></p>",
         "<p><label for=\"create-quota\">Configured quota (MiB)</label><input id=\"create-quota\" type=\"number\" name=\"quota_mib\" min=\"1\" max=\"1048576\" step=\"1\" aria-describedby=\"create-quota-help\" required></p>",
         "<p id=\"create-quota-help\" class=\"muted\">Enter a positive limit in MiB (1 MiB = 1,048,576 bytes). The domain's remaining capacity is checked when you submit.</p>",
-        "<p><label for=\"create-password\">Mailbox password</label><input id=\"create-password\" type=\"password\" name=\"password\" autocomplete=\"new-password\" minlength=\"15\" maxlength=\"256\" aria-describedby=\"create-password-help\" required></p>",
-        "<p id=\"create-password-help\" class=\"muted\">Use 15–128 characters, at most 512 UTF-8 bytes. The service checks this limit when you submit. Passwords are never displayed on the result page.</p>",
-        "<p><label for=\"create-confirmation\">Confirm mailbox password</label><input id=\"create-confirmation\" type=\"password\" name=\"confirmation\" autocomplete=\"new-password\" minlength=\"15\" maxlength=\"256\" required></p>",
+        "<p><label for=\"create-setup-contact\">Recovery email</label><input id=\"create-setup-contact\" type=\"email\" name=\"setup_contact\" autocomplete=\"off\" maxlength=\"254\" aria-describedby=\"create-setup-help\" required></p>",
+        "<p id=\"create-setup-help\" class=\"muted\">Confirm the new user's identity and external recovery email offline. Forgot password uses this address for the user's first password and authenticator setup.</p>",
         "<p><label for=\"create-totp\">Current administrator TOTP code</label><input id=\"create-totp\" type=\"text\" name=\"totp\" autocomplete=\"one-time-code\" inputmode=\"numeric\" pattern=\"[0-9]{{6}}\" minlength=\"6\" maxlength=\"6\" required></p>",
-        "<p>Mailbox browser MFA enrollment is pending. Native mailbox authentication and message delivery require separate verification after configuration.</p>",
-        "<div class=\"toolbar\"><button type=\"submit\" class=\"primary-button\">Create mailbox</button> <a class=\"button-link\" href=\"/admin/mailboxes?domain={domain_url}\">Cancel</a></div></form></section>"
+        "<div class=\"toolbar\"><button type=\"submit\" class=\"primary-button\">{create}</button> <a class=\"button-link\" href=\"/admin/mailboxes?domain={domain_url}\">{cancel}</a></div></form></section>"
     ), csrf=escape_html(&page.csrf), request_id=escape_html(&page.request_id), revision=page.revision,
-       domain=escape_html(&page.domain), domain_url=escape_html(&url_encode(&page.domain)));
+       domain=escape_html(&page.domain), domain_url=escape_html(&url_encode(&page.domain)),
+       create=presentation_label("Create mailbox", "add"), cancel=presentation_label("Cancel", "close"));
     super::page_shell(
         &page.login,
         &page.csrf,
@@ -38,7 +38,7 @@ pub(crate) fn create_mailbox_page(page: &CreatePage) -> HttpResponse {
 }
 
 pub(crate) fn mailbox_created_page(receipt: &CreateReceipt) -> HttpResponse {
-    if !receipt.valid() {
+    if !receipt.valid() || !receipt.setup_pending {
         return super::error_page(503);
     }
     let content = format!(concat!(
@@ -46,11 +46,12 @@ pub(crate) fn mailbox_created_page(receipt: &CreateReceipt) -> HttpResponse {
         "<dl><dt>Mailbox address</dt><dd>{username}</dd><dt>Hosted domain</dt><dd>{domain}</dd>",
         "<dt>Configured quota</dt><dd>{quota_mib} MiB ({quota} bytes)</dd>",
         "<dt>Operation ID</dt><dd style=\"overflow-wrap:anywhere\">{request_id}</dd></dl>",
-        "<p>Native authentication and message delivery have not yet been verified. Mailbox browser MFA enrollment is pending.</p>",
+        "<p>Recovery email recorded. The mailbox is pending user setup. Once account setup is enabled for this mailbox, the user can choose Forgot password on the OSMAP sign-in page.</p>",
         "<p>Keep this operation ID when checking the result. Refreshing this submission uses the same operation ID.</p>",
-        "<a class=\"button-link\" href=\"/admin/mailboxes?domain={domain_url}\">Back to mailboxes</a></section>"
+        "<a class=\"button-link\" href=\"/admin/mailboxes?domain={domain_url}\">{back}</a></section>"
     ), username=escape_html(&receipt.username), domain=escape_html(&receipt.domain), quota_mib=receipt.quota / 1_048_576,
-       quota=receipt.quota, request_id=escape_html(&receipt.request_id), domain_url=escape_html(&url_encode(&receipt.domain)));
+       quota=receipt.quota, request_id=escape_html(&receipt.request_id), domain_url=escape_html(&url_encode(&receipt.domain)),
+       back=presentation_label("Back to mailboxes", "back"));
     let mut response = super::page_shell(
         &receipt.login,
         &receipt.csrf,
@@ -89,7 +90,7 @@ pub(crate) fn create_failure_page(
             )
         })
         .unwrap_or_default();
-    let body = format!("<main id=\"main-content\" class=\"standalone-notice\" tabindex=\"-1\"><section class=\"panel\"><h1>Mailbox creation unavailable</h1><p role=\"alert\">{message}</p>{operation}<a class=\"button-link\" href=\"/admin/mailboxes?domain={}\">Back to mailboxes</a> <a class=\"button-link\" href=\"/admin\">Return to overview</a></section></main>",escape_html(&url_encode(domain)));
+    let body = format!("<main id=\"main-content\" class=\"standalone-notice\" tabindex=\"-1\"><section class=\"panel\"><h1>Mailbox creation unavailable</h1><p role=\"alert\">{message}</p>{operation}<a class=\"button-link\" href=\"/admin/mailboxes?domain={}\">{back}</a> <a class=\"button-link\" href=\"/admin\">{overview}</a></section></main>",escape_html(&url_encode(domain)),back=presentation_label("Back to mailboxes", "back"),overview=presentation_label("Return to overview", "shield"));
     super::admin_html_response(
         status,
         reason,
@@ -109,6 +110,7 @@ mod tests {
             domain: "example.test".into(),
             revision: 1,
             request_id: "b".repeat(64),
+            setup_enabled: true,
         }
     }
 
@@ -125,13 +127,12 @@ mod tests {
             .split("</form>")
             .next()
             .unwrap();
-        assert_eq!(form.matches(" name=\"").count(), 10);
+        assert_eq!(form.matches(" name=\"").count(), 9);
         for name in [
             "domain",
             "local_part",
             "display_name",
-            "password",
-            "confirmation",
+            "setup_contact",
             "totp",
             "csrf",
             "request_id",
@@ -140,7 +141,7 @@ mod tests {
         ] {
             assert!(form.contains(&format!("name=\"{name}\"")));
         }
-        for name in ["password", "confirmation", "totp"] {
+        for name in ["setup_contact", "totp"] {
             let input = form
                 .split(&format!("name=\"{name}\""))
                 .nth(1)
@@ -151,9 +152,26 @@ mod tests {
             assert!(!input.contains("value="));
         }
         assert!(form.contains("Configured quota (MiB)"));
-        assert!(form.contains("minlength=\"15\" maxlength=\"256\""));
+        assert!(form.contains("Recovery email"));
+        assert!(form.contains("offline"));
+        assert!(form.contains("Forgot password"));
+        assert!(!form.contains("name=\"password\""));
+        assert!(!form.contains("name=\"confirmation\""));
+        assert!(form.contains("presentation-icon-add"));
+        assert!(form.contains("presentation-icon-close"));
         assert!(!html.contains("osmap-admin1."));
         assert!(!html.contains("<script"));
+    }
+
+    #[test]
+    fn service_without_recovery_contact_support_cannot_offer_creation() {
+        let mut page = page();
+        page.setup_enabled = false;
+        let response = create_mailbox_page(&page);
+        let html = String::from_utf8(response.body).unwrap();
+        assert_eq!(response.status_code, 503);
+        assert!(!html.contains("<form"));
+        assert!(!html.contains("name=\"setup_contact\""));
     }
 
     #[test]
@@ -165,16 +183,23 @@ mod tests {
             username: "alice@example.test".into(),
             request_id: "b".repeat(64),
             quota: 2 * 1_048_576,
+            setup_pending: true,
         };
-        let response = mailbox_created_page(&receipt);
+        let mut response = mailbox_created_page(&receipt);
+        crate::admin_access::AdminPreferences {
+            presentation_style: "icons".into(),
+            ..Default::default()
+        }
+        .apply_menus(&mut response);
         assert_eq!(response.status_code, 201);
         let html = String::from_utf8(response.body).unwrap();
+        assert!(html.contains("data-presentation-style=\"icons\""));
+        assert!(html.contains("presentation-icon-back"));
         assert!(html.contains("alice@example.test"));
         assert!(html.contains("2 MiB (2097152 bytes)"));
         assert!(html.contains("Signed in as"));
-        assert!(
-            html.contains("Native authentication and message delivery have not yet been verified.")
-        );
+        assert!(html.contains("Recovery email recorded."));
+        assert!(html.contains("pending user setup"));
         assert!(!html.contains("synthetic-mailbox-password"));
         assert!(!html.contains("name=\"password\""));
     }

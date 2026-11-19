@@ -1,6 +1,7 @@
 //! Fixed child-role custody for authoritative password utilities. Dependencies
 //! are admitted from the trusted installed graph before confinement, then held
 //! stable for this helper lifetime. No historical OS/package bytes are required.
+use crate::account_password_backend::SQL_SOCKET;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::cell::Cell;
@@ -26,7 +27,6 @@ const CONTROL_AUTH: &str = "/var/dovecot/osmap-account-auth-master";
 const CONTROL_ANVIL: &str = "/var/dovecot/osmap-account-anvil";
 const SQL_CONFIG: &str = "/etc/osmap/account-mariadb.cnf";
 const SQL_PLAN: &str = "/etc/osmap/account-runtime/sql-endpoint.json";
-const SQL_SOCKET: &str = "/var/run/mysql/mysql.sock";
 const PRIMARY_SOCKET: &str = "/var/dovecot/osmap-account-auth-client";
 const FILE_CAP: u64 = 64 * 1024 * 1024;
 const TOTAL_CAP: u64 = 128 * 1024 * 1024;

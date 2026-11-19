@@ -1,9 +1,11 @@
-//! Account-bound replacement TOTP candidates for already-enrolled accounts.
+//! Account-bound TOTP candidates for replacement or initial owner enrollment.
 //!
 //! This store never changes the active factor, account epoch or browser sessions.
 //! Native activation must consume the verified enrollment ID under the real
-//! account fence, compare the prior factor/epoch, install the factor,
+//! account fence, compare the prior factor or authorized absence and epoch,
+//! install the factor,
 //! revoke old sessions and independently read back before releasing it.
+use crate::access_recovery::FactorBinding;
 use crate::identity::CanonicalUsername;
 use crate::private_account_file::PrivateAccountFile;
 use crate::session::{RandomSource, SystemRandomSource};
@@ -34,7 +36,8 @@ pub struct EnrollmentBinding {
     pub account: String,
     pub session_id: String,
     pub epoch: u64,
-    pub expected_factor_sha256: String,
+    #[serde(alias = "expected_factor_sha256")]
+    pub factor: FactorBinding,
 }
 impl fmt::Debug for EnrollmentBinding {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -48,7 +51,13 @@ impl EnrollmentBinding {
     fn valid(&self) -> bool {
         CanonicalUsername::parse(self.account.clone()).is_ok()
             && hex_id(&self.session_id)
-            && hex_id(&self.expected_factor_sha256)
+            && match &self.factor {
+                FactorBinding::Existing(hash) => hex_id(hash),
+                FactorBinding::Absent {
+                    provision_operation,
+                    revision,
+                } => hex_id(provision_operation) && *revision > 0,
+            }
     }
 }
 
@@ -442,7 +451,7 @@ mod tests {
             account: "alice@example.test".into(),
             session_id: "1".repeat(64),
             epoch: 4,
-            expected_factor_sha256: "a".repeat(64),
+            factor: FactorBinding::Existing("a".repeat(64)),
         }
     }
     fn deadline() -> Instant {
@@ -466,6 +475,17 @@ mod tests {
             .otpauth_uri
             .starts_with("otpauth://totp/OSMAP%3Aalice%40example.test?secret="));
         assert!(!format!("{pending:?}").contains(&pending.secret_base32));
+        // Exercise the real reader against a retained pre-typed binding.
+        let mut legacy: serde_json::Value = serde_json::from_slice(&bytes(&store)).unwrap();
+        let factor = legacy["binding"]
+            .as_object_mut()
+            .unwrap()
+            .remove("factor")
+            .unwrap();
+        legacy["binding"]["expected_factor_sha256"] = factor;
+        let held = store.files.lock(&binding().account).unwrap();
+        held.write(&serde_json::to_vec(&legacy).unwrap()).unwrap();
+        drop(held);
         let proof = store
             .verify(
                 &binding(),
@@ -484,6 +504,68 @@ mod tests {
     }
 
     #[test]
+    fn absent_factor_candidate_is_bound_to_pending_operation_and_revision() {
+        let (_scratch, store) = fixture();
+        let mut initial = binding();
+        initial.factor = FactorBinding::Absent {
+            provision_operation: "b".repeat(64),
+            revision: 2,
+        };
+        let pending = store
+            .begin_with_random(
+                initial.clone(),
+                0,
+                30,
+                deadline(),
+                &ReferenceRandom(Cell::new(1)),
+            )
+            .unwrap();
+        let original = bytes(&store);
+        for factor in [
+            FactorBinding::Existing("a".repeat(64)),
+            FactorBinding::Absent {
+                provision_operation: "c".repeat(64),
+                revision: 2,
+            },
+            FactorBinding::Absent {
+                provision_operation: "b".repeat(64),
+                revision: 3,
+            },
+        ] {
+            let mut changed = initial.clone();
+            changed.factor = factor;
+            assert!(store.pending(&changed, 59, deadline()).unwrap().is_none());
+            assert_eq!(
+                store
+                    .verify(
+                        &changed,
+                        &pending.id,
+                        pending.revision,
+                        "287082",
+                        59,
+                        deadline()
+                    )
+                    .unwrap_err(),
+                EnrollmentError::Refused
+            );
+            assert_eq!(bytes(&store), original);
+        }
+        let proof = store
+            .verify(
+                &initial,
+                &pending.id,
+                pending.revision,
+                "287082",
+                59,
+                deadline(),
+            )
+            .unwrap();
+        assert_eq!(proof.binding(), &initial);
+        assert_eq!(proof.accepted_counter(), 1);
+        assert!(!format!("{proof:?}").contains(&pending.secret_base32));
+    }
+
+    #[test]
     fn wrong_session_epoch_factor_id_and_revision_never_consume_candidate() {
         let (_scratch, store) = fixture();
         let pending = begin(&store);
@@ -496,7 +578,7 @@ mod tests {
         v.epoch += 1;
         changes.push(v);
         let mut v = binding();
-        v.expected_factor_sha256 = "b".repeat(64);
+        v.factor = FactorBinding::Existing("b".repeat(64));
         changes.push(v);
         for value in changes {
             assert_eq!(
@@ -753,7 +835,7 @@ mod tests {
         );
         assert_eq!(bytes(&store), before);
         let mut absent = binding();
-        absent.expected_factor_sha256.clear();
+        absent.factor = FactorBinding::Existing(String::new());
         assert_eq!(
             store
                 .begin(absent, pending.revision, 59, deadline())

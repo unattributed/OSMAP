@@ -1,7 +1,8 @@
 //! Durable account admission state for the Rust password service.
 //!
 //! The epoch-v1 filename and five-field JSON schema match the existing operator
-//! store. Runtime opens existing state only. A crash after `begin` leaves the
+//! store. Ordinary admission opens existing state only; first enrollment has a
+//! trusted, absent-only initializer. A crash after `begin` leaves the
 //! account pending; a new guard cannot clear pending/contained state. These
 //! methods are trusted service operations, not browser-request capabilities.
 //! Rust readers also honor the narrowly owned `.uncertain` sibling marker.
@@ -115,7 +116,8 @@ pub(crate) struct Store {
 }
 impl Store {
     /// `root`/owner come only from fixed operator service configuration. The
-    /// directory and every runtime lock/record must already exist.
+    /// directory must already exist. Ordinary admission and mutation also
+    /// require existing lock/record pairs; only `provision_initial` creates them.
     pub(crate) fn open(root: &Path, owner: u32) -> Result<Self, Error> {
         if !root.is_absolute() || root.canonicalize().map_err(available)? != root {
             return Err(Error::Unavailable);
@@ -137,6 +139,104 @@ impl Store {
         };
         store.check_root()?;
         Ok(store)
+    }
+    /// Native first enrollment only, after pending SQL authority, consumed
+    /// email proof and a proved first factor. This creates admission metadata,
+    /// not credentials or a factor. Existing and partial state is never reset.
+    pub(crate) fn provision_initial(
+        &self,
+        account: &str,
+        original_deadline: Instant,
+    ) -> Result<(), Error> {
+        deadline(original_deadline)?;
+        self.check_root()?;
+        let stem = stem(account)?;
+        let lock_name = format!("{stem}.lock");
+        let record_name = format!("{stem}.json");
+        let marker_name = format!("{stem}.uncertain");
+        for name in [&lock_name, &record_name, &marker_name] {
+            if crate::openbsd::private_leaf_exists(&self.directory, &leaf(name)?)
+                .map_err(available)?
+            {
+                return Err(Error::Refused);
+            }
+        }
+        let lock = self.open_leaf(&lock_name, libc::O_RDWR | libc::O_CREAT | libc::O_EXCL)?;
+        let lock_identity = identity(&lock.metadata().map_err(available)?);
+        let result = (|| {
+            crate::openbsd::private_file_try_lock(&lock).map_err(available)?;
+            lock.sync_all().map_err(available)?;
+            self.directory.sync_all().map_err(available)?;
+            deadline(original_deadline)?;
+            if self.current_identity(&lock_name)? != lock_identity {
+                return Err(Error::Unavailable);
+            }
+            for name in [&record_name, &marker_name] {
+                if crate::openbsd::private_leaf_exists(&self.directory, &leaf(name)?)
+                    .map_err(available)?
+                {
+                    return Err(Error::Refused);
+                }
+            }
+            let bytes = serde_json::to_vec(&Record {
+                epoch: 0,
+                state: State::Active,
+                changed_at: None,
+                intent: None,
+                used_intents: Vec::new(),
+            })
+            .map_err(available)?;
+            let expected_hash = Sha256::digest(&bytes);
+            let mut output =
+                self.open_leaf(&record_name, libc::O_RDWR | libc::O_CREAT | libc::O_EXCL)?;
+            let record_identity = identity(&output.metadata().map_err(available)?);
+            output.write_all(&bytes).map_err(available)?;
+            output.sync_all().map_err(available)?;
+            self.directory.sync_all().map_err(available)?;
+            let mut input = self.open_leaf(&record_name, libc::O_RDONLY)?;
+            let mut actual = Vec::new();
+            (&mut input)
+                .take(LIMIT as u64 + 1)
+                .read_to_end(&mut actual)
+                .map_err(available)?;
+            self.check_file(&input)?;
+            let (record, observed_identity) = self.read(&record_name)?;
+            if actual.len() != bytes.len()
+                || Sha256::digest(&actual) != expected_hash
+                || identity(&input.metadata().map_err(available)?) != record_identity
+                || identity(&output.metadata().map_err(available)?) != record_identity
+                || observed_identity != record_identity
+                || self.current_identity(&lock_name)? != lock_identity
+                || record.epoch != 0
+                || record.state != State::Active
+                || record.changed_at.is_some()
+                || record.intent.is_some()
+                || !record.used_intents.is_empty()
+                || crate::openbsd::private_leaf_exists(&self.directory, &leaf(&marker_name)?)
+                    .map_err(available)?
+            {
+                return Err(Error::Unavailable);
+            }
+            self.check_root()?;
+            deadline(original_deadline)
+        })();
+        if result.is_err() {
+            // Retain every newly created leaf. If publication was partial or
+            // uncertain, the existing marker also refuses ordinary admission.
+            // A failed containment write never replaces the original failure.
+            if self.current_identity(&lock_name).ok() == Some(lock_identity) {
+                if let Ok(mut marker) =
+                    self.open_leaf(&marker_name, libc::O_WRONLY | libc::O_CREAT | libc::O_EXCL)
+                {
+                    let _ = marker
+                        .write_all(b"osmap-initial-epoch-incomplete-v1\n")
+                        .and_then(|()| marker.sync_all())
+                        .and_then(|()| self.directory.sync_all());
+                }
+            }
+        }
+        let _ = crate::openbsd::private_file_unlock(&lock);
+        result
     }
     fn check_root(&self) -> Result<(), Error> {
         let current = fs::symlink_metadata(&self.root).map_err(available)?;

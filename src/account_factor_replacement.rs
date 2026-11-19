@@ -231,6 +231,9 @@ impl Coordinator {
         );
         within(deadline)?;
         let binding = verified.binding().clone();
+        // A proved initial candidate authorizes only first installation. It
+        // must never enter replacement's archive/session/epoch effects.
+        let expected_factor_sha256 = binding.factor.existing_sha256().ok_or(Error::Refused)?;
         let active_name = leaf(&binding.account)?;
         let new_bytes = format!(
             "# {}\nsecret={}\n",
@@ -239,7 +242,7 @@ impl Coordinator {
         )
         .into_bytes();
         let replacement = hash(&new_bytes);
-        if replacement == binding.expected_factor_sha256 {
+        if replacement == expected_factor_sha256 {
             return Err(Error::Refused);
         }
         let files = self.files();
@@ -259,7 +262,7 @@ impl Coordinator {
         }
         let factors = self.factors()?;
         let (old_bytes, old_identity) = factors.read(&active_name)?;
-        if hash(&old_bytes) != binding.expected_factor_sha256 {
+        if hash(&old_bytes) != expected_factor_sha256 {
             return Err(Error::FactorChanged);
         }
         let old_secret = parse_secret_file(
@@ -307,7 +310,7 @@ impl Coordinator {
         intent.update(verified.id().as_bytes());
         intent.update(binding.session_id.as_bytes());
         intent.update(binding.epoch.to_be_bytes());
-        intent.update(binding.expected_factor_sha256.as_bytes());
+        intent.update(expected_factor_sha256.as_bytes());
         let intent = format!("{:x}", intent.finalize());
         let mut case = Case {
             schema: SCHEMA.into(),
@@ -418,7 +421,7 @@ impl Coordinator {
         )
         .map_err(|_| fail(&locked, &mut case, Error::SessionsIncomplete))?;
         if hash(&factors.read(&active_name)?.0) != replacement
-            || hash(&archive.read(&archive_name)?.0) != binding.expected_factor_sha256
+            || hash(&archive.read(&archive_name)?.0) != expected_factor_sha256
         {
             return Err(fail(&locked, &mut case, Error::FactorChanged));
         }
@@ -725,6 +728,12 @@ mod tests {
             guard.status().unwrap()
         }
         fn proof(&self) -> VerifiedEnrollment {
+            self.proof_with_factor(crate::access_recovery::FactorBinding::Existing(hash(OLD)))
+        }
+        fn proof_with_factor(
+            &self,
+            factor: crate::access_recovery::FactorBinding,
+        ) -> VerifiedEnrollment {
             let enroll = EnrollmentStore::new(self.root.join("enrollment"));
             let pending = enroll
                 .begin(
@@ -732,7 +741,7 @@ mod tests {
                         account: ACCOUNT.into(),
                         session_id: "a".repeat(64),
                         epoch: 3,
-                        expected_factor_sha256: hash(OLD),
+                        factor: factor.clone(),
                     },
                     0,
                     100,
@@ -747,7 +756,7 @@ mod tests {
                         account: ACCOUNT.into(),
                         session_id: "a".repeat(64),
                         epoch: 3,
-                        expected_factor_sha256: hash(OLD),
+                        factor,
                     },
                     &pending.id,
                     pending.revision,
@@ -774,6 +783,30 @@ mod tests {
             .unwrap());
         assert_eq!(fs::read(f.factor()).unwrap(), OLD);
         assert_eq!(f.status().state, State::Active);
+        assert!(f
+            .sessions()
+            .load(&"a".repeat(64))
+            .unwrap()
+            .unwrap()
+            .revoked_at
+            .is_none());
+    }
+
+    #[test]
+    fn initial_candidate_cannot_dispatch_replacement_effects() {
+        let f = Fixture::new();
+        let proof = f.proof_with_factor(crate::access_recovery::FactorBinding::Absent {
+            provision_operation: "b".repeat(64),
+            revision: 1,
+        });
+        let result = f.coordinator().replace(proof, 120, deadline(), |_| {
+            panic!("initial candidate reached password effects")
+        });
+        assert_eq!(result.unwrap_err(), Error::Refused);
+        assert_eq!(fs::read(f.factor()).unwrap(), OLD);
+        assert_eq!(f.status().state, State::Active);
+        assert_eq!(fs::read_dir(f.root.join("cases")).unwrap().count(), 0);
+        assert!(!f.root.join("archive").exists());
         assert!(f
             .sessions()
             .load(&"a".repeat(64))
@@ -1142,7 +1175,7 @@ mod tests {
                 account: ACCOUNT.into(),
                 session_id: "a".repeat(64),
                 epoch: 3,
-                expected_factor_sha256: hash(OLD),
+                factor: crate::access_recovery::FactorBinding::Existing(hash(OLD)),
             };
             let enroll = EnrollmentStore::new(f.root.join("enrollment"));
             let pending = enroll.begin(binding.clone(), 0, now, deadline()).unwrap();

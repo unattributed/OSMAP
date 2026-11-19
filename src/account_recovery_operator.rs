@@ -38,6 +38,7 @@ struct StatusRequest {
 pub(crate) struct RuntimePaths {
     pub session_directory: PathBuf,
     pub factor_directory: PathBuf,
+    pub replay_directory: PathBuf,
     pub revoked_directory: PathBuf,
     pub settings_directory: PathBuf,
 }
@@ -107,6 +108,7 @@ fn parse_runtime_paths(bytes: &[u8]) -> Result<RuntimeConfiguration, Error> {
     let paths = RuntimePaths {
         session_directory: select("OSMAP_SESSION_DIR", "sessions")?,
         factor_directory,
+        replay_directory: select("OSMAP_CACHE_DIR", "cache")?.join("totp-replay"),
         revoked_directory,
         settings_directory: select("OSMAP_SETTINGS_DIR", "settings")?,
     };

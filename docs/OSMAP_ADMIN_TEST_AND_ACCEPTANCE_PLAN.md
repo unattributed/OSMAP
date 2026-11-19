@@ -32,6 +32,57 @@ selected source and evidence before engineering tests; reuse matching results
 without promoting an internal backend PASS into a complete browser journey.
 The 2026-11-13 acceptance baseline below retains its original requirements.
 
+ADM-S04-01 implementation/qualification mapping (2026-11-18): T:F-09–12,
+T:F-34, T:INT-12–13, T:SEC-16–17, T:SEC-34, T:UX-12 and T:RES-06–07 cover
+admin-TOTP pending creation, external-contact proof, restricted initial
+password/TOTP setup, no-overwrite activation and owned Inbox. Focused Rust checks
+exercise purpose/account binding, email-code/grant replay and expiry, bounded
+incorrect codes, existing/partial factor refusal, initial counter readback,
+strict RPC/Origin/CSRF and separation from admin/mail session cookies. They are
+component evidence, not native or owner acceptance. Native qualification must
+exercise the actual producer/consumer and SQL/Dovecot/Maildir path, including
+disabled-before-setup and fresh-password/later-TOTP login. The project work order
+records execution status and the isolated candidate's exact assessed source.
+
+Executed private obsd1 evidence for source `2221f55` / test-only `5cf7461`:
+the real setup producer, privileged installer and password/SQL activation pass;
+a separate ordinary HTTPS password/later-TOTP login reaches the owned Inbox.
+The exact native probe is then logged out and disabled. The saved administrator
+signs into the upgraded development service and authorizes one pending account
+with a fresh TOTP; actual HTTPS creation and SMTP invitation acceptance pass.
+The owner confirms the first external email arrived but rejects its development
+port. Corrected source 2c53596 requires a plain HTTPS origin and explicit account
+instructions; diagnostic source 5fed618 retains fixed native failure classes and
+stream counts. Standard HTTPS 443 password/TOTP login and owned Inbox pass after
+one earlier native status 75 whose cause remains UNKNOWN (native text discarded).
+The probe is logged out and disabled. The saved admin then authorizes a distinct
+pending account and one corrected invitation; recipient receipt/control proof,
+enrollment and first-login acceptance remain pending. These observations do not qualify Toronto, production rollout,
+message delivery, or the entire mapped case set.
+
+**Current correction:** the owner subsequently rejected the separate invitation
+journey itself. Its page, token store and standalone installer service are
+removed from the corrected source; the feature is disabled and its parallel
+private runtime is stopped. Historical passes above do not qualify this change.
+The administrator obtains the new user's recovery email offline and records it
+with pending creation. The existing Forgot password form, six-digit code,
+restricted cookie, password form and TOTP proof are reused. The server derives
+initial eligibility from the pending native operation and genuine factor absence;
+the browser cannot select a weaker recovery purpose. Initial and registered
+recovery both enforce the actual native account roster and selected rollout.
+
+The corrected local composition must demonstrate pending creation data -> email
+proof -> initial password/factor publication -> completed contact usable by
+ordinary recovery, plus wrong/replayed/expired proof, changed operation,
+existing/partial native state and out-of-roster/rollout refusal. Installed
+qualification additionally needs the real shared SQL authority, protected root
+and creator grants, matching native account rosters, frontend rollout and existing
+factor/replay/contact custody. Automatic registration of a newly created account
+in those native rosters is **not implemented**. Keep initial setup disabled where
+these prerequisites are unmet. Corrected installed first enrollment and Inbox
+are NOT_RUN; operator acceptance is NOT_ACCEPTED. No further invitation emails
+or parallel fixtures form part of this correction.
+
 **Primary cross-project boundary:** `openbsd-mailstack` provides components, configuration patterns, maintenance and public-safe installer examples. `openbsd-self-hosting` provides private deployment-specific context. OSMAP owns the existing browser, credential and factor integrations. OSMAP-ADMIN owns a new private administrative service and, only after explicit cutover, administrative account mutations. The installed OpenBSD, package and schema capabilities determine compatibility; historical release numbers do not.
 
 ### 1.1 Acceptance invariants

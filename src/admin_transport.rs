@@ -586,8 +586,9 @@ mod tests {
                     domain: "example.test".into(),
                     local_part: "alice".into(),
                     display_name: "Public Alice".into(),
-                    password: "public-mailbox-password".into(),
-                    confirmation: "public-mailbox-password".into(),
+                    password: String::new(),
+                    confirmation: String::new(),
+                    setup_contact: Some("owner@independent.test".into()),
                     totp: "123456".into(),
                     csrf: "c".repeat(64),
                     request_id: "b".repeat(64),
@@ -615,6 +616,7 @@ mod tests {
                 domain: "example.test".into(),
                 revision: 7,
                 request_id: "b".repeat(64),
+                setup_enabled: true,
             },
         };
         assert_eq!(response.validate(), Ok(()));
@@ -835,6 +837,9 @@ mod tests {
             r#"{"version":1,"client":"127.0.0.1","uid":1000,"operation":{"op":"scope","token":"x"}}"#,
             r#"{"version":1,"client":"127.0.0.1","operation":{"op":"login","login":"x","password":"y","totp":"123456","system":true}}"#,
             r#"{"version":1,"client":"127.0.0.1","operation":{"op":"sql","query":"SELECT 1"}}"#,
+            r#"{"version":1,"client":"127.0.0.1","operation":{"op":"redeem_setup","account":"new@example.test","invitation":"retired"}}"#,
+            r#"{"version":1,"client":"127.0.0.1","operation":{"op":"setup_view","account":"new@example.test","grant":"retired"}}"#,
+            r#"{"version":1,"client":"127.0.0.1","operation":{"op":"complete_setup","account":"new@example.test","grant":"retired"}}"#,
         ] {
             assert!(serde_json::from_str::<Request>(raw).is_err());
         }

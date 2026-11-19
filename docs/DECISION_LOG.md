@@ -2138,3 +2138,141 @@ private history. Future work follows one complete management function at a time
 against the installed parity map, using the established test identity without
 new credential setup. Native authentication/delivery and the other mapped writers
 remain their separate outcomes.
+
+### Same day — owner-controlled first enrollment, separate from recovery
+
+The owner accepts controlled mailbox configuration creation, then identifies the
+missing initial TOTP: the new mailbox still cannot sign into OSMAP. Record that
+PASS for configuration creation only. The owner approves administrator-TOTP
+authorization, independent external invitation verification, restricted user-chosen
+password/authenticator setup, safe first-factor installation and a fresh login
+through the actual mailbox backend.
+
+Reuse the existing Rust writer, password hashing, private account records, local
+QR renderer and ordinary login. Keep initial invitation authority separate from
+registered-account recovery, which requires an existing factor. An explicitly
+configured onboarding writer creates disabled authentication flags and an unknown
+random initial password; it cannot select the legacy administrator-password flow.
+Only the intended user's expiring single-use invitation can open restricted
+setup. Consume that authority before native changes; publish the replay counter
+before the factor without overwrite, then activate the user-chosen password under
+current writer/domain/admin/grant/self-alias locks and read back. Retain interrupted
+state and the earliest fixed failure stage. The privileged file role accepts only
+the configured admin service UID and domain scope, with no SQL or command input.
+
+Preserve the established development admin password/TOTP and approved login.
+Passkeys and changing existing recovery eligibility remain outside this slice.
+The onboarding option defaults off. The active fixture and ordinary frontend
+currently use different mailbox authorities, so component tests and SQL creation
+cannot qualify the promised first Inbox. A private actual Dovecot/frontend/helper
+candidate is required without changing public mail services. Source checks, native
+qualification, source publication and owner acceptance remain separate results
+in the existing project work order.
+
+### Same day — qualify native first login before inviting the owner
+
+The separate private admin fixture cannot be qualified by ordinary OSMAP's remote
+mail authority. Keep public mail running and use a private actual Dovecot,
+frontend/helper and root-only initial-factor service. Preserve failed preparation
+observations: descriptor exhaustion, asynchronous stop/readiness, stale Web socket
+handling, proxy-role/chroot assumptions and compiler ENOSPC. In particular,
+`/var/tmp` resolves to `/tmp`; verify the real destination filesystem and compiler
+temporary directory before the corrected build. These corrections supply no
+product acceptance by themselves.
+
+The actual native setup producer/privileged installer/password/activation/readback
+passes, followed by an ordinary password/later-TOTP HTTPS login to the controlled
+user's owned Inbox. Log out and disable that probe. Independent review admits
+the development admin upgrade while preserving its existing authority and the
+exact saved administrator password/factor; actual saved login and the contact
+creation form pass. One fresh administrator TOTP then authorizes a new pending
+mailbox and one invitation to the privately supplied external contact. SQL confirms
+disabled authentication flags and a self-alias; SMTP acceptance is distinct from
+external delivery. Retain owner verification, authenticator setup and first-login
+acceptance as pending. Keep the source PR draft and make no production, Toronto
+or message-delivery claim from this isolated result.
+
+The owner confirms that the invitation arrived, then rejects its non-standard
+development port and requests the normal HTTPS address and clearer account/code
+instructions. Treat this as an installed workflow correction, not acceptance.
+Require a plain HTTPS setup origin in the Rust configuration and SMTP producer;
+show explicit Account and Setup page fields. Reuse obsd1's existing 443/web
+listeners and the admin proxy with Unix transport rather than retaining added
+TCP listeners. The development frontend's private authority is explicit; Toronto
+and public mail daemons remain outside this correction. Preserve the original
+disabled pending account and expired invitation without automatic reprovisioning;
+a distinct controlled acceptance account may follow the corrected route. Do not
+reset or replace the owner's saved administrator credentials.
+
+The standard 443 admin route passes after preserving the Unix-address header
+refusal and graceful-reload observation. The added TCP listeners and exact
+temporary firewall rule are removed. The development frontend's new composition
+serves both login forms, but its first authenticated check returns native backend
+status 75. Direct matching-UID, matching-argument and cleared-environment auth
+succeeds. Do not reuse an earlier private Inbox PASS as proof of this changed
+sealed frontend. Add only fixed diagnostic classes and stream accounting to the
+existing error consumer; never log arbitrary native output. Keep the replacement
+invitation and owner acceptance pending the actual correction.
+
+The signed diagnostic source subsequently passes ordinary password/TOTP sign-in
+and owned Inbox access on standard HTTPS 443. Its authentication decisions are
+unchanged; retain the earlier native status-75 cause as UNKNOWN because the old
+consumer discarded that output. Log out and disable the probe. After independent
+review, the unchanged saved administrator signs in and uses a later fresh TOTP
+to create one distinct pending account and submit its corrected invitation. The
+email explicitly identifies the account and normal HTTPS setup address. SQL
+confirms disabled authentication flags, self-alias and operation readback. The
+original pending account is retained without reprovisioning. Owner receipt and
+the complete recipient-controlled setup/first-login journey remain pending.
+
+### Same day — replace the rejected invitation approach with existing recovery
+
+The owner rejects the separate invitation page and the effort spent on parallel
+test systems. The owner explicitly directs reuse of OSMAP's Forgot password code
+and clarifies the business authority: the administrator obtains and confirms the
+new user's recovery email offline, then records it during account creation.
+Record the invitation journey as not accepted. Restore the original OSMAP
+frontend and admin configuration, disable that feature and stop only its owned
+parallel private runtime. Normal HTTPS routes, saved admin credentials and public
+mail services remain intact; source and failures are retained.
+
+Implement initial enrollment as a distinct trusted purpose of the existing
+six-digit recovery challenge and setup flow. A pending mailbox's recorded
+provisioning operation and genuine absent factor authorize that purpose;
+registered-account recovery continues to require its real existing factor.
+Reuse the same root account service, bounded SQL/hash writer, code delivery,
+restricted cookie, password and authenticator controls. Native pending metadata
+must be checked again at challenge, proof and activation; no browser can declare
+itself a new account. The administrator-facing pages reuse OSMAP's actual shared
+shield, account menu and controls. This is source work toward the corrected
+product journey, not a new environment or an acceptance claim.
+
+Independent review identifies a remaining native registration dependency: the
+pending SQL account is not automatically included in the root mutation/admission
+rosters or selected frontend rollout. Apply those existing scope checks before
+both initial and completed-contact recovery eligibility. Keep the feature off
+where registration is missing; do not broaden rollout or silently fall back to
+legacy authentication. Automatic native registration and corrected installed
+first login remain unfinished. Historical private Inbox evidence cannot close
+that gap. The shared icon/text preference now covers the creation receipt as
+well as ordinary admin pages; the approved login remains unchanged.
+
+### 2026-11-19 — require recovery email for every new mailbox
+
+The owner observed a successful development mailbox creation without a recovery
+email. The restored writer's password-only mode allowed exactly that outcome.
+Require the offline-confirmed external recovery email on every new creation.
+A missing handoff table or grant blocks creation. The service records the
+contact atomically with the pending mailbox and leaves both native login flags
+disabled. Existing accounts keep their state. Native Forgot password redemption
+still requires its separate registration and shared account authority.
+
+### 2026-11-19 — bind mailbox creation to the native account database
+
+An administrator created a pending mailbox with a recovery email in an isolated
+database. Ordinary recovery had no access to that record. The operator chose to
+move the obsd1 admin site to its native database and administrator identity.
+Both SQL callers now use the native socket and schema for mailbox writes.
+Other database configurations retain read access. Enabling the native writer
+requires reconciling the existing administrative writer. The fixture's accounts
+and sessions have no authority over the six existing native domain records.

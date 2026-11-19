@@ -8,6 +8,8 @@ use std::os::unix::fs::{MetadataExt, PermissionsExt};
 
 const ACCOUNT: &str = "alice@recovery.invalid";
 const OTHER: &str = "bob@recovery.invalid";
+const NEW_ACCOUNT: &str = "new-user@recovery.invalid";
+const NEW_CONTACT: &str = "new-owner@independent.test";
 const CSRF: &str = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 const SESSION: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const BASELINE: &str = "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n";
@@ -95,6 +97,7 @@ impl Fixture {
         let service = NativeAccess {
             config: Config {
                 version: 1,
+                initial_setup: false,
                 contacts: vec![Contact {
                     account: ACCOUNT.into(),
                     email: "registered@example.test".into(),
@@ -106,6 +109,7 @@ impl Fixture {
             paths: crate::account_recovery_operator::RuntimePaths {
                 session_directory: root.join("sessions"),
                 factor_directory: root.join("factors"),
+                replay_directory: root.join("replay"),
                 revoked_directory: root.join("revoked"),
                 settings_directory: root.join("settings"),
             },
@@ -191,6 +195,8 @@ impl Drop for Fixture {
 struct Commands {
     written: RefCell<bool>,
     calls: RefCell<usize>,
+    initial_root: Option<PathBuf>,
+    initial_approved: u64,
 }
 fn new_hash() -> String {
     format!(
@@ -220,7 +226,76 @@ impl CommandExecutor for Commands {
         assert!(limit <= 4096);
         *self.calls.borrow_mut() += 1;
         let text = if program == crate::account_password_backend::SQL_PROGRAM {
-            if input.starts_with(b"SELECT HEX(password)") {
+            let query = std::str::from_utf8(input).unwrap();
+            if let Some(root) = &self.initial_root {
+                let hex = |value: &str| {
+                    value
+                        .as_bytes()
+                        .iter()
+                        .map(|b| format!("{b:02X}"))
+                        .collect::<String>()
+                };
+                if query.contains("START TRANSACTION;") {
+                    assert!(!*self.written.borrow());
+                    let factors = crate::totp::FileTotpSecretStore::new(root.join("factors"));
+                    assert!(factors.secret_path_for_username(NEW_ACCOUNT).is_file());
+                    assert!(fs::read_dir(root.join("replay")).unwrap().any(|e| e
+                        .unwrap()
+                        .path()
+                        .extension()
+                        .is_some_and(|s| s == "counter")));
+                    let contact = crate::recovery_contact::RecoveryContactStore::new(
+                        root.join("settings/recovery-contact-v1"),
+                    )
+                    .snapshot(NEW_ACCOUNT, now())
+                    .unwrap();
+                    assert_eq!(contact.verified.unwrap().email, NEW_CONTACT);
+                    let store =
+                        EpochStore::open(&root.join("epoch"), fs::metadata(root).unwrap().uid())
+                            .unwrap();
+                    assert_eq!(
+                        store
+                            .lock_before(NEW_ACCOUNT, deadline())
+                            .unwrap()
+                            .admission(Some(0))
+                            .unwrap()
+                            .epoch,
+                        0
+                    );
+                    assert!(query.contains("SET status='complete',activated=UTC_TIMESTAMP()"));
+                    *self.written.borrow_mut() = true;
+                    "activated\n".into()
+                } else if query.contains("UNIX_TIMESTAMP(i.activated)") {
+                    if *self.written.borrow() {
+                        format!(
+                            "{}\t{}\t1\t{}\n",
+                            hex(NEW_ACCOUNT),
+                            hex(NEW_CONTACT),
+                            self.initial_approved
+                        )
+                    } else {
+                        String::new()
+                    }
+                } else if query.contains("UNIX_TIMESTAMP(i.created)") {
+                    if *self.written.borrow() {
+                        String::new()
+                    } else {
+                        format!(
+                            "{}\t{}\t{}\t1\t{}\t{}\t{}\t1\n",
+                            hex(NEW_ACCOUNT),
+                            hex(NEW_CONTACT),
+                            "c".repeat(64),
+                            self.initial_approved,
+                            "d".repeat(64),
+                            "a".repeat(32)
+                        )
+                    }
+                } else {
+                    assert!(*self.written.borrow());
+                    assert!(query.starts_with("SELECT HEX(m.password)"));
+                    format!("{}\t{STAMP}\n", hex(&new_hash()))
+                }
+            } else if input.starts_with(b"SELECT HEX(password)") {
                 let h = format!("{{BLF-CRYPT}}$2y$05${}", "A".repeat(53));
                 format!(
                     "{}\t{STAMP}\t1\t1\n",
@@ -249,7 +324,12 @@ impl CommandExecutor for Commands {
                 reason: "unsupported stock FLUSH".into(),
             });
         } else {
-            format!("auth succeeded\nuser={ACCOUNT}\n")
+            let account = if args.iter().any(|arg| arg == NEW_ACCOUNT) {
+                NEW_ACCOUNT
+            } else {
+                ACCOUNT
+            };
+            format!("auth succeeded\nuser={account}\n")
         };
         Ok(CommandExecution {
             status_code: 0,
@@ -340,13 +420,20 @@ struct Mail(RefCell<String>);
 impl recovery::Notifier for Mail {
     fn deliver(
         &self,
-        _: &str,
+        account: &str,
         email: &str,
         code: &str,
         _: u64,
         _: Instant,
     ) -> RecoveryContactDelivery {
-        assert_eq!(email, "registered@example.test");
+        assert_eq!(
+            email,
+            if account == NEW_ACCOUNT {
+                NEW_CONTACT
+            } else {
+                "registered@example.test"
+            }
+        );
         *self.0.borrow_mut() = code.into();
         RecoveryContactDelivery::Accepted
     }
@@ -380,6 +467,7 @@ fn email_grant_commits_password_and_factor_under_one_native_fence() {
         service: &f.service,
         accounts: &f.accounts,
         epochs: &epochs,
+        backend: &db,
     };
     assert!(f
         .service
@@ -401,11 +489,20 @@ fn email_grant_commits_password_and_factor_under_one_native_fence() {
 }
 
 fn email_enrollment(f: &Fixture) -> (String, PendingEnrollment) {
+    let db = Backend::new(Commands::default());
+    email_enrollment_for(f, ACCOUNT, &db)
+}
+fn email_enrollment_for(
+    f: &Fixture,
+    account: &str,
+    db: &Backend<Commands>,
+) -> (String, PendingEnrollment) {
     let epochs = f.epochs();
     let eligible = Eligible {
         service: &f.service,
         accounts: &f.accounts,
         epochs: &epochs,
+        backend: db,
     };
     let mail = Mail(RefCell::new(String::new()));
     let started = f
@@ -413,7 +510,7 @@ fn email_enrollment(f: &Fixture) -> (String, PendingEnrollment) {
         .recovery()
         .start(
             recovery::Start {
-                account: ACCOUNT,
+                account,
                 source: "127.0.0.1",
                 flow: CSRF,
                 now: now(),
@@ -438,10 +535,106 @@ fn email_enrollment(f: &Fixture) -> (String, PendingEnrollment) {
         .unwrap();
     let binding = f
         .service
-        .binding(ACCOUNT, &sha(grant.token().as_bytes()), 3, deadline())
+        .grant_binding(&grant.binding, grant.token(), deadline())
         .unwrap();
     let enrollment = f.service.begin(binding, now(), deadline()).unwrap();
     (grant.token().into(), enrollment)
+}
+
+#[test]
+fn admin_recorded_contact_uses_existing_email_proof_for_first_setup_and_later_recovery() {
+    let mut f = Fixture::new();
+    f.service.config.initial_setup = true;
+    f.service.selected = Some(NEW_ACCOUNT.into());
+    f.accounts.insert(NEW_ACCOUNT.into());
+    fs::create_dir(f.root.join("replay")).unwrap();
+    fs::set_permissions(f.root.join("replay"), fs::Permissions::from_mode(0o700)).unwrap();
+    let db = Backend::new(Commands {
+        initial_root: Some(f.root.clone()),
+        initial_approved: now(),
+        ..Commands::default()
+    });
+    let (token, enrollment) = email_enrollment_for(&f, NEW_ACCOUNT, &db);
+    let result = f
+        .action(
+            Authority::Grant {
+                token: token.clone(),
+            },
+            Action::Confirm {
+                enrollment_id: enrollment.id.clone(),
+                revision: enrollment.revision,
+                code: code(&enrollment),
+                password: Some(NEW_PASSWORD.into()),
+                confirmation: Some(NEW_PASSWORD.into()),
+            },
+            &db,
+            &Commands::default(),
+        )
+        .unwrap();
+    assert!(matches!(result.view, AccessView::Complete));
+    let epochs = f.epochs();
+    let authority = Eligible {
+        service: &f.service,
+        accounts: &f.accounts,
+        epochs: &epochs,
+        backend: &db,
+    };
+    assert!(f
+        .service
+        .recovery()
+        .lookup_grant(&token, CSRF, now(), deadline(), &authority)
+        .is_err());
+    let registered = recovery::Authority::eligible(&authority, NEW_ACCOUNT, deadline())
+        .unwrap()
+        .unwrap();
+    assert_eq!(registered.purpose, recovery::Purpose::AccountRecoverySetup);
+    assert!(registered.factor.existing_sha256().is_some());
+    assert_eq!(registered.verified_email, NEW_CONTACT);
+    f.service.selected = Some(ACCOUNT.into());
+    let authority = Eligible {
+        service: &f.service,
+        accounts: &f.accounts,
+        epochs: &epochs,
+        backend: &db,
+    };
+    assert!(
+        recovery::Authority::eligible(&authority, NEW_ACCOUNT, deadline())
+            .unwrap()
+            .is_none()
+    );
+}
+
+#[test]
+fn pending_setup_requires_the_native_roster_and_selected_rollout() {
+    let mut f = Fixture::new();
+    f.service.config.initial_setup = true;
+    // This executor intentionally cannot answer pending SQL. Both refusals
+    // must occur before SQL, email submission or state creation.
+    let db = Backend::new(Commands::default());
+    let epochs = f.epochs();
+    for selected in [NEW_ACCOUNT, ACCOUNT] {
+        f.service.selected = Some(selected.into());
+        if selected == ACCOUNT {
+            f.accounts.insert(NEW_ACCOUNT.into());
+        }
+        let authority = Eligible {
+            service: &f.service,
+            accounts: &f.accounts,
+            epochs: &epochs,
+            backend: &db,
+        };
+        assert!(
+            recovery::Authority::eligible(&authority, NEW_ACCOUNT, deadline())
+                .unwrap()
+                .is_none()
+        );
+    }
+    assert!(!f.root.join("replay").exists());
+    assert!(
+        !crate::totp::FileTotpSecretStore::new(f.root.join("factors"))
+            .secret_path_for_username(NEW_ACCOUNT)
+            .exists()
+    );
 }
 
 #[test]

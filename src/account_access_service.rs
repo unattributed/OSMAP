@@ -1,6 +1,7 @@
 //! Browser recovery actions in the existing native account service. Fixed
 //! root-owned configuration supplies already registered recovery contacts.
-//! Onboarding/provisioning is manual and deliberately outside this module.
+//! Initial enrollment uses an administrator-authorized pending SQL record and
+//! the same email proof and enrollment flow, without inventing a prior factor.
 use crate::access_recovery::{self as recovery, EligibleAccount};
 use crate::access_recovery_protocol::{self as protocol, Action, Authority, Request, Response};
 use crate::account_factor_replacement::{Coordinator, Error as FactorError, Paths};
@@ -34,6 +35,8 @@ struct Contact {
 struct Config {
     version: u8,
     contacts: Vec<Contact>,
+    #[serde(default)]
+    initial_setup: bool,
 }
 
 pub(crate) struct NativeAccess {
@@ -113,6 +116,27 @@ impl NativeAccess {
                 return Err(AccessError::Unavailable);
             }
         }
+        if config.initial_setup {
+            crate::initial_factor::InitialFactor::new(crate::initial_factor::Paths {
+                factors: paths.factor_directory.clone(),
+                replay: paths.replay_directory.clone(),
+                runtime_uid: uid,
+                runtime_gid: gid,
+            })
+            .check_paths()
+            .map_err(|_| AccessError::Unavailable)?;
+            let contact_dir = paths.settings_directory.join("recovery-contact-v1");
+            let metadata =
+                std::fs::symlink_metadata(&contact_dir).map_err(|_| AccessError::Unavailable)?;
+            if !metadata.is_dir()
+                || metadata.file_type().is_symlink()
+                || metadata.uid() != uid
+                || metadata.gid() != gid
+                || metadata.mode() & 0o7777 != 0o700
+            {
+                return Err(AccessError::Unavailable);
+            }
+        }
         Ok(Some(Self {
             config,
             config_sha256: sha(&bytes),
@@ -137,11 +161,18 @@ impl NativeAccess {
             (self.paths.factor_directory.clone(), "rwc"),
             (self.paths.revoked_directory.clone(), "rwc"),
         ];
+        if self.config.initial_setup {
+            rules.push((self.paths.replay_directory.clone(), "rwc"));
+        }
         // Exact metadata visibility for descriptor/custody ancestor checks;
         // empty permissions reveal no sibling contents or recursive file reads.
         rules.push((
             self.paths.settings_directory.join("recovery-contact-v1"),
-            "r",
+            if self.config.initial_setup {
+                "rwc"
+            } else {
+                "r"
+            },
         ));
         let parents = rules
             .iter()
@@ -165,6 +196,14 @@ impl NativeAccess {
             factors: self.paths.factor_directory.clone(),
             archive: self.paths.revoked_directory.clone(),
             operator_uid: self.operator_uid,
+            runtime_uid: self.uid,
+            runtime_gid: self.gid,
+        })
+    }
+    fn initial_factor(&self) -> crate::initial_factor::InitialFactor {
+        crate::initial_factor::InitialFactor::new(crate::initial_factor::Paths {
+            factors: self.paths.factor_directory.clone(),
+            replay: self.paths.replay_directory.clone(),
             runtime_uid: self.uid,
             runtime_gid: self.gid,
         })
@@ -257,8 +296,39 @@ impl NativeAccess {
             account: account.into(),
             session_id: session_id.into(),
             epoch,
-            expected_factor_sha256: factor,
+            factor: recovery::FactorBinding::Existing(factor),
         })
+    }
+    fn grant_binding(
+        &self,
+        grant: &recovery::GrantBinding,
+        token: &str,
+        deadline: Instant,
+    ) -> Result<EnrollmentBinding, AccessError> {
+        match (&grant.purpose, &grant.factor) {
+            (recovery::Purpose::AccountRecoverySetup, recovery::FactorBinding::Existing(_)) => self
+                .binding(
+                    &grant.account,
+                    &sha(token.as_bytes()),
+                    grant.epoch,
+                    deadline,
+                ),
+            (
+                recovery::Purpose::InitialAccountSetup,
+                factor @ recovery::FactorBinding::Absent { .. },
+            ) if self.config.initial_setup && grant.epoch == 0 => {
+                self.initial_factor()
+                    .check_absent(&grant.account, deadline)
+                    .map_err(|_| AccessError::Refused)?;
+                Ok(EnrollmentBinding {
+                    account: grant.account.clone(),
+                    session_id: sha(token.as_bytes()),
+                    epoch: 0,
+                    factor: factor.clone(),
+                })
+            }
+            _ => Err(AccessError::Refused),
+        }
     }
     fn begin(
         &self,
@@ -314,6 +384,7 @@ impl NativeAccess {
             service: self,
             accounts,
             epochs,
+            backend,
         };
         let unchanged = |view| {
             Ok(AccessOutcome {
@@ -372,12 +443,7 @@ impl NativeAccess {
                         &authority,
                     )
                     .map_err(recovery_error)?;
-                let binding = self.binding(
-                    &grant.binding.account,
-                    &sha(grant.token().as_bytes()),
-                    grant.binding.epoch,
-                    deadline,
-                )?;
+                let binding = self.grant_binding(&grant.binding, grant.token(), deadline)?;
                 let enrollment = self.begin(binding, now, deadline)?;
                 Ok(AccessOutcome {
                     view: AccessView::RecoverySetup {
@@ -460,12 +526,7 @@ impl NativeAccess {
                     .recovery()
                     .lookup_grant(token, csrf, now, deadline, &authority)
                     .map_err(recovery_error)?;
-                let binding = self.binding(
-                    &grant.account,
-                    &sha(token.as_bytes()),
-                    grant.epoch,
-                    deadline,
-                )?;
+                let binding = self.grant_binding(&grant, token, deadline)?;
                 let enrollment = self
                     .enrollment()
                     .pending(&binding, now, deadline)
@@ -530,12 +591,74 @@ impl NativeAccess {
                     .recovery()
                     .lookup_grant(token, csrf, now, deadline, &authority)
                     .map_err(recovery_error)?;
-                let binding = self.binding(
-                    &grant.account,
-                    &sha(token.as_bytes()),
-                    grant.epoch,
-                    deadline,
-                )?;
+                let binding = self.grant_binding(&grant, token, deadline)?;
+                if grant.purpose == recovery::Purpose::InitialAccountSetup {
+                    let pending = backend
+                        .pending_initial(&grant.account, deadline)
+                        .map_err(|_| AccessError::Unavailable)?
+                        .ok_or(AccessError::Refused)?;
+                    let recovery_email = pending.email.clone();
+                    cache_zero(deadline)?;
+                    let verified = self
+                        .enrollment()
+                        .verify(&binding, enrollment_id, *revision, code, now, deadline)
+                        .map_err(enrollment_error)?;
+                    self.recovery()
+                        .consume_grant(token, csrf, now, deadline, &authority, |current| {
+                            backend
+                                .activate_initial(
+                                    pending,
+                                    current,
+                                    password,
+                                    confirmation,
+                                    deadline,
+                                    || {
+                                        epochs.provision_initial(&current.account, deadline)
+                                            .map_err(|_| {
+                                                eprintln!("account_access_service stage=initial_epoch result=unconfirmed resources=retained");
+                                                crate::account_password_backend::Error::Refused
+                                            })?;
+                                        crate::recovery_contact::RecoveryContactStore::new(
+                                            self.paths.settings_directory.join("recovery-contact-v1"),
+                                        ).install_initial_native(
+                                            &recovery_email, current, now, self.uid, self.gid, deadline,
+                                        ).map_err(|_| {
+                                            eprintln!("account_access_service stage=initial_contact result=unconfirmed resources=retained");
+                                            crate::account_password_backend::Error::Refused
+                                        })?;
+                                        self.initial_factor()
+                                            .install(
+                                                &current.account,
+                                                verified.secret_base32(),
+                                                verified.accepted_counter(),
+                                                deadline,
+                                            )
+                                            .map(|_| ())
+                                            .map_err(|error| {
+                                                eprintln!("account_access_service stage=initial_factor result=unconfirmed code={} resources=retained", error.code());
+                                                crate::account_password_backend::Error::Refused
+                                            })
+                                    },
+                                )
+                                .map_err(|_| {
+                                    eprintln!("account_access_service stage=initial_activation result=unconfirmed native_cause=not_observed resources=retained automatic_retry=false");
+                                    recovery::Error::Unconfirmed
+                                })?;
+                            cache_zero(deadline).map_err(|_| recovery::Error::Unconfirmed)?;
+                            if !crate::account_password_mail::primary(
+                                primary, &current.account, password, deadline,
+                            )
+                            .map_err(|_| recovery::Error::Unconfirmed)? {
+                                return Err(recovery::Error::Unconfirmed);
+                            }
+                            Ok(())
+                        })
+                        .map_err(recovery_error)?;
+                    return Ok(AccessOutcome {
+                        view: AccessView::Complete,
+                        grant_cookie: AccessCookie::Clear,
+                    });
+                }
                 let snapshot = backend
                     .read(&grant.account, deadline)
                     .map_err(|_| AccessError::Unavailable)?;
@@ -602,17 +725,21 @@ impl NativeAccess {
         }
     }
 }
-struct Eligible<'a> {
+struct Eligible<'a, E> {
     service: &'a NativeAccess,
     accounts: &'a BTreeSet<String>,
     epochs: &'a EpochStore,
+    backend: &'a Backend<E>,
 }
-impl recovery::Authority for Eligible<'_> {
+impl<E: CommandExecutor> recovery::Authority for Eligible<'_, E> {
     fn eligible(
         &self,
         account: &str,
         deadline: Instant,
     ) -> Result<Option<EligibleAccount>, recovery::Error> {
+        // Initial setup cannot authorize an account that the ordinary native
+        // authentication/session path will refuse. The same fixed rollout and
+        // root-service roster apply to both recovery purposes.
         if !self.service.allowed(account, self.accounts) {
             return Ok(None);
         }
@@ -623,52 +750,102 @@ impl recovery::Authority for Eligible<'_> {
             .iter()
             .find(|c| c.account == account)
         else {
-            return Ok(None);
-        };
-        let current = crate::recovery_contact::RecoveryContactStore::new(
-            self.service
-                .paths
-                .settings_directory
-                .join("recovery-contact-v1"),
-        )
-        .registered_consistency(
-            account,
-            SystemTimeProvider.unix_timestamp(),
-            &contact.email,
-            self.service.uid,
-            self.service.gid,
-        );
-        match current {
-            Ok(true) => {}
-            Ok(false) => return Ok(None),
-            Err(_) => {
-                eprintln!("account_recovery stage=eligibility code=CONTACT_UNAVAILABLE");
+            // A failed registered-contact check never reaches this branch.
+            // Only the separately enabled native pending-account authority may
+            // authorize first enrollment without a prior factor.
+            if !self.service.config.initial_setup {
                 return Ok(None);
             }
-        }
-        let status = match self
-            .epochs
-            .lock_before(account, deadline)
-            .and_then(|guard| guard.admission(None))
-        {
-            Ok(status) => status,
-            Err(_) => return Ok(None),
+            if let Some(registered) = self
+                .backend
+                .completed_initial_contact(account, deadline)
+                .map_err(|_| recovery::Error::Unavailable)?
+            {
+                let contact = Contact {
+                    account: registered.account,
+                    email: registered.email,
+                    revision: registered.revision,
+                    verified_at: registered.verified_at,
+                };
+                return registered_eligible(self.service, account, &contact, self.epochs, deadline);
+            }
+            let Some(pending) = self
+                .backend
+                .pending_initial(account, deadline)
+                .map_err(|_| recovery::Error::Unavailable)?
+            else {
+                return Ok(None);
+            };
+            if self
+                .service
+                .initial_factor()
+                .check_absent(account, deadline)
+                .is_err()
+            {
+                return Ok(None);
+            }
+            return Ok(Some(EligibleAccount {
+                purpose: recovery::Purpose::InitialAccountSetup,
+                epoch: 0,
+                verified_email: pending.email,
+                contact_revision: pending.revision,
+                verified_at: pending.approved_at,
+                factor: recovery::FactorBinding::Absent {
+                    provision_operation: pending.operation,
+                    revision: pending.revision,
+                },
+            }));
         };
-        let (epoch, factor) = match self.service.factor().snapshot(account, deadline) {
-            Ok(value) => value,
-            Err(_) => return Ok(None),
-        };
-        if epoch != status.epoch {
+        registered_eligible(self.service, account, contact, self.epochs, deadline)
+    }
+}
+fn registered_eligible(
+    service: &NativeAccess,
+    account: &str,
+    contact: &Contact,
+    epochs: &EpochStore,
+    deadline: Instant,
+) -> Result<Option<EligibleAccount>, recovery::Error> {
+    let current = crate::recovery_contact::RecoveryContactStore::new(
+        service.paths.settings_directory.join("recovery-contact-v1"),
+    )
+    .registered_consistency(
+        account,
+        SystemTimeProvider.unix_timestamp(),
+        &contact.email,
+        service.uid,
+        service.gid,
+    );
+    match current {
+        Ok(true) => {}
+        Ok(false) => return Ok(None),
+        Err(_) => {
+            eprintln!("account_recovery stage=eligibility code=CONTACT_UNAVAILABLE");
             return Ok(None);
         }
-        Ok(Some(EligibleAccount {
-            epoch,
-            verified_email: contact.email.clone(),
-            contact_revision: contact.revision,
-            verified_at: contact.verified_at,
-            existing_factor_sha256: factor,
-        }))
     }
+    let status = match epochs
+        .lock_before(account, deadline)
+        .and_then(|guard| guard.admission(None))
+    {
+        Ok(status) => status,
+        Err(_) => return Ok(None),
+    };
+    let (epoch, factor) = match service.factor().snapshot(account, deadline) {
+        Ok(value) => value,
+        Err(_) => return Ok(None),
+    };
+    if epoch != status.epoch {
+        return Ok(None);
+    }
+    Ok(Some(EligibleAccount {
+        purpose: recovery::Purpose::AccountRecoverySetup,
+        epoch,
+        verified_email: contact.email.clone(),
+        contact_revision: contact.revision,
+        verified_at: contact.verified_at,
+        factor: recovery::FactorBinding::Existing(factor),
+    }))
 }
 fn recovery_error(e: recovery::Error) -> AccessError {
     match e {

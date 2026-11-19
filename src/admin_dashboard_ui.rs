@@ -153,7 +153,10 @@ pub(crate) fn mailbox_workspace_page(page: &DomainOverview) -> HttpResponse {
                 if row.active { "" } else { " (domain disabled)" }
             ));
         }
-        body.push_str("</select><button type=\"submit\">Open mailboxes</button></form>");
+        body.push_str(&format!(
+            "</select><button type=\"submit\">{}</button></form>",
+            presentation_label("Open mailboxes", "inbox")
+        ));
     }
     body.push_str("<nav aria-label=\"Hosted domain choices\">");
     for next in [
@@ -270,7 +273,7 @@ pub(crate) fn settings_page(page: &SettingsPage, section: &str, saved: bool) -> 
                 for (value,text) in options {body.push_str(&format!("<option value=\"{value}\"{}>{text}</option>",if *value==selected {" selected"}else{""}));}
                 body.push_str("</select></div>");
             }
-            body.push_str("<p class=\"settings-field-help\">Icons use compact desktop menus with names on hover or keyboard focus. Touch devices keep visible labels.</p></div><div class=\"settings-save-row\"><button class=\"primary-button presentation-text\">Save changes</button></div></form>");
+            body.push_str(&format!("<p class=\"settings-field-help\">Icons use compact desktop menus with names on hover or keyboard focus. Touch devices keep visible labels.</p></div><div class=\"settings-save-row\"><button class=\"primary-button\" type=\"submit\">{}</button></div></form>", presentation_label("Save changes", "save")));
         },
         "account"=>body.push_str(&format!("<h2>Account &amp; Security</h2><section class=\"panel\"><h3>Administrator account</h3><dl><dt>Login</dt><dd>{}</dd><dt>Role</dt><dd>{}</dd><dt>Sign-in policy</dt><dd>Administrator password and TOTP are required.</dd></dl><p>Administrator credentials and preferences are separate from mailbox sign-in.</p><a class=\"button-link\" href=\"/admin/account/scope\">View current domain access</a><p>Password changes, authenticator management and session administration will appear here when those lifecycle controls are enabled.</p></section>",escape_html(&page.login),if page.system {"System administrator"}else{"Domain administrator"})),
         "system"=>body.push_str("<h2>Installation information</h2><section class=\"panel\"><dl><dt>Domain inventory</dt><dd>Available to authorized administrators</dd><dt>Domain editing</dt><dd>Not available</dd><dt>Mailbox inventory</dt><dd>Available for authorized hosted domains</dd><dt>Mailbox creation</dt><dd>Requires the configured writer and current authorization</dd><dt>Existing mailbox editing</dt><dd>Not available</dd><dt>Application</dt><dd>OSMAP Admin</dd></dl><p>Domains and address counts come from the selected account directory. Open the mailbox workspace to view addresses and the scoped creation form.</p><a class=\"button-link\" href=\"/admin/mailboxes\">Open mailbox workspace</a><p>This information page does not change mail-service configuration.</p></section>"),
