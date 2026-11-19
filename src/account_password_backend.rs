@@ -19,12 +19,16 @@ pub(crate) fn native_read_diagnostic() -> u8 {
 
 pub const SQL_PROGRAM: &str = "/usr/local/bin/mariadb";
 pub const HASH_PROGRAM: &str = "/usr/local/bin/doveadm";
+pub(crate) const SQL_SOCKET: &str = "/var/run/mysql/mysql.sock";
+const SQL_DATABASE_ARG: &str = "--database=postfixadmin";
+// The admin writer and Dovecot reader compare against the native recovery target.
+pub(crate) const SQL_DATABASE: &str = SQL_DATABASE_ARG.split_at("--database=".len()).1;
 pub const SQL_ARGS: &[&str] = &[
     "--defaults-file=/etc/osmap/account-mariadb.cnf",
     "-N",
     "-B",
     "--raw",
-    "--database=postfixadmin",
+    SQL_DATABASE_ARG,
 ];
 pub const HASH_ARGS: &[&str] = &["-O", "pw", "-s", "ARGON2ID"];
 const OUTPUT_LIMIT: usize = 4096;

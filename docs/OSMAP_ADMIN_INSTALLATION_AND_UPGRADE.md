@@ -65,6 +65,13 @@ Only the protected root account writer may UPDATE `status` and `activated` and
 perform the reviewed mailbox/password/operation transition. The admin web receives
 none of these grants. Verify actual default/check constraints and grants, the
 configured cache's replay directory and existing contact/factor custody.
+For the existing OpenBSD installation, the runtime permits a mailbox writer only
+on the native account service's database (`postfixadmin`) and local MariaDB
+socket (`/var/run/mysql/mysql.sock`, owned by `_mysql`). Admin SQL uses its own
+credentials. A different socket, database or owner leaves the site read-only.
+When moving from another account database use a distinct admin state directory
+so its sessions and enrolled factors cannot authorize native accounts.
+
 Forgot password redemption has a separate enablement condition. Before enabling
 root access-recovery `initial_setup: true`, both protected native account rosters must include the exact account, and the
 ordinary frontend rollout must select it. Automatic registration is not yet

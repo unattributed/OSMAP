@@ -2356,9 +2356,9 @@ impl StockPeer {
 // Only the public false branch is callable. Original configuration bytes stay
 // unchanged and credential fields never leave this bounded private reader.
 mod stock_sql {
+    use crate::account_password_backend::{SQL_DATABASE, SQL_SOCKET};
     use std::collections::{BTreeMap, BTreeSet};
     const LIMIT: usize = 16384;
-    const MYSQL_SOCKET: &str = "/var/run/mysql/mysql.sock";
     #[derive(Debug)]
     pub(super) struct Unavailable;
     pub(super) fn validate(raw: &[u8]) -> Result<(), Unavailable> {
@@ -2448,8 +2448,8 @@ mod stock_sql {
         // route or an implicit dedicated submission endpoint. Dedicated SQL uses
         // the explicit fixed socket and the separate restricted mutation role.
         if fields.len() != 4
-            || (host != Some(MYSQL_SOCKET) && (frontend || host != Some("localhost")))
-            || fields.get("dbname").copied() != Some("postfixadmin")
+            || (host != Some(SQL_SOCKET) && (frontend || host != Some("localhost")))
+            || fields.get("dbname").copied() != Some(SQL_DATABASE)
             || !fields
                 .get("user")
                 .is_some_and(|v| !v.is_empty() && v.len() <= 64)
@@ -2633,6 +2633,12 @@ mod stock_sql {
             };
             let query = "SELECT username AS user, password, 'after' AS osmap_epoch_phase FROM mailbox WHERE username = '%u' AND active = '1'";
             assert!(validate(source(query).as_bytes()).is_ok());
+            for route in [
+                source(query).replace("dbname=postfixadmin", "dbname=unrelated"),
+                source(query).replace("host=/var/run/mysql/mysql.sock", "host=/tmp/mysql.sock"),
+            ] {
+                assert!(validate(route.as_bytes()).is_err());
+            }
             for changed in [
                 query.replace("'%u'", "'%U'"),
                 query.replace("'%u'", "'%Lu'"),

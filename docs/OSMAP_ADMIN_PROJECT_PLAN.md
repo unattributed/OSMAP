@@ -2344,3 +2344,16 @@ and delivery, with separate writer, frontend and independent review. Exercise
 missing contact, password-only POST, unavailable schema and atomic pending
 creation; inspect the installed form. Do not infer activation or Inbox access
 from a captured address, or populate older accounts using a guessed contact.
+
+The owner subsequently confirmed capture and observed failure at ordinary Forgot
+password. For the shared-backend change starting at `31efd4e`, root owns obsd1
+integration, the native and admin engineers bind both SQL callers, and the
+independent reviewer checks the real command paths. On obsd1 the writer selects
+a private development schema while the native account service and Dovecot use
+the writable local mailbox database. Check domain presence there before live
+provisioning. Creation must use that same socket and database or refuse before
+a write. Keep ordinary sign-in and read access available. Check matching and
+mismatched endpoints, plus the actual host wiring. Stop before changing
+unrelated mail accounts or replacing an existing domain. Earlier effort is
+unquantified. First code delivery and activated Inbox require separate observed
+results.

@@ -20,6 +20,7 @@ use std::time::{Duration, Instant};
 struct Sql {
     profile: PathBuf,
     database: String,
+    socket: PathBuf,
     digest: [u8; 32],
     deadline: Arc<Mutex<Instant>>,
     writer: Option<(PathBuf, [u8; 32])>,
@@ -35,6 +36,7 @@ impl Sql {
         Ok(Self {
             profile: config.sql_profile.clone(),
             database: config.database.clone(),
+            socket: config.sql_socket.clone(),
             digest: Sha256::digest(&bytes).into(),
             deadline: Arc::new(Mutex::new(Instant::now())),
             writer: config
@@ -148,13 +150,7 @@ impl CommandExecutor for Sql {
             eprintln!("ADMIN_SQL_PROFILE_CHANGED");
             return Err(Self::refused());
         }
-        let fixed = vec![
-            format!("--defaults-file={}", profile.display()),
-            format!("--database={}", self.database),
-            "--batch".into(),
-            "--skip-column-names".into(),
-            "--raw".into(),
-        ];
+        let fixed = sql_arguments(profile, &self.database, &self.socket);
         let result = SystemCommandExecutor.run_with_stdin_bytes_timeout_and_output_limit(
             "/usr/local/bin/mariadb",
             &fixed,
@@ -178,6 +174,18 @@ impl CommandExecutor for Sql {
         }
         result
     }
+}
+
+fn sql_arguments(profile: &Path, database: &str, socket: &Path) -> [String; 7] {
+    [
+        format!("--defaults-file={}", profile.display()),
+        "--protocol=SOCKET".into(),
+        format!("--socket={}", socket.display()),
+        format!("--database={database}"),
+        "--batch".into(),
+        "--skip-column-names".into(),
+        "--raw".into(),
+    ]
 }
 
 fn sql_failure_code(stderr: &str) -> &'static str {
@@ -457,6 +465,28 @@ fn inventory_error(error: crate::admin_access::Error) -> Response {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn fixed_sql_command_pins_socket_and_database_after_private_profile() {
+        use crate::account_password_backend::{SQL_DATABASE, SQL_SOCKET};
+        let args = sql_arguments(
+            Path::new("/writer.cnf"),
+            SQL_DATABASE,
+            Path::new(SQL_SOCKET),
+        );
+        assert_eq!(
+            args,
+            [
+                "--defaults-file=/writer.cnf",
+                "--protocol=SOCKET",
+                "--socket=/var/run/mysql/mysql.sock",
+                "--database=postfixadmin",
+                "--batch",
+                "--skip-column-names",
+                "--raw",
+            ]
+        );
+    }
+
     #[test]
     fn native_sql_diagnostic_keeps_private_error_text_out_of_export() {
         assert_eq!(

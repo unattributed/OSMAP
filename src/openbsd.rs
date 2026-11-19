@@ -2285,6 +2285,16 @@ pub(crate) fn effective_gid() -> u32 {
 /// storage. No libc static pointer or caller-selected account is returned.
 #[cfg(unix)]
 pub(crate) fn osmap_runtime_identity() -> io::Result<(u32, u32)> {
+    fixed_runtime_identity(c"_osmap")
+}
+
+#[cfg(unix)]
+pub(crate) fn mysql_runtime_uid() -> io::Result<u32> {
+    fixed_runtime_identity(c"_mysql").map(|(uid, _)| uid)
+}
+
+#[cfg(unix)]
+fn fixed_runtime_identity(name: &std::ffi::CStr) -> io::Result<(u32, u32)> {
     let mut entry: libc::passwd = unsafe { std::mem::zeroed() };
     let mut buffer = [0u8; 16384];
     let mut result = std::ptr::null_mut();
@@ -2292,7 +2302,7 @@ pub(crate) fn osmap_runtime_identity() -> io::Result<(u32, u32)> {
     // lengths; result is checked before the copied numeric fields are used.
     let code = unsafe {
         libc::getpwnam_r(
-            c"_osmap".as_ptr(),
+            name.as_ptr(),
             &mut entry,
             buffer.as_mut_ptr().cast(),
             buffer.len(),

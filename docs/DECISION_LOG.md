@@ -2266,3 +2266,13 @@ A missing handoff table or grant blocks creation. The service records the
 contact atomically with the pending mailbox and leaves both native login flags
 disabled. Existing accounts keep their state. Native Forgot password redemption
 still requires its separate registration and shared account authority.
+
+### 2026-11-19 — bind mailbox creation to the native account database
+
+An administrator created a pending mailbox with a recovery email in an isolated
+database. Ordinary recovery had no access to that record. The operator chose to
+move the obsd1 admin site to its native database and administrator identity.
+Both SQL callers now use the native socket and schema for mailbox writes.
+Other database configurations retain read access. Enabling the native writer
+requires reconciling the existing administrative writer. The fixture's accounts
+and sessions have no authority over the six existing native domain records.
