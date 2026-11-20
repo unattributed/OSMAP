@@ -386,23 +386,91 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
+        use crate::http_ui::{render_folder_shortcut_notice, FolderView};
+        let account = &validated_session.record.canonical_username;
+        let csrf = &validated_session.record.csrf_token;
+        let kind = match request
+            .query_params
+            .get("kind")
+            .map(String::as_str)
+            .filter(|_| request.query_params.len() == 1)
+        {
+            Some("archive") => FolderView::Archive,
+            Some("bin") => FolderView::Bin,
+            Some("junk") => FolderView::Junk,
+            _ => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Unknown Mailbox Shortcut",
+                        render_navigation_notice(
+                            account,
+                            csrf,
+                            "Unknown Mailbox Shortcut",
+                            "Choose a mailbox from the navigation.",
+                        ),
+                    ),
+                    audit_events,
+                }
+            }
+        };
         let notice = |status, reason, title, message, audit_events| HandledHttpResponse {
             response: html_response(
                 status,
                 reason,
                 title,
-                render_navigation_notice(
-                    &validated_session.record.canonical_username,
-                    &validated_session.record.csrf_token,
-                    title,
-                    message,
-                ),
+                render_folder_shortcut_notice(account, csrf, kind, title, message),
             ),
             audit_events,
         };
-        if request.query_params.len() == 1
-            && request.query_params.get("kind").map(String::as_str) == Some("bin")
-        {
+        if kind == FolderView::Junk {
+            let (guard, event) =
+                match self.acquire_mailbox_budget(context, &validated_session, "junk_shortcut") {
+                    Ok(value) => value,
+                    Err(response) => return response,
+                };
+            audit_events.push(event);
+            let outcome = self.gateway.list_mailboxes(context, &validated_session);
+            audit_events.extend(outcome.audit_events);
+            audit_events.push(self.release_request_budget(
+                guard,
+                "junk_shortcut",
+                context,
+                &validated_session,
+            ));
+            return match outcome.decision {
+                BrowserMailboxDecision::Listed {
+                    canonical_username,
+                    mailboxes,
+                } if canonical_username == *account
+                    && super::routes_settings::valid_folder_listing(&mailboxes) =>
+                {
+                    if mailbox_name_exists(&mailboxes, "Junk") {
+                        HandledHttpResponse {
+                            response: redirect_response(303, "See Other", "/mailbox?name=Junk"),
+                            audit_events,
+                        }
+                    } else {
+                        notice(
+                            404,
+                            "Not Found",
+                            "Junk Unavailable",
+                            "Your mailbox list has no Junk folder.",
+                            audit_events,
+                        )
+                    }
+                }
+                _ => notice(
+                    503,
+                    "Service Unavailable",
+                    "Junk Unavailable",
+                    "Your Junk folder could not be confirmed.",
+                    audit_events,
+                ),
+            };
+        }
+        if kind == FolderView::Bin {
             let Ok(bin) = self.gateway.load_bin_preference(&validated_session) else {
                 return notice(
                     503,
@@ -438,17 +506,6 @@ where
                     audit_events,
                 ),
             };
-        }
-        if request.query_params.len() != 1
-            || request.query_params.get("kind").map(String::as_str) != Some("archive")
-        {
-            return notice(
-                400,
-                "Bad Request",
-                "Unknown Mailbox Shortcut",
-                "Choose a mailbox from the navigation.",
-                audit_events,
-            );
         }
         let outcome = self.gateway.load_settings(context, &validated_session);
         audit_events.extend(outcome.audit_events);
@@ -612,6 +669,12 @@ where
                     .ok()
                     .map(|preferences| preferences.openpgp);
                 let visible_mailboxes = filter_user_visible_mailboxes(&mailboxes);
+                let junk_count = if mailbox_name_exists(&visible_mailboxes, "Junk") {
+                    self.folder_status(context, &validated_session, "Junk", &mut audit_events)
+                        .map(|status| status.messages())
+                } else {
+                    None
+                };
                 let notices = self.gateway.notification_inbox(&validated_session).ok();
                 let notice_preferences = self
                     .gateway
@@ -640,6 +703,7 @@ where
                                     preference.policy == crate::mark_read::Policy::OnOpen
                                 }),
                             crate::http_ui::WelcomeAccountState {
+                                junk_count,
                                 openpgp: &keys.state,
                                 defaults: openpgp_defaults,
                                 storage: Some(&storage),

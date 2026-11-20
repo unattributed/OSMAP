@@ -3889,7 +3889,9 @@ mod tests {
                             .unwrap_or("1234567890abcdef1234567890abcdef")
                     )
                     .unwrap(),
-                    if created_guid.is_some() && context.user_agent != "FolderCreateDeletePopulated"
+                    if (created_guid.is_some()
+                        && context.user_agent != "FolderCreateDeletePopulated")
+                        || (folder == "Junk" && context.user_agent == "WelcomeJunkEmpty")
                     {
                         0
                     } else {

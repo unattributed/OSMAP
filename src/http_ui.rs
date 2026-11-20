@@ -60,6 +60,7 @@ const DEFAULT_RENDERED_MAILBOXES_MAX: usize = DEFAULT_MAX_MAILBOXES;
 
 #[path = "http/archive_ui.rs"]
 mod archive_ui;
+pub(crate) use archive_ui::{render_folder_shortcut_notice, FolderView};
 
 #[path = "http/sessions_ui.rs"]
 mod sessions_ui;

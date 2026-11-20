@@ -6,7 +6,7 @@
 .welcome-page h1 { font-size: 2.15rem; letter-spacing: -.04rem; margin: 0 0 .3rem; }
 .welcome-greeting p { margin: .35rem 0; color: var(--muted); font-size: 1.1rem; }
 .welcome-greeting .welcome-account { font-size: .8rem; overflow-wrap: anywhere; }
-.welcome-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .65rem; flex: 0 1 38rem; }
+.welcome-metrics { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: .65rem; flex: 0 1 48rem; }
 .welcome-metric { display: flex; align-items: center; gap: .65rem; border: 1px solid var(--line); border-radius: .4rem; min-height: 5.3rem; padding: .7rem; color: var(--ink); background: var(--panel); text-decoration: none; }
 .welcome-metric strong { display: block; font-size: 1.05rem; margin-bottom: .25rem; }
 .welcome-metric > span > span { display: block; font-size: .75rem; }

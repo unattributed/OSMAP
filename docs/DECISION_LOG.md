@@ -1455,3 +1455,17 @@ Roundcube/PostfixAdmin application set does not become an OSMAP browser runtime
 prerequisite, and its dated integration observations do not replace current
 OSMAP procedures. This is a two-file documentation correction; no bootstrap,
 host operation, service change or new installation qualification is performed.
+
+### 2026-11-20 — expose Junk on the welcome page and in folder navigation
+
+The welcome page showed Inbox, drafts and Sent counts. An account with no
+configured Archive also reached a chooser that offered no path to Bin or Junk.
+Add a **Junk · Inbox** link to the account's Junk list. Use the existing
+authenticated mailbox-status operation for its total message count. A verified
+empty folder shows zero. A failed count shows Unknown. Listing messages and
+moving them uses the existing Junk view and its account-scoped controls.
+
+Provide Archive, Bin and Junk controls on the grouped shortcut, including the
+Archive chooser. Archive and Bin follow the account's folder preferences. Junk
+opens the listed Junk folder. These changes concern mail delivered to Junk;
+messages rejected or held upstream have no mailbox entry to count.

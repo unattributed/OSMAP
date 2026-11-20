@@ -2,6 +2,7 @@
 use super::*;
 
 pub(crate) struct WelcomeAccountState<'a> {
+    pub junk_count: Option<u64>,
     pub openpgp: &'a crate::key_management::State,
     pub defaults: Option<crate::composition_preferences::OpenPgpDefaults>,
     pub storage: Option<&'a crate::storage_ui::StorageView>,
@@ -53,20 +54,31 @@ pub(crate) fn render_mailboxes_page_with_storage(
             "Unread · loaded Inbox",
             "inbox",
             inbox.then_some("/mailbox?name=INBOX&filter=unread"),
-            unread,
+            unread.map(|count| count as u64),
         ),
-        ("Saved drafts", "drafts", Some("/drafts"), draft_count),
+        (
+            "Saved drafts",
+            "drafts",
+            Some("/drafts"),
+            draft_count.map(|count| count as u64),
+        ),
         (
             "Sent · loaded messages",
             "sent",
             sent.then_some("/mailbox?name=Sent"),
-            sent_count,
+            sent_count.map(|count| count as u64),
         ),
         (
             "Flagged · loaded Inbox",
             "folders",
             inbox.then_some("/mailbox?name=INBOX&filter=starred"),
-            flagged,
+            flagged.map(|count| count as u64),
+        ),
+        (
+            "Junk · Inbox",
+            "folders",
+            has("Junk").then_some("/mailbox?name=Junk"),
+            account_state.junk_count,
         ),
     ] {
         let value = count
@@ -403,6 +415,7 @@ mod activity_tests {
                 },
                 false,
                 WelcomeAccountState {
+                    junk_count: None,
                     openpgp: &keys,
                     defaults: None,
                     storage,
