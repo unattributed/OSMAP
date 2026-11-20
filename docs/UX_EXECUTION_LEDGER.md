@@ -61703,3 +61703,23 @@ record/scope diff review, whitespace, normal signed commit/push hooks and fresh
 protected-main synchronization. Broader account writers/reset, boot readiness,
 portability and general release acceptance remain open. No raw screenshot or
 reusable authentication material is introduced into Git.
+
+### 2026-11-20 — production Junk count and folder navigation
+
+From the deployed web source 909b952, show the signed-in account's total Junk
+count and open its message list. Keep Archive, Bin and Junk reachable from the
+grouped menu, including an unconfigured Archive. The production mailbox status
+command returned a count for Junk. Root owns integration and frontend-only
+cutover. Independently review the diff and check populated, empty, unavailable
+and wrong-account counts plus folder switching. Stop deployment on a mismatch
+and restore the prior executable on failed readiness.
+
+Focused route checks and independent source review passed. The signed production
+source is d2cc4dcc6710076b9f192832eaedbfa4ef5719fe. Main integrates the same
+mailbox behavior and preserves the separate four-card administration layout.
+
+Production cutover passed bounded readiness on 2026-11-20 at 05:57 UTC after
+one startup 502. The running web executable matched the installed file and
+the public login returned 200. Functional count and switch coverage came from
+authenticated route tests. The production check used native folder status and
+anonymous route protection. Owner browser acceptance was requested separately.
