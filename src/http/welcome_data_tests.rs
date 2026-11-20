@@ -159,3 +159,35 @@ fn welcome_sent_loaded_count_is_owned_and_independent() {
     assert!(app.gateway.submitted.lock().unwrap().is_empty());
     assert!(app.gateway.message_flags.lock().unwrap().is_empty());
 }
+
+#[test]
+fn welcome_junk_links_to_the_owned_folder_and_uses_its_total() {
+    let app = app();
+    for (agent, expected) in [
+        ("WelcomeData/rows", "42"),
+        ("WelcomeJunkEmpty", "0"),
+        ("StatusWrongOwner", "Unknown"),
+        ("StatusUnavailable", "Unknown"),
+    ] {
+        let result = home(&app, agent);
+        assert_eq!(result.response.status_code, 200);
+        assert!(body_text(&result).contains(&format!(
+            r#"class="welcome-metric" href="/mailbox?name=Junk" aria-label="Junk · Inbox: {expected}; open list""#
+        )), "{agent}");
+        assert_eq!(
+            result
+                .audit_events
+                .iter()
+                .filter(|e| e.action == "status_fixture")
+                .count(),
+            1
+        );
+    }
+    let missing = home(&app, "WelcomeMissing");
+    assert!(body_text(&missing).contains("<strong>Unknown</strong><span>Junk · Inbox</span>"));
+    assert!(!body_text(&missing).contains(r#"class="welcome-metric" href="/mailbox?name=Junk""#));
+    assert!(!missing
+        .audit_events
+        .iter()
+        .any(|e| e.action == "status_fixture"));
+}

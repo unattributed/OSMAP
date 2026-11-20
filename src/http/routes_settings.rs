@@ -847,7 +847,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             entries,
         )
     }
-    fn folder_status(
+    pub(super) fn folder_status(
         &self,
         context: &AuthenticationContext,
         session: &ValidatedSession,
@@ -855,18 +855,17 @@ impl<G: BrowserGateway> BrowserApp<G> {
         audit: &mut Vec<LogEvent>,
     ) -> Option<crate::mailbox_status::MailboxStatus> {
         crate::mailbox_status::validate_name(folder).ok()?;
-        let (guard, event) =
-            match self.acquire_mailbox_budget(context, session, "settings_folder_status") {
-                Ok(v) => v,
-                Err(r) => {
-                    audit.extend(r.audit_events);
-                    return None;
-                }
-            };
+        let (guard, event) = match self.acquire_mailbox_budget(context, session, "folder_status") {
+            Ok(v) => v,
+            Err(r) => {
+                audit.extend(r.audit_events);
+                return None;
+            }
+        };
         audit.push(event);
         let outcome = self.gateway.mailbox_status(context, session, folder);
         audit.extend(outcome.audit_events);
-        audit.push(self.release_request_budget(guard, "settings_folder_status", context, session));
+        audit.push(self.release_request_budget(guard, "folder_status", context, session));
         if outcome.canonical_username != session.record.canonical_username {
             return None;
         }

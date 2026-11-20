@@ -9,10 +9,62 @@ pub(super) struct RowState {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(super) enum FolderView {
+pub(crate) enum FolderView {
     Archive,
     Bin,
     Junk,
+}
+
+/// Each destination is a server-constructed URL. Only the selected folder is current.
+fn folder_tabs(
+    current: FolderView,
+    archive: Option<&str>,
+    bin: Option<&str>,
+    junk: Option<&str>,
+) -> String {
+    let mut tabs = String::from(r#"<nav class="archive-tabs" aria-label="Archive, Bin and Junk">"#);
+    for (kind, label, href) in [
+        (FolderView::Archive, "Archive", archive),
+        (FolderView::Bin, "Bin", bin),
+        (FolderView::Junk, "Junk", junk),
+    ] {
+        if let Some(href) = href {
+            let active = if current == kind {
+                r#" aria-current="page""#
+            } else {
+                ""
+            };
+            tabs.push_str(&format!(
+                r#"<a class="button-link" href="{}"{active}>{label}</a>"#,
+                escape_html(href)
+            ));
+        } else {
+            tabs.push_str(&format!("<button disabled>{label} unavailable</button>"));
+        }
+    }
+    tabs.push_str("</nav>");
+    tabs
+}
+
+pub(crate) fn render_folder_shortcut_notice(
+    account: &str,
+    csrf: &str,
+    current: FolderView,
+    title: &str,
+    message: &str,
+) -> TrustedHtml {
+    let tabs = folder_tabs(
+        current,
+        Some("/mailbox/shortcut?kind=archive"),
+        Some("/mailbox/shortcut?kind=bin"),
+        Some("/mailbox/shortcut?kind=junk"),
+    );
+    TrustedHtml::from_template(format!(
+        r#"{}<main id="main-content" class="page-shell archive-page" tabindex="-1"><section class="content-pane"><h1>{}</h1>{tabs}<p>{}</p><div class="toolbar"><a class="button-link" href="/mailboxes">All mailboxes</a><a class="button-link" href="/settings?section=copies">Folder settings</a></div></section></main>"#,
+        app_header(account, csrf, "archive"),
+        escape_html(title),
+        escape_html(message)
+    ))
 }
 
 pub(super) fn row(
@@ -82,60 +134,34 @@ pub(super) fn page(p: Page<'_>) -> TrustedHtml {
     let view = p.links.view;
     let bin_name = p.links.reader.bin_mailbox_name.as_deref();
     let is_bin = p.kind == FolderView::Bin;
-    let is_junk = p.kind == FolderView::Junk;
     let tab_href = |mailbox: &str| {
         let mut destination = view.clone();
         destination.selection = None;
-        escape_html(&list_navigation_href(
+        list_navigation_href(
             &format!("/mailbox?name={}", url_encode(mailbox)),
             &destination,
             1,
-        ))
-    };
-    let archive = match p.actions.archive_mailbox_name {
-        Some(name) => format!(
-            "<a class=\"button-link\" href=\"{}\"{}>Archive</a>",
-            tab_href(name),
-            if p.kind == FolderView::Archive {
-                " aria-current=\"page\""
-            } else {
-                ""
-            }
-        ),
-        None if is_bin => String::new(),
-        None => {
-            "<a class=\"button-link\" href=\"/settings?section=copies\">Choose Archive folder</a>"
-                .into()
-        }
-    };
-    let bin = if bin_name.is_some_and(|name| {
-        is_bin
-            || p.actions
-                .move_destinations
-                .iter()
-                .any(|target| target == name)
-    }) {
-        format!(
-            "<a class=\"button-link\" href=\"{}\"{}>Trash</a>",
-            tab_href(bin_name.unwrap_or("")),
-            if is_bin { " aria-current=\"page\"" } else { "" }
         )
-    } else {
-        "<button disabled>Bin unavailable</button>".into()
     };
-    let junk = if p.junk_available {
-        format!(
-            "<a class=\"button-link\" href=\"{}\"{}>Junk</a>",
-            tab_href("Junk"),
-            if is_junk {
-                " aria-current=\"page\""
-            } else {
-                ""
-            }
-        )
-    } else {
-        "<button disabled>Junk unavailable</button>".into()
-    };
+    let archive = p.actions.archive_mailbox_name.map(tab_href);
+    let bin = bin_name
+        .filter(|name| {
+            is_bin
+                || p.actions
+                    .move_destinations
+                    .iter()
+                    .any(|target| target == *name)
+        })
+        .map(tab_href);
+    let junk = p.junk_available.then(|| tab_href("Junk"));
+    let tabs = folder_tabs(
+        p.kind,
+        archive
+            .as_deref()
+            .or(Some("/mailbox/shortcut?kind=archive")),
+        bin.as_deref(),
+        junk.as_deref(),
+    );
     let mut navigation = render_list_navigation(p.base, view, true).replace(
         "aria-label=\"Sent filters\"",
         "aria-label=\"Archive and Bin filters\"",
@@ -171,7 +197,7 @@ pub(super) fn page(p: Page<'_>) -> TrustedHtml {
     } else {
         selection
     };
-    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell coordinated-mail archive-page{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>{title}</h1><p>Manage messages in this folder.</p>{empty_trash}</div><section class=\"content-pane coordinated-list\" aria-label=\"Archive, Bin and Junk messages\"><nav class=\"archive-tabs\" aria-label=\"Archive, Bin and Junk\">{archive}{bin}{junk}</nav>{}<div class=\"mail-list-toolbar\">{}{search}{navigation}{sort}</div><div class=\"archive-actions\">{}</div><table class=\"archive-table\"><caption class=\"sr-only\">{caption}</caption><thead><tr><th scope=\"col\"><span class=\"sr-only\">Select</span></th><th scope=\"col\">From</th><th scope=\"col\">Subject</th><th scope=\"col\">Folder</th><th scope=\"col\">{date_heading}</th><th scope=\"col\">Size</th><th scope=\"col\"><span class=\"sr-only\">Actions</span></th></tr></thead><tbody>{rows}</tbody></table><p id=\"archive-retention\" class=\"archive-retention\">{retention}</p></section>{reader}</main>", app_header(p.account, p.csrf, if is_bin { "bin" } else { "archive" }), if view.selection.is_some() { " has-selection" } else { "" }, p.banner, selection, p.bulk_form))
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell coordinated-mail archive-page{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>{title}</h1><p>Manage messages in this folder.</p>{empty_trash}</div><section class=\"content-pane coordinated-list\" aria-label=\"Archive, Bin and Junk messages\">{tabs}{}<div class=\"mail-list-toolbar\">{}{search}{navigation}{sort}</div><div class=\"archive-actions\">{}</div><table class=\"archive-table\"><caption class=\"sr-only\">{caption}</caption><thead><tr><th scope=\"col\"><span class=\"sr-only\">Select</span></th><th scope=\"col\">From</th><th scope=\"col\">Subject</th><th scope=\"col\">Folder</th><th scope=\"col\">{date_heading}</th><th scope=\"col\">Size</th><th scope=\"col\"><span class=\"sr-only\">Actions</span></th></tr></thead><tbody>{rows}</tbody></table><p id=\"archive-retention\" class=\"archive-retention\">{retention}</p></section>{reader}</main>", app_header(p.account, p.csrf, if is_bin { "bin" } else { "archive" }), if view.selection.is_some() { " has-selection" } else { "" }, p.banner, selection, p.bulk_form))
 }
 
 #[cfg(test)]
