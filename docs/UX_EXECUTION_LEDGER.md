@@ -61723,3 +61723,7 @@ one startup 502. The running web executable matched the installed file and
 the public login returned 200. Functional count and switch coverage came from
 authenticated route tests. The production check used native folder status and
 anonymous route protection. Owner browser acceptance was requested separately.
+
+**Owner UAT PASS, 2026-11-20.** The owner confirmed both the production
+dashboard count and link, and switching to Bin and Junk from the Archive
+chooser. The owner approved the change. PR #103 is merged.

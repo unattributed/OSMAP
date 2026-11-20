@@ -2170,3 +2170,10 @@ folder routes redirected anonymous requests to sign-in. Dovecot returned the
 Junk count through its native status operation. The account helper, mailbox
 helper, web frontend, nginx, Postfix, Dovecot and MariaDB passed their service
 checks. The previous web executable is retained for rollback.
+
+**Owner acceptance, November 20.** On the signed-in production site, the
+owner refreshed the mailbox dashboard, opened **Junk · Inbox**, and switched
+to **Bin** and **Junk** from the Archive chooser. The owner confirmed that
+the count and folder controls both worked and approved the change.
+[PR #103](https://github.com/unattributed/OSMAP/pull/103) integrated the feature
+and deployment record into `main`.
