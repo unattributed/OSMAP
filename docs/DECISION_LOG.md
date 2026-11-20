@@ -2159,3 +2159,14 @@ contains this change without the intervening OSMAP Admin development. On main,
 scope the five-column layout to webmail because Admin shares the base card CSS.
 The authenticated route tests cover the count, missing folders, the Archive
 chooser and moving a synthetic Junk message back to Inbox.
+
+At 05:57 UTC, install the OpenBSD release build on mail.blackbagsecurity.com
+and restart the OSMAP web frontend. Its running executable inode matches the
+installed binary, SHA-256
+`9e82f697c5fa24045ded6891a5607290406152215b3a7111a82faa72cd756185`.
+The first startup probe received HTTP 502. The bounded readiness check then
+passed and an independent public login request returned HTTP 200. Protected
+folder routes redirected anonymous requests to sign-in. Dovecot returned the
+Junk count through its native status operation. The account helper, mailbox
+helper, web frontend, nginx, Postfix, Dovecot and MariaDB passed their service
+checks. The previous web executable is retained for rollback.

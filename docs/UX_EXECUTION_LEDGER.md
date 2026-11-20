@@ -61717,3 +61717,9 @@ and restore the prior executable on failed readiness.
 Focused route checks and independent source review passed. The signed production
 source is d2cc4dcc6710076b9f192832eaedbfa4ef5719fe. Main integrates the same
 mailbox behavior and preserves the separate four-card administration layout.
+
+Production cutover passed bounded readiness on 2026-11-20 at 05:57 UTC after
+one startup 502. The running web executable matched the installed file and
+the public login returned 200. Functional count and switch coverage came from
+authenticated route tests. The production check used native folder status and
+anonymous route protection. Owner browser acceptance was requested separately.
