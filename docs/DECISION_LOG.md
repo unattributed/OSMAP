@@ -2276,3 +2276,19 @@ Both SQL callers now use the native socket and schema for mailbox writes.
 Other database configurations retain read access. Enabling the native writer
 requires reconciling the existing administrative writer. The fixture's accounts
 and sessions have no authority over the six existing native domain records.
+
+### 2026-11-20 — identify an admin-created mailbox throughout initial enrollment
+
+The administrator can create a pending mailbox and record its recovery contact
+on obsd1. The native recovery service needs to recognize that same creation
+after activation. Bind the exact mailbox and domain to the matching request in
+the creation journal and initial-account table. Use its phase to select first
+enrollment or existing-account recovery, then verify the corresponding eligibility
+and factor state. An older journal-only creation or conflicting pair cannot
+authorize a recovery email. Keep the public response generic for those cases.
+
+The native development database accepted the lookup against the installed tables
+for an absent address and returned the expected pending and complete records
+from read-only synthetic inputs. Routing ordinary login and session validation
+for a newly provisioned user remains open under ADM-S04-01. The five-page
+PostfixAdmin alignment checklist is recorded in [issue #85](https://github.com/unattributed/OSMAP/issues/85).

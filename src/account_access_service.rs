@@ -5,7 +5,7 @@
 use crate::access_recovery::{self as recovery, EligibleAccount};
 use crate::access_recovery_protocol::{self as protocol, Action, Authority, Request, Response};
 use crate::account_factor_replacement::{Coordinator, Error as FactorError, Paths};
-use crate::account_password_backend::Backend;
+use crate::account_password_backend::{Backend, CreationRegistration};
 use crate::account_password_state::Store as EpochStore;
 use crate::auth::CommandExecutor;
 use crate::browser_access::{AccessCookie, AccessError, AccessOutcome, AccessView};
@@ -756,23 +756,41 @@ impl<E: CommandExecutor> recovery::Authority for Eligible<'_, E> {
             if !self.service.config.initial_setup {
                 return Ok(None);
             }
-            if let Some(registered) = self
+            let registration = self
                 .backend
-                .completed_initial_contact(account, deadline)
-                .map_err(|_| recovery::Error::Unavailable)?
-            {
-                let contact = Contact {
-                    account: registered.account,
-                    email: registered.email,
-                    revision: registered.revision,
-                    verified_at: registered.verified_at,
-                };
-                return registered_eligible(self.service, account, &contact, self.epochs, deadline);
-            }
+                .creation_registration(account, deadline)
+                .map_err(|_| recovery::Error::Unavailable)?;
+            let operation = match registration {
+                None | Some(CreationRegistration::Inconsistent) => return Ok(None),
+                Some(CreationRegistration::Complete(operation)) => {
+                    let Some(registered) = self
+                        .backend
+                        .completed_initial_contact(account, &operation, deadline)
+                        .map_err(|_| recovery::Error::Unavailable)?
+                    else {
+                        return Ok(None);
+                    };
+                    let contact = Contact {
+                        account: registered.account,
+                        email: registered.email,
+                        revision: registered.revision,
+                        verified_at: registered.verified_at,
+                    };
+                    return registered_eligible(
+                        self.service,
+                        account,
+                        &contact,
+                        self.epochs,
+                        deadline,
+                    );
+                }
+                Some(CreationRegistration::Pending(operation)) => operation,
+            };
             let Some(pending) = self
                 .backend
                 .pending_initial(account, deadline)
                 .map_err(|_| recovery::Error::Unavailable)?
+                .filter(|pending| pending.operation == operation)
             else {
                 return Ok(None);
             };

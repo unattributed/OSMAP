@@ -799,6 +799,71 @@ fn initial_grant() -> crate::access_recovery::GrantBinding {
 }
 
 #[test]
+fn creation_registration_uses_only_durable_pair_and_fails_closed_on_conflict() {
+    let name = upper_hex(ACCOUNT.as_bytes());
+    let domain = upper_hex(b"example.test");
+    let operation = "b".repeat(64);
+    let row =
+        format!("{name}\t{name}\t{domain}\tmailbox.create\t{operation}\t{operation}\tpending\n");
+    for (phase, expected) in [
+        ("pending", CreationRegistration::Pending(operation.clone())),
+        (
+            "complete",
+            CreationRegistration::Complete(operation.clone()),
+        ),
+    ] {
+        let backend = Backend::new(Executor::new(vec![ok(row.replace("pending", phase))]));
+        assert_eq!(
+            backend.creation_registration(ACCOUNT, deadline()),
+            Ok(Some(expected))
+        );
+        let calls = backend.executor.calls.borrow();
+        let query = std::str::from_utf8(&calls[0].input).unwrap();
+        assert_eq!(calls.len(), 1);
+        for required in [
+            "LEFT JOIN osmap_admin_operations o ON o.username=requested.username",
+            "LEFT JOIN osmap_initial_accounts i ON i.username=requested.username",
+            &format!("SELECT BINARY {} AS username", sql_hex(ACCOUNT)),
+        ] {
+            assert!(query.contains(required));
+        }
+        for mutable_authority in [
+            "JOIN mailbox ",
+            "JOIN admin ",
+            "JOIN domain ",
+            "JOIN alias ",
+            "osmap_admin_writer",
+            "recovery_email",
+            "password",
+        ] {
+            assert!(!query.contains(mutable_authority));
+        }
+    }
+    let lookup =
+        |reply| Backend::new(Executor::new(vec![reply])).creation_registration(ACCOUNT, deadline());
+    assert_eq!(lookup(ok(String::new())), Ok(None));
+    for invalid in [
+        row.replacen(&name, "NULL", 1),
+        row.replace(&name, &upper_hex(b"bob@example.test")),
+        row.replace(&domain, &upper_hex(b"elsewhere.test")),
+        row.replace("mailbox.create", "mailbox.update"),
+        row.replacen(&operation, &"c".repeat(64), 1),
+        row.replace(&operation, "xyz"),
+        row.replace("pending", "invalid"),
+        format!("{row}{row}"),
+    ] {
+        assert_eq!(
+            lookup(ok(invalid)),
+            Ok(Some(CreationRegistration::Inconsistent))
+        );
+    }
+    assert!(lookup(Err(CommandExecutionError {
+        reason: "unavailable".into()
+    }))
+    .is_err());
+}
+
+#[test]
 fn pending_initial_reads_only_current_disabled_authorized_creation() {
     let backend = Backend::new(Executor::new(vec![pending_row()]));
     let pending = backend
@@ -860,7 +925,7 @@ fn completed_initial_contact_keeps_verified_owner_contact_after_password_or_admi
     );
     let backend = Backend::new(Executor::new(vec![ok(text.clone())]));
     let contact = backend
-        .completed_initial_contact(ACCOUNT, deadline())
+        .completed_initial_contact(ACCOUNT, &"b".repeat(64), deadline())
         .unwrap()
         .unwrap();
     assert!(
@@ -873,6 +938,7 @@ fn completed_initial_contact_keeps_verified_owner_contact_after_password_or_admi
     assert!(calls.len() == 1 && calls[0].program == SQL_PROGRAM && calls[0].args == SQL_ARGS);
     let query = std::str::from_utf8(&calls[0].input).unwrap();
     for term in [
+        &format!("BINARY i.request_id=BINARY {}", sql_hex(&"b".repeat(64))),
         "i.status='complete'",
         "i.activated IS NOT NULL",
         "m.active=1 AND m.smtp_active=1",
@@ -895,7 +961,7 @@ fn completed_initial_contact_keeps_verified_owner_contact_after_password_or_admi
     drop(calls);
     let unknown = Backend::new(Executor::new(vec![ok(String::new())]));
     assert!(unknown
-        .completed_initial_contact(ACCOUNT, deadline())
+        .completed_initial_contact(ACCOUNT, &"b".repeat(64), deadline())
         .unwrap()
         .is_none());
     for malformed in [
@@ -908,7 +974,7 @@ fn completed_initial_contact_keeps_verified_owner_contact_after_password_or_admi
         ),
     ] {
         assert!(Backend::new(Executor::new(vec![ok(malformed)]))
-            .completed_initial_contact(ACCOUNT, deadline())
+            .completed_initial_contact(ACCOUNT, &"b".repeat(64), deadline())
             .is_err());
     }
 }

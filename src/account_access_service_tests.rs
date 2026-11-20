@@ -195,6 +195,7 @@ impl Drop for Fixture {
 struct Commands {
     written: RefCell<bool>,
     calls: RefCell<usize>,
+    registration_read: Option<Result<String, ()>>,
     initial_root: Option<PathBuf>,
     initial_approved: u64,
 }
@@ -227,7 +228,12 @@ impl CommandExecutor for Commands {
         *self.calls.borrow_mut() += 1;
         let text = if program == crate::account_password_backend::SQL_PROGRAM {
             let query = std::str::from_utf8(input).unwrap();
-            if let Some(root) = &self.initial_root {
+            if let Some(reply) = &self.registration_read {
+                assert!(query.starts_with("SELECT HEX(o.username),HEX(i.username)"));
+                reply.clone().map_err(|()| CommandExecutionError {
+                    reason: "SQL unavailable".into(),
+                })?
+            } else if let Some(root) = &self.initial_root {
                 let hex = |value: &str| {
                     value
                         .as_bytes()
@@ -265,6 +271,18 @@ impl CommandExecutor for Commands {
                     assert!(query.contains("SET status='complete',activated=UTC_TIMESTAMP()"));
                     *self.written.borrow_mut() = true;
                     "activated\n".into()
+                } else if query.starts_with("SELECT HEX(o.username),HEX(i.username)") {
+                    let phase = if *self.written.borrow() {
+                        "complete"
+                    } else {
+                        "pending"
+                    };
+                    format!(
+                        "{0}\t{0}\t{1}\tmailbox.create\t{2}\t{2}\t{phase}\n",
+                        hex(NEW_ACCOUNT),
+                        hex(NEW_ACCOUNT.split_once('@').unwrap().1),
+                        "c".repeat(64)
+                    )
                 } else if query.contains("UNIX_TIMESTAMP(i.activated)") {
                     if *self.written.borrow() {
                         format!(
@@ -602,6 +620,64 @@ fn admin_recorded_contact_uses_existing_email_proof_for_first_setup_and_later_re
             .unwrap()
             .is_none()
     );
+}
+
+#[test]
+fn unavailable_sql_and_ineligible_creation_have_distinct_recovery_outcomes() {
+    let username: String = NEW_ACCOUNT
+        .bytes()
+        .map(|byte| format!("{byte:02X}"))
+        .collect();
+    let domain: String = NEW_ACCOUNT
+        .split_once('@')
+        .unwrap()
+        .1
+        .bytes()
+        .map(|byte| format!("{byte:02X}"))
+        .collect();
+    let operation = "b".repeat(64);
+    let orphan = format!("{username}\tNULL\t{domain}\tmailbox.create\t{operation}\tNULL\tNULL\n");
+    let conflict = format!(
+        "{username}\t{username}\t{domain}\tmailbox.create\t{operation}\t{}\tpending\n",
+        "d".repeat(64)
+    );
+    for reply in [Ok(String::new()), Ok(orphan), Ok(conflict), Err(())] {
+        let mut f = Fixture::new();
+        f.service.config.initial_setup = true;
+        f.service.selected = Some(NEW_ACCOUNT.into());
+        f.accounts.insert(NEW_ACCOUNT.into());
+        let failed = reply.is_err();
+        let db = Backend::new(Commands {
+            registration_read: Some(reply),
+            ..Default::default()
+        });
+        let epochs = f.epochs();
+        let authority = Eligible {
+            service: &f.service,
+            accounts: &f.accounts,
+            epochs: &epochs,
+            backend: &db,
+        };
+        let mail = Mail(RefCell::new(String::new()));
+        let started = f.service.recovery().start(
+            recovery::Start {
+                account: NEW_ACCOUNT,
+                source: "127.0.0.1",
+                flow: CSRF,
+                now: now(),
+                deadline: deadline(),
+            },
+            &authority,
+            &mail,
+        );
+        if failed {
+            assert!(matches!(started, Err(recovery::Error::Unavailable)));
+        } else {
+            let started = started.unwrap();
+            assert!(!started.source_limited && !started.challenge_id.is_empty());
+        }
+        assert!(mail.0.borrow().is_empty());
+    }
 }
 
 #[test]

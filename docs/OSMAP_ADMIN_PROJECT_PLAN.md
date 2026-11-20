@@ -2357,3 +2357,30 @@ mismatched endpoints, plus the actual host wiring. Stop before changing
 unrelated mail accounts or replacing an existing domain. Earlier effort is
 unquantified. First code delivery and activated Inbox require separate observed
 results.
+
+### 2026-11-20 — first mailbox enrollment on the native obsd1 backend
+
+The owner confirmed development administrator sign-in and requested implementation
+of the page checklist in [issue #85](https://github.com/unattributed/OSMAP/issues/85).
+Continue ADM-S04-01 on PR #102 from `019a7ff`. The user outcome remains receipt
+of a code at the offline-confirmed recovery address, password and first factor
+setup, and ordinary sign-in to the user's own Inbox.
+
+Begin with how the account service identifies mailboxes created by OSMAP Admin.
+The creation journal and initial-account row already record this decision. The
+lookup must identify the same mailbox across activation, and distinguish absence
+from damaged or conflicting records. Registration alone grants neither recovery
+nor sign-in. Preserve the existing rollout, account eligibility and factor checks.
+Verify exact-account selection, both provisioning states, unrelated accounts,
+and inconsistent records through the existing backend and recovery tests.
+Root owns integration and obsd1 verification, the account developer owns the
+selector, and the independent reviewer checks both scope and failure behaviour.
+Use one source increment and the existing delivery hooks. Stop before enabling
+enrollment unless authentication, session admission and recovery all select the
+same account. Previous effort is unquantified.
+
+Read-only obsd1 inspection confirmed the native account SQL reader could read
+both tables. Neither contained a creation for the new native site. The admission
+and mutation rosters matched at eight accounts, the web service configuration
+selected a single rollout account, and initial setup was disabled. Earlier
+creation evidence was obtained on the isolated database.

@@ -53,6 +53,14 @@ pub struct Snapshot {
     smtp_active: bool,
 }
 
+/// Durable creation identity. Registration alone grants no login or recovery.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum CreationRegistration {
+    Inconsistent,
+    Pending(String),
+    Complete(String),
+}
+
 /// Native-owned pending-account comparison material. No browser deserializer,
 /// Debug or Serialize exposes the recorded contact or credential comparison.
 pub(crate) struct PendingInitial {
@@ -135,6 +143,53 @@ impl<E: CommandExecutor> Backend<E> {
         })
     }
 
+    pub(crate) fn creation_registration(
+        &self,
+        account: &str,
+        deadline: Instant,
+    ) -> Result<Option<CreationRegistration>, Error> {
+        crate::account_admission::valid_account(account).map_err(|_| Error::Refused)?;
+        let (_, domain) = account.split_once('@').ok_or(Error::Refused)?;
+        // Read both immutable creation references independently. An orphan or
+        // mismatched record is ambiguous, never proof of an unmanaged account.
+        let query = format!(concat!(
+            "SELECT HEX(o.username),HEX(i.username),HEX(o.domain),o.kind,o.request_id,i.request_id,i.status ",
+            "FROM (SELECT BINARY {} AS username) AS requested ",
+            "LEFT JOIN osmap_admin_operations o ON o.username=requested.username ",
+            "LEFT JOIN osmap_initial_accounts i ON i.username=requested.username ",
+            "WHERE o.username IS NOT NULL OR i.username IS NOT NULL LIMIT 2;\n"
+        ), sql_hex(account));
+        let text = self.run(SQL_PROGRAM, SQL_ARGS, query.as_bytes(), deadline, false)?;
+        if text.is_empty() {
+            return Ok(None);
+        }
+        let mut lines = text.lines();
+        let fields: Vec<_> = lines.next().ok_or(Error::Refused)?.split('\t').collect();
+        let [created_account, initial_account, recorded_domain, kind, operation, initial_operation, phase] =
+            fields.as_slice()
+        else {
+            return Ok(Some(CreationRegistration::Inconsistent));
+        };
+        if lines.next().is_some()
+            || *created_account != upper_hex(account.as_bytes())
+            || initial_account != created_account
+            || *recorded_domain != upper_hex(domain.as_bytes())
+            || *kind != "mailbox.create"
+            || operation != initial_operation
+            || operation.len() != 64
+            || !operation
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        {
+            return Ok(Some(CreationRegistration::Inconsistent));
+        }
+        match *phase {
+            "pending" => Ok(Some(CreationRegistration::Pending((*operation).into()))),
+            "complete" => Ok(Some(CreationRegistration::Complete((*operation).into()))),
+            _ => Ok(Some(CreationRegistration::Inconsistent)),
+        }
+    }
+
     pub(crate) fn pending_initial(
         &self,
         account: &str,
@@ -205,6 +260,7 @@ impl<E: CommandExecutor> Backend<E> {
     pub(crate) fn completed_initial_contact(
         &self,
         account: &str,
+        operation: &str,
         deadline: Instant,
     ) -> Result<Option<CompletedInitialContact>, Error> {
         crate::account_admission::valid_account(account).map_err(|_| Error::Refused)?;
@@ -212,10 +268,10 @@ impl<E: CommandExecutor> Backend<E> {
             "SET time_zone='+00:00'; SELECT HEX(m.username),HEX(i.recovery_email),i.revision,UNIX_TIMESTAMP(i.activated) ",
             "FROM osmap_initial_accounts i JOIN mailbox m ON BINARY m.username=BINARY i.username JOIN osmap_admin_operations o ON BINARY o.username=BINARY m.username AND BINARY o.request_id=BINARY i.request_id ",
             "JOIN domain d ON BINARY d.domain=BINARY m.domain JOIN alias a ON BINARY a.address=BINARY m.username ",
-            "WHERE BINARY m.username=BINARY {account} AND i.status='complete' AND i.activated IS NOT NULL AND i.revision>0 ",
+            "WHERE BINARY m.username=BINARY {account} AND BINARY i.request_id=BINARY {operation} AND i.status='complete' AND i.activated IS NOT NULL AND i.revision>0 ",
             "AND o.kind='mailbox.create' AND BINARY o.domain=BINARY m.domain AND m.active=1 AND m.smtp_active=1 AND d.active=1 AND d.backupmx=0 ",
             "AND a.active=1 AND BINARY a.goto=BINARY m.username AND BINARY a.domain=BINARY m.domain LIMIT 2;\n"
-        ),account=sql_hex(account));
+        ),account=sql_hex(account),operation=sql_hex(operation));
         let text = self.run(SQL_PROGRAM, SQL_ARGS, query.as_bytes(), deadline, false)?;
         if text.is_empty() {
             return Ok(None);
