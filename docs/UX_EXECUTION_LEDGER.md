@@ -61842,3 +61842,51 @@ protected enrollment page visibly shows both the manual Base32 key and QR code,
 then confirm the new password and a code from the replacement authenticator can
 sign in. No owner password, recovery grant, TOTP secret or mailbox content was
 used or retained by this deployment verification.
+
+### 2026-11-22 — owner obsd1 recovery UAT accepted; Toronto promotion authorized
+
+The owner reports PASS for all four required obsd1 development observations:
+the recovery code was delivered to the registered recovery address, the code
+was accepted, complete recovery of the selected development account succeeded,
+and a fresh post-recovery sign-in with its replacement password and authenticator
+succeeded. The supplied screenshots visibly confirm the simultaneous manual
+`2FA secret key (TOTP)` and `QR code` enrollment methods, the `Access updated`
+result, and the subsequent authenticated mailbox landing page. Accept the
+development recovery journey for this account and installed candidate. Do not
+retain or reproduce the recovery code, password, six-digit authenticator value,
+manual Base32 secret, QR payload, cookies or mailbox content from the screenshots.
+
+The owner separately authorizes promotion of all outstanding public-safe work to
+`origin/main` and implementation on `mail.blackbagsecurity.com` for production
+UAT/CAT. This is a new environment boundary: obsd1 acceptance does not itself
+accept Toronto. The observable engineering exit is an exact reviewed
+`origin/main` source and matching installed Toronto Web artifact that serves the
+existing recovery entry while retaining the password/TOTP/recovery, proxy-proof,
+session, CSRF/origin and confinement boundaries. Owner production UAT/CAT remains
+separate and must exercise recovery and post-recovery sign-in on the mail host.
+
+Fresh Toronto preflight identifies `mail.blackbagsecurity.com` at the pinned
+public administration endpoint as OpenBSD 8.0 amd64. Its standard checkout is
+clean at historical main `a791a5e`; the installed Web binary SHA256 is
+`9e82f697c5fa24045ded6891a5607290406152215b3a7111a82faa72cd756185`.
+Nginx, OSMAP Web/password/helper/crypto/public-admin/public-inventory, Postfix,
+Dovecot, Rspamd and MySQL are healthy. The production Web environment and
+root-only nginx include already implement the proxy-token prerequisite. SMTP,
+IMAPS, HTTPS and loopback port 8080 listeners are present. The host has adequate
+disk but its build identity has a 1.5 GiB soft and hard DATA limit, matching the
+already observed rustc allocation boundary; do not repeat a known-unusable local
+compile as a production prerequisite.
+
+Production method: merge only the signed reviewed topic history through the
+required pull-request and `local-ci / verified` protection, then prove fresh
+`origin/main` parity. Build one release-profile artifact from that exact promoted
+source on the already qualified obsd1 OpenBSD 8.0 amd64 builder with one compiler
+job and a build-process-only raised DATA limit. Before install, compare the
+artifact's dynamic-library contract with Toronto, retain the current production
+binary and configuration as rollback, and prove staged/read-back hashes. Restart
+only `osmap_serve`; do not restart or reconfigure Postfix, Dovecot, Rspamd,
+MariaDB or unrelated OSMAP helpers. Require `osmap_serve(ok)`, nginx health,
+public HTTPS recovery 200, direct missing/wrong proxy proof 403, expected security
+headers and preserved mail-service PIDs/listeners. On any source, dependency,
+install, startup or functional mismatch, restore the exact prior Web binary,
+restart only `osmap_serve`, verify public recovery and stop without owner UAT.
