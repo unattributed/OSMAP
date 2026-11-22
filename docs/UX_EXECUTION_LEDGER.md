@@ -1,3 +1,53 @@
+## 2026-11-22 — Visible manual authenticator setup key
+
+The owner observed during live obsd1 account recovery that the Base32 TOTP
+setup key was hidden inside a collapsed disclosure beneath the QR code. Not all
+users can scan a QR code. The bounded outcome is to present the manual setup
+key visibly by default as an equal enrollment method on both recovery and
+signed-in authenticator-replacement pages. The QR option remains available.
+
+Scope is limited to the shared server-rendered enrollment presentation and its
+existing route regressions. Preserve the current enrollment secret, QR payload,
+password/TOTP confirmation, CSRF/origin checks, restricted recovery grant and
+fresh-sign-in requirement. Do not expose the full `otpauth://` URI or add
+client-side clipboard access. No live restart or deployment occurs while the
+owner's current recovery grant is active.
+
+The initial renderer regression failed because the manual key was inside
+`<details>`. The smallest presentation change makes the escaped Base32 value
+visible under the explicit `2FA secret key (TOTP)` heading before the separately
+labelled QR alternative.
+Recovery and signed-in replacement assertions pass in the complete 11-test
+access-recovery route group; formatting and diff checks pass. The first normal
+developer gate passed the full Rust library suite (2,463 passed, 100 ignored),
+Clippy with warnings denied, formatting, supply-chain checks and the V4/V7/V8
+regression gates, then stopped at the V11 closure because the added test lines
+shifted positions in the governed Rust-assumption inventory. Counts and
+classifications are unchanged; the generated timestamp and current inventory
+digest were refreshed mechanically. The second complete run passed that V11
+boundary, then the nested V3 release fixture rejected `totp` in its generated
+proof. The literal came only from the isolated worktree directory name recorded
+as `project_root`, not proof content or application output. The same worktree
+was moved to a neutral directory name; the leak guard and application source
+were not weakened. The final complete `make security-check` rerun passes,
+including the 2,463-test Rust library suite (100 ignored), Clippy with warnings
+denied, formatting, supply-chain checks, V4/V7/V8/V11/V12/V13 gates, governed
+recovery suites and the nested V3 fail-closed harness. Independent review,
+OpenBSD build, installed QA and owner acceptance are separate delivery stages
+and remain NOT RUN unless recorded otherwise below.
+
+The owner then clarified that the visible label itself must be `2FA secret key
+(TOTP)` and that both that manual value and the QR code must be present on the
+recovery page. A new exact-label regression failed against `Manual setup key`;
+the shared renderer now uses the requested label and a separate `QR code`
+heading. Both recovery and signed-in replacement assertions require the two
+headings and the visible escaped Base32 key. The complete 11-test route group,
+formatting and diff checks pass. The governed assumption inventory retains
+13,629 entries with unchanged classifications and a mechanically refreshed
+digest. The fresh complete `make security-check` developer gate passes for this
+exact label and dual-method renderer. Immutable-commit review, signed source
+delivery, OpenBSD build, installed QA and owner acceptance remain pending.
+
 ## 2026-11-14 — Ammonia remediation on Toronto and obsd1
 
 The operator explicitly requests immediate updates to both servers for
@@ -61727,3 +61777,116 @@ anonymous route protection. Owner browser acceptance was requested separately.
 **Owner UAT PASS, 2026-11-20.** The owner confirmed both the production
 dashboard count and link, and switching to Bin and Junk from the Archive
 chooser. The owner approved the change. PR #103 is merged.
+
+### 2026-11-22 — visible manual TOTP key and obsd1 UAT deployment
+
+Recovery and signed-in authenticator replacement now render both enrollment
+methods at the same time: a visible Base32 value under the exact heading
+`2FA secret key (TOTP)` and the existing image under `QR code`. The shared
+renderer HTML-escapes the manual value and does not disclose the complete
+`otpauth://` URI. Focused recovery tests require both headings and the known
+Base32 fixture, and reject the former collapsed setup-key control. Password
+replacement, fresh-code confirmation, recovery grant, CSRF/origin checks,
+single-use state, response `no-store`, and existing confinement boundaries are
+unchanged.
+
+Signed product commit `7fd513f81f952237784d5bc7aa40ce7705891b09`
+passed the full local security gate and Good Shopkeeper verification. Independent
+source/security review returned GO with no findings. The normal non-forced push
+initially completed its gate but the SSH transport closed with exit 141 before
+transfer; the precise close reason is not established. The bounded keepalive
+retry reran the complete gate and published the exact commit on
+`bbs/visible-totp-key-20261122`.
+
+The obsd1 install used a clean detached worktree at that exact commit and left
+the standard checkout unchanged. Two OpenBSD builds failed safely before install
+when rustc reached the observed 1.5 GiB soft DATA limit, including the single-job,
+no-debug-metadata retry. A third single-job, non-incremental build passed after
+raising only that build shell's DATA limit to 8 GiB, within its existing hard
+limit; no persistent login-class setting changed. The retained deployment session
+is `/home/foo/osmap-binary-deployment/20261122-125925`. Its staged binary SHA256
+is `35a33f14922edd26d66cb57e09f8fa8eddfd41c3fa5cfaf5f12d60c52df9d55c`;
+the rollback binary SHA256 is
+`b0fa8955b4e3a86013923214bea8e5d9efc943d77f57e8bb9484ccd840814b1d`.
+The failed-compiler core file was removed after confirming it was the only
+untracked source-tree artifact.
+
+The first two candidate starts failed closed and were automatically rolled back
+to the healthy prior binary. Fresh stderr established the exact missing
+prerequisite: the newer production HTTP runtime requires
+`OSMAP_PROXY_TOKEN_FILE`. The bounded repair generated the proof only on obsd1,
+installed a `_osmap:_osmap` mode-0600 one-link token file, installed a
+root:wheel mode-0600 one-link nginx header include, added the token-file path to
+the existing root:`_osmap` mode-0640 Web environment, and installed the reviewed
+nginx templates whose only host delta was that include in every OSMAP proxy
+location. The prior environment and templates remain in the deployment session's
+prerequisite backup. The token was not displayed, copied off-host or committed.
+Nginx syntax passed before a reload, and public recovery stayed HTTP 200 while
+the old Web binary remained active.
+
+Final candidate activation restarted only `osmap_serve`; nginx was reloaded for
+the prerequisite, while Postfix, Dovecot, Rspamd, MySQL, the password service,
+mailbox helper, relays, crypto helpers, public admin/inventory and database
+replica/tunnel were not restarted. Live `/usr/local/bin/osmap` matches the staged
+SHA256 above and PID 74520 started from that path. Public
+`https://obsd1.blackbagsecurity.com/recover` returns 200 with `Cache-Control:
+no-store`, the expected CSP, HSTS, referrer and nosniff headers. Direct loopback
+requests with no proxy proof and a deliberately wrong proof both return 403.
+The installed artifact contains both exact enrollment headings. All enumerated
+OSMAP and mail services are started, and SMTP, IMAP, HTTPS and loopback port 8080
+listeners are present.
+
+Engineering deployment is PASS and obsd1 is UAT_READY. Owner UAT remains separate:
+complete a fresh recovery or authenticator-replacement journey and confirm the
+protected enrollment page visibly shows both the manual Base32 key and QR code,
+then confirm the new password and a code from the replacement authenticator can
+sign in. No owner password, recovery grant, TOTP secret or mailbox content was
+used or retained by this deployment verification.
+
+### 2026-11-22 — owner obsd1 recovery UAT accepted; Toronto promotion authorized
+
+The owner reports PASS for all four required obsd1 development observations:
+the recovery code was delivered to the registered recovery address, the code
+was accepted, complete recovery of the selected development account succeeded,
+and a fresh post-recovery sign-in with its replacement password and authenticator
+succeeded. The supplied screenshots visibly confirm the simultaneous manual
+`2FA secret key (TOTP)` and `QR code` enrollment methods, the `Access updated`
+result, and the subsequent authenticated mailbox landing page. Accept the
+development recovery journey for this account and installed candidate. Do not
+retain or reproduce the recovery code, password, six-digit authenticator value,
+manual Base32 secret, QR payload, cookies or mailbox content from the screenshots.
+
+The owner separately authorizes promotion of all outstanding public-safe work to
+`origin/main` and implementation on `mail.blackbagsecurity.com` for production
+UAT/CAT. This is a new environment boundary: obsd1 acceptance does not itself
+accept Toronto. The observable engineering exit is an exact reviewed
+`origin/main` source and matching installed Toronto Web artifact that serves the
+existing recovery entry while retaining the password/TOTP/recovery, proxy-proof,
+session, CSRF/origin and confinement boundaries. Owner production UAT/CAT remains
+separate and must exercise recovery and post-recovery sign-in on the mail host.
+
+Fresh Toronto preflight identifies `mail.blackbagsecurity.com` at the pinned
+public administration endpoint as OpenBSD 8.0 amd64. Its standard checkout is
+clean at historical main `a791a5e`; the installed Web binary SHA256 is
+`9e82f697c5fa24045ded6891a5607290406152215b3a7111a82faa72cd756185`.
+Nginx, OSMAP Web/password/helper/crypto/public-admin/public-inventory, Postfix,
+Dovecot, Rspamd and MySQL are healthy. The production Web environment and
+root-only nginx include already implement the proxy-token prerequisite. SMTP,
+IMAPS, HTTPS and loopback port 8080 listeners are present. The host has adequate
+disk but its build identity has a 1.5 GiB soft and hard DATA limit, matching the
+already observed rustc allocation boundary; do not repeat a known-unusable local
+compile as a production prerequisite.
+
+Production method: merge only the signed reviewed topic history through the
+required pull-request and `local-ci / verified` protection, then prove fresh
+`origin/main` parity. Build one release-profile artifact from that exact promoted
+source on the already qualified obsd1 OpenBSD 8.0 amd64 builder with one compiler
+job and a build-process-only raised DATA limit. Before install, compare the
+artifact's dynamic-library contract with Toronto, retain the current production
+binary and configuration as rollback, and prove staged/read-back hashes. Restart
+only `osmap_serve`; do not restart or reconfigure Postfix, Dovecot, Rspamd,
+MariaDB or unrelated OSMAP helpers. Require `osmap_serve(ok)`, nginx health,
+public HTTPS recovery 200, direct missing/wrong proxy proof 403, expected security
+headers and preserved mail-service PIDs/listeners. On any source, dependency,
+install, startup or functional mismatch, restore the exact prior Web binary,
+restart only `osmap_serve`, verify public recovery and stop without owner UAT.
