@@ -61890,3 +61890,51 @@ public HTTPS recovery 200, direct missing/wrong proxy proof 403, expected securi
 headers and preserved mail-service PIDs/listeners. On any source, dependency,
 install, startup or functional mismatch, restore the exact prior Web binary,
 restart only `osmap_serve`, verify public recovery and stop without owner UAT.
+
+### 2026-11-22 — manual TOTP recovery deployed to Toronto for UAT/CAT
+
+Protected pull request 106 merged the three signed topic commits to GitHub-verified
+`origin/main` commit `75da4a90f07d0922497a94cd03a8ea0bf8d13c14` after the exact
+topic head passed the complete local security gate and required
+`local-ci / verified` status. The merged tree exactly matches the independently
+reviewed topic tree. Toronto's standard checkout was clean and fast-forwarded from
+historical main to that exact promoted commit before deployment.
+
+The release candidate was built from a clean detached worktree at that exact main
+commit on the matching obsd1 OpenBSD 8.0 amd64 builder. The one-job,
+non-incremental release build used only a build-shell DATA limit increase and did
+not modify obsd1's live binary. Retained builder rehearsal session:
+`/home/foo/osmap-binary-deployment/20261122-151319`. Candidate SHA256:
+`238151f920c9e1002e70f77d8ab7d7fdfcc6d2c6d200ebe9f66c02bf8df644f4`.
+Its dynamic-library names and versions exactly match the Toronto runtime contract.
+
+Toronto staged and read back that exact candidate hash. Before installation, it
+retained the prior root:bin mode-0555 Web binary plus the root-only Web environment
+and nginx proxy-proof include under
+`/var/backups/osmap-binary-deployment/20261122-1521-toronto`. The rollback binary
+SHA256 is `9e82f697c5fa24045ded6891a5607290406152215b3a7111a82faa72cd756185`.
+The live candidate readback is root:bin mode 0555 and matches the candidate hash.
+
+Only `osmap_serve` was stopped and started. Its Web process changed from PID 30974
+to PID 36861. Nginx, Postfix, Dovecot, Rspamd, MySQL, the mailbox helper, crypto,
+public-admin and public-inventory processes retained their observed pre-change
+PIDs; all enumerated services remain `ok`. SMTP, IMAPS, HTTPS and loopback port
+8080 listeners remain present. No mail service, database service, nginx service,
+helper, mail configuration or account state was restarted or changed.
+
+Public `https://mail.blackbagsecurity.com/recover` returns HTTP 200 and the expected
+no-store, CSP, same-origin resource/referrer, nosniff and frame-deny protections.
+Direct loopback requests with missing and deliberately wrong proxy proof both
+return 403. The installed binary contains both exact enrollment headings,
+`2FA secret key (TOTP)` and `QR code`. The initial recovery form correctly does
+not reveal either enrollment value before a valid recovery challenge. A fresh
+response check did not observe `Strict-Transport-Security`; record that existing
+edge-header deviation separately rather than claiming HSTS passed or expanding
+this Web-binary deployment into an unreviewed nginx change.
+
+Engineering deployment is PASS and Toronto is UAT_READY. Owner production UAT/CAT
+remains separate: request a fresh recovery code, complete the challenge, confirm
+that the protected setup page displays both manual Base32 and QR enrollment
+methods, choose a new password, confirm the new authenticator code, and sign in
+freshly. No password, recovery code, TOTP secret, QR payload, cookie, private
+recovery address or mailbox content was retained in source or deployment evidence.
