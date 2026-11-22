@@ -1,3 +1,53 @@
+## 2026-11-22 — Visible manual authenticator setup key
+
+The owner observed during live obsd1 account recovery that the Base32 TOTP
+setup key was hidden inside a collapsed disclosure beneath the QR code. Not all
+users can scan a QR code. The bounded outcome is to present the manual setup
+key visibly by default as an equal enrollment method on both recovery and
+signed-in authenticator-replacement pages. The QR option remains available.
+
+Scope is limited to the shared server-rendered enrollment presentation and its
+existing route regressions. Preserve the current enrollment secret, QR payload,
+password/TOTP confirmation, CSRF/origin checks, restricted recovery grant and
+fresh-sign-in requirement. Do not expose the full `otpauth://` URI or add
+client-side clipboard access. No live restart or deployment occurs while the
+owner's current recovery grant is active.
+
+The initial renderer regression failed because the manual key was inside
+`<details>`. The smallest presentation change makes the escaped Base32 value
+visible under the explicit `2FA secret key (TOTP)` heading before the separately
+labelled QR alternative.
+Recovery and signed-in replacement assertions pass in the complete 11-test
+access-recovery route group; formatting and diff checks pass. The first normal
+developer gate passed the full Rust library suite (2,463 passed, 100 ignored),
+Clippy with warnings denied, formatting, supply-chain checks and the V4/V7/V8
+regression gates, then stopped at the V11 closure because the added test lines
+shifted positions in the governed Rust-assumption inventory. Counts and
+classifications are unchanged; the generated timestamp and current inventory
+digest were refreshed mechanically. The second complete run passed that V11
+boundary, then the nested V3 release fixture rejected `totp` in its generated
+proof. The literal came only from the isolated worktree directory name recorded
+as `project_root`, not proof content or application output. The same worktree
+was moved to a neutral directory name; the leak guard and application source
+were not weakened. The final complete `make security-check` rerun passes,
+including the 2,463-test Rust library suite (100 ignored), Clippy with warnings
+denied, formatting, supply-chain checks, V4/V7/V8/V11/V12/V13 gates, governed
+recovery suites and the nested V3 fail-closed harness. Independent review,
+OpenBSD build, installed QA and owner acceptance are separate delivery stages
+and remain NOT RUN unless recorded otherwise below.
+
+The owner then clarified that the visible label itself must be `2FA secret key
+(TOTP)` and that both that manual value and the QR code must be present on the
+recovery page. A new exact-label regression failed against `Manual setup key`;
+the shared renderer now uses the requested label and a separate `QR code`
+heading. Both recovery and signed-in replacement assertions require the two
+headings and the visible escaped Base32 key. The complete 11-test route group,
+formatting and diff checks pass. The governed assumption inventory retains
+13,629 entries with unchanged classifications and a mechanically refreshed
+digest. The fresh complete `make security-check` developer gate passes for this
+exact label and dual-method renderer. Immutable-commit review, signed source
+delivery, OpenBSD build, installed QA and owner acceptance remain pending.
+
 ## 2026-11-14 — Ammonia remediation on Toronto and obsd1
 
 The operator explicitly requests immediate updates to both servers for
