@@ -72,13 +72,16 @@ fn run_with_socket(
     }
 
     let mut stream = UnixStream::connect(socket_path).map_err(|_| Error::Unavailable)?;
-    apply_openbsd_confinement(socket_path)?;
+    // OpenBSD requires the `unix` promise for setsockopt(2). Establish both
+    // bounded I/O timeouts before confinement removes that promise; afterward
+    // the helper retains only stdio authority on this already-open descriptor.
     stream
         .set_read_timeout(Some(IO_TIMEOUT))
         .map_err(|_| Error::Unavailable)?;
     stream
         .set_write_timeout(Some(IO_TIMEOUT))
         .map_err(|_| Error::Unavailable)?;
+    apply_openbsd_confinement(socket_path)?;
     let header = format!(
         "POST /learnspam HTTP/1.1\r\nHost: localhost\r\nContent-Type: message/rfc822\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
         message.len()
@@ -175,6 +178,8 @@ mod tests {
         let path = socket_path("ok");
         let _ = std::fs::remove_file(&path);
         let listener = UnixListener::bind(&path).unwrap();
+        #[cfg(not(target_os = "openbsd"))]
+        let worker_path = path.clone();
         let worker = thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
             let mut request = Vec::new();
@@ -186,13 +191,21 @@ mod tests {
             stream
                 .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 16\r\n\r\n{\"success\":true}")
                 .unwrap();
+            // pledge(2) is process-wide on OpenBSD. The fixture socket uses a
+            // per-process name and is removed before the next run; attempting
+            // unlink after the helper narrows to stdio would correctly abort.
+            #[cfg(not(target_os = "openbsd"))]
+            {
+                drop(stream);
+                drop(listener);
+                let _ = std::fs::remove_file(worker_path);
+            }
         });
         let mut input = &b"Subject: fixture\r\n\r\nbody"[..];
         let mut output = Vec::new();
         assert_eq!(run_with_socket(&path, &mut input, &mut output), Ok(()));
         assert_eq!(output, b"learned\n");
         worker.join().unwrap();
-        let _ = std::fs::remove_file(path);
     }
 
     #[test]
@@ -211,6 +224,8 @@ mod tests {
         let path = socket_path("unconfirmed");
         let _ = std::fs::remove_file(&path);
         let listener = UnixListener::bind(&path).unwrap();
+        #[cfg(not(target_os = "openbsd"))]
+        let worker_path = path.clone();
         let worker = thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
             let mut request = Vec::new();
@@ -218,6 +233,12 @@ mod tests {
             stream
                 .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n{}")
                 .unwrap();
+            #[cfg(not(target_os = "openbsd"))]
+            {
+                drop(stream);
+                drop(listener);
+                let _ = std::fs::remove_file(worker_path);
+            }
         });
         let mut input = &b"Subject: fixture\r\n\r\nbody"[..];
         let mut output = Vec::new();
@@ -227,6 +248,5 @@ mod tests {
         );
         assert!(output.is_empty());
         worker.join().unwrap();
-        let _ = std::fs::remove_file(path);
     }
 }
