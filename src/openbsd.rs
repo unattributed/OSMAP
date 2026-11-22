@@ -2502,9 +2502,11 @@ pub(crate) fn dependency_program_allowed(program: &Path) -> bool {
     matches!(
         program.to_str(),
         Some(
-            "/usr/bin/fstat"
+            "/usr/bin/doas"
+                | "/usr/bin/fstat"
                 | "/usr/local/bin/doveadm"
                 | "/usr/local/bin/doveconf"
+                | "/usr/local/bin/osmap"
                 | "/usr/local/libexec/osmap/storage-quota"
                 | "/usr/local/bin/mariadb"
                 | "/usr/sbin/sendmail"
@@ -4445,6 +4447,18 @@ mod tests {
         assert!(!dependency_program_allowed(Path::new(
             "/usr/local/lib/dovecot/libevil.so.bad"
         )));
+    }
+
+    #[test]
+    fn rspamd_feedback_dependency_programs_are_admitted_exactly() {
+        assert!(dependency_program_allowed(Path::new("/usr/bin/doas")));
+        assert!(dependency_program_allowed(Path::new(
+            "/usr/local/bin/osmap"
+        )));
+        assert!(!dependency_program_allowed(Path::new(
+            "/usr/local/bin/doas"
+        )));
+        assert!(!dependency_program_allowed(Path::new("/usr/bin/osmap")));
     }
 
     #[test]
