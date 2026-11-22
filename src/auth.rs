@@ -1171,6 +1171,15 @@ pub struct CommandExecution {
     pub stderr: String,
 }
 
+/// Binary-safe command result for fixed native operations whose stdout is not
+/// text (for example an RFC 5322 message fetched from Dovecot).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawCommandExecution {
+    pub status_code: i32,
+    pub stdout: Vec<u8>,
+    pub stderr: Vec<u8>,
+}
+
 /// Errors that can occur while invoking external auth backends.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CommandExecutionError {
@@ -1213,6 +1222,28 @@ pub trait CommandExecutor {
         _output_max_bytes: usize,
     ) -> Result<CommandExecution, CommandExecutionError> {
         self.run_with_stdin_bytes_timeout(program, args, stdin_data, timeout)
+    }
+
+    fn run_with_stdin_bytes_timeout_and_raw_output_limit(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &[u8],
+        timeout: Duration,
+        output_max_bytes: usize,
+    ) -> Result<RawCommandExecution, CommandExecutionError> {
+        self.run_with_stdin_bytes_timeout_and_output_limit(
+            program,
+            args,
+            stdin_data,
+            timeout,
+            output_max_bytes,
+        )
+        .map(|result| RawCommandExecution {
+            status_code: result.status_code,
+            stdout: result.stdout.into_bytes(),
+            stderr: result.stderr.into_bytes(),
+        })
     }
 
     fn run_folder_mutation(
@@ -1303,6 +1334,25 @@ impl CommandExecutor for SystemCommandExecutor {
             .result
     }
 
+    fn run_with_stdin_bytes_timeout_and_raw_output_limit(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &[u8],
+        timeout: Duration,
+        output_max_bytes: usize,
+    ) -> Result<RawCommandExecution, CommandExecutionError> {
+        let mut settled = true;
+        run_system_command_raw(
+            program,
+            args,
+            stdin_data,
+            timeout,
+            output_max_bytes,
+            &mut settled,
+        )
+    }
+
     fn run_folder_mutation(
         &self,
         program: &str,
@@ -1332,6 +1382,29 @@ fn run_system_command(
     output_max_bytes: usize,
     settled: &mut bool,
 ) -> Result<CommandExecution, CommandExecutionError> {
+    run_system_command_raw(
+        program,
+        args,
+        stdin_data,
+        timeout,
+        output_max_bytes,
+        settled,
+    )
+    .map(|output| CommandExecution {
+        status_code: output.status_code,
+        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+    })
+}
+
+fn run_system_command_raw(
+    program: &str,
+    args: &[String],
+    stdin_data: &[u8],
+    timeout: Duration,
+    output_max_bytes: usize,
+    settled: &mut bool,
+) -> Result<RawCommandExecution, CommandExecutionError> {
     let mut child = Command::new(program)
         .args(args)
         .env_clear()
@@ -1369,7 +1442,7 @@ fn run_system_command(
     let stdout_handle = spawn_bounded_output_reader(stdout, output_max_bytes, "stdout");
     let stderr_handle = spawn_bounded_output_reader(stderr, output_max_bytes, "stderr");
 
-    wait_for_command_with_timeout(
+    wait_for_command_with_timeout_raw(
         child,
         stdin_rx,
         stdout_handle,
@@ -1385,14 +1458,14 @@ fn write_command_stdin(mut stdin: std::process::ChildStdin, stdin_data: &[u8]) -
     stdin.flush()
 }
 
-fn wait_for_command_with_timeout(
+fn wait_for_command_with_timeout_raw(
     mut child: std::process::Child,
     stdin_rx: mpsc::Receiver<Result<(), String>>,
     stdout_handle: thread::JoinHandle<Result<Vec<u8>, CommandExecutionError>>,
     stderr_handle: thread::JoinHandle<Result<Vec<u8>, CommandExecutionError>>,
     timeout: Duration,
     settled: &mut bool,
-) -> Result<CommandExecution, CommandExecutionError> {
+) -> Result<RawCommandExecution, CommandExecutionError> {
     let deadline = Instant::now() + timeout;
     let mut stdin_result: Option<Result<(), String>> = None;
 
@@ -1449,10 +1522,10 @@ fn wait_for_command_with_timeout(
     let stdout = stdout?;
     let stderr = stderr?;
 
-    Ok(CommandExecution {
+    Ok(RawCommandExecution {
         status_code: status_code_or_signal(status),
-        stdout: String::from_utf8_lossy(&stdout).into_owned(),
-        stderr: String::from_utf8_lossy(&stderr).into_owned(),
+        stdout,
+        stderr,
     })
 }
 

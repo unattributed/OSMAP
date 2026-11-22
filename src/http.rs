@@ -51,6 +51,7 @@ mod routes_flags;
 #[path = "http/routes_folder_disposition.rs"]
 mod routes_folder_disposition;
 mod routes_identity_preferences;
+mod routes_junk;
 #[path = "http/routes_keys.rs"]
 mod routes_keys;
 mod routes_label_selection;
@@ -874,7 +875,8 @@ pub use self::http_browser::{
     BrowserSessionListOutcome, BrowserSessionRevokeDecision, BrowserSessionRevokeOutcome,
     BrowserSessionRevokeScope, BrowserSessionValidationOutcome, BrowserSettingsDecision,
     BrowserSettingsOutcome, BrowserSettingsUpdateDecision, BrowserSettingsUpdateOutcome,
-    BrowserVisibleSession, BrowserVisibleSettings,
+    BrowserSpamFeedbackFailure, BrowserSpamFeedbackOutcome, BrowserVisibleSession,
+    BrowserVisibleSettings,
 };
 pub use self::http_gateway::RuntimeBrowserGateway;
 pub use self::http_runtime::run_http_server;
@@ -1197,6 +1199,7 @@ mod tests {
         drafts: Arc<Mutex<BTreeMap<String, DraftRecord>>>,
         submitted: Arc<Mutex<Vec<ComposeRequest>>>,
         message_flags: Arc<Mutex<SyntheticFlagStates>>,
+        spam_feedback: Arc<Mutex<Vec<(String, String, u64)>>>,
         message_moves: Arc<Mutex<SyntheticMessageMoves>>,
         appearance_store: Option<AppearanceStore>,
         settings_store: Option<crate::settings::FileUserSettingsStore>,
@@ -1285,6 +1288,7 @@ mod tests {
                 drafts: Arc::new(Mutex::new(BTreeMap::new())),
                 submitted: Arc::new(Mutex::new(Vec::new())),
                 message_flags: Arc::new(Mutex::new(BTreeMap::new())),
+                spam_feedback: Arc::new(Mutex::new(Vec::new())),
                 message_moves: Arc::new(Mutex::new(SyntheticMessageMoves::default())),
                 appearance_store: None,
                 settings_store: None,
@@ -2346,6 +2350,45 @@ mod tests {
             request: &crate::mailbox::MessageFlagRequest,
         ) -> BrowserMessageFlagOutcome {
             self.set_fixture_message_flag(context, session, request)
+        }
+        fn record_spam_feedback(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            request: &crate::mailbox::MessageMoveRequest,
+        ) -> BrowserSpamFeedbackOutcome {
+            let failure = if context.user_agent.contains("SpamFeedbackUnknown") {
+                Some(BrowserSpamFeedbackFailure::Unknown)
+            } else if context.user_agent.contains("SpamFeedbackRefused") {
+                Some(BrowserSpamFeedbackFailure::Refused)
+            } else if self
+                .fixture_current_metadata(
+                    &session.record.canonical_username,
+                    &request.source_mailbox_name,
+                    request.uid,
+                )
+                .map(|metadata| metadata.version)
+                != Some(request.version.clone())
+            {
+                Some(BrowserSpamFeedbackFailure::Stale)
+            } else {
+                None
+            };
+            if let Some(failure) = failure {
+                return BrowserSpamFeedbackOutcome {
+                    result: Err(failure),
+                    audit_events: Vec::new(),
+                };
+            }
+            self.spam_feedback.lock().expect("spam feedback").push((
+                session.record.canonical_username.clone(),
+                request.source_mailbox_name.clone(),
+                request.uid,
+            ));
+            BrowserSpamFeedbackOutcome {
+                result: Ok(()),
+                audit_events: Vec::new(),
+            }
         }
         fn login(
             &self,
@@ -7942,6 +7985,13 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("id=\"bulk-move-form\""));
         assert!(body.contains("action=\"/messages/move\""));
+        assert!(body.contains("class=\"bulk-actions-visible\""));
+        assert!(!body.contains("<details class=\"bulk-actions\""));
+        assert!(body.contains("formaction=\"/messages/flag\" name=\"action\" value=\"read\""));
+        assert!(body.contains("formaction=\"/messages/flag\" name=\"action\" value=\"unread\""));
+        assert!(body.contains("formaction=\"/messages/junk\" name=\"action\" value=\"junk\""));
+        assert!(body.contains("name=\"action\" value=\"bin\""));
+        assert!(body.contains("<span class=\"presentation-label\">Delete Selected</span>"));
         assert!(!body.contains("id=\"bulk-archive-form\""));
         assert!(body.contains("name=\"action\" value=\"archive\""));
         assert!(body.contains("name=\"action\" value=\"archive\""));
@@ -8103,6 +8153,215 @@ mod tests {
             .headers
             .iter()
             .any(|(name, value)| { name == "Location" && value == "/mailbox?name=INBOX" }));
+    }
+
+    #[test]
+    fn rendered_toolbar_bulk_mark_read_accepts_move_chooser_field() {
+        let application = app();
+        let response = application.handle_request(
+            &request(
+                "POST",
+                "/messages/flag",
+                &authenticated_same_origin_headers(),
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9&uid_10=10", "read"),
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| { name == "Location" && value == "/mailbox?name=INBOX" }));
+        for uid in [9, 10] {
+            assert!(application
+                .gateway
+                .fixture_message_flags("alice@example.com", "INBOX", uid)
+                .iter()
+                .any(|flag| flag == "\\Seen"));
+        }
+    }
+
+    #[test]
+    fn rendered_toolbar_bulk_mark_unread_accepts_move_chooser_field() {
+        let application = app();
+        let response = application.handle_request(
+            &request(
+                "POST",
+                "/messages/flag",
+                &authenticated_same_origin_headers(),
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9&uid_10=10", "unread"),
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        for uid in [9, 10] {
+            assert!(!application
+                .gateway
+                .fixture_message_flags("alice@example.com", "INBOX", uid)
+                .iter()
+                .any(|flag| flag == "\\Seen"));
+        }
+    }
+
+    #[test]
+    fn bulk_mark_read_rejects_more_than_ten_messages_before_mutation() {
+        let application = app();
+        let response = application.handle_request(
+            &request(
+                "POST",
+                "/messages/flag",
+                &authenticated_same_origin_headers(),
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid_1=1&uid_2=2&uid_3=3&uid_4=4&uid_5=5&uid_6=6&uid_7=7&uid_8=8&uid_9=9&uid_10=10&uid_11=11", "read"),
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(application
+            .gateway
+            .message_flags
+            .lock()
+            .expect("flags")
+            .is_empty());
+    }
+
+    #[test]
+    fn rendered_toolbar_bulk_mark_junk_accepts_move_chooser_field() {
+        let application = app();
+        let response = application.handle_request(
+            &request(
+                "POST",
+                "/messages/junk",
+                &authenticated_same_origin_headers(),
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9", "junk"),
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert_eq!(
+            application
+                .gateway
+                .spam_feedback
+                .lock()
+                .expect("spam feedback")
+                .as_slice(),
+            &[("alice@example.com".into(), "INBOX".into(), 9)]
+        );
+        assert!(application
+            .gateway
+            .fixture_message_removed("alice@example.com", "INBOX", 9));
+    }
+
+    #[test]
+    fn uncertain_spam_feedback_never_moves_or_retries_message() {
+        let application = app();
+        let response = application.handle_request(
+            &request(
+                "POST",
+                "/messages/junk",
+                &[
+                    ("User-Agent", "SpamFeedbackUnknown"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "https://localhost"),
+                ],
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid_9=9&uid_10=10", "junk"),
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 503);
+        assert!(body_text(&response).contains("do not repeat Mark as Junk"));
+        assert!(application
+            .gateway
+            .spam_feedback
+            .lock()
+            .expect("spam feedback")
+            .is_empty());
+        for uid in [9, 10] {
+            assert!(!application.gateway.fixture_message_removed(
+                "alice@example.com",
+                "INBOX",
+                uid
+            ));
+        }
+    }
+
+    #[test]
+    fn bulk_mark_junk_rejects_more_than_ten_messages_before_feedback_or_move() {
+        let application = app();
+        let response = application.handle_request(
+            &request(
+                "POST",
+                "/messages/junk",
+                &authenticated_same_origin_headers(),
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid_1=1&uid_2=2&uid_3=3&uid_4=4&uid_5=5&uid_6=6&uid_7=7&uid_8=8&uid_9=9&uid_10=10&uid_11=11", "junk"),
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(application
+            .gateway
+            .spam_feedback
+            .lock()
+            .expect("spam feedback")
+            .is_empty());
+        for uid in 1..=11 {
+            assert!(!application.gateway.fixture_message_removed(
+                "alice@example.com",
+                "INBOX",
+                uid
+            ));
+        }
+    }
+
+    #[test]
+    fn confirmed_spam_learning_with_unconfirmed_move_stops_without_retraining() {
+        let application = app();
+        let response = application.handle_request(
+            &request(
+                "POST",
+                "/messages/junk",
+                &[
+                    ("User-Agent", "MoveUnknown"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "https://localhost"),
+                ],
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid_10=10&uid_11=11", "junk"),
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 503);
+        let body = body_text(&response);
+        assert!(body.contains("Spam Learned; Move Incomplete"));
+        assert!(body.contains("Do not repeat Mark as Junk"));
+        assert_eq!(
+            application
+                .gateway
+                .spam_feedback
+                .lock()
+                .expect("spam feedback")
+                .as_slice(),
+            &[("alice@example.com".into(), "INBOX".into(), 10)]
+        );
+        for uid in [10, 11] {
+            assert!(!application.gateway.fixture_message_removed(
+                "alice@example.com",
+                "INBOX",
+                uid
+            ));
+        }
     }
 
     #[test]

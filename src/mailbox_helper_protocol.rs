@@ -106,6 +106,13 @@ pub(super) enum MailboxHelperRequest {
         uid: u64,
         grant: MailboxHelperGrant,
     },
+    RawMessage {
+        canonical_username: String,
+        mailbox_name: String,
+        uid: u64,
+        version: MessageVersion,
+        grant: MailboxHelperGrant,
+    },
     AttachmentDownload {
         canonical_username: String,
         mailbox_name: String,
@@ -224,6 +231,9 @@ pub(crate) enum MailboxHelperResponse {
     MessageViewOk {
         message: Box<MessageView>,
     },
+    RawMessageOk {
+        message: Box<crate::mailbox::RawMessage>,
+    },
     AttachmentDownloadOk {
         attachment: Box<DownloadedAttachment>,
     },
@@ -312,6 +322,13 @@ pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
             "operation=message_view\ncanonical_username_b64={}\nmailbox_name_b64={}\nuid={uid}\n{}",
             encode_base64(canonical_username.as_bytes()),
             encode_base64(mailbox_name.as_bytes()),
+            encode_grant_fields(grant),
+        ),
+        MailboxHelperRequest::RawMessage { canonical_username, mailbox_name, uid, version, grant } => format!(
+            "operation=raw_message\ncanonical_username_b64={}\nmailbox_name_b64={}\nuid={uid}\n{}{}",
+            encode_base64(canonical_username.as_bytes()),
+            encode_base64(mailbox_name.as_bytes()),
+            encode_move_version(version),
             encode_grant_fields(grant),
         ),
         MailboxHelperRequest::AttachmentDownload {
@@ -602,6 +619,29 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
                 grant,
             })
         }
+        "raw_message" => {
+            let mailbox_name = decode_base64_text(
+                require_field(&fields, "mailbox_name_b64")?,
+                crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+                "mailbox_name",
+            )?;
+            let uid = require_field(&fields, "uid")?
+                .parse::<u64>()
+                .map_err(|error| format!("invalid helper uid: {error}"))?;
+            let request = crate::mailbox::RawMessageRequest::new(
+                mailbox_name,
+                uid,
+                parse_move_version(&fields)?,
+            )
+            .map_err(|error| error.reason)?;
+            Ok(MailboxHelperRequest::RawMessage {
+                canonical_username,
+                mailbox_name: request.mailbox_name,
+                uid: request.uid,
+                version: request.version,
+                grant,
+            })
+        }
         "attachment_download" => {
             let mailbox_name = decode_base64_text(
                 require_field(&fields, "mailbox_name_b64")?,
@@ -709,6 +749,7 @@ pub(super) fn ordinary_request_allowed(request: &MailboxHelperRequest) -> bool {
         | MessageList { mailbox_name, .. }
         | MessageSearch { mailbox_name, .. }
         | MessageView { mailbox_name, .. }
+        | RawMessage { mailbox_name, .. }
         | AttachmentDownload { mailbox_name, .. }
         | MessageAppend { mailbox_name, .. } => allowed(mailbox_name),
         MessageSearchBatch { mailbox_names, .. } | FolderFacts { mailbox_names, .. } => {
@@ -841,6 +882,7 @@ pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGra
         | MailboxHelperRequest::MessageSearch { grant, .. }
         | MailboxHelperRequest::MessageSearchBatch { grant, .. }
         | MailboxHelperRequest::MessageView { grant, .. }
+        | MailboxHelperRequest::RawMessage { grant, .. }
         | MailboxHelperRequest::AttachmentDownload { grant, .. }
         | MailboxHelperRequest::MessageMove { grant, .. }
         | MailboxHelperRequest::MessageAppend { grant, .. } => grant,
@@ -865,6 +907,7 @@ fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelpe
         | MailboxHelperRequest::MessageSearch { grant, .. }
         | MailboxHelperRequest::MessageSearchBatch { grant, .. }
         | MailboxHelperRequest::MessageView { grant, .. }
+        | MailboxHelperRequest::RawMessage { grant, .. }
         | MailboxHelperRequest::AttachmentDownload { grant, .. }
         | MailboxHelperRequest::MessageMove { grant, .. }
         | MailboxHelperRequest::MessageAppend { grant, .. } => *grant = new_grant,
@@ -889,6 +932,7 @@ pub(super) fn helper_operation_label(request: &MailboxHelperRequest) -> &'static
         MailboxHelperRequest::MessageSearch { .. } => "message_search",
         MailboxHelperRequest::MessageSearchBatch { .. } => "message_search_batch",
         MailboxHelperRequest::MessageView { .. } => "message_view",
+        MailboxHelperRequest::RawMessage { .. } => "raw_message",
         MailboxHelperRequest::AttachmentDownload { .. } => "attachment_download",
         MailboxHelperRequest::MessageMove { .. } => "message_move",
         MailboxHelperRequest::MessageAppend { .. } => "message_append",
@@ -1085,6 +1129,19 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
             fields.push(canonical_username.clone());
             fields.push(mailbox_name.clone());
             fields.push(uid.to_string());
+        }
+        MailboxHelperRequest::RawMessage {
+            canonical_username,
+            mailbox_name,
+            uid,
+            version,
+            ..
+        } => {
+            fields.push(canonical_username.clone());
+            fields.push(mailbox_name.clone());
+            fields.push(uid.to_string());
+            fields.push(version.mailbox_guid.clone());
+            fields.push(version.message_guid.clone());
         }
         MailboxHelperRequest::AttachmentDownload {
             canonical_username,
@@ -1361,6 +1418,13 @@ fn encode_response_checked(response: &MailboxHelperResponse) -> Result<String, S
             encode_base64(message.body_text.as_bytes()),
             encode_message_metadata(message.metadata.as_ref())?,
         ),
+        MailboxHelperResponse::RawMessageOk { message } => format!(
+            "status=ok\noperation=raw_message\nmessage_uid={}\nmessage_mailbox_b64={}\n{}message_raw_b64={}\n",
+            message.uid,
+            encode_base64(message.mailbox_name.as_bytes()),
+            encode_move_version(&message.version),
+            encode_base64(&message.bytes),
+        ),
         MailboxHelperResponse::AttachmentDownloadOk { attachment } => format!(
             "status=ok\noperation=attachment_download\nattachment_mailbox_name_b64={}\nattachment_uid={}\nattachment_part_path_b64={}\nattachment_filename_b64={}\nattachment_content_type_b64={}\nattachment_body_b64={}\n",
             encode_base64(attachment.mailbox_name.as_bytes()),
@@ -1407,6 +1471,35 @@ pub(super) fn parse_response(
     message_view_policy: MessageViewPolicy,
     input: &str,
 ) -> Result<MailboxHelperResponse, String> {
+    if input.lines().any(|line| line == "operation=raw_message") {
+        let fields = parse_kv_lines(input)?;
+        if require_field(&fields, "status")? != "ok" {
+            return Err("raw message helper returned an error".into());
+        }
+        let raw_bytes = decode_base64_bytes(
+            require_field(&fields, "message_raw_b64")?,
+            crate::mailbox::DEFAULT_RAW_MESSAGE_MAX_BYTES,
+            "message_raw",
+        )?;
+        if raw_bytes.is_empty() {
+            return Err("raw message was empty".into());
+        }
+        let message = crate::mailbox::RawMessage {
+            mailbox_name: decode_base64_text(
+                require_field(&fields, "message_mailbox_b64")?,
+                crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+                "message_mailbox",
+            )?,
+            uid: require_field(&fields, "message_uid")?
+                .parse()
+                .map_err(|_| "invalid raw message uid")?,
+            version: parse_move_version(&fields)?,
+            bytes: raw_bytes,
+        };
+        return Ok(MailboxHelperResponse::RawMessageOk {
+            message: Box::new(message),
+        });
+    }
     if input.lines().any(|line| {
         matches!(
             line,
@@ -2168,6 +2261,18 @@ fn reject_unknown_request_fields(
             "canonical_username_b64",
             "mailbox_name_b64",
             "uid",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
+        "raw_message" => &[
+            "operation",
+            "canonical_username_b64",
+            "mailbox_name_b64",
+            "uid",
+            "move_mailbox_guid",
+            "move_message_guid_b64",
             "grant_issued_at",
             "grant_expires_at",
             "grant_nonce",
@@ -3861,6 +3966,104 @@ mod batch_protocol_tests {
         let mut many = (1..=250).map(|uid| row("INBOX", uid)).collect::<Vec<_>>();
         many.push(row("Foreign", 251));
         assert!(parse_batch(&encode_response(&response(many))).is_err());
+    }
+
+    #[test]
+    fn raw_message_request_response_bind_version_and_preserve_binary_bytes() {
+        let version = MessageVersion::new("a".repeat(32), "b".repeat(32)).unwrap();
+        let mut request = MailboxHelperRequest::RawMessage {
+            canonical_username: "alice@example.com".into(),
+            mailbox_name: "INBOX".into(),
+            uid: 9,
+            version: version.clone(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        issue_request_grant_with_nonce(&mut request, KEY, 100, &"02".repeat(32)).unwrap();
+        let encoded = encode_request(&request);
+        assert_eq!(parse_request(&encoded).unwrap(), request);
+        verify_request_grant(&request, KEY, 101).unwrap();
+
+        let mut tampered = parse_request(&encoded).unwrap();
+        if let MailboxHelperRequest::RawMessage { version, .. } = &mut tampered {
+            version.message_guid = "c".repeat(32);
+        }
+        assert!(verify_request_grant(&tampered, KEY, 101).is_err());
+
+        let bytes = vec![0, 1, 2, 0x80, 0xff, b'\r', b'\n'];
+        let response = MailboxHelperResponse::RawMessageOk {
+            message: Box::new(crate::mailbox::RawMessage {
+                mailbox_name: "INBOX".into(),
+                uid: 9,
+                version,
+                bytes,
+            }),
+        };
+        let wire = encode_response(&response);
+        assert_eq!(
+            parse_response(
+                MailboxListingPolicy::default(),
+                MessageListPolicy::default(),
+                MessageSearchPolicy::default(),
+                MessageViewPolicy::default(),
+                &wire,
+            )
+            .unwrap(),
+            response
+        );
+    }
+
+    #[test]
+    fn raw_message_response_accepts_exact_maximum_and_refuses_one_byte_more() {
+        for (size, accepted) in [
+            (crate::mailbox::DEFAULT_RAW_MESSAGE_MAX_BYTES, true),
+            (crate::mailbox::DEFAULT_RAW_MESSAGE_MAX_BYTES + 1, false),
+        ] {
+            let response = MailboxHelperResponse::RawMessageOk {
+                message: Box::new(crate::mailbox::RawMessage {
+                    mailbox_name: "INBOX".into(),
+                    uid: 9,
+                    version: MessageVersion::new("a".repeat(32), "b".repeat(32)).unwrap(),
+                    bytes: vec![b'x'; size],
+                }),
+            };
+            let parsed = parse_response(
+                MailboxListingPolicy::default(),
+                MessageListPolicy::default(),
+                MessageSearchPolicy::default(),
+                MessageViewPolicy::default(),
+                &encode_response(&response),
+            );
+            assert_eq!(parsed.is_ok(), accepted);
+        }
+    }
+
+    #[test]
+    fn raw_message_response_refuses_empty_malformed_and_wrong_operation() {
+        let base = format!(
+            "status=ok\noperation=raw_message\nmessage_uid=9\nmessage_mailbox_b64=SU5CT1g=\nmove_mailbox_guid={}\nmove_message_guid_b64={}\nmessage_raw_b64={{}}\n",
+            "a".repeat(32),
+            encode_base64("b".repeat(32).as_bytes())
+        );
+        for raw in ["", "***not-base64***"] {
+            assert!(parse_response(
+                MailboxListingPolicy::default(),
+                MessageListPolicy::default(),
+                MessageSearchPolicy::default(),
+                MessageViewPolicy::default(),
+                &base.replace("{}", raw),
+            )
+            .is_err());
+        }
+        assert!(parse_response(
+            MailboxListingPolicy::default(),
+            MessageListPolicy::default(),
+            MessageSearchPolicy::default(),
+            MessageViewPolicy::default(),
+            &base
+                .replace("operation=raw_message", "operation=mailbox_list")
+                .replace("{}", "eA=="),
+        )
+        .is_err());
     }
 
     #[test]

@@ -15,8 +15,335 @@ use super::{
     MessageAppendRequest, MessageListBackend, MessageListPolicy, MessageListRequest,
     MessageSearchBackend, MessageSearchBatchRequest, MessageSearchPolicy, MessageSearchRequest,
     MessageSearchResult, MessageSummary, MessageView, MessageViewBackend, MessageViewPolicy,
-    MessageViewRequest,
+    MessageViewRequest, RawMessage, RawMessageBackend, RawMessageRequest,
+    DEFAULT_RAW_MESSAGE_MAX_BYTES,
 };
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawIdentityRow {
+    uid: String,
+    mailbox: String,
+    #[serde(rename = "mailbox-guid")]
+    mailbox_guid: String,
+    guid: String,
+}
+
+/// Binary-safe, version-bound Dovecot message retrieval for spam learning.
+#[derive(Debug, Clone)]
+pub struct DoveadmRawMessageBackend<E> {
+    command_executor: E,
+    doveadm_path: PathBuf,
+    userdb_socket_path: Option<PathBuf>,
+    command_timeout_secs: u64,
+}
+
+impl<E> DoveadmRawMessageBackend<E> {
+    pub fn new(command_executor: E, doveadm_path: impl Into<PathBuf>) -> Self {
+        Self {
+            command_executor,
+            doveadm_path: doveadm_path.into(),
+            userdb_socket_path: None,
+            command_timeout_secs: DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
+        }
+    }
+
+    pub fn with_userdb_socket_path(mut self, path: Option<PathBuf>) -> Self {
+        self.userdb_socket_path = path;
+        self
+    }
+}
+
+fn confirm_raw_identity(
+    bytes: &[u8],
+    request: &RawMessageRequest,
+) -> Result<(), MailboxBackendError> {
+    let rows: Vec<RawIdentityRow> =
+        serde_json::from_slice(bytes).map_err(|_| MailboxBackendError {
+            backend: "doveadm-raw-message",
+            reason: "native identity output was invalid".into(),
+        })?;
+    let [row] = rows.as_slice() else {
+        return Err(MailboxBackendError {
+            backend: "doveadm-raw-message",
+            reason: "native identity was unavailable".into(),
+        });
+    };
+    if row.uid.parse::<u64>().ok() != Some(request.uid)
+        || row.mailbox != request.mailbox_name
+        || row.mailbox_guid != request.version.mailbox_guid
+        || row.guid != request.version.message_guid
+    {
+        return Err(MailboxBackendError {
+            backend: "doveadm-raw-message",
+            reason: "stored message identity changed".into(),
+        });
+    }
+    Ok(())
+}
+
+fn parse_raw_pager_message(output: &[u8]) -> Result<Vec<u8>, MailboxBackendError> {
+    const PREFIX: &[u8] = b"text: ";
+    const SUFFIX: &[u8] = b"\n\x0c\n";
+    if !output.starts_with(PREFIX) || !output.ends_with(SUFFIX) {
+        return Err(MailboxBackendError {
+            backend: "doveadm-raw-message",
+            reason: "native raw-message framing was invalid".into(),
+        });
+    }
+    let bytes = output[PREFIX.len()..output.len() - SUFFIX.len()].to_vec();
+    if bytes.is_empty() || bytes.len() > DEFAULT_RAW_MESSAGE_MAX_BYTES {
+        return Err(MailboxBackendError {
+            backend: "doveadm-raw-message",
+            reason: "stored message exceeded its exact byte bound".into(),
+        });
+    }
+    Ok(bytes)
+}
+
+impl<E: CommandExecutor> RawMessageBackend for DoveadmRawMessageBackend<E> {
+    fn fetch_raw_message(
+        &self,
+        canonical_username: &str,
+        request: &RawMessageRequest,
+    ) -> Result<RawMessage, MailboxBackendError> {
+        let base = || {
+            let mut args = vec!["-o".into(), "stats_writer_socket_path=".into()];
+            append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
+            args
+        };
+        let identity = || {
+            let mut args = base();
+            args.extend([
+                "-f".into(),
+                "json".into(),
+                "fetch".into(),
+                "-u".into(),
+                canonical_username.into(),
+                "uid mailbox mailbox-guid guid".into(),
+                "mailbox".into(),
+                request.mailbox_name.clone(),
+                "uid".into(),
+                request.uid.to_string(),
+            ]);
+            self.command_executor
+                .run_with_stdin_bytes_timeout_and_raw_output_limit(
+                    self.doveadm_path.to_string_lossy().as_ref(),
+                    &args,
+                    b"",
+                    Duration::from_secs(self.command_timeout_secs),
+                    64 * 1024,
+                )
+        };
+        let before = identity().map_err(|error| MailboxBackendError {
+            backend: "doveadm-raw-message",
+            reason: error.reason,
+        })?;
+        if before.status_code != 0 {
+            return Err(MailboxBackendError {
+                backend: "doveadm-raw-message",
+                reason: "native identity fetch failed".into(),
+            });
+        }
+        confirm_raw_identity(&before.stdout, request)?;
+
+        let mut args = base();
+        args.extend([
+            "-f".into(),
+            "pager".into(),
+            "fetch".into(),
+            "-u".into(),
+            canonical_username.into(),
+            "text".into(),
+            "mailbox".into(),
+            request.mailbox_name.clone(),
+            "uid".into(),
+            request.uid.to_string(),
+        ]);
+        let content = self
+            .command_executor
+            .run_with_stdin_bytes_timeout_and_raw_output_limit(
+                self.doveadm_path.to_string_lossy().as_ref(),
+                &args,
+                b"",
+                Duration::from_secs(self.command_timeout_secs),
+                DEFAULT_RAW_MESSAGE_MAX_BYTES + 64,
+            )
+            .map_err(|error| MailboxBackendError {
+                backend: "doveadm-raw-message",
+                reason: error.reason,
+            })?;
+        if content.status_code != 0 {
+            return Err(MailboxBackendError {
+                backend: "doveadm-raw-message",
+                reason: "native raw fetch failed".into(),
+            });
+        }
+        let bytes = parse_raw_pager_message(&content.stdout)?;
+
+        let after = identity().map_err(|error| MailboxBackendError {
+            backend: "doveadm-raw-message",
+            reason: error.reason,
+        })?;
+        if after.status_code != 0 {
+            return Err(MailboxBackendError {
+                backend: "doveadm-raw-message",
+                reason: "native identity confirmation failed".into(),
+            });
+        }
+        confirm_raw_identity(&after.stdout, request)?;
+        Ok(RawMessage {
+            mailbox_name: request.mailbox_name.clone(),
+            uid: request.uid,
+            version: request.version.clone(),
+            bytes,
+        })
+    }
+}
+
+#[cfg(test)]
+mod raw_message_tests {
+    use super::*;
+    use crate::auth::{CommandExecution, CommandExecutionError, RawCommandExecution};
+    use std::collections::VecDeque;
+    use std::sync::Mutex;
+
+    struct RawFixture(Mutex<VecDeque<RawCommandExecution>>);
+
+    impl CommandExecutor for RawFixture {
+        fn run_with_stdin_bytes(
+            &self,
+            _program: &str,
+            _args: &[String],
+            _stdin_data: &[u8],
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            Err(CommandExecutionError {
+                reason: "text execution must not be used".into(),
+            })
+        }
+
+        fn run_with_stdin_bytes_timeout_and_raw_output_limit(
+            &self,
+            _program: &str,
+            _args: &[String],
+            _stdin_data: &[u8],
+            _timeout: Duration,
+            _output_max_bytes: usize,
+        ) -> Result<RawCommandExecution, CommandExecutionError> {
+            self.0
+                .lock()
+                .unwrap()
+                .pop_front()
+                .ok_or_else(|| CommandExecutionError {
+                    reason: "unexpected command".into(),
+                })
+        }
+    }
+
+    #[test]
+    fn pager_parser_preserves_binary_control_bytes_beyond_text_view_limit() {
+        let mut message = b"Subject: binary\r\n\r\n".to_vec();
+        message.extend(std::iter::repeat_n(b'x', 600 * 1024));
+        message.extend_from_slice(&[0, 1, 2, 0x80, 0xff, b'\r', b'\n']);
+        let mut framed = b"text: ".to_vec();
+        framed.extend_from_slice(&message);
+        framed.extend_from_slice(b"\n\x0c\n");
+        assert_eq!(parse_raw_pager_message(&framed).unwrap(), message);
+    }
+
+    #[test]
+    fn pager_parser_accepts_exact_upper_bound_and_refuses_one_byte_more() {
+        for (size, accepted) in [
+            (DEFAULT_RAW_MESSAGE_MAX_BYTES, true),
+            (DEFAULT_RAW_MESSAGE_MAX_BYTES + 1, false),
+        ] {
+            let mut framed = b"text: ".to_vec();
+            framed.extend(std::iter::repeat_n(b'a', size));
+            framed.extend_from_slice(b"\n\x0c\n");
+            assert_eq!(parse_raw_pager_message(&framed).is_ok(), accepted);
+        }
+    }
+
+    #[test]
+    fn raw_identity_refuses_stale_mailbox_or_message_version() {
+        let request = RawMessageRequest::new(
+            "INBOX",
+            9,
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "b".repeat(32)).unwrap(),
+        )
+        .unwrap();
+        let matching = format!(
+            "[{{\"uid\":\"9\",\"mailbox\":\"INBOX\",\"mailbox-guid\":\"{}\",\"guid\":\"{}\"}}]",
+            "a".repeat(32),
+            "b".repeat(32)
+        );
+        assert!(confirm_raw_identity(matching.as_bytes(), &request).is_ok());
+        let stale = matching.replace(&"b".repeat(32), &"c".repeat(32));
+        assert!(confirm_raw_identity(stale.as_bytes(), &request).is_err());
+    }
+
+    #[test]
+    fn backend_executes_identity_raw_identity_sequence_and_returns_exact_bytes() {
+        let version =
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "b".repeat(32)).unwrap();
+        let request = RawMessageRequest::new("INBOX", 9, version.clone()).unwrap();
+        let identity = format!(
+            "[{{\"uid\":\"9\",\"mailbox\":\"INBOX\",\"mailbox-guid\":\"{}\",\"guid\":\"{}\"}}]",
+            version.mailbox_guid, version.message_guid
+        )
+        .into_bytes();
+        let exact = vec![b'S', b':', b' ', 0, 0x80, 0xff, b'\r', b'\n'];
+        let mut framed = b"text: ".to_vec();
+        framed.extend_from_slice(&exact);
+        framed.extend_from_slice(b"\n\x0c\n");
+        let ok = |stdout| RawCommandExecution {
+            status_code: 0,
+            stdout,
+            stderr: vec![],
+        };
+        let fixture = RawFixture(Mutex::new(VecDeque::from([
+            ok(identity.clone()),
+            ok(framed),
+            ok(identity),
+        ])));
+        let backend = DoveadmRawMessageBackend::new(fixture, "/usr/local/bin/doveadm");
+        let message = backend
+            .fetch_raw_message("alice@example.com", &request)
+            .unwrap();
+        assert_eq!(message.bytes, exact);
+        assert_eq!(message.version, version);
+        assert!(backend.command_executor.0.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn backend_refuses_changed_second_identity_after_raw_fetch() {
+        let version =
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "b".repeat(32)).unwrap();
+        let request = RawMessageRequest::new("INBOX", 9, version.clone()).unwrap();
+        let identity = |guid: char| {
+            format!(
+                "[{{\"uid\":\"9\",\"mailbox\":\"INBOX\",\"mailbox-guid\":\"{}\",\"guid\":\"{}\"}}]",
+                version.mailbox_guid,
+                guid.to_string().repeat(32)
+            )
+            .into_bytes()
+        };
+        let ok = |stdout| RawCommandExecution {
+            status_code: 0,
+            stdout,
+            stderr: vec![],
+        };
+        let fixture = RawFixture(Mutex::new(VecDeque::from([
+            ok(identity('b')),
+            ok(b"text: Subject: x\r\n\r\nbody\n\x0c\n".to_vec()),
+            ok(identity('c')),
+        ])));
+        let backend = DoveadmRawMessageBackend::new(fixture, "/usr/local/bin/doveadm");
+        assert!(backend
+            .fetch_raw_message("alice@example.com", &request)
+            .is_err());
+    }
+}
 
 /// Lists mailboxes through `doveadm mailbox list`.
 #[derive(Debug, Clone)]

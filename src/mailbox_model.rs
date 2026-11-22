@@ -888,6 +888,58 @@ pub struct MessageView {
     pub body_text: String,
 }
 
+/// Maximum exact RFC 5322 payload accepted for Rspamd feedback.
+pub const DEFAULT_RAW_MESSAGE_MAX_BYTES: usize = 4 * 1024 * 1024;
+
+/// Version-bound request for an exact stored RFC 5322 payload.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawMessageRequest {
+    pub mailbox_name: String,
+    pub uid: u64,
+    pub version: crate::message_metadata::MessageVersion,
+}
+
+impl RawMessageRequest {
+    pub fn new(
+        mailbox_name: impl Into<String>,
+        uid: u64,
+        version: crate::message_metadata::MessageVersion,
+    ) -> Result<Self, MailboxBackendError> {
+        let mailbox_name = mailbox_name.into();
+        MailboxEntry::new(MailboxListingPolicy::default(), &mailbox_name)?;
+        if uid == 0 {
+            return Err(MailboxBackendError {
+                backend: "raw-message-request",
+                reason: "uid is outside its bound".into(),
+            });
+        }
+        Ok(Self {
+            mailbox_name,
+            uid,
+            version: crate::message_metadata::MessageVersion::new(
+                version.mailbox_guid,
+                version.message_guid,
+            )?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawMessage {
+    pub mailbox_name: String,
+    pub uid: u64,
+    pub version: crate::message_metadata::MessageVersion,
+    pub bytes: Vec<u8>,
+}
+
+pub trait RawMessageBackend {
+    fn fetch_raw_message(
+        &self,
+        canonical_username: &str,
+        request: &RawMessageRequest,
+    ) -> Result<RawMessage, MailboxBackendError>;
+}
+
 /// The user-facing reason returned when mailbox listing fails.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MailboxPublicFailureReason {

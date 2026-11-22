@@ -18,6 +18,8 @@ mod http_gateway_documents;
 mod http_gateway_draft;
 #[path = "http_gateway_flags.rs"]
 mod http_gateway_flags;
+#[path = "http_gateway_junk.rs"]
+mod http_gateway_junk;
 #[path = "http_gateway_keys.rs"]
 mod http_gateway_keys;
 #[path = "http_gateway_mail.rs"]
@@ -1273,6 +1275,15 @@ impl BrowserGateway for RuntimeBrowserGateway {
         request: &crate::mailbox::MessageFlagRequest,
     ) -> BrowserMessageFlagOutcome {
         self.set_message_flag_impl(context, validated_session, request)
+    }
+
+    fn record_spam_feedback(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &crate::mailbox::MessageMoveRequest,
+    ) -> BrowserSpamFeedbackOutcome {
+        self.record_spam_feedback_impl(context, validated_session, request)
     }
 
     fn load_notification_preference(

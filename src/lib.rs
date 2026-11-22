@@ -110,6 +110,7 @@ pub mod recovery_contact;
 pub mod rendering;
 pub mod rendering_html;
 pub mod reply_thread;
+pub mod rspamd_feedback_helper;
 pub mod scheduled_send;
 mod scheduled_ui;
 mod scheduled_worker;

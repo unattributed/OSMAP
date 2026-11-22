@@ -601,6 +601,18 @@ pub trait BrowserGateway {
         }
     }
 
+    fn record_spam_feedback(
+        &self,
+        _context: &AuthenticationContext,
+        _validated_session: &ValidatedSession,
+        _request: &crate::mailbox::MessageMoveRequest,
+    ) -> BrowserSpamFeedbackOutcome {
+        BrowserSpamFeedbackOutcome {
+            result: Err(BrowserSpamFeedbackFailure::Unavailable),
+            audit_events: Vec::new(),
+        }
+    }
+
     fn load_notification_preference(
         &self,
         _session: &ValidatedSession,
@@ -1571,6 +1583,25 @@ pub enum BrowserMessageFlagFailure {
     Stale,
     Busy,
     RateLimited { retry_after_seconds: u64 },
+    Unavailable,
+    Unknown,
+}
+
+/// Confirmation that one exact stored message was submitted to Rspamd's
+/// spam-learning endpoint. Moving the message remains a separate observable
+/// result so partial outcomes are never hidden.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserSpamFeedbackOutcome {
+    pub result: Result<(), BrowserSpamFeedbackFailure>,
+    pub audit_events: Vec<LogEvent>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserSpamFeedbackFailure {
+    Invalid,
+    Stale,
+    RateLimited { retry_after_seconds: u64 },
+    Refused,
     Unavailable,
     Unknown,
 }

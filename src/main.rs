@@ -17,6 +17,22 @@ fn main() -> ExitCode {
         );
         return ExitCode::SUCCESS;
     }
+    if env::args().nth(1).as_deref() == Some("rspamd-learn-spam") {
+        if env::args().nth(2).is_some() {
+            eprintln!(
+                "{}",
+                usage_message(&env::args().next().unwrap_or_else(|| "osmap".into()))
+            );
+            return ExitCode::FAILURE;
+        }
+        return match osmap::rspamd_feedback_helper::run() {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(error) => {
+                eprintln!("rspamd spam feedback failed: {}", error.public_code());
+                ExitCode::from(error.exit_code())
+            }
+        };
+    }
     if let Err(message) = apply_cli_run_mode_override() {
         eprintln!("{message}");
         return ExitCode::FAILURE;
@@ -84,7 +100,7 @@ fn apply_cli_run_mode_override() -> Result<(), String> {
 }
 
 fn usage_message(program: &str) -> String {
-    format!("usage: {program} [bootstrap|serve|mailbox-helper]")
+    format!("usage: {program} [bootstrap|serve|mailbox-helper|rspamd-learn-spam]")
 }
 
 #[cfg(test)]
@@ -95,7 +111,7 @@ mod tests {
     fn usage_message_lists_supported_run_modes() {
         assert_eq!(
             usage_message("osmap"),
-            "usage: osmap [bootstrap|serve|mailbox-helper]"
+            "usage: osmap [bootstrap|serve|mailbox-helper|rspamd-learn-spam]"
         );
     }
 }
