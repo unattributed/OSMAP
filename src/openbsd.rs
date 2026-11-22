@@ -2782,42 +2782,46 @@ fn postdrop_trace_elf_prefix(bytes: &[u8]) -> bool {
 }
 
 #[cfg(unix)]
-pub(crate) fn validate_postdrop_trace_program() -> io::Result<()> {
+pub(crate) fn validate_privileged_trace_program(path: &Path) -> io::Result<()> {
     use std::io::Read;
     use std::os::unix::fs::OpenOptionsExt;
-    if !cfg!(target_os = "openbsd") {
+    if !cfg!(target_os = "openbsd")
+        || !matches!(
+            path.to_str(),
+            Some("/usr/bin/doas" | "/usr/local/sbin/postdrop")
+        )
+    {
         return Err(io::Error::new(
             io::ErrorKind::Unsupported,
-            "postdrop loader trace requires OpenBSD",
+            "privileged loader trace target refused",
         ));
     }
     let check = || -> Result<(), String> {
-        let path = Path::new("/usr/local/sbin/postdrop");
         trusted_dependency_program(path)?;
         let before = dependency_identity(path)?;
         let file = fs::OpenOptions::new()
             .read(true)
             .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
             .open(path)
-            .map_err(|_| "postdrop trace object unavailable")?;
+            .map_err(|_| "privileged trace object unavailable")?;
         if dependency_metadata_identity(
             &file
                 .metadata()
-                .map_err(|_| "postdrop trace object unavailable")?,
+                .map_err(|_| "privileged trace object unavailable")?,
         ) != before
         {
-            return Err("postdrop trace object changed".into());
+            return Err("privileged trace object changed".into());
         }
         let mut prefix = Vec::new();
         file.take(65536)
             .read_to_end(&mut prefix)
-            .map_err(|_| "postdrop trace header unavailable")?;
+            .map_err(|_| "privileged trace header unavailable")?;
         if !postdrop_trace_elf_prefix(&prefix) {
-            return Err("postdrop trace interpreter refused".into());
+            return Err("privileged trace interpreter refused".into());
         }
         trusted_dependency_program(path)?;
         if dependency_identity(path)? != before {
-            return Err("postdrop trace object changed".into());
+            return Err("privileged trace object changed".into());
         }
         Ok(())
     };
@@ -4616,7 +4620,7 @@ mod tests {
         );
         let target = Path::new("/usr/local/sbin/postdrop");
         assert_ne!(fs::symlink_metadata(target).unwrap().mode() & 0o2000, 0);
-        validate_postdrop_trace_program().expect("protected native dynamic postdrop");
+        validate_privileged_trace_program(target).expect("protected native dynamic postdrop");
         let command = crate::auth::installed_dependencies_command(target).unwrap();
         assert_eq!(command.get_program(), target);
         assert_eq!(command.get_args().len(), 0);
@@ -4627,6 +4631,31 @@ mod tests {
         .expect("setgid postdrop loader trace without program initialization");
         assert!(!libraries.is_empty());
         println!("DEPENDENCIES_POSTDROP_TRACE_PASS target_mode=setgid loader_only=true");
+    }
+
+    #[cfg(target_os = "openbsd")]
+    #[test]
+    #[ignore = "requires installed readable dynamic setuid doas; trace exits before main"]
+    fn installed_dependency_native_setuid_doas_trace() {
+        use std::os::unix::fs::MetadataExt;
+        assert_ne!(
+            unsafe { libc::geteuid() },
+            0,
+            "trace qualifier requires a nonroot actor"
+        );
+        let target = Path::new("/usr/bin/doas");
+        assert_ne!(fs::symlink_metadata(target).unwrap().mode() & 0o4000, 0);
+        validate_privileged_trace_program(target).expect("protected native dynamic doas");
+        let command = crate::auth::installed_dependencies_command(target).unwrap();
+        assert_eq!(command.get_program(), target);
+        assert_eq!(command.get_args().len(), 0);
+        let libraries = installed_library_paths_before(
+            target,
+            std::time::Instant::now() + std::time::Duration::from_secs(5),
+        )
+        .expect("setuid doas loader trace without program initialization");
+        assert!(!libraries.is_empty());
+        println!("DEPENDENCIES_DOAS_TRACE_PASS target_mode=setuid loader_only=true");
     }
 
     #[test]

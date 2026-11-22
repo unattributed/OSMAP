@@ -178,12 +178,15 @@ pub(crate) fn installed_dependencies_command(
     if !crate::openbsd::dependency_program_allowed(program) {
         return Err(std::io::ErrorKind::PermissionDenied.into());
     }
-    if program == std::path::Path::new("/usr/local/sbin/postdrop") {
-        // ldd versions which set execpromises cannot exec a setgid target.
+    if matches!(
+        program.to_str(),
+        Some("/usr/bin/doas" | "/usr/local/sbin/postdrop")
+    ) {
+        // OpenBSD ldd cannot exec set-id targets under its execpromises.
         // Validate the actual native dynamic-loader entry before selecting
         // its trace-only interface; a static binary must never reach exec.
-        crate::openbsd::validate_postdrop_trace_program()?;
-        return Ok(fixed_postdrop_trace_command());
+        crate::openbsd::validate_privileged_trace_program(program)?;
+        return Ok(fixed_privileged_trace_command(program));
     }
     let mut command = Command::new("/usr/bin/ldd");
     command
@@ -205,8 +208,8 @@ pub(crate) fn installed_dependencies_command(
 }
 
 #[cfg(unix)]
-fn fixed_postdrop_trace_command() -> Command {
-    let mut command = Command::new("/usr/local/sbin/postdrop");
+fn fixed_privileged_trace_command(program: &std::path::Path) -> Command {
+    let mut command = Command::new(program);
     command
         .env_clear()
         .env("LC_ALL", "C")
@@ -2152,36 +2155,42 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn installed_postdrop_trace_factory_has_no_operands_or_inherited_search_paths() {
+    fn installed_privileged_trace_factories_have_no_operands_or_inherited_search_paths() {
         use std::collections::BTreeMap;
         use std::ffi::OsString;
         use std::path::Path;
-        let command = fixed_postdrop_trace_command();
-        assert_eq!(command.get_program(), "/usr/local/sbin/postdrop");
-        assert_eq!(command.get_args().len(), 0);
-        assert_eq!(command.get_current_dir(), Some(Path::new("/")));
-        assert_eq!(
-            command
-                .get_envs()
-                .map(|(key, value)| (key.to_os_string(), value.map(OsString::from)))
-                .collect::<BTreeMap<_, _>>(),
-            BTreeMap::from([
-                ("LC_ALL".into(), Some("C".into())),
-                ("PATH".into(), Some(SAFE_COMMAND_PATH.into())),
-                ("LD_TRACE_LOADED_OBJECTS".into(), Some("true".into())),
-            ])
-        );
+        for program in ["/usr/bin/doas", "/usr/local/sbin/postdrop"] {
+            let command = fixed_privileged_trace_command(Path::new(program));
+            assert_eq!(command.get_program(), program);
+            assert_eq!(command.get_args().len(), 0);
+            assert_eq!(command.get_current_dir(), Some(Path::new("/")));
+            assert_eq!(
+                command
+                    .get_envs()
+                    .map(|(key, value)| (key.to_os_string(), value.map(OsString::from)))
+                    .collect::<BTreeMap<_, _>>(),
+                BTreeMap::from([
+                    ("LC_ALL".into(), Some("C".into())),
+                    ("PATH".into(), Some(SAFE_COMMAND_PATH.into())),
+                    ("LD_TRACE_LOADED_OBJECTS".into(), Some("true".into())),
+                ]),
+                "{program}"
+            );
+        }
     }
 
     #[cfg(all(unix, not(target_os = "openbsd")))]
     #[test]
-    fn installed_postdrop_trace_refuses_other_unix_before_reading_target() {
-        assert_eq!(
-            installed_dependencies_command(std::path::Path::new("/usr/local/sbin/postdrop"))
-                .unwrap_err()
-                .kind(),
-            std::io::ErrorKind::Unsupported
-        );
+    fn installed_privileged_traces_refuse_other_unix_before_reading_targets() {
+        for program in ["/usr/bin/doas", "/usr/local/sbin/postdrop"] {
+            assert_eq!(
+                installed_dependencies_command(std::path::Path::new(program))
+                    .unwrap_err()
+                    .kind(),
+                std::io::ErrorKind::Unsupported,
+                "{program}"
+            );
+        }
     }
 
     struct AcceptingBackend;
