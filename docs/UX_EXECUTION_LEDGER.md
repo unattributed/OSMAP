@@ -47,7 +47,137 @@ formatting and diff checks pass. The governed assumption inventory retains
 digest. The fresh complete `make security-check` developer gate passes for this
 exact label and dual-method renderer. Immutable-commit review, signed source
 delivery, OpenBSD build, installed QA and owner acceptance remain pending.
+## 2026-11-22 — Inbox selected-message actions correction
 
+The owner reports that Inbox selection exposes no usable controls to delete,
+move, mark read or mark as Junk with Rspamd feedback. The observable outcome is
+one visible, keyboard-labelled selected-message action bar on Inbox with: a
+reversible **Delete Selected** move to the configured Bin; account-owned folder
+move; exact-identity Read/Unread; and **Mark as Junk**, which confirms Rspamd
+spam learning before moving that same identity to the account-owned literal
+Junk folder. One to ten current messages may be selected. Permanent deletion
+remains available only inside the configured Bin through its existing review.
+
+Source baseline is `0463f9e26e7042b5078c0ba7766cd28780220303` on isolated branch
+`bbs/inbox-bulk-actions-20261122`. Root owns source, Git and any serialized host
+action. Independent review initially found the shared-form field mismatch, an
+overbroad pre-connect Unix promise and a text-view substitution for raw message
+bytes. The corrected 32-path functional candidate received final independent
+GO after the reviewer reran the raw transport, rendered-toolbar and
+Rspamd-helper regressions,
+formatting, Clippy, V10/V11 and diff checks. The linked-worktree scanner refusal
+is retained as a tooling limitation; native OpenBSD, doas and Rspamd behavior is
+still a separate deployment/UAT qualification rather than source acceptance.
+
+Prerequisites observed before dependent source work: Toronto is the authoritative
+mailbox host; the existing exact-identity helper serves mailbox reads/mutations;
+Rspamd 4.3.0 exposes privileged `/learnspam` on its controller; the live
+controller has no Unix feedback socket and Dovecot has no IMAPSieve learning
+hook. Moving to Junk therefore does not itself train Rspamd. The correction
+uses a fixed root helper command that accepts only bounded RFC 5322 bytes on
+stdin and can reach only a mode-restricted local Rspamd controller Unix socket.
+No controller credential, caller-selected command/path, message content or raw
+Rspamd response enters browser state or audit logs.
+
+Minimum tests: visible renderer controls; successful and oversized bulk Read;
+successful feedback-before-move; uncertain feedback stops without move/retry;
+fixed helper HTTP request and empty-input refusal; CSRF/origin, identity,
+selection bound and partial-outcome regressions; normal security/release hooks;
+OpenBSD configtest, source-matched native build, disposable-message learning
+counter/event and Junk move; fresh installed Web/helper identity and HTTPS.
+Focused source tests pass, including confirmed and uncertain Rspamd replies,
+over-limit zero-effect requests, feedback-before-move, and learned-but-move-
+unconfirmed handling. The first developer gate exposed a removed Archive-help
+sentence; it was restored and its focused regression passed. The second gate
+passed all Rust, integration, Clippy, formatting, dependency and V8 checks,
+then stopped at the expected V10/V11 generated inventory drift. The unchanged
+repository generators refreshed both registers and their claims bindings; two
+new production `expect` calls were converted to explicit errors, leaving the
+refined high-relevance count at zero. Direct V10 and V11 gates pass. The final
+complete developer-gate attempts then exposed and closed two further governed
+inventories: the new POST routes were added to the WSTG browser attack surface,
+and the helper's UID and `pledge` calls were moved into the existing reviewed
+OpenBSD FFI boundary without a guard exception. Final self-review also removed
+an impossible re-unveil after Web's inherited lock; the helper connects the
+fixed socket under Web's exact view, then removes `unix` with `pledge("stdio")`.
+After the raw helper transport and sequence regressions were added, the final
+corrected-candidate `make v10-check v11-check` and `make security-check`
+completed successfully through the terminal `security-check complete` marker.
+The retained security-check log SHA256 is
+`d066fa88e7890137e6140848b0c6190cc0ee31bcbb6ec5d40694bbcf4de53b98`.
+No earlier gate receipt is treated as evidence for this candidate.
+During the first protected publication attempt, the live RustSec feed published
+`RUSTSEC-2026-0592` for locked transitive dependency `url` 2.5.8. The normal
+pre-push hook refused publication. The smallest compatible lock refresh updates
+`url` to 2.5.9 and its parser dependency `form_urlencoded` to 1.2.3; the direct
+`ammonia` 4.1.9 boundary is unchanged. The V15 risk-based admission record is
+refreshed to the new lock digest while preserving nine direct dependencies and
+83 locked packages. The direct V15 validator and complete supply-chain check
+pass with no advisory ignore; the normal full pre-push gate remains required
+before the amended candidate can advance.
+Release, native, installed and owner UAT are NOT RUN.
+No real owner message is a test fixture. Web/OSMAP restart is allowed; no
+Dovecot, Postfix or MariaDB lifecycle/configuration change is authorized.
+Two failures at the same functional boundary stop unchanged retries.
+
+<!-- OSMAP_INBOX_ACTIONS_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "INBOX-ACTIONS-20261122",
+  "state": "ACTIVE",
+  "source_baseline": "0463f9e26e7042b5078c0ba7766cd28780220303",
+  "integration_owner": "/root",
+  "allowed_paths": [
+    "Cargo.lock",
+    "src/http.rs",
+    "src/http_browser.rs",
+    "src/http_gateway.rs",
+    "src/http_gateway_junk.rs",
+    "src/http/routes_flags.rs",
+    "src/http/routes_junk.rs",
+    "src/http/routes_moves.rs",
+    "src/http_runtime.rs",
+    "src/http_support.rs",
+    "src/http_ui.rs",
+    "src/lib.rs",
+    "src/auth.rs",
+    "src/http_mailbox_backends.rs",
+    "src/mailbox.rs",
+    "src/mailbox_backend.rs",
+    "src/mailbox_helper.rs",
+    "src/mailbox_helper_client.rs",
+    "src/mailbox_helper_dispatch.rs",
+    "src/mailbox_helper_protocol.rs",
+    "src/mailbox_helper_rename_tests.rs",
+    "src/mailbox_model.rs",
+    "src/main.rs",
+    "src/openbsd.rs",
+    "src/rspamd_feedback_helper.rs",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v15-dependency-admission.json",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "maint/ux/move_workflows.py",
+    "maint/openbsd/README.md",
+    "docs/UX_DECISIONS.md",
+    "docs/UX_EXECUTION_LEDGER.md"
+  ],
+  "outcome": "Visible bounded Inbox delete, move, read and Rspamd-backed Junk actions",
+  "preserve": "No owner-mail fixture, no implicit expunge, no controller credential exposure, no public Dovecot/Postfix/MariaDB restart",
+  "stop_rule": "Stop after two failures at the same functional boundary",
+  "stages": {
+    "implementation": "PASS",
+    "focused_source_tests": "PASS",
+    "mandatory_gates": "PASS",
+    "native_tests": "NOT_RUN",
+    "deployed_qa": "NOT_RUN",
+    "independent_review": "PASS",
+    "owner_uat": "NOT_RUN"
+  }
+}
+```
 ## 2026-11-14 — Ammonia remediation on Toronto and obsd1
 
 The operator explicitly requests immediate updates to both servers for

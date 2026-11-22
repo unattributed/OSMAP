@@ -251,7 +251,7 @@ impl RuntimeBrowserGateway {
         }
     }
 
-    fn helper_grant_key_path(&self) -> Option<&Path> {
+    pub(super) fn helper_grant_key_path(&self) -> Option<&Path> {
         self.mailbox_helper_grant_key_path.as_deref()
     }
 }

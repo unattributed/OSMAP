@@ -105,6 +105,7 @@ pub(super) fn with_rename_helper<B: MailboxBackend + Send + 'static, T>(
             },
             None,
             None,
+            None,
             &Logger::new(crate::config::LogFormat::Text, LogLevel::Info),
             &mut stream,
             MailboxHelperPolicy::default(),

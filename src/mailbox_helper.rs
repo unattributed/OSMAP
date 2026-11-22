@@ -44,7 +44,7 @@ pub use self::mailbox_helper_client::{
     MailboxHelperAttachmentDownloadBackend, MailboxHelperMailboxListBackend,
     MailboxHelperMessageAppendBackend, MailboxHelperMessageListBackend,
     MailboxHelperMessageMoveBackend, MailboxHelperMessageSearchBackend,
-    MailboxHelperMessageViewBackend,
+    MailboxHelperMessageViewBackend, MailboxHelperRawMessageBackend,
 };
 use self::mailbox_helper_dispatch::{
     dispatch_helper_request_with_delete, log_helper_response, HelperBackends,
@@ -59,6 +59,8 @@ use self::mailbox_helper_protocol::{
 use crate::auth::SystemCommandExecutor;
 use crate::config::{AppConfig, AppRunMode, LogLevel};
 use crate::logging::{EventCategory, LogEvent, Logger};
+#[cfg(unix)]
+use crate::mailbox::RawMessageBackend;
 use crate::mailbox::{
     DoveadmMailboxListBackend, DoveadmMessageAppendBackend, DoveadmMessageListBackend,
     DoveadmMessageMoveBackend, DoveadmMessageSearchBackend, DoveadmMessageViewBackend,
@@ -190,6 +192,13 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
             )
             .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
         );
+        let raw_message_backend = Arc::new(
+            crate::mailbox::DoveadmRawMessageBackend::new(
+                SystemCommandExecutor,
+                "/usr/local/bin/doveadm",
+            )
+            .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
+        );
         let mutation_gate = Arc::new(Mutex::new(()));
         let message_move_backend = Arc::new(
             DoveadmMessageMoveBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
@@ -278,6 +287,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                     let message_list_backend = Arc::clone(&message_list_backend);
                     let message_search_backend = Arc::clone(&message_search_backend);
                     let message_view_backend = Arc::clone(&message_view_backend);
+                    let raw_message_backend = Arc::clone(&raw_message_backend);
                     let message_move_backend = Arc::clone(&message_move_backend);
                     let message_append_backend = Arc::clone(&message_append_backend);
                     let message_flag_backend = Arc::clone(&message_flag_backend);
@@ -303,6 +313,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                                 },
                                 Some(message_delete_backend.as_ref()),
                                 Some(documents_backend.as_ref()),
+                                Some(raw_message_backend.as_ref()),
                                 &worker_logger,
                                 &mut stream,
                                 policy,
@@ -423,6 +434,7 @@ fn handle_helper_client_with_documents<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
         backends,
         delete_backend,
         documents_backend,
+        None,
         logger,
         stream,
         policy,
@@ -442,10 +454,12 @@ struct HelperRequestAuthority<'a> {
 }
 
 #[cfg(unix)]
+#[allow(clippy::too_many_arguments)]
 fn handle_helper_client_with_documents_and_rename<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
     backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
     delete_backend: Option<&dyn crate::mailbox::MessageDeleteBackend>,
     documents_backend: Option<&dyn crate::documents::Backend>,
+    raw_message_backend: Option<&dyn RawMessageBackend>,
     logger: &Logger,
     stream: &mut UnixStream,
     policy: MailboxHelperPolicy,
@@ -549,13 +563,38 @@ fn handle_helper_client_with_documents_and_rename<MB, MLB, MSB, MVB, MMB, MAB, M
         return;
     }
 
-    let response = match mailbox_helper_rename::handle(
-        rename_completion_dir,
-        backends.mailbox_backend,
-        &request,
-    ) {
-        Some(response) => response,
-        None => dispatch_helper_request_with_delete(backends, delete_backend, &request),
+    let response = match &request {
+        MailboxHelperRequest::RawMessage {
+            canonical_username,
+            mailbox_name,
+            uid,
+            version,
+            ..
+        } => match crate::mailbox::RawMessageRequest::new(mailbox_name, *uid, version.clone())
+            .and_then(|value| {
+                raw_message_backend
+                    .ok_or_else(|| crate::mailbox::MailboxBackendError {
+                        backend: "raw-message",
+                        reason: "raw message backend unavailable".into(),
+                    })?
+                    .fetch_raw_message(canonical_username, &value)
+            }) {
+            Ok(message) => MailboxHelperResponse::RawMessageOk {
+                message: Box::new(message),
+            },
+            Err(error) => MailboxHelperResponse::Error {
+                backend: error.backend.into(),
+                reason: error.reason,
+            },
+        },
+        _ => match mailbox_helper_rename::handle(
+            rename_completion_dir,
+            backends.mailbox_backend,
+            &request,
+        ) {
+            Some(response) => response,
+            None => dispatch_helper_request_with_delete(backends, delete_backend, &request),
+        },
     };
 
     let _ = write_response(stream, &response);

@@ -1486,6 +1486,7 @@ impl OpenbsdConfinementPlan {
 
                 let dependency_error = add_doveadm_dependency_rules(&mut rules)
                     .and_then(|()| add_sendmail_dependency_rules(&mut rules))
+                    .and_then(|()| add_rspamd_feedback_dependency_rules(&mut rules))
                     .err();
                 #[cfg(all(test, target_os = "openbsd"))]
                 for (path, permissions) in
@@ -2013,6 +2014,16 @@ pub(crate) fn effective_uid() -> u32 {
     effective_uid_raw()
 }
 
+/// Narrow the fixed root-only Rspamd learning bridge through the reviewed
+/// OpenBSD FFI boundary. A Web-launched child inherits Web's already locked
+/// exact-path unveil view; re-unveiling after that lock would fail with EPERM.
+/// The helper first connects the fixed socket, then this seal removes `unix`
+/// so only I/O on the already-open descriptor remains.
+#[cfg(target_os = "openbsd")]
+pub(crate) fn apply_rspamd_feedback_confinement() -> io::Result<()> {
+    imp::rspamd_feedback_confinement()
+}
+
 #[cfg(unix)]
 pub(crate) fn real_uid() -> u32 {
     // SAFETY: getuid has no pointer or ownership precondition.
@@ -2449,6 +2460,21 @@ fn add_sendmail_dependency_rules(rules: &mut BTreeMap<PathBuf, String>) -> Resul
         add_if_exists(rules, Path::new(path), "r");
     }
     add_if_exists(rules, Path::new("/var/spool/postfix"), "rwc");
+    Ok(())
+}
+
+fn add_rspamd_feedback_dependency_rules(
+    rules: &mut BTreeMap<PathBuf, String>,
+) -> Result<(), String> {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
+    for program in ["/usr/bin/doas", "/usr/local/bin/osmap"] {
+        add_rule(rules, Path::new(program), "x");
+        add_installed_dependency_rules(rules, Path::new(program), deadline)?;
+    }
+    add_if_exists(rules, Path::new("/etc/doas.conf"), "r");
+    let socket = Path::new(crate::rspamd_feedback_helper::RSPAMD_FEEDBACK_SOCKET);
+    add_rule(rules, socket, "rw");
+    add_parent_dir_rules(rules, socket);
     Ok(())
 }
 
@@ -3194,6 +3220,7 @@ mod confinement_tests;
 
 #[cfg(target_os = "openbsd")]
 mod imp {
+    use std::ffi::CString;
     use std::io;
     use std::os::raw::{c_char, c_int};
 
@@ -3202,6 +3229,16 @@ mod imp {
     unsafe extern "C" {
         fn pledge(promises: *const c_char, execpromises: *const c_char) -> c_int;
         fn unveil(path: *const c_char, permissions: *const c_char) -> c_int;
+    }
+
+    pub(super) fn rspamd_feedback_confinement() -> io::Result<()> {
+        let promises = CString::new("stdio").map_err(|_| io::ErrorKind::InvalidInput)?;
+        // SAFETY: the promise string is owned and NUL-terminated. The helper
+        // inherits Web's locked unveil table and may only narrow pledge here.
+        if unsafe { pledge(promises.as_ptr(), std::ptr::null()) } != 0 {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(())
     }
 
     pub(super) fn password_parent_seal(

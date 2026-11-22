@@ -351,6 +351,12 @@ where
             (HttpMethod::Post, "/trash/empty") => self.handle_bulk_delete(request, &context, false),
             (HttpMethod::Post, "/message/move") => self.handle_message_move(request, &context),
             (HttpMethod::Post, "/message/flag") => self.handle_message_flag(request, &context),
+            (HttpMethod::Post, "/messages/flag") => {
+                self.handle_bulk_message_flag(request, &context)
+            }
+            (HttpMethod::Post, "/messages/junk") => {
+                self.handle_bulk_message_junk(request, &context)
+            }
             (HttpMethod::Post, "/message/open") => self.handle_message_open(request, &context),
             (HttpMethod::Post, "/settings/timezone") => {
                 self.handle_timezone_update(request, &context)

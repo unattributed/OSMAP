@@ -98,8 +98,7 @@ def main():
             selected = page.locator('input[form="bulk-move-form"]:checked')
             assert selected.count() == 10
             chosen = selected.evaluate_all("es => es.map(e => e.name)")
-            page.locator(".bulk-actions summary").click()
-            press("Move Selected to Bin")
+            press("Delete Selected")
             assert "of 114 messages" in page.locator("main").inner_text()
             assert page.locator('input[type="checkbox"]:checked').count() == 0
             for name in chosen:
