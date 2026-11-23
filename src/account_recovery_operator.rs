@@ -162,12 +162,14 @@ fn runtime_paths(runtime_gid: u32) -> Result<RuntimeConfiguration, Error> {
 
 /// Fixed root-owned Web configuration used by the native account service for
 /// its browser recovery adapter. It never accepts request-selected paths.
-pub(crate) fn browser_recovery_paths(
-) -> Result<(RuntimePaths, u32, u32, Option<BTreeSet<String>>, u64), Error> {
+pub(crate) fn browser_recovery_paths() -> Result<BrowserRecoveryStartup, Error> {
     let (uid, gid) = runtime_identity()?;
     let (paths, selected, idle) = browser_recovery_fence(gid)?;
     Ok((paths, uid, gid, selected, idle))
 }
+
+type BrowserRecoveryStartup = (RuntimePaths, u32, u32, Option<BTreeSet<String>>, u64);
+
 /// Recheck the fixed frontend fence after unveil without repeating user-db
 /// discovery; the native service already captured its trusted runtime identity.
 pub(crate) fn browser_recovery_fence(
