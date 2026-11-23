@@ -211,6 +211,16 @@ fn verified_email_enters_restricted_local_qr_setup_and_cookie_is_not_a_mail_sess
     assert!(html.contains("<svg"));
     assert!(!html.contains("<img"));
     assert!(!html.contains("otpauth://"));
+    assert!(html.contains("Use either method to add the new authenticator"));
+    assert!(html.contains(
+        "<h3 id=\"totp-secret-key-heading\">2FA secret key (TOTP)</h3>"
+    ));
+    assert!(html.contains("<h3 id=\"totp-qr-heading\">QR code</h3>"));
+    assert!(html.contains(
+        "<code class=\"totp-setup-key\">GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ</code>"
+    ));
+    assert!(!html.contains("<details>"));
+    assert!(!html.contains("Enter a setup key instead"));
     assert!(html.contains("name=\"new_password\""));
     assert!(html.contains("name=\"new_totp_code\""));
     assert!(headers(&result).contains(&format!("__Host-osmap_recovery={TOKEN};")));
@@ -611,7 +621,16 @@ fn stored_session_get_form_cookie_and_csrf_roundtrip_reaches_only_own_reset_acti
         *app.gateway.access_calls.lock().unwrap(),
         ["view", "begin_reset"]
     );
-    assert!(!body_text(&accepted).contains("synthetic-current-only"));
+    let accepted_html = body_text(&accepted);
+    assert!(accepted_html.contains(
+        "<h3 id=\"totp-secret-key-heading\">2FA secret key (TOTP)</h3>"
+    ));
+    assert!(accepted_html.contains("<h3 id=\"totp-qr-heading\">QR code</h3>"));
+    assert!(accepted_html.contains(
+        "<code class=\"totp-setup-key\">GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ</code>"
+    ));
+    assert!(!accepted_html.contains("Enter a setup key instead"));
+    assert!(!accepted_html.contains("synthetic-current-only"));
     // A subsequent known refusal renders the same safe form with the browser
     // policy needed for a deliberate corrected submission, without credentials.
     app.gateway

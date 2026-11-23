@@ -1,3 +1,183 @@
+## 2026-11-22 — Visible manual authenticator setup key
+
+The owner observed during live obsd1 account recovery that the Base32 TOTP
+setup key was hidden inside a collapsed disclosure beneath the QR code. Not all
+users can scan a QR code. The bounded outcome is to present the manual setup
+key visibly by default as an equal enrollment method on both recovery and
+signed-in authenticator-replacement pages. The QR option remains available.
+
+Scope is limited to the shared server-rendered enrollment presentation and its
+existing route regressions. Preserve the current enrollment secret, QR payload,
+password/TOTP confirmation, CSRF/origin checks, restricted recovery grant and
+fresh-sign-in requirement. Do not expose the full `otpauth://` URI or add
+client-side clipboard access. No live restart or deployment occurs while the
+owner's current recovery grant is active.
+
+The initial renderer regression failed because the manual key was inside
+`<details>`. The smallest presentation change makes the escaped Base32 value
+visible under the explicit `2FA secret key (TOTP)` heading before the separately
+labelled QR alternative.
+Recovery and signed-in replacement assertions pass in the complete 11-test
+access-recovery route group; formatting and diff checks pass. The first normal
+developer gate passed the full Rust library suite (2,463 passed, 100 ignored),
+Clippy with warnings denied, formatting, supply-chain checks and the V4/V7/V8
+regression gates, then stopped at the V11 closure because the added test lines
+shifted positions in the governed Rust-assumption inventory. Counts and
+classifications are unchanged; the generated timestamp and current inventory
+digest were refreshed mechanically. The second complete run passed that V11
+boundary, then the nested V3 release fixture rejected `totp` in its generated
+proof. The literal came only from the isolated worktree directory name recorded
+as `project_root`, not proof content or application output. The same worktree
+was moved to a neutral directory name; the leak guard and application source
+were not weakened. The final complete `make security-check` rerun passes,
+including the 2,463-test Rust library suite (100 ignored), Clippy with warnings
+denied, formatting, supply-chain checks, V4/V7/V8/V11/V12/V13 gates, governed
+recovery suites and the nested V3 fail-closed harness. Independent review,
+OpenBSD build, installed QA and owner acceptance are separate delivery stages
+and remain NOT RUN unless recorded otherwise below.
+
+The owner then clarified that the visible label itself must be `2FA secret key
+(TOTP)` and that both that manual value and the QR code must be present on the
+recovery page. A new exact-label regression failed against `Manual setup key`;
+the shared renderer now uses the requested label and a separate `QR code`
+heading. Both recovery and signed-in replacement assertions require the two
+headings and the visible escaped Base32 key. The complete 11-test route group,
+formatting and diff checks pass. The governed assumption inventory retains
+13,629 entries with unchanged classifications and a mechanically refreshed
+digest. The fresh complete `make security-check` developer gate passes for this
+exact label and dual-method renderer. Immutable-commit review, signed source
+delivery, OpenBSD build, installed QA and owner acceptance remain pending.
+## 2026-11-22 — Inbox selected-message actions correction
+
+The owner reports that Inbox selection exposes no usable controls to delete,
+move, mark read or mark as Junk with Rspamd feedback. The observable outcome is
+one visible, keyboard-labelled selected-message action bar on Inbox with: a
+reversible **Delete Selected** move to the configured Bin; account-owned folder
+move; exact-identity Read/Unread; and **Mark as Junk**, which confirms Rspamd
+spam learning before moving that same identity to the account-owned literal
+Junk folder. One to ten current messages may be selected. Permanent deletion
+remains available only inside the configured Bin through its existing review.
+
+Source baseline is `0463f9e26e7042b5078c0ba7766cd28780220303` on isolated branch
+`bbs/inbox-bulk-actions-20261122`. Root owns source, Git and any serialized host
+action. Independent review initially found the shared-form field mismatch, an
+overbroad pre-connect Unix promise and a text-view substitution for raw message
+bytes. The corrected 32-path functional candidate received final independent
+GO after the reviewer reran the raw transport, rendered-toolbar and
+Rspamd-helper regressions,
+formatting, Clippy, V10/V11 and diff checks. The linked-worktree scanner refusal
+is retained as a tooling limitation; native OpenBSD, doas and Rspamd behavior is
+still a separate deployment/UAT qualification rather than source acceptance.
+
+Prerequisites observed before dependent source work: Toronto is the authoritative
+mailbox host; the existing exact-identity helper serves mailbox reads/mutations;
+Rspamd 4.3.0 exposes privileged `/learnspam` on its controller; the live
+controller has no Unix feedback socket and Dovecot has no IMAPSieve learning
+hook. Moving to Junk therefore does not itself train Rspamd. The correction
+uses a fixed root helper command that accepts only bounded RFC 5322 bytes on
+stdin and can reach only a mode-restricted local Rspamd controller Unix socket.
+No controller credential, caller-selected command/path, message content or raw
+Rspamd response enters browser state or audit logs.
+
+Minimum tests: visible renderer controls; successful and oversized bulk Read;
+successful feedback-before-move; uncertain feedback stops without move/retry;
+fixed helper HTTP request and empty-input refusal; CSRF/origin, identity,
+selection bound and partial-outcome regressions; normal security/release hooks;
+OpenBSD configtest, source-matched native build, disposable-message learning
+counter/event and Junk move; fresh installed Web/helper identity and HTTPS.
+Focused source tests pass, including confirmed and uncertain Rspamd replies,
+over-limit zero-effect requests, feedback-before-move, and learned-but-move-
+unconfirmed handling. The first developer gate exposed a removed Archive-help
+sentence; it was restored and its focused regression passed. The second gate
+passed all Rust, integration, Clippy, formatting, dependency and V8 checks,
+then stopped at the expected V10/V11 generated inventory drift. The unchanged
+repository generators refreshed both registers and their claims bindings; two
+new production `expect` calls were converted to explicit errors, leaving the
+refined high-relevance count at zero. Direct V10 and V11 gates pass. The final
+complete developer-gate attempts then exposed and closed two further governed
+inventories: the new POST routes were added to the WSTG browser attack surface,
+and the helper's UID and `pledge` calls were moved into the existing reviewed
+OpenBSD FFI boundary without a guard exception. Final self-review also removed
+an impossible re-unveil after Web's inherited lock; the helper connects the
+fixed socket under Web's exact view, then removes `unix` with `pledge("stdio")`.
+After the raw helper transport and sequence regressions were added, the final
+corrected-candidate `make v10-check v11-check` and `make security-check`
+completed successfully through the terminal `security-check complete` marker.
+The retained security-check log SHA256 is
+`d066fa88e7890137e6140848b0c6190cc0ee31bcbb6ec5d40694bbcf4de53b98`.
+No earlier gate receipt is treated as evidence for this candidate.
+During the first protected publication attempt, the live RustSec feed published
+`RUSTSEC-2026-0592` for locked transitive dependency `url` 2.5.8. The normal
+pre-push hook refused publication. The smallest compatible lock refresh updates
+`url` to 2.5.9 and its parser dependency `form_urlencoded` to 1.2.3; the direct
+`ammonia` 4.1.9 boundary is unchanged. The V15 risk-based admission record is
+refreshed to the new lock digest while preserving nine direct dependencies and
+83 locked packages. The direct V15 validator and complete supply-chain check
+pass with no advisory ignore; the normal full pre-push gate remains required
+before the amended candidate can advance.
+Release, native, installed and owner UAT are NOT RUN.
+No real owner message is a test fixture. Web/OSMAP restart is allowed; no
+Dovecot, Postfix or MariaDB lifecycle/configuration change is authorized.
+Two failures at the same functional boundary stop unchanged retries.
+
+<!-- OSMAP_INBOX_ACTIONS_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "INBOX-ACTIONS-20261122",
+  "state": "ACTIVE",
+  "source_baseline": "0463f9e26e7042b5078c0ba7766cd28780220303",
+  "integration_owner": "/root",
+  "allowed_paths": [
+    "Cargo.lock",
+    "src/http.rs",
+    "src/http_browser.rs",
+    "src/http_gateway.rs",
+    "src/http_gateway_junk.rs",
+    "src/http/routes_flags.rs",
+    "src/http/routes_junk.rs",
+    "src/http/routes_moves.rs",
+    "src/http_runtime.rs",
+    "src/http_support.rs",
+    "src/http_ui.rs",
+    "src/lib.rs",
+    "src/auth.rs",
+    "src/http_mailbox_backends.rs",
+    "src/mailbox.rs",
+    "src/mailbox_backend.rs",
+    "src/mailbox_helper.rs",
+    "src/mailbox_helper_client.rs",
+    "src/mailbox_helper_dispatch.rs",
+    "src/mailbox_helper_protocol.rs",
+    "src/mailbox_helper_rename_tests.rs",
+    "src/mailbox_model.rs",
+    "src/main.rs",
+    "src/openbsd.rs",
+    "src/rspamd_feedback_helper.rs",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v15-dependency-admission.json",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "maint/ux/move_workflows.py",
+    "maint/openbsd/README.md",
+    "docs/UX_DECISIONS.md",
+    "docs/UX_EXECUTION_LEDGER.md"
+  ],
+  "outcome": "Visible bounded Inbox delete, move, read and Rspamd-backed Junk actions",
+  "preserve": "No owner-mail fixture, no implicit expunge, no controller credential exposure, no public Dovecot/Postfix/MariaDB restart",
+  "stop_rule": "Stop after two failures at the same functional boundary",
+  "stages": {
+    "implementation": "PASS",
+    "focused_source_tests": "PASS",
+    "mandatory_gates": "PASS",
+    "native_tests": "NOT_RUN",
+    "deployed_qa": "NOT_RUN",
+    "independent_review": "PASS",
+    "owner_uat": "NOT_RUN"
+  }
+}
+```
 ## 2026-11-14 — Ammonia remediation on Toronto and obsd1
 
 The operator explicitly requests immediate updates to both servers for
@@ -61703,3 +61883,188 @@ record/scope diff review, whitespace, normal signed commit/push hooks and fresh
 protected-main synchronization. Broader account writers/reset, boot readiness,
 portability and general release acceptance remain open. No raw screenshot or
 reusable authentication material is introduced into Git.
+
+### 2026-11-20 — production Junk count and folder navigation
+
+From the deployed web source 909b952, show the signed-in account's total Junk
+count and open its message list. Keep Archive, Bin and Junk reachable from the
+grouped menu, including an unconfigured Archive. The production mailbox status
+command returned a count for Junk. Root owns integration and frontend-only
+cutover. Independently review the diff and check populated, empty, unavailable
+and wrong-account counts plus folder switching. Stop deployment on a mismatch
+and restore the prior executable on failed readiness.
+
+Focused route checks and independent source review passed. The signed production
+source is d2cc4dcc6710076b9f192832eaedbfa4ef5719fe. Main integrates the same
+mailbox behavior and preserves the separate four-card administration layout.
+
+Production cutover passed bounded readiness on 2026-11-20 at 05:57 UTC after
+one startup 502. The running web executable matched the installed file and
+the public login returned 200. Functional count and switch coverage came from
+authenticated route tests. The production check used native folder status and
+anonymous route protection. Owner browser acceptance was requested separately.
+
+**Owner UAT PASS, 2026-11-20.** The owner confirmed both the production
+dashboard count and link, and switching to Bin and Junk from the Archive
+chooser. The owner approved the change. PR #103 is merged.
+
+### 2026-11-22 — visible manual TOTP key and obsd1 UAT deployment
+
+Recovery and signed-in authenticator replacement now render both enrollment
+methods at the same time: a visible Base32 value under the exact heading
+`2FA secret key (TOTP)` and the existing image under `QR code`. The shared
+renderer HTML-escapes the manual value and does not disclose the complete
+`otpauth://` URI. Focused recovery tests require both headings and the known
+Base32 fixture, and reject the former collapsed setup-key control. Password
+replacement, fresh-code confirmation, recovery grant, CSRF/origin checks,
+single-use state, response `no-store`, and existing confinement boundaries are
+unchanged.
+
+Signed product commit `7fd513f81f952237784d5bc7aa40ce7705891b09`
+passed the full local security gate and Good Shopkeeper verification. Independent
+source/security review returned GO with no findings. The normal non-forced push
+initially completed its gate but the SSH transport closed with exit 141 before
+transfer; the precise close reason is not established. The bounded keepalive
+retry reran the complete gate and published the exact commit on
+`bbs/visible-totp-key-20261122`.
+
+The obsd1 install used a clean detached worktree at that exact commit and left
+the standard checkout unchanged. Two OpenBSD builds failed safely before install
+when rustc reached the observed 1.5 GiB soft DATA limit, including the single-job,
+no-debug-metadata retry. A third single-job, non-incremental build passed after
+raising only that build shell's DATA limit to 8 GiB, within its existing hard
+limit; no persistent login-class setting changed. The retained deployment session
+is `/home/foo/osmap-binary-deployment/20261122-125925`. Its staged binary SHA256
+is `35a33f14922edd26d66cb57e09f8fa8eddfd41c3fa5cfaf5f12d60c52df9d55c`;
+the rollback binary SHA256 is
+`b0fa8955b4e3a86013923214bea8e5d9efc943d77f57e8bb9484ccd840814b1d`.
+The failed-compiler core file was removed after confirming it was the only
+untracked source-tree artifact.
+
+The first two candidate starts failed closed and were automatically rolled back
+to the healthy prior binary. Fresh stderr established the exact missing
+prerequisite: the newer production HTTP runtime requires
+`OSMAP_PROXY_TOKEN_FILE`. The bounded repair generated the proof only on obsd1,
+installed a `_osmap:_osmap` mode-0600 one-link token file, installed a
+root:wheel mode-0600 one-link nginx header include, added the token-file path to
+the existing root:`_osmap` mode-0640 Web environment, and installed the reviewed
+nginx templates whose only host delta was that include in every OSMAP proxy
+location. The prior environment and templates remain in the deployment session's
+prerequisite backup. The token was not displayed, copied off-host or committed.
+Nginx syntax passed before a reload, and public recovery stayed HTTP 200 while
+the old Web binary remained active.
+
+Final candidate activation restarted only `osmap_serve`; nginx was reloaded for
+the prerequisite, while Postfix, Dovecot, Rspamd, MySQL, the password service,
+mailbox helper, relays, crypto helpers, public admin/inventory and database
+replica/tunnel were not restarted. Live `/usr/local/bin/osmap` matches the staged
+SHA256 above and PID 74520 started from that path. Public
+`https://obsd1.blackbagsecurity.com/recover` returns 200 with `Cache-Control:
+no-store`, the expected CSP, HSTS, referrer and nosniff headers. Direct loopback
+requests with no proxy proof and a deliberately wrong proof both return 403.
+The installed artifact contains both exact enrollment headings. All enumerated
+OSMAP and mail services are started, and SMTP, IMAP, HTTPS and loopback port 8080
+listeners are present.
+
+Engineering deployment is PASS and obsd1 is UAT_READY. Owner UAT remains separate:
+complete a fresh recovery or authenticator-replacement journey and confirm the
+protected enrollment page visibly shows both the manual Base32 key and QR code,
+then confirm the new password and a code from the replacement authenticator can
+sign in. No owner password, recovery grant, TOTP secret or mailbox content was
+used or retained by this deployment verification.
+
+### 2026-11-22 — owner obsd1 recovery UAT accepted; Toronto promotion authorized
+
+The owner reports PASS for all four required obsd1 development observations:
+the recovery code was delivered to the registered recovery address, the code
+was accepted, complete recovery of the selected development account succeeded,
+and a fresh post-recovery sign-in with its replacement password and authenticator
+succeeded. The supplied screenshots visibly confirm the simultaneous manual
+`2FA secret key (TOTP)` and `QR code` enrollment methods, the `Access updated`
+result, and the subsequent authenticated mailbox landing page. Accept the
+development recovery journey for this account and installed candidate. Do not
+retain or reproduce the recovery code, password, six-digit authenticator value,
+manual Base32 secret, QR payload, cookies or mailbox content from the screenshots.
+
+The owner separately authorizes promotion of all outstanding public-safe work to
+`origin/main` and implementation on `mail.blackbagsecurity.com` for production
+UAT/CAT. This is a new environment boundary: obsd1 acceptance does not itself
+accept Toronto. The observable engineering exit is an exact reviewed
+`origin/main` source and matching installed Toronto Web artifact that serves the
+existing recovery entry while retaining the password/TOTP/recovery, proxy-proof,
+session, CSRF/origin and confinement boundaries. Owner production UAT/CAT remains
+separate and must exercise recovery and post-recovery sign-in on the mail host.
+
+Fresh Toronto preflight identifies `mail.blackbagsecurity.com` at the pinned
+public administration endpoint as OpenBSD 8.0 amd64. Its standard checkout is
+clean at historical main `a791a5e`; the installed Web binary SHA256 is
+`9e82f697c5fa24045ded6891a5607290406152215b3a7111a82faa72cd756185`.
+Nginx, OSMAP Web/password/helper/crypto/public-admin/public-inventory, Postfix,
+Dovecot, Rspamd and MySQL are healthy. The production Web environment and
+root-only nginx include already implement the proxy-token prerequisite. SMTP,
+IMAPS, HTTPS and loopback port 8080 listeners are present. The host has adequate
+disk but its build identity has a 1.5 GiB soft and hard DATA limit, matching the
+already observed rustc allocation boundary; do not repeat a known-unusable local
+compile as a production prerequisite.
+
+Production method: merge only the signed reviewed topic history through the
+required pull-request and `local-ci / verified` protection, then prove fresh
+`origin/main` parity. Build one release-profile artifact from that exact promoted
+source on the already qualified obsd1 OpenBSD 8.0 amd64 builder with one compiler
+job and a build-process-only raised DATA limit. Before install, compare the
+artifact's dynamic-library contract with Toronto, retain the current production
+binary and configuration as rollback, and prove staged/read-back hashes. Restart
+only `osmap_serve`; do not restart or reconfigure Postfix, Dovecot, Rspamd,
+MariaDB or unrelated OSMAP helpers. Require `osmap_serve(ok)`, nginx health,
+public HTTPS recovery 200, direct missing/wrong proxy proof 403, expected security
+headers and preserved mail-service PIDs/listeners. On any source, dependency,
+install, startup or functional mismatch, restore the exact prior Web binary,
+restart only `osmap_serve`, verify public recovery and stop without owner UAT.
+
+### 2026-11-22 — manual TOTP recovery deployed to Toronto for UAT/CAT
+
+Protected pull request 106 merged the three signed topic commits to GitHub-verified
+`origin/main` commit `75da4a90f07d0922497a94cd03a8ea0bf8d13c14` after the exact
+topic head passed the complete local security gate and required
+`local-ci / verified` status. The merged tree exactly matches the independently
+reviewed topic tree. Toronto's standard checkout was clean and fast-forwarded from
+historical main to that exact promoted commit before deployment.
+
+The release candidate was built from a clean detached worktree at that exact main
+commit on the matching obsd1 OpenBSD 8.0 amd64 builder. The one-job,
+non-incremental release build used only a build-shell DATA limit increase and did
+not modify obsd1's live binary. Retained builder rehearsal session:
+`/home/foo/osmap-binary-deployment/20261122-151319`. Candidate SHA256:
+`238151f920c9e1002e70f77d8ab7d7fdfcc6d2c6d200ebe9f66c02bf8df644f4`.
+Its dynamic-library names and versions exactly match the Toronto runtime contract.
+
+Toronto staged and read back that exact candidate hash. Before installation, it
+retained the prior root:bin mode-0555 Web binary plus the root-only Web environment
+and nginx proxy-proof include under
+`/var/backups/osmap-binary-deployment/20261122-1521-toronto`. The rollback binary
+SHA256 is `9e82f697c5fa24045ded6891a5607290406152215b3a7111a82faa72cd756185`.
+The live candidate readback is root:bin mode 0555 and matches the candidate hash.
+
+Only `osmap_serve` was stopped and started. Its Web process changed from PID 30974
+to PID 36861. Nginx, Postfix, Dovecot, Rspamd, MySQL, the mailbox helper, crypto,
+public-admin and public-inventory processes retained their observed pre-change
+PIDs; all enumerated services remain `ok`. SMTP, IMAPS, HTTPS and loopback port
+8080 listeners remain present. No mail service, database service, nginx service,
+helper, mail configuration or account state was restarted or changed.
+
+Public `https://mail.blackbagsecurity.com/recover` returns HTTP 200 and the expected
+no-store, CSP, same-origin resource/referrer, nosniff and frame-deny protections.
+Direct loopback requests with missing and deliberately wrong proxy proof both
+return 403. The installed binary contains both exact enrollment headings,
+`2FA secret key (TOTP)` and `QR code`. The initial recovery form correctly does
+not reveal either enrollment value before a valid recovery challenge. A fresh
+response check did not observe `Strict-Transport-Security`; record that existing
+edge-header deviation separately rather than claiming HSTS passed or expanding
+this Web-binary deployment into an unreviewed nginx change.
+
+Engineering deployment is PASS and Toronto is UAT_READY. Owner production UAT/CAT
+remains separate: request a fresh recovery code, complete the challenge, confirm
+that the protected setup page displays both manual Base32 and QR enrollment
+methods, choose a new password, confirm the new authenticator code, and sign in
+freshly. No password, recovery code, TOTP secret, QR payload, cookie, private
+recovery address or mailbox content was retained in source or deployment evidence.

@@ -82,6 +82,48 @@ story explicit. One conservative pattern is:
 The important property is not one specific group name. It is that `_osmap`
 can connect to the helper socket without giving unrelated users access.
 
+## Rspamd spam-feedback boundary
+
+The Inbox **Mark as Junk** action is not satisfied by a Dovecot move alone.
+OSMAP submits the exact, currently version-bound stored message to Rspamd's
+privileged `/learnspam` endpoint first and moves it only after confirmation.
+The Web process must never receive an Rspamd controller password or general
+controller authority.
+
+The reviewed OpenBSD pattern is:
+
+1. Add a dedicated controller Unix socket alongside the existing TCP listener
+   in `/etc/rspamd/local.d/worker-controller.inc`:
+
+       bind_socket = "/var/run/rspamd/osmap-controller.sock mode=0600 owner=_rspamd group=wheel";
+
+   Retain the host's existing TCP `bind_socket`, `secure_ip`, `password` and
+   `enable_password` settings. Do not replace that file with this fragment.
+2. Validate the merged Rspamd configuration before its separately controlled
+   reload/restart. Confirm the Unix socket is owned by `_rspamd`, mode `0600`,
+   and is not reachable by `_osmap` directly.
+3. Add this exact no-argument privilege rule to `/etc/doas.conf`, using the
+   installed Web identity:
+
+       permit nopass _osmap as root cmd /usr/local/bin/osmap args rspamd-learn-spam
+
+   Validate `doas.conf` before use. Do not grant `_osmap` arbitrary `osmap`,
+   `rspamc`, shell or controller access.
+4. The elevated `osmap rspamd-learn-spam` mode reads at most 4 MiB from stdin,
+   connects only to `/var/run/rspamd/osmap-controller.sock`, sends only a fixed
+   `/learnspam` request, and emits a fixed confirmation. A Web-launched helper
+   inherits Web's already locked exact-path `unveil` view, connects that fixed
+   socket, and then narrows to `pledge("stdio")` before any controller I/O; it
+   must not attempt to re-unveil or create/connect another socket afterward.
+   The caller cannot select another controller command, socket, header or local
+   message path.
+
+Qualify with a disposable synthetic message and compare the Rspamd spam-learn
+counter/event before and after. Then confirm the same synthetic identity moved
+to Junk. A process/listener check, a successful move alone, or the presence of
+Bayes configuration is not proof of feedback. Never train indiscriminately from
+the contents of an existing Junk folder, and never use owner mail as a fixture.
+
 ## Service Startup Order
 
 Start the helper before the web-facing runtime.

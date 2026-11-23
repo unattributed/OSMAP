@@ -196,6 +196,7 @@ fn native_installed_mail_storage_report() -> Result<(), &'static str> {
             &activity,
             false,
             crate::http_ui::WelcomeAccountState {
+                junk_count: None,
                 openpgp: &keys,
                 defaults: None,
                 storage: Some(view),

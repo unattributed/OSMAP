@@ -326,6 +326,10 @@ where
                 Err(error_response) => error_response,
             }
         }
+        MailboxHelperRequest::RawMessage { .. } => MailboxHelperResponse::Error {
+            backend: "raw-message".into(),
+            reason: "raw message backend unavailable".into(),
+        },
         MailboxHelperRequest::AttachmentDownload {
             canonical_username,
             mailbox_name,
@@ -759,6 +763,7 @@ fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
         MailboxHelperRequest::MessageSearch { .. } => "message_search",
         MailboxHelperRequest::MessageSearchBatch { .. } => "message_search_batch",
         MailboxHelperRequest::MessageView { .. } => "message_view",
+        MailboxHelperRequest::RawMessage { .. } => "raw_message",
         MailboxHelperRequest::AttachmentDownload { .. } => "attachment_download",
         MailboxHelperRequest::MessageMove { .. } => "message_move",
         MailboxHelperRequest::MessageAppend { .. } => "message_append",

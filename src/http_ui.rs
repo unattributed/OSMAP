@@ -60,6 +60,7 @@ const DEFAULT_RENDERED_MAILBOXES_MAX: usize = DEFAULT_MAX_MAILBOXES;
 
 #[path = "http/archive_ui.rs"]
 mod archive_ui;
+pub(crate) use archive_ui::{render_folder_shortcut_notice, FolderView};
 
 #[path = "http/sessions_ui.rs"]
 mod sessions_ui;
@@ -2277,6 +2278,18 @@ pub(crate) fn render_message_list_page(
         } else {
             String::from("<button type=\"submit\" formaction=\"/messages/labels/review\" name=\"action\" value=\"review\"><span class=\"presentation-icon presentation-icon-label\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Review labels for selected</span></button>")
         };
+        if !is_trash {
+            buttons.push_str("<button type=\"submit\" formaction=\"/messages/flag\" name=\"action\" value=\"read\"><span class=\"presentation-label\">Mark Read</span></button><button type=\"submit\" formaction=\"/messages/flag\" name=\"action\" value=\"unread\"><span class=\"presentation-label\">Mark Unread</span></button>");
+        }
+        if !is_trash
+            && !is_junk
+            && bulk_actions
+                .move_destinations
+                .iter()
+                .any(|name| name == "Junk")
+        {
+            buttons.push_str("<button type=\"submit\" formaction=\"/messages/junk\" name=\"action\" value=\"junk\"><span class=\"presentation-label\">Mark as Junk</span></button>");
+        }
         if archive_actions_available && !is_trash {
             buttons.push_str("<button type=\"submit\" name=\"action\" value=\"archive\"><span class=\"presentation-icon presentation-icon-archive\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Archive Selected</span></button>");
         }
@@ -2292,7 +2305,7 @@ pub(crate) fn render_message_list_page(
                         .any(|name| name == bin)
             })
         {
-            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"bin\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Move Selected to Bin</span></button>");
+            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"bin\" title=\"Moves selected messages to your Bin; it does not permanently erase them\"><span class=\"presentation-icon presentation-icon-bin\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Delete Selected</span></button>");
         }
         if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name)
             && bulk_actions
@@ -2377,9 +2390,14 @@ pub(crate) fn render_message_list_page(
         "<details class=\"mail-search-disclosure\" name=\"list-tools\"><summary><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search this mailbox</span></summary><div class=\"mail-tools-panel\">",
         "<form class=\"search-row compact-search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search</span></button><details class=\"search-options\"><summary><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search options</span></summary><div>{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></div></details></form></div></details>"
     ), escape_html(mailbox_name), list_form_state(&search_view), escape_html(sort_links.search_query.unwrap_or("")), render_search_field_select(MessageSearchField::All)) + label_search_notice;
-    let action_controls = format!(concat!(
-        "<details class=\"bulk-actions\" name=\"list-tools\"><summary><span class=\"presentation-icon presentation-icon-more\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Bulk actions</span></summary><div class=\"mail-tools-panel\">{}<p class=\"muted\">Use the row checkboxes to select messages for an action.</p><div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div></div></details>"
-    ), archive_notice, bulk_move_form, bulk_archive_form);
+    let action_controls = if bulk_move_form.is_empty() {
+        String::new()
+    } else {
+        format!(
+            "<div class=\"bulk-actions-visible\" role=\"group\" aria-label=\"Selected message actions\">{}{}{}</div>",
+            archive_notice, bulk_move_form, bulk_archive_form
+        )
+    };
 
     let table_mailbox = mailbox_name == "INBOX" || is_sent;
     let compact_tool = |html: String, text: &str, icon: &str| {
@@ -2401,7 +2419,6 @@ pub(crate) fn render_message_list_page(
         "inbox",
     );
     let search_controls = compact_tool(search_controls, "Search this mailbox", "search");
-    let action_controls = compact_tool(action_controls, "Bulk actions", "more");
     // The selection form remains shared with the existing mailbox actions.
     // Keep this entry outside its disclosure so labelling is discoverable.
     let label_actions = if messages.iter().any(|message| message.metadata.is_some()) {

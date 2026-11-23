@@ -3,8 +3,111 @@ use crate::attachment::{
     AttachmentDownloadError, AttachmentDownloadFailureKind, DownloadedAttachment,
 };
 use crate::mailbox::MessageSearchBatchRequest;
+use crate::mailbox::{RawMessage, RawMessageBackend, RawMessageRequest};
 #[cfg(unix)]
 use std::time::Instant;
+
+/// Client for the helper's binary-safe, version-bound raw message operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MailboxHelperRawMessageBackend {
+    socket_path: PathBuf,
+    grant_key_path: PathBuf,
+    policy: MailboxHelperPolicy,
+    helper_uid: Option<u32>,
+}
+
+impl MailboxHelperRawMessageBackend {
+    pub fn new(
+        socket_path: impl Into<PathBuf>,
+        grant_key_path: impl Into<PathBuf>,
+        policy: MailboxHelperPolicy,
+    ) -> Self {
+        Self {
+            socket_path: socket_path.into(),
+            grant_key_path: grant_key_path.into(),
+            policy,
+            helper_uid: None,
+        }
+    }
+
+    pub fn with_helper_uid(mut self, uid: Option<u32>) -> Self {
+        self.helper_uid = uid;
+        self
+    }
+}
+
+impl RawMessageBackend for MailboxHelperRawMessageBackend {
+    fn fetch_raw_message(
+        &self,
+        canonical_username: &str,
+        request: &RawMessageRequest,
+    ) -> Result<RawMessage, MailboxBackendError> {
+        let mut helper_request = MailboxHelperRequest::RawMessage {
+            canonical_username: canonical_username.to_string(),
+            mailbox_name: request.mailbox_name.clone(),
+            uid: request.uid,
+            version: request.version.clone(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let deadline = Instant::now()
+            + Duration::from_secs(
+                self.policy
+                    .read_timeout_secs
+                    .max(1)
+                    .min(self.policy.write_timeout_secs.max(1)),
+            );
+        let bytes = encode_authorized_request(&self.grant_key_path, &mut helper_request).map_err(
+            |reason| MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason,
+            },
+        )?;
+        let mut policy = self.policy;
+        policy.max_response_bytes = (crate::mailbox::DEFAULT_RAW_MESSAGE_MAX_BYTES / 3 * 4) + 8192;
+        let response_bytes = helper_exchange_before_with_peer(
+            &self.socket_path,
+            &bytes,
+            policy,
+            deadline,
+            self.helper_uid,
+        )
+        .map_err(|reason| MailboxBackendError {
+            backend: "mailbox-helper-client",
+            reason,
+        })?;
+        let response = parse_response(
+            MailboxListingPolicy::default(),
+            MessageListPolicy::default(),
+            MessageSearchPolicy::default(),
+            MessageViewPolicy::default(),
+            std::str::from_utf8(&response_bytes).map_err(|_| MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason: "raw helper response was not protocol text".into(),
+            })?,
+        )
+        .map_err(|reason| MailboxBackendError {
+            backend: "mailbox-helper-client",
+            reason,
+        })?;
+        match response {
+            MailboxHelperResponse::RawMessageOk { message }
+                if message.mailbox_name == request.mailbox_name
+                    && message.uid == request.uid
+                    && message.version == request.version =>
+            {
+                Ok(*message)
+            }
+            MailboxHelperResponse::Error { backend, reason } => Err(MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason: format!("{backend}: {reason}"),
+            }),
+            _ => Err(MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason: "helper returned a mismatched raw message".into(),
+            }),
+        }
+    }
+}
 
 /// Client backend that proxies mailbox listing through the local helper socket.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -455,9 +558,10 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
-                | MailboxHelperResponse::MessageSearchBatchOk { .. } => Err(MailboxBackendError {
+                | MailboxHelperResponse::MessageSearchBatchOk { .. }
+                | MailboxHelperResponse::RawMessageOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
-                    reason: "helper returned a flag response for a different operation".into(),
+                    reason: "helper returned a response for a different operation".into(),
                 }),
                 MailboxHelperResponse::MailboxListOk { mailboxes } => {
                     helper_deadline_remaining(deadline).map_err(|reason| MailboxBackendError {
@@ -633,9 +737,10 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
-                | MailboxHelperResponse::MessageSearchBatchOk { .. } => Err(MailboxBackendError {
+                | MailboxHelperResponse::MessageSearchBatchOk { .. }
+                | MailboxHelperResponse::RawMessageOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
-                    reason: "helper returned a flag response for a different operation".into(),
+                    reason: "helper returned a response for a different operation".into(),
                 }),
                 MailboxHelperResponse::MessageListOk {
                     mailbox_name,
@@ -821,9 +926,10 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
-                | MailboxHelperResponse::MessageSearchBatchOk { .. } => Err(MailboxBackendError {
+                | MailboxHelperResponse::MessageSearchBatchOk { .. }
+                | MailboxHelperResponse::RawMessageOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
-                    reason: "helper returned a flag response for a different operation".into(),
+                    reason: "helper returned a response for a different operation".into(),
                 }),
                 MailboxHelperResponse::MessageSearchOk {
                     mailbox_name,
@@ -1129,9 +1235,10 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
-                | MailboxHelperResponse::MessageSearchBatchOk { .. } => Err(MailboxBackendError {
+                | MailboxHelperResponse::MessageSearchBatchOk { .. }
+                | MailboxHelperResponse::RawMessageOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
-                    reason: "helper returned a flag response for a different operation".into(),
+                    reason: "helper returned a response for a different operation".into(),
                 }),
                 MailboxHelperResponse::MessageViewOk { message } => {
                     if message.mailbox_name != request.mailbox_name {
@@ -1286,7 +1393,8 @@ impl MailboxHelperAttachmentDownloadBackend {
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
-                | MailboxHelperResponse::MessageSearchBatchOk { .. } => Err(transport_error(
+                | MailboxHelperResponse::MessageSearchBatchOk { .. }
+                | MailboxHelperResponse::RawMessageOk { .. } => Err(transport_error(
                     "helper returned a flag response for a different operation",
                 )),
                 MailboxHelperResponse::AttachmentDownloadOk { attachment } => {
@@ -1901,6 +2009,37 @@ mod batch_client_tests {
         }
     }
 
+    fn raw_transport(response: MailboxHelperResponse) -> Result<RawMessage, MailboxBackendError> {
+        let root = FixtureRoot::new();
+        let socket = root.0.join("raw-helper.sock");
+        let key = root.key();
+        let listener = UnixListener::bind(&socket).unwrap();
+        let version =
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "b".repeat(32)).unwrap();
+        let expected = RawMessageRequest::new("INBOX", 9, version.clone()).unwrap();
+        let wire = encode_response(&response);
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let bytes =
+                read_bounded_from_stream(&mut stream, DEFAULT_MAILBOX_HELPER_MAX_REQUEST_BYTES)
+                    .unwrap();
+            let parsed = parse_request(std::str::from_utf8(&bytes).unwrap()).unwrap();
+            let cache = Mutex::new(BTreeMap::new());
+            verify_helper_request_authority(&parsed, KEY, &cache).unwrap();
+            assert!(matches!(parsed, MailboxHelperRequest::RawMessage {
+                canonical_username, mailbox_name, uid, version: actual, ..
+            } if canonical_username == "alice@example.com" && mailbox_name == "INBOX"
+                && uid == 9 && actual == version));
+            stream.write_all(wire.as_bytes()).unwrap();
+        });
+        let result =
+            MailboxHelperRawMessageBackend::new(&socket, &key, MailboxHelperPolicy::default())
+                .with_helper_uid(Some(crate::openbsd::effective_uid()))
+                .fetch_raw_message("alice@example.com", &expected);
+        server.join().unwrap();
+        result
+    }
+
     // This is an owned Unix transport fixture. It applies the actual request
     // codec and grant/replay verifier; native dispatcher proof is separate.
     fn transport(
@@ -1973,6 +2112,34 @@ mod batch_client_tests {
         assert_eq!(policy.max_response_bytes, 1024 * 1024);
         assert_eq!(policy.read_timeout_secs, 5);
         assert_eq!(policy.max_concurrent_connections, 4);
+    }
+
+    #[test]
+    fn raw_client_transports_binary_exact_message_and_refuses_identity_mismatch() {
+        let version =
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "b".repeat(32)).unwrap();
+        let bytes = vec![0, 1, 2, 0x80, 0xff, b'\r', b'\n'];
+        let message = raw_transport(MailboxHelperResponse::RawMessageOk {
+            message: Box::new(RawMessage {
+                mailbox_name: "INBOX".into(),
+                uid: 9,
+                version: version.clone(),
+                bytes: bytes.clone(),
+            }),
+        })
+        .unwrap();
+        assert_eq!(message.bytes, bytes);
+
+        let mismatch = raw_transport(MailboxHelperResponse::RawMessageOk {
+            message: Box::new(RawMessage {
+                mailbox_name: "INBOX".into(),
+                uid: 10,
+                version,
+                bytes: b"wrong identity".to_vec(),
+            }),
+        });
+        assert!(mismatch.is_err());
+        assert!(raw_transport(MailboxHelperResponse::MailboxListOk { mailboxes: vec![] }).is_err());
     }
 
     #[test]

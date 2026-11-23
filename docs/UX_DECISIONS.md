@@ -844,3 +844,27 @@ Empty trash and permanent deletion. This extension adds no spam classification,
 training, delivery rule, retention or mail-service configuration. Use the S05
 failure-analysis and smallest-correction method; source, installed and owner
 acceptance remain separate. See [S08-07](UX_SLICE_S08_07.md).
+
+## Inbox selected-message actions and explicit spam feedback — 2026-11-22
+
+The owner's authenticated Inbox observation supersedes the discoverability and
+training exclusions that left required actions unusable. Keep the existing
+identity-bound Move/Bin implementation, but surface it in a visible selected-
+message action bar instead of an icon-only disclosure. Label the reversible Bin
+action **Delete Selected** and state that it is not permanent erasure. Add a
+bounded exact-identity Read/Unread action using the existing flag backend.
+
+**Mark as Junk** is not an alias for Move. For each selected message OSMAP first
+retrieves the current identity-bound stored source, submits only that bounded
+message to Rspamd's privileged `/learnspam` endpoint through a fixed root helper,
+requires positive confirmation, and then invokes the ordinary exact-identity
+move to the account-owned literal Junk folder. The helper has no caller-selected
+controller command, path or header, and reaches a dedicated mode-restricted Unix
+controller socket without carrying a controller password through OSMAP. If
+learning is unknown, no move or automatic retry follows. If learning succeeds
+but the move is refused or unknown, report the partial outcome and direct the
+owner to the ordinary Move control rather than repeating training.
+
+The selection limit remains ten. No wildcard operation, implicit expunge,
+automatic training from the contents of Junk, lowering of Bayes thresholds,
+new folder creation, or use of owner mail as a qualification fixture follows.

@@ -2,6 +2,7 @@
 use super::*;
 
 pub(crate) struct WelcomeAccountState<'a> {
+    pub junk_count: Option<u64>,
     pub openpgp: &'a crate::key_management::State,
     pub defaults: Option<crate::composition_preferences::OpenPgpDefaults>,
     pub storage: Option<&'a crate::storage_ui::StorageView>,
@@ -53,20 +54,31 @@ pub(crate) fn render_mailboxes_page_with_storage(
             "Unread · loaded Inbox",
             "inbox",
             inbox.then_some("/mailbox?name=INBOX&filter=unread"),
-            unread,
+            unread.map(|count| count as u64),
         ),
-        ("Saved drafts", "drafts", Some("/drafts"), draft_count),
+        (
+            "Saved drafts",
+            "drafts",
+            Some("/drafts"),
+            draft_count.map(|count| count as u64),
+        ),
         (
             "Sent · loaded messages",
             "sent",
             sent.then_some("/mailbox?name=Sent"),
-            sent_count,
+            sent_count.map(|count| count as u64),
         ),
         (
             "Flagged · loaded Inbox",
             "folders",
             inbox.then_some("/mailbox?name=INBOX&filter=starred"),
-            flagged,
+            flagged.map(|count| count as u64),
+        ),
+        (
+            "Junk · Inbox",
+            "folders",
+            has("Junk").then_some("/mailbox?name=Junk"),
+            account_state.junk_count,
         ),
     ] {
         let value = count
@@ -144,7 +156,7 @@ pub(crate) fn render_mailboxes_page_with_storage(
     let search = format!("<details class=\"welcome-search\"><summary class=\"presentation-text welcome-panel-link\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search all mailboxes →</span></summary><form class=\"search-row\" method=\"get\" action=\"/search\"><label for=\"mailbox-global-search\">Search all mailboxes<input id=\"mailbox-global-search\" type=\"text\" name=\"q\" autocomplete=\"off\" maxlength=\"256\" required></label>{}<button type=\"submit\"><span class=\"presentation-icon presentation-icon-search\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Search</span></button></form></details>", render_search_field_select(MessageSearchField::All));
     TrustedHtml::from_template(format!(concat!(
         "{header}<main id=\"main-content\" class=\"page-shell welcome-page\" tabindex=\"-1\">",
-        "<section class=\"welcome-intro\" aria-labelledby=\"mailboxes-title\"><div class=\"welcome-greeting\"><h1 id=\"mailboxes-title\">Welcome back.</h1><p>Choose a mailbox to get started.</p><p class=\"welcome-account\">Signed in as <strong>{account}</strong></p></div><div class=\"welcome-metrics\" aria-label=\"Message counts and scope\">{metrics}</div></section>",
+        "<section class=\"welcome-intro\" aria-labelledby=\"mailboxes-title\"><div class=\"welcome-greeting\"><h1 id=\"mailboxes-title\">Welcome back.</h1><p>Choose a mailbox to get started.</p><p class=\"welcome-account\">Signed in as <strong>{account}</strong></p></div><div class=\"welcome-metrics welcome-mail-counts\" aria-label=\"Message counts and scope\">{metrics}</div></section>",
         "<div class=\"welcome-primary-grid\"><section class=\"welcome-panel welcome-messages\" aria-labelledby=\"welcome-messages-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-messages-title\">Recent Messages</h2>{view_all}</div>{recent}<details class=\"welcome-browse\"><summary id=\"welcome-mailboxes\" class=\"presentation-text welcome-panel-link\"><span class=\"presentation-icon presentation-icon-folders\" aria-hidden=\"true\"><i></i></span><span class=\"presentation-label\">Browse your mailboxes →</span></summary><div class=\"welcome-folder-scroll\" tabindex=\"0\" role=\"region\" aria-labelledby=\"welcome-mailboxes\"><ul>{folders}</ul></div>{limit}</details></section>",
         "<section class=\"welcome-panel welcome-account-security\" aria-labelledby=\"welcome-security-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-security-title\">Account Security</h2></div><div class=\"welcome-protection\">{shield}<div><strong>Rendering protection</strong><p>Remote images and active content are blocked.</p></div></div><div class=\"welcome-security-detail\"><h3>Authenticated session</h3><p>Password and TOTP were required at sign-in.</p><a class=\"welcome-panel-link\" href=\"/sessions\">Manage sessions <span aria-hidden=\"true\">→</span></a></div></section>",
         "{key_summary}</div>",
@@ -403,6 +415,7 @@ mod activity_tests {
                 },
                 false,
                 WelcomeAccountState {
+                    junk_count: None,
                     openpgp: &keys,
                     defaults: None,
                     storage,

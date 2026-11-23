@@ -1519,6 +1519,7 @@ impl OpenbsdConfinementPlan {
 
                 let dependency_error = add_doveadm_dependency_rules(&mut rules)
                     .and_then(|()| add_sendmail_dependency_rules(&mut rules))
+                    .and_then(|()| add_rspamd_feedback_dependency_rules(&mut rules))
                     .err();
                 #[cfg(all(test, target_os = "openbsd"))]
                 for (path, permissions) in
@@ -2046,6 +2047,16 @@ pub(crate) fn effective_uid() -> u32 {
     effective_uid_raw()
 }
 
+/// Narrow the fixed root-only Rspamd learning bridge through the reviewed
+/// OpenBSD FFI boundary. A Web-launched child inherits Web's already locked
+/// exact-path unveil view; re-unveiling after that lock would fail with EPERM.
+/// The helper first connects the fixed socket, then this seal removes `unix`
+/// so only I/O on the already-open descriptor remains.
+#[cfg(target_os = "openbsd")]
+pub(crate) fn apply_rspamd_feedback_confinement() -> io::Result<()> {
+    imp::rspamd_feedback_confinement()
+}
+
 #[cfg(unix)]
 pub(crate) fn real_uid() -> u32 {
     // SAFETY: getuid has no pointer or ownership precondition.
@@ -2495,6 +2506,21 @@ fn add_sendmail_dependency_rules(rules: &mut BTreeMap<PathBuf, String>) -> Resul
     Ok(())
 }
 
+fn add_rspamd_feedback_dependency_rules(
+    rules: &mut BTreeMap<PathBuf, String>,
+) -> Result<(), String> {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
+    for program in ["/usr/bin/doas", "/usr/local/bin/osmap"] {
+        add_rule(rules, Path::new(program), "x");
+        add_installed_dependency_rules(rules, Path::new(program), deadline)?;
+    }
+    add_if_exists(rules, Path::new("/etc/doas.conf"), "r");
+    let socket = Path::new(crate::rspamd_feedback_helper::RSPAMD_FEEDBACK_SOCKET);
+    add_rule(rules, socket, "rw");
+    add_parent_dir_rules(rules, socket);
+    Ok(())
+}
+
 fn add_installed_dependency_rules(
     rules: &mut BTreeMap<PathBuf, String>,
     program: &Path,
@@ -2519,9 +2545,11 @@ pub(crate) fn dependency_program_allowed(program: &Path) -> bool {
     matches!(
         program.to_str(),
         Some(
-            "/usr/bin/fstat"
+            "/usr/bin/doas"
+                | "/usr/bin/fstat"
                 | "/usr/local/bin/doveadm"
                 | "/usr/local/bin/doveconf"
+                | "/usr/local/bin/osmap"
                 | "/usr/local/libexec/osmap/storage-quota"
                 | "/usr/local/bin/mariadb"
                 | "/usr/sbin/sendmail"
@@ -2797,42 +2825,46 @@ fn postdrop_trace_elf_prefix(bytes: &[u8]) -> bool {
 }
 
 #[cfg(unix)]
-pub(crate) fn validate_postdrop_trace_program() -> io::Result<()> {
+pub(crate) fn validate_privileged_trace_program(path: &Path) -> io::Result<()> {
     use std::io::Read;
     use std::os::unix::fs::OpenOptionsExt;
-    if !cfg!(target_os = "openbsd") {
+    if !cfg!(target_os = "openbsd")
+        || !matches!(
+            path.to_str(),
+            Some("/usr/bin/doas" | "/usr/local/sbin/postdrop")
+        )
+    {
         return Err(io::Error::new(
             io::ErrorKind::Unsupported,
-            "postdrop loader trace requires OpenBSD",
+            "privileged loader trace target refused",
         ));
     }
     let check = || -> Result<(), String> {
-        let path = Path::new("/usr/local/sbin/postdrop");
         trusted_dependency_program(path)?;
         let before = dependency_identity(path)?;
         let file = fs::OpenOptions::new()
             .read(true)
             .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
             .open(path)
-            .map_err(|_| "postdrop trace object unavailable")?;
+            .map_err(|_| "privileged trace object unavailable")?;
         if dependency_metadata_identity(
             &file
                 .metadata()
-                .map_err(|_| "postdrop trace object unavailable")?,
+                .map_err(|_| "privileged trace object unavailable")?,
         ) != before
         {
-            return Err("postdrop trace object changed".into());
+            return Err("privileged trace object changed".into());
         }
         let mut prefix = Vec::new();
         file.take(65536)
             .read_to_end(&mut prefix)
-            .map_err(|_| "postdrop trace header unavailable")?;
+            .map_err(|_| "privileged trace header unavailable")?;
         if !postdrop_trace_elf_prefix(&prefix) {
-            return Err("postdrop trace interpreter refused".into());
+            return Err("privileged trace interpreter refused".into());
         }
         trusted_dependency_program(path)?;
         if dependency_identity(path)? != before {
-            return Err("postdrop trace object changed".into());
+            return Err("privileged trace object changed".into());
         }
         Ok(())
     };
@@ -3237,6 +3269,7 @@ mod confinement_tests;
 
 #[cfg(target_os = "openbsd")]
 mod imp {
+    use std::ffi::CString;
     use std::io;
     use std::os::raw::{c_char, c_int};
 
@@ -3245,6 +3278,16 @@ mod imp {
     unsafe extern "C" {
         fn pledge(promises: *const c_char, execpromises: *const c_char) -> c_int;
         fn unveil(path: *const c_char, permissions: *const c_char) -> c_int;
+    }
+
+    pub(super) fn rspamd_feedback_confinement() -> io::Result<()> {
+        let promises = CString::new("stdio").map_err(|_| io::ErrorKind::InvalidInput)?;
+        // SAFETY: the promise string is owned and NUL-terminated. The helper
+        // inherits Web's locked unveil table and may only narrow pledge here.
+        if unsafe { pledge(promises.as_ptr(), std::ptr::null()) } != 0 {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(())
     }
 
     pub(super) fn password_parent_seal(
@@ -4454,6 +4497,18 @@ mod tests {
     }
 
     #[test]
+    fn rspamd_feedback_dependency_programs_are_admitted_exactly() {
+        assert!(dependency_program_allowed(Path::new("/usr/bin/doas")));
+        assert!(dependency_program_allowed(Path::new(
+            "/usr/local/bin/osmap"
+        )));
+        assert!(!dependency_program_allowed(Path::new(
+            "/usr/local/bin/doas"
+        )));
+        assert!(!dependency_program_allowed(Path::new("/usr/bin/osmap")));
+    }
+
+    #[test]
     fn dependency_trace_accepts_installed_cpp_libraries_only_in_protected_paths() {
         let program = Path::new("/usr/local/bin/mariadb");
         // Exact library names and trace rows observed on obsd1 in capture130.
@@ -4608,7 +4663,7 @@ mod tests {
         );
         let target = Path::new("/usr/local/sbin/postdrop");
         assert_ne!(fs::symlink_metadata(target).unwrap().mode() & 0o2000, 0);
-        validate_postdrop_trace_program().expect("protected native dynamic postdrop");
+        validate_privileged_trace_program(target).expect("protected native dynamic postdrop");
         let command = crate::auth::installed_dependencies_command(target).unwrap();
         assert_eq!(command.get_program(), target);
         assert_eq!(command.get_args().len(), 0);
@@ -4619,6 +4674,31 @@ mod tests {
         .expect("setgid postdrop loader trace without program initialization");
         assert!(!libraries.is_empty());
         println!("DEPENDENCIES_POSTDROP_TRACE_PASS target_mode=setgid loader_only=true");
+    }
+
+    #[cfg(target_os = "openbsd")]
+    #[test]
+    #[ignore = "requires installed readable dynamic setuid doas; trace exits before main"]
+    fn installed_dependency_native_setuid_doas_trace() {
+        use std::os::unix::fs::MetadataExt;
+        assert_ne!(
+            unsafe { libc::geteuid() },
+            0,
+            "trace qualifier requires a nonroot actor"
+        );
+        let target = Path::new("/usr/bin/doas");
+        assert_ne!(fs::symlink_metadata(target).unwrap().mode() & 0o4000, 0);
+        validate_privileged_trace_program(target).expect("protected native dynamic doas");
+        let command = crate::auth::installed_dependencies_command(target).unwrap();
+        assert_eq!(command.get_program(), target);
+        assert_eq!(command.get_args().len(), 0);
+        let libraries = installed_library_paths_before(
+            target,
+            std::time::Instant::now() + std::time::Duration::from_secs(5),
+        )
+        .expect("setuid doas loader trace without program initialization");
+        assert!(!libraries.is_empty());
+        println!("DEPENDENCIES_DOAS_TRACE_PASS target_mode=setuid loader_only=true");
     }
 
     #[test]

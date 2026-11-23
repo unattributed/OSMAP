@@ -178,12 +178,15 @@ pub(crate) fn installed_dependencies_command(
     if !crate::openbsd::dependency_program_allowed(program) {
         return Err(std::io::ErrorKind::PermissionDenied.into());
     }
-    if program == std::path::Path::new("/usr/local/sbin/postdrop") {
-        // ldd versions which set execpromises cannot exec a setgid target.
+    if matches!(
+        program.to_str(),
+        Some("/usr/bin/doas" | "/usr/local/sbin/postdrop")
+    ) {
+        // OpenBSD ldd cannot exec set-id targets under its execpromises.
         // Validate the actual native dynamic-loader entry before selecting
         // its trace-only interface; a static binary must never reach exec.
-        crate::openbsd::validate_postdrop_trace_program()?;
-        return Ok(fixed_postdrop_trace_command());
+        crate::openbsd::validate_privileged_trace_program(program)?;
+        return Ok(fixed_privileged_trace_command(program));
     }
     let mut command = Command::new("/usr/bin/ldd");
     command
@@ -205,8 +208,8 @@ pub(crate) fn installed_dependencies_command(
 }
 
 #[cfg(unix)]
-fn fixed_postdrop_trace_command() -> Command {
-    let mut command = Command::new("/usr/local/sbin/postdrop");
+fn fixed_privileged_trace_command(program: &std::path::Path) -> Command {
+    let mut command = Command::new(program);
     command
         .env_clear()
         .env("LC_ALL", "C")
@@ -1171,6 +1174,15 @@ pub struct CommandExecution {
     pub stderr: String,
 }
 
+/// Binary-safe command result for fixed native operations whose stdout is not
+/// text (for example an RFC 5322 message fetched from Dovecot).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawCommandExecution {
+    pub status_code: i32,
+    pub stdout: Vec<u8>,
+    pub stderr: Vec<u8>,
+}
+
 /// Errors that can occur while invoking external auth backends.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CommandExecutionError {
@@ -1213,6 +1225,28 @@ pub trait CommandExecutor {
         _output_max_bytes: usize,
     ) -> Result<CommandExecution, CommandExecutionError> {
         self.run_with_stdin_bytes_timeout(program, args, stdin_data, timeout)
+    }
+
+    fn run_with_stdin_bytes_timeout_and_raw_output_limit(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &[u8],
+        timeout: Duration,
+        output_max_bytes: usize,
+    ) -> Result<RawCommandExecution, CommandExecutionError> {
+        self.run_with_stdin_bytes_timeout_and_output_limit(
+            program,
+            args,
+            stdin_data,
+            timeout,
+            output_max_bytes,
+        )
+        .map(|result| RawCommandExecution {
+            status_code: result.status_code,
+            stdout: result.stdout.into_bytes(),
+            stderr: result.stderr.into_bytes(),
+        })
     }
 
     fn run_folder_mutation(
@@ -1303,6 +1337,25 @@ impl CommandExecutor for SystemCommandExecutor {
             .result
     }
 
+    fn run_with_stdin_bytes_timeout_and_raw_output_limit(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &[u8],
+        timeout: Duration,
+        output_max_bytes: usize,
+    ) -> Result<RawCommandExecution, CommandExecutionError> {
+        let mut settled = true;
+        run_system_command_raw(
+            program,
+            args,
+            stdin_data,
+            timeout,
+            output_max_bytes,
+            &mut settled,
+        )
+    }
+
     fn run_folder_mutation(
         &self,
         program: &str,
@@ -1332,6 +1385,29 @@ fn run_system_command(
     output_max_bytes: usize,
     settled: &mut bool,
 ) -> Result<CommandExecution, CommandExecutionError> {
+    run_system_command_raw(
+        program,
+        args,
+        stdin_data,
+        timeout,
+        output_max_bytes,
+        settled,
+    )
+    .map(|output| CommandExecution {
+        status_code: output.status_code,
+        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+    })
+}
+
+fn run_system_command_raw(
+    program: &str,
+    args: &[String],
+    stdin_data: &[u8],
+    timeout: Duration,
+    output_max_bytes: usize,
+    settled: &mut bool,
+) -> Result<RawCommandExecution, CommandExecutionError> {
     let mut child = Command::new(program)
         .args(args)
         .env_clear()
@@ -1369,7 +1445,7 @@ fn run_system_command(
     let stdout_handle = spawn_bounded_output_reader(stdout, output_max_bytes, "stdout");
     let stderr_handle = spawn_bounded_output_reader(stderr, output_max_bytes, "stderr");
 
-    wait_for_command_with_timeout(
+    wait_for_command_with_timeout_raw(
         child,
         stdin_rx,
         stdout_handle,
@@ -1385,14 +1461,14 @@ fn write_command_stdin(mut stdin: std::process::ChildStdin, stdin_data: &[u8]) -
     stdin.flush()
 }
 
-fn wait_for_command_with_timeout(
+fn wait_for_command_with_timeout_raw(
     mut child: std::process::Child,
     stdin_rx: mpsc::Receiver<Result<(), String>>,
     stdout_handle: thread::JoinHandle<Result<Vec<u8>, CommandExecutionError>>,
     stderr_handle: thread::JoinHandle<Result<Vec<u8>, CommandExecutionError>>,
     timeout: Duration,
     settled: &mut bool,
-) -> Result<CommandExecution, CommandExecutionError> {
+) -> Result<RawCommandExecution, CommandExecutionError> {
     let deadline = Instant::now() + timeout;
     let mut stdin_result: Option<Result<(), String>> = None;
 
@@ -1449,10 +1525,10 @@ fn wait_for_command_with_timeout(
     let stdout = stdout?;
     let stderr = stderr?;
 
-    Ok(CommandExecution {
+    Ok(RawCommandExecution {
         status_code: status_code_or_signal(status),
-        stdout: String::from_utf8_lossy(&stdout).into_owned(),
-        stderr: String::from_utf8_lossy(&stderr).into_owned(),
+        stdout,
+        stderr,
     })
 }
 
@@ -2101,36 +2177,42 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn installed_postdrop_trace_factory_has_no_operands_or_inherited_search_paths() {
+    fn installed_privileged_trace_factories_have_no_operands_or_inherited_search_paths() {
         use std::collections::BTreeMap;
         use std::ffi::OsString;
         use std::path::Path;
-        let command = fixed_postdrop_trace_command();
-        assert_eq!(command.get_program(), "/usr/local/sbin/postdrop");
-        assert_eq!(command.get_args().len(), 0);
-        assert_eq!(command.get_current_dir(), Some(Path::new("/")));
-        assert_eq!(
-            command
-                .get_envs()
-                .map(|(key, value)| (key.to_os_string(), value.map(OsString::from)))
-                .collect::<BTreeMap<_, _>>(),
-            BTreeMap::from([
-                ("LC_ALL".into(), Some("C".into())),
-                ("PATH".into(), Some(SAFE_COMMAND_PATH.into())),
-                ("LD_TRACE_LOADED_OBJECTS".into(), Some("true".into())),
-            ])
-        );
+        for program in ["/usr/bin/doas", "/usr/local/sbin/postdrop"] {
+            let command = fixed_privileged_trace_command(Path::new(program));
+            assert_eq!(command.get_program(), program);
+            assert_eq!(command.get_args().len(), 0);
+            assert_eq!(command.get_current_dir(), Some(Path::new("/")));
+            assert_eq!(
+                command
+                    .get_envs()
+                    .map(|(key, value)| (key.to_os_string(), value.map(OsString::from)))
+                    .collect::<BTreeMap<_, _>>(),
+                BTreeMap::from([
+                    ("LC_ALL".into(), Some("C".into())),
+                    ("PATH".into(), Some(SAFE_COMMAND_PATH.into())),
+                    ("LD_TRACE_LOADED_OBJECTS".into(), Some("true".into())),
+                ]),
+                "{program}"
+            );
+        }
     }
 
     #[cfg(all(unix, not(target_os = "openbsd")))]
     #[test]
-    fn installed_postdrop_trace_refuses_other_unix_before_reading_target() {
-        assert_eq!(
-            installed_dependencies_command(std::path::Path::new("/usr/local/sbin/postdrop"))
-                .unwrap_err()
-                .kind(),
-            std::io::ErrorKind::Unsupported
-        );
+    fn installed_privileged_traces_refuse_other_unix_before_reading_targets() {
+        for program in ["/usr/bin/doas", "/usr/local/sbin/postdrop"] {
+            assert_eq!(
+                installed_dependencies_command(std::path::Path::new(program))
+                    .unwrap_err()
+                    .kind(),
+                std::io::ErrorKind::Unsupported,
+                "{program}"
+            );
+        }
     }
 
     struct AcceptingBackend;

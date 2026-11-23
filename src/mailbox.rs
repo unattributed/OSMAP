@@ -28,7 +28,7 @@ mod mailbox_service;
 
 pub use self::mailbox_backend::{
     DoveadmMailboxListBackend, DoveadmMessageAppendBackend, DoveadmMessageListBackend,
-    DoveadmMessageSearchBackend, DoveadmMessageViewBackend,
+    DoveadmMessageSearchBackend, DoveadmMessageViewBackend, DoveadmRawMessageBackend,
 };
 pub use self::mailbox_delete::{
     DoveadmMessageDeleteBackend, MessageDeleteBackend, MessageDeleteError, MessageDeleteRequest,
@@ -50,10 +50,11 @@ pub use self::mailbox_model::{
     MessageSearchDecision, MessageSearchField, MessageSearchOutcome, MessageSearchPolicy,
     MessageSearchRequest, MessageSearchResult, MessageSort, MessageSortColumn,
     MessageSortDirection, MessageSummary, MessageView, MessageViewBackend, MessageViewDecision,
-    MessageViewOutcome, MessageViewPolicy, MessageViewRequest, DEFAULT_MAILBOX_NAME_MAX_LEN,
-    DEFAULT_MAX_MAILBOXES, DEFAULT_MAX_MESSAGES, DEFAULT_MAX_SEARCH_RESULTS,
-    DEFAULT_MESSAGE_APPEND_MAX_BYTES, DEFAULT_MESSAGE_BODY_MAX_LEN, DEFAULT_MESSAGE_DATE_MAX_LEN,
-    DEFAULT_MESSAGE_FLAG_STRING_MAX_LEN, DEFAULT_MESSAGE_HEADER_MAX_LEN,
+    MessageViewOutcome, MessageViewPolicy, MessageViewRequest, RawMessage, RawMessageBackend,
+    RawMessageRequest, DEFAULT_MAILBOX_NAME_MAX_LEN, DEFAULT_MAX_MAILBOXES, DEFAULT_MAX_MESSAGES,
+    DEFAULT_MAX_SEARCH_RESULTS, DEFAULT_MESSAGE_APPEND_MAX_BYTES, DEFAULT_MESSAGE_BODY_MAX_LEN,
+    DEFAULT_MESSAGE_DATE_MAX_LEN, DEFAULT_MESSAGE_FLAG_STRING_MAX_LEN,
+    DEFAULT_MESSAGE_HEADER_MAX_LEN, DEFAULT_RAW_MESSAGE_MAX_BYTES,
     DEFAULT_SEARCH_HEADER_VALUE_MAX_LEN, DEFAULT_SEARCH_QUERY_MAX_LEN,
 };
 pub use self::mailbox_move::DoveadmMessageMoveBackend;

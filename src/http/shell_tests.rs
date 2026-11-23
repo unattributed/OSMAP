@@ -103,12 +103,39 @@ fn archive_navigation_resolves_only_the_authenticated_saved_folder() {
     let result = app().handle_request(&req, "127.0.0.1");
     assert_eq!(result.response.status_code, 404);
     assert!(body_text(&result).contains("Archive Mailbox Not Found"));
-    assert!(body_text(&result).contains("href=\"/settings\""));
+    assert!(body_text(&result).contains("href=\"/settings?section=copies\""));
     req.headers
         .insert("user-agent".into(), "OSMAP/NoArchiveTest".into());
     let result = app().handle_request(&req, "127.0.0.1");
     assert_eq!(result.response.status_code, 200);
-    assert!(body_text(&result).contains("Choose Your Archive Mailbox"));
+    let chooser = body_text(&result);
+    assert!(chooser.contains("Choose Your Archive Mailbox"));
+    let tabs = chooser
+        .split(r#"<nav class="archive-tabs""#)
+        .nth(1)
+        .unwrap()
+        .split("</nav>")
+        .next()
+        .unwrap();
+    for (target, label) in [("bin", "Bin"), ("junk", "Junk")] {
+        let href = format!("/mailbox/shortcut?kind={target}");
+        assert!(tabs.contains(&format!(r#"href="{href}">{label}</a>"#)));
+        let result = app().handle_request(
+            &request("GET", &href, &authenticated_headers(), ""),
+            "127.0.0.1",
+        );
+        assert_eq!(result.response.status_code, 303);
+        assert_eq!(
+            location_header(&result),
+            if target == "bin" {
+                "/mailbox?name=Trash"
+            } else {
+                "/mailbox?name=Junk"
+            }
+        );
+    }
+    let trash = app().handle_request(&request("GET", "/mailbox?name=Trash", &[("User-Agent", "OSMAP/NoArchiveTest"), ("Cookie", "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")], ""), "127.0.0.1");
+    assert!(body_text(&trash).contains(r#"href="/mailbox/shortcut?kind=archive">Archive</a>"#));
     req.headers
         .insert("user-agent".into(), "OSMAP/SettingsUnavailable".into());
     let result = app().handle_request(&req, "127.0.0.1");
@@ -166,7 +193,7 @@ fn junk_is_a_third_owned_archive_view_with_received_dates() {
     let trash = authenticated_get("/mailbox?name=Trash");
     assert_eq!(trash.response.status_code, 200);
     let trash_html = body_text(&trash);
-    assert!(trash_html.contains("aria-current=\"page\">Trash</a>"));
+    assert!(trash_html.contains("aria-current=\"page\">Bin</a>"));
     assert!(trash_html.contains("Empty trash"));
 }
 
@@ -201,6 +228,23 @@ fn junk_move_to_inbox_uses_existing_owned_bulk_contract() {
 fn junk_tab_refuses_missing_unavailable_and_foreign_folder_lists() {
     let app = app();
     for agent in ["WelcomeMissing", "JunkListUnavailable", "CopiesWrongOwner"] {
+        let mut shortcut = request(
+            "GET",
+            "/mailbox/shortcut?kind=junk",
+            &authenticated_headers(),
+            "",
+        );
+        shortcut.headers.insert("user-agent".into(), agent.into());
+        let rejected = app.handle_request(&shortcut, "127.0.0.1");
+        assert_eq!(
+            rejected.response.status_code,
+            if agent == "WelcomeMissing" { 404 } else { 503 }
+        );
+        assert!(!rejected
+            .response
+            .headers
+            .iter()
+            .any(|(key, _)| key.eq_ignore_ascii_case("location")));
         let page = app.handle_request(
             &request(
                 "GET",

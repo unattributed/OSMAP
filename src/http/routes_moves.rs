@@ -3,7 +3,7 @@ use super::*;
 use crate::mail_list::MAX_BULK_SELECTION;
 use crate::message_metadata::MessageVersion;
 
-fn selected_moves(
+pub(super) fn selected_moves(
     form: &BTreeMap<String, String>,
     source: &str,
     destination: &str,

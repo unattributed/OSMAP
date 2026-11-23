@@ -693,6 +693,43 @@
     },
     {
       "method": "POST",
+      "path": "/messages/flag",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "mailbox",
+        "action",
+        "return_to",
+        "message_*"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/messages/junk",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "mailbox",
+        "action",
+        "return_to",
+        "message_*"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
       "path": "/messages/move",
       "query_fields": [],
       "form_fields": [
