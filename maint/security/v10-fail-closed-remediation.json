@@ -2,21 +2,21 @@
   "baseline": {
     "by_classification": {
       "control_flow_invariant": 7,
-      "panic_path_assumption": 102,
-      "production_adjacent_assumption": 3326,
+      "panic_path_assumption": 103,
+      "production_adjacent_assumption": 3365,
       "startup_or_global_invariant": 10,
-      "test_or_fixture_assumption": 10228
+      "test_or_fixture_assumption": 10314
     },
     "by_fail_closed_relevance": {
-      "high": 3428,
-      "low": 10228,
+      "high": 3468,
+      "low": 10314,
       "medium": 17
     },
-    "inventory_sha256": "a68e33619334e08ec4b384693b6de392d91dee5474d1259f2b8dc5a589d2b309",
+    "inventory_sha256": "79e9659eca1d4dea15ac7e947bb8717f316575b567a371a38518941273a7db53",
     "schema_version": 1,
     "slice": "V10 Slice 4",
     "source": "maint/security/v10-rust-assumption-audit.json",
-    "total_count": 13673
+    "total_count": 13799
   },
   "explicit_non_claims": [
     "This slice does not claim production Rust paths are panic-free.",
@@ -24,7 +24,7 @@
     "This slice does not claim broad public release readiness.",
     "This slice does not change production deployment state."
   ],
-  "generated_at_utc": "2026-11-23T15:13:42Z",
+  "generated_at_utc": "2026-11-23T15:22:31Z",
   "purpose": "Targeted fail-closed remediation register for Rust assumption handling after the Slice 4 audit.",
   "refined_current": {
     "by_classification": {
@@ -36,7 +36,7 @@
       "medium": 3
     },
     "high_relevance_top_files": {},
-    "inventory_sha256": "45c10706d97cdb7175bef46ecb2cc347060e441ad3625316b84ff4b50cd6023f",
+    "inventory_sha256": "86f0c1fb5d0064d770a5bf1e38fa83c967693b718020e6b3edc49f481154a713",
     "total_count": 13799
   },
   "required_followups": [
@@ -56,16 +56,16 @@
   },
   "slice": "V10 Slice 5",
   "summary": {
-    "baseline_total_count": 13673,
+    "baseline_total_count": 13799,
     "classification_complete": true,
     "high_relevance_after": 0,
-    "high_relevance_before": 3428,
+    "high_relevance_before": 3468,
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "refined_total_count": 13799,
     "source_test_module_assumption_count": 13715,
     "test_or_fixture_after": 13796,
-    "test_or_fixture_before": 10228
+    "test_or_fixture_before": 10314
   }
 }

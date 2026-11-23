@@ -475,7 +475,6 @@ fn native_private_admin_service_seal_denies_outside_namespace() {
         &base.join("profiles/reader.cnf"),
         &base.join("sql-run/mysql.sock"),
         None,
-        None,
     )
     .unwrap();
     assert!(fs::read_dir(base.join("state")).is_ok());
