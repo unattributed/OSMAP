@@ -57,7 +57,7 @@ impl RuntimeBrowserGateway {
             _ => std::sync::Arc::new(super::http_gateway_account::UnavailableAccountAuthority),
         };
         match &self.account_rollout {
-            Some(account) => service.with_account_epoch_authority(account.clone(), authority),
+            Some(accounts) => service.with_scoped_epoch_authority(accounts.clone(), authority),
             None => service.with_epoch_authority(authority),
         }
     }

@@ -163,7 +163,7 @@ fn runtime_paths(runtime_gid: u32) -> Result<RuntimeConfiguration, Error> {
 /// Fixed root-owned Web configuration used by the native account service for
 /// its browser recovery adapter. It never accepts request-selected paths.
 pub(crate) fn browser_recovery_paths(
-) -> Result<(RuntimePaths, u32, u32, Option<String>, u64), Error> {
+) -> Result<(RuntimePaths, u32, u32, Option<BTreeSet<String>>, u64), Error> {
     let (uid, gid) = runtime_identity()?;
     let (paths, selected, idle) = browser_recovery_fence(gid)?;
     Ok((paths, uid, gid, selected, idle))
@@ -172,7 +172,7 @@ pub(crate) fn browser_recovery_paths(
 /// discovery; the native service already captured its trusted runtime identity.
 pub(crate) fn browser_recovery_fence(
     runtime_gid: u32,
-) -> Result<(RuntimePaths, Option<String>, u64), Error> {
+) -> Result<(RuntimePaths, Option<BTreeSet<String>>, u64), Error> {
     let config = runtime_paths(runtime_gid)?;
     let frontend = config
         .frontend_account_runtime
@@ -187,7 +187,7 @@ pub(crate) fn browser_recovery_fence(
     }
     Ok((
         config.paths,
-        frontend.rollout_account,
+        frontend.rollout_accounts,
         config.session_idle_seconds,
     ))
 }
@@ -207,10 +207,7 @@ fn frontend_admission(
         || profile.mutation_socket != Path::new(crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET)
         || profile.admission_helper_uid != 0
         || profile.mutation_helper_uid != 0
-        || profile
-            .rollout_account
-            .as_deref()
-            .is_some_and(|selected| selected != account)
+        || !crate::config::account_in_rollout(profile.rollout_accounts.as_ref(), account)
     {
         return Err(Error::Unauthorized);
     }
@@ -483,6 +480,20 @@ mod tests {
         );
         assert_eq!(
             frontend_admission(&selected.frontend_account_runtime, BOB),
+            Err(Error::Unauthorized)
+        );
+        let selected = parse_runtime_paths(
+            format!("{NATIVE_ACCOUNT}OSMAP_ACCOUNT_ROLLOUT_ACCOUNT={ALICE},{BOB}\n").as_bytes(),
+        )
+        .unwrap();
+        for account in [ALICE, BOB] {
+            assert_eq!(
+                frontend_admission(&selected.frontend_account_runtime, account),
+                Ok(())
+            );
+        }
+        assert_eq!(
+            frontend_admission(&selected.frontend_account_runtime, "carol@recovery.invalid"),
             Err(Error::Unauthorized)
         );
         let disabled = parse_runtime_paths(b"OSMAP_STATE_DIR=/var/lib/custom\n").unwrap();

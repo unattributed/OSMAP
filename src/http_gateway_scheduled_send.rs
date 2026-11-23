@@ -90,11 +90,7 @@ impl RuntimeBrowserGateway {
         claim: &ClaimedJob,
         deadline: Instant,
     ) -> Result<(), BlockReason> {
-        if self
-            .account_rollout
-            .as_deref()
-            .is_some_and(|a| a != claim.account())
-        {
+        if !self.uses_account_runtime(claim.account()) {
             return Err(BlockReason::AccountChanged);
         }
         let runtime = self

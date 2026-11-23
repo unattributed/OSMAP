@@ -423,7 +423,7 @@ impl Drop for SessionFileLock {
 /// Issues, validates, and revokes browser sessions.
 pub struct SessionService<S, T, R> {
     epoch_authority: Option<std::sync::Arc<dyn crate::account_admission::EpochAuthority>>,
-    epoch_account: Option<String>,
+    epoch_accounts: Option<std::collections::BTreeSet<String>>,
     session_store: S,
     time_provider: T,
     random_source: R,
@@ -438,19 +438,19 @@ impl<S, T, R> SessionService<S, T, R> {
         authority: std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
     ) -> Self {
         self.epoch_authority = Some(authority);
-        self.epoch_account = None;
+        self.epoch_accounts = None;
         self
     }
 
-    /// Enforce authority only for the configured canonical identity. Other
+    /// Enforce authority only for the configured canonical identities. Other
     /// accounts retain the Disabled contract, including refusal of bound epochs.
-    pub(crate) fn with_account_epoch_authority(
+    pub(crate) fn with_scoped_epoch_authority(
         mut self,
-        account: String,
+        accounts: std::collections::BTreeSet<String>,
         authority: std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
     ) -> Self {
         self.epoch_authority = Some(authority);
-        self.epoch_account = Some(account);
+        self.epoch_accounts = Some(accounts);
         self
     }
 
@@ -460,11 +460,10 @@ impl<S, T, R> SessionService<S, T, R> {
                 reason: "account epoch binding invalid".into(),
             });
         }
-        let authority = self.epoch_authority.as_ref().filter(|_| {
-            self.epoch_account
-                .as_deref()
-                .is_none_or(|selected| selected == account)
-        });
+        let authority = self
+            .epoch_authority
+            .as_ref()
+            .filter(|_| crate::config::account_in_rollout(self.epoch_accounts.as_ref(), account));
         match (authority, epoch) {
             (None, None) => Ok(()),
             (Some(authority), Some(epoch)) => {
@@ -489,7 +488,7 @@ impl<S, T, R> SessionService<S, T, R> {
     ) -> Self {
         Self {
             epoch_authority: None,
-            epoch_account: None,
+            epoch_accounts: None,
             session_store,
             time_provider,
             random_source,

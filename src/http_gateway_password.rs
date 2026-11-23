@@ -659,8 +659,8 @@ impl RuntimeBrowserGateway {
             self.session_idle_timeout_seconds,
         );
         let service = match &self.account_rollout {
-            Some(account) => {
-                service.with_account_epoch_authority(account.clone(), authority.clone())
+            Some(accounts) => {
+                service.with_scoped_epoch_authority(accounts.clone(), authority.clone())
             }
             None => service.with_epoch_authority(authority.clone()),
         };

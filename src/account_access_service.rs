@@ -46,7 +46,7 @@ pub(crate) struct NativeAccess {
     uid: u32,
     gid: u32,
     root: PathBuf,
-    selected: Option<String>,
+    selected: Option<BTreeSet<String>>,
     session_idle_seconds: u64,
     epoch_root: PathBuf,
     operator_uid: u32,
@@ -183,10 +183,7 @@ impl NativeAccess {
     }
     fn allowed(&self, account: &str, accounts: &BTreeSet<String>) -> bool {
         accounts.contains(account)
-            && self
-                .selected
-                .as_deref()
-                .is_none_or(|selected| selected == account)
+            && crate::config::account_in_rollout(self.selected.as_ref(), account)
     }
     fn factor(&self) -> Coordinator {
         Coordinator::new(Paths {

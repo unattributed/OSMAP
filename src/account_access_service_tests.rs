@@ -116,7 +116,7 @@ impl Fixture {
             uid: meta.uid(),
             gid: meta.gid(),
             root: root.join("access"),
-            selected: Some(ACCOUNT.into()),
+            selected: Some(BTreeSet::from([ACCOUNT.into()])),
             session_idle_seconds: 900,
             epoch_root: root.join("epoch"),
             operator_uid: meta.uid(),
@@ -563,7 +563,7 @@ fn email_enrollment_for(
 fn admin_recorded_contact_uses_existing_email_proof_for_first_setup_and_later_recovery() {
     let mut f = Fixture::new();
     f.service.config.initial_setup = true;
-    f.service.selected = Some(NEW_ACCOUNT.into());
+    f.service.selected = Some(BTreeSet::from([ACCOUNT.into(), NEW_ACCOUNT.into()]));
     f.accounts.insert(NEW_ACCOUNT.into());
     fs::create_dir(f.root.join("replay")).unwrap();
     fs::set_permissions(f.root.join("replay"), fs::Permissions::from_mode(0o700)).unwrap();
@@ -608,7 +608,7 @@ fn admin_recorded_contact_uses_existing_email_proof_for_first_setup_and_later_re
     assert_eq!(registered.purpose, recovery::Purpose::AccountRecoverySetup);
     assert!(registered.factor.existing_sha256().is_some());
     assert_eq!(registered.verified_email, NEW_CONTACT);
-    f.service.selected = Some(ACCOUNT.into());
+    f.service.selected = Some(BTreeSet::from([ACCOUNT.into()]));
     let authority = Eligible {
         service: &f.service,
         accounts: &f.accounts,
@@ -644,7 +644,7 @@ fn unavailable_sql_and_ineligible_creation_have_distinct_recovery_outcomes() {
     for reply in [Ok(String::new()), Ok(orphan), Ok(conflict), Err(())] {
         let mut f = Fixture::new();
         f.service.config.initial_setup = true;
-        f.service.selected = Some(NEW_ACCOUNT.into());
+        f.service.selected = Some(BTreeSet::from([NEW_ACCOUNT.into()]));
         f.accounts.insert(NEW_ACCOUNT.into());
         let failed = reply.is_err();
         let db = Backend::new(Commands {
@@ -689,7 +689,7 @@ fn pending_setup_requires_the_native_roster_and_selected_rollout() {
     let db = Backend::new(Commands::default());
     let epochs = f.epochs();
     for selected in [NEW_ACCOUNT, ACCOUNT] {
-        f.service.selected = Some(selected.into());
+        f.service.selected = Some(BTreeSet::from([selected.into()]));
         if selected == ACCOUNT {
             f.accounts.insert(NEW_ACCOUNT.into());
         }

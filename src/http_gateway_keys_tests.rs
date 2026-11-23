@@ -227,7 +227,7 @@ fn native_runtime_key_management_fixture(test: &str, public_import_only: bool) {
         )
         .unwrap(),
     );
-    f.gateway.account_rollout = Some(ACCOUNT.into());
+    f.gateway.account_rollout = Some([ACCOUNT.into()].into_iter().collect());
     fs::write(
         &f.gateway.doveadm_path,
         format!(

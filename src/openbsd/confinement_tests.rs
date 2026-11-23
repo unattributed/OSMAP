@@ -277,7 +277,7 @@ fn concrete_account_clients_keep_key_separation_peer_uid_and_leaf_custody_checks
     fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
     let uid = effective_uid();
     let account = crate::config::AccountRuntimeConfig {
-        rollout_account: None,
+        rollout_accounts: None,
         admission_socket: root.join("admission.sock"),
         admission_key_file: root.join("admission.key"),
         admission_helper_uid: uid,

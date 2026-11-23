@@ -191,7 +191,7 @@ fn authenticator_runtime_gateway_delegates_to_actual_factor_replay_and_request_s
             .request,
         Some(first)
     );
-    gateway.account_rollout = Some("bob@example.com".into());
+    gateway.account_rollout = Some(["bob@example.com".into()].into_iter().collect());
     assert_eq!(
         BrowserGateway::authenticator(&gateway, &session),
         Err(crate::authenticator::Error::Unavailable)

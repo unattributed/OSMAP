@@ -69,7 +69,7 @@ impl AdmissionFixture {
             crate::http::http_gateway::http_gateway_account::AccountRuntimeCapability::fixture(
                 admission, mutation,
             );
-        gateway.account_rollout = Some(ACCOUNT.into());
+        gateway.account_rollout = Some([ACCOUNT.into()].into_iter().collect());
         let epoch = Arc::new(AtomicU64::new(2));
         let requests = Arc::new(AtomicUsize::new(0));
         let stop = Arc::new(AtomicBool::new(false));

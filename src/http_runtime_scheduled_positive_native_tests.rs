@@ -108,7 +108,10 @@ fn child_root(config: &AppConfig) -> Option<PathBuf> {
         OpenbsdConfinementMode::Enforce
     );
     let account = config.account_runtime.as_ref().unwrap();
-    assert_eq!(account.rollout_account.as_deref(), Some(ACCOUNT));
+    assert_eq!(
+        account.rollout_accounts,
+        Some(std::collections::BTreeSet::from([ACCOUNT.into()]))
+    );
     assert_eq!(account.admission_socket, root.join("e.sock"));
     assert_eq!(account.admission_key_file, root.join("admission.key"));
     assert_eq!(account.mutation_socket, root.join("m.sock"));

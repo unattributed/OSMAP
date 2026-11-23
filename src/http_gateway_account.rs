@@ -160,9 +160,7 @@ impl crate::auth::PrimaryCredentialBackend for UnavailableAccountAuthority {
 }
 impl RuntimeBrowserGateway {
     pub(super) fn uses_account_runtime(&self, account: &str) -> bool {
-        self.account_rollout
-            .as_deref()
-            .is_none_or(|selected| selected == account)
+        crate::config::account_in_rollout(self.account_rollout.as_ref(), account)
     }
 
     pub(super) fn ready_account_runtime(&self, account: &str) -> Option<&ReadyAccountRuntime> {
@@ -351,6 +349,10 @@ mod tests {
             .build_session_service()
             .issue(&context, "bob@example.test", RequiredSecondFactor::Totp)
             .unwrap();
+        let carol = legacy
+            .build_session_service()
+            .issue(&context, "carol@example.test", RequiredSecondFactor::Totp)
+            .unwrap();
         let alice_path =
             FileSessionStore::new(f.root.join("sessions")).session_path(&alice.record.session_id);
         let before = std::fs::read(&alice_path).unwrap();
@@ -362,13 +364,18 @@ mod tests {
             let ready = capability.ready().is_some();
             let mut gateway = legacy.clone();
             gateway.account_runtime = capability;
-            gateway.account_rollout = Some("alice@example.test".into());
-            assert!(matches!(
-                gateway
-                    .validate_session(&context, alice.token.as_str())
-                    .decision,
-                BrowserSessionDecision::Invalid
-            ));
+            gateway.account_rollout = Some(BTreeSet::from([
+                "alice@example.test".into(),
+                "carol@example.test".into(),
+            ]));
+            for selected in [&alice, &carol] {
+                assert!(matches!(
+                    gateway
+                        .validate_session(&context, selected.token.as_str())
+                        .decision,
+                    BrowserSessionDecision::Invalid
+                ));
+            }
             assert_eq!(std::fs::read(&alice_path).unwrap(), before);
             assert!(matches!(
                 gateway
@@ -528,7 +535,7 @@ mod tests {
             }
             let mut gateway = RuntimeBrowserGateway::for_test(&f.root);
             gateway.account_runtime = f.pair(29, 17, 19);
-            gateway.account_rollout = Some("alice@example.test".into());
+            gateway.account_rollout = Some(BTreeSet::from(["alice@example.test".into()]));
             gateway.doveadm_path = PathBuf::from("/usr/bin/false");
             let context = AuthenticationContext::new(
                 AuthenticationPolicy::default(),
@@ -799,7 +806,7 @@ mod tests {
         ]))
         .unwrap();
         config.account_runtime = Some(crate::config::AccountRuntimeConfig {
-            rollout_account: None,
+            rollout_accounts: None,
             admission_socket: fixture.root.join("admission.sock"),
             admission_key_file: fixture.root.join("admission.key"),
             admission_helper_uid: crate::openbsd::effective_uid(),
@@ -933,7 +940,7 @@ mod tests {
     #[test]
     fn native_local_runtime_route_requires_entire_fixed_pair_and_root_helpers() {
         let base = crate::config::AccountRuntimeConfig {
-            rollout_account: None,
+            rollout_accounts: None,
             admission_socket: crate::config::LOCAL_ACCOUNT_ADMISSION_SOCKET.into(),
             admission_key_file: "/nonexistent/native-admission.key".into(),
             admission_helper_uid: 0,

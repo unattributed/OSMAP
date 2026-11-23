@@ -72,14 +72,14 @@ credentials. A different socket, database or owner leaves the site read-only.
 When moving from another account database use a distinct admin state directory
 so its sessions and enrolled factors cannot authorize native accounts.
 
-Forgot password redemption has a separate enablement condition. Before enabling
-root access-recovery `initial_setup: true`, both protected native account rosters must include the exact account, and the
-ordinary frontend rollout must select it. Automatic registration is not yet
-implemented. Do not enable this source on the present isolated admin authority
-against an unrelated ordinary mailbox backend, broaden rollout to work around a
-missing account, create another fixture, or claim installed readiness from source
-tests. Keep the existing feature disabled until these product prerequisites are
-resolved and the real journey is qualified.
+Before enabling root access-recovery `initial_setup: true`, add the exact
+mailbox to both protected native account rosters and the frontend rollout.
+`OSMAP_ACCOUNT_ROLLOUT_ACCOUNT` accepts a comma-separated list of up to 64
+distinct canonical addresses. Append the pending mailbox to the existing list
+to preserve recovery and session admission for already selected accounts.
+The account service still checks the native creation and factor state before
+dispatching email proof. Verify the shared native account authority and the
+installed journey before marking enrollment ready.
 
 The running host configuration and its authenticated service/process observations are the **current operational fact**. Signed, reviewed repository configuration is the **intended design**. Differences must be inventoried and resolved before any overwrite.
 
