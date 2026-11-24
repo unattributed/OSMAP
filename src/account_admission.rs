@@ -36,6 +36,9 @@ pub struct Admission {
 
 pub trait EpochAuthority: Send + Sync {
     fn admit(&self, account: &str, epoch: u64) -> Result<(), Error>;
+    fn managed(&self, _account: &str) -> Result<bool, Error> {
+        Err(Error::Unavailable)
+    }
     /// Default bounded callback contract; native transports override the I/O
     /// cap with the caller's exact original deadline instead of a fresh timeout.
     fn admit_before(
@@ -85,12 +88,14 @@ pub(crate) fn valid_account(account: &str) -> Result<(), Error> {
 pub enum Operation {
     Authenticate { password: String },
     Admit { epoch: u64 },
+    Classify {},
 }
 impl std::fmt::Debug for Operation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Authenticate { .. } => f.write_str("Authenticate(<redacted>)"),
             Self::Admit { epoch } => f.debug_tuple("Admit").field(epoch).finish(),
+            Self::Classify {} => f.write_str("Classify"),
         }
     }
 }
@@ -240,6 +245,7 @@ impl Request {
             Operation::Admit { epoch } => {
                 serde_json::json!({"schema":"osmap-account-admission-worker-v1","operation":"admit","account":self.account,"epoch":epoch})
             }
+            Operation::Classify {} => return Err(Error::Refused),
         };
         // Only the authenticated parent emits this private stdin receipt. The
         // worker receives neither a renewed phase timer nor a wire authority
@@ -265,7 +271,9 @@ impl Request {
         key: &[u8],
         now: u64,
     ) -> Result<Vec<u8>, Error> {
-        if admission.is_some_and(|epoch| !valid_epoch(epoch)) {
+        if matches!(self.operation, Operation::Classify {})
+            || admission.is_some_and(|epoch| !valid_epoch(epoch))
+        {
             return Err(Error::Invalid);
         }
         if changed_at
@@ -275,18 +283,52 @@ impl Request {
         {
             return Err(Error::Invalid);
         }
+        self.sign_response(
+            if admission.is_some() {
+                "active"
+            } else {
+                "rejected"
+            },
+            admission,
+            changed_at,
+            key,
+            now,
+        )
+    }
+
+    pub(crate) fn classification_response(
+        &self,
+        managed: bool,
+        key: &[u8],
+        now: u64,
+    ) -> Result<Vec<u8>, Error> {
+        if !matches!(self.operation, Operation::Classify {}) {
+            return Err(Error::Invalid);
+        }
+        self.sign_response(
+            if managed { "managed" } else { "unmanaged" },
+            None,
+            None,
+            key,
+            now,
+        )
+    }
+
+    fn sign_response(
+        &self,
+        status: &str,
+        epoch: Option<u64>,
+        changed_at: Option<String>,
+        key: &[u8],
+        now: u64,
+    ) -> Result<Vec<u8>, Error> {
         self.valid(key, now)?;
         let mut r = Response {
             schema: SCHEMA.into(),
             account: self.account.clone(),
             nonce: self.nonce.clone(),
-            status: if admission.is_some() {
-                "active"
-            } else {
-                "rejected"
-            }
-            .into(),
-            epoch: admission,
+            status: status.into(),
+            epoch,
             changed_at,
             signature: String::new(),
         };
@@ -370,22 +412,7 @@ impl Verifier {
         key: &[u8],
         now: u64,
     ) -> Result<(Option<Admission>, Option<String>), Error> {
-        if bytes.len() > MAX_FRAME {
-            return Err(Error::Invalid);
-        }
-        request.valid(key, now)?;
-        let r: Response = serde_json::from_slice(bytes).map_err(|_| Error::Invalid)?;
-        if r.schema != SCHEMA || r.account != request.account || r.nonce != request.nonce {
-            return Err(Error::Authentication);
-        }
-        verify(key, &r.payload()?, &r.signature)?;
-        if r.changed_at
-            .as_deref()
-            .is_some_and(|v| !crate::account_mutation::changed_at_valid(v))
-            || (r.status != "active" && r.changed_at.is_some())
-        {
-            return Err(Error::Invalid);
-        }
+        let r = Self::verified_response(request, bytes, key, now)?;
         let value = match (&request.operation, r.status.as_str(), r.epoch) {
             (Operation::Authenticate { .. }, "rejected", None) => None,
             (Operation::Authenticate { .. }, "active", Some(epoch)) if valid_epoch(epoch) => {
@@ -404,6 +431,48 @@ impl Verifier {
         };
         self.consume(request, true, now)?;
         Ok((value, r.changed_at))
+    }
+
+    pub(crate) fn classification_response(
+        &mut self,
+        request: &Request,
+        bytes: &[u8],
+        key: &[u8],
+        now: u64,
+    ) -> Result<bool, Error> {
+        let r = Self::verified_response(request, bytes, key, now)?;
+        let managed = match (&request.operation, r.status.as_str(), r.epoch, r.changed_at) {
+            (Operation::Classify {}, "managed", None, None) => true,
+            (Operation::Classify {}, "unmanaged", None, None) => false,
+            _ => return Err(Error::Refused),
+        };
+        self.consume(request, true, now)?;
+        Ok(managed)
+    }
+
+    fn verified_response(
+        request: &Request,
+        bytes: &[u8],
+        key: &[u8],
+        now: u64,
+    ) -> Result<Response, Error> {
+        if bytes.len() > MAX_FRAME {
+            return Err(Error::Invalid);
+        }
+        request.valid(key, now)?;
+        let r: Response = serde_json::from_slice(bytes).map_err(|_| Error::Invalid)?;
+        if r.schema != SCHEMA || r.account != request.account || r.nonce != request.nonce {
+            return Err(Error::Authentication);
+        }
+        verify(key, &r.payload()?, &r.signature)?;
+        if r.changed_at
+            .as_deref()
+            .is_some_and(|v| !crate::account_mutation::changed_at_valid(v))
+            || (r.status != "active" && r.changed_at.is_some())
+        {
+            return Err(Error::Invalid);
+        }
+        Ok(r)
     }
 }
 #[cfg(test)]

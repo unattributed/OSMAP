@@ -57,7 +57,7 @@ fn enrollment(pending: &PendingEnrollment) -> Result<String, AccessError> {
             }
         }
     }
-    Ok(format!("<section aria-labelledby=\"enrollment-heading\"><h2 id=\"enrollment-heading\">Add the new authenticator</h2><p>Use either method to add the new authenticator. Keep this page and setup key private.</p><section aria-labelledby=\"totp-secret-key-heading\"><h3 id=\"totp-secret-key-heading\">2FA secret key (TOTP)</h3><p>Enter this Base32 key in a time-based, six-digit authenticator:</p><p class=\"totp-setup-key-value\"><code class=\"totp-setup-key\">{}</code></p></section><section aria-labelledby=\"totp-qr-heading\"><h3 id=\"totp-qr-heading\">QR code</h3><p>Alternatively, scan this QR code in an authenticator app that supports scanning.</p><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {extent} {extent}\" width=\"320\" height=\"320\" role=\"img\" aria-label=\"New authenticator QR code\" style=\"max-width:100%;height:auto;background:white\"><rect width=\"100%\" height=\"100%\" fill=\"white\"/><path d=\"{modules}\" fill=\"black\"/></svg></section><p>Enter a current six-digit code from the <strong>new</strong> entry to confirm it. Neither enrollment method activates the replacement until that code is verified.</p></section>", escape_html(&pending.secret_base32)))
+    Ok(format!("<section aria-labelledby=\"enrollment-heading\"><h2 id=\"enrollment-heading\">Add the new authenticator</h2><p>Use either method to add the new authenticator. Keep this page and setup key private.</p><section aria-labelledby=\"totp-secret-key-heading\"><h3 id=\"totp-secret-key-heading\">2FA secret key (TOTP)</h3><p>Enter this Base32 key in a time-based, six-digit authenticator:</p><p class=\"totp-setup-key-value\"><code class=\"totp-setup-key\">{}</code></p></section><section aria-labelledby=\"totp-qr-heading\"><h3 id=\"totp-qr-heading\">QR code</h3><p>Alternatively, scan this QR code in an authenticator app that supports scanning.</p><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {extent} {extent}\" width=\"320\" height=\"320\" role=\"img\" aria-label=\"New authenticator QR code\" style=\"max-width:100%;height:auto;background:white\"><rect width=\"100%\" height=\"100%\" fill=\"white\"/><path d=\"{modules}\" fill=\"black\"/></svg></section><p>Enter a current six-digit code from the <strong>new</strong> entry to confirm it. Authenticator setup completes after OSMAP verifies that code.</p></section>", escape_html(&pending.secret_base32)))
 }
 fn enrollment_fields(pending: &PendingEnrollment) -> String {
     format!(
@@ -74,7 +74,7 @@ pub(crate) fn render_access_page(
     let (heading, content, header) = match view {
         AccessView::RecoveryEmail { csrf } => (
             "Recover access",
-            format!("<p>Enter your login email address. If recovery is available, we will email a code to the address registered for recovery.</p>{}", form("/recover", csrf, "send_code", "<label for=\"email\">Login email address</label><input id=\"email\" name=\"email\" type=\"email\" autocomplete=\"username\" maxlength=\"254\" required>", "Email a recovery code")),
+            format!("<p>Enter your OSMAP email address. If recovery is available, we will send a six-digit code to the recovery email recorded for that account. If your administrator has enabled initial setup, new accounts can use this process too. Your administrator obtains and records that address with you offline.</p>{}", form("/recover", csrf, "send_code", "<label for=\"email\">OSMAP email address</label><input id=\"email\" name=\"email\" type=\"email\" autocomplete=\"username\" maxlength=\"254\" required>", "Email a recovery code")),
             String::new(),
         ),
         AccessView::RecoveryCode { csrf, challenge_id } => (
@@ -83,8 +83,8 @@ pub(crate) fn render_access_page(
             String::new(),
         ),
         AccessView::RecoverySetup { csrf, enrollment: pending } => (
-            "Restore access",
-            format!("<p>Choose a new password and confirm your replacement authenticator. You will sign in again after the update is confirmed.</p>{}{}", enrollment(pending)?, form("/recover/setup", csrf, "confirm_recovery", &format!("{}{}{}{}<p>Use 15–128 characters.</p>", enrollment_fields(pending), password("new_password", "New password", true), password("confirmation", "Confirm new password", true), otp("new_totp_code", "Code from the new authenticator")), "Verify and restore access")),
+            "Set your password and authenticator",
+            format!("<p>Choose your password and register the authenticator shown below. Confirm its current code to finish setup or recovery, then sign in after the update is confirmed.</p>{}{}", enrollment(pending)?, form("/recover/setup", csrf, "confirm_recovery", &format!("{}{}{}{}<p>Use 15–128 characters.</p>", enrollment_fields(pending), password("new_password", "New password", true), password("confirmation", "Confirm new password", true), otp("new_totp_code", "Code from the new authenticator")), "Verify and finish setup")),
             String::new(),
         ),
         AccessView::TotpResetStart { account, csrf } => (

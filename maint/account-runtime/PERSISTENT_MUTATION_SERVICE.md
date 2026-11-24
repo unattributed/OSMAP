@@ -256,10 +256,10 @@ configuration alone still refuses instead of enabling the password workflow.
 Qualification must cover real paired SSH/peer/group/key/bootstrap routing,
 original deadlines, full authenticated password outcome and owned rollback.
 
-The optional `OSMAP_ACCOUNT_ROLLOUT_ACCOUNT` selects one exact canonical account
-for a bounded rollout. It is accepted only with all seven paired-service fields;
-an empty, malformed, wildcard or multiple-account selector refuses startup.
-The selected account requires the paired primary and epoch authority, including
+The optional `OSMAP_ACCOUNT_ROLLOUT_ACCOUNT` selects up to 64 exact canonical
+accounts separated by commas. It requires all seven paired-service fields.
+Empty entries, whitespace, wildcards and duplicate accounts refuse startup.
+Each selected account requires the paired primary and epoch authority, including
 session issuance/validation, password preparation/dispatch and status readback.
 Configured failure never falls back to legacy authentication for that account.
 A legacy alias resolving to the selected canonical identity also refuses before

@@ -112,7 +112,7 @@ fn scheduled_runtime_requires_current_account_authority_without_fabricating_brow
         denied.decision,
         ScheduledDispatch::Blocked(BlockReason::ServiceUnavailable)
     ));
-    fixture.gateway.account_rollout = Some("bob@example.com".into());
+    fixture.gateway.account_rollout = Some(["bob@example.com".into()].into_iter().collect());
     let foreign = fixture
         .gateway
         .dispatch_scheduled_with_backends(&claim, &submission, &append);

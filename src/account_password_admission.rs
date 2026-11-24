@@ -101,6 +101,7 @@ impl<'a, E: CommandExecutor, C: TimeProvider> Service<'a, E, C> {
             let expected = match request.operation() {
                 Operation::Admit { epoch } => Some(*epoch),
                 Operation::Authenticate { .. } => None,
+                Operation::Classify {} => return Err(Error::Refused),
             };
             let before = match guard.admission(expected) {
                 Ok(value) => value,

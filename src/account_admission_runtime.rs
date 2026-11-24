@@ -21,6 +21,10 @@ use std::time::{Duration, Instant};
 /// Retained legacy worker/service qualification. Native-local clients use the
 /// fixed root-owned Rust service path and preserve their full custody checks.
 pub const NATIVE_CONFINEMENT_QUALIFIED: bool = false;
+pub(crate) enum NativeReply {
+    Epoch(Option<AdmissionStatus>),
+    Classification(bool),
+}
 const WORKER: &str = "/usr/local/libexec/osmap/account-runtime/account_admission_worker.py";
 // Closed sibling source closure of the private worker, including the material
 // and command factory's function-local imports. No request/config can add one.
@@ -374,18 +378,9 @@ impl Service {
         &self,
         stream: &mut UnixStream,
         deadline: Instant,
-        execute: impl FnOnce(&Request, Instant) -> Result<Option<AdmissionStatus>, Error>,
+        execute: impl FnOnce(&Request, Instant) -> Result<NativeReply, Error>,
     ) -> Result<(), Error> {
-        self.connection_with_status_deadline(stream, deadline, |request, inherited| {
-            if crate::account_password_process::execution_quarantined() {
-                return Err(Error::CleanupUnconfirmed);
-            }
-            let value = execute(request, inherited)?;
-            if crate::account_password_process::execution_quarantined() {
-                return Err(Error::CleanupUnconfirmed);
-            }
-            Ok(value)
-        })
+        self.connection_with_reply(stream, deadline, true, execute)
     }
 
     #[cfg(test)]
@@ -399,15 +394,29 @@ impl Service {
             execute(request).map(|v| v.map(|epoch| (epoch, None)))
         })
     }
+    #[cfg(test)]
     fn process_with_status(
         &self,
         bytes: &[u8],
         at: u64,
         execute: impl FnOnce(&Request) -> Result<Option<AdmissionStatus>, Error>,
     ) -> Result<Vec<u8>, Error> {
+        self.process_with_reply(bytes, at, false, |request| {
+            execute(request).map(NativeReply::Epoch)
+        })
+    }
+
+    fn process_with_reply(
+        &self,
+        bytes: &[u8],
+        at: u64,
+        native: bool,
+        execute: impl FnOnce(&Request) -> Result<NativeReply, Error>,
+    ) -> Result<Vec<u8>, Error> {
         if self
             .cleanup_unconfirmed
             .load(std::sync::atomic::Ordering::SeqCst)
+            || (native && crate::account_password_process::execution_quarantined())
         {
             return Err(Error::CleanupUnconfirmed);
         }
@@ -416,11 +425,16 @@ impl Service {
             .lock()
             .map_err(unavailable)?
             .request(bytes, &self.key, at)?;
-        if !self.config.accounts.iter().any(|a| a == request.account()) {
+        if !native && !self.config.accounts.iter().any(|a| a == request.account()) {
             return Err(Error::Refused);
         }
         let _permit = self.enter(request.account())?;
-        let result = match execute(&request) {
+        let result = execute(&request);
+        let result = match if native && crate::account_password_process::execution_quarantined() {
+            Err(Error::CleanupUnconfirmed)
+        } else {
+            result
+        } {
             Err(Error::CleanupUnconfirmed) => {
                 self.cleanup_unconfirmed
                     .store(true, std::sync::atomic::Ordering::SeqCst);
@@ -428,11 +442,18 @@ impl Service {
             }
             value => value?,
         };
-        let (epoch, stamp) = match result {
-            Some((epoch, stamp)) => (Some(epoch), stamp),
-            None => (None, None),
-        };
-        request.response_with_status(epoch, stamp, &self.key, now().map_err(unavailable)?)
+        let at = now().map_err(unavailable)?;
+        match result {
+            NativeReply::Epoch(status) => {
+                let (epoch, stamp) =
+                    status.map_or((None, None), |(epoch, stamp)| (Some(epoch), stamp));
+                request.response_with_status(epoch, stamp, &self.key, at)
+            }
+            NativeReply::Classification(managed) if native => {
+                request.classification_response(managed, &self.key, at)
+            }
+            NativeReply::Classification(_) => Err(Error::Refused),
+        }
     }
     fn enter(&self, account: &str) -> Result<Permit<'_>, Error> {
         let mut active = self.active.lock().map_err(unavailable)?;
@@ -586,6 +607,18 @@ impl Service {
         deadline: Instant,
         execute: impl FnOnce(&Request, Instant) -> Result<Option<AdmissionStatus>, Error>,
     ) -> Result<(), Error> {
+        self.connection_with_reply(stream, deadline, false, |request, inherited| {
+            execute(request, inherited).map(NativeReply::Epoch)
+        })
+    }
+
+    fn connection_with_reply(
+        &self,
+        stream: &mut UnixStream,
+        deadline: Instant,
+        native: bool,
+        execute: impl FnOnce(&Request, Instant) -> Result<NativeReply, Error>,
+    ) -> Result<(), Error> {
         let accepted_now = Instant::now();
         if deadline <= accepted_now || deadline > accepted_now + Duration::from_secs(30) {
             return Err(Error::Expired);
@@ -596,9 +629,10 @@ impl Service {
             return Err(Error::Authentication);
         }
         let bytes = read_frame(stream, MAX_FRAME, deadline).map_err(unavailable)?;
-        let response = self.process_with_status(&bytes, now().map_err(unavailable)?, |r| {
-            execute(r, deadline)
-        })?;
+        let response =
+            self.process_with_reply(&bytes, now().map_err(unavailable)?, native, |r| {
+                execute(r, deadline)
+            })?;
         write_frame(stream, &response, deadline).map_err(unavailable)
     }
 }
@@ -1304,8 +1338,25 @@ impl Client {
         account: &str,
         operation: Operation,
         original_deadline: Instant,
-        mut clock: impl FnMut() -> Result<u64, Error>,
+        clock: impl FnMut() -> Result<u64, Error>,
     ) -> Result<(Option<Admission>, Option<String>), Error> {
+        self.exchange_before(
+            account,
+            operation,
+            original_deadline,
+            clock,
+            Verifier::response_with_status,
+        )
+    }
+
+    fn exchange_before<T>(
+        &self,
+        account: &str,
+        operation: Operation,
+        original_deadline: Instant,
+        mut clock: impl FnMut() -> Result<u64, Error>,
+        verify: impl FnOnce(&mut Verifier, &Request, &[u8], &[u8], u64) -> Result<T, Error>,
+    ) -> Result<T, Error> {
         // Preserve the caller's one workflow budget and this adapter's existing
         // maximum; neither connection nor verification starts a new deadline.
         let deadline = original_deadline.min(Instant::now() + Duration::from_secs(30));
@@ -1341,12 +1392,10 @@ impl Client {
         let at = check()?;
         // A held verifier must not turn a bounded operation into a blocking
         // lock wait. The authenticated result is withheld until the final check.
-        let result = self
-            .0
-            .verifier
-            .try_lock()
-            .map_err(unavailable)?
-            .response_with_status(&request, &bytes, &self.0.key, at)?;
+        let result = {
+            let mut verifier = self.0.verifier.try_lock().map_err(unavailable)?;
+            verify(&mut verifier, &request, &bytes, &self.0.key, at)?
+        };
         check()?;
         Ok(result)
     }
@@ -1404,8 +1453,21 @@ impl Client {
             },
         )
     }
+
+    pub(crate) fn managed_before(&self, account: &str, deadline: Instant) -> Result<bool, Error> {
+        self.exchange_before(
+            account,
+            Operation::Classify {},
+            deadline.min(Instant::now() + Duration::from_secs(10)),
+            || now().map_err(unavailable),
+            Verifier::classification_response,
+        )
+    }
 }
 impl EpochAuthority for Client {
+    fn managed(&self, account: &str) -> Result<bool, Error> {
+        self.managed_before(account, Instant::now() + Duration::from_secs(10))
+    }
     fn admit(&self, account: &str, epoch: u64) -> Result<(), Error> {
         self.execute(account, Operation::Admit { epoch })?
             .map(|_| ())

@@ -22,7 +22,7 @@ This specification complements [OSMAP_ADMIN_SYSTEM_ARCHITECTURE.md](OSMAP_ADMIN_
 3. **No duplicate mailbox password database:** The selected MariaDB mail-account authority stores the one Dovecot-compatible mailbox password hash. Admin-only password credentials are separately scoped to admin identities and never returned through Dovecot/Postfix lookups.
 4. **TOTP remains protected:** Current mailbox-user TOTP seed files and accepted-counter replay state remain in their established protected stores. No SQL TOTP seed, OTP, recovery code plaintext, accepted counter, or retrievable secret. Separate admin identity namespace and protected factor namespace are required.
 5. **Independent state dimensions:** Mailbox record lifecycle, Dovecot/native-client authentication, Postfix/LMTP acceptance/delivery, OSMAP browser TOTP eligibility, and account suspension/retention are different facts. Do not report one as proof of another.
-6. **Only the identity owner normally sees the enrollment secret:** An administrator creates a *pending invitation*, not a silently enrolled owner factor. Recovery is a separate identity-attested, audited workflow.
+6. **Only the identity owner normally sees the enrollment secret:** An administrator establishes identity and obtains the recovery email offline, then creates a pending account with that contact. Initial setup reuses OSMAP's Forgot password email-code and restricted password/TOTP flow. The administrator never enrolls the owner's factor or receives their password or seed. Existing-account recovery retains its distinct trusted purpose and prior-factor binding.
 7. **Unknown or partially applied transitions do not become active by assertion:** Verify authoritative database readback, factor-store state, native lookup behavior and session effects; preserve an `uncertain` operation until reconciled.
 8. **Current host boundaries remain:** The documented Toronto `postfixadmin` database stays authoritative until an explicit cutover; obsd1 development and read-only Toronto replica are separate. Existing-host read-only compatibility precedes any Rust writer activation. Fresh installs use versioned `osmap_mail` schema creation with the privileged local migrator.
 9. **Identity retirement does not erase mail:** Disablement and logical retirement do not delete Maildir bytes, message identifiers, OpenPGP material, backup sets, or audit trails. Retention, export and physical purge require their own policy and authorization.
@@ -224,6 +224,20 @@ The current mailbox-user factor verifier follows RFC 6238-style TOTP with 6-digi
 **Interrupted enrollment:** If the seed is installed but the SQL activation update fails, never overwrite it or reset the replay counter. Reconcile by verified canonical subject, factor digest/reference, pending operation, and authorized recovery decision. If SQL says active but protected state is absent, refuse normal login and record a containment finding.
 
 ### 7.3 Admin enrollment and first system administrator
+
+ADM-S04-01 implementation boundary: first-user invitations use a separate
+256-bit, digest-only setup authority and restricted cookie, not the existing
+registered-account recovery grant. The administrator supplies an approved
+external contact and fresh administrator TOTP; the user chooses the permanent
+password and authenticator. With onboarding explicitly enabled, both native
+authentication flags stay disabled until protected factor/counter installation
+and the scoped SQL activation/readback complete. A root-owned file endpoint
+trusts only the configured admin-service UID for proved initial installation;
+it has no SQL profile or request-selected paths/commands. Interrupted setup
+retains disabled or unconfirmed state for exact reconciliation, with no automatic
+resend, counter reset or factor replacement. Completing first setup does not
+silently grant the contact permanent password-and-MFA recovery authority. These
+implementation rules are not a native qualification or production rollout claim.
 
 - Before any domain or mailbox exists, a **trusted local one-shot Rust `bootstrap-admin` procedure** creates one pending system-admin identity and protected pending admin enrollment. It does not use the public OSMAP listener.
 - Establish a separately reviewed admin password verifier, distinct admin principal namespace and factor-store path. Present the bootstrap enrollment to the operator over the trusted local terminal, not an unattended log or a public web endpoint.

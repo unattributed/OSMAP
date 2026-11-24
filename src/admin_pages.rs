@@ -105,7 +105,7 @@ impl AdminPreferences {
     }
     pub(crate) fn apply_menus(&self, response: &mut crate::http::HttpResponse) {
         const ROOT: &[u8] = b"<!doctype html><html lang=\"en\"";
-        if response.status_code == 200 && response.body.starts_with(ROOT) {
+        if matches!(response.status_code, 200 | 201) && response.body.starts_with(ROOT) {
             let style = crate::appearance::PresentationStyle::parse(&self.presentation_style)
                 .unwrap_or_default();
             let attribute = format!(" data-presentation-style=\"{}\"", style.as_str());

@@ -61,6 +61,88 @@ fn until() -> Instant {
 }
 
 #[test]
+fn initial_provision_creates_admissible_epoch_zero_once() {
+    let scratch = Scratch::new();
+    let store = scratch.store();
+    assert_eq!(
+        store.provision_initial(ALICE, Instant::now()),
+        Err(Error::Expired)
+    );
+    assert_eq!(fs::read_dir(&scratch.0).unwrap().count(), 0);
+    store.provision_initial(ALICE, until()).unwrap();
+    let guard = store.lock_before(ALICE, until()).unwrap();
+    assert_eq!(
+        guard.admission(Some(0)).unwrap(),
+        Status {
+            epoch: 0,
+            state: State::Active,
+            changed_at: None
+        }
+    );
+    drop(guard);
+    let bytes = fs::read(scratch.record(ALICE)).unwrap();
+    let value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(value.as_object().unwrap().len(), 5);
+    assert_eq!(value["used_intents"], serde_json::json!([]));
+    assert_eq!(store.provision_initial(ALICE, until()), Err(Error::Refused));
+    assert_eq!(fs::read(scratch.record(ALICE)).unwrap(), bytes);
+    for suffix in ["lock", "json"] {
+        let m = fs::symlink_metadata(scratch.0.join(format!("{}.{suffix}", stem(ALICE).unwrap())))
+            .unwrap();
+        assert_eq!(m.mode() & 0o7777, 0o600);
+        assert_eq!(m.uid(), crate::openbsd::effective_uid());
+        assert_eq!(m.nlink(), 1);
+    }
+}
+
+#[test]
+fn initial_provision_never_resets_existing_or_partial_state() {
+    for suffix in ["lock", "json", "uncertain", "json-symlink"] {
+        let scratch = Scratch::new();
+        let name = stem(ALICE).unwrap();
+        let path = scratch.0.join(format!(
+            "{name}.{}",
+            if suffix == "json-symlink" {
+                "json"
+            } else {
+                suffix
+            }
+        ));
+        if suffix == "json-symlink" {
+            symlink("retained-missing", &path).unwrap();
+        } else {
+            fs::write(&path, b"retained partial").unwrap();
+            fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        assert_eq!(
+            scratch.store().provision_initial(ALICE, until()),
+            Err(Error::Refused)
+        );
+        assert_eq!(fs::read_dir(&scratch.0).unwrap().count(), 1);
+        if suffix == "json-symlink" {
+            assert_eq!(fs::read_link(path).unwrap(), Path::new("retained-missing"));
+        } else {
+            assert_eq!(fs::read(path).unwrap(), b"retained partial");
+        }
+    }
+    let scratch = Scratch::new();
+    scratch.provision(ALICE, 7, Some(STAMP));
+    let before = fs::read(scratch.record(ALICE)).unwrap();
+    let store = scratch.store();
+    assert_eq!(store.provision_initial(ALICE, until()), Err(Error::Refused));
+    assert_eq!(fs::read(scratch.record(ALICE)).unwrap(), before);
+    assert_eq!(
+        store
+            .lock_before(ALICE, until())
+            .unwrap()
+            .admission(Some(7))
+            .unwrap()
+            .epoch,
+        7
+    );
+}
+
+#[test]
 fn existing_epoch_v1_schema_completes_once_and_preserves_other_account() {
     let scratch = Scratch::new();
     scratch.provision(ALICE, 3, None);

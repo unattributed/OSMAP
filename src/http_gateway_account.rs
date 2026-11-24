@@ -159,10 +159,37 @@ impl crate::auth::PrimaryCredentialBackend for UnavailableAccountAuthority {
     }
 }
 impl RuntimeBrowserGateway {
+    pub(super) fn account_scope(
+        &self,
+        account: &str,
+    ) -> Result<bool, crate::account_admission::Error> {
+        self.account_scope_before(
+            account,
+            std::time::Instant::now() + std::time::Duration::from_secs(10),
+        )
+    }
+
+    pub(super) fn account_scope_before(
+        &self,
+        account: &str,
+        deadline: std::time::Instant,
+    ) -> Result<bool, crate::account_admission::Error> {
+        use crate::account_admission::Error;
+        if crate::config::account_in_rollout(self.account_rollout.as_ref(), account) {
+            return Ok(true);
+        }
+        if !self.automatic_enrollment || crate::account_admission::valid_account(account).is_err() {
+            return Ok(false);
+        }
+        self.account_runtime
+            .ready()
+            .ok_or(Error::Unavailable)?
+            .admission()
+            .managed_before(account, deadline)
+    }
+
     pub(super) fn uses_account_runtime(&self, account: &str) -> bool {
-        self.account_rollout
-            .as_deref()
-            .is_none_or(|selected| selected == account)
+        self.account_scope(account).is_ok_and(|managed| managed)
     }
 
     pub(super) fn ready_account_runtime(&self, account: &str) -> Option<&ReadyAccountRuntime> {
@@ -335,6 +362,131 @@ mod tests {
     }
 
     #[test]
+    fn automatically_enrolled_mailbox_uses_signed_primary_and_epoch_admission() {
+        use crate::account_admission::{Operation, Verifier, MAX_FRAME};
+        use crate::openpgp_inventory_runtime::{now, read_frame, write_frame};
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use std::time::{Duration, Instant};
+
+        const NEW: &str = "new@example.test";
+        const LEGACY: &str = "legacy@example.test";
+        let f = Fixture::new();
+        let context = AuthenticationContext {
+            request_id: "automatic-enrollment".into(),
+            remote_addr: "127.0.0.1".into(),
+            user_agent: "public fixture".into(),
+        };
+        let mut gateway = RuntimeBrowserGateway::for_test(&f.root);
+        let legacy = gateway.build_session_service();
+        let old_new = legacy
+            .issue(&context, NEW, RequiredSecondFactor::Totp)
+            .unwrap();
+        let existing = legacy
+            .issue(&context, LEGACY, RequiredSecondFactor::Totp)
+            .unwrap();
+        gateway.account_rollout = Some(BTreeSet::from(["static@example.test".into()]));
+        gateway.automatic_enrollment = true;
+        gateway.account_runtime = f.pair(29, 17, 19);
+        let captured = Arc::new(std::sync::Mutex::new(None));
+        let stop = AtomicBool::new(false);
+        std::thread::scope(|scope| {
+            struct Stop<'a>(&'a AtomicBool);
+            impl Drop for Stop<'_> {
+                fn drop(&mut self) {
+                    self.0.store(true, Ordering::SeqCst);
+                }
+            }
+            let _stop = Stop(&stop);
+            let listener = &f.listeners[0];
+            scope.spawn(|| {
+                let mut verifier = Verifier::default();
+                let end = Instant::now() + Duration::from_secs(5);
+                while !stop.load(Ordering::SeqCst) && Instant::now() < end {
+                    let Ok((mut stream, _)) = listener.accept() else {
+                        std::thread::sleep(Duration::from_millis(3));
+                        continue;
+                    };
+                    let bytes = read_frame(&mut stream, MAX_FRAME, end).unwrap();
+                    let key = [29; 32];
+                    let at = now().unwrap();
+                    let request = verifier.request(&bytes, &key, at).unwrap();
+                    let response = match request.operation() {
+                        Operation::Classify {} => {
+                            if request.account() == LEGACY {
+                                let lock = std::fs::OpenOptions::new()
+                                    .read(true)
+                                    .write(true)
+                                    .open(f.root.join("sessions/.session-store.lock"))
+                                    .unwrap();
+                                assert!(
+                                    crate::openbsd::try_advisory_file_lock_exclusive(&lock).is_ok(),
+                                    "legacy scope transport must run outside the store-wide lock"
+                                );
+                            }
+                            request.classification_response(request.account() == NEW, &key, at)
+                        }
+                        Operation::Authenticate { password } => {
+                            assert_eq!(request.account(), NEW);
+                            assert_eq!(password, "public fixture password");
+                            request.response(Some(0), &key, at)
+                        }
+                        Operation::Admit { epoch } => request.response(
+                            (request.account() == NEW && *epoch == 0).then_some(0),
+                            &key,
+                            at,
+                        ),
+                    }
+                    .unwrap();
+                    write_frame(&mut stream, &response, end).unwrap();
+                }
+            });
+            let outcome = gateway.authenticate_account_primary(
+                &context,
+                NEW,
+                "public fixture password",
+                captured.clone(),
+            );
+            assert!(matches!(
+                outcome.decision,
+                AuthenticationDecision::MfaRequired { .. }
+            ));
+            assert_eq!(captured.lock().unwrap().as_ref().unwrap().epoch, 0);
+            let service = gateway.build_session_service();
+            let enrolled = service
+                .issue_with_epoch(&context, NEW, RequiredSecondFactor::Totp, Some(0))
+                .unwrap();
+            assert!(matches!(
+                gateway
+                    .validate_session(&context, enrolled.token.as_str())
+                    .decision,
+                BrowserSessionDecision::Valid { .. }
+            ));
+            assert!(matches!(
+                gateway
+                    .validate_session(&context, old_new.token.as_str())
+                    .decision,
+                BrowserSessionDecision::Invalid
+            ));
+            assert!(matches!(
+                gateway
+                    .validate_session(&context, existing.token.as_str())
+                    .decision,
+                BrowserSessionDecision::Valid { .. }
+            ));
+            assert!(service
+                .issue_with_epoch(&context, LEGACY, RequiredSecondFactor::Totp, Some(0))
+                .is_err());
+        });
+        gateway.account_runtime = AccountRuntimeCapability::ConfiguredUnavailable;
+        assert!(matches!(
+            gateway
+                .validate_session(&context, existing.token.as_str())
+                .decision,
+            BrowserSessionDecision::Invalid
+        ));
+    }
+
+    #[test]
     fn account_rollout_preserves_unrelated_sessions_and_refuses_selected_pre_epoch() {
         let f = Fixture::new();
         let context = AuthenticationContext {
@@ -351,6 +503,10 @@ mod tests {
             .build_session_service()
             .issue(&context, "bob@example.test", RequiredSecondFactor::Totp)
             .unwrap();
+        let carol = legacy
+            .build_session_service()
+            .issue(&context, "carol@example.test", RequiredSecondFactor::Totp)
+            .unwrap();
         let alice_path =
             FileSessionStore::new(f.root.join("sessions")).session_path(&alice.record.session_id);
         let before = std::fs::read(&alice_path).unwrap();
@@ -362,13 +518,18 @@ mod tests {
             let ready = capability.ready().is_some();
             let mut gateway = legacy.clone();
             gateway.account_runtime = capability;
-            gateway.account_rollout = Some("alice@example.test".into());
-            assert!(matches!(
-                gateway
-                    .validate_session(&context, alice.token.as_str())
-                    .decision,
-                BrowserSessionDecision::Invalid
-            ));
+            gateway.account_rollout = Some(BTreeSet::from([
+                "alice@example.test".into(),
+                "carol@example.test".into(),
+            ]));
+            for selected in [&alice, &carol] {
+                assert!(matches!(
+                    gateway
+                        .validate_session(&context, selected.token.as_str())
+                        .decision,
+                    BrowserSessionDecision::Invalid
+                ));
+            }
             assert_eq!(std::fs::read(&alice_path).unwrap(), before);
             assert!(matches!(
                 gateway
@@ -528,7 +689,7 @@ mod tests {
             }
             let mut gateway = RuntimeBrowserGateway::for_test(&f.root);
             gateway.account_runtime = f.pair(29, 17, 19);
-            gateway.account_rollout = Some("alice@example.test".into());
+            gateway.account_rollout = Some(BTreeSet::from(["alice@example.test".into()]));
             gateway.doveadm_path = PathBuf::from("/usr/bin/false");
             let context = AuthenticationContext::new(
                 AuthenticationPolicy::default(),
@@ -582,6 +743,7 @@ mod tests {
                             assert_eq!(*epoch, 7);
                             Some(7)
                         }
+                        Operation::Classify {} => panic!("unexpected classification"),
                     };
                     let reply = request
                         .response(admitted, &[29; 32], now().unwrap())
@@ -799,7 +961,8 @@ mod tests {
         ]))
         .unwrap();
         config.account_runtime = Some(crate::config::AccountRuntimeConfig {
-            rollout_account: None,
+            rollout_accounts: None,
+            automatic_enrollment: false,
             admission_socket: fixture.root.join("admission.sock"),
             admission_key_file: fixture.root.join("admission.key"),
             admission_helper_uid: crate::openbsd::effective_uid(),
@@ -933,7 +1096,8 @@ mod tests {
     #[test]
     fn native_local_runtime_route_requires_entire_fixed_pair_and_root_helpers() {
         let base = crate::config::AccountRuntimeConfig {
-            rollout_account: None,
+            rollout_accounts: None,
+            automatic_enrollment: false,
             admission_socket: crate::config::LOCAL_ACCOUNT_ADMISSION_SOCKET.into(),
             admission_key_file: "/nonexistent/native-admission.key".into(),
             admission_helper_uid: 0,

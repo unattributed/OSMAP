@@ -1149,11 +1149,11 @@ mod tests;
 
 /// One-role adapter for admission before a submission namespace exists. The
 /// sealed profile only prepares PRIMARY commands; no SQL/hash/control fallback.
-pub(crate) struct PrimaryExecutor<'a> {
+pub(crate) struct ProfileExecutor<'a> {
     profile: &'a crate::account_password_native::NativeProfile,
     deadline: Instant,
 }
-impl<'a> PrimaryExecutor<'a> {
+impl<'a> ProfileExecutor<'a> {
     pub(crate) fn new(
         profile: &'a crate::account_password_native::NativeProfile,
         deadline: Instant,
@@ -1161,7 +1161,7 @@ impl<'a> PrimaryExecutor<'a> {
         Self { profile, deadline }
     }
 }
-impl CommandExecutor for PrimaryExecutor<'_> {
+impl CommandExecutor for ProfileExecutor<'_> {
     fn run_with_stdin_bytes(
         &self,
         program: &str,

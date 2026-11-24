@@ -145,12 +145,19 @@ impl<T: TimeProvider, R: RandomSource> SessionService<FileSessionStore, T, R> {
         callback: impl for<'guard> FnOnce(ValidatedSession, GuardedSessionLease<'guard>) -> O,
     ) -> Result<O, GuardedSessionError> {
         let id = session_id_from_token(token.as_str());
+        let checked_legacy = self
+            .prepare_legacy_scope(&id)
+            .map_err(|_| GuardedSessionError::Unavailable)?;
         self.session_store
             .with_guarded_record(&id, |record, _guard| {
                 let began = self.time_provider.unix_timestamp();
                 self.action_current(&record, began)?;
-                self.check_epoch(&record.canonical_username, record.account_epoch)
-                    .map_err(|_| GuardedSessionError::Unavailable)?;
+                self.check_epoch(
+                    &record.canonical_username,
+                    record.account_epoch,
+                    checked_legacy.as_deref(),
+                )
+                .map_err(|_| GuardedSessionError::Unavailable)?;
                 let now = self.time_provider.unix_timestamp();
                 if now < began {
                     return Err(GuardedSessionError::Inactive);

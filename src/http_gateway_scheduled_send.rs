@@ -90,15 +90,15 @@ impl RuntimeBrowserGateway {
         claim: &ClaimedJob,
         deadline: Instant,
     ) -> Result<(), BlockReason> {
-        if self
-            .account_rollout
-            .as_deref()
-            .is_some_and(|a| a != claim.account())
+        if !self
+            .account_scope_before(claim.account(), deadline)
+            .map_err(|_| BlockReason::ServiceUnavailable)?
         {
             return Err(BlockReason::AccountChanged);
         }
         let runtime = self
-            .ready_account_runtime(claim.account())
+            .account_runtime
+            .ready()
             .ok_or(BlockReason::ServiceUnavailable)?;
         runtime
             .admission()

@@ -20,6 +20,7 @@ use std::time::{Duration, Instant};
 struct Sql {
     profile: PathBuf,
     database: String,
+    socket: PathBuf,
     digest: [u8; 32],
     deadline: Arc<Mutex<Instant>>,
     writer: Option<(PathBuf, [u8; 32])>,
@@ -35,6 +36,7 @@ impl Sql {
         Ok(Self {
             profile: config.sql_profile.clone(),
             database: config.database.clone(),
+            socket: config.sql_socket.clone(),
             digest: Sha256::digest(&bytes).into(),
             deadline: Arc::new(Mutex::new(Instant::now())),
             writer: config
@@ -148,13 +150,7 @@ impl CommandExecutor for Sql {
             eprintln!("ADMIN_SQL_PROFILE_CHANGED");
             return Err(Self::refused());
         }
-        let fixed = vec![
-            format!("--defaults-file={}", profile.display()),
-            format!("--database={}", self.database),
-            "--batch".into(),
-            "--skip-column-names".into(),
-            "--raw".into(),
-        ];
+        let fixed = sql_arguments(profile, &self.database, &self.socket);
         let result = SystemCommandExecutor.run_with_stdin_bytes_timeout_and_output_limit(
             "/usr/local/bin/mariadb",
             &fixed,
@@ -178,6 +174,18 @@ impl CommandExecutor for Sql {
         }
         result
     }
+}
+
+fn sql_arguments(profile: &Path, database: &str, socket: &Path) -> [String; 7] {
+    [
+        format!("--defaults-file={}", profile.display()),
+        "--protocol=SOCKET".into(),
+        format!("--socket={}", socket.display()),
+        format!("--database={database}"),
+        "--batch".into(),
+        "--skip-column-names".into(),
+        "--raw".into(),
+    ]
 }
 
 fn sql_failure_code(stderr: &str) -> &'static str {
@@ -341,27 +349,40 @@ where
             Ok(page) => Response::CreateMailboxForm { page },
             Err(reason) => Response::CreateMailboxFailed { reason },
         },
-        Operation::CreateMailbox { token, request } => match Token::presented(&token)
-            .map_err(crate::admin_access::CreateFailure::from)
-            .and_then(|t| backend.create_mailbox_from(&t, &context, &request))
-        {
-            Ok(receipt) => Response::MailboxCreated { receipt },
-            Err(reason) => Response::CreateMailboxFailed { reason },
-        },
+        Operation::CreateMailbox { token, request } => {
+            let result = Token::presented(&token)
+                .map_err(crate::admin_access::CreateFailure::from)
+                .and_then(|t| backend.create_mailbox_from(&t, &context, &request));
+            let outcome = match &result {
+                Ok(receipt) if receipt.setup_pending => "pending_setup_recorded",
+                Ok(_) => "mailbox_recorded",
+                Err(reason) => reason.action_outcome(),
+            };
+            log_action("mailbox.create", outcome);
+            match result {
+                Ok(receipt) => Response::MailboxCreated { receipt },
+                Err(reason) => Response::CreateMailboxFailed { reason },
+            }
+        }
         Operation::Login {
             login,
             password,
             totp,
         } => match backend.login_from(&context, &login, &password, &totp) {
-            Ok(token) => Response::SignedIn {
-                token: token.as_str().into(),
-            },
+            Ok(token) => {
+                log_action("login", "signed_in");
+                Response::SignedIn {
+                    token: token.as_str().into(),
+                }
+            }
             Err(crate::admin_access::Error::Unavailable) => {
                 eprintln!("ADMIN_LOGIN_DEPENDENCY_UNAVAILABLE");
+                log_action("login", "unavailable");
                 Response::Unavailable
             }
             Err(_) => {
                 eprintln!("ADMIN_LOGIN_NOT_COMPLETED");
+                log_action("login", "denied");
                 Response::Denied
             }
         },
@@ -435,11 +456,31 @@ where
         Operation::Logout { token, csrf } => match Token::presented(&token)
             .and_then(|token| backend.logout_from(&token, &csrf, &context))
         {
-            Ok(()) => Response::SignedOut,
-            Err(crate::admin_access::Error::Unavailable) => Response::Unavailable,
-            Err(_) => Response::Denied,
+            Ok(()) => {
+                log_action("logout", "signed_out");
+                Response::SignedOut
+            }
+            Err(crate::admin_access::Error::Unavailable) => {
+                log_action("logout", "unavailable");
+                Response::Unavailable
+            }
+            Err(_) => {
+                log_action("logout", "denied");
+                Response::Denied
+            }
         },
     }
+}
+
+fn log_action(action: &'static str, outcome: &'static str) {
+    use std::io::Write as _;
+    let at = crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider);
+    // The protected operation table remains the detailed creation audit source.
+    // A logging error cannot turn a committed action into an unknown response.
+    let _ = writeln!(
+        std::io::stderr().lock(),
+        "osmap_admin_action unix={at} action={action} outcome={outcome}"
+    );
 }
 
 fn inventory_error(error: crate::admin_access::Error) -> Response {
@@ -457,6 +498,28 @@ fn inventory_error(error: crate::admin_access::Error) -> Response {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn fixed_sql_command_pins_socket_and_database_after_private_profile() {
+        use crate::account_password_backend::{SQL_DATABASE, SQL_SOCKET};
+        let args = sql_arguments(
+            Path::new("/writer.cnf"),
+            SQL_DATABASE,
+            Path::new(SQL_SOCKET),
+        );
+        assert_eq!(
+            args,
+            [
+                "--defaults-file=/writer.cnf",
+                "--protocol=SOCKET",
+                "--socket=/var/run/mysql/mysql.sock",
+                "--database=postfixadmin",
+                "--batch",
+                "--skip-column-names",
+                "--raw",
+            ]
+        );
+    }
+
     #[test]
     fn native_sql_diagnostic_keeps_private_error_text_out_of_export() {
         assert_eq!(

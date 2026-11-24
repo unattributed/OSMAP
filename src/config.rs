@@ -5,7 +5,7 @@
 //! - defaults are conservative and loopback-bound
 //! - secrets are expected to be supplied out-of-band by operators later
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -258,8 +258,9 @@ pub struct OpenPgpInventoryConfig {
 /// Complete private account-service configuration; absence retains legacy mode.
 #[derive(Clone, PartialEq, Eq)]
 pub struct AccountRuntimeConfig {
-    /// Exact canonical identity for a bounded rollout; None preserves global mode.
-    pub rollout_account: Option<String>,
+    /// Exact canonical identities for a bounded rollout; None preserves global mode.
+    pub rollout_accounts: Option<BTreeSet<String>>,
+    pub automatic_enrollment: bool,
     pub admission_socket: PathBuf,
     pub admission_key_file: PathBuf,
     pub admission_helper_uid: u32,
@@ -267,6 +268,10 @@ pub struct AccountRuntimeConfig {
     pub mutation_key_file: PathBuf,
     pub session_proof_key_file: PathBuf,
     pub mutation_helper_uid: u32,
+}
+
+pub(crate) fn account_in_rollout(accounts: Option<&BTreeSet<String>>, account: &str) -> bool {
+    accounts.is_none_or(|selected| selected.contains(account))
 }
 /// Fixed local sockets created by the authoritative Rust account service.
 /// Never substitute a cross-host SSH relay socket in production.
@@ -357,19 +362,41 @@ pub(crate) fn parse_account_runtime(
     let error = || {
         BootstrapError::InvalidConfig { field: "OSMAP_ACCOUNT_ADMISSION_SOCKET", reason: "complete distinct admission/mutation endpoints, purpose keys, session proof and explicit decimal peer UIDs are required together".into() }
     };
-    let rollout_account = env
+    let rollout_accounts = env
         .get("OSMAP_ACCOUNT_ROLLOUT_ACCOUNT")
-        .map(|account| {
-            crate::account_admission::valid_account(account).map_err(|_| {
-                BootstrapError::InvalidConfig {
-                    field: "OSMAP_ACCOUNT_ROLLOUT_ACCOUNT",
-                    reason: "one exact canonical account is required".into(),
+        .map(|value| {
+            let mut accounts = BTreeSet::new();
+            for account in value.split(',') {
+                if accounts.len() == 64
+                    || crate::account_admission::valid_account(account).is_err()
+                    || !accounts.insert(account.to_owned())
+                {
+                    return Err(BootstrapError::InvalidConfig {
+                        field: "OSMAP_ACCOUNT_ROLLOUT_ACCOUNT",
+                        reason: "expected 1 to 64 distinct canonical accounts separated by commas"
+                            .into(),
+                    });
                 }
-            })?;
-            Ok::<_, BootstrapError>(account.clone())
+            }
+            Ok(accounts)
         })
         .transpose()?;
-    if FIELDS.iter().all(|field| !env.contains_key(*field)) && rollout_account.is_none() {
+    const AUTOMATIC: &str = "OSMAP_ACCOUNT_AUTOMATIC_ENROLLMENT";
+    let invalid_automatic = || {
+        BootstrapError::InvalidConfig {
+        field: AUTOMATIC,
+        reason: "automatic enrollment requires enabled or disabled, and enabled requires scoped native local account services".into(),
+    }
+    };
+    let automatic_enrollment = match env.get(AUTOMATIC).map(String::as_str) {
+        None | Some("disabled") => false,
+        Some("enabled") => true,
+        Some(_) => return Err(invalid_automatic()),
+    };
+    if FIELDS.iter().all(|field| !env.contains_key(*field))
+        && rollout_accounts.is_none()
+        && !automatic_enrollment
+    {
         return Ok(None);
     }
     if FIELDS.iter().any(|field| !env.contains_key(*field)) {
@@ -385,7 +412,8 @@ pub(crate) fn parse_account_runtime(
         Ok(value)
     };
     let value = AccountRuntimeConfig {
-        rollout_account,
+        rollout_accounts,
+        automatic_enrollment,
         admission_socket: path(FIELDS[0])?,
         admission_key_file: path(FIELDS[1])?,
         admission_helper_uid: uid(FIELDS[2])?,
@@ -394,6 +422,15 @@ pub(crate) fn parse_account_runtime(
         session_proof_key_file: path(FIELDS[5])?,
         mutation_helper_uid: uid(FIELDS[6])?,
     };
+    if automatic_enrollment
+        && (value.rollout_accounts.is_none()
+            || value.admission_socket != Path::new(LOCAL_ACCOUNT_ADMISSION_SOCKET)
+            || value.mutation_socket != Path::new(LOCAL_ACCOUNT_MUTATION_SOCKET)
+            || value.admission_helper_uid != 0
+            || value.mutation_helper_uid != 0)
+    {
+        return Err(invalid_automatic());
+    }
     if value.admission_socket == value.mutation_socket
         || value.admission_key_file == value.mutation_key_file
         || value.admission_key_file == value.session_proof_key_file
@@ -1619,7 +1656,7 @@ mod tests {
         let config = AppConfig::from_env_map(&values).unwrap();
         assert!(config.account_runtime.is_some());
         assert_eq!(
-            config.account_runtime.as_ref().unwrap().rollout_account,
+            config.account_runtime.as_ref().unwrap().rollout_accounts,
             None
         );
         assert_eq!(
@@ -1654,9 +1691,8 @@ mod tests {
                 .unwrap()
                 .account_runtime
                 .unwrap()
-                .rollout_account
-                .as_deref(),
-            Some("alice@example.test")
+                .rollout_accounts,
+            Some(BTreeSet::from(["alice@example.test".into()]))
         );
         assert!(AppConfig::from_env_map(&BTreeMap::from([(
             selector.into(),
@@ -1669,11 +1705,36 @@ mod tests {
             "alice@example.test ",
             "*",
             "alice",
-            "alice@example.test,bob@example.test",
+            "alice@example.test,",
+            "alice@example.test, bob@example.test",
+            "alice@example.test,alice@example.test",
         ] {
             scoped.insert(selector.into(), bad.into());
             assert!(AppConfig::from_env_map(&scoped).is_err(), "{bad}");
         }
+        scoped.insert(
+            selector.into(),
+            "alice@example.test,bob@example.test".into(),
+        );
+        assert_eq!(
+            AppConfig::from_env_map(&scoped)
+                .unwrap()
+                .account_runtime
+                .unwrap()
+                .rollout_accounts,
+            Some(BTreeSet::from([
+                "alice@example.test".into(),
+                "bob@example.test".into(),
+            ]))
+        );
+        scoped.insert(
+            selector.into(),
+            (0..65)
+                .map(|i| format!("user{i}@example.test"))
+                .collect::<Vec<_>>()
+                .join(","),
+        );
+        assert!(AppConfig::from_env_map(&scoped).is_err());
     }
     #[test]
     fn sender_identity_authority_config_is_optional_absolute_and_not_alias_provisioning() {

@@ -84,6 +84,8 @@ pub mod http_support;
 pub mod http_ui;
 pub mod identity;
 pub mod identity_preferences;
+#[cfg(unix)]
+mod initial_factor;
 pub mod key_management;
 pub mod logging;
 pub mod mail_address;

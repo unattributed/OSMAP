@@ -286,7 +286,7 @@ mod back_focus;
 mod reader_toolbar;
 
 // Reuse the retained login logo in every branded application header.
-const OSMAP_BRAND_SHIELD: &str = "<svg class=\"login-shield\" aria-hidden=\"true\" viewBox=\"0 0 64 72\" role=\"img\"><path d=\"M32 4 56 13v18c0 17-9 29-24 37C17 60 8 48 8 31V13L32 4Z\" fill=\"#eaf2ff\" stroke=\"#9db9ee\" stroke-width=\"2\"/><path d=\"M32 10 49 17v14c0 12-6 22-17 29C21 53 15 43 15 31V17l17-7Z\" fill=\"#2f66d8\"/><circle cx=\"32\" cy=\"31\" r=\"7\" fill=\"#fff\"/><path d=\"M29 37h6l2 14H27l2-14Z\" fill=\"#fff\"/></svg>";
+pub(crate) const OSMAP_BRAND_SHIELD: &str = "<svg class=\"login-shield\" aria-hidden=\"true\" viewBox=\"0 0 64 72\" role=\"img\"><path d=\"M32 4 56 13v18c0 17-9 29-24 37C17 60 8 48 8 31V13L32 4Z\" fill=\"#eaf2ff\" stroke=\"#9db9ee\" stroke-width=\"2\"/><path d=\"M32 10 49 17v14c0 12-6 22-17 29C21 53 15 43 15 31V17l17-7Z\" fill=\"#2f66d8\"/><circle cx=\"32\" cy=\"31\" r=\"7\" fill=\"#fff\"/><path d=\"M29 37h6l2 14H27l2-14Z\" fill=\"#fff\"/></svg>";
 
 /// Source-owned action content only. Unmapped actions retain their readable
 /// label instead of receiving a misleading fallback symbol. Message content

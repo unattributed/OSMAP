@@ -56,6 +56,41 @@ The public `openbsd-mailstack` repository supplies the **component topology, tem
 
 ### 3.1 Configuration source precedence
 
+Every new mailbox requires its independent recovery email. Before enabling
+creation, install the reviewed `osmap_initial_accounts` table from the Rust schema
+producer in the same account database. Its `status` must default to `pending`;
+the creator receives INSERT only for `username`, `request_id`, `recovery_email`,
+`revision`, `writer_holder`, `writer_epoch`, `created`, plus necessary SELECT.
+Only the protected root account writer may UPDATE `status` and `activated` and
+perform the reviewed mailbox/password/operation transition. The admin web receives
+none of these grants. Verify actual default/check constraints and grants, the
+configured cache's replay directory and existing contact/factor custody.
+For the existing OpenBSD installation, the runtime permits a mailbox writer only
+on the native account service's database (`postfixadmin`) and local MariaDB
+socket (`/var/run/mysql/mysql.sock`, owned by `_mysql`). Admin SQL uses its own
+credentials. A different socket, database or owner leaves the site read-only.
+When moving from another account database use a distinct admin state directory
+so its sessions and enrolled factors cannot authorize native accounts.
+
+Enable automatic first enrollment with root access-recovery
+`initial_setup: true` and `OSMAP_ACCOUNT_AUTOMATIC_ENROLLMENT=enabled` in the
+protected frontend environment. Both the native helper and frontend must
+support the same signed classification operation. The setting requires the
+fixed local account sockets and an explicit existing
+`OSMAP_ACCOUNT_ROLLOUT_ACCOUNT` list. Keep both protected native rosters and the
+existing selections. The native service checks the exact Admin creation
+record and factor state before dispatching email proof. On completion it
+requires an active mailbox, native password verification, TOTP and an
+epoch-bound session. For other addresses in the signed lookup's scope, a
+confirmed unmanaged result preserves legacy login. An unavailable lookup
+refuses admission. Verify the shared native authority and complete the
+installed journey before marking enrollment ready.
+
+The Admin service writes fixed login, logout and mailbox-creation outcomes to
+its existing private service log. The database operation journal is the
+protected source for action details. Recovery dispatch and pre-submission
+outcomes are recorded by the native account service.
+
 The running host configuration and its authenticated service/process observations are the **current operational fact**. Signed, reviewed repository configuration is the **intended design**. Differences must be inventoried and resolved before any overwrite.
 
 1. Preserve the target host's active configuration and record its state without exposing secrets.

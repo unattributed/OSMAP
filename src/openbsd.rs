@@ -614,6 +614,39 @@ pub(crate) fn private_leaf_unlink(directory: &fs::File, name: &std::ffi::CStr) -
         Err(io::Error::last_os_error())
     }
 }
+
+/// Publish a checked private leaf without replacing an existing destination.
+/// Both names stay beneath the same already admitted directory descriptor.
+pub(crate) fn private_leaf_link(
+    directory: &fs::File,
+    source: &std::ffi::CStr,
+    destination: &std::ffi::CStr,
+) -> io::Result<()> {
+    for name in [source, destination] {
+        if name.to_bytes().is_empty()
+            || matches!(name.to_bytes(), b"." | b"..")
+            || name.to_bytes().contains(&b'/')
+        {
+            return Err(io::ErrorKind::InvalidInput.into());
+        }
+    }
+    // SAFETY: CStr owns terminated names and the live File owns this directory
+    // descriptor for the call. flags=0 cannot follow a source symbolic link.
+    if unsafe {
+        libc::linkat(
+            directory.as_raw_fd(),
+            source.as_ptr(),
+            directory.as_raw_fd(),
+            destination.as_ptr(),
+            0,
+        )
+    } == 0
+    {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
 #[cfg(unix)]
 pub(crate) fn private_leaf_exists(directory: &fs::File, name: &std::ffi::CStr) -> io::Result<bool> {
     let mut info: libc::stat = unsafe { std::mem::zeroed() };
@@ -2263,6 +2296,16 @@ pub(crate) fn effective_gid() -> u32 {
 /// storage. No libc static pointer or caller-selected account is returned.
 #[cfg(unix)]
 pub(crate) fn osmap_runtime_identity() -> io::Result<(u32, u32)> {
+    fixed_runtime_identity(c"_osmap")
+}
+
+#[cfg(unix)]
+pub(crate) fn mysql_runtime_uid() -> io::Result<u32> {
+    fixed_runtime_identity(c"_mysql").map(|(uid, _)| uid)
+}
+
+#[cfg(unix)]
+fn fixed_runtime_identity(name: &std::ffi::CStr) -> io::Result<(u32, u32)> {
     let mut entry: libc::passwd = unsafe { std::mem::zeroed() };
     let mut buffer = [0u8; 16384];
     let mut result = std::ptr::null_mut();
@@ -2270,7 +2313,7 @@ pub(crate) fn osmap_runtime_identity() -> io::Result<(u32, u32)> {
     // lengths; result is checked before the copied numeric fields are used.
     let code = unsafe {
         libc::getpwnam_r(
-            c"_osmap".as_ptr(),
+            name.as_ptr(),
             &mut entry,
             buffer.as_mut_ptr().cast(),
             buffer.len(),

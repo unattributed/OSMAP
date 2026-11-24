@@ -38,6 +38,7 @@ struct StatusRequest {
 pub(crate) struct RuntimePaths {
     pub session_directory: PathBuf,
     pub factor_directory: PathBuf,
+    pub replay_directory: PathBuf,
     pub revoked_directory: PathBuf,
     pub settings_directory: PathBuf,
 }
@@ -107,6 +108,7 @@ fn parse_runtime_paths(bytes: &[u8]) -> Result<RuntimeConfiguration, Error> {
     let paths = RuntimePaths {
         session_directory: select("OSMAP_SESSION_DIR", "sessions")?,
         factor_directory,
+        replay_directory: select("OSMAP_CACHE_DIR", "cache")?.join("totp-replay"),
         revoked_directory,
         settings_directory: select("OSMAP_SETTINGS_DIR", "settings")?,
     };
@@ -160,17 +162,24 @@ fn runtime_paths(runtime_gid: u32) -> Result<RuntimeConfiguration, Error> {
 
 /// Fixed root-owned Web configuration used by the native account service for
 /// its browser recovery adapter. It never accepts request-selected paths.
-pub(crate) fn browser_recovery_paths(
-) -> Result<(RuntimePaths, u32, u32, Option<String>, u64), Error> {
+pub(crate) fn browser_recovery_paths() -> Result<BrowserRecoveryStartup, Error> {
     let (uid, gid) = runtime_identity()?;
-    let (paths, selected, idle) = browser_recovery_fence(gid)?;
-    Ok((paths, uid, gid, selected, idle))
+    Ok((browser_recovery_fence(gid)?, uid, gid))
 }
+
+type BrowserRecoveryStartup = (BrowserRecoveryFence, u32, u32);
+
+#[derive(PartialEq, Eq)]
+pub(crate) struct BrowserRecoveryFence {
+    pub paths: RuntimePaths,
+    pub selected: Option<BTreeSet<String>>,
+    pub session_idle_seconds: u64,
+    pub automatic_enrollment: bool,
+}
+
 /// Recheck the fixed frontend fence after unveil without repeating user-db
 /// discovery; the native service already captured its trusted runtime identity.
-pub(crate) fn browser_recovery_fence(
-    runtime_gid: u32,
-) -> Result<(RuntimePaths, Option<String>, u64), Error> {
+pub(crate) fn browser_recovery_fence(runtime_gid: u32) -> Result<BrowserRecoveryFence, Error> {
     let config = runtime_paths(runtime_gid)?;
     let frontend = config
         .frontend_account_runtime
@@ -183,11 +192,12 @@ pub(crate) fn browser_recovery_fence(
     {
         return Err(Error::Unauthorized);
     }
-    Ok((
-        config.paths,
-        frontend.rollout_account,
-        config.session_idle_seconds,
-    ))
+    Ok(BrowserRecoveryFence {
+        paths: config.paths,
+        selected: frontend.rollout_accounts,
+        session_idle_seconds: config.session_idle_seconds,
+        automatic_enrollment: frontend.automatic_enrollment,
+    })
 }
 
 fn frontend_admission(
@@ -205,10 +215,7 @@ fn frontend_admission(
         || profile.mutation_socket != Path::new(crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET)
         || profile.admission_helper_uid != 0
         || profile.mutation_helper_uid != 0
-        || profile
-            .rollout_account
-            .as_deref()
-            .is_some_and(|selected| selected != account)
+        || !crate::config::account_in_rollout(profile.rollout_accounts.as_ref(), account)
     {
         return Err(Error::Unauthorized);
     }
@@ -481,6 +488,20 @@ mod tests {
         );
         assert_eq!(
             frontend_admission(&selected.frontend_account_runtime, BOB),
+            Err(Error::Unauthorized)
+        );
+        let selected = parse_runtime_paths(
+            format!("{NATIVE_ACCOUNT}OSMAP_ACCOUNT_ROLLOUT_ACCOUNT={ALICE},{BOB}\n").as_bytes(),
+        )
+        .unwrap();
+        for account in [ALICE, BOB] {
+            assert_eq!(
+                frontend_admission(&selected.frontend_account_runtime, account),
+                Ok(())
+            );
+        }
+        assert_eq!(
+            frontend_admission(&selected.frontend_account_runtime, "carol@recovery.invalid"),
             Err(Error::Unauthorized)
         );
         let disabled = parse_runtime_paths(b"OSMAP_STATE_DIR=/var/lib/custom\n").unwrap();

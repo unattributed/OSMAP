@@ -423,7 +423,8 @@ impl Drop for SessionFileLock {
 /// Issues, validates, and revokes browser sessions.
 pub struct SessionService<S, T, R> {
     epoch_authority: Option<std::sync::Arc<dyn crate::account_admission::EpochAuthority>>,
-    epoch_account: Option<String>,
+    epoch_accounts: Option<std::collections::BTreeSet<String>>,
+    automatic_enrollment: bool,
     session_store: S,
     time_provider: T,
     random_source: R,
@@ -438,32 +439,74 @@ impl<S, T, R> SessionService<S, T, R> {
         authority: std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
     ) -> Self {
         self.epoch_authority = Some(authority);
-        self.epoch_account = None;
+        self.epoch_accounts = None;
         self
     }
 
-    /// Enforce authority only for the configured canonical identity. Other
+    /// Enforce authority only for the configured canonical identities. Other
     /// accounts retain the Disabled contract, including refusal of bound epochs.
-    pub(crate) fn with_account_epoch_authority(
+    pub(crate) fn with_scoped_epoch_authority(
         mut self,
-        account: String,
+        accounts: std::collections::BTreeSet<String>,
         authority: std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
     ) -> Self {
         self.epoch_authority = Some(authority);
-        self.epoch_account = Some(account);
+        self.epoch_accounts = Some(accounts);
         self
     }
 
-    fn check_epoch(&self, account: &str, epoch: Option<u64>) -> Result<(), SessionError> {
+    pub(crate) fn with_automatic_enrollment(mut self, enabled: bool) -> Self {
+        self.automatic_enrollment = enabled;
+        self
+    }
+
+    fn requires_automatic_scope(&self, account: &str) -> bool {
+        self.automatic_enrollment
+            && !crate::config::account_in_rollout(self.epoch_accounts.as_ref(), account)
+            && crate::account_admission::valid_account(account).is_ok()
+    }
+
+    fn check_legacy_scope(&self, account: &str, epoch: Option<u64>) -> Result<bool, SessionError> {
+        if epoch.is_some() || !self.requires_automatic_scope(account) {
+            return Ok(false);
+        }
+        let scope_unavailable = || SessionError::StoreFailure {
+            reason: "account scope unavailable".into(),
+        };
+        let managed = self
+            .epoch_authority
+            .as_ref()
+            .ok_or_else(scope_unavailable)?
+            .managed(account)
+            .map_err(|_| scope_unavailable())?;
+        if managed {
+            return Err(SessionError::StoreFailure {
+                reason: "managed account requires an epoch-bound session".into(),
+            });
+        }
+        Ok(true)
+    }
+
+    fn check_epoch(
+        &self,
+        account: &str,
+        epoch: Option<u64>,
+        checked_legacy: Option<&str>,
+    ) -> Result<(), SessionError> {
         if epoch.is_some_and(|value| !crate::account_admission::valid_epoch(value)) {
             return Err(SessionError::StoreFailure {
                 reason: "account epoch binding invalid".into(),
             });
         }
+        let automatic_scope = self.requires_automatic_scope(account);
+        if automatic_scope && epoch.is_none() && checked_legacy != Some(account) {
+            return Err(SessionError::StoreFailure {
+                reason: "account scope unavailable".into(),
+            });
+        }
         let authority = self.epoch_authority.as_ref().filter(|_| {
-            self.epoch_account
-                .as_deref()
-                .is_none_or(|selected| selected == account)
+            crate::config::account_in_rollout(self.epoch_accounts.as_ref(), account)
+                || (automatic_scope && epoch.is_some())
         });
         match (authority, epoch) {
             (None, None) => Ok(()),
@@ -489,7 +532,8 @@ impl<S, T, R> SessionService<S, T, R> {
     ) -> Self {
         Self {
             epoch_authority: None,
-            epoch_account: None,
+            epoch_accounts: None,
+            automatic_enrollment: false,
             session_store,
             time_provider,
             random_source,
@@ -505,6 +549,26 @@ where
     T: TimeProvider,
     R: RandomSource,
 {
+    // Snapshot only the identity under the store lock. The signed lookup runs
+    // outside it, and the final check compares the identity on the locked record.
+    fn prepare_legacy_scope(&self, session_id: &str) -> Result<Option<String>, SessionError> {
+        if !self.automatic_enrollment {
+            return Ok(None);
+        }
+        let Some(record) = self.session_store.load(session_id)? else {
+            return Ok(None);
+        };
+        if record.revoked_at.is_some()
+            || self
+                .timeout_reason(&record, self.time_provider.unix_timestamp())
+                .is_some()
+        {
+            return Ok(None);
+        }
+        let checked = self.check_legacy_scope(&record.canonical_username, record.account_epoch)?;
+        Ok(checked.then_some(record.canonical_username))
+    }
+
     /// Issues a new session after successful multi-factor authentication.
     pub fn issue(
         &self,
@@ -530,8 +594,14 @@ where
                     reason: format!("invalid canonical username for session: {}", error.as_str()),
                 }
             })?;
+        let checked_legacy =
+            self.check_legacy_scope(canonical_username.as_str(), authenticated_epoch)?;
         self.session_store.with_exclusive_lock(|| {
-            self.check_epoch(canonical_username.as_str(), authenticated_epoch)?;
+            self.check_epoch(
+                canonical_username.as_str(),
+                authenticated_epoch,
+                checked_legacy.then_some(canonical_username.as_str()),
+            )?;
             let issued_at = self.time_provider.unix_timestamp();
             let expires_at = issued_at.saturating_add(self.lifetime_seconds);
             let token = generate_session_token(&self.random_source)?;
@@ -582,14 +652,17 @@ where
         token: &SessionToken,
     ) -> Result<ValidatedSession, SessionError> {
         let session_id = session_id_from_token(token.as_str());
-        self.session_store
-            .with_exclusive_lock(|| self.validate_unlocked(context, &session_id))
+        let checked_legacy = self.prepare_legacy_scope(&session_id)?;
+        self.session_store.with_exclusive_lock(|| {
+            self.validate_unlocked(context, &session_id, checked_legacy.as_deref())
+        })
     }
 
     fn validate_unlocked(
         &self,
         context: &AuthenticationContext,
         session_id: &str,
+        checked_legacy: Option<&str>,
     ) -> Result<ValidatedSession, SessionError> {
         let now = self.time_provider.unix_timestamp();
         let Some(mut record) = self.session_store.load_unlocked(session_id)? else {
@@ -612,7 +685,11 @@ where
             });
         }
 
-        self.check_epoch(&record.canonical_username, record.account_epoch)?;
+        self.check_epoch(
+            &record.canonical_username,
+            record.account_epoch,
+            checked_legacy,
+        )?;
         record.last_seen_at = now;
         self.session_store.save_unlocked(&record)?;
 

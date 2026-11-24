@@ -300,7 +300,7 @@ fn handle_inner<C: Exchange>(
         return crate::admin_ui::error_page(403);
     }
     // This header is admitted only from the UID-checked Unix proxy, whose
-    // protected configuration overwrites it from the accepted TLS connection.
+    // protected configuration supplies the accepted client or fixed local hop.
     // Generic X-Forwarded-* and Forwarded headers never become source authority.
     let Some(client_addr) = request
         .headers
@@ -363,6 +363,7 @@ fn appearance_cookie(preferences: &crate::admin_access::AdminPreferences) -> Str
         preferences.value()
     )
 }
+
 fn dashboard<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) -> HttpResponse {
     let token = match cookie(request, SESSION_COOKIE) {
         Ok(Some(value)) if bearer(value) => value,
@@ -539,8 +540,7 @@ fn mailbox_create<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) ->
                     "domain",
                     "local_part",
                     "display_name",
-                    "password",
-                    "confirmation",
+                    "setup_contact",
                     "totp",
                     "csrf",
                     "request_id",
@@ -561,8 +561,9 @@ fn mailbox_create<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) ->
                 domain: values["domain"].clone(),
                 local_part: values["local_part"].clone(),
                 display_name: values["display_name"].clone(),
-                password: values["password"].clone(),
-                confirmation: values["confirmation"].clone(),
+                password: String::new(),
+                confirmation: String::new(),
+                setup_contact: Some(values["setup_contact"].clone()),
                 totp: values["totp"].clone(),
                 csrf: values["csrf"].clone(),
                 request_id: values["request_id"].clone(),
@@ -620,6 +621,7 @@ fn mailbox_create<C: Exchange>(request: &HttpRequest, addr: &str, client: &C) ->
             if receipt.valid()
                 && Some(receipt.request_id.as_str()) == operation_id.as_deref()
                 && receipt.domain == domain
+                && receipt.setup_pending
                 && Some(receipt.username.as_str()) == expected_username.as_deref()
                 && Some(receipt.quota) == expected_quota =>
         {
@@ -1143,6 +1145,7 @@ mod tests {
             domain: "example.test".into(),
             revision: 7,
             request_id: "b".repeat(64),
+            setup_enabled: true,
         }
     }
 
@@ -1154,12 +1157,13 @@ mod tests {
             username: "alice@example.test".into(),
             request_id: "b".repeat(64),
             quota: 2 * 1_048_576,
+            setup_pending: true,
         }
     }
 
-    fn creation_body(password: &str) -> String {
-        format!("domain=example.test&local_part=ALICE&display_name=Public%20Alice&password={}&confirmation={}&totp=123456&csrf={}&request_id={}&quota_mib=2&revision=7",
-            crate::http_support::url_encode(password),crate::http_support::url_encode(password),"c".repeat(64),"b".repeat(64))
+    fn creation_body() -> String {
+        format!("domain=example.test&local_part=ALICE&display_name=Public%20Alice&setup_contact=owner%40independent.test&totp=123456&csrf={}&request_id={}&quota_mib=2&revision=7",
+            "c".repeat(64),"b".repeat(64))
     }
 
     fn creation_headers() -> String {
@@ -1196,10 +1200,8 @@ mod tests {
     }
 
     #[test]
-    fn create_post_preserves_private_unicode_proof_and_correlates_receipt() {
-        let password = "🦀".repeat(128);
-        let body = creation_body(&password);
-        assert!(body.len() > 2048);
+    fn create_post_sends_offline_contact_and_requires_pending_receipt() {
+        let body = creation_body();
         let request = parse("POST", "/admin/mailboxes/new", &creation_headers(), &body);
         let fake = Fake::new(Response::MailboxCreated {
             receipt: creation_receipt(),
@@ -1208,23 +1210,26 @@ mod tests {
         assert_eq!(response.status_code, 201);
         assert!(
             matches!(&fake.calls.borrow()[0].operation,Operation::CreateMailbox {request,..}
-            if request.password==password && request.confirmation==password && request.local_part=="ALICE"
+            if request.setup_contact.as_deref()==Some("owner@independent.test") && request.password.is_empty() && request.confirmation.is_empty() && request.local_part=="ALICE"
             && request.csrf=="c".repeat(64) && request.request_id=="b".repeat(64) && request.revision==7 && request.quota_mib==2)
         );
         let html = String::from_utf8(response.body).unwrap();
         assert!(html.contains("alice@example.test"));
-        assert!(html.contains("have not yet been verified"));
-        assert!(!html.contains(&password));
+        assert!(html.contains("Recovery email recorded."));
+        assert!(!html.contains("owner@independent.test"));
         assert!(!html.contains("123456"));
         assert!(!html.contains(&token()));
     }
 
     #[test]
     fn create_post_refuses_field_ambiguity_origin_and_public_cookie_before_rpc() {
-        let body = creation_body("public-mailbox-password");
+        let body = creation_body();
         for case in [
             "extra",
             "duplicate",
+            "missing_contact",
+            "empty_contact",
+            "legacy_password",
             "quota_overflow",
             "stale_shape",
             "query",
@@ -1236,6 +1241,22 @@ mod tests {
             match case {
                 "extra" => request.body.extend_from_slice(b"&role=system"),
                 "duplicate" => request.body.extend_from_slice(b"&csrf=forged"),
+                "missing_contact" => {
+                    request.body = body
+                        .replace("&setup_contact=owner%40independent.test", "")
+                        .into_bytes();
+                }
+                "empty_contact" => {
+                    request.body = body.replace("owner%40independent.test", "").into_bytes();
+                }
+                "legacy_password" => {
+                    request.body = body
+                        .replace(
+                            "setup_contact=owner%40independent.test",
+                            "password=old-form-password&confirmation=old-form-password",
+                        )
+                        .into_bytes();
+                }
                 "quota_overflow" => {
                     request.body = body
                         .replace("quota_mib=2", "quota_mib=4294967296")
@@ -1270,13 +1291,18 @@ mod tests {
             "POST",
             "/admin/mailboxes/new",
             &creation_headers(),
-            &creation_body("public-mailbox-password"),
+            &creation_body(),
         );
         let mut wrong = creation_receipt();
         wrong.request_id = "d".repeat(64);
+        let mut contact_unconfirmed = creation_receipt();
+        contact_unconfirmed.setup_pending = false;
         for response in [
             Response::Unavailable,
             Response::MailboxCreated { receipt: wrong },
+            Response::MailboxCreated {
+                receipt: contact_unconfirmed,
+            },
         ] {
             let fake = Fake::new(response);
             let response = handle(&config(), &request, &fake);

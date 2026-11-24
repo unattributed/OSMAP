@@ -20,6 +20,8 @@ struct Native {
     epoch: Cell<u64>,
     revision: Cell<u64>,
     factor: RefCell<String>,
+    purpose: Cell<Purpose>,
+    provision: RefCell<Option<(String, u64)>>,
     lookups: Cell<usize>,
 }
 impl Authority for Native {
@@ -31,7 +33,14 @@ impl Authority for Native {
                 verified_email: "recovery@example.test".into(),
                 contact_revision: self.revision.get(),
                 verified_at: 1,
-                existing_factor_sha256: self.factor.borrow().clone(),
+                purpose: self.purpose.get(),
+                factor: self.provision.borrow().as_ref().map_or_else(
+                    || FactorBinding::Existing(self.factor.borrow().clone()),
+                    |(operation, revision)| FactorBinding::Absent {
+                        provision_operation: operation.clone(),
+                        revision: *revision,
+                    },
+                ),
             }),
         )
     }
@@ -85,6 +94,8 @@ impl Fixture {
                 epoch: Cell::new(3),
                 revision: Cell::new(1),
                 factor: RefCell::new("a".repeat(64)),
+                purpose: Cell::new(Purpose::AccountRecoverySetup),
+                provision: RefCell::new(None),
                 lookups: Cell::new(0),
             },
             mail: Mail {
@@ -174,6 +185,144 @@ fn email_proof_issues_only_bound_restricted_grant_and_stores_no_plaintext_secret
     assert!(!disk.contains(&format!("\"{}\"", f.mail.sent.borrow()[0].1)));
     assert!(!disk.contains("recovery@example.test"));
     assert!(!format!("{grant:?}").contains(grant.token()));
+}
+
+#[test]
+fn initial_setup_reuses_six_digit_proof_and_one_use_restricted_grant() {
+    let f = Fixture::new();
+    f.native.purpose.set(Purpose::InitialAccountSetup);
+    f.native.epoch.set(0);
+    *f.native.provision.borrow_mut() = Some(("b".repeat(64), 7));
+    let grant = f.grant();
+    let code = f.mail.sent.borrow()[0].1.clone();
+    assert!(code.len() == 6 && code.bytes().all(|byte| byte.is_ascii_digit()));
+    assert_eq!(grant.binding.purpose, Purpose::InitialAccountSetup);
+    assert_eq!(
+        grant.binding.factor,
+        FactorBinding::Absent {
+            provision_operation: "b".repeat(64),
+            revision: 7,
+        }
+    );
+    assert!(grant.binding.factor.existing_sha256().is_none());
+    let calls = Cell::new(0);
+    f.store
+        .consume_grant(
+            grant.token(),
+            FLOW,
+            102,
+            Fixture::deadline(),
+            &f.native,
+            |binding| {
+                assert_eq!(binding.purpose, Purpose::InitialAccountSetup);
+                calls.set(calls.get() + 1);
+                Ok(())
+            },
+        )
+        .unwrap();
+    assert!(f
+        .store
+        .consume_grant(
+            grant.token(),
+            FLOW,
+            103,
+            Fixture::deadline(),
+            &f.native,
+            |_| {
+                calls.set(calls.get() + 1);
+                Ok(())
+            }
+        )
+        .is_err());
+    assert_eq!(calls.get(), 1);
+}
+
+#[test]
+fn purpose_mismatch_or_changed_pending_operation_never_dispatches_setup() {
+    for change in 0..3 {
+        let f = Fixture::new();
+        f.native.purpose.set(Purpose::InitialAccountSetup);
+        f.native.epoch.set(0);
+        *f.native.provision.borrow_mut() = Some(("b".repeat(64), 7));
+        let grant = f.grant();
+        match change {
+            0 => {
+                f.native.purpose.set(Purpose::AccountRecoverySetup);
+                *f.native.provision.borrow_mut() = None;
+            }
+            1 => *f.native.provision.borrow_mut() = Some(("d".repeat(64), 7)),
+            _ => *f.native.provision.borrow_mut() = Some(("b".repeat(64), 8)),
+        }
+        let dispatched = Cell::new(false);
+        assert!(f
+            .store
+            .consume_grant(
+                grant.token(),
+                FLOW,
+                102,
+                Fixture::deadline(),
+                &f.native,
+                |_| {
+                    dispatched.set(true);
+                    Ok(())
+                }
+            )
+            .is_err());
+        assert!(!dispatched.get());
+    }
+    // Neither purpose may adopt the other's factor state, even if an authority
+    // adapter accidentally constructs an inconsistent eligibility record.
+    for purpose in [Purpose::AccountRecoverySetup, Purpose::InitialAccountSetup] {
+        let f = Fixture::new();
+        f.native.purpose.set(purpose);
+        if purpose == Purpose::AccountRecoverySetup {
+            *f.native.provision.borrow_mut() = Some(("b".repeat(64), 7));
+        } else {
+            f.native.epoch.set(0);
+        }
+        assert_eq!(
+            f.store
+                .start(
+                    Start {
+                        account: ALICE,
+                        source: "192.0.2.1",
+                        flow: FLOW,
+                        now: 100,
+                        deadline: Fixture::deadline()
+                    },
+                    &f.native,
+                    &f.mail
+                )
+                .unwrap_err(),
+            Error::Unavailable
+        );
+        assert!(f.mail.sent.borrow().is_empty());
+    }
+}
+
+#[test]
+fn legacy_registered_grant_encoding_and_contact_digest_remain_readable() {
+    let f = Fixture::new();
+    let grant = f.grant();
+    let key = token_key(grant.token()).unwrap();
+    let raw = f.store.grants.read(slot(&key)).unwrap().unwrap();
+    let mut legacy: serde_json::Value = serde_json::from_slice(&raw).unwrap();
+    let fields = legacy.as_object_mut().unwrap();
+    let factor = fields.remove("factor").unwrap();
+    fields.insert("existing_factor_sha256".into(), factor);
+    fields.remove("purpose");
+    let parsed = parse_grant(serde_json::to_vec(&legacy).unwrap(), 102).unwrap();
+    assert_eq!(parsed.purpose, Purpose::AccountRecoverySetup);
+    assert_eq!(
+        parsed.factor.existing_sha256(),
+        Some("a".repeat(64).as_str())
+    );
+    let original_digest = digest(
+        "osmap-access-contact-v1",
+        &serde_json::to_vec(&("recovery@example.test", 1_u64, 1_u64, "a".repeat(64))).unwrap(),
+    );
+    assert_eq!(parsed.contact_digest, original_digest);
+    validate_grant(&parsed, 102, Fixture::deadline(), &f.native).unwrap();
 }
 
 #[test]
@@ -484,7 +633,10 @@ fn opaque_challenge_resolves_account_and_enforces_browser_flow_through_grant() {
         )
         .unwrap();
     assert_eq!(grant.binding.account, ALICE);
-    assert_eq!(grant.binding.existing_factor_sha256, "a".repeat(64));
+    assert_eq!(
+        grant.binding.factor.existing_sha256(),
+        Some("a".repeat(64).as_str())
+    );
     assert_eq!(
         f.store
             .lookup_grant(

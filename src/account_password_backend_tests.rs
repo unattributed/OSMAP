@@ -753,7 +753,7 @@ fn recovery_writer_shares_real_cas_without_fabricating_current_password() {
         purpose: crate::access_recovery::Purpose::AccountRecoverySetup,
         expires_at: 1000,
         flow_sha256: "a".repeat(64),
-        existing_factor_sha256: "b".repeat(64),
+        factor: crate::access_recovery::FactorBinding::Existing("b".repeat(64)),
     };
     let backend = Backend::new(Executor::new(vec![row(), hash(), receipt("1")]));
     let snapshot = backend.read(ACCOUNT, deadline()).unwrap();
@@ -772,4 +772,352 @@ fn recovery_writer_shares_real_cas_without_fabricating_current_password() {
         .reset_after_recovery(snapshot, &grant, "short", "short", deadline(), || Ok(()))
         .is_err());
     assert_eq!(refused.executor.calls.borrow().len(), 1);
+}
+
+fn pending_row() -> Result<CommandExecution, CommandExecutionError> {
+    ok(format!(
+        "{}\t{}\t{}\t7\t100\t{}\t{}\t1\n",
+        upper_hex(ACCOUNT.as_bytes()),
+        upper_hex(b"owner@outside.test"),
+        "b".repeat(64),
+        "c".repeat(64),
+        "d".repeat(32)
+    ))
+}
+fn initial_grant() -> crate::access_recovery::GrantBinding {
+    crate::access_recovery::GrantBinding {
+        account: ACCOUNT.into(),
+        epoch: 0,
+        purpose: crate::access_recovery::Purpose::InitialAccountSetup,
+        expires_at: 1000,
+        flow_sha256: "a".repeat(64),
+        factor: crate::access_recovery::FactorBinding::Absent {
+            provision_operation: "b".repeat(64),
+            revision: 7,
+        },
+    }
+}
+
+#[test]
+fn creation_registration_uses_only_durable_pair_and_fails_closed_on_conflict() {
+    let name = upper_hex(ACCOUNT.as_bytes());
+    let domain = upper_hex(b"example.test");
+    let operation = "b".repeat(64);
+    let row =
+        format!("{name}\t{name}\t{domain}\tmailbox.create\t{operation}\t{operation}\tpending\t0\n");
+    for (phase, expected) in [
+        (
+            "pending\t0",
+            CreationRegistration::Pending(operation.clone()),
+        ),
+        (
+            "complete\t0",
+            CreationRegistration::Complete(operation.clone(), false),
+        ),
+        (
+            "complete\t1",
+            CreationRegistration::Complete(operation.clone(), true),
+        ),
+    ] {
+        let backend = Backend::new(Executor::new(vec![ok(row.replace("pending\t0", phase))]));
+        assert_eq!(
+            backend.creation_registration(ACCOUNT, deadline()),
+            Ok(Some(expected))
+        );
+        let calls = backend.executor.calls.borrow();
+        let query = std::str::from_utf8(&calls[0].input).unwrap();
+        assert_eq!(calls.len(), 1);
+        for required in [
+            "LEFT JOIN osmap_admin_operations o ON o.username=requested.username",
+            "LEFT JOIN osmap_initial_accounts i ON i.username=requested.username",
+            &format!("SELECT BINARY {} AS username", sql_hex(ACCOUNT)),
+            "m.active=1 AND d.active=1 AND d.backupmx=0",
+        ] {
+            assert!(query.contains(required));
+        }
+        for mutable_authority in [
+            "JOIN admin ",
+            "JOIN alias ",
+            "osmap_admin_writer",
+            "recovery_email",
+            "password",
+        ] {
+            assert!(!query.contains(mutable_authority));
+        }
+    }
+    let lookup =
+        |reply| Backend::new(Executor::new(vec![reply])).creation_registration(ACCOUNT, deadline());
+    assert_eq!(lookup(ok(String::new())), Ok(None));
+    for invalid in [
+        row.replacen(&name, "NULL", 1),
+        row.replace(&name, &upper_hex(b"bob@example.test")),
+        row.replace(&domain, &upper_hex(b"elsewhere.test")),
+        row.replace("mailbox.create", "mailbox.update"),
+        row.replacen(&operation, &"c".repeat(64), 1),
+        row.replace(&operation, "xyz"),
+        row.replace("pending", "invalid"),
+        row.replace("pending\t0", "pending\t1"),
+        format!("{row}{row}"),
+    ] {
+        assert_eq!(
+            lookup(ok(invalid)),
+            Ok(Some(CreationRegistration::Inconsistent))
+        );
+    }
+    assert!(lookup(Err(CommandExecutionError {
+        reason: "unavailable".into()
+    }))
+    .is_err());
+}
+
+#[test]
+fn pending_initial_reads_only_current_disabled_authorized_creation() {
+    let backend = Backend::new(Executor::new(vec![pending_row()]));
+    let pending = backend
+        .pending_initial(ACCOUNT, deadline())
+        .unwrap()
+        .unwrap();
+    assert!(
+        pending.account == ACCOUNT
+            && pending.email == "owner@outside.test"
+            && pending.operation == "b".repeat(64)
+            && pending.revision == 7
+            && pending.approved_at == 100
+    );
+    let calls = backend.executor.calls.borrow();
+    assert!(calls.len() == 1 && calls[0].program == SQL_PROGRAM && calls[0].args == SQL_ARGS);
+    let query = std::str::from_utf8(&calls[0].input).unwrap();
+    for required in [
+        "i.status='pending'",
+        "i.activated IS NULL",
+        "m.active=0 AND m.smtp_active=0",
+        "a.active=1",
+        "BINARY a.goto=BINARY m.username",
+        "actor.active=1",
+        "domain_admins",
+        "BINARY w.holder=BINARY i.writer_holder",
+        "w.epoch=i.writer_epoch",
+        "LIMIT 2",
+    ] {
+        assert!(query.contains(required));
+    }
+    assert!(!query.contains("w.revision=i.revision"));
+    drop(calls);
+    let missing = Backend::new(Executor::new(vec![ok(String::new())]));
+    assert!(missing
+        .pending_initial(ACCOUNT, deadline())
+        .unwrap()
+        .is_none());
+    for text in [
+        "malformed\n".into(),
+        "a\tb\tc\t0\t1\td\te\t1\n".into(),
+        format!(
+            "{}{}",
+            pending_row().unwrap().stdout,
+            pending_row().unwrap().stdout
+        ),
+    ] {
+        assert!(Backend::new(Executor::new(vec![ok(text)]))
+            .pending_initial(ACCOUNT, deadline())
+            .is_err());
+    }
+}
+
+#[test]
+fn completed_initial_contact_keeps_verified_owner_contact_after_password_or_admin_changes() {
+    let text = format!(
+        "{}\t{}\t1\t123\n",
+        upper_hex(ACCOUNT.as_bytes()),
+        upper_hex(b"owner@outside.test")
+    );
+    let backend = Backend::new(Executor::new(vec![ok(text.clone())]));
+    let contact = backend
+        .completed_initial_contact(ACCOUNT, &"b".repeat(64), deadline())
+        .unwrap()
+        .unwrap();
+    assert!(
+        contact.account == ACCOUNT
+            && contact.email == "owner@outside.test"
+            && contact.revision == 1
+            && contact.verified_at == 123
+    );
+    let calls = backend.executor.calls.borrow();
+    assert!(calls.len() == 1 && calls[0].program == SQL_PROGRAM && calls[0].args == SQL_ARGS);
+    let query = std::str::from_utf8(&calls[0].input).unwrap();
+    for term in [
+        &format!("BINARY i.request_id=BINARY {}", sql_hex(&"b".repeat(64))),
+        "i.status='complete'",
+        "i.activated IS NOT NULL",
+        "m.active=1 AND m.smtp_active=1",
+        "o.kind='mailbox.create'",
+        "BINARY o.request_id=BINARY i.request_id",
+        "d.active=1",
+        "BINARY a.goto=BINARY m.username",
+        "a.active=1",
+    ] {
+        assert!(query.contains(term));
+    }
+    for obsolete in [
+        "credential_digest",
+        "SHA2(m.password",
+        "JOIN admin ",
+        "osmap_admin_writer",
+    ] {
+        assert!(!query.contains(obsolete));
+    }
+    drop(calls);
+    let unknown = Backend::new(Executor::new(vec![ok(String::new())]));
+    assert!(unknown
+        .completed_initial_contact(ACCOUNT, &"b".repeat(64), deadline())
+        .unwrap()
+        .is_none());
+    for malformed in [
+        format!("{text}{text}"),
+        "a\tb\t0\t0\n".into(),
+        format!(
+            "{}\t{}\t1\t0\n",
+            upper_hex(ACCOUNT.as_bytes()),
+            upper_hex(b"owner@outside.test")
+        ),
+    ] {
+        assert!(Backend::new(Executor::new(vec![ok(malformed)]))
+            .completed_initial_contact(ACCOUNT, &"b".repeat(64), deadline())
+            .is_err());
+    }
+}
+
+#[test]
+fn initial_activation_proves_factor_before_atomic_pending_account_write_and_readback() {
+    let backend = Backend::new(Executor::new(vec![
+        pending_row(),
+        hash(),
+        ok("activated\n".into()),
+        ok(format!("{}\t{NEXT}\n", upper_hex(new_hash().as_bytes()))),
+    ]));
+    let pending = backend
+        .pending_initial(ACCOUNT, deadline())
+        .unwrap()
+        .unwrap();
+    let installed = RefCell::new(false);
+    let result = backend
+        .activate_initial(
+            pending,
+            &initial_grant(),
+            PASSWORD,
+            PASSWORD,
+            deadline(),
+            || {
+                assert!(backend.executor.calls.borrow().len() == 2);
+                *installed.borrow_mut() = true;
+                Ok(())
+            },
+        )
+        .unwrap();
+    assert!(result.changed_at() == NEXT && *installed.borrow());
+    let calls = backend.executor.calls.borrow();
+    assert!(calls.len() == 4 && calls[1].program == HASH_PROGRAM && calls[1].args == HASH_ARGS);
+    let transaction = std::str::from_utf8(&calls[2].input).unwrap();
+    assert!(transaction.len() < INPUT_LIMIT && transaction.matches("FOR UPDATE").count() >= 7);
+    for required in [
+        "status='pending'",
+        "active=0 AND smtp_active=0",
+        "@admin IS NOT NULL",
+        "@alias IS NOT NULL",
+        "@all IS NOT NULL",
+        "@grant IS NOT NULL",
+        "BINARY @h=BINARY",
+        "UPDATE osmap_admin_operations",
+        "UPDATE osmap_initial_accounts SET status='complete'",
+        "PREPARE osmap_finish",
+        "ROLLBACK",
+    ] {
+        assert!(transaction.contains(required));
+    }
+    assert!(!transaction.contains(PASSWORD));
+}
+
+#[test]
+fn initial_activation_refuses_wrong_authority_before_factor_or_password_dispatch() {
+    for changed in 0..5 {
+        let backend = Backend::new(Executor::new(vec![pending_row()]));
+        let pending = backend
+            .pending_initial(ACCOUNT, deadline())
+            .unwrap()
+            .unwrap();
+        let mut grant = initial_grant();
+        match changed {
+            0 => grant.purpose = crate::access_recovery::Purpose::AccountRecoverySetup,
+            1 => grant.factor = crate::access_recovery::FactorBinding::Existing("a".repeat(64)),
+            2 => {
+                grant.factor = crate::access_recovery::FactorBinding::Absent {
+                    provision_operation: "e".repeat(64),
+                    revision: 7,
+                }
+            }
+            3 => {
+                grant.factor = crate::access_recovery::FactorBinding::Absent {
+                    provision_operation: "b".repeat(64),
+                    revision: 8,
+                }
+            }
+            _ => grant.epoch = 3,
+        }
+        let invoked = RefCell::new(false);
+        assert!(backend
+            .activate_initial(pending, &grant, PASSWORD, PASSWORD, deadline(), || {
+                *invoked.borrow_mut() = true;
+                Ok(())
+            })
+            .is_err());
+        assert!(!*invoked.borrow() && backend.executor.calls.borrow().len() == 1);
+    }
+}
+
+#[test]
+fn initial_factor_side_effect_prevents_retry_after_sql_or_readback_failure() {
+    for replies in [
+        vec![pending_row(), hash(), ok("refused\n".into())],
+        vec![
+            pending_row(),
+            hash(),
+            ok("activated\n".into()),
+            ok("malformed\n".into()),
+        ],
+    ] {
+        let backend = Backend::new(Executor::new(replies));
+        let pending = backend
+            .pending_initial(ACCOUNT, deadline())
+            .unwrap()
+            .unwrap();
+        let called = RefCell::new(false);
+        let result = backend.activate_initial(
+            pending,
+            &initial_grant(),
+            PASSWORD,
+            PASSWORD,
+            deadline(),
+            || {
+                *called.borrow_mut() = true;
+                Ok(())
+            },
+        );
+        assert!(matches!(result, Err(Error::Unconfirmed { .. })) && *called.borrow());
+    }
+    let backend = Backend::new(Executor::new(vec![pending_row(), hash()]));
+    let pending = backend
+        .pending_initial(ACCOUNT, deadline())
+        .unwrap()
+        .unwrap();
+    assert!(matches!(
+        backend.activate_initial(
+            pending,
+            &initial_grant(),
+            PASSWORD,
+            PASSWORD,
+            deadline(),
+            || Err(Error::Refused)
+        ),
+        Err(Error::Unconfirmed { .. })
+    ));
+    assert!(backend.executor.calls.borrow().len() == 2);
 }

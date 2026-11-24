@@ -1,4 +1,5 @@
 use super::*;
+use std::collections::BTreeSet;
 
 #[cfg(all(test, target_os = "openbsd"))]
 #[path = "http_gateway_storage_native_tests.rs"]
@@ -48,7 +49,8 @@ pub struct RuntimeBrowserGateway {
     pub(crate) account_runtime: AccountRuntimeCapability,
     recovery_contact_local_domain: Option<String>,
     recovery_contact_external_delivery: bool,
-    pub(crate) account_rollout: Option<String>,
+    pub(crate) account_rollout: Option<BTreeSet<String>>,
+    pub(crate) automatic_enrollment: bool,
     pub(crate) public_inventory_client: Option<crate::openpgp_inventory_runtime::Client>,
     pub(crate) crypto_client: Option<crate::openpgp_crypto_runtime::Client>,
     pub(crate) public_admin_client: Option<crate::openpgp_public_admin_runtime::Client>,
@@ -160,7 +162,11 @@ impl RuntimeBrowserGateway {
             account_rollout: config
                 .account_runtime
                 .as_ref()
-                .and_then(|value| value.rollout_account.clone()),
+                .and_then(|value| value.rollout_accounts.clone()),
+            automatic_enrollment: config
+                .account_runtime
+                .as_ref()
+                .is_some_and(|value| value.automatic_enrollment),
             public_admin_client: config.openpgp_public_admin.as_ref().and_then(|c| {
                 crate::openpgp_public_admin_runtime::Client::from_operator_files(
                     &c.socket,
@@ -356,6 +362,7 @@ impl RuntimeBrowserGateway {
             recovery_contact_local_domain: None,
             recovery_contact_external_delivery: false,
             account_rollout: None,
+            automatic_enrollment: false,
             public_inventory_client: None,
             crypto_client: None,
             public_admin_client: None,

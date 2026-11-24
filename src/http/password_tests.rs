@@ -728,7 +728,8 @@ mod genuine_http_pilot {
     ) -> crate::config::AccountRuntimeConfig {
         let native = topology == Topology::NativeLocal;
         crate::config::AccountRuntimeConfig {
-            rollout_account: None,
+            rollout_accounts: None,
+            automatic_enrollment: false,
             admission_socket: if native {
                 crate::config::LOCAL_ACCOUNT_ADMISSION_SOCKET.into()
             } else {
@@ -835,7 +836,7 @@ mod genuine_http_pilot {
             local.session_proof_key_file,
             root.join("keys/session-proof.key")
         );
-        assert!(local.rollout_account.is_none());
+        assert!(local.rollout_accounts.is_none());
         assert_eq!(
             fixture_accounts(Topology::NativeLocal),
             fixture_accounts(Topology::PairedRelay)

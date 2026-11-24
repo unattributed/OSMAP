@@ -61,6 +61,19 @@ pub(crate) struct ServiceConfig {
     pub(crate) writer: Option<WriterConfig>,
 }
 
+impl ServiceConfig {
+    /// Read-only installations may inspect a separate database. A writer must
+    /// use the same local MariaDB endpoint as ordinary account recovery.
+    fn restrict_writer_to_account_backend(&mut self, mysql_uid: Option<u32>) {
+        if self.database != crate::account_password_backend::SQL_DATABASE
+            || !account_socket(&self.sql_socket, self.sql_socket_uid, mysql_uid)
+        {
+            self.writer = None;
+            eprintln!("ADMIN_WRITER_ACCOUNT_BACKEND_MISMATCH");
+        }
+    }
+}
+
 /// Explicit local operator opt-in. Never populated from HTTP or RPC.
 #[derive(Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -72,7 +85,15 @@ pub(crate) struct WriterConfig {
     pub(crate) administrators: Vec<String>,
     /// Explicit adopted domain-limit unit; mailbox quota is always bytes.
     pub(crate) domain_quota_unit_bytes: u32,
+    // Earlier writer profiles used this optional marker to select the form.
+    // Every new mailbox now requires its recovery contact.
+    #[serde(default, rename = "onboarding")]
+    pub(crate) _onboarding: Option<OnboardingConfig>,
 }
+
+#[derive(Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct OnboardingConfig {}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -128,7 +149,7 @@ fn file_shape(metadata: &fs::Metadata, owner: u32, config: bool) -> bool {
         }
 }
 
-fn read_file(path: &Path, owner: u32, config: bool) -> Result<Vec<u8>, Error> {
+pub(crate) fn read_file(path: &Path, owner: u32, config: bool) -> Result<Vec<u8>, Error> {
     // Root-owned startup files may reside below the role's protected namespace.
     exact(path, crate::openbsd::effective_uid())?;
     let initial = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
@@ -183,14 +204,31 @@ fn new_socket(path: &Path, owner: u32) -> Result<(), Error> {
     }
 }
 
-fn sql_socket(path: &Path, owner: u32) -> Result<(), Error> {
+fn account_socket(path: &Path, owner: u32, mysql_uid: Option<u32>) -> bool {
+    path.as_os_str() == crate::account_password_backend::SQL_SOCKET && Some(owner) == mysql_uid
+}
+
+fn sql_parent_modes(path: &Path, owner: u32, mysql_uid: Option<u32>) -> &'static [u32] {
+    if account_socket(path, owner, mysql_uid) {
+        // The native _mysql directory permits traversal without listing.
+        &[0o700, 0o750, 0o711]
+    } else {
+        &[0o700, 0o750]
+    }
+}
+
+fn sql_socket(path: &Path, owner: u32, mysql_uid: Option<u32>) -> Result<(), Error> {
     if path.as_os_str().len() > 100 {
         return Err(Error::Invalid);
     }
     exact(path, owner)?;
-    private_dir(path.parent().ok_or(Error::Invalid)?, owner, &[0o700, 0o750])?;
+    private_dir(
+        path.parent().ok_or(Error::Invalid)?,
+        owner,
+        sql_parent_modes(path, owner, mysql_uid),
+    )?;
     let metadata = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
-    // MariaDB may use 0777 on the socket while its 0750 parent controls access.
+    // MariaDB may use 0777 on the socket while its protected parent controls replacement.
     // The selected server UID and protected parent, not a guessed daemon group
     // or version-specific leaf permission, establish this native boundary.
     if !metadata.file_type().is_socket() || metadata.uid() != owner || metadata.nlink() != 1 {
@@ -275,7 +313,8 @@ pub(crate) fn verify_sql_profile(path: &Path) -> Result<(), Error> {
 
 pub(crate) fn load_service(path: &Path) -> Result<ServiceConfig, Error> {
     let raw = read_file(path, 0, true).map_err(|_| Error::ConfigFile)?;
-    let config: ServiceConfig = serde_json::from_slice(&raw).map_err(|_| Error::ConfigSchema)?;
+    let mut config: ServiceConfig =
+        serde_json::from_slice(&raw).map_err(|_| Error::ConfigSchema)?;
     let own = crate::openbsd::effective_uid();
     if own == 0
         || config.web_uid == 0
@@ -292,7 +331,12 @@ pub(crate) fn load_service(path: &Path) -> Result<ServiceConfig, Error> {
     let profile =
         read_file(&config.sql_profile, own, false).map_err(|_| Error::SqlProfileCustody)?;
     profile_options(&profile, &config.sql_socket).map_err(|_| Error::SqlProfileOptions)?;
-    sql_socket(&config.sql_socket, config.sql_socket_uid).map_err(|_| Error::SqlSocket)?;
+    let mysql_uid = crate::openbsd::mysql_runtime_uid().ok();
+    sql_socket(&config.sql_socket, config.sql_socket_uid, mysql_uid)
+        .map_err(|_| Error::SqlSocket)?;
+    if config.writer.is_some() {
+        config.restrict_writer_to_account_backend(mysql_uid);
+    }
     if let Some(writer) = &config.writer {
         if writer.profile == config.sql_profile
             || writer.holder.len() != 32
@@ -489,6 +533,39 @@ mod tests {
         assert!(!web_roles_valid(1001, 1003, 1002));
         assert!(!web_roles_valid(1001, 1001, 1001));
         assert!(!web_roles_valid(0, 0, 1002));
+    }
+
+    #[test]
+    fn only_the_recovery_backend_keeps_the_requested_writer() {
+        use crate::account_password_backend::{SQL_DATABASE, SQL_SOCKET};
+        for (database, socket, mysql_uid, writable) in [
+            (SQL_DATABASE, SQL_SOCKET, Some(502), true),
+            ("isolated", SQL_SOCKET, Some(502), false),
+            (SQL_DATABASE, "/other/mysql.sock", Some(502), false),
+            (SQL_DATABASE, SQL_SOCKET, Some(503), false),
+            (SQL_DATABASE, SQL_SOCKET, None, false),
+        ] {
+            let mut config: ServiceConfig = serde_json::from_value(serde_json::json!({
+                "state":"/state","socket":"/state/listener","web_uid":1001,
+                "sql_profile":"/reader.cnf","sql_socket":socket,
+                "database":database,"sql_socket_uid":502,
+                "writer":{"profile":"/writer.cnf","holder":"a".repeat(32),"epoch":1,
+                    "domains":["example.test"],"administrators":["admin@example.test"],
+                    "domain_quota_unit_bytes":1048576}
+            }))
+            .unwrap();
+            config.restrict_writer_to_account_backend(mysql_uid);
+            assert_eq!(config.writer.is_some(), writable);
+            assert_eq!(config.database, database);
+            assert_eq!(config.sql_socket, Path::new(socket));
+            assert_eq!(config.sql_profile, Path::new("/reader.cnf"));
+            let modes = sql_parent_modes(Path::new(socket), 502, mysql_uid);
+            assert_eq!(
+                modes.contains(&0o711),
+                socket == SQL_SOCKET && mysql_uid == Some(502)
+            );
+            assert!(modes.iter().all(|m| m & 0o022 == 0));
+        }
     }
 
     #[test]
