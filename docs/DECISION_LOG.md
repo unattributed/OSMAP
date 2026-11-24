@@ -2331,3 +2331,12 @@ to **Bin** and **Junk** from the Archive chooser. The owner confirmed that
 the count and folder controls both worked and approved the change.
 [PR #103](https://github.com/unattributed/OSMAP/pull/103) integrated the feature
 and deployment record into `main`.
+
+### 2026-11-24 — accept the first native enrollment journey on obsd1
+
+The operator reported ADM-S04-01 UAT PASS after receipt and verification of the
+external email proof and confirmation of password and first-authenticator
+setup. Read-only native checks confirmed completed activation and active epoch
+state. Accept the journey for the single explicitly admitted test mailbox.
+Subsequent mailboxes still require both native roster entries and an explicit
+frontend rollout selection. [PR #102](https://github.com/unattributed/OSMAP/pull/102)

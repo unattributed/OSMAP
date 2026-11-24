@@ -188,10 +188,10 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Current product slice | **ADM-S04-01**, initial user enrollment: IN_PROGRESS. The owner rejected the separate invitation journey; it is disabled and its parallel private runtime is stopped. Corrected source reuses Forgot password with the administrator's offline-confirmed recovery email. Source checks and installed qualification are recorded in the correction below; the corrected first-enrollment/Inbox journey is NOT_RUN and NOT_ACCEPTED. Automatic native account registration is still unmet. Historical native passes do not qualify this changed composition. |
+| Current product slice | **ADM-S04-01**, initial user enrollment: OWNER_UAT_PASS for one explicitly admitted mailbox on obsd1. The installed flow reuses Forgot password with the administrator's offline-confirmed recovery email. Each new mailbox still requires explicit native roster and frontend rollout entries. |
 | Previous product slice | ADM-S01-02 DELIVERED through [PR #99](https://github.com/unattributed/OSMAP/pull/99), main `8e8294f`; bounded development/isolated mail qualification PASS; basic pages approved, text/icon refinement owner acceptance NOT_ACCEPTED |
 | Earlier product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; final login design owner-approved; whole-slice operator acceptance NOT_ACCEPTED |
-| Selected slice / next boundary | ADM-S04-01 is explicitly approved and brought forward after ADM-S01-03: admin-TOTP pending creation with an offline-confirmed recovery email -> existing Forgot password -> six-digit email proof -> restricted password/first-TOTP enrollment -> actual native OSMAP login. Existing native registration and rollout prerequisites must be met before setup. ADM-S01-04 message delivery remains subsequent work. |
+| Selected slice / next boundary | ADM-S04-01 has owner acceptance for one obsd1 mailbox. ADM-S01-04 message delivery remains a separate subsequent boundary. |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
 | Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
 | ADM-PLAN-03: integrated epic scope | Documentation-only integration of bootstrap, domain/virtual-address/admin management and all 18 security catalogue categories into the sprint/slice index below; no new product work is started or accepted by this amendment |
@@ -2384,3 +2384,22 @@ both tables. Neither contained a creation for the new native site. The admission
 and mutation rosters matched at eight accounts, the web service configuration
 selected a single rollout account, and initial setup was disabled. Earlier
 creation evidence was obtained on the isolated database.
+
+### 2026-11-24 — owner UAT passed for native initial enrollment on obsd1
+
+The owner reported PASS for Forgot password, external recovery email receipt
+and six-digit email proof. The browser reached the restricted password and
+first-authenticator setup, then displayed the confirmation that access was
+updated. The owner reported overall UAT PASS for the assigned journey,
+including the first-login and Inbox handoff. Inbox acceptance rests on that
+owner report.
+
+Readback from the installed obsd1 runtime at
+`c83dd1b09fb18e7d0b0855e9ddec4abb66d257df` confirmed one accepted SMTP queue
+submission after the readiness baseline, a completed enrollment record with
+an activation timestamp, an active mailbox and SMTP flags, an installed
+factor, and active admission epoch state. The native account helper and web
+service passed service checks. The code supports adding exact accounts to the
+existing rollout while keeping the paired protected rosters. This acceptance
+covers the one admitted mailbox. Automatic registration and ADM-S01-04
+message delivery remain open.
