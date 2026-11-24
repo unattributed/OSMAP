@@ -46,7 +46,7 @@ pub(crate) fn mailbox_created_page(receipt: &CreateReceipt) -> HttpResponse {
         "<dl><dt>Mailbox address</dt><dd>{username}</dd><dt>Hosted domain</dt><dd>{domain}</dd>",
         "<dt>Configured quota</dt><dd>{quota_mib} MiB ({quota} bytes)</dd>",
         "<dt>Operation ID</dt><dd style=\"overflow-wrap:anywhere\">{request_id}</dd></dl>",
-        "<p>Recovery email recorded. Once account setup is enabled, the user can choose Forgot password on the OSMAP sign-in page, enter the new OSMAP mailbox address, and request a code. The code goes to the recorded recovery address.</p>",
+        "<p>Recovery email recorded. The mailbox is pending user setup. Once account setup is enabled, the user can choose Forgot password on the OSMAP sign-in page, enter the new OSMAP mailbox address, and request a code. The code goes to the recorded recovery address.</p>",
         "<p>Keep this operation ID when checking the result. Refreshing this submission uses the same operation ID.</p>",
         "<a class=\"button-link\" href=\"/admin/mailboxes?domain={domain_url}\">{back}</a></section>"
     ), username=escape_html(&receipt.username), domain=escape_html(&receipt.domain), quota_mib=receipt.quota / 1_048_576,
