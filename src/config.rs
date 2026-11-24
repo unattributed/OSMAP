@@ -260,6 +260,7 @@ pub struct OpenPgpInventoryConfig {
 pub struct AccountRuntimeConfig {
     /// Exact canonical identities for a bounded rollout; None preserves global mode.
     pub rollout_accounts: Option<BTreeSet<String>>,
+    pub automatic_enrollment: bool,
     pub admission_socket: PathBuf,
     pub admission_key_file: PathBuf,
     pub admission_helper_uid: u32,
@@ -380,7 +381,22 @@ pub(crate) fn parse_account_runtime(
             Ok(accounts)
         })
         .transpose()?;
-    if FIELDS.iter().all(|field| !env.contains_key(*field)) && rollout_accounts.is_none() {
+    const AUTOMATIC: &str = "OSMAP_ACCOUNT_AUTOMATIC_ENROLLMENT";
+    let invalid_automatic = || {
+        BootstrapError::InvalidConfig {
+        field: AUTOMATIC,
+        reason: "automatic enrollment requires enabled or disabled, and enabled requires scoped native local account services".into(),
+    }
+    };
+    let automatic_enrollment = match env.get(AUTOMATIC).map(String::as_str) {
+        None | Some("disabled") => false,
+        Some("enabled") => true,
+        Some(_) => return Err(invalid_automatic()),
+    };
+    if FIELDS.iter().all(|field| !env.contains_key(*field))
+        && rollout_accounts.is_none()
+        && !automatic_enrollment
+    {
         return Ok(None);
     }
     if FIELDS.iter().any(|field| !env.contains_key(*field)) {
@@ -397,6 +413,7 @@ pub(crate) fn parse_account_runtime(
     };
     let value = AccountRuntimeConfig {
         rollout_accounts,
+        automatic_enrollment,
         admission_socket: path(FIELDS[0])?,
         admission_key_file: path(FIELDS[1])?,
         admission_helper_uid: uid(FIELDS[2])?,
@@ -405,6 +422,15 @@ pub(crate) fn parse_account_runtime(
         session_proof_key_file: path(FIELDS[5])?,
         mutation_helper_uid: uid(FIELDS[6])?,
     };
+    if automatic_enrollment
+        && (value.rollout_accounts.is_none()
+            || value.admission_socket != Path::new(LOCAL_ACCOUNT_ADMISSION_SOCKET)
+            || value.mutation_socket != Path::new(LOCAL_ACCOUNT_MUTATION_SOCKET)
+            || value.admission_helper_uid != 0
+            || value.mutation_helper_uid != 0)
+    {
+        return Err(invalid_automatic());
+    }
     if value.admission_socket == value.mutation_socket
         || value.admission_key_file == value.mutation_key_file
         || value.admission_key_file == value.session_proof_key_file

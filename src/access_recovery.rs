@@ -28,6 +28,15 @@ pub enum Error {
     /// A one-use proof/effect was dispatched. It must not be retried blindly.
     Unconfirmed,
 }
+fn log_start_skip(outcome: &'static str) {
+    use std::io::Write as _;
+    let at = crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider);
+    let _ = writeln!(
+        std::io::stderr().lock(),
+        "account_recovery_start unix={at} outcome={outcome} submission=not_attempted"
+    );
+}
+
 impl From<std::io::Error> for Error {
     fn from(value: std::io::Error) -> Self {
         if value.kind() == std::io::ErrorKind::WouldBlock {
@@ -335,6 +344,7 @@ impl Store {
             source_limited: false,
         };
         if !self.source_attempt(request.source, request.now)? {
+            log_start_skip("source_limited");
             return Ok(Started {
                 source_limited: true,
                 ..response
@@ -343,14 +353,21 @@ impl Store {
         before(request.deadline)?;
         let eligible = match authority.eligible(request.account, request.deadline) {
             Ok(Some(value)) => value,
-            Ok(None) | Err(Error::Denied) => return Ok(response),
-            Err(error) => return Err(error),
+            Ok(None) | Err(Error::Denied) => {
+                log_start_skip("ineligible");
+                return Ok(response);
+            }
+            Err(error) => {
+                log_start_skip("authority_unavailable");
+                return Err(error);
+            }
         };
         let contact = contact_digest(&eligible, request.now)?;
         let locked = self.accounts.lock(request.account)?;
         let mut account = account_record(request.account, locked.read()?, request.now)?;
         if let Some(c) = &account.challenge {
             if c.phase == Phase::Verifying {
+                log_start_skip("verification_pending");
                 return Ok(response);
             }
             if c.phase == Phase::GrantIssued {
@@ -362,6 +379,7 @@ impl Store {
                                 || (grant.state == GrantState::Pending
                                     && request.now < grant.expires_at))
                         {
+                            log_start_skip("grant_pending");
                             return Ok(response);
                         }
                     }
@@ -374,6 +392,7 @@ impl Store {
                     .last()
                     .is_some_and(|at| request.now.saturating_sub(*at) < 60)
             {
+                log_start_skip("recent_challenge");
                 if c.flow_sha256 != flow_sha256 {
                     return Ok(response);
                 }
@@ -388,6 +407,7 @@ impl Store {
             .sends
             .retain(|at| request.now.saturating_sub(*at) < 3600);
         if account.sends.len() >= 3 {
+            log_start_skip("account_limited");
             return Ok(response);
         }
         before(request.deadline)?;
@@ -405,6 +425,7 @@ impl Store {
             if request.now < previous.expires_at
                 || self.account_uncertain(&previous.account, request.now)?
             {
+                log_start_skip("challenge_slot_busy");
                 return Ok(response);
             }
         }

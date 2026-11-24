@@ -349,27 +349,40 @@ where
             Ok(page) => Response::CreateMailboxForm { page },
             Err(reason) => Response::CreateMailboxFailed { reason },
         },
-        Operation::CreateMailbox { token, request } => match Token::presented(&token)
-            .map_err(crate::admin_access::CreateFailure::from)
-            .and_then(|t| backend.create_mailbox_from(&t, &context, &request))
-        {
-            Ok(receipt) => Response::MailboxCreated { receipt },
-            Err(reason) => Response::CreateMailboxFailed { reason },
-        },
+        Operation::CreateMailbox { token, request } => {
+            let result = Token::presented(&token)
+                .map_err(crate::admin_access::CreateFailure::from)
+                .and_then(|t| backend.create_mailbox_from(&t, &context, &request));
+            let outcome = match &result {
+                Ok(receipt) if receipt.setup_pending => "pending_setup_recorded",
+                Ok(_) => "mailbox_recorded",
+                Err(reason) => reason.action_outcome(),
+            };
+            log_action("mailbox.create", outcome);
+            match result {
+                Ok(receipt) => Response::MailboxCreated { receipt },
+                Err(reason) => Response::CreateMailboxFailed { reason },
+            }
+        }
         Operation::Login {
             login,
             password,
             totp,
         } => match backend.login_from(&context, &login, &password, &totp) {
-            Ok(token) => Response::SignedIn {
-                token: token.as_str().into(),
-            },
+            Ok(token) => {
+                log_action("login", "signed_in");
+                Response::SignedIn {
+                    token: token.as_str().into(),
+                }
+            }
             Err(crate::admin_access::Error::Unavailable) => {
                 eprintln!("ADMIN_LOGIN_DEPENDENCY_UNAVAILABLE");
+                log_action("login", "unavailable");
                 Response::Unavailable
             }
             Err(_) => {
                 eprintln!("ADMIN_LOGIN_NOT_COMPLETED");
+                log_action("login", "denied");
                 Response::Denied
             }
         },
@@ -443,11 +456,31 @@ where
         Operation::Logout { token, csrf } => match Token::presented(&token)
             .and_then(|token| backend.logout_from(&token, &csrf, &context))
         {
-            Ok(()) => Response::SignedOut,
-            Err(crate::admin_access::Error::Unavailable) => Response::Unavailable,
-            Err(_) => Response::Denied,
+            Ok(()) => {
+                log_action("logout", "signed_out");
+                Response::SignedOut
+            }
+            Err(crate::admin_access::Error::Unavailable) => {
+                log_action("logout", "unavailable");
+                Response::Unavailable
+            }
+            Err(_) => {
+                log_action("logout", "denied");
+                Response::Denied
+            }
         },
     }
+}
+
+fn log_action(action: &'static str, outcome: &'static str) {
+    use std::io::Write as _;
+    let at = crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider);
+    // The protected operation table remains the detailed creation audit source.
+    // A logging error cannot turn a committed action into an unknown response.
+    let _ = writeln!(
+        std::io::stderr().lock(),
+        "osmap_admin_action unix={at} action={action} outcome={outcome}"
+    );
 }
 
 fn inventory_error(error: crate::admin_access::Error) -> Response {

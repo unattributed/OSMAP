@@ -113,6 +113,7 @@ fn both_bounded_apis_preserve_exact_authenticated_account_and_epoch() {
                         assert_eq!(n, 1);
                         assert_eq!(*epoch, 7);
                     }
+                    Operation::Classify {} => panic!("unexpected classification"),
                 }
                 Ok(Some(7))
             })

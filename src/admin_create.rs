@@ -31,6 +31,22 @@ pub(crate) enum CreateFailure {
     Unconfirmed,
     Unavailable,
 }
+impl CreateFailure {
+    pub(crate) fn action_outcome(self) -> &'static str {
+        match self {
+            Self::WriterDisabled => "writer_disabled",
+            Self::Invalid => "invalid",
+            Self::Denied => "denied",
+            Self::Missing => "missing",
+            Self::Conflict => "conflict",
+            Self::Stale => "stale",
+            Self::Limit => "limited",
+            Self::StepUp => "step_up_refused",
+            Self::Unconfirmed => "unconfirmed",
+            Self::Unavailable => "unavailable",
+        }
+    }
+}
 impl From<Error> for CreateFailure {
     fn from(value: Error) -> Self {
         match value {

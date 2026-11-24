@@ -164,17 +164,22 @@ fn runtime_paths(runtime_gid: u32) -> Result<RuntimeConfiguration, Error> {
 /// its browser recovery adapter. It never accepts request-selected paths.
 pub(crate) fn browser_recovery_paths() -> Result<BrowserRecoveryStartup, Error> {
     let (uid, gid) = runtime_identity()?;
-    let (paths, selected, idle) = browser_recovery_fence(gid)?;
-    Ok((paths, uid, gid, selected, idle))
+    Ok((browser_recovery_fence(gid)?, uid, gid))
 }
 
-type BrowserRecoveryStartup = (RuntimePaths, u32, u32, Option<BTreeSet<String>>, u64);
+type BrowserRecoveryStartup = (BrowserRecoveryFence, u32, u32);
+
+#[derive(PartialEq, Eq)]
+pub(crate) struct BrowserRecoveryFence {
+    pub paths: RuntimePaths,
+    pub selected: Option<BTreeSet<String>>,
+    pub session_idle_seconds: u64,
+    pub automatic_enrollment: bool,
+}
 
 /// Recheck the fixed frontend fence after unveil without repeating user-db
 /// discovery; the native service already captured its trusted runtime identity.
-pub(crate) fn browser_recovery_fence(
-    runtime_gid: u32,
-) -> Result<(RuntimePaths, Option<BTreeSet<String>>, u64), Error> {
+pub(crate) fn browser_recovery_fence(runtime_gid: u32) -> Result<BrowserRecoveryFence, Error> {
     let config = runtime_paths(runtime_gid)?;
     let frontend = config
         .frontend_account_runtime
@@ -187,11 +192,12 @@ pub(crate) fn browser_recovery_fence(
     {
         return Err(Error::Unauthorized);
     }
-    Ok((
-        config.paths,
-        frontend.rollout_accounts,
-        config.session_idle_seconds,
-    ))
+    Ok(BrowserRecoveryFence {
+        paths: config.paths,
+        selected: frontend.rollout_accounts,
+        session_idle_seconds: config.session_idle_seconds,
+        automatic_enrollment: frontend.automatic_enrollment,
+    })
 }
 
 fn frontend_admission(

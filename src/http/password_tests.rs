@@ -729,6 +729,7 @@ mod genuine_http_pilot {
         let native = topology == Topology::NativeLocal;
         crate::config::AccountRuntimeConfig {
             rollout_accounts: None,
+            automatic_enrollment: false,
             admission_socket: if native {
                 crate::config::LOCAL_ACCOUNT_ADMISSION_SOCKET.into()
             } else {

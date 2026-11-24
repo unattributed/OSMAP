@@ -659,14 +659,14 @@ impl RuntimeBrowserGateway {
             self.session_idle_timeout_seconds,
         );
         let service = match &self.account_rollout {
-            Some(accounts) => {
-                service.with_scoped_epoch_authority(accounts.clone(), authority.clone())
-            }
+            Some(accounts) => service
+                .with_scoped_epoch_authority(accounts.clone(), authority.clone())
+                .with_automatic_enrollment(self.automatic_enrollment),
             None => service.with_epoch_authority(authority.clone()),
         };
         service
             .with_guarded_session_lease(context, token, |current, lease| {
-                if !self.uses_account_runtime(&current.record.canonical_username) {
+                if current.record.account_epoch.is_none() {
                     return Err(password_change::Error::Unavailable);
                 }
                 let action =

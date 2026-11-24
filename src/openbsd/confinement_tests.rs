@@ -278,6 +278,7 @@ fn concrete_account_clients_keep_key_separation_peer_uid_and_leaf_custody_checks
     let uid = effective_uid();
     let account = crate::config::AccountRuntimeConfig {
         rollout_accounts: None,
+        automatic_enrollment: false,
         admission_socket: root.join("admission.sock"),
         admission_key_file: root.join("admission.key"),
         admission_helper_uid: uid,

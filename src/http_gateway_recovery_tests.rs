@@ -466,6 +466,9 @@ fn ordinary_runtime_http_contact_roundtrip_uses_real_session_and_external_delive
                             worker_guard.store(true, Ordering::SeqCst);
                             password == "public synthetic passphrase"
                         }
+                        crate::account_admission::Operation::Classify {} => {
+                            panic!("unexpected classification")
+                        }
                     };
                     let reply = request
                         .response(allowed.then_some(3), &[29; 32], now)

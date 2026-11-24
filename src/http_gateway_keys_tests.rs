@@ -277,6 +277,9 @@ fn native_runtime_key_management_fixture(test: &str, public_import_only: bool) {
                             assert_eq!(*epoch, 7);
                             admit_count.fetch_add(1, Ordering::SeqCst);
                         }
+                        crate::account_admission::Operation::Classify {} => {
+                            panic!("unexpected classification")
+                        }
                     }
                     let response = request
                         .response(Some(7), &[29; 32], now().unwrap())

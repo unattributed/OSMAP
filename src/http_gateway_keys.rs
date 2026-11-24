@@ -245,7 +245,7 @@ impl RuntimeBrowserGateway {
                             password,
                             captured.clone(),
                         );
-                        let constraint = if self.ready_account_runtime(username).is_some()
+                        let constraint = if current.record.account_epoch.is_some()
                             && matches!(
                                 outcome.decision,
                                 AuthenticationDecision::MfaRequired { .. }

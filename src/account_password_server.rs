@@ -10,7 +10,7 @@ use crate::account_password_connection::Keys;
 use crate::account_password_native::{NativeProfile, Role};
 use crate::account_password_peer::StockPeer;
 use crate::account_password_process::MetadataExecutor;
-use crate::account_password_process::{FixedExecutor, PrimaryExecutor};
+use crate::account_password_process::{FixedExecutor, ProfileExecutor};
 use crate::account_password_runtime::StockRuntime;
 use crate::account_password_state::Store;
 use crate::openpgp_inventory_runtime::{file, private_dir, secret};
@@ -74,6 +74,7 @@ fn admission_operation_allowed(
     }
     match operation {
         crate::account_admission::Operation::Admit { .. } => true,
+        crate::account_admission::Operation::Classify {} => false,
         crate::account_admission::Operation::Authenticate { .. } => {
             #[cfg(test)]
             {
@@ -549,6 +550,7 @@ fn stock_admission(
         return Err(Error::Authentication);
     }
     admission.password_connection(&mut stream, deadline, |request, inherited| {
+        use crate::account_admission_runtime::NativeReply;
         let deadline = deadline.min(inherited);
         if !admission_operation_allowed(
             readonly_admission_fixture(),
@@ -562,15 +564,22 @@ fn stock_admission(
             crate::account_admission::Operation::Admit { .. } => {
                 // Epoch/status admission performs no primary command. Keep the
                 // runtime's peer/account/Store checks without an unused auth graph.
-                runtime.admission(request, &MetadataExecutor::readonly(), deadline)
+                runtime
+                    .admission(request, &MetadataExecutor::readonly(), deadline)
+                    .map(NativeReply::Epoch)
             }
             crate::account_admission::Operation::Authenticate { .. } => {
                 let profile =
                     NativeProfile::from_stock(Role::StockPrimary, stock.clone(), deadline)
                         .map_err(unavailable)?;
-                let executor = PrimaryExecutor::new(&profile, deadline);
-                runtime.admission(request, &executor, deadline)
+                let executor = ProfileExecutor::new(&profile, deadline);
+                runtime
+                    .admission(request, &executor, deadline)
+                    .map(NativeReply::Epoch)
             }
+            crate::account_admission::Operation::Classify {} => runtime
+                .classify(request.account(), deadline)
+                .map(NativeReply::Classification),
         }
     })
 }

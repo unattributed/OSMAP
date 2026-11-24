@@ -29,6 +29,19 @@ fn native_installed_epoch_readiness() -> Result<(), &'static str> {
     client
         .admit_before(&account, epoch, Instant::now() + Duration::from_secs(10))
         .map_err(|_| "installed signed epoch admission unavailable")?;
+    if let Ok(pending) = std::env::var("OSMAP_READINESS_PENDING_ACCOUNT") {
+        let deadline = Instant::now() + Duration::from_secs(10);
+        if !client
+            .managed_before(&pending, deadline)
+            .map_err(|_| "installed signed pending classification unavailable")?
+            || client
+                .managed_before("osmap-automatic-readiness@example.invalid", deadline)
+                .map_err(|_| "installed signed unmanaged classification unavailable")?
+        {
+            return Err("installed scope classification mismatch");
+        }
+        println!("INSTALLED_AUTOMATIC_SCOPE=PASS");
+    }
     println!(
         "INSTALLED_EPOCH_READINESS=PASS PASSWORD_SUBMITTED=NO TOTP_CONSUMED=NO CREDENTIAL_WRITE=NO"
     );
@@ -48,6 +61,38 @@ fn service(uid: u32) -> Service {
         key: vec![29; 32],
         verifier: Mutex::new(Verifier::default()),
         engine: None,
+    }
+}
+
+#[test]
+fn native_listener_signs_out_of_roster_classification_and_refuses_replay() {
+    let service = service(51);
+    let at = now().unwrap();
+    for (account, managed) in [
+        ("pending@example.test", true),
+        ("other@example.test", false),
+    ] {
+        let request = Request::issue(account, Operation::Classify {}, at, &service.key).unwrap();
+        let frame = request.bytes().unwrap();
+        let response = service
+            .process_with_reply(&frame, at, true, |verified| {
+                assert_eq!(verified.account(), account);
+                assert!(matches!(verified.operation(), Operation::Classify {}));
+                Ok(NativeReply::Classification(managed))
+            })
+            .unwrap();
+        let mut verifier = Verifier::default();
+        assert_eq!(
+            verifier.classification_response(&request, &response, &service.key, at),
+            Ok(managed)
+        );
+        assert!(verifier
+            .response_with_status(&request, &response, &service.key, at)
+            .is_err());
+        assert_eq!(
+            service.process_with_reply(&frame, at, true, |_| panic!("replayed query executed")),
+            Err(Error::Replay)
+        );
     }
 }
 #[test]
@@ -924,6 +969,7 @@ fn actual_private_socket_authentication_and_epoch_binding_without_native_credent
                         assert_eq!(password, "synthetic credential")
                     }
                     Operation::Admit { epoch } => assert_eq!(*epoch, 7),
+                    Operation::Classify {} => panic!("unexpected classification"),
                 };
                 Ok(Some(7))
             })
@@ -1033,6 +1079,7 @@ fn actual_runtime_login_mfa_session_and_changed_epoch_refusal_no_primary_fallbac
                         assert_eq!(*epoch, 7, "issuance must not retarget to changed epoch");
                         Ok((server_epoch.load(Ordering::SeqCst) == 7).then_some(7))
                     }
+                    Operation::Classify {} => panic!("unexpected classification"),
                 })
                 .unwrap();
             }

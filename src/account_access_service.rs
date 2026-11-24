@@ -47,6 +47,7 @@ pub(crate) struct NativeAccess {
     gid: u32,
     root: PathBuf,
     selected: Option<BTreeSet<String>>,
+    automatic_enrollment: bool,
     session_idle_seconds: u64,
     epoch_root: PathBuf,
     operator_uid: u32,
@@ -93,9 +94,9 @@ impl NativeAccess {
                 return Err(AccessError::Unavailable);
             }
         }
-        let (paths, uid, gid, selected, session_idle_seconds) =
-            crate::account_recovery_operator::browser_recovery_paths()
-                .map_err(|_| AccessError::Unavailable)?;
+        let (fence, uid, gid) = crate::account_recovery_operator::browser_recovery_paths()
+            .map_err(|_| AccessError::Unavailable)?;
+        let paths = fence.paths;
         // Installation prepares these existing private directories. Validate
         // them before irreversible confinement or a recovery dispatch; first
         // use must never discover a missing archive after account containment.
@@ -144,8 +145,9 @@ impl NativeAccess {
             uid,
             gid,
             root: ROOT.into(),
-            selected,
-            session_idle_seconds,
+            selected: fence.selected,
+            automatic_enrollment: fence.automatic_enrollment,
+            session_idle_seconds: fence.session_idle_seconds,
             epoch_root: EPOCH.into(),
             operator_uid: 0,
         }))
@@ -181,9 +183,28 @@ impl NativeAccess {
         rules.extend(parents.into_iter().map(|path| (path, "")));
         rules
     }
-    fn allowed(&self, account: &str, accounts: &BTreeSet<String>) -> bool {
+    pub(crate) fn allowed(&self, account: &str, accounts: &BTreeSet<String>) -> bool {
         accounts.contains(account)
             && crate::config::account_in_rollout(self.selected.as_ref(), account)
+    }
+
+    pub(crate) fn automatic_enrollment_enabled(&self) -> bool {
+        self.automatic_enrollment
+    }
+
+    pub(crate) fn classify_registration<E: CommandExecutor>(
+        &self,
+        backend: &Backend<E>,
+        account: &str,
+        deadline: Instant,
+    ) -> Result<Option<CreationRegistration>, AccessError> {
+        if !self.automatic_enrollment {
+            return Err(AccessError::Unavailable);
+        }
+        self.check()?;
+        backend
+            .creation_registration(account, deadline)
+            .map_err(|_| AccessError::Unavailable)
     }
     fn factor(&self) -> Coordinator {
         Coordinator::new(Paths {
@@ -212,13 +233,17 @@ impl NativeAccess {
         recovery::Store::new(self.root.join("proofs"))
     }
     fn check(&self) -> Result<(), AccessError> {
-        let (paths, selected, idle) =
+        let fence =
             crate::account_recovery_operator::browser_recovery_fence(self.gid)
                 .map_err(|_| {
                     eprintln!("account_access_service stage=fence_read result=unavailable native_errno=not_observed");
                     AccessError::Unavailable
                 })?;
-        if paths != self.paths || selected != self.selected || idle != self.session_idle_seconds {
+        if fence.paths != self.paths
+            || fence.selected != self.selected
+            || fence.session_idle_seconds != self.session_idle_seconds
+            || fence.automatic_enrollment != self.automatic_enrollment
+        {
             eprintln!("account_access_service stage=fence_binding result=unavailable");
             return Err(AccessError::Unavailable);
         }
@@ -359,7 +384,13 @@ impl NativeAccess {
             session_id,
         } = request.authority()
         {
-            if !self.allowed(account, accounts) {
+            if !(self.allowed(account, accounts)
+                || self.automatic_enrollment
+                    && backend
+                        .creation_registration(account, deadline)
+                        .map_err(|_| AccessError::Unavailable)?
+                        .is_some_and(|registration| registration.is_active()))
+            {
                 return Err(AccessError::Refused);
             }
             crate::session::validate_recovery_session(
@@ -458,9 +489,6 @@ impl NativeAccess {
                 },
                 Action::View {},
             ) => {
-                if !self.allowed(account, accounts) {
-                    return Err(AccessError::Refused);
-                }
                 let binding = self.binding(account, session_id, *epoch, deadline)?;
                 match self
                     .enrollment()
@@ -486,9 +514,6 @@ impl NativeAccess {
                 },
                 Action::BeginReset { password, totp },
             ) => {
-                if !self.allowed(account, accounts) {
-                    return Err(AccessError::Refused);
-                }
                 let binding = self.binding(account, session_id, *epoch, deadline)?;
                 let rate = crate::password_change_rate::Store::new(self.root.join("stepup-rate"));
                 let permit = rate
@@ -548,9 +573,6 @@ impl NativeAccess {
                     confirmation: None,
                 },
             ) => {
-                if !self.allowed(account, accounts) {
-                    return Err(AccessError::Refused);
-                }
                 let binding = self.binding(account, session_id, *epoch, deadline)?;
                 let verified = self
                     .enrollment()
@@ -734,10 +756,8 @@ impl<E: CommandExecutor> recovery::Authority for Eligible<'_, E> {
         account: &str,
         deadline: Instant,
     ) -> Result<Option<EligibleAccount>, recovery::Error> {
-        // Initial setup cannot authorize an account that the ordinary native
-        // authentication/session path will refuse. The same fixed rollout and
-        // root-service roster apply to both recovery purposes.
-        if !self.service.allowed(account, self.accounts) {
+        let static_scope = self.service.allowed(account, self.accounts);
+        if !static_scope && !self.service.automatic_enrollment {
             return Ok(None);
         }
         let Some(contact) = self
@@ -759,7 +779,7 @@ impl<E: CommandExecutor> recovery::Authority for Eligible<'_, E> {
                 .map_err(|_| recovery::Error::Unavailable)?;
             let operation = match registration {
                 None | Some(CreationRegistration::Inconsistent) => return Ok(None),
-                Some(CreationRegistration::Complete(operation)) => {
+                Some(CreationRegistration::Complete(operation, true)) => {
                     let Some(registered) = self
                         .backend
                         .completed_initial_contact(account, &operation, deadline)
@@ -781,6 +801,7 @@ impl<E: CommandExecutor> recovery::Authority for Eligible<'_, E> {
                         deadline,
                     );
                 }
+                Some(CreationRegistration::Complete(_, false)) => return Ok(None),
                 Some(CreationRegistration::Pending(operation)) => operation,
             };
             let Some(pending) = self
@@ -811,6 +832,9 @@ impl<E: CommandExecutor> recovery::Authority for Eligible<'_, E> {
                 },
             }));
         };
+        if !static_scope {
+            return Ok(None);
+        }
         registered_eligible(self.service, account, contact, self.epochs, deadline)
     }
 }

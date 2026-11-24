@@ -57,7 +57,9 @@ impl RuntimeBrowserGateway {
             _ => std::sync::Arc::new(super::http_gateway_account::UnavailableAccountAuthority),
         };
         match &self.account_rollout {
-            Some(accounts) => service.with_scoped_epoch_authority(accounts.clone(), authority),
+            Some(accounts) => service
+                .with_scoped_epoch_authority(accounts.clone(), authority)
+                .with_automatic_enrollment(self.automatic_enrollment),
             None => service.with_epoch_authority(authority),
         }
     }
@@ -69,13 +71,15 @@ impl RuntimeBrowserGateway {
         password: &str,
         captured: std::sync::Arc<std::sync::Mutex<Option<crate::account_admission::Admission>>>,
     ) -> crate::auth::AuthenticationOutcome {
-        let selected = self.uses_account_runtime(username);
         let unavailable = || {
             AuthenticationService::new(
                 self.authentication_policy,
                 super::http_gateway_account::UnavailableAccountAuthority,
             )
             .authenticate(context, username, password)
+        };
+        let Ok(selected) = self.account_scope(username) else {
+            return unavailable();
         };
         let outcome = if selected {
             match &self.account_runtime {
@@ -106,7 +110,8 @@ impl RuntimeBrowserGateway {
             // A legacy alias cannot admit the selected canonical identity, and
             // selected authority cannot issue a session for an unrelated identity.
             if self.account_rollout.is_some()
-                && selected != self.uses_account_runtime(canonical_username)
+                && username != canonical_username
+                && self.account_scope(canonical_username) != Ok(selected)
             {
                 return unavailable();
             }

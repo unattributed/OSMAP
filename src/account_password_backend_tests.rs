@@ -804,15 +804,22 @@ fn creation_registration_uses_only_durable_pair_and_fails_closed_on_conflict() {
     let domain = upper_hex(b"example.test");
     let operation = "b".repeat(64);
     let row =
-        format!("{name}\t{name}\t{domain}\tmailbox.create\t{operation}\t{operation}\tpending\n");
+        format!("{name}\t{name}\t{domain}\tmailbox.create\t{operation}\t{operation}\tpending\t0\n");
     for (phase, expected) in [
-        ("pending", CreationRegistration::Pending(operation.clone())),
         (
-            "complete",
-            CreationRegistration::Complete(operation.clone()),
+            "pending\t0",
+            CreationRegistration::Pending(operation.clone()),
+        ),
+        (
+            "complete\t0",
+            CreationRegistration::Complete(operation.clone(), false),
+        ),
+        (
+            "complete\t1",
+            CreationRegistration::Complete(operation.clone(), true),
         ),
     ] {
-        let backend = Backend::new(Executor::new(vec![ok(row.replace("pending", phase))]));
+        let backend = Backend::new(Executor::new(vec![ok(row.replace("pending\t0", phase))]));
         assert_eq!(
             backend.creation_registration(ACCOUNT, deadline()),
             Ok(Some(expected))
@@ -824,13 +831,12 @@ fn creation_registration_uses_only_durable_pair_and_fails_closed_on_conflict() {
             "LEFT JOIN osmap_admin_operations o ON o.username=requested.username",
             "LEFT JOIN osmap_initial_accounts i ON i.username=requested.username",
             &format!("SELECT BINARY {} AS username", sql_hex(ACCOUNT)),
+            "m.active=1 AND d.active=1 AND d.backupmx=0",
         ] {
             assert!(query.contains(required));
         }
         for mutable_authority in [
-            "JOIN mailbox ",
             "JOIN admin ",
-            "JOIN domain ",
             "JOIN alias ",
             "osmap_admin_writer",
             "recovery_email",
@@ -850,6 +856,7 @@ fn creation_registration_uses_only_durable_pair_and_fails_closed_on_conflict() {
         row.replacen(&operation, &"c".repeat(64), 1),
         row.replace(&operation, "xyz"),
         row.replace("pending", "invalid"),
+        row.replace("pending\t0", "pending\t1"),
         format!("{row}{row}"),
     ] {
         assert_eq!(

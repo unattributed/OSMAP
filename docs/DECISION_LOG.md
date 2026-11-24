@@ -2340,3 +2340,9 @@ setup. Read-only native checks confirmed completed activation and active epoch
 state. Accept the journey for the single explicitly admitted test mailbox.
 Subsequent mailboxes still require both native roster entries and an explicit
 frontend rollout selection. [PR #102](https://github.com/unattributed/OSMAP/pull/102)
+
+The next mailbox confirmed that the static selection still blocks native
+initial enrollment. The owner marked end-to-end UAT FAILED and requires a
+fresh mailbox and recovery address to complete password and authenticator
+setup and ordinary sign-in on obsd1. The first admitted mailbox remains a
+scoped result.

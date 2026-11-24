@@ -117,6 +117,7 @@ impl Fixture {
             gid: meta.gid(),
             root: root.join("access"),
             selected: Some(BTreeSet::from([ACCOUNT.into()])),
+            automatic_enrollment: false,
             session_idle_seconds: 900,
             epoch_root: root.join("epoch"),
             operator_uid: meta.uid(),
@@ -278,10 +279,11 @@ impl CommandExecutor for Commands {
                         "pending"
                     };
                     format!(
-                        "{0}\t{0}\t{1}\tmailbox.create\t{2}\t{2}\t{phase}\n",
+                        "{0}\t{0}\t{1}\tmailbox.create\t{2}\t{2}\t{phase}\t{3}\n",
                         hex(NEW_ACCOUNT),
                         hex(NEW_ACCOUNT.split_once('@').unwrap().1),
-                        "c".repeat(64)
+                        "c".repeat(64),
+                        u8::from(*self.written.borrow())
                     )
                 } else if query.contains("UNIX_TIMESTAMP(i.activated)") {
                     if *self.written.borrow() {
@@ -561,10 +563,22 @@ fn email_enrollment_for(
 
 #[test]
 fn admin_recorded_contact_uses_existing_email_proof_for_first_setup_and_later_recovery() {
+    first_setup_and_later_recovery(false);
+}
+
+#[test]
+fn automatic_initial_setup_enrolls_without_a_manual_roster_or_rollout_entry() {
+    first_setup_and_later_recovery(true);
+}
+
+fn first_setup_and_later_recovery(automatic: bool) {
     let mut f = Fixture::new();
     f.service.config.initial_setup = true;
-    f.service.selected = Some(BTreeSet::from([ACCOUNT.into(), NEW_ACCOUNT.into()]));
-    f.accounts.insert(NEW_ACCOUNT.into());
+    f.service.automatic_enrollment = automatic;
+    if !automatic {
+        f.service.selected = Some(BTreeSet::from([ACCOUNT.into(), NEW_ACCOUNT.into()]));
+        f.accounts.insert(NEW_ACCOUNT.into());
+    }
     fs::create_dir(f.root.join("replay")).unwrap();
     fs::set_permissions(f.root.join("replay"), fs::Permissions::from_mode(0o700)).unwrap();
     let db = Backend::new(Commands {
@@ -608,6 +622,7 @@ fn admin_recorded_contact_uses_existing_email_proof_for_first_setup_and_later_re
     assert_eq!(registered.purpose, recovery::Purpose::AccountRecoverySetup);
     assert!(registered.factor.existing_sha256().is_some());
     assert_eq!(registered.verified_email, NEW_CONTACT);
+    f.service.automatic_enrollment = false;
     f.service.selected = Some(BTreeSet::from([ACCOUNT.into()]));
     let authority = Eligible {
         service: &f.service,
@@ -636,16 +651,16 @@ fn unavailable_sql_and_ineligible_creation_have_distinct_recovery_outcomes() {
         .map(|byte| format!("{byte:02X}"))
         .collect();
     let operation = "b".repeat(64);
-    let orphan = format!("{username}\tNULL\t{domain}\tmailbox.create\t{operation}\tNULL\tNULL\n");
+    let orphan =
+        format!("{username}\tNULL\t{domain}\tmailbox.create\t{operation}\tNULL\tNULL\t0\n");
     let conflict = format!(
-        "{username}\t{username}\t{domain}\tmailbox.create\t{operation}\t{}\tpending\n",
+        "{username}\t{username}\t{domain}\tmailbox.create\t{operation}\t{}\tpending\t0\n",
         "d".repeat(64)
     );
     for reply in [Ok(String::new()), Ok(orphan), Ok(conflict), Err(())] {
         let mut f = Fixture::new();
         f.service.config.initial_setup = true;
-        f.service.selected = Some(BTreeSet::from([NEW_ACCOUNT.into()]));
-        f.accounts.insert(NEW_ACCOUNT.into());
+        f.service.automatic_enrollment = true;
         let failed = reply.is_err();
         let db = Backend::new(Commands {
             registration_read: Some(reply),

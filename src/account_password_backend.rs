@@ -58,7 +58,13 @@ pub struct Snapshot {
 pub(crate) enum CreationRegistration {
     Inconsistent,
     Pending(String),
-    Complete(String),
+    Complete(String, bool),
+}
+
+impl CreationRegistration {
+    pub(crate) fn is_active(&self) -> bool {
+        matches!(self, Self::Complete(_, true))
+    }
 }
 
 /// Native-owned pending-account comparison material. No browser deserializer,
@@ -153,7 +159,10 @@ impl<E: CommandExecutor> Backend<E> {
         // Read both immutable creation references independently. An orphan or
         // mismatched record is ambiguous, never proof of an unmanaged account.
         let query = format!(concat!(
-            "SELECT HEX(o.username),HEX(i.username),HEX(o.domain),o.kind,o.request_id,i.request_id,i.status ",
+            "SELECT HEX(o.username),HEX(i.username),HEX(o.domain),o.kind,o.request_id,i.request_id,i.status,",
+            "EXISTS(SELECT 1 FROM mailbox m JOIN domain d ON BINARY d.domain=BINARY m.domain ",
+            "WHERE BINARY m.username=requested.username AND BINARY m.domain=BINARY o.domain ",
+            "AND m.active=1 AND d.active=1 AND d.backupmx=0) ",
             "FROM (SELECT BINARY {} AS username) AS requested ",
             "LEFT JOIN osmap_admin_operations o ON o.username=requested.username ",
             "LEFT JOIN osmap_initial_accounts i ON i.username=requested.username ",
@@ -165,7 +174,7 @@ impl<E: CommandExecutor> Backend<E> {
         }
         let mut lines = text.lines();
         let fields: Vec<_> = lines.next().ok_or(Error::Refused)?.split('\t').collect();
-        let [created_account, initial_account, recorded_domain, kind, operation, initial_operation, phase] =
+        let [created_account, initial_account, recorded_domain, kind, operation, initial_operation, phase, active] =
             fields.as_slice()
         else {
             return Ok(Some(CreationRegistration::Inconsistent));
@@ -183,9 +192,12 @@ impl<E: CommandExecutor> Backend<E> {
         {
             return Ok(Some(CreationRegistration::Inconsistent));
         }
-        match *phase {
-            "pending" => Ok(Some(CreationRegistration::Pending((*operation).into()))),
-            "complete" => Ok(Some(CreationRegistration::Complete((*operation).into()))),
+        match (*phase, *active) {
+            ("pending", "0") => Ok(Some(CreationRegistration::Pending((*operation).into()))),
+            ("complete", "0" | "1") => Ok(Some(CreationRegistration::Complete(
+                (*operation).into(),
+                *active == "1",
+            ))),
             _ => Ok(Some(CreationRegistration::Inconsistent)),
         }
     }

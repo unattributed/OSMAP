@@ -316,6 +316,46 @@ impl StockRuntime {
                 .map_err(|_| Unavailable)?,
         })
     }
+    pub(crate) fn classify(
+        &self,
+        account: &str,
+        deadline: Instant,
+    ) -> Result<bool, crate::account_admission::Error> {
+        use crate::account_password_backend::CreationRegistration;
+        match self.registration(account, deadline)? {
+            None => Ok(false),
+            Some(CreationRegistration::Inconsistent) => {
+                Err(crate::account_admission::Error::Unavailable)
+            }
+            Some(_) => Ok(true),
+        }
+    }
+
+    fn registration(
+        &self,
+        account: &str,
+        deadline: Instant,
+    ) -> Result<
+        Option<crate::account_password_backend::CreationRegistration>,
+        crate::account_admission::Error,
+    > {
+        use crate::account_admission::Error;
+        use crate::account_password_native::{NativeProfile, Role};
+        let access = self
+            .access
+            .as_ref()
+            .filter(|access| access.automatic_enrollment_enabled())
+            .ok_or(Error::Unavailable)?;
+        let sql = NativeProfile::from_stock_backend(Role::Sql, self.peer.clone(), deadline)
+            .map_err(|_| Error::Unavailable)?;
+        let backend = Backend::new(crate::account_password_process::ProfileExecutor::new(
+            &sql, deadline,
+        ));
+        access
+            .classify_registration(&backend, account, deadline)
+            .map_err(|_| Error::Unavailable)
+    }
+
     pub(crate) fn admission<E: CommandExecutor>(
         &self,
         request: &crate::account_admission::Request,
@@ -328,12 +368,32 @@ impl StockRuntime {
         self.peer
             .recheck(deadline)
             .map_err(|_| crate::account_admission::Error::Unavailable)?;
+        let account = request.account();
+        if !in_static_scope(&self.accounts, self.access.as_ref(), account) {
+            if !self
+                .access
+                .as_ref()
+                .is_some_and(|access| access.automatic_enrollment_enabled())
+            {
+                return Err(crate::account_admission::Error::Refused);
+            }
+            use crate::account_admission::{Error, Operation};
+            use crate::account_password_backend::CreationRegistration;
+            match self.registration(account, deadline)? {
+                Some(registration) if registration.is_active() => {}
+                Some(CreationRegistration::Inconsistent) => return Err(Error::Unavailable),
+                Some(_) if matches!(request.operation(), Operation::Authenticate { .. }) => {
+                    return Ok(None);
+                }
+                _ => return Err(Error::Refused),
+            }
+        }
         crate::account_password_admission::execute_current(
             self.store.as_ref(),
             executor,
             &SystemTimeProvider,
             &self.admission_key,
-            self.accounts.clone(),
+            BTreeSet::from([account.to_owned()]),
             request,
             deadline,
         )
@@ -349,6 +409,8 @@ impl StockRuntime {
             primary,
             peer: &self.peer,
             accounts: &self.accounts,
+            access: self.access.as_ref(),
+            backend,
             account: RefCell::new(None),
             phase: Cell::new(Phase::New),
         };
@@ -506,16 +568,28 @@ impl<E: Effects> Effects for PostwriteRefusalEffects<'_, E> {
         self.0.finish_mail(a, d)
     }
 }
-struct StockEffects<'a, P> {
+struct StockEffects<'a, E, P> {
     primary: &'a P,
     peer: &'a crate::account_password_peer::StockPeer,
     accounts: &'a BTreeSet<String>,
+    access: Option<&'a crate::account_access_service::NativeAccess>,
+    backend: &'a Backend<E>,
     account: RefCell<Option<String>>,
     phase: Cell<Phase>,
 }
-impl<P: CommandExecutor> StockEffects<'_, P> {
+fn in_static_scope(
+    accounts: &BTreeSet<String>,
+    access: Option<&crate::account_access_service::NativeAccess>,
+    account: &str,
+) -> bool {
+    match access {
+        Some(access) if access.automatic_enrollment_enabled() => access.allowed(account, accounts),
+        _ => accounts.contains(account),
+    }
+}
+impl<E: CommandExecutor, P: CommandExecutor> StockEffects<'_, E, P> {
     fn current(&self, account: &str, deadline: Instant) -> Result<(), DependencyError> {
-        if Instant::now() >= deadline || !self.accounts.contains(account) {
+        if Instant::now() >= deadline {
             return Err(DependencyError::Refused);
         }
         let mut selected = self
@@ -523,7 +597,22 @@ impl<P: CommandExecutor> StockEffects<'_, P> {
             .try_borrow_mut()
             .map_err(|_| DependencyError::Unavailable)?;
         match selected.as_deref() {
-            None if self.phase.get() == Phase::New => *selected = Some(account.into()),
+            None if self.phase.get() == Phase::New => {
+                if !in_static_scope(self.accounts, self.access, account) {
+                    let access = self
+                        .access
+                        .filter(|access| access.automatic_enrollment_enabled())
+                        .ok_or(DependencyError::Refused)?;
+                    if !access
+                        .classify_registration(self.backend, account, deadline)
+                        .map_err(|_| DependencyError::Unavailable)?
+                        .is_some_and(|registration| registration.is_active())
+                    {
+                        return Err(DependencyError::Refused);
+                    }
+                }
+                *selected = Some(account.into());
+            }
             Some(own) if own == account => {}
             _ => return Err(DependencyError::Refused),
         }
@@ -532,7 +621,7 @@ impl<P: CommandExecutor> StockEffects<'_, P> {
             .map_err(|_| DependencyError::Unavailable)
     }
 }
-impl<P: CommandExecutor> Effects for StockEffects<'_, P> {
+impl<E: CommandExecutor, P: CommandExecutor> Effects for StockEffects<'_, E, P> {
     fn authenticate(
         &self,
         account: &str,

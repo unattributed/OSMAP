@@ -188,10 +188,10 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Current product slice | **ADM-S04-01**, initial user enrollment: OWNER_UAT_PASS for one explicitly admitted mailbox on obsd1. The installed flow reuses Forgot password with the administrator's offline-confirmed recovery email. Each new mailbox still requires explicit native roster and frontend rollout entries. |
+| Current product slice | **ADM-S04-01**, initial user enrollment: UAT_FAILED for a newly created mailbox on obsd1. The first explicitly admitted mailbox passed its bounded owner test. The second mailbox exposed the missing automatic admission path. |
 | Previous product slice | ADM-S01-02 DELIVERED through [PR #99](https://github.com/unattributed/OSMAP/pull/99), main `8e8294f`; bounded development/isolated mail qualification PASS; basic pages approved, text/icon refinement owner acceptance NOT_ACCEPTED |
 | Earlier product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; final login design owner-approved; whole-slice operator acceptance NOT_ACCEPTED |
-| Selected slice / next boundary | ADM-S04-01 has owner acceptance for one obsd1 mailbox. ADM-S01-04 message delivery remains a separate subsequent boundary. |
+| Selected slice / next boundary | Repair ADM-S04-01 automatic admission and verify one fresh mailbox end to end on obsd1. ADM-S01-04 message delivery remains a separate subsequent boundary. |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
 | Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
 | ADM-PLAN-03: integrated epic scope | Documentation-only integration of bootstrap, domain/virtual-address/admin management and all 18 security catalogue categories into the sprint/slice index below; no new product work is started or accepted by this amendment |
@@ -2403,3 +2403,23 @@ service passed service checks. The code supports adding exact accounts to the
 existing rollout while keeping the paired protected rosters. This acceptance
 covers the one admitted mailbox. Automatic registration and ADM-S01-04
 message delivery remain open.
+
+### 2026-11-24 — second mailbox UAT failed before recovery dispatch
+
+The owner reopened ADM-S04-01 and marked end-to-end UAT FAILED. The Admin
+receipt and native readback confirmed a pending mailbox with a recorded
+recovery contact. Both native rosters and frontend rollout excluded it even
+though initial setup was enabled. Recovery refused before SMTP. Preserve the
+first mailbox's scoped result and the second mailbox's failure.
+The owner retried through the correct Forgot password form and confirmed the
+same failure. The observed Postfix log had no record for the second sender.
+
+Root owns one correction on PR #102. Use authenticated native registration
+from the existing Admin creation record to route initial recovery and later
+password, TOTP and session admission. Preserve the existing static rollout
+and legacy paths. Test an exact pending registration, completed registration,
+unrelated identity, and unavailable or inconsistent authority without fallback.
+Keep obsd1 mail services available and stop on repeated failure at the same
+functional boundary. The owner requires a newly created mailbox with a new
+recovery address, receipt and redemption of its proof, password and TOTP setup,
+and ordinary sign-in on obsd1. That run remains pending.
