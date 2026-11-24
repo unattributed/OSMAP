@@ -188,10 +188,10 @@ and all historical failures/UNKNOWN cleanup records in successor work orders.
 | --- | --- |
 | ADM-PLAN-01: execution-roadmap reconciliation | Documentation delivery complete in [PR #96](https://github.com/unattributed/OSMAP/pull/96); no product implementation started |
 | ADM-PLAN-02: admin Argon2id feature assignment | Documentation-only amendment below; no product implementation started |
-| Current product slice | **ADM-S04-01**, initial user enrollment: UAT_FAILED for a newly created mailbox on obsd1. The first explicitly admitted mailbox passed its bounded owner test. The second mailbox exposed the missing automatic admission path. |
+| Current product slice | **ADM-S04-01**, initial user enrollment: owner UAT/CAT PASS on obsd1 for automatic enrollment of a freshly created mailbox through its recorded external recovery address. |
 | Previous product slice | ADM-S01-02 DELIVERED through [PR #99](https://github.com/unattributed/OSMAP/pull/99), main `8e8294f`; bounded development/isolated mail qualification PASS; basic pages approved, text/icon refinement owner acceptance NOT_ACCEPTED |
 | Earlier product slice | ADM-S01-01 DELIVERED; isolated development/mail qualification PASS; final login design owner-approved; whole-slice operator acceptance NOT_ACCEPTED |
-| Selected slice / next boundary | Repair ADM-S04-01 automatic admission and verify one fresh mailbox end to end on obsd1. ADM-S01-04 message delivery remains a separate subsequent boundary. |
+| Selected slice / next boundary | Record ADM-S04-01 acceptance and integrate [PR #102](https://github.com/unattributed/OSMAP/pull/102) into `main`. ADM-S01-04 ordinary mailbox message delivery remains the next boundary. |
 | Other product slices | NOT_STARTED, development and mail native/browser tests NOT_RUN, operator acceptance NOT_ACCEPTED |
 | Admin Argon2id credential feature | SCHEDULED within **ADM-S04-02**; implementation NOT_STARTED, development/mail tests NOT_RUN, acceptance NOT_ACCEPTED; not a prerequisite for ADM-S01 |
 | ADM-PLAN-03: integrated epic scope | Documentation-only integration of bootstrap, domain/virtual-address/admin management and all 18 security catalogue categories into the sprint/slice index below; no new product work is started or accepted by this amendment |
@@ -2423,3 +2423,24 @@ Keep obsd1 mail services available and stop on repeated failure at the same
 functional boundary. The owner requires a newly created mailbox with a new
 recovery address, receipt and redemption of its proof, password and TOTP setup,
 and ordinary sign-in on obsd1. That run remains pending.
+
+### 2026-11-24 — automatic enrollment owner UAT/CAT passed on obsd1
+
+The owner created a fresh mailbox through OSMAP Admin with a recorded external
+recovery address. The owner reported that Forgot password delivered the setup
+code to the recovery inbox, accepted the code, enrolled the new password and
+TOTP, and allowed ordinary Webmail sign-in as the new mailbox. The supplied
+screenshots show the Admin creation receipt and the authenticated mailbox
+dashboard. The owner accepted the complete onboarding journey and requested
+integration of [PR #102](https://github.com/unattributed/OSMAP/pull/102).
+
+Read-only checks on obsd1 found one matching Admin creation and completed
+MariaDB activation, an external recovery record, active mailbox and SMTP flags,
+an installed factor, and active admission epoch state. Automatic enrollment was
+enabled and the new mailbox was absent from the two protected static rosters
+and the frontend's explicit account selection. Postfix recorded a successful
+handoff for the new mailbox's sender, and `/admin/login` and `/login` each
+returned HTTP 200. The accepted build was installed from `74a45fa`; `301a06b`
+updates the reviewed SQL adapter pins. The earlier new-mailbox failure remains
+part of the test history. This acceptance covers onboarding on obsd1.
+ADM-S01-04 ordinary mailbox message delivery remains a separate boundary.

@@ -2346,3 +2346,16 @@ initial enrollment. The owner marked end-to-end UAT FAILED and requires a
 fresh mailbox and recovery address to complete password and authenticator
 setup and ordinary sign-in on obsd1. The first admitted mailbox remains a
 scoped result.
+
+### 2026-11-24 — accept automatic enrollment for a fresh mailbox on obsd1
+
+Admin creation now supplies the native registration used by Forgot password
+and by subsequent password and authenticator sign-in. Recovery and Admin
+action logs record bounded outcomes for diagnosing failures before submission.
+The owner repeated UAT/CAT with a fresh mailbox and accepted the full sequence:
+creation in Admin, recovery code receipt and verification at the recorded
+external address, password and TOTP enrollment, and ordinary Webmail sign-in.
+Readback confirmed complete activation and active mailbox, factor and epoch
+state. The mailbox was absent from static rollout selection. Preserve the
+earlier failed UAT and carry this accepted result into `main` via
+[PR #102](https://github.com/unattributed/OSMAP/pull/102).
