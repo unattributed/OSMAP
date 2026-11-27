@@ -89,7 +89,7 @@
     "audit_script_present": true,
     "classification_complete": true,
     "current_scanner_count": 13820,
-    "inventory_sha256": "160a7e4d95a16b8276f6d39dbd56bb24d2294ab6d6f7ff14995e611634b6a5c2",
+    "inventory_sha256": "04478a066577d2e98d0b93c11793f45dda192881ae03b63cb32e252137ef76a8",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
