@@ -86,10 +86,15 @@ confirmed unmanaged result preserves legacy login. An unavailable lookup
 refuses admission. Verify the shared native authority and complete the
 installed journey before marking enrollment ready.
 
-The Admin service writes fixed login, logout and mailbox-creation outcomes to
-its existing private service log. The database operation journal is the
-protected source for action details. Recovery dispatch and pre-submission
-outcomes are recorded by the native account service.
+The Admin service writes fixed operation/result/source IP/response-write/duration
+records through the `osmap_admin_service` syslog tag. The web process writes
+fixed route/status/source IP/response-write/duration records through
+`osmap_admin_web`; both appear in the host's rotated
+`/var/log/daemon` when their rc scripts set `daemon_logger=daemon.info`.
+The database operation journal is the protected source for mailbox-creation
+details. Recovery dispatch and pre-submission outcomes are recorded by the
+native account service. Verify actual log capture after installation: the
+original Toronto admin rc scripts discarded both output streams.
 
 The running host configuration and its authenticated service/process observations are the **current operational fact**. Signed, reviewed repository configuration is the **intended design**. Differences must be inventoried and resolved before any overwrite.
 

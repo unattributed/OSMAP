@@ -88,6 +88,25 @@ pub(crate) enum Operation {
     },
 }
 
+impl Operation {
+    /// Fixed audit names. Never format the request: it contains credentials and tokens.
+    pub(crate) fn audit_name(&self) -> &'static str {
+        match self {
+            Self::Login { .. } => "login",
+            Self::Scope { .. } => "scope",
+            Self::Overview { .. } => "overview",
+            Self::DomainDetails { .. } => "domain_details",
+            Self::Settings { .. } => "settings",
+            Self::SavePreferences { .. } => "save_preferences",
+            Self::Logout { .. } => "logout",
+            Self::Mailboxes { .. } => "mailboxes",
+            Self::Mailbox { .. } => "mailbox",
+            Self::CreateMailboxForm { .. } => "create_mailbox_form",
+            Self::CreateMailbox { .. } => "create_mailbox",
+        }
+    }
+}
+
 #[derive(Serialize)]
 #[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
 pub(crate) enum Response {
@@ -133,6 +152,47 @@ pub(crate) enum Response {
     Denied,
     Invalid,
     Unavailable,
+}
+
+impl Response {
+    /// Fixed result classes shared by operational and security review.
+    pub(crate) fn audit_result(&self) -> &'static str {
+        match self {
+            Self::Denied => "denied",
+            Self::Invalid => "invalid",
+            Self::Missing => "missing",
+            Self::Capacity => "capacity",
+            Self::Unavailable => "unavailable",
+            Self::CreateMailboxFailed { reason } => reason.action_outcome(),
+            Self::MailboxCreated { receipt } if receipt.setup_pending => "pending_setup_recorded",
+            Self::MailboxCreated { .. } => "mailbox_recorded",
+            _ => "ok",
+        }
+    }
+}
+
+#[cfg(test)]
+mod audit_tests {
+    use super::*;
+
+    #[test]
+    fn audit_classes_do_not_serialize_request_secrets() {
+        let operation = Operation::Login {
+            login: "private-login".into(),
+            password: "private-password".into(),
+            totp: "123456".into(),
+        };
+        assert_eq!(operation.audit_name(), "login");
+        assert_eq!(Response::Denied.audit_result(), "denied");
+        assert_eq!(Response::Unavailable.audit_result(), "unavailable");
+        assert_eq!(
+            (Response::SignedIn {
+                token: "private-token".into()
+            })
+            .audit_result(),
+            "ok"
+        );
+    }
 }
 
 // Serde's internally-tagged *unit* visitor ignores remaining fields even with

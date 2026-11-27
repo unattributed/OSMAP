@@ -1,6 +1,7 @@
 //! Private admin HTTP entry. Only an authenticated local TLS proxy reaches it.
 //! The trusted service owns credentials, sessions, factors and current grants.
 use crate::admin_config::WebConfig;
+use crate::admin_runtime::admin_log;
 use crate::admin_transport::{Client, Error, Operation, Request, Response, VERSION};
 use crate::auth::{AuthenticationPolicy, RequiredSecondFactor};
 use crate::http::{HttpMethod, HttpPolicy, HttpRequest, HttpRequestErrorKind, HttpResponse};
@@ -354,6 +355,23 @@ fn handle_inner<C: Exchange>(
         ) => crate::admin_ui::error_page(405),
         (_, path) if path.starts_with("/admin/domains/") => crate::admin_ui::error_page(405),
         _ => crate::admin_ui::error_page(404),
+    }
+}
+
+/// Route classes stay fixed even when a path embeds an account or domain.
+fn audit_route(path: &str) -> &'static str {
+    match path {
+        "/admin/login" => "login",
+        "/admin/logout" => "logout",
+        "/admin" => "overview",
+        "/admin/domains" => "domains",
+        "/admin/settings" | "/admin/settings/appearance" => "settings",
+        "/admin/account/scope" => "scope",
+        "/admin/mailboxes" => "mailboxes",
+        "/admin/mailboxes/new" => "mailbox_create",
+        _ if path.starts_with("/admin/domains/") => "domain_detail",
+        _ if path.starts_with("/admin/mailboxes/") => "mailbox_detail",
+        _ => "other",
     }
 }
 
@@ -819,6 +837,7 @@ pub(crate) fn run(config: &WebConfig) -> Result<(), &'static str> {
     crate::openbsd::seal_admin_web(&config.socket, &config.service_socket)
         .map_err(|_| "ADMIN_WEB_CONFINEMENT_REFUSED")?;
     let policy = policy(config);
+    admin_log!("ADMIN_WEB_READY");
     while !signals.stop_flag().load(Ordering::SeqCst) {
         match listener.accept() {
             Ok((mut stream, _)) => {
@@ -827,11 +846,11 @@ pub(crate) fn run(config: &WebConfig) -> Result<(), &'static str> {
                     .filter(|uid| *uid == config.proxy_uid)
                     .is_none()
                 {
-                    eprintln!("ADMIN_WEB_PROXY_PEER_REFUSED");
+                    admin_log!("ADMIN_WEB_PROXY_PEER_REFUSED");
                     continue;
                 }
                 if stream.set_nonblocking(false).is_err() {
-                    eprintln!("ADMIN_WEB_REQUEST_SETUP_REFUSED");
+                    admin_log!("ADMIN_WEB_REQUEST_SETUP_REFUSED");
                     continue;
                 }
                 let mut reader = DeadlineReader {
@@ -839,8 +858,22 @@ pub(crate) fn run(config: &WebConfig) -> Result<(), &'static str> {
                     deadline: Instant::now() + IO_LIMIT,
                     read_bytes: 0,
                 };
+                let started = Instant::now();
+                let mut request_audit = None;
                 let response = match read_http_request(&mut reader, &policy) {
-                    Ok(request) => handle(config, &request, &client),
+                    Ok(request) => {
+                        let response = handle(config, &request, &client);
+                        let source_ip = request
+                            .headers
+                            .get("x-real-ip")
+                            .and_then(|value| value.parse::<IpAddr>().ok());
+                        request_audit = Some((
+                            request.method.as_str(),
+                            audit_route(&request.path),
+                            source_ip,
+                        ));
+                        response
+                    }
                     Err(error) => {
                         let code = match error.kind {
                             HttpRequestErrorKind::Parse => "ADMIN_WEB_REQUEST_PARSE_REFUSED",
@@ -848,12 +881,27 @@ pub(crate) fn run(config: &WebConfig) -> Result<(), &'static str> {
                             HttpRequestErrorKind::Truncated => "ADMIN_WEB_REQUEST_TRUNCATED",
                             HttpRequestErrorKind::Empty => "ADMIN_WEB_REQUEST_EMPTY",
                         };
-                        eprintln!("{code} read_bytes={}", reader.read_bytes);
+                        admin_log!("{code} read_bytes={}", reader.read_bytes);
                         crate::admin_ui::error_page(400)
                     }
                 };
-                if let Err(code) = write_response(&mut stream, &response) {
-                    eprintln!("{code}");
+                let response_write = match write_response(&mut stream, &response) {
+                    Ok(()) => "ok",
+                    Err(code) => {
+                        admin_log!("{code}");
+                        "unconfirmed"
+                    }
+                };
+                if let Some((method, route, source_ip)) = request_audit {
+                    admin_log!(
+                        "ADMIN_WEB_REQUEST method={} route={} source_ip={} status={} response_write={} duration_ms={}",
+                        method,
+                        route,
+                        source_ip.map_or_else(|| "unavailable".to_string(), |ip| ip.to_string()),
+                        response.status_code,
+                        response_write,
+                        started.elapsed().as_millis()
+                    );
                 }
             }
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
@@ -865,6 +913,7 @@ pub(crate) fn run(config: &WebConfig) -> Result<(), &'static str> {
     }
     // Root's exact-owned disposition removes this socket after durable evidence
     // readback. The process never unlinks an existing or replaced namespace.
+    admin_log!("ADMIN_WEB_STOPPED");
     Ok(())
 }
 
@@ -872,6 +921,19 @@ pub(crate) fn run(config: &WebConfig) -> Result<(), &'static str> {
 mod tests {
     use super::*;
     use std::cell::RefCell;
+
+    #[test]
+    fn audit_routes_never_include_dynamic_account_or_domain_paths() {
+        assert_eq!(
+            audit_route("/admin/mailboxes/private@example.test"),
+            "mailbox_detail"
+        );
+        assert_eq!(
+            audit_route("/admin/domains/private.example.test"),
+            "domain_detail"
+        );
+        assert_eq!(audit_route("/admin/login?token=private"), "other");
+    }
 
     struct Fake {
         response: RefCell<Option<Response>>,
