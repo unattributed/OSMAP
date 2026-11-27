@@ -1,0 +1,16 @@
+#!/bin/ksh
+# Private OSMAP-ADMIN authority. rc.subr sends bounded stderr/stdout to syslog.
+daemon="/usr/local/bin/osmap-admin"
+daemon_user="_osmapas"
+daemon_flags="service /etc/osmap/admin-service.json"
+daemon_logger="daemon.info"
+rc_bg=YES
+rc_reload=NO
+. /etc/rc.d/rc.subr
+pexp="^${daemon} ${daemon_flags}$"
+rc_pre() {
+    install -d -o _osmapas -g www -m 0750 /var/run/osmap-admin-service || return 1
+    [ ! -e /var/run/osmap-admin-service/service.sock ] || [ -S /var/run/osmap-admin-service/service.sock ] || return 1
+    rm -f /var/run/osmap-admin-service/service.sock
+}
+rc_cmd $1

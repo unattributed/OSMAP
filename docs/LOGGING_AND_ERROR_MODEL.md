@@ -48,6 +48,28 @@ trees remain application state boundaries for sessions, settings, audit/cache
 state, helper sockets, and similar runtime data. They are not the primary
 operator log destination.
 
+The private `osmap_admin_service` and `osmap_admin_web` rc scripts use OpenBSD
+`daemon_logger=daemon.info`. Their separate syslog tags and fixed application
+event codes appear in `/var/log/daemon`, which the host already rotates. Verify
+both tags after each deployment or restart. An empty log or `rcctl check` alone
+does not prove capture: inspect the running process output descriptors and cause
+a safe private request. Do not copy raw admin logs to public release evidence.
+
+The admin service records an operation name, result class, validated source IP,
+response-write outcome and duration for every accepted RPC. It also retains
+fixed error codes for peer/frame, SQL, socket and response failures. The admin
+web process records a fixed route class, method, validated proxy-reported source IP,
+HTTP status, response-write outcome and duration; dynamic account paths,
+queries, other headers, bodies, cookies, factors and bearer values are never
+included. A web 503 and a service
+`unavailable` result can be compared by time and operation, but these lines are
+not a guaranteed cross-process request trace. The private nginx admin location
+overwrites `X-Real-IP` with `$remote_addr` and clears generic forwarding headers;
+verify that live include before using this field for attribution. A
+`response_write=ok` field means the local write completed, not that the browser
+received the response. The protected operation journal remains the source for
+mailbox creation details.
+
 The public Nginx edge that fronts `OSMAP_RUN_MODE=serve` has a separate log
 boundary from private/WireGuard mail and operator applications:
 
@@ -102,6 +124,10 @@ filename, revocation target, or session lookup key.
 `LogEvent::with_field()` defensively converts any attempted `session_id` audit
 field into `session_ref`. Runtime call sites should still use `session_ref`
 explicitly so code review does not depend only on the central safety net.
+The text renderer escapes control characters and caps each displayed value at
+1024 characters so untrusted values cannot forge a second log line or create
+unbounded records. This protects record shape; callers must still keep secrets
+out of events.
 
 ## Error-Handling Posture
 

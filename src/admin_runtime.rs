@@ -16,6 +16,16 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+// Logging must never turn a completed admin operation into a daemon panic if
+// syslog's rc pipe is unavailable.
+macro_rules! admin_log {
+    ($($arg:tt)*) => {{
+        use std::io::Write as _;
+        let _ = writeln!(std::io::stderr().lock(), $($arg)*);
+    }};
+}
+pub(crate) use admin_log;
+
 #[derive(Clone)]
 struct Sql {
     profile: PathBuf,
@@ -100,7 +110,7 @@ impl CommandExecutor for Sql {
                 .as_ref()
                 .map_or(true, |o| o.status_code != 0 || !o.stderr.is_empty())
             {
-                eprintln!(
+                admin_log!(
                     "ADMIN_CREATE_HASH_REFUSED cleanup_uncertain={}",
                     crate::account_password_process::execution_quarantined()
                 );
@@ -130,7 +140,7 @@ impl CommandExecutor for Sql {
                     16384
                 }
         {
-            eprintln!("ADMIN_SQL_FIXED_BOUNDARY_REFUSED");
+            admin_log!("ADMIN_SQL_FIXED_BOUNDARY_REFUSED");
             return Err(Self::refused());
         }
         let (profile, digest) = if writing {
@@ -142,12 +152,12 @@ impl CommandExecutor for Sql {
             (&self.profile, &self.digest)
         };
         crate::admin_config::verify_sql_profile(profile).map_err(|_| {
-            eprintln!("ADMIN_SQL_PROFILE_CUSTODY_REFUSED");
+            admin_log!("ADMIN_SQL_PROFILE_CUSTODY_REFUSED");
             Self::refused()
         })?;
         let bytes = fs::read(profile).map_err(|_| Self::refused())?;
         if bytes.len() > 4096 || <[u8; 32]>::from(Sha256::digest(&bytes)) != *digest {
-            eprintln!("ADMIN_SQL_PROFILE_CHANGED");
+            admin_log!("ADMIN_SQL_PROFILE_CHANGED");
             return Err(Self::refused());
         }
         let fixed = sql_arguments(profile, &self.database, &self.socket);
@@ -159,14 +169,14 @@ impl CommandExecutor for Sql {
             output_limit,
         );
         match &result {
-            Ok(output) if output.status_code != 0 || !output.stderr.is_empty() => eprintln!(
+            Ok(output) if output.status_code != 0 || !output.stderr.is_empty() => admin_log!(
                 "ADMIN_SQL_PROCESS_REFUSED status={} stdout_bytes={} stderr_bytes={} cause={}",
                 output.status_code,
                 output.stdout.len(),
                 output.stderr.len(),
                 sql_failure_code(&output.stderr)
             ),
-            Err(error) => eprintln!(
+            Err(error) => admin_log!(
                 "ADMIN_SQL_RUNNER_REFUSED private_reason_bytes={} cause=not_observed",
                 error.reason.len()
             ),
@@ -224,12 +234,12 @@ pub fn run(arguments: &[OsString]) -> Result<(), &'static str> {
     let config = Path::new(&arguments[1]);
     match arguments[0].to_str() {
         Some("service") => service(crate::admin_config::load_service(config).map_err(|error| {
-            eprintln!("{}", error.code());
+            admin_log!("{}", error.code());
             "ADMIN_SERVICE_CONFIG"
         })?),
         Some("web") => {
             crate::admin_web::run(&crate::admin_config::load_web(config).map_err(|error| {
-                eprintln!("{}", error.code());
+                admin_log!("{}", error.code());
                 "ADMIN_WEB_CONFIG"
             })?)
         }
@@ -275,7 +285,7 @@ fn service(config: ServiceConfig) -> Result<(), &'static str> {
         config.writer.as_ref().map(|w| w.profile.as_path()),
     )
     .map_err(|_| "ADMIN_SERVICE_SEAL")?;
-    eprintln!("ADMIN_SERVICE_READY");
+    admin_log!("ADMIN_SERVICE_READY");
     while !signals
         .stop_flag()
         .load(std::sync::atomic::Ordering::SeqCst)
@@ -289,12 +299,32 @@ fn service(config: ServiceConfig) -> Result<(), &'static str> {
                 match request {
                     Ok(request) => {
                         *deadline.lock().map_err(|_| "ADMIN_DEADLINE_LOCK")? = end;
+                        let operation = request.operation.audit_name();
+                        let source_ip = request.client.clone();
+                        let started = Instant::now();
                         let response = dispatch(&backend, request);
-                        if admin_transport::write_response(&mut stream, &response, end).is_err() {
-                            eprintln!("ADMIN_SERVICE_RESPONSE_UNCONFIRMED");
-                        }
+                        let result = response.audit_result();
+                        let response_write = if admin_transport::write_response(
+                            &mut stream,
+                            &response,
+                            end,
+                        )
+                        .is_err()
+                        {
+                            "unconfirmed"
+                        } else {
+                            "ok"
+                        };
+                        admin_log!(
+                            "ADMIN_SERVICE_OPERATION operation={} source_ip={} result={} response_write={} duration_ms={}",
+                            operation,
+                            source_ip,
+                            result,
+                            response_write,
+                            started.elapsed().as_millis()
+                        );
                     }
-                    Err(_) => eprintln!("ADMIN_SERVICE_PEER_OR_FRAME_REFUSED"),
+                    Err(_) => admin_log!("ADMIN_SERVICE_PEER_OR_FRAME_REFUSED"),
                 }
             }
             Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
@@ -304,7 +334,7 @@ fn service(config: ServiceConfig) -> Result<(), &'static str> {
         }
     }
     let after = fs::symlink_metadata(&config.socket).map_err(|error| {
-        eprintln!(
+        admin_log!(
             "ADMIN_SERVICE_SOCKET_STAT_REFUSED errno={}",
             error
                 .raw_os_error()
@@ -317,7 +347,7 @@ fn service(config: ServiceConfig) -> Result<(), &'static str> {
         return Err("ADMIN_SERVICE_SOCKET_CHANGED");
     }
     fs::remove_file(&config.socket).map_err(|error| {
-        eprintln!(
+        admin_log!(
             "ADMIN_SERVICE_SOCKET_UNLINK_REFUSED errno={}",
             error
                 .raw_os_error()
@@ -326,7 +356,7 @@ fn service(config: ServiceConfig) -> Result<(), &'static str> {
         );
         "ADMIN_SERVICE_SOCKET_UNLINK_UNCONFIRMED"
     })?;
-    eprintln!("ADMIN_SERVICE_STOPPED");
+    admin_log!("ADMIN_SERVICE_STOPPED");
     Ok(())
 }
 
@@ -353,12 +383,6 @@ where
             let result = Token::presented(&token)
                 .map_err(crate::admin_access::CreateFailure::from)
                 .and_then(|t| backend.create_mailbox_from(&t, &context, &request));
-            let outcome = match &result {
-                Ok(receipt) if receipt.setup_pending => "pending_setup_recorded",
-                Ok(_) => "mailbox_recorded",
-                Err(reason) => reason.action_outcome(),
-            };
-            log_action("mailbox.create", outcome);
             match result {
                 Ok(receipt) => Response::MailboxCreated { receipt },
                 Err(reason) => Response::CreateMailboxFailed { reason },
@@ -369,22 +393,14 @@ where
             password,
             totp,
         } => match backend.login_from(&context, &login, &password, &totp) {
-            Ok(token) => {
-                log_action("login", "signed_in");
-                Response::SignedIn {
-                    token: token.as_str().into(),
-                }
-            }
+            Ok(token) => Response::SignedIn {
+                token: token.as_str().into(),
+            },
             Err(crate::admin_access::Error::Unavailable) => {
-                eprintln!("ADMIN_LOGIN_DEPENDENCY_UNAVAILABLE");
-                log_action("login", "unavailable");
+                admin_log!("ADMIN_LOGIN_DEPENDENCY_UNAVAILABLE");
                 Response::Unavailable
             }
-            Err(_) => {
-                eprintln!("ADMIN_LOGIN_NOT_COMPLETED");
-                log_action("login", "denied");
-                Response::Denied
-            }
+            Err(_) => Response::Denied,
         },
         Operation::Overview { token, query, page } => match Token::presented(&token)
             .and_then(|token| backend.overview_from(&token, &context, &query, page))
@@ -456,31 +472,11 @@ where
         Operation::Logout { token, csrf } => match Token::presented(&token)
             .and_then(|token| backend.logout_from(&token, &csrf, &context))
         {
-            Ok(()) => {
-                log_action("logout", "signed_out");
-                Response::SignedOut
-            }
-            Err(crate::admin_access::Error::Unavailable) => {
-                log_action("logout", "unavailable");
-                Response::Unavailable
-            }
-            Err(_) => {
-                log_action("logout", "denied");
-                Response::Denied
-            }
+            Ok(()) => Response::SignedOut,
+            Err(crate::admin_access::Error::Unavailable) => Response::Unavailable,
+            Err(_) => Response::Denied,
         },
     }
-}
-
-fn log_action(action: &'static str, outcome: &'static str) {
-    use std::io::Write as _;
-    let at = crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider);
-    // The protected operation table remains the detailed creation audit source.
-    // A logging error cannot turn a committed action into an unknown response.
-    let _ = writeln!(
-        std::io::stderr().lock(),
-        "osmap_admin_action unix={at} action={action} outcome={outcome}"
-    );
 }
 
 fn inventory_error(error: crate::admin_access::Error) -> Response {

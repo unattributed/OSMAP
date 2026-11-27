@@ -233,8 +233,26 @@ fn civil_from_unix_days(days_since_unix_epoch: i128) -> (i128, u32, u32) {
 /// Quotes field values conservatively so spaces and punctuation remain
 /// readable without introducing ambiguous ad hoc formatting.
 fn quote_value(value: &str) -> String {
-    let escaped = value.replace('\\', "\\\\").replace('"', "\\\"");
-    format!("\"{}\"", escaped)
+    let mut escaped = String::with_capacity(value.len().min(1024) + 2);
+    escaped.push('"');
+    for character in value.chars().take(1024) {
+        match character {
+            '\\' => escaped.push_str("\\\\"),
+            '"' => escaped.push_str("\\\""),
+            '\n' => escaped.push_str("\\n"),
+            '\r' => escaped.push_str("\\r"),
+            '\t' => escaped.push_str("\\t"),
+            c if c.is_control() => {
+                let _ = write!(escaped, "\\u{{{:x}}}", c as u32);
+            }
+            c => escaped.push(c),
+        }
+    }
+    if value.chars().count() > 1024 {
+        escaped.push_str("...[truncated]");
+    }
+    escaped.push('"');
+    escaped
 }
 
 #[cfg(test)]
@@ -268,6 +286,17 @@ mod tests {
             line,
             "ts=\"1970-01-01T03:25:45Z\" ts_unix=12345 level=info category=bootstrap action=startup msg=\"bootstrap completed\" env=\"development\" listen_addr=\"127.0.0.1:8080\""
         );
+    }
+
+    #[test]
+    fn untrusted_fields_cannot_forge_a_second_log_record() {
+        let logger = Logger::new(LogFormat::Text, LogLevel::Debug);
+        let event = LogEvent::new(LogLevel::Warn, EventCategory::Http, "refused", "bad\nvalue")
+            .with_field("source", "a\r\nlevel=info\t\u{0000}b");
+        let line = logger.render_with_timestamp(&event, 1);
+        assert_eq!(line.lines().count(), 1);
+        assert!(line.contains("msg=\"bad\\nvalue\""));
+        assert!(line.contains("source=\"a\\r\\nlevel=info\\t\\u{0}b\""));
     }
 
     #[test]

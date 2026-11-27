@@ -1,0 +1,15 @@
+#!/bin/ksh
+# Private OSMAP-ADMIN web entry. Keep its syslog tag distinct from authority.
+daemon="/usr/local/bin/osmap-admin"
+daemon_user="www"
+daemon_flags="web /etc/osmap/admin-web.json"
+daemon_logger="daemon.info"
+rc_bg=YES
+rc_reload=NO
+. /etc/rc.d/rc.subr
+pexp="^${daemon} ${daemon_flags}$"
+rc_pre() {
+    [ ! -e /var/www/run/osmap-admin/web.sock ] || [ -S /var/www/run/osmap-admin/web.sock ] || return 1
+    rm -f /var/www/run/osmap-admin/web.sock
+}
+rc_cmd $1
